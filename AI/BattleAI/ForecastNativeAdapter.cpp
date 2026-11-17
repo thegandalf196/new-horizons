@@ -4,6 +4,8 @@
 #include "../../lib/battle/UnitStateValueExchange.h"
 #include "ForecastNativePreparation.h"
 #include "ForecastPerkPolicy.h"
+#include "ForecastAmmoCartAdmission.h"
+#include "ForecastSkillSpecialtyAdmission.h"
 #include "../../lib/bonuses/BonusDependencyCapture.h"
 #include "AttackPreviewHitContext.h"
 #include "../../lib/battle/BattleEffectExchange.h"
@@ -21,6 +23,7 @@
 #include "../../lib/battle/NewHorizonsSpecialtyEvents.h"
 #include "../../lib/battle/NewHorizonsSpecialtyRoundEffects.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
+#include <array>
 #include <limits>
 namespace forecast
 {
@@ -29,7 +32,7 @@ namespace
 constexpr EventMask ordinary = eventBit(Event::Damage) | eventBit(Event::Healing)
 	| eventBit(Event::Move) | eventBit(Event::Activation) | eventBit(Event::Retaliation) | eventBit(Event::Round) | eventBit(Event::Strike) | eventBit(Event::Effect);
 
-bool ordinaryRecord(BonusType type)
+bool passiveHeroMetadata(BonusType type)
 {
 	switch(type)
 	{
@@ -37,7 +40,30 @@ bool ordinaryRecord(BonusType type)
 	// exchange plan. HeroResource/effect plans require separate admission.
 	case BonusType::MAGIC_SCHOOL_SKILL:
 	case BonusType::SPELL_DURATION:
+	case BonusType::HERO_SPELL_CASTS_PER_COMBAT_TURN:
+	case BonusType::MAX_LEARNABLE_SPELL_LEVEL:
+	case BonusType::THIEVES_GUILD_ACCESS:
+	case BonusType::LEARN_BATTLE_SPELL_CHANCE:
+	case BonusType::LEARN_BATTLE_SPELL_LEVEL_LIMIT:
+	case BonusType::LEARN_BATTLE_SPELL_CHANCE_PRE_BATTLE:
+	case BonusType::LEARN_BATTLE_SPELL_LEVEL_LIMIT_PRE_BATTLE:
 	case BonusType::SPELL:
+	case BonusType::SPELLS_OF_LEVEL:
+	case BonusType::SPELLS_OF_SCHOOL:
+	case BonusType::MANA_PER_KNOWLEDGE_PERCENTAGE:
+	case BonusType::MANA_REGENERATION:
+	case BonusType::MANA_PERCENTAGE_REGENERATION:
+	case BonusType::SIGHT_RADIUS:
+	case BonusType::HERO_EXPERIENCE_GAIN_PERCENT:
+		return true;
+	default: return false;
+	}
+}
+
+bool ordinaryRecord(BonusType type)
+{
+	switch(type)
+	{
 	// Passive casting facts are owned; casting operations preflight separately.
 	case BonusType::CASTS:
 	case BonusType::SPELLCASTER:
@@ -45,8 +71,6 @@ bool ordinaryRecord(BonusType type)
 	case BonusType::CREATURE_SPELL_POWER:
 	case BonusType::SPECIFIC_SPELL_POWER:
 	case BonusType::CREATURE_ENCHANT_POWER:
-	case BonusType::SPELLS_OF_LEVEL:
-	case BonusType::SPELLS_OF_SCHOOL:
 	case BonusType::SPELL_DAMAGE:
 	case BonusType::SPECIFIC_SPELL_DAMAGE:
 	case BonusType::SPECIAL_SPELL_LEV:
@@ -54,11 +78,6 @@ bool ordinaryRecord(BonusType type)
 	case BonusType::SPELL_DAMAGE_REDUCTION:
 	case BonusType::ELEMENTAL_SPELL_DAMAGE:
 	case BonusType::ELEMENTAL_SPELL_DAMAGE_RECEIVED:
-	case BonusType::MANA_PER_KNOWLEDGE_PERCENTAGE:
-	case BonusType::MANA_REGENERATION:
-	case BonusType::MANA_PERCENTAGE_REGENERATION:
-	case BonusType::SIGHT_RADIUS:
-	case BonusType::HERO_EXPERIENCE_GAIN_PERCENT:
 	case BonusType::CHANGES_SPELL_COST_FOR_ALLY:
 	case BonusType::CHANGES_SPELL_COST_FOR_ENEMY:
 	case BonusType::LEADERSHIP:
@@ -115,19 +134,42 @@ bool ordinaryRecord(BonusType type)
 	case BonusType::ENEMY_ATTACK_REDUCTION:
 	case BonusType::CREATURE_DAMAGE:
 		return true;
-	default: return false;
+	default: return passiveHeroMetadata(type);
 	}
 }
-bool closedLifecycle(const StackWithBonuses & unit, const forecastEffects::State & effects)
+
+using VisibleHeroes = std::array<const CGHeroInstance *, 2>;
+AdmissionFailure captureVisibleHeroes(const HypotheticBattle & source, VisibleHeroes & heroes)
+{
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+	{
+		const auto & owned = source.forecastSide(side);
+		if(!owned || !owned->magicOwner || owned->magicOwner != source.getCapturedMagicRules()
+			|| owned->knowledge == VisibleHeroPolicy::Knowledge::HIDDEN_UNKNOWN
+			|| owned->knowledge == VisibleHeroPolicy::Knowledge::UNAVAILABLE)
+			return AdmissionFailure::Source;
+		if(!owned->hasVisibleHero()) continue;
+		const auto policy = source.battleGetVisibleHeroPolicy(side);
+		const auto * hero = policy.legacyHero();
+		if(!hero || !ordinaryPerksSupported(*hero)
+			|| !NativeAdapter::ordinaryOrdersSupported(source, side)) return AdmissionFailure::UnitLifecycle;
+		heroes.at(static_cast<size_t>(side)) = hero;
+	}
+	return AdmissionFailure::None;
+}
+
+bool closedLifecycle(const StackWithBonuses & unit, const forecastEffects::State & effects,
+	const CGHeroInstance * visibleHero)
 {
 	// Raw capability (not effective-list absence) protects dormant sources too.
 	if(unit.health.isCapacityHealthTracking()) return false;
+	const auto * inertCart = ammoCartAdmission::intrinsic(unit);
 	for(const auto type : {BonusType::COMBAT_EVENT_TRIGGER, BonusType::REBIRTH,
 		BonusType::DISINTEGRATE, BonusType::CREATURE_ABILITY_SUPPRESSION,
 		BonusType::HYPNOTIZED, BonusType::CONFUSION_PENDING, BonusType::GUARDIAN_SPIRIT,
 		BonusType::HP_REGENERATION, BonusType::NOT_ACTIVE,
 		BonusType::ATTACKS_NEAREST_CREATURE})
-		if(unit.mayHaveBonusType(type)) return false;
+		if(!(type == BonusType::NOT_ACTIVE && inertCart) && unit.mayHaveBonusType(type)) return false;
 	const auto raw = unit.getUnstackedBonuses(Selector::all);
 	for(const auto & bonus : *raw)
 	{
@@ -135,9 +177,15 @@ bool closedLifecycle(const StackWithBonuses & unit, const forecastEffects::State
 			|| newHorizonsOffense::isNoQuarterBonus(bonus.get())) return false;
 		const bool admitted = std::ranges::any_of(effects.values(), [&](const auto & record)
 		{ return battle::exactBattleEffectEqual(*record.value, *bonus); });
-		if(!admitted && (!ordinaryRecord(bonus->type)
-			|| (bonus->duration != BonusDuration::PERMANENT && bonus->duration != BonusDuration::ONE_BATTLE))) return false;
+		if(!admitted)
+		{
+			if(bonus.get() != inertCart && !ordinaryRecord(bonus->type) && !isOwnedSkillSpecialtyMarker(*bonus, visibleHero))
+				return false;
+			if(bonus->duration != BonusDuration::PERMANENT && bonus->duration != BonusDuration::ONE_BATTLE)
+				return false;
+		}
 	}
+	if(inertCart && std::ranges::none_of(*raw, [&](const auto & row) { return row.get() == inertCart; })) return false;
 	return !unit.isClone() && !unit.isGhost() && !unit.ghostPending && !unit.summoned && !unit.hasBattleFormState()
 		&& unit.getPhantomIntegrity() == 0 && unit.guardianSpiritHitPoints == 0
 		&& unit.regenerationRateMillionths == 0 && unit.regenerationPendingMicroHealth == 0
@@ -255,24 +303,10 @@ Admission NativeAdapter::capture(HypotheticBattle & source, EventMask entirePlan
 				throw battleSearch::BudgetExhausted(battleSearch::WorkKind::Node);
 			source.searchBudget()->require(battleSearch::WorkKind::Node, static_cast<uint32_t>(work));
 		}
-		for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
-		{
-			const auto & owned = source.forecastSide(side);
-			if(!owned || !owned->magicOwner || owned->magicOwner != source.getCapturedMagicRules()
-				|| owned->knowledge == VisibleHeroPolicy::Knowledge::HIDDEN_UNKNOWN
-				|| owned->knowledge == VisibleHeroPolicy::Knowledge::UNAVAILABLE)
-				return {{}, AdmissionFailure::Source};
-			if(owned->hasVisibleHero())
-			{
-				// Initial finite hero coverage: immutable native passives, no acquired
-				// perk can create an unrepresented strike/activation reaction.
-				const auto policy = source.battleGetVisibleHeroPolicy(side);
-				const auto * hero = policy.legacyHero();
-				if(!hero || !ordinaryPerksSupported(*hero)
-					|| !ordinaryOrdersSupported(source, side)) return {{}, AdmissionFailure::UnitLifecycle};
-			}
-		}
-		if(roster.size() < 2 || roster.size() > 4096 || source.getDefendedTown()) return {{}, AdmissionFailure::Source};
+		VisibleHeroes heroes{};
+		if(const auto reason = captureVisibleHeroes(source, heroes); reason != AdmissionFailure::None)
+			return {{}, reason};
+		if(roster.size() < 2 || source.getDefendedTown()) return {{}, AdmissionFailure::Source};
 		if(source.searchBudget()) source.searchBudget()->require(battleSearch::WorkKind::Node, static_cast<uint32_t>(roster.size()));
 		heroActionProjection::CanonicalSourceAdmission proof(*roster.front(), source);
 		if(!proof.admits(*roster.back())) return {{}, AdmissionFailure::Source};
@@ -285,7 +319,8 @@ Admission NativeAdapter::capture(HypotheticBattle & source, EventMask entirePlan
 			const auto unit = captureRead.unit(entry->unitId());
 			if(!unit || (!newHorizonsCombatSkills::isOrdinaryCreatureAttacker(unit.get()) && !unit->isAmmoCart())) return {{}, AdmissionFailure::UnitLifecycle};
 			auto effects = captureEffects(*unit, source.battleGetRound());
-			if(!closedLifecycle(*unit, *effects)) return {{}, AdmissionFailure::UnitLifecycle};
+			if(!closedLifecycle(*unit, *effects, heroes.at(static_cast<size_t>(unit->unitSide()))))
+				return {{}, AdmissionFailure::UnitLifecycle};
 			if(source.unitHasVeteranCohesion(unit.get()) || source.unitBloodragePainIncrement(unit.get()) != 0
 				|| unit->getMaxHealth() > static_cast<uint32_t>(std::numeric_limits<int32_t>::max()))
 				return {{}, AdmissionFailure::DynamicHealth};

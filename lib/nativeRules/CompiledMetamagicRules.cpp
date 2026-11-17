@@ -68,6 +68,15 @@ bool debuffPayload(const JsonNode & node)
 	return false;
 }
 
+bool debuffPayload(const CSpell & spell, int level)
+{
+	const auto & definition = spell.getLevelInfo(level);
+	if(spell.hasBattleEffects()) return debuffPayload(definition.battleEffects);
+	// Match ISpellMechanicsFactory's legacy fallback: nonempty effects, or
+	// cumulativeEffects only when effects is absent, become core:timed.
+	return !definition.effects.Struct().empty() || !definition.cumulativeEffects.Struct().empty();
+}
+
 size_t index(MetamagicPerk key)
 {
 	const auto value = static_cast<size_t>(key);
@@ -192,7 +201,7 @@ CompiledMetamagicEnergy::CompiledMetamagicEnergy(const JsonNode & admittedMagic)
 				&& actualSpell.getLevelInfo(level).range == std::vector<int>{0}
 				&& identities[entry]->effectCardinalityByLevel[level] == MetamagicTargetShape::Single;
 			identities[entry]->debuffByLevel[level] = actualSpell.isNegative() && !actualSpell.isDamage()
-				&& debuffPayload(actualSpell.getLevelInfo(level).battleEffects);
+				&& debuffPayload(actualSpell, level);
 		}
 		const auto family = identities[entry]->family;
 		const auto & definition = LIBRARY->spellh->objects[family.getNum()];

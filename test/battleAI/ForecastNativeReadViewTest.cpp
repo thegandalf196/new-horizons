@@ -223,7 +223,12 @@ TEST_F(ForecastNativeAdapterTest, WrongBindingsUnknownEnvironmentAndForeignSameI
 TEST_F(ForecastNativeAdapterTest, ActualForkNativeLookupsDoNotReadAnAdvancingAncestor)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare(false, false, false, "core:archer"));
-	const auto id = parent->battleGetAllUnits(false).front()->unitId();
+	const auto attackers = parent->battleGetUnitsIf([](const battle::Unit * unit)
+	{ return unit->unitSide() == BattleSide::ATTACKER && unit->unitSlot() == SlotID(0); });
+	ASSERT_EQ(attackers.size(), 1u);
+	ASSERT_EQ(attackers.front()->creatureId(), CreatureID(CreatureID::decode("core:archer")));
+	ASSERT_TRUE(attackers.front()->isShooter()); // Intrinsic shots must survive Focus expiry.
+	const auto id = attackers.front()->unitId();
 	auto source = parent->getForUpdate(id);
 	source->waiting = true; source->waitedThisTurn = true; source->defending = true;
 	source->addUnitBonus(newHorizonsFocusMagic::enchantment(*source,

@@ -1644,6 +1644,7 @@ set(lib_MAIN_HEADERS
 	entities/hero/NewHorizonsSwampSeer.h
 	entities/hero/NewHorizonsSchoolSpellcraft.h
 	entities/hero/NewHorizonsRuleValidation.h
+	entities/hero/NewHorizonsSkillSpecialtyMarker.h
 	entities/hero/NewHorizonsSkillSpecialtyRules.h
 	entities/hero/HeroStartingProjection.h
 	entities/hero/NewHorizonsStartingPerks.h

@@ -2,12 +2,11 @@
 
 The single product/module authoring value is [config/newHorizonsVersion.json](../config/newHorizonsVersion.json). Menu and generated module read it; development versions may be ahead of the published releases. The version alone does not establish release publication or playable acceptance.
 
-Current source metadata targets **0.92.1**, an in-development replacement for
-withdrawn 0.92.0. The withdrawn tag and package retain their original identities;
-a replacement uses a new tag rather than retargeting an existing release.
+Current source metadata targets **0.92.1 Early Access**, the replacement for the
+withdrawn 0.92.0 package. Each release tag identifies its own source revision.
 
-The Sorcery, Metamagic and shared captured-rule migration requires a new game.
-The current writer and minimum accepted save format are **1163**. Earlier files
+The Consecrated Arms and Metamagic revisions require a new game.
+The current writer and minimum accepted save format are **1164**. Earlier files
 are rejected without conversion or modification. Product metadata alone does
 not identify a published package. See the
 [save boundary](developers/Serialization.md#current-save-boundary) and

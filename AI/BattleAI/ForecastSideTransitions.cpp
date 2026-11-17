@@ -167,7 +167,8 @@ std::optional<SideReceipt> SideTransitions::setAttunement(const std::shared_ptr<
 		[&](SideState & next)
 		{
 			if((mask & ~newHorizonsElementalAttunement::ALL_ELEMENTS) != 0
-				|| (!next.attunementKnown && mask != next.attunementMask))
+				|| ((!next.attunementKnown || next.knowledge == VisibleHeroPolicy::Knowledge::KNOWN_ABSENT)
+					&& mask != next.attunementMask))
 				throw std::invalid_argument("Unknown compact elemental activation");
 			next.attunementMask = mask;
 		}, budget, false);

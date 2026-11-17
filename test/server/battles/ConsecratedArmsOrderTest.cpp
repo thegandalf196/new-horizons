@@ -9,6 +9,7 @@
 #include "../../../lib/networkPacks/SetStackEffect.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
 #include "../../../lib/battle/RedemptionEvent.h"
+#include "../../../lib/battle/StackEffectRemoval.h"
 #include "../../../lib/battle/NewHorizonsMagicalAbilityDamage.h"
 #include "../../../server/battles/BattleConsecratedArms.h"
 
@@ -29,8 +30,28 @@ protected:
 		attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
 		attackerSideHero->removeAllSpells();
 		attackerSideHero->initializeSpellPoints(0, 0);
+		// Shield capacity is captured for original army slots during localInit.
+		// Later synthetic ADD units deliberately have no combat-start HP basis.
+		for(auto * hero : {attackerSideHero, defenderSideHero})
+		{
+			hero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode(SKILL)),
+				MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+			for(int slot = 0; slot < 3; ++slot)
+				ASSERT_TRUE(hero->setCreature(SlotID(slot), creatureByName("core:pikeman"), 100));
+		}
 		startBattle();
 		beginCombat();
+	}
+	CStack * original(BattleSide side, SlotID slot, BattleHex position)
+	{
+		for(const auto & stack : battle()->stacks)
+			if(stack->unitSide() == side && stack->unitSlot() == slot)
+			{
+				EXPECT_GT(stack->getBattleStartMaximumAggregateHP(), 0);
+				stack->setPosition(position);
+				return stack.get();
+			}
+		throw std::logic_error("Missing original prayer fixture stack");
 	}
 	void grant(const battle::Unit & unit, Prayer prayer, Policy policy = Policy{1}, int faith = 200)
 	{
@@ -86,7 +107,12 @@ TEST_F(ConsecratedArmsOrderTest, AllSixCoexistAndSamePrayerRefreshDoesNotStack)
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	const auto * unit = battle()->battleActiveUnit();
 	for(int index = 0; index < 6; ++index)
+	{
 		grant(*unit, static_cast<Prayer>(index));
+		ASSERT_EQ(activePrayerCount(*unit), index + 1);
+		for(int existing = 0; existing <= index; ++existing)
+			ASSERT_TRUE(activePrayer(*unit, static_cast<Prayer>(existing)));
+	}
 	ASSERT_EQ(activePrayerCount(*unit), 6);
 	grant(*unit, Prayer::DIVINE_PURPOSE, Policy{1}, 400);
 	ASSERT_EQ(activePrayerCount(*unit), 6);
@@ -163,7 +189,7 @@ TEST_F(ConsecratedArmsOrderTest, DauntlessReducesOnlyProvokedMeleeRetaliation)
 TEST_F(ConsecratedArmsOrderTest, NativeCasualtiesEarnShieldAfterEventAndRefreshDoesNotRefill)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
-	auto * recipient = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(leftHex), 10);
+	auto * recipient = original(BattleSide::ATTACKER, SlotID(1), BattleHex(leftHex));
 	grant(*recipient, Prayer::VICARIOUS_REDEMPTION);
 	const auto maximumHP = recipient->getMaxHealth();
 	ASSERT_GT(maximumHP, 0);
@@ -198,7 +224,7 @@ TEST_F(ConsecratedArmsOrderTest, PhysicalStrikeAndJudgmentShareOneVowCasualtyQuo
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	const auto * source = battle()->battleActiveUnit();
-	auto * recipient = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(rightHex), 100);
+	auto * recipient = original(BattleSide::DEFENDER, SlotID(2), BattleHex(rightHex));
 	grant(*source, Prayer::HEAVENS_JUDGMENT);
 	grant(*recipient, Prayer::UNBROKEN_VOW);
 	battleConsecratedArms::AttackContext attack;
@@ -227,12 +253,12 @@ TEST_F(ConsecratedArmsOrderTest, PhysicalStrikeAndJudgmentShareOneVowCasualtyQuo
 TEST_F(ConsecratedArmsOrderTest, UnstackedDecoderRejectsDuplicateAndInactivePrayerRecords)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
-	auto * duplicate = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(leftHex), 10);
+	auto * duplicate = original(BattleSide::ATTACKER, SlotID(1), BattleHex(leftHex));
 	const auto bonuses = prayerBonuses(Prayer::UNBROKEN_VOW, 200, Policy{1}, 3, 1);
 	duplicate->addNewBonus(std::make_shared<Bonus>(bonuses.front()));
 	duplicate->addNewBonus(std::make_shared<Bonus>(bonuses.front()));
 	EXPECT_THROW(activePrayers(*duplicate), std::runtime_error);
-	auto * inactive = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(rightHex), 10);
+	auto * inactive = original(BattleSide::DEFENDER, SlotID(2), BattleHex(rightHex));
 	auto malformed = bonuses.front();
 	malformed.parameters = std::make_shared<BonusParameters>(std::vector<int32_t>{1, 0, 0});
 	inactive->addNewBonus(std::make_shared<Bonus>(malformed));
@@ -242,8 +268,8 @@ TEST_F(ConsecratedArmsOrderTest, UnstackedDecoderRejectsDuplicateAndInactivePray
 TEST_F(ConsecratedArmsOrderTest, EliminatedPrimaryStillPaysSurvivingCommunionAllyOnce)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
-	auto * primary = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(leftHex), 10);
-	auto * ally = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(rightHex), 100);
+	auto * primary = original(BattleSide::ATTACKER, SlotID(1), BattleHex(leftHex));
+	auto * ally = original(BattleSide::ATTACKER, SlotID(2), BattleHex(rightHex));
 	grant(*primary, Prayer::VICARIOUS_REDEMPTION);
 	grant(*ally, Prayer::VICARIOUS_REDEMPTION,
 		Policy{2, static_cast<uint16_t>(Perk::COMMUNION_OF_SAINTS), 50, 100}, 150);
@@ -274,7 +300,7 @@ TEST_F(ConsecratedArmsOrderTest, ShieldEarnedByPhysicalStrikeCannotAbsorbItsJudg
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	const auto * source = battle()->battleActiveUnit();
-	auto * recipient = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(rightHex), 100);
+	auto * recipient = original(BattleSide::DEFENDER, SlotID(2), BattleHex(rightHex));
 	grant(*source, Prayer::HEAVENS_JUDGMENT);
 	grant(*recipient, Prayer::VICARIOUS_REDEMPTION);
 	const int64_t before = recipient->getAvailableHealth();
@@ -304,4 +330,30 @@ TEST_F(ConsecratedArmsOrderTest, ShieldEarnedByPhysicalStrikeCannotAbsorbItsJudg
 	event.redemption.complete(*battle(), *gameHandler->spellcastEnvironment());
 	EXPECT_EQ(recipient->getRedemptionShieldHitPoints(), maximumHP * 2 * 3000 / 10000);
 	EXPECT_THROW(event.redemption.complete(*battle(), *gameHandler->spellcastEnvironment()), std::logic_error);
+}
+
+TEST_F(ConsecratedArmsOrderTest, EqualPayloadPrayerRemovalKeepsDistinctIdentities)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	for(int selected = 0; selected < 6; ++selected)
+		for(int candidate = 0; candidate < 6; ++candidate)
+		{
+			const auto left = prayerBonuses(static_cast<Prayer>(selected), 200, Policy{1}, 3, 6);
+			const auto right = prayerBonuses(static_cast<Prayer>(candidate), 200, Policy{1}, 3, 6);
+			EXPECT_EQ(battle::matchesStackEffectRemoval(left.front(), right.front()), selected == candidate);
+		}
+}
+
+TEST_F(ConsecratedArmsOrderTest, UnrelatedLegacyRemovalRetainsItsExistingContract)
+{
+	Bonus selected(BonusDuration::N_TURNS, BonusType::NONE, BonusSource::OTHER, 200, BonusSourceID());
+	selected.turnsRemain = 3;
+	selected.statusIdentity = "custom.first";
+	selected.stacking = "custom.first";
+	auto candidate = selected;
+	candidate.statusIdentity = "custom.second";
+	candidate.stacking = "custom.second";
+	EXPECT_TRUE(battle::matchesStackEffectRemoval(selected, candidate));
+	candidate.val = 201;
+	EXPECT_FALSE(battle::matchesStackEffectRemoval(selected, candidate));
 }

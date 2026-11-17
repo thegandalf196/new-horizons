@@ -7,18 +7,23 @@ and revisions as the game develops.
 For individual perk effects, spell formulas, creature statistics and Order rules,
 read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 
-## 0.92.1 — in development
+## 0.92.1 Early Access
 
 - Corrects perk progression to one Basic, one Advanced and one Expert perk per
   Skill. Fresh default heroes have two Basic Skills and no perks. Skill ranks
   and perks remain separate level-up advancements.
 - Simplifies the four-offer level-up display and confirms a perk with one click.
+- Gives 11 skills distinct Basic, Advanced and Expert illustrations and updates
+  the matching hero specialty icons.
 - Revises Sorcery and Academy Metamagic, including Focus Magic, Forced Recall
   and Force Lance. Retires Counterspell and the previous time-stasis mechanics.
+- Replaces Divine Mandate with Consecrated Arms. Issuing an Order grants a
+  prayer to its recipients, with effects that scale with the hero's Faith.
 - Removes the Conflux Vault of Ashes and its additional Fire Elemental growth.
-- Reworks captured-rule storage, perk lookups and combat AI evaluation. Full
-  integration, rendered gameplay and comparative performance acceptance remain
-  pending; no speedup is claimed here.
+- Compiles captured rules and reuses battle state for supported combat AI forecasts.
+
+Start a new game in 0.92.1. The current save format is **1164**. Earlier saves
+are rejected without changing the saved files.
 
 ## 0.92.0 Early Access
 

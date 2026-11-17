@@ -93,6 +93,9 @@ sharing a source/SID. Leave it empty for the ordinary existing identity.
 Components of the same logical status should use the same identity. Generic
 duration refresh preserves original numerical payload and caster provenance,
 retains explicit classification and must not merge distinct explicit identities.
+Consecrated Arms prayer removal also matches the explicit identity and stacking
+group, so removing one prayer preserves other prayers with identical numerical
+payloads.
 Tags travel with copied bonuses and their ordinary removal lifecycle. This is
 metadata infrastructure, not an active effect counter or automatic tagging of
 existing content. New Horizons Pandemonium's unresolved count/perk semantics

@@ -213,13 +213,21 @@ TEST_F(ForecastNativeAdapterTest, PotentialTargetsOffersStampActualSourceAndBest
 TEST_F(ForecastNativeAdapterTest, LateAcceptedPlanBudgetFailureRestoresLazyMapCachesModelAndObservation)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
-	auto sourceActor = parent->getForUpdate(parent->battleGetAllUnits(false).front()->unitId());
+	const auto nativeUnits = parent->battleGetAllUnits(false);
+	const auto attacker = std::ranges::find_if(nativeUnits, [](const battle::Unit * unit)
+	{ return unit->unitSide() == BattleSide::ATTACKER && unit->unitSlot() == SlotID(0); });
+	const auto defender = std::ranges::find_if(nativeUnits, [](const battle::Unit * unit)
+	{ return unit->unitSide() == BattleSide::DEFENDER && unit->unitSlot() == SlotID(0); });
+	ASSERT_NE(attacker, nativeUnits.end());
+	ASSERT_NE(defender, nativeUnits.end());
+	const auto actorId = (*attacker)->unitId(), targetId = (*defender)->unitId();
+	auto sourceActor = parent->getForUpdate(actorId);
 	sourceActor->setPosition(BattleHex(2, 5));
 	sourceActor->addUnitBonus(newHorizonsFocusMagic::enchantment(*sourceActor,
 		SpellID(SpellID::decode(newHorizonsFocusMagic::SPELL))));
 	ASSERT_TRUE(forecast::NativeAdapter::prepareExchange(*parent));
 	const auto ids = parent->forecastState()->ids();
-	const auto action = acceptedPreview(parent, ids[0], ids[1], true);
+	const auto action = acceptedPreview(parent, actorId, targetId, true);
 	auto child = std::make_shared<HypotheticBattle>(environment.get(), parent);
 	forecast::NativeAdapter::forkExchange(*parent, *child);
 	ASSERT_TRUE(child->stackStates.empty());
@@ -241,17 +249,19 @@ TEST_F(ForecastNativeAdapterTest, LateAcceptedPlanBudgetFailureRestoresLazyMapCa
 	ASSERT_TRUE(child->stackStates.empty());
 	const auto before = *child->forecastState();
 	const auto mapBefore = child->stackStates;
-	const auto * inherited = child->battleGetUnitByID(ids[0]);
+	const auto * inherited = child->battleGetUnitByID(actorId);
 	const auto actorBefore = inherited->acquireState()->save();
-	const auto defenderBefore = child->battleGetUnitByID(ids[1])->acquireState()->save();
-	const auto spellsBefore = child->getLocalSpellEffects(ids[0]);
-	ASSERT_FALSE(spellsBefore.empty());
+	const auto defenderBefore = child->battleGetUnitByID(targetId)->acquireState()->save();
+	const auto spellsBefore = child->forecastState()->unit(actorId)->effects;
+	ASSERT_TRUE(spellsBefore);
+	ASSERT_FALSE(spellsBefore->values().empty());
+	ASSERT_TRUE(child->stackStates.empty());
 	DamageCache cache;
 	cache.buildDamageCache(parent, inherited->unitSide());
 	const auto cacheBefore = cache.captureSnapshot();
 	const auto rng = projectedHitTest::serialized(*handler->randomizer);
 	const auto ambient = projectedHitTest::serialized(CRandomGenerator::getDefault());
-	ASSERT_TRUE(child->beginLifeDrainFriendlyObservation(ids[0]));
+	ASSERT_TRUE(child->beginLifeDrainFriendlyObservation(actorId));
 	battleSearch::WorkAmounts quota{};
 	quota[node] = constructorWork + static_cast<uint32_t>(ids.size() * (ids.size() + 1));
 	auto work = std::make_shared<battleSearch::SearchBudget>(quota);
@@ -263,14 +273,15 @@ TEST_F(ForecastNativeAdapterTest, LateAcceptedPlanBudgetFailureRestoresLazyMapCa
 	EXPECT_EQ(work->spent()[node], quota[node]);
 	EXPECT_EQ(work->refusals()[node], 1u);
 	EXPECT_EQ(child->stackStates, mapBefore);
-	EXPECT_EQ(child->battleGetUnitByID(ids[0]), inherited);
+	EXPECT_EQ(child->battleGetUnitByID(actorId), inherited);
 	EXPECT_TRUE(child->forecastState()->sameSnapshot(before));
 	EXPECT_EQ(inherited->acquireState()->save(), actorBefore);
-	EXPECT_EQ(child->battleGetUnitByID(ids[1])->acquireState()->save(), defenderBefore);
-	const auto spellsAfter = child->getLocalSpellEffects(ids[0]);
-	ASSERT_EQ(spellsAfter.size(), spellsBefore.size());
-	for(size_t index = 0; index < spellsBefore.size(); ++index)
-		EXPECT_TRUE(battle::exactBattleEffectEqual(spellsBefore[index], spellsAfter[index]));
+	EXPECT_EQ(child->battleGetUnitByID(targetId)->acquireState()->save(), defenderBefore);
+	const auto spellsAfter = child->forecastState()->unit(actorId)->effects;
+	ASSERT_EQ(spellsAfter, spellsBefore); // Restore the exact immutable effect owner, without materializing it.
+	ASSERT_EQ(spellsAfter->values().size(), spellsBefore->values().size());
+	for(size_t index = 0; index < spellsBefore->values().size(); ++index)
+		EXPECT_TRUE(battle::exactBattleEffectEqual(*spellsBefore->values()[index].value, *spellsAfter->values()[index].value));
 	EXPECT_EQ(newHorizonsFocusMagic::charges(*inherited), 3);
 	EXPECT_TRUE(cache.matchesSnapshot(cacheBefore));
 	EXPECT_TRUE(child->finishLifeDrainFriendlyObservation());

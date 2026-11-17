@@ -73,6 +73,8 @@ protected:
 		for(bool ranged : {false, true})
 		{
 			const auto expected = nativeDamage::prepareUnit(*unit, ranged); ASSERT_TRUE(expected);
+			EXPECT_EQ(expected->unit.baseAmount, unit->unitBaseAmount());
+			EXPECT_EQ(expected->unit.availableHealth, static_cast<double>(unit->getAvailableHealth()));
 			const auto * actual = state->prepared(unit->unitId(), ranged); ASSERT_NE(actual, nullptr);
 			const auto * row = state->unit(unit->unitId()); ASSERT_TRUE(row->modifierNumbers);
 			for(const auto * prepared : {actual, &row->modifierNumbers->prepared[ranged ? 1 : 0]})
@@ -102,10 +104,13 @@ protected:
 		auto target = child->getForUpdate(actorId); ASSERT_GT(target->getCount(), 1);
 		const auto before = child->forecastState()->unit(target->unitId())->currentModifiers;
 		const auto oldCount = target->getCount();
+		const auto oldHealth = target->getAvailableHealth();
 		int64_t amount = target->getFirstHPleft();
 		ASSERT_GT(amount, 0);
 		ASSERT_TRUE(forecast::NativeAdapter::damage(*child, *target, amount, battle::DamageProvenance::OTHER, nullptr));
 		EXPECT_LT(target->getCount(), oldCount);
+		EXPECT_EQ(target->getAvailableHealth(), oldHealth - amount);
+		EXPECT_EQ(child->forecastState()->unit(target->unitId())->health.available(), target->getAvailableHealth());
 		EXPECT_EQ(child->forecastState()->unit(target->unitId())->currentModifiers, before);
 		ASSERT_NO_FATAL_FAILURE(expectNativeParity());
 	}

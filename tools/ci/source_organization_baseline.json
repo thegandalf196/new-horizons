@@ -23209,7 +23209,7 @@
       "inherited_a1_health_deferral": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.",
       "inherited_deferral": "Exact source-list bound only. Before substantive build logic, extract a cohesive target configuration section. Verify source/link membership once and retain no duplicate translation units. Prior stricter obligations remain in inherited_deferral, where present.",
       "kind": "exception",
-      "lines": 2143,
+      "lines": 2144,
       "owner": "engine_engineer",
       "previous_review": "PROPOSED-0920-EXACT-SOURCE-ORGANIZATION",
       "prior_a1_health_scope": {
@@ -23220,11 +23220,11 @@
         "sha256": "7058cdef35cfce13214572d190c4accfdf5721e6c144af3cdfca9f53bb68c2a0"
       },
       "prior_deferral": "Exact mechanical source/header registration only. Before substantive CMake target policy growth, extract a cohesive configuration section while verifying translation-unit membership and facade linkage. No future file growth allowance. Prior stricter obligations remain in inherited_deferral, where present.\n\nKeep registrations in their current coherent tables. Extract any future conditional target/control logic rather than growing this registry into a build framework.",
-      "rationale": "Exact2079 to2088 line shared-clock integration scope. Mechanical source/header registration only: FocusValueState and TimedEffectValueTransitions; source algorithms live in focused owners. No conditional target logic or future registry allowance.\n\nIndependently reviewed C14 scope (2088 to 2143 physical lines): Only mechanical source/header registrations change. The comparison source is2114 lines despite its older2088 metadata; the current registry is2143. No build-policy algorithm, direct-object consumer link or global visibility change is introduced. This bounds only the recorded hash and measured span; all inherited deferrals, ratchets and runtime holds remain binding, with no future growth allowance.",
-      "review": "IR-NH0921-C14-1164-CODEORG-20261117",
-      "review_scope": "Exact recorded C14 source hash, physical span and organization delta only. No future growth, whole-mechanic, compiler, native, rendered, performance, save-resume, publication or promotion acceptance.",
+      "rationale": "Exact 2143 to 2144-line mechanical header registration: add entities/hero/NewHorizonsSkillSpecialtyMarker.h once to the existing shared-library header list. No target conditions, compilation units, source order, linkage or build policy change. All inherited extraction and registry-size deferrals remain; no future growth credit.",
+      "review": "IR-NH0921-CLEAN-FORECAST-EXTRACTION-20261117",
+      "review_scope": "Only the exact2144-line lib/CMakeLists.txt hash and single shared marker header registration. No compiler, runtime, rendered, performance, publication or future-growth acceptance.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN",
-      "sha256": "b21c5095906c60e33ed6ea885c353e665d144a7e18893754f6ed7d01e4c581cf"
+      "sha256": "56aeb2264653e94712798750d390a12389a20b7e31650718e5ebed632fae744c"
     },
     "lib/CSkillHandler.cpp::std::shared_ptr<CSkill> CSkillHandler::loadFromJson(const std::string & scope, const JsonNode & json, const std::string & identifier, size_t index)#1": {
       "kind": "legacy",
@@ -25140,7 +25140,7 @@
       "deferral": "Next substantive hero Learning expansion must use focused Learning state/transition owners with explicit owner/partner/round-week/rules inputs; preserve source/map/School eligibility, no duplicate event, current-save and Normal resource semantics. Before further substantive expansion, owning engine/gameplay/UI specialist must extract the next coherent touched policy, ordered stage, codec family or widget responsibility into a focused owner, preserving callback visibility, rejection atomicity, serialized field order, payment and RNG/packet order. This exact bounded migration/registry/validation routing gives no future growth credit.",
       "inherited_a1_health_deferral": "Next substantive hero Learning expansion must use focused Learning state/transition owners with explicit owner/partner/round-week/rules inputs; preserve source/map/School eligibility, no duplicate event, current-save and Normal resource semantics. Before further substantive expansion, owning engine/gameplay/UI specialist must extract the next coherent touched policy, ordered stage, codec family or widget responsibility into a focused owner, preserving callback visibility, rejection atomicity, serialized field order, payment and RNG/packet order. This exact bounded migration/registry/validation routing gives no future growth credit.",
       "kind": "exception",
-      "lines": 3082,
+      "lines": 3066,
       "owner": "gameplay_engineer",
       "preceding_review": "IR-COMPOSED-FEATURE-NUMERIC-EXACT-20261029",
       "previous_review": "PROPOSED-0920-EXACT-SOURCE-ORGANIZATION",
@@ -25151,11 +25151,11 @@
         "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
         "sha256": "450543a3563b69fd683ee866089caeddd601609193e8a442ea477703f6021856"
       },
-      "rationale": "Exact 3100 to 3082-line ratchet. Typed Development/Mastery/Leadership/Metamagic routing or the isolated CHealth value context removes repeated policy work from this existing owner; prior stricter extraction obligations remain. Shared raw adapters, metadata identity, mutable input/RNG order and lifecycle remain governed by focused differential coverage.",
-      "review": "IR-NH092-ORG-E8CD1819-20261116",
-      "review_scope": "Exact source organization hash/count/span only; no runtime, performance, rendered or future-growth approval.",
-      "review_status": "APPROVED_EXACT_ORGANIZATION_METADATA",
-      "sha256": "d98ea8a6322d194f86d78bac269fe3614b0b440485a4f59251af6215556c8300"
+      "rationale": "Exact 3082 to 3066-line ratchet. Cohesive skill-specialty marker key/construction moves to its shared lib owner, retaining the same saved marker schema and three initialization/query call sites. Prior stronger extraction and invariant deferrals remain; no future growth credit.",
+      "review": "IR-NH0921-CART-INERT-METADATA-20261117",
+      "review_scope": "Exact shrinking file hash/count and skill-specialty marker extraction only. No temporary diagnostics, runtime, performance, rendered or future-growth approval.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN",
+      "sha256": "a477c7a2994bf9c4acd6e90ab16848cc2f6358c5e0f0eff70eaff910f51c899b"
     },
     "lib/mapObjects/CGHeroInstance.cpp::CStackBasicDescriptor CGHeroInstance::calculateNecromancy (const BattleResult &battleResult) const#1": {
       "kind": "legacy",
@@ -25183,8 +25183,8 @@
         "review_status": "INDEPENDENT_COMPLETE_EXACT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
         "sha256": "0fbe23fe3e84e1f458ec0548c4dcb7a6145b17999a3d43b5524941067d6002b0"
       },
-      "deferral": "Owner: Gameplay engineer. Interface/acceptance: Extract starting specialty producer conversion and hero cost composition behind captured-rule helpers; preserve explicit authored overrides, default starting projections, old policy absence and battle/spellbook cost parity. Owner: gameplay_engineer. Before further specialty producer growth, extract cohesive captured creature-line producer selection; preserve initialization order, explicit zero/absence, removal identities and existing saved-rule behavior. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance. Fafner bounded follow-up: Before further producer selection growth, extract the captured creature-line conversion owner while preserving authored initialization order, zero/absence, removal identity, hero-cost composition and old-save behavior. Extract the next touched captured creature-line/specialty initialization stage behind an explicit hero plus captured-policy initialization helper, preserving authored override\u2192producer refresh\u2192secondary bonus order, removals and level-one meaning; return declared assignments/refresh outcome rather than expose all hero internals. Required characterization: Current versus absent capture, explicit override/zero, old hero specialties/starting perks, level-one/no retroactive growth, real gained-level primary state and no extra RNG. Trigger: Before the next substantive expansion of this affected responsibility. Existing stronger invariant/deferral obligations remain; this approval covers only the pinned finite batch. Retain existing scoped decomposition obligations for the next affected substantive growth; this removal ratchets the exact baseline down and grants no regrowth credit.\n\nBefore any further substantive expansion, extract the next cohesive touched policy, callback/read adapter or ordered admission stage into its focused owner. Preserve exact capture metadata, source visibility, schema rejection, RNG/packet ordering and standalone/world wire identity; no future growth credit from this exception.",
-      "inherited_a1_health_deferral": "Owner: Gameplay engineer. Interface/acceptance: Extract starting specialty producer conversion and hero cost composition behind captured-rule helpers; preserve explicit authored overrides, default starting projections, old policy absence and battle/spellbook cost parity. Owner: gameplay_engineer. Before further specialty producer growth, extract cohesive captured creature-line producer selection; preserve initialization order, explicit zero/absence, removal identities and existing saved-rule behavior. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance. Fafner bounded follow-up: Before further producer selection growth, extract the captured creature-line conversion owner while preserving authored initialization order, zero/absence, removal identity, hero-cost composition and old-save behavior. Extract the next touched captured creature-line/specialty initialization stage behind an explicit hero plus captured-policy initialization helper, preserving authored override\u2192producer refresh\u2192secondary bonus order, removals and level-one meaning; return declared assignments/refresh outcome rather than expose all hero internals. Required characterization: Current versus absent capture, explicit override/zero, old hero specialties/starting perks, level-one/no retroactive growth, real gained-level primary state and no extra RNG. Trigger: Before the next substantive expansion of this affected responsibility. Existing stronger invariant/deferral obligations remain; this approval covers only the pinned finite batch. Retain existing scoped decomposition obligations for the next affected substantive growth; this removal ratchets the exact baseline down and grants no regrowth credit.",
+      "deferral": "Owner: Gameplay engineer. Interface/acceptance: Extract starting specialty producer conversion and hero cost composition behind captured-rule helpers; preserve explicit authored overrides, default starting projections, old policy absence and battle/spellbook cost parity. Owner: gameplay_engineer. Before further specialty producer growth, extract cohesive captured creature-line producer selection; preserve initialization order, explicit zero/absence, removal identities and existing saved-rule behavior. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance. Fafner bounded follow-up: Before further producer selection growth, extract the captured creature-line conversion owner while preserving authored initialization order, zero/absence, removal identity, hero-cost composition and old-save behavior. Extract the next touched captured creature-line/specialty initialization stage behind an explicit hero plus captured-policy initialization helper, preserving authored override→producer refresh→secondary bonus order, removals and level-one meaning; return declared assignments/refresh outcome rather than expose all hero internals. Required characterization: Current versus absent capture, explicit override/zero, old hero specialties/starting perks, level-one/no retroactive growth, real gained-level primary state and no extra RNG. Trigger: Before the next substantive expansion of this affected responsibility. Existing stronger invariant/deferral obligations remain; this approval covers only the pinned finite batch. Retain existing scoped decomposition obligations for the next affected substantive growth; this removal ratchets the exact baseline down and grants no regrowth credit.\n\nBefore any further substantive expansion, extract the next cohesive touched policy, callback/read adapter or ordered admission stage into its focused owner. Preserve exact capture metadata, source visibility, schema rejection, RNG/packet ordering and standalone/world wire identity; no future growth credit from this exception.",
+      "inherited_a1_health_deferral": "Owner: Gameplay engineer. Interface/acceptance: Extract starting specialty producer conversion and hero cost composition behind captured-rule helpers; preserve explicit authored overrides, default starting projections, old policy absence and battle/spellbook cost parity. Owner: gameplay_engineer. Before further specialty producer growth, extract cohesive captured creature-line producer selection; preserve initialization order, explicit zero/absence, removal identities and existing saved-rule behavior. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance. Fafner bounded follow-up: Before further producer selection growth, extract the captured creature-line conversion owner while preserving authored initialization order, zero/absence, removal identity, hero-cost composition and old-save behavior. Extract the next touched captured creature-line/specialty initialization stage behind an explicit hero plus captured-policy initialization helper, preserving authored override→producer refresh→secondary bonus order, removals and level-one meaning; return declared assignments/refresh outcome rather than expose all hero internals. Required characterization: Current versus absent capture, explicit override/zero, old hero specialties/starting perks, level-one/no retroactive growth, real gained-level primary state and no extra RNG. Trigger: Before the next substantive expansion of this affected responsibility. Existing stronger invariant/deferral obligations remain; this approval covers only the pinned finite batch. Retain existing scoped decomposition obligations for the next affected substantive growth; this removal ratchets the exact baseline down and grants no regrowth credit.",
       "kind": "exception",
       "lines": 346,
       "owner": "gameplay_engineer",
@@ -25196,11 +25196,11 @@
         "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
         "sha256": "56b0ebeb208919d1c5d349befad3ab0268df96b986a1e8d14cbc4a29c31f6863"
       },
-      "rationale": "Exact 346 to 346-line integrated scope. Bounded const typed-owner forwarding, immutable capture/WorldMagic table admission, compiled-out audit hook or source registration only; substantive definition/lookup implementations live in focused new nativeRules units. No broad numerical growth allowance, mutable cache or gameplay rebalance.",
-      "review": "IR-NH092-ORG-E8CD1819-20261116",
-      "review_scope": "Exact source organization hash/count/span only; no runtime, performance, rendered or future-growth approval.",
-      "review_status": "APPROVED_EXACT_ORGANIZATION_METADATA",
-      "sha256": "2c6f0f42de7b06a5d59b9df22ecbdc1498b06946675756f3a55594e29c3327bb"
+      "rationale": "Exact 346 to 346-line routing-only change: two skill-specialty marker construction calls use the extracted shared lib helper. Initialization order, captured-policy decisions, saved marker identity and RNG/packet order remain unchanged. All inherited extraction obligations remain; no future growth credit.",
+      "review": "IR-NH0921-CART-INERT-METADATA-20261117",
+      "review_scope": "Only exact346-line initHero hash and two identifier-only marker-helper call substitutions. Existing oversized-function exception and stronger deferrals remain; no unrelated scope, runtime, rendered or future-growth approval.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN",
+      "sha256": "a86f45e60d82e74d9ae2ff897ad5ddec61d196ebe303896109704df6af4b5f5a"
     },
     "lib/mapObjects/CGHeroInstance.cpp::void CGHeroInstance::serializeCommonOptions(JsonSerializeFormat & handler)#1": {
       "deferral": "Exact source and size only. Gameplay owner should extract the next touched hero creation or common-options serialization stage behind a focused typed interface, preserving equipment intent, startup RNG/slot order, captured absence and JSON/binary compatibility before further central growth.",
@@ -29299,32 +29299,10 @@
       "inherited_exact_source_review": {},
       "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN"
     },
-    "AI/BattleAI/ForecastNativeAdapter.cpp::forecast::bool ordinaryRecord(BonusType type)#1": {
-      "kind": "review",
-      "lines": 89,
-      "sha256": "b6b4504dfb7c08419ec07f8a5282a4183438f2cf427cfb1115f5e2af613d3aa2",
-      "review": "IR-NH0921-COMPOSED4-CODEORG-20261117",
-      "rationale": "Three-line native original completion bridge adds one Overflow stage; shared recorder observes pre-casualty original injury once and reflection/automatic origins remain separate.",
-      "owner": "ai_engineer",
-      "review_scope": "Exact recorded composed4 physical size and content hash only; no future growth credit or relaxed ceiling. All inherited technical requirements, extraction triggers and runtime holds remain. Source organization review does not establish compilation, functional/native/rendered acceptance, timing, balance or publication authority.",
-      "inherited_exact_source_review": {},
-      "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN"
-    },
     "AI/BattleAI/ForecastNativeAdapter.cpp::forecast::UnitInput captureUnit(const StackWithBonuses & unit, const HypotheticBattle & source, std::shared_ptr<const forecastEffects::State> effects)#1": {
       "kind": "review",
       "lines": 83,
       "sha256": "86d2051b770814b79969e93418c7cd39d61f1dbb26c9c4c05a3931fd298319f8",
-      "review": "IR-NH0921-COMPOSED4-CODEORG-20261117",
-      "rationale": "Three-line native original completion bridge adds one Overflow stage; shared recorder observes pre-casualty original injury once and reflection/automatic origins remain separate.",
-      "owner": "ai_engineer",
-      "review_scope": "Exact recorded composed4 physical size and content hash only; no future growth credit or relaxed ceiling. All inherited technical requirements, extraction triggers and runtime holds remain. Source organization review does not establish compilation, functional/native/rendered acceptance, timing, balance or publication authority.",
-      "inherited_exact_source_review": {},
-      "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN"
-    },
-    "AI/BattleAI/ForecastNativeAdapter.cpp::forecast::Admission NativeAdapter::capture(HypotheticBattle & source, EventMask entirePlan)#1": {
-      "kind": "review",
-      "lines": 87,
-      "sha256": "3156e6b6d07b8473dbef8cbe59eb06838ad6e7de16922df13d4706278c0eab72",
       "review": "IR-NH0921-COMPOSED4-CODEORG-20261117",
       "rationale": "Three-line native original completion bridge adds one Overflow stage; shared recorder observes pre-casualty original injury once and reflection/automatic origins remain separate.",
       "owner": "ai_engineer",

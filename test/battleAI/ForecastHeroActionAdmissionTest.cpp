@@ -81,7 +81,9 @@ TEST_F(ForecastHeroActionAdmissionTest, DamageNumericFocusAndHeroBindHaveFiniteP
 	ASSERT_NO_FATAL_FAILURE(prepareHero());
 	expectPure(spell(SpellID::MAGIC_ARROW), Route::Compact);
 	expectPure(spell(SpellID::HASTE, true), Route::Compact);
-	expectPure(spell(SpellID::BIND), Route::Compact);
+	// The authored Hero root has a finite round clock. core:bind is the
+	// creature ability whose addInfo is patched with its unit caster ID.
+	expectPure(spell(SpellID(SpellID::decode("new-horizons:entangle"))), Route::Compact);
 	expectPure(spell(SpellID(SpellID::decode("new-horizons:focusMagic")), true), Route::Compact);
 }
 TEST_F(ForecastHeroActionAdmissionTest, ExistingSixOrdersHaveNoSpellPrefixAndSpecialContinuationsRouteReference)
@@ -105,12 +107,23 @@ TEST_F(ForecastHeroActionAdmissionTest, ExistingSixOrdersHaveNoSpellPrefixAndSpe
 TEST_F(ForecastHeroActionAdmissionTest, NoFuelMetamagicAndSorceryDoNotForceBlanketReference)
 {
 	ASSERT_NO_FATAL_FAILURE(prepareHero(true));
-	expectPure(spell(SpellID::MAGIC_ARROW), Route::Compact);
-	expectPure(spell(SpellID::HASTE, true), Route::Compact);
+	{ SCOPED_TRACE("no-fuel Magic Arrow"); expectPure(spell(SpellID::MAGIC_ARROW), Route::Compact); }
+	{ SCOPED_TRACE("non-damaging Haste"); expectPure(spell(SpellID::HASTE, true), Route::Compact); }
 }
 TEST_F(ForecastHeroActionAdmissionTest, ActualEligibleMetamagicFuelRoutesBeforeCandidatePrefix)
 {
-	ASSERT_NO_FATAL_FAILURE(prepareHero(true));
+	ASSERT_NO_FATAL_FAILURE(prepareHero());
+	auto * hero = findHeroByOwner(PlayerColor(0));
+	ASSERT_NE(hero, nullptr);
+	const auto metamagic = SecondarySkill(SecondarySkill::decode("new-horizons:metamagic"));
+	hero->setSecSkillLevel(metamagic, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	// Meta6's offensive removal is optional, not granted by the skill core.
+	ASSERT_TRUE(hero->getPerkState().canAcquirePerk("new-horizons:metamagic",
+		"new-horizons:metamagic.unravelingMagic", MasteryLevel::BASIC));
+	hero->applyPerkSelection({"new-horizons:metamagic", "new-horizons:metamagic.unravelingMagic"});
+	ASSERT_TRUE(hero->hasActivePerk("new-horizons:metamagic", "new-horizons:metamagic.unravelingMagic"));
+	parent = std::make_shared<HypotheticBattle>(environment.get(), visible);
+	ASSERT_TRUE(forecast::NativeAdapter::prepareExchange(*parent));
 	auto candidate = spell(SpellID::MAGIC_ARROW);
 	ASSERT_FALSE(candidate.dest.empty());
 	const auto id = candidate.dest.front().unitValue->unitId();
@@ -184,10 +197,12 @@ TEST_F(ForecastHeroActionAdmissionTest, FullHeroClassifierRejectsEveryUnsafeChai
 		badChains[4].Integer() = std::numeric_limits<int64_t>::max();
 		if(id == SpellID::CHAIN_LIGHTNING)
 		{
-			// Captured native policy expands even a safe configured zero.
-			JsonNode configuredZero;
-			configuredZero.Integer() = 0;
-			badChains.push_back(configuredZero);
+			// The current native policy preserves explicitly finite 0/1 chains;
+			// only configured multi-target chains receive the fixed target count.
+			JsonNode finite;
+			finite["chainLength"].Integer() = 0;
+			actual->init(finite);
+			EXPECT_TRUE(actual->supportsFiniteForecastTargeting(*mechanics));
 		}
 		for(const auto & bad : badChains)
 		{
@@ -219,7 +234,14 @@ TEST_F(ForecastHeroActionAdmissionTest, CreatureEntryUsesTheSamePretargetDescrip
 	forecast::NativeAdapter::forkExchange(*parent, *state);
 	auto probe = std::make_shared<TargetCallbackProbe>(state);
 	const auto candidate = spell(SpellID::MAGIC_ARROW);
-	const auto * actor = state->battleGetAllUnits(false).front();
+	const auto roster = state->battleGetAllUnits(false);
+	const auto actorEntry = std::ranges::find_if(roster, [](const battle::Unit * unit)
+	{ return unit->unitSide() == SIDE && unit->unitSlot() == SlotID(0); });
+	ASSERT_NE(actorEntry, roster.end());
+	const auto * actor = *actorEntry;
+	ASSERT_EQ(actor->creatureId(), CreatureID(CreatureID::decode("core:pikeman")));
+	ASSERT_FALSE(candidate.dest.empty());
+	ASSERT_EQ(candidate.dest.front().unitValue->unitSide(), BattleSide::DEFENDER);
 	spells::BattleCast cast(state.get(), actor, spells::Mode::CREATURE_ACTIVE, candidate.spell);
 	spells::BattleCast observed(probe.get(), actor, spells::Mode::CREATURE_ACTIVE, candidate.spell);
 	auto effects = std::make_shared<spells::effects::Effects>();
@@ -241,7 +263,9 @@ TEST_F(ForecastHeroActionAdmissionTest, CreatureEntryUsesTheSamePretargetDescrip
 	EXPECT_EQ(state->forecastSide(SIDE), owned);
 	EXPECT_EQ(decision.required & forecast::eventBit(forecast::Event::HeroResource), 0u);
 	auto actual = candidate.spell->battleMechanics(&cast);
-	EXPECT_EQ(classifyCreature(*state, *actual, candidate.dest).route, Route::Compact);
+	const auto actualDecision = classifyCreature(*state, *actual, candidate.dest);
+	EXPECT_EQ(actualDecision.route, Route::Compact) << reasonText(actualDecision.reason)
+		<< " actor=" << actor->unitId() << " casterOwner=" << actual->getCasterColor().getNum();
 	EXPECT_EQ(state->forecastSide(SIDE), owned);
 }
 
@@ -279,7 +303,11 @@ TEST_F(ForecastHeroActionAdmissionTest, CreatureEntryRejectsAncestorCasterWithSa
 	ASSERT_NO_FATAL_FAILURE(prepareHero());
 	auto state = std::make_shared<HypotheticBattle>(environment.get(), parent);
 	forecast::NativeAdapter::forkExchange(*parent, *state);
-	const auto * ancestor = parent->battleGetAllUnits(false).front();
+	const auto roster = parent->battleGetAllUnits(false);
+	const auto ancestorEntry = std::ranges::find_if(roster, [](const battle::Unit * unit)
+	{ return unit->unitSide() == SIDE && unit->unitSlot() == SlotID(0); });
+	ASSERT_NE(ancestorEntry, roster.end());
+	const auto * ancestor = *ancestorEntry;
 	int64_t damage = 7;
 	state->getForUpdate(ancestor->unitId())->damage(damage, false, battle::DamageProvenance::PHYSICAL_CREATURE);
 	ASSERT_NE(state->battleGetUnitByID(ancestor->unitId()), ancestor);

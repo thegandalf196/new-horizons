@@ -26,6 +26,7 @@
 #include "../nativeRules/CompiledMetamagicRules.h"
 #include "../bonuses/BonusList.h"
 #include "../bonuses/BonusSelector.h"
+#include "../bonuses/Propagators.h"
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -35,6 +36,21 @@ namespace newHorizonsMetamagic
 {
 namespace
 {
+bool nativeTownTavernInformation(const Bonus & row)
+{
+	// This incoming adventure statistic is provided by a persistent town, not
+	// by the dying battle unit. Recognize only the exact native tavern record.
+	const auto building = row.sid.as<BuildingTypeUniqueID>();
+	return typeid(row) == typeid(Bonus) && row.type == BonusType::THIEVES_GUILD_ACCESS
+		&& row.source == BonusSource::TOWN_STRUCTURE && building.hasValue()
+		&& building.getBuilding() == BuildingID::TAVERN && row.val == 1
+		&& row.valType == BonusValueType::ADDITIVE_VALUE && row.duration == BonusDuration::PERMANENT
+		&& row.turnsRemain == 0 && row.effectRange == BonusLimitEffect::NO_LIMIT
+		&& row.subtype == BonusSubtypeID() && row.targetSourceType == BonusSource::OTHER
+		&& row.stacking.empty() && !row.parameters && !row.limiter && !row.updater && !row.propagationUpdater
+		&& row.propagator && typeid(*row.propagator) == typeid(CPropagatorNodeType)
+		&& static_cast<const CPropagatorNodeType &>(*row.propagator).getPropagatorType() == BonusNodeType::PLAYER;
+}
 bool unrepresentedDeathContext(const battle::Unit & unit)
 {
 	if(unit.hasBonusOfType(BonusType::COMBAT_EVENT_TRIGGER)) return true;
@@ -42,7 +58,7 @@ bool unrepresentedDeathContext(const battle::Unit & unit)
 	// that provider's post-death recipe a current-board number is not a bound.
 	const auto records = unit.getUnstackedBonuses(Selector::all);
 	return std::ranges::any_of(*records, [](const auto & record)
-	{ return !record || record->propagator || record->propagationUpdater; });
+	{ return !record || ((record->propagator || record->propagationUpdater) && !nativeTownTavernInformation(*record)); });
 }
 const CSpell * ordinarySpell(const spells::Mechanics & mechanics)
 {
@@ -195,6 +211,9 @@ OverflowSupport overflowSupport(const spells::Mechanics & mechanics, const spell
 	const auto * spell = dynamic_cast<const CSpell *>(mechanics.getSpell());
 	if(!spell || typeid(*spell) != typeid(CSpell)) return OverflowSupport::Unsupported;
 	if(percent(mechanics) <= 0) return OverflowSupport::Inapplicable;
+	// A known non-damaging spell cannot produce damage overflow. Its Timed or
+	// enchantment payload is owned by the separate effect-admission path.
+	if(!spell->isDamage()) return OverflowSupport::Inapplicable;
 	const auto shape = singleRecipientEffectPayload(mechanics);
 	if(!shape) return OverflowSupport::Unsupported;
 	if(!ordinarySpell(mechanics) || target.size() != 1 || !target.front().unitValue) return OverflowSupport::Inapplicable;

@@ -6,6 +6,7 @@
 #include "../../AI/BattleAI/SearchBudget.h"
 #include "../../lib/battle/BattleLayout.h"
 #include "../../lib/battle/NewHorizonsFrozen.h"
+#include "../../lib/battle/UnitStateValueSnapshot.h"
 #include "../../lib/bonuses/BonusList.h"
 #include "../../lib/mapObjects/ObjectTemplate.h"
 #include "../../lib/networkPacks/SetStackEffect.h"
@@ -169,10 +170,26 @@ TEST_F(ForecastEffectConsumerTest, MaximumHealthRemovalUpdatesDetachedContextBef
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	ASSERT_NO_FATAL_FAILURE(rebuild());
 	const auto id = first(); auto target = model->getForUpdate(id); const auto base = target->getMaxHealth();
+	const auto initialCount = target->getCount();
+	auto baseline = forecast::NativeAdapter::prepareEffectDraft(*target);
+	const auto baselineBefore = baseline->save();
 	auto health = timed(BonusType::STACK_HEALTH, 4, 1);
 	ASSERT_TRUE(forecast::NativeAdapter::effectApplication(*model, id, {}, {health}));
 	ASSERT_EQ(target->getMaxHealth(), base + 4);
 	EXPECT_EQ(model->forecastState()->unit(id)->health.valueContext().maximumHealth, base + 4);
+	const auto snapshot = battle::UnitStateValueSnapshot::capture(*target);
+	EXPECT_THROW(snapshot.restore(*baseline), std::invalid_argument);
+	EXPECT_EQ(baseline->save(), baselineBefore); // Strict mismatched-context rejection is atomic.
+	auto casualtyDamage = int64_t(target->health.getFirstHPleft()) + 1;
+	ASSERT_TRUE(forecast::NativeAdapter::damage(*model, *target, casualtyDamage,
+		battle::DamageProvenance::OTHER, nullptr));
+	ASSERT_LT(target->getCount(), initialCount);
+	const auto targetBeforeDraft = target->save();
+	auto prepared = forecast::NativeAdapter::prepareEffectDraft(*target);
+	EXPECT_EQ(prepared->getMaxHealth(), base + 4);
+	EXPECT_EQ(prepared->health.valueContext(), target->health.valueContext());
+	EXPECT_EQ(prepared->save(), targetBeforeDraft);
+	EXPECT_EQ(target->save(), targetBeforeDraft); // Preparing never changes the live recipient.
 	ASSERT_TRUE(forecast::NativeAdapter::effectApplication(*model, id, {health}, {}));
 	EXPECT_EQ(target->getMaxHealth(), base);
 	EXPECT_EQ(model->forecastState()->unit(id)->health.valueContext().maximumHealth, base);

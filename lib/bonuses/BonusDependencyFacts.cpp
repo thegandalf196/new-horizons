@@ -5,9 +5,11 @@
 #include "BonusList.h"
 #include "BonusLimitation.h"
 #include "BonusParameters.h"
+#include "../json/JsonNode.h"
 #include "Propagators.h"
 #include "Updaters.h"
 #include <functional>
+#include <limits>
 #include <set>
 #include <stdexcept>
 #include <typeinfo>
@@ -107,6 +109,25 @@ bool primaryRating(const Bonus & bonus)
 			|| bonus.subtype == BonusSubtypeID(PrimarySkill::DEFENSE));
 }
 }
+bool detail::heroBaseManaRegeneration(const Bonus & raw)
+{
+	if(typeid(raw) != typeid(Bonus) || raw.type != BonusType::MANA_REGENERATION
+		|| raw.source != BonusSource::HERO_BASE_SKILL || raw.sid.getNum() < 0
+		|| raw.duration != BonusDuration::PERMANENT || raw.turnsRemain != 0
+		|| raw.val != 1 || raw.valType != BonusValueType::BASE_NUMBER
+		|| raw.effectRange != BonusLimitEffect::NO_LIMIT || raw.subtype != BonusSubtypeID()
+		|| raw.targetSourceType != BonusSource::OTHER || raw.parameters || raw.updater
+		|| raw.propagator || raw.propagationUpdater || !raw.stacking.empty()
+		|| !raw.limiter || typeid(*raw.limiter) != typeid(NoneOfLimiter)) return false;
+	const auto & children = static_cast<const NoneOfLimiter &>(*raw.limiter).limiters;
+	if(children.size() != 1 || !children.front()
+		|| typeid(*children.front()) != typeid(HasAnotherBonusLimiter)) return false;
+	const auto & peer = static_cast<const HasAnotherBonusLimiter &>(*children.front());
+	return peer.type == BonusType::MANA_REGENERATION && peer.isSourceRelevant
+		&& peer.source == BonusSource::SECONDARY_SKILL && !peer.isSourceIDRelevant
+		&& !peer.isSubtypeRelevant && peer.minValue == std::numeric_limits<int32_t>::min()
+		&& peer.maxValue == std::numeric_limits<int32_t>::max();
+}
 namespace
 {
 Classification classifyImpl(const Bonus & raw, bool terrainCertified)
@@ -128,12 +149,23 @@ Classification classifyImpl(const Bonus & raw, bool terrainCertified)
 			catch(const std::runtime_error &) { return false; }
 		};
 		scalar = scalar || holds.operator()<int32_t>() || holds.operator()<CreatureID>() || holds.operator()<SpellID>();
+		// The native parser preserves this passive pool selector as JSON, not int32_t.
+		if(!scalar && raw.type == BonusType::RANDOM_SPELLCASTER)
+			try
+			{
+				const auto & selector = raw.parameters->toCustom<JsonNode>();
+				scalar = selector.getType() == JsonNode::JsonType::DATA_INTEGER
+					&& (selector.Integer() == 0 || selector.Integer() == 1);
+			}
+			catch(const std::runtime_error &) { /* Other payload variants remain unsupported. */ }
 		if(!scalar) classifier.result.supported = false;
 	}
 	if(raw.duration != BonusDuration::PERMANENT)
 		classifier.result.dependencies = classifier.result.dependencies | Change::Round | Change::ActiveEffects;
 	classifier.updater(raw.updater);
-	classifier.limiter(raw.limiter);
+	if(detail::heroBaseManaRegeneration(raw))
+		classifier.result.dependencies = classifier.result.dependencies | Change::ActiveEffects;
+	else classifier.limiter(raw.limiter);
 	return classifier.result;
 }
 
@@ -142,6 +174,7 @@ Classification classifyLocal(const Bonus & raw, bool terrainCertified)
 	if(typeid(raw) != typeid(Bonus)) return {false};
 	Bonus local(raw);
 	local.propagationUpdater.reset();
+	if(raw.propagationUpdater && detail::heroBaseManaRegeneration(local)) return {false};
 	auto result = classifyImpl(local, terrainCertified);
 	Classifier propagation;
 	propagation.updater(raw.propagationUpdater);
@@ -198,7 +231,7 @@ Recipe capture(const std::shared_ptr<const ownedBonusPayloads::Captured> & owner
 }
 Recipe detail::captureCertified(const std::shared_ptr<const ownedBonusPayloads::Captured> & owner, size_t rootIndex,
 	std::span<const Stage> stages, const BonusEvaluationContext & finalContext, bool materializedLocal,
-	const TerrainCaptureCertificate * terrain)
+	const TerrainCaptureCertificate * terrain, const BonusList * nativePeers, const Bonus * nativeOutput)
 {
 	if(!owner || rootIndex >= owner->roots().size() || stages.size() > 64)
 		throw std::invalid_argument("Invalid owned modifier recipe root");
@@ -207,6 +240,9 @@ Recipe detail::captureCertified(const std::shared_ptr<const ownedBonusPayloads::
 		: materializedLocal ? classifyMaterializedLocal(*raw) : classify(*raw)) : Classification{false};
 	if(!raw || !classification.supported || (stages.empty() && raw->updater))
 		throw std::invalid_argument("Unsupported or incomplete modifier dependency trace");
+	const bool peerMana = detail::heroBaseManaRegeneration(*raw);
+	if(peerMana && (!nativePeers || !nativeOutput || !detail::heroBaseManaRegeneration(*nativeOutput)))
+		throw std::invalid_argument("Hero base recovery requires full native peer collection");
 	Recipe recipe;
 	if(intersects(classification.dependencies, Change::TerrainContext))
 		recipe.terrainWitnesses = terrain->witnesses(stages, finalContext);
@@ -252,7 +288,15 @@ Recipe detail::captureCertified(const std::shared_ptr<const ownedBonusPayloads::
 		}
 	}
 	recipe.materialized = current;
-	recipe.decision = decide(*current, finalContext);
+	if(peerMana)
+	{
+		BonusList accepted;
+		limitBonuses(*nativePeers, accepted, finalContext);
+		// No updater is legal for this exact row; the native output retains raw identity.
+		recipe.decision = std::ranges::any_of(accepted, [&](const auto & row) { return row.get() == nativeOutput; })
+			? ILimiter::EDecision::ACCEPT : ILimiter::EDecision::DISCARD;
+	}
+	else recipe.decision = decide(*current, finalContext);
 	return recipe;
 }
 

@@ -10,6 +10,7 @@ namespace bonusDependencies
 bool supportsRecipientRecord(const Bonus & value)
 {
 	return value.type != BonusType::TERRAIN_NATIVE
+		&& value.type != BonusType::MANA_REGENERATION
 		&& !value.propagator && !value.propagationUpdater && classify(value).supported;
 }
 

@@ -1,6 +1,130 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt and AUTHORS. */
 #include "StdInc.h"
+#include <array>
 #include "ForecastNativeAdapterFixture.h"
+#include "../../lib/bonuses/BonusList.h"
+
+TEST_F(ForecastNativeAdapterTest, BothNativePlayersCanCertifyPublicAbsenceInAnArmyOnlyBattle)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	for(const auto player : {PlayerColor(0), PlayerColor(1)})
+	{
+		auto view = std::make_shared<CPlayerBattleCallback>(visible->getBattle(), player);
+		auto scoped = std::make_shared<HypotheticBattle>(environment.get(), view);
+		for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+		{
+			const auto & captured = scoped->forecastSide(side);
+			ASSERT_TRUE(captured);
+			EXPECT_FALSE(view->battleHasHero(side));
+			EXPECT_EQ(captured->knowledge, VisibleHeroPolicy::Knowledge::KNOWN_ABSENT);
+			EXPECT_TRUE(captured->attunementKnown);
+			EXPECT_EQ(captured->attunement, newHorizonsElementalAttunement::Profile{});
+			EXPECT_EQ(captured->magicOwner, scoped->getCapturedMagicRules());
+			EXPECT_FALSE(captured->hero); EXPECT_FALSE(captured->mana); EXPECT_FALSE(captured->ledger);
+		}
+		EXPECT_TRUE(forecast::NativeAdapter::prepareExchange(*scoped));
+	}
+}
+TEST_F(ForecastNativeAdapterTest, CustomObserverProxyWorldAndUnrelatedPlayerCannotManufactureKnownAbsence)
+{
+	class CustomObserver final : public CPlayerBattleCallback
+	{
+	public:
+		using CPlayerBattleCallback::CPlayerBattleCallback;
+	};
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto outside = gameState()->saveToMemory();
+	const auto authority = projectedHitTest::serialized(*handler->randomizer);
+	const auto ambient = projectedHitTest::serialized(CRandomGenerator::getDefault());
+	auto custom = std::make_shared<CustomObserver>(visible->getBattle(), PlayerColor(0));
+	CPlayerBattleCallback proxyWorld(parent.get(), PlayerColor(0));
+	CPlayerBattleCallback unrelated(visible->getBattle(), PlayerColor(2));
+	const std::array<const CPlayerBattleCallback *, 3> observers{custom.get(), &proxyWorld, &unrelated};
+	for(const auto * observer : observers)
+	{
+		const auto hidden = observer->battleGetVisibleHeroPolicy(BattleSide::DEFENDER);
+		EXPECT_EQ(hidden.kind(), VisibleHeroPolicy::Knowledge::HIDDEN_UNKNOWN);
+		EXPECT_EQ(hidden.legacyHero(), nullptr);
+		const auto copied = hidden.informationOnly();
+		EXPECT_EQ(copied.kind(), VisibleHeroPolicy::Knowledge::HIDDEN_UNKNOWN);
+		EXPECT_FALSE(copied.matchesSuppliedHero(nullptr));
+	}
+	auto proxy = std::make_shared<HypotheticBattle>(environment.get(), custom);
+	auto sibling = std::make_shared<HypotheticBattle>(environment.get(), proxy);
+	EXPECT_EQ(proxy->battleGetVisibleHeroPolicy(BattleSide::DEFENDER).kind(), VisibleHeroPolicy::Knowledge::HIDDEN_UNKNOWN);
+	EXPECT_EQ(sibling->forecastSide(BattleSide::DEFENDER)->knowledge, VisibleHeroPolicy::Knowledge::HIDDEN_UNKNOWN);
+	EXPECT_FALSE(forecast::NativeAdapter::prepareExchange(*proxy));
+	EXPECT_FALSE(proxy->forecastState()); EXPECT_FALSE(sibling->forecastState());
+	EXPECT_EQ(gameState()->saveToMemory(), outside);
+	EXPECT_EQ(projectedHitTest::serialized(*handler->randomizer), authority);
+	EXPECT_EQ(projectedHitTest::serialized(CRandomGenerator::getDefault()), ambient);
+}
+
+TEST_F(ForecastNativeAdapterTest, ActualPlayerHeroVersusCreepsUsesPublicAbsenceAndAdmitsOrdinaryDamage)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(false, false, false, "core:pikeman", false, false, "core:orrin", false, true));
+	ASSERT_EQ(parent->getSidePlayer(BattleSide::DEFENDER), PlayerColor::NEUTRAL);
+	ASSERT_EQ(visible->getPlayerID(), std::optional<PlayerColor>(PlayerColor(0)));
+	EXPECT_EQ(visible->battleGetVisibleHeroPolicy(BattleSide::ATTACKER).kind(), VisibleHeroPolicy::Knowledge::VISIBLE_HERO);
+	EXPECT_FALSE(visible->battleHasHero(BattleSide::DEFENDER));
+	const auto & absent = parent->forecastSide(BattleSide::DEFENDER);
+	ASSERT_TRUE(absent);
+	EXPECT_EQ(absent->knowledge, VisibleHeroPolicy::Knowledge::KNOWN_ABSENT);
+	EXPECT_TRUE(absent->attunementKnown);
+	EXPECT_EQ(absent->attunement, newHorizonsElementalAttunement::Profile{});
+	EXPECT_FALSE(absent->hero); EXPECT_FALSE(absent->mana); EXPECT_FALSE(absent->ledger); EXPECT_FALSE(absent->perkOwner);
+	EXPECT_EQ(absent->magicOwner, parent->getCapturedMagicRules());
+	const auto outside = gameState()->saveToMemory();
+	const auto authority = projectedHitTest::serialized(*handler->randomizer);
+	const auto ambient = projectedHitTest::serialized(CRandomGenerator::getDefault());
+	ASSERT_TRUE(forecast::NativeAdapter::prepareExchange(*parent));
+	auto branch = std::make_shared<HypotheticBattle>(environment.get(), parent);
+	forecast::NativeAdapter::forkExchange(*parent, *branch);
+	auto sibling = std::make_shared<HypotheticBattle>(environment.get(), parent);
+	forecast::NativeAdapter::forkExchange(*parent, *sibling);
+	auto reference = std::make_shared<HypotheticBattle>(environment.get(), visible);
+	const auto units = branch->battleGetAllUnits(false);
+	const auto target = std::ranges::find_if(units, [](const battle::Unit * unit) { return unit->unitSide() == BattleSide::DEFENDER; });
+	ASSERT_NE(target, units.end());
+	auto actual = branch->getForUpdate((*target)->unitId());
+	auto expected = reference->getForUpdate(actual->unitId());
+	const auto parentHealth = parent->battleGetUnitByID(actual->unitId())->getAvailableHealth();
+	int64_t damage = actual->getFirstHPleft(), nativeDamage = damage;
+	expected->damage(nativeDamage, false, battle::DamageProvenance::PHYSICAL_CREATURE);
+	ASSERT_TRUE(forecast::NativeAdapter::damage(*branch, *actual, damage, battle::DamageProvenance::PHYSICAL_CREATURE, nullptr));
+	EXPECT_EQ(damage, nativeDamage);
+	EXPECT_EQ(actual->save(), expected->save());
+	EXPECT_EQ(parent->battleGetUnitByID(actual->unitId())->getAvailableHealth(), parentHealth);
+	EXPECT_EQ(sibling->battleGetUnitByID(actual->unitId())->getAvailableHealth(), parentHealth);
+	EXPECT_EQ(sibling->forecastSide(BattleSide::DEFENDER), absent);
+	EXPECT_EQ(gameState()->saveToMemory(), outside);
+	EXPECT_EQ(projectedHitTest::serialized(*handler->randomizer), authority);
+	EXPECT_EQ(projectedHitTest::serialized(CRandomGenerator::getDefault()), ambient);
+}
+TEST_F(ForecastNativeAdapterTest, ActualPlayerCannotUsePublicPresenceToReadAnOpposingHeroPolicy)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(false, false, false, "core:pikeman", false, false, "core:orrin"));
+	auto defender = std::make_shared<CPlayerBattleCallback>(visible->getBattle(), PlayerColor(1));
+	EXPECT_TRUE(defender->battleHasHero(BattleSide::ATTACKER));
+	const auto hidden = defender->battleGetVisibleHeroPolicy(BattleSide::ATTACKER);
+	EXPECT_EQ(hidden.kind(), VisibleHeroPolicy::Knowledge::HIDDEN_UNKNOWN);
+	EXPECT_EQ(hidden.legacyHero(), nullptr);
+	EXPECT_FALSE(hidden.matchesSuppliedHero(nullptr));
+	auto scoped = std::make_shared<HypotheticBattle>(environment.get(), defender);
+	const auto & state = scoped->forecastSide(BattleSide::ATTACKER);
+	ASSERT_TRUE(state);
+	EXPECT_EQ(state->knowledge, VisibleHeroPolicy::Knowledge::HIDDEN_UNKNOWN);
+	EXPECT_FALSE(state->attunementKnown);
+	EXPECT_FALSE(state->hero); EXPECT_FALSE(state->mana); EXPECT_FALSE(state->ledger); EXPECT_FALSE(state->perkOwner);
+	EXPECT_EQ(state->magicOwner, scoped->getCapturedMagicRules());
+	const auto outside = gameState()->saveToMemory();
+	const auto authority = projectedHitTest::serialized(*handler->randomizer);
+	EXPECT_FALSE(forecast::NativeAdapter::prepareExchange(*scoped));
+	EXPECT_FALSE(scoped->forecastState());
+	EXPECT_EQ(state->knowledge, VisibleHeroPolicy::Knowledge::HIDDEN_UNKNOWN);
+	EXPECT_EQ(gameState()->saveToMemory(), outside);
+	EXPECT_EQ(projectedHitTest::serialized(*handler->randomizer), authority);
+}
 
 TEST_F(ForecastNativeAdapterTest, ActualDamageProbeUsesChangedCompactFactsAndPreservesParentRng)
 {
@@ -21,12 +145,34 @@ TEST_F(ForecastNativeAdapterTest, ActualDamageProbeUsesChangedCompactFactsAndPre
 	ASSERT_EQ(roster.size(), 2u);
 	auto actor = branch->getForUpdate(roster[0]->unitId());
 	auto target = branch->getForUpdate(roster[1]->unitId());
+	EXPECT_FALSE(branch->forecastState()->supports(forecast::Event::HeroResource));
+	// Passive adventure and Hero-only metadata remain owned without granting a cast action.
+	for(const auto * unit : {actor.get(), target.get()})
+	{
+		const auto guild = unit->getUnstackedBonuses(Selector::type()(BonusType::THIEVES_GUILD_ACCESS));
+		ASSERT_EQ(guild->size(), 1u);
+		EXPECT_EQ(guild->front()->duration, BonusDuration::PERMANENT);
+		EXPECT_EQ(guild->front()->val, 1);
+		for(const auto type : {BonusType::HERO_SPELL_CASTS_PER_COMBAT_TURN, BonusType::MAX_LEARNABLE_SPELL_LEVEL})
+		{
+			const auto rows = unit->getUnstackedBonuses(Selector::type()(type));
+			ASSERT_EQ(rows->size(), 1u);
+			EXPECT_EQ(rows->front()->source, BonusSource::GLOBAL);
+			EXPECT_EQ(rows->front()->duration, BonusDuration::PERMANENT);
+			EXPECT_EQ(rows->front()->valType, BonusValueType::BASE_NUMBER);
+			EXPECT_EQ(rows->front()->val, type == BonusType::HERO_SPELL_CASTS_PER_COMBAT_TURN ? 1 : 2);
+		}
+	}
 	const auto initial = target->getAvailableHealth();
 	int64_t damage = 37, expectedDamage = damage;
 	reference->getForUpdate(target->unitId())->damage(expectedDamage, false, battle::DamageProvenance::PHYSICAL_CREATURE);
 	ASSERT_TRUE(forecast::NativeAdapter::damage(*branch, *target, damage, battle::DamageProvenance::PHYSICAL_CREATURE, nullptr));
 	EXPECT_EQ(damage, expectedDamage);
 	EXPECT_EQ(target->save(), reference->getForUpdate(target->unitId())->save());
+	EXPECT_EQ(target->valOfBonuses(BonusType::HERO_SPELL_CASTS_PER_COMBAT_TURN), 1);
+	EXPECT_EQ(target->valOfBonuses(BonusType::MAX_LEARNABLE_SPELL_LEVEL), 2);
+	EXPECT_EQ(target->valOfBonuses(BonusType::THIEVES_GUILD_ACCESS), 1);
+	EXPECT_FALSE(branch->forecastState()->supports(forecast::Event::HeroResource));
 	EXPECT_EQ(parent->getForUpdate(target->unitId())->getAvailableHealth(), initial);
 	const auto * facts = branch->preparedUnitDamageFacts(*target, false);
 	ASSERT_NE(facts, nullptr);
@@ -262,11 +408,16 @@ TEST_F(ForecastNativeAdapterTest, ActiveChargeUsesOwningOrderLeaseAndNativeDamag
 	const auto enemy = std::find_if(roster.begin(), roster.end(), [](const battle::Unit * unit)
 		{ return unit->unitSide() == BattleSide::DEFENDER; });
 	ASSERT_NE(actor, roster.end()); ASSERT_NE(enemy, roster.end());
-	BattleAttackInfo actual(*actor, *enemy, 4, false);
-	BattleAttackInfo expected(reference->getForUpdate((*actor)->unitId()).get(),
-		reference->getForUpdate((*enemy)->unitId()).get(), 4, false);
+	const auto actorId = (*actor)->unitId();
+	const auto enemyId = (*enemy)->unitId();
 	const auto compare = [&]()
 	{
+		// Order replacement publishes new owned native views. Rebind both
+		// endpoints for this comparison instead of retaining earlier pointers.
+		BattleAttackInfo actual(branch->battleGetUnitByID(actorId),
+			branch->battleGetUnitByID(enemyId), 4, false);
+		BattleAttackInfo expected(reference->getForUpdate(actorId).get(),
+			reference->getForUpdate(enemyId).get(), 4, false);
 		const auto compact = branch->calculateDmgRange(actual);
 		const auto native = reference->calculateDmgRange(expected);
 		EXPECT_EQ(compact.damage.min, native.damage.min);
@@ -274,7 +425,7 @@ TEST_F(ForecastNativeAdapterTest, ActiveChargeUsesOwningOrderLeaseAndNativeDamag
 	};
 	compare();
 	const auto active = branch->preparedHeroOrderStates(BattleSide::ATTACKER);
-	charge.consumedUnitIds = {(*actor)->unitId()};
+	charge.consumedUnitIds = {actorId};
 	branch->setHeroOrderStates(BattleSide::ATTACKER, {charge});
 	reference->setHeroOrderStates(BattleSide::ATTACKER, {charge});
 	EXPECT_TRUE(active->front().consumedUnitIds.empty());

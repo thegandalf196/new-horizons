@@ -86,6 +86,14 @@ protected:
 TEST_F(MetamagicStochasticProjectionTest, HandOfFateEligibleEnemyEnchantmentChangesExpectedUtilityWithoutLiveRolls)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
+	// Isolate optional removal from the core's friendly-damage calculation.
+	// Immune stacks remain in Hand of Fate's random collateral selection pool.
+	for(const auto * unit : {active, actor, waiter})
+	{
+		effect(unit, Bonus(BonusDuration::ONE_BATTLE, BonusType::SPELL_IMMUNITY,
+			BonusSource::OTHER, 1, BonusSourceID(), BonusSubtypeID(spell)));
+		ASSERT_TRUE(unit->hasImmunity(spell));
+	}
 	Bonus blessing(BonusDuration::N_TURNS, BonusType::CREATURE_DAMAGE, BonusSource::SPELL_EFFECT, 4,
 		BonusSourceID(SpellID(SpellID::BLESS)));
 	blessing.turnsRemain = 3;
@@ -104,6 +112,24 @@ TEST_F(MetamagicStochasticProjectionTest, HandOfFateEligibleEnemyEnchantmentChan
 	EXPECT_EQ(enemy->getAvailableHealth(), health);
 	EXPECT_EQ(enemy->getBonuses(Selector::source(BonusSource::SPELL_EFFECT,
 		BonusSourceID(SpellID(SpellID::BLESS))))->size(), 1u);
+}
+TEST_F(MetamagicStochasticProjectionTest, HandOfFateCoreProtectsFriendlyCollateralWithoutRemovalPerks)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	std::vector<float> ordinary, protectedCollateral;
+	ASSERT_NO_FATAL_FAILURE(score(0, ordinary));
+	ASSERT_NO_FATAL_FAILURE(score(3, protectedCollateral));
+	ASSERT_EQ(ordinary.size(), protectedCollateral.size());
+	EXPECT_FALSE(attackerSideHero->hasActivePerk("new-horizons:metamagic",
+		"new-horizons:metamagic.unravelingMagic"));
+	spells::BattleCast cast(live.get(), attackerSideHero, spells::Mode::HERO, spell.toSpell());
+	const auto mechanics = spell.toSpell()->battleMechanics(&cast);
+	EXPECT_FALSE(newHorizonsMetamagic::singleTargetSpell(*mechanics));
+	for(const auto * unit : {active, actor, waiter})
+		EXPECT_EQ(newHorizonsMetamagic::recipientDamagePercent(*mechanics, unit), 40);
+	EXPECT_EQ(newHorizonsMetamagic::recipientDamagePercent(*mechanics, enemy), 100);
+	EXPECT_GT(*std::max_element(protectedCollateral.begin(), protectedCollateral.end()),
+		*std::max_element(ordinary.begin(), ordinary.end()));
 }
 TEST(MetamagicStochasticProjectionContractTest, LocalReceiptCannotLaunchCandidateContinuationAndPropagatesUnknown)
 {
@@ -135,10 +161,14 @@ TEST_F(MetamagicStochasticProjectionTest, DebuffRetryUsesCurrentProjectedResista
 	effect(enemy, Bonus(BonusDuration::ONE_BATTLE, BonusType::MAGIC_RESISTANCE, BonusSource::OTHER, 50, BonusSourceID()));
 	const auto worldBefore = gameState()->saveToMemory();
 	const auto random = wire(*gameHandler->randomizer);
-	auto state = std::make_shared<HypotheticBattle>(environment.get(), live);
-	auto sibling = std::make_shared<HypotheticBattle>(environment.get(), state);
+	const auto base = std::make_shared<HypotheticBattle>(environment.get(), live);
+	auto state = std::make_shared<HypotheticBattle>(environment.get(), base);
+	auto sibling = std::make_shared<HypotheticBattle>(environment.get(), base);
 	state->addUnitBonus(enemy->unitId(), {Bonus(BonusDuration::ONE_BATTLE, BonusType::MAGIC_RESISTANCE,
 		BonusSource::OTHER, 20, BonusSourceID())});
+	EXPECT_EQ(base->battleGetUnitByID(enemy->unitId())->magicResistance(), 50);
+	EXPECT_EQ(sibling->battleGetUnitByID(enemy->unitId())->magicResistance(), 50);
+	EXPECT_EQ(state->battleGetUnitByID(enemy->unitId())->magicResistance(), 70);
 	const auto chance = [&](const auto & board)
 	{
 		spells::BattleCast cast(board.get(), attackerSideHero, spells::Mode::HERO, SpellID(SpellID::SLOW).toSpell());
@@ -147,8 +177,10 @@ TEST_F(MetamagicStochasticProjectionTest, DebuffRetryUsesCurrentProjectedResista
 		EXPECT_TRUE(mechanics->canBeCastAt({spells::Destination(target)}));
 		return SpellTargetEvaluator::applicationChance(mechanics.get(), target);
 	};
+	// Success = (1-r) + r * .6 * (1-r): .65 at r=.5, .426 at r=.7.
 	EXPECT_NEAR(chance(sibling), 0.65, 0.00001);
 	EXPECT_NEAR(chance(state), 0.426, 0.00001);
+	EXPECT_EQ(enemy->magicResistance(), 50);
 	EXPECT_EQ(gameState()->saveToMemory(), worldBefore);
 	EXPECT_EQ(wire(*gameHandler->randomizer), random);
 }

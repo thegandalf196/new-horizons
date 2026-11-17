@@ -49,9 +49,11 @@ class DLL_LINKAGE Recipe;
 namespace detail
 {
 class TerrainCaptureCertificate;
+/// Exact native daily recovery row; its peer-sensitive decision needs full native collection.
+DLL_LINKAGE bool heroBaseManaRegeneration(const Bonus &);
 struct TerrainWitnesses;
 Recipe captureCertified(const std::shared_ptr<const ownedBonusPayloads::Captured> &, size_t,
-	std::span<const Stage>, const BonusEvaluationContext &, bool, const TerrainCaptureCertificate *);
+	std::span<const Stage>, const BonusEvaluationContext &, bool, const TerrainCaptureCertificate *, const BonusList * nativePeers = nullptr, const Bonus * nativeOutput = nullptr);
 }
 class DLL_LINKAGE Recipe final
 {
@@ -73,7 +75,7 @@ class DLL_LINKAGE Recipe final
 	friend Recipe capture(const std::shared_ptr<const ownedBonusPayloads::Captured> &, size_t,
 		std::span<const Stage>, const BonusEvaluationContext &, bool);
 	friend Recipe detail::captureCertified(const std::shared_ptr<const ownedBonusPayloads::Captured> &, size_t,
-		std::span<const Stage>, const BonusEvaluationContext &, bool, const detail::TerrainCaptureCertificate *);
+		std::span<const Stage>, const BonusEvaluationContext &, bool, const detail::TerrainCaptureCertificate *, const BonusList *, const Bonus *);
 public:
 	Change dependencies() const noexcept { return required; }
 	/// Count is refreshed locally. All other dirty dependencies require cold rebind.

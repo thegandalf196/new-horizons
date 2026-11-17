@@ -91,8 +91,12 @@ std::optional<SideState> SideState::capture(const CBattleInfoCallback & source, 
 			result.ledger = std::move(ledger);
 		}
 		const battle::LiveUnitEnvironmentContext context(source);
-		result.attunementKnown = context.knowsElementalAttunementProfile(side);
-		if(result.attunementKnown) result.attunement = source.getBattle()->getElementalAttunementProfile(side);
+		// Certified absence supplies a known empty profile, without inspecting
+		// the opposing side's raw profile or borrowing native occurrence facts.
+		result.attunementKnown = result.knowledge == VisibleHeroPolicy::Knowledge::KNOWN_ABSENT
+			|| context.knowsElementalAttunementProfile(side);
+		if(result.attunementKnown && result.knowledge != VisibleHeroPolicy::Knowledge::KNOWN_ABSENT)
+			result.attunement = source.getBattle()->getElementalAttunementProfile(side);
 		result.attunementMask = source.getBattle()->getElementalAttunementMask(side);
 		result.validate();
 		return result;

@@ -34,6 +34,12 @@ TEST_F(ForecastNativeAdapterTest, UnsupportedHeroClosureStartsReferenceBeforeMan
 TEST_F(ForecastNativeAdapterTest, ReferenceDescendantKeepsCurrentManaEffectsAndSource)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare(false, false, false, "core:pikeman", false, false, "core:aenain"));
+	auto * hero = findHeroByOwner(PlayerColor(0));
+	ASSERT_NE(hero, nullptr);
+	ASSERT_TRUE(hero->hasSpellbook());
+	// This scenario casts Arrow; Aenain's authored starting spell is Frailty.
+	hero->addSpellToSpellbook(SpellID::MAGIC_ARROW);
+	ASSERT_TRUE(hero->canCastThisSpell(SpellID(SpellID::MAGIC_ARROW).toSpell()));
 	auto reference = forecast::heroAction::makeBranch(environment.get(), visible, {},
 		forecast::heroAction::Route::CurrentNativeReference);
 	reference->nextRound(); // Enter the actual ordinary Hero allowance round.
@@ -42,15 +48,23 @@ TEST_F(ForecastNativeAdapterTest, ReferenceDescendantKeepsCurrentManaEffectsAndS
 	ASSERT_TRUE(initialMana);
 	PossibleSpellcast candidate;
 	candidate.spell = SpellID(SpellID::MAGIC_ARROW).toSpell();
-	const auto enemy = reference->battleGetAllUnits(false).back();
+	const auto units = reference->battleGetAllUnits(false);
+	const auto enemyIt = std::ranges::find_if(units, [](const battle::Unit * unit)
+	{ return unit->unitSide() == BattleSide::DEFENDER; });
+	ASSERT_NE(enemyIt, units.end());
+	const auto * enemy = *enemyIt;
 	candidate.dest.emplace_back(enemy);
+	ASSERT_TRUE(reference->prepareHeroSpellAllowance(side, candidate.spell->getId()));
 	const auto admission = heroActionProjection::admitCandidate(*reference, side, candidate);
 	ASSERT_TRUE(admission.admitted);
 	ASSERT_TRUE(admission.spellAllowance);
 	ASSERT_TRUE(reference->projectAcceptedHeroSpell(side, candidate.spell->getId(), enemy->unitId(), *admission.spellAllowance));
 	const auto changedMana = reference->getProjectedManaAvailable(side);
 	ASSERT_TRUE(changedMana); ASSERT_LT(*changedMana, *initialMana);
-	const auto id = reference->battleGetAllUnits(false).front()->unitId();
+	const auto attacker = std::ranges::find_if(units, [side](const battle::Unit * unit)
+	{ return unit->unitSide() == side && unit->unitSlot() == SlotID(0); });
+	ASSERT_NE(attacker, units.end());
+	const auto id = (*attacker)->unitId();
 	Bonus bonus; bonus.type = BonusType::PRIMARY_SKILL; bonus.subtype = BonusSubtypeID(PrimarySkill::ATTACK);
 	bonus.val = 7; bonus.source = BonusSource::OTHER; bonus.duration = BonusDuration::ONE_BATTLE;
 	reference->getForUpdate(id)->addUnitBonus({bonus});

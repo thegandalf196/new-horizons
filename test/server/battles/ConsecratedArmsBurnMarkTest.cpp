@@ -20,8 +20,23 @@ namespace marks = newHorizonsCoordinatedMarks;
 class ConsecratedArmsBurnMarkTest : public HeroCommandFixture
 {
 protected:
+	bool specialtiesEnabled = true;
 	CStack * source = nullptr;
 	CStack * recipient = nullptr;
+	void mapLoaded(CMap * map) override
+	{
+		HeroCommandFixture::mapLoaded(map);
+		// These interaction tests admit explicit captured abilities; shipped defaults
+		// omit these optional coefficients and correctly produce no effect.
+		JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
+		auto & policy = rules["additionalSpecialties"]["ordinaryCreatureSpecialties"];
+		for(const char * key : {"emberbrandDamagePercent", "consecratedTargetDefenseIgnorePercent",
+			"featheredFeintPhysicalReductionIgnorePercent"})
+			if(specialtiesEnabled) policy[key].Integer() = 20;
+			else policy.Struct().erase(key);
+		rules.setOverrideFlag(true);
+		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, rules);
+	}
 	void prepare(const char * hero = "core:ignissa", const char * creature = "core:fireElemental", bool unshakable = true)
 	{
 		useRevisedOrders = true;
@@ -94,6 +109,17 @@ protected:
 		return resisted;
 	}
 };
+
+TEST_F(ConsecratedArmsBurnMarkTest, MissingCapturedBurnCoefficientProducesNoAffliction)
+{
+	specialtiesEnabled = false;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto loss = physicalHit(100);
+	ASSERT_GT(loss, 0);
+	const auto plan = burn::plan(*battle(), BattleAttackInfo(source, recipient, 0, false), loss);
+	EXPECT_TRUE(plan.add.empty());
+	EXPECT_TRUE(plan.remove.empty());
+}
 
 TEST_F(ConsecratedArmsBurnMarkTest, ActualBurnApplicationIsPreventedOnceWithoutUndoingItsPhysicalHit)
 {
@@ -181,6 +207,15 @@ protected:
 		return newHorizonsOrdinaryStrike::plan(*battle(), BattleAttackInfo(source, recipient, 0, true), 1);
 	}
 };
+
+TEST_P(ConsecratedArmsCoordinatedMarkTest, MissingCapturedCoefficientProducesNoMark)
+{
+	specialtiesEnabled = false;
+	ASSERT_NO_FATAL_FAILURE(setupMark());
+	const auto plan = mark();
+	EXPECT_TRUE(plan.add.empty());
+	EXPECT_TRUE(plan.remove.empty());
+}
 
 TEST_P(ConsecratedArmsCoordinatedMarkTest, RealMarkProducerHasOnePreventionCheckAndLeavesInitialDamageIntact)
 {

@@ -1,6 +1,7 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
 #include "EffectFixture.h"
+#include "../../../lib/spells/CSpell.h"
 #include "../../../lib/spells/NewHorizonsSorcerySpells.h"
 #include "../../../lib/battle/NewHorizonsFocusMagic.h"
 #include "../../../lib/battle/AccessibilityInfo.h"
@@ -53,6 +54,21 @@ protected:
 		EXPECT_CALL(result, isInvincible()).WillRepeatedly(Return(false));
 		EXPECT_CALL(result, isValidTarget(_)).WillRepeatedly(Return(true));
 		return result;
+	}
+
+	void expectForceLanceCast()
+	{
+		const SpellID spell(SpellID::decode(newHorizonsSorcerySpells::FORCE_LANCE));
+		ASSERT_NE(spell, SpellID::NONE);
+		const auto * definition = spell.toSpell();
+		ASSERT_NE(definition, nullptr);
+		ASSERT_EQ(definition->getJsonKey(), newHorizonsSorcerySpells::FORCE_LANCE);
+		ASSERT_TRUE(definition->isDamage());
+		ASSERT_TRUE(definition->isMagical());
+		EXPECT_CALL(mechanicsMock, getSpell()).WillRepeatedly(Return(definition));
+		EXPECT_CALL(mechanicsMock, getSpellId()).WillRepeatedly(Return(spell));
+		EXPECT_CALL(mechanicsMock, isMagicalEffect()).WillRepeatedly(Return(definition->isMagical()));
+		EXPECT_CALL(mechanicsMock, getUnitCaster()).WillRepeatedly(Return(nullptr));
 	}
 
 	void add(battle::UnitFake & unit, const std::vector<Bonus> & bonuses)
@@ -211,7 +227,10 @@ TEST_F(NewHorizonsSorceryEffects, LanceActualHitBypassesAbsorptionAndPreservesNo
 	EXPECT_CALL(mechanicsMock, ownerMatches(&target)).WillRepeatedly(Return(true));
 	int damage = 100;
 	EXPECT_CALL(mechanicsMock, getEffectValue()).WillRepeatedly(Invoke([&] { return damage; }));
-	EXPECT_CALL(mechanicsMock, getSpellId()).WillRepeatedly(Return(SpellID(SpellID::MAGIC_ARROW)));
+	ASSERT_NO_FATAL_FAILURE(expectForceLanceCast());
+	const auto damageContext = mechanicsMock.spellDamageContext(target);
+	EXPECT_EQ(damageContext.damageClass, ::battle::DamageClass::MAGICAL);
+	EXPECT_EQ(damageContext.origin, ::battle::DamageOrigin::HERO_SPELL);
 	EXPECT_CALL(serverMock, getRNG()).WillRepeatedly(Return(&rngMock));
 	EXPECT_CALL(serverMock, describeChanges()).WillRepeatedly(Return(false));
 	EXPECT_CALL(serverMock, apply(Matcher<StacksInjured &>(_))).Times(2).WillRepeatedly(Invoke([&](StacksInjured & packet)
@@ -277,7 +296,10 @@ TEST_F(NewHorizonsSorceryEffects, LanceActualMagicalHitClearsFrozenBeforeApplyin
 	EXPECT_CALL(mechanicsMock, battle()).WillRepeatedly(Return(&view));
 	EXPECT_CALL(mechanicsMock, ownerMatches(&target)).WillRepeatedly(Return(true));
 	EXPECT_CALL(mechanicsMock, getEffectValue()).WillRepeatedly(Return(1));
-	EXPECT_CALL(mechanicsMock, getSpellId()).WillRepeatedly(Return(SpellID(SpellID::MAGIC_ARROW)));
+	ASSERT_NO_FATAL_FAILURE(expectForceLanceCast());
+	const auto damageContext = mechanicsMock.spellDamageContext(target);
+	EXPECT_EQ(damageContext.damageClass, ::battle::DamageClass::MAGICAL);
+	EXPECT_EQ(damageContext.origin, ::battle::DamageOrigin::HERO_SPELL);
 	EXPECT_CALL(target, acquireState()).WillRepeatedly(Invoke([&]
 	{
 		auto changed = std::make_shared<::battle::CUnitStateDetached>(&target, &target);

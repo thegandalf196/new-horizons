@@ -18,10 +18,145 @@
 #include "../../../lib/networkPacks/SetStackEffect.h"
 #include "../../mock/mock_ServerCallback.h"
 #include "../../mock/mock_vstd_RNG.h"
+#include <string_view>
 
 namespace
 {
 using namespace newHorizonsMetamagic;
+// Pin the complete v4 roster rather than relabeling installed v6 perks.
+// Source: config/newHorizonsPerks.json at d0647f2e5d (v5 adds only Overflow).
+JsonNode historicalMetamagicPerks()
+{
+	static constexpr std::string_view json = R"json([
+		{
+		  "id": "new-horizons:metamagic.conservedFormula",
+		  "name": "Conserved Formula",
+		  "requires": "basic",
+		  "description": "Refund the actual Mana paid for a valid single-target spell completely resisted by its sole recipient. The Hero Action remains spent.",
+		  "effect": {
+		    "status": "active",
+		    "description": "Refund the actual Mana paid for a valid single-target spell completely resisted by its sole recipient. The Hero Action remains spent."
+		  },
+		  "details": "No refund for cancellation, invalid targets, partial effects, absorption or damage reduced to zero. Combined refunds never exceed actual payment."
+		},
+		{
+		  "id": "new-horizons:metamagic.manaRecycling",
+		  "name": "Mana Recycling",
+		  "requires": "basic",
+		  "description": "Recover Mana from magical effects actually removed during your cast.",
+		  "effect": {
+		    "status": "active",
+		    "description": "Recover Mana from magical effects actually removed during your cast."
+		  },
+		  "details": "Once per original cast, refund min(floor(total normalized removed Mana / 4), floor(actual Mana paid / 2)), respecting Mana capacity and the combined payment cap. Free casts refund zero."
+		},
+		{
+		  "id": "new-horizons:metamagic.disruptiveCasting",
+		  "name": "Disruptive Casting",
+		  "requires": "basic",
+		  "description": "Actual spell damage removes the target's ordinary Defend bonus after the hit.",
+		  "effect": {
+		    "status": "active",
+		    "description": "Actual spell damage removes the target's ordinary Defend bonus after the hit."
+		  },
+		  "details": "Retaliation, spent actions, Wait and unrelated Orders remain unchanged."
+		},
+		{
+		  "id": "new-horizons:metamagic.purgingFormula",
+		  "name": "Purging Formula",
+		  "requires": "basic",
+		  "description": "A successful buff also removes one physical affliction from each actual friendly recipient.",
+		  "effect": {
+		    "status": "active",
+		    "description": "A successful buff also removes one physical affliction from each actual friendly recipient."
+		  },
+		  "details": "Physical removal releases no Metamagic energy. No additional target or selector is introduced."
+		},
+		{
+		  "id": "new-horizons:metamagic.spellSculpting",
+		  "name": "Spell Sculpting",
+		  "requires": "advanced",
+		  "description": "Your damaging hero spells deal no damage to friendly creatures.",
+		  "effect": {
+		    "status": "active",
+		    "description": "Your damaging hero spells deal no damage to friendly creatures."
+		  },
+		  "details": "Includes area, chain and global damage and your owned spell-created hazards; unrelated terrain, enemy spells and ordinary attacks are unchanged."
+		},
+		{
+		  "id": "new-horizons:metamagic.hexWeaving",
+		  "name": "Hex Weaving",
+		  "requires": "advanced",
+		  "description": "Successful non-damaging hostile hero spells also unravel temporary enemy enchantments.",
+		  "effect": {
+		    "status": "active",
+		    "description": "Successful non-damaging hostile hero spells also unravel temporary enemy enchantments."
+		  },
+		  "details": "Uses the same rank-based chance, one attempt per logical effect and separate 10 damage per removed Mana discharge. It cannot recurse."
+		},
+		{
+		  "id": "new-horizons:metamagic.widenSpell",
+		  "name": "Widen Spell",
+		  "requires": "advanced",
+		  "description": "Eligible centrally aimed area spells affect one additional hex ring, without extra Mana cost.",
+		  "effect": {
+		    "status": "active",
+		    "description": "Eligible centrally aimed area spells affect one additional hex ring, without extra Mana cost."
+		  },
+		  "details": "Excludes single-target spells, lines, cones, chains, global or mass spells, and persistent battlefield fields. Force Lance remains single-target."
+		},
+		{
+		  "id": "new-horizons:metamagic.matterbreaker",
+		  "name": "Matterbreaker",
+		  "requires": "advanced",
+		  "description": "Damaging area spells destroy ordinary physical obstacles intersecting their affected area.",
+		  "effect": {
+		    "status": "active",
+		    "description": "Damaging area spells destroy ordinary physical obstacles intersecting their affected area."
+		  },
+		  "details": "Adds no radius, fortification damage, magical-object removal, explosion or permission to target illegal empty hexes."
+		},
+		{
+		  "id": "new-horizons:metamagic.magicalMemory",
+		  "name": "Magical Memory",
+		  "requires": "expert",
+		  "description": "A spell family actually removed by Metamagic cannot be reapplied to that same recipient for the rest of combat.",
+		  "effect": {
+		    "status": "active",
+		    "description": "A spell family actually removed by Metamagic cannot be reapplied to that same recipient for the rest of combat."
+		  },
+		  "details": "Applies to cleansed allied curses and stripped enemy enchantments, including their single and mass variants, regardless of later caster. Does not block unrelated damage or extend durations."
+		},
+		{
+		  "id": "new-horizons:metamagic.arcaneRupture",
+		  "name": "Arcane Rupture",
+		  "requires": "expert",
+		  "description": "Metamagic's separate discharge bypasses magical protection and damage reduction.",
+		  "effect": {
+		    "status": "active",
+		    "description": "Metamagic's separate discharge bypasses magical protection and damage reduction."
+		  },
+		  "details": "The discharge remains 10 damage per removed Mana. Original spell admission, resistance and damage remain unchanged; a fully resisted spell cannot earn a discharge."
+		}
+	])json";
+	return JsonNode(json.data(), json.size(), "historical Metamagic fixture");
+}
+
+JsonNode historicalCompletionMetamagicRulesV5()
+{
+	auto source = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+	auto & policy = source["metamagicPolicy"];
+	policy.Struct().clear();
+	policy["version"].Integer() = 5;
+	policy["removalChancePercent"].Vector() = {JsonNode(0), JsonNode(20), JsonNode(30), JsonNode(40)};
+	policy["damagePerMana"].Integer() = 10;
+	policy["restorationPerMana"].Integer() = 15;
+	policy["halonRemovalChanceBonusPercent"].Integer() = 5;
+	policy["arcaneOverflowPercentByRank"].Vector() = {JsonNode(0), JsonNode(25), JsonNode(50), JsonNode(75)};
+	source["skills"]["new-horizons:metamagic"]["perks"] = historicalMetamagicPerks();
+	return source;
+}
+
 class NewHorizonsMetamagicCompletionTest : public HeroCommandFixture
 {
 protected:
@@ -49,12 +184,21 @@ protected:
 	void mapLoaded(CMap * loaded) override
 	{
 		HeroCommandFixture::mapLoaded(loaded);
+		// These cases characterize the retained historical v5 completion contract.
+		// Current v6 optional-removal behavior is covered by NewHorizonsMetamagicV2Test.
+		auto perks = historicalCompletionMetamagicRulesV5();
+		perks.setOverrideFlag(true);
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
 			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 	}
 	void prepare()
 	{
 		startGame();
+		const auto policy = resolutionPolicy(attackerSideHero->getPerkState().getRules());
+		ASSERT_TRUE(policy);
+		ASSERT_FALSE(policy->optionalRemoval);
+		ASSERT_EQ(policy->overflowPercentByRank, (std::array<int32_t, 4>{0, 25, 50, 75}));
 		attackerSideHero->setHeroType(HeroTypeID(HeroTypeID::decode("core:neela")));
 		attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:metamagic")),
 			3, ChangeValueMode::ABSOLUTE);

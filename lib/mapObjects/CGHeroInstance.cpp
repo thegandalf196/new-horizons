@@ -24,6 +24,7 @@
 #include "../entities/hero/NewHorizonsLearningSpecialties.h"
 #include "../entities/hero/HeroStartingProjection.h"
 #include "../entities/hero/NewHorizonsHeroRules.h"
+#include "../entities/hero/NewHorizonsSkillSpecialtyMarker.h"
 #include "../entities/hero/NewHorizonsLeadership.h"
 #include "../entities/hero/NewHorizonsDiplomacy.h"
 #include "NewHorizonsGlyphsOfFear.h"
@@ -138,23 +139,6 @@ std::string nonDamageSpellSpecialtyMarker(HeroTypeID heroType, SpellID spell)
 {
 	return "new-horizons:non-damage-spell-specialty:" + std::to_string(heroType.getNum()) + ":"
 		+ std::to_string(spell.getNum());
-}
-
-std::string skillSpecialtyMarker(HeroTypeID heroType, SecondarySkill skill)
-{
-	return "new-horizons:skill-specialty:" + std::to_string(heroType.getNum()) + ":"
-		+ std::to_string(skill.getNum());
-}
-
-std::shared_ptr<Bonus> makeSkillSpecialtyMarker(HeroTypeID heroType, SecondarySkill skill)
-{
-	auto marker = std::make_shared<Bonus>();
-	marker->type = BonusType::NONE;
-	marker->source = BonusSource::HERO_SPECIAL;
-	marker->sid = BonusSourceID(heroType);
-	marker->duration = BonusDuration::PERMANENT;
-	marker->stacking = skillSpecialtyMarker(heroType, skill);
-	return marker;
 }
 
 const ArtifactID & spellbindersHatArtifactID()
@@ -592,7 +576,7 @@ int CGHeroInstance::getSkillSpecialtyCoreBonusPercent(SecondarySkill skill) cons
 
 	// Only a saved local conversion marker can make this query contribute.
 	// Capture/init/load validate policy independently of this negative fast path.
-	const std::string marker = skillSpecialtyMarker(heroType->getId(), skill);
+	const std::string marker = newHorizonsHeroes::skillSpecialtyMarker::key(heroType->getId(), skill);
 	const auto & localBonuses = getExportedBonusList();
 	if(std::ranges::none_of(localBonuses, [&marker](const auto & bonus)
 	{
@@ -775,7 +759,7 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 		// Specialty conversion is a fresh captured rule, independently of a
 		// map's explicit development. Without Logistics there is no core
 		// Movement component to increase; never auto-grant that map hero a parent.
-		addNewBonus(makeSkillSpecialtyMarker(heroType->getId(), SecondarySkill(SecondarySkill::LOGISTICS)));
+		addNewBonus(newHorizonsHeroes::skillSpecialtyMarker::make(heroType->getId(), SecondarySkill(SecondarySkill::LOGISTICS)));
 	}
 	const bool hasSupportedSkillSpecialty = skillSpecialties.has_value()
 		&& heroType->secondarySkillSpecialtyAlias
@@ -788,7 +772,7 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 		// automatically below. Install the saved marker before those rolls so
 		// their core Skill-growth chance uses the same converted view as later
 		// level-ups and the UI forecast.
-		addNewBonus(makeSkillSpecialtyMarker(heroType->getId(), heroType->secondarySkillSpecialtyAlias->skill));
+		addNewBonus(newHorizonsHeroes::skillSpecialtyMarker::make(heroType->getId(), heroType->secondarySkillSpecialtyAlias->skill));
 	}
 
 	// Magic-school conversion is an independent saved magic-profile rule. Keep

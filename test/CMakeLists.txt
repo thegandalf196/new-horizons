@@ -1187,6 +1187,8 @@ if(ENABLE_BATTLE_AI)
 		battleAI/ForecastNativeReadWorkTest.cpp
 		battleAI/ForecastNativeReadViewTest.cpp
 		battleAI/ForecastNativeJoinTest.cpp
+		battleAI/ForecastInertHeroMetadataTest.cpp
+		battleAI/ForecastPassiveCartAdmissionTest.cpp
 		battleAI/ForecastNativeAdapterTest.cpp
 		battleAI/ForecastTerrainNativeIntegrationTest.cpp
 		battleAI/ForecastNativeAdapterFixture.h

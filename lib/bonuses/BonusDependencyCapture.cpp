@@ -63,11 +63,13 @@ bool countFieldSupported(BonusType type)
 	}
 }
 
-void validateGraph(const BonusGraphQuery & graph, const CBonusSystemNode & root,
+
+bool validateGraph(const BonusGraphQuery & graph, const CBonusSystemNode & root,
 	const detail::TerrainCaptureCertificate * terrain)
 {
 	std::set<const CBonusSystemNode *> active;
 	size_t records = 0, edges = 0, visits = 0;
+	bool peerMana = false;
 	const auto inspect = [&](auto && self, const CBonusSystemNode & node, size_t depth) -> void
 	{
 		if(depth > 64 || ++visits > 1024 || !active.insert(&node).second)
@@ -77,6 +79,12 @@ void validateGraph(const BonusGraphQuery & graph, const CBonusSystemNode & root,
 			if(++records > 8192 || !raw || raw->type == BonusType::TERRAIN_NATIVE
 				|| !(terrain ? terrain->classifyMaterialized(*raw) : classifyMaterializedLocal(*raw)).supported)
 				throw std::invalid_argument("Unsupported raw modifier source");
+			if(detail::heroBaseManaRegeneration(*raw))
+			{
+				if(node.getNodeType() != BonusNodeType::HERO)
+					throw std::invalid_argument("Hero base recovery requires hero exporter");
+				peerMana = true;
+			}
 			if(intersects(classifyMaterializedLocal(*raw).dependencies, Change::Count) && !countFieldSupported(raw->type))
 				throw std::invalid_argument("Count-derived field requires its native transition owner");
 		}
@@ -91,6 +99,7 @@ void validateGraph(const BonusGraphQuery & graph, const CBonusSystemNode & root,
 		active.erase(&node);
 	};
 	inspect(inspect, root, 0);
+	return peerMana;
 }
 }
 CapturedModifiers captureNativeModifiers(const BonusGraphQuery & graph, const CBonusSystemNode & recipient)
@@ -104,7 +113,7 @@ CapturedModifiers captureNativeOverlayModifiers(const BonusGraphQuery & graph, c
 	if(recipient.getNodeType() == BonusNodeType::STACK_BATTLE
 		&& graph.evaluation(recipient).getNodeType() == BonusNodeType::STACK_BATTLE)
 		terrain.reset(new detail::TerrainCaptureCertificate);
-	validateGraph(graph, recipient, terrain.get()); // Before executing any raw modifier.
+	const bool peerMana = validateGraph(graph, recipient, terrain.get()); // Before executing any raw modifier.
 	if(layers.size() > 512) throw std::invalid_argument("Oversized certified terrain overlay lineage");
 	size_t overlayRecords = 0;
 	for(const auto & layer : layers)
@@ -116,8 +125,10 @@ CapturedModifiers captureNativeOverlayModifiers(const BonusGraphQuery & graph, c
 			if(count > 8192 - overlayRecords) throw std::invalid_argument("Oversized certified terrain overlay records");
 			overlayRecords += count;
 		}
-		const auto reject = [](const auto & row)
+		const auto reject = [peerMana](const auto & row)
 		{
+			if(peerMana && row.type == BonusType::MANA_REGENERATION)
+				throw std::invalid_argument("Hero recovery overlay needs fresh native peer collection");
 			if(row.type == BonusType::TERRAIN_NATIVE)
 				throw std::invalid_argument("Native-ground overlay needs full peer limitation");
 		};
@@ -142,7 +153,7 @@ CapturedModifiers captureNativeOverlayModifiers(const BonusGraphQuery & graph, c
 	for(size_t i = 0; i < occurrences.size(); ++i)
 	{
 		const auto & occurrence = occurrences[i];
-		recipes->push_back(detail::captureCertified(owner, i, occurrence.stages, graph.evaluation(recipient), true, terrain.get()));
+		recipes->push_back(detail::captureCertified(owner, i, occurrence.stages, graph.evaluation(recipient), true, terrain.get(), &output, occurrence.output.get()));
 		const auto [alias, inserted] = aliases.emplace(occurrence.output.get(), static_cast<uint32_t>(aliases.size()));
 		const auto exporter = exporters.emplace(occurrence.exporter, static_cast<uint32_t>(exporters.size())).first->second;
 		const auto rawId = rawIds.emplace(occurrence.raw.get(), static_cast<uint32_t>(rawIds.size())).first->second;

@@ -295,7 +295,10 @@ Decision classifyCreature(const CBattleInfoCallback & source, const spells::Mech
 	if(!static_cast<const spells::BattleSpellMechanics &>(mechanics).isFiniteCreatureForecast())
 		return refusal(Reason::WrongCastProvenance);
 	const auto * caster = mechanics.getUnitCaster();
-	if(source.battleGetUnitByID(caster->unitId()) != caster) return refusal(Reason::WrongCastProvenance);
+	// getUnitCaster resolves the ID through the current battle. The original
+	// cast source must also be that exact occurrence, not an ancestor alias.
+	if(dynamic_cast<const battle::Unit *>(mechanics.caster) != caster
+		|| source.battleGetUnitByID(caster->unitId()) != caster) return refusal(Reason::WrongCastProvenance);
 	EventMask required = 0;
 	const auto reason = inspectSupportedEffects(mechanics, target, required);
 	if(reason != Reason::None) return refusal(reason, required);

@@ -11,6 +11,7 @@
 #include <limits>
 #include <set>
 #include <algorithm>
+#include <array>
 
 namespace
 {
@@ -127,11 +128,60 @@ namespace heroQueueTest
 class ConsecratedDamageProjectionTest : public HeroQueueSelectorTest
 {
 protected:
-	void prepare()
+	void originalRedemptionArena()
+	{
+		const auto skill = SecondarySkill(SecondarySkill::decode(consecratedArms::SKILL));
+		ASSERT_TRUE(skill.hasValue());
+		for(auto * hero : {attackerSideHero, defenderSideHero})
+		{
+			hero->setSecSkillLevel(skill, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+			ASSERT_EQ(consecratedArms::capturePolicy(hero).rank, 1);
+			hero->clearSlots();
+		}
+		// Redemption's immutable cap belongs to original army stacks captured
+		// during localInit, not arena()'s later slotless ADD recipients.
+		attackerSideHero->setCreature(SlotID(0), creatureByName("core:pikeman"), 1);
+		attackerSideHero->setCreature(SlotID(1), creatureByName("core:angel"), 100);
+		attackerSideHero->setCreature(SlotID(2), creatureByName("core:pikeman"), 100);
+		defenderSideHero->setCreature(SlotID(0), creatureByName("core:pikeman"), 100);
+		ASSERT_NO_FATAL_FAILURE(startBattle());
+		for(const auto & stack : battle()->stacks)
+		{
+			if(stack->unitSide() == BattleSide::DEFENDER && stack->unitSlot() == SlotID(0)) enemy = stack.get();
+			if(stack->unitSide() != BattleSide::ATTACKER) continue;
+			if(stack->unitSlot() == SlotID(0)) active = stack.get();
+			if(stack->unitSlot() == SlotID(1)) actor = stack.get();
+			if(stack->unitSlot() == SlotID(2)) waiter = stack.get();
+		}
+		const std::array<CStack *, 4> units{active, actor, waiter, enemy};
+		const std::array<BattleHex, 4> positions{BattleHex(1, 5), BattleHex(7, 5), BattleHex(3, 5), BattleHex(8, 5)};
+		for(size_t index = 0; index < units.size(); ++index)
+		{
+			auto * unit = units[index];
+			ASSERT_NE(unit, nullptr);
+			unit->setPosition(positions[index]); // Initial scenario geometry before combat.
+			const auto basis = static_cast<int64_t>(unit->unitBaseAmount()) * unit->getMaxHealth();
+			ASSERT_GT(basis, 0);
+			ASSERT_EQ(unit->getBattleStartMaximumAggregateHP(), basis);
+			effect(unit, Bonus(BonusDuration::ONE_BATTLE, BonusType::STACKS_INITIATIVE_BASE,
+				BonusSource::OTHER, 1000 - static_cast<int>(index) * 200, BonusSourceID(), BonusSubtypeID(), BonusValueType::BASE_NUMBER));
+			effect(unit, Bonus(BonusDuration::ONE_BATTLE, BonusType::NO_MORALE, BonusSource::OTHER, 1, BonusSourceID()));
+		}
+		ASSERT_NO_FATAL_FAILURE(beginCombat());
+		ASSERT_EQ(battle()->battleActiveUnit(), active);
+	}
+	void prepare(bool originalRedemption = false)
 	{
 		useRevisedOrders = true;
 		ASSERT_NO_FATAL_FAILURE(world());
-		ASSERT_NO_FATAL_FAILURE(arena());
+		if(originalRedemption)
+		{
+			ASSERT_NO_FATAL_FAILURE(originalRedemptionArena());
+		}
+		else
+		{
+			ASSERT_NO_FATAL_FAILURE(arena());
+		}
 		environment = std::make_shared<QueueEnvironment>(gameState());
 		live = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
 		parent = std::make_shared<HypotheticBattle>(environment.get(), live);
@@ -140,7 +190,7 @@ protected:
 };
 TEST_F(ConsecratedDamageProjectionTest, SharedPreviewPricesStoredRedemptionWithoutRefillOrMutation)
 {
-	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_NO_FATAL_FAILURE(prepare(true));
 	auto target = parent->getForUpdate(actor->unitId());
 	consecratedArms::Policy policy; policy.rank = 1;
 	target->addUnitBonus(consecratedArms::prayerBonuses(consecratedArms::Prayer::VICARIOUS_REDEMPTION,
@@ -200,7 +250,7 @@ TEST_F(ConsecratedDamageProjectionTest, PhysicalBlowAndJudgmentShareOneQuotaAndN
 }
 TEST_F(ConsecratedDamageProjectionTest, RedemptionWaitsForJudgmentAndRepeatedFinishCannotRefillShield)
 {
-	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_NO_FATAL_FAILURE(prepare(true));
 	auto source = parent->getForUpdate(actor->unitId());
 	auto target = parent->getForUpdate(enemy->unitId());
 	consecratedArms::Policy policy; policy.rank = 1;
@@ -304,7 +354,7 @@ TEST_F(ConsecratedDamageProjectionTest, SelectedCounterJudgmentReplayDoesNotAppl
 }
 TEST_F(ConsecratedDamageProjectionTest, CommunionPeerOutsideHitRecipientsReceivesOneOwnedRestorableShield)
 {
-	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_NO_FATAL_FAILURE(prepare(true));
 	auto source = parent->getForUpdate(enemy->unitId());
 	auto target = parent->getForUpdate(actor->unitId());
 	auto peer = parent->getForUpdate(waiter->unitId());

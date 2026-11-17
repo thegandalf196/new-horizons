@@ -14,8 +14,13 @@ std::optional<forecastEffects::RecordId> managedFocusMarker(const forecast::Stat
 TEST_F(ForecastNativeAdapterTest, FocusAcceptedZeroDamageUsesThreeChargesAndKeepsStableTargetAndParents)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
-	const auto id = parent->battleGetAllUnits(false).front()->unitId();
+	const auto attackers = parent->battleGetUnitsIf([](const battle::Unit * unit)
+	{ return unit->unitSide() == BattleSide::ATTACKER && unit->unitSlot() == SlotID(0); });
+	ASSERT_EQ(attackers.size(), 1u);
+	ASSERT_EQ(attackers.front()->creatureId(), CreatureID(CreatureID::decode("core:pikeman")));
+	const auto id = attackers.front()->unitId();
 	auto root = parent->getForUpdate(id);
+	ASSERT_FALSE(root->isShooter());
 	root->addUnitBonus(newHorizonsFocusMagic::enchantment(*root,
 		SpellID(SpellID::decode(newHorizonsFocusMagic::SPELL))));
 	const auto rng = projectedHitTest::serialized(*handler->randomizer);
@@ -53,7 +58,16 @@ TEST_F(ForecastNativeAdapterTest, FocusAcceptedZeroDamageUsesThreeChargesAndKeep
 TEST_F(ForecastNativeAdapterTest, FocusNativeArcherFinalChargeThenCasualtyRefreshMatchesReference)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare(false, false, false, "core:archer"));
-	const auto id = parent->battleGetAllUnits(false).front()->unitId();
+	// Roster order follows native initiative ordering, not attacker/defender roles.
+	const auto attackers = parent->battleGetUnitsIf([](const battle::Unit * unit)
+	{ return unit->unitSide() == BattleSide::ATTACKER && unit->unitSlot() == SlotID(0); });
+	const auto defenders = parent->battleGetUnitsIf([](const battle::Unit * unit)
+	{ return unit->unitSide() == BattleSide::DEFENDER && unit->unitSlot() == SlotID(0); });
+	ASSERT_EQ(attackers.size(), 1u); ASSERT_EQ(defenders.size(), 1u);
+	ASSERT_EQ(attackers.front()->creatureId(), CreatureID(CreatureID::decode("core:archer")));
+	ASSERT_EQ(defenders.front()->creatureId(), CreatureID(CreatureID::decode("core:pikeman")));
+	const auto id = attackers.front()->unitId();
+	const auto targetId = defenders.front()->unitId();
 	auto root = parent->getForUpdate(id);
 	ASSERT_TRUE(root->isShooter());
 	root->addUnitBonus(newHorizonsFocusMagic::enchantment(*root,
@@ -74,7 +88,6 @@ TEST_F(ForecastNativeAdapterTest, FocusNativeArcherFinalChargeThenCasualtyRefres
 	int64_t damage = actor->getMaxHealth() + 1, nativeDamage = damage;
 	expected->damage(nativeDamage, false, battle::DamageProvenance::PHYSICAL_CREATURE);
 	ASSERT_TRUE(forecast::NativeAdapter::damage(*child, *actor, damage, battle::DamageProvenance::PHYSICAL_CREATURE, nullptr));
-	const auto targetId = child->battleGetAllUnits(false).back()->unitId();
 	const auto actual = child->calculateDmgRange(BattleAttackInfo(actor.get(), child->getForUpdate(targetId).get(), 0, true));
 	const auto baseline = reference->calculateDmgRange(BattleAttackInfo(expected.get(), reference->getForUpdate(targetId).get(), 0, true));
 	EXPECT_EQ(actual.damage.min, baseline.damage.min);
@@ -88,10 +101,13 @@ TEST_F(ForecastNativeAdapterTest, FocusRealAmmoCartKeepsNativeAmmoUnlimitedUntil
 	for(const auto * unit : parent->battleGetAllUnits(false))
 		if(unit->unitSide() == BattleSide::ATTACKER)
 		{
-			if(unit->isAmmoCart()) cart = parent->getForUpdate(unit->unitId());
-			else root = parent->getForUpdate(unit->unitId());
+			if(unit->unitSlot() == SlotID(1) && unit->isAmmoCart()) cart = parent->getForUpdate(unit->unitId());
+			else if(unit->unitSlot() == SlotID(0)) root = parent->getForUpdate(unit->unitId());
 		}
 	ASSERT_TRUE(root); ASSERT_TRUE(cart);
+	ASSERT_EQ(root->creatureId(), CreatureID(CreatureID::decode("core:archer")));
+	ASSERT_EQ(cart->creatureId(), CreatureID::AMMO_CART);
+	ASSERT_TRUE(root->isShooter());
 	root->addUnitBonus(newHorizonsFocusMagic::enchantment(*root,
 		SpellID(SpellID::decode(newHorizonsFocusMagic::SPELL))));
 	ASSERT_FALSE(root->shots.isLimited());
@@ -119,8 +135,13 @@ TEST_F(ForecastNativeAdapterTest, FocusRealAmmoCartKeepsNativeAmmoUnlimitedUntil
 TEST_F(ForecastNativeAdapterTest, FocusSelectedReceiptImportsNativeTwoChargesWithoutSecondConsumption)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
-	const auto id = parent->battleGetAllUnits(false).front()->unitId();
+	const auto attackers = parent->battleGetUnitsIf([](const battle::Unit * unit)
+	{ return unit->unitSide() == BattleSide::ATTACKER && unit->unitSlot() == SlotID(0); });
+	ASSERT_EQ(attackers.size(), 1u);
+	ASSERT_EQ(attackers.front()->creatureId(), CreatureID(CreatureID::decode("core:pikeman")));
+	const auto id = attackers.front()->unitId();
 	auto root = parent->getForUpdate(id);
+	ASSERT_FALSE(root->isShooter());
 	root->addUnitBonus(newHorizonsFocusMagic::enchantment(*root,
 		SpellID(SpellID::decode(newHorizonsFocusMagic::SPELL))));
 	ASSERT_TRUE(forecast::NativeAdapter::prepareExchange(*parent));
@@ -129,20 +150,28 @@ TEST_F(ForecastNativeAdapterTest, FocusSelectedReceiptImportsNativeTwoChargesWit
 	forecast::NativeAdapter::forkExchange(*parent, *acceptedWorld);
 	forecast::NativeAdapter::forkExchange(*parent, *destination);
 	auto accepted = acceptedWorld->getForUpdate(id), target = destination->getForUpdate(id);
-	focusMagicAI::afterAttack(*accepted, true, false, true, true, acceptedWorld.get());
-	ASSERT_EQ(newHorizonsFocusMagic::charges(*accepted), 2);
-	const auto opponent = acceptedWorld->battleGetAllUnits(false).back()->unitId();
-	AttackPossibility receipt(accepted->getPosition(), acceptedWorld->getForUpdate(opponent)->getPosition(),
-		BattleAttackInfo(accepted.get(), acceptedWorld->getForUpdate(opponent).get(), 0, true));
-	receipt.queryWorld = std::make_shared<VisibleCandidateWorld>(acceptedWorld);
-	selectedAttackReceipt::restoreResources(receipt, *accepted, target, target, *destination);
+	const auto defenders = acceptedWorld->battleGetUnitsIf([](const battle::Unit * unit)
+	{ return unit->unitSide() == BattleSide::DEFENDER && unit->unitSlot() == SlotID(0); });
+	ASSERT_EQ(defenders.size(), 1u);
+	ASSERT_EQ(defenders.front()->creatureId(), CreatureID(CreatureID::decode("core:pikeman")));
+	const auto opponent = defenders.front()->unitId();
+	DamageCache cache;
+	cache.buildDamageCache(acceptedWorld, BattleSide::ATTACKER);
+	const auto query = std::make_shared<const VisibleCandidateWorld>(acceptedWorld);
+	const auto receipt = VisibleCandidateWorld::evaluate(query, accepted.get(),
+		acceptedWorld->battleGetUnitByID(opponent), 0, true, accepted->getPosition(), cache);
+	ASSERT_TRUE(receipt.snapshotSeal);
+	ASSERT_NE(receipt.attackerState, nullptr);
+	ASSERT_EQ(newHorizonsFocusMagic::charges(*receipt.attackerState), 2);
+	ASSERT_EQ(newHorizonsFocusMagic::charges(*accepted), 3); // Preview leaves its source unchanged.
+	selectedAttackReceipt::restoreResources(receipt, *receipt.attackerState, target, target, *destination);
 	EXPECT_EQ(newHorizonsFocusMagic::charges(*target), 2);
 	EXPECT_EQ(destination->forecastState()->unit(id)->focus->charges, 2);
-	selectedAttackReceipt::restoreResources(receipt, *accepted, target, target, *destination);
+	selectedAttackReceipt::restoreResources(receipt, *receipt.attackerState, target, target, *destination);
 	EXPECT_EQ(newHorizonsFocusMagic::charges(*target), 2); // Reopening/import is idempotent, never3→2→1.
 	const auto beforeForeign = target->save();
 	acceptedWorld->nextRound();
-	EXPECT_THROW(selectedAttackReceipt::restoreResources(receipt, *accepted, target, target, *destination), std::logic_error);
+	EXPECT_THROW(selectedAttackReceipt::restoreResources(receipt, *receipt.attackerState, target, target, *destination), std::logic_error);
 	EXPECT_EQ(target->save(), beforeForeign);
 	EXPECT_EQ(destination->forecastState()->unit(id)->focus->charges, 2);
 }
@@ -150,8 +179,13 @@ TEST_F(ForecastNativeAdapterTest, FocusSelectedReceiptImportsNativeTwoChargesWit
 TEST_F(ForecastNativeAdapterTest, UnacceptedFocusKeepsHardChargesAndExhaustedBudgetRejectsBeforeMutation)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
-	const auto id = parent->battleGetAllUnits(false).front()->unitId();
+	const auto attackers = parent->battleGetUnitsIf([](const battle::Unit * unit)
+	{ return unit->unitSide() == BattleSide::ATTACKER && unit->unitSlot() == SlotID(0); });
+	ASSERT_EQ(attackers.size(), 1u);
+	ASSERT_EQ(attackers.front()->creatureId(), CreatureID(CreatureID::decode("core:pikeman")));
+	const auto id = attackers.front()->unitId();
 	auto actor = parent->getForUpdate(id);
+	ASSERT_FALSE(actor->isShooter());
 	actor->waitedThisTurn = true;
 	actor->addUnitBonus(newHorizonsFocusMagic::enchantment(*actor,
 		SpellID(SpellID::decode(newHorizonsFocusMagic::SPELL))));
@@ -177,8 +211,13 @@ TEST_F(ForecastNativeAdapterTest, UnacceptedFocusKeepsHardChargesAndExhaustedBud
 TEST_F(ForecastNativeAdapterTest, FocusAcceptedRecastRefreshesEffectOnlyAndNeverNativeSpentAmmo)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare(false, false, false, "core:archer"));
-	const auto id = parent->battleGetAllUnits(false).front()->unitId();
+	const auto attackers = parent->battleGetUnitsIf([](const battle::Unit * unit)
+	{ return unit->unitSide() == BattleSide::ATTACKER && unit->unitSlot() == SlotID(0); });
+	ASSERT_EQ(attackers.size(), 1u);
+	ASSERT_EQ(attackers.front()->creatureId(), CreatureID(CreatureID::decode("core:archer")));
+	const auto id = attackers.front()->unitId();
 	auto root = parent->getForUpdate(id);
+	ASSERT_TRUE(root->isShooter());
 	const SpellID focus(SpellID::decode(newHorizonsFocusMagic::SPELL));
 	root->addUnitBonus(newHorizonsFocusMagic::enchantment(*root, focus));
 	ASSERT_TRUE(forecast::NativeAdapter::prepareExchange(*parent));

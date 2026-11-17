@@ -7,6 +7,10 @@
 #include "../../lib/spells/BattleSpellMechanics.h"
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/spells/NewHorizonsMetamagicOverflow.h"
+#include "../../lib/bonuses/BonusList.h"
+#include "../../lib/bonuses/BonusSelector.h"
+#include "../../lib/bonuses/Propagators.h"
+#include <typeinfo>
 
 namespace forecastTest
 {
@@ -24,6 +28,25 @@ TEST_F(ForecastNativeAdapterTest, OrdinaryTowerMetamagicOverflowUsesCompactTwoEn
 		if(unit->unitSide() == BattleSide::DEFENDER) enemies.push_back(unit->unitId());
 	ASSERT_EQ(enemies.size(), 2u);
 	const auto primary = enemies[0], secondary = enemies[1];
+	// Native town information reaches both combatants through PLAYER ancestry.
+	// Its provider survives unit deaths, so it is not an outgoing combat aura.
+	for(const auto id : {primary, secondary})
+	{
+		const auto guild = parent->battleGetUnitByID(id)->getUnstackedBonuses(Selector::type()(BonusType::THIEVES_GUILD_ACCESS));
+		ASSERT_EQ(guild->size(), 1u);
+		const auto & row = *guild->front();
+		EXPECT_EQ(row.source, BonusSource::TOWN_STRUCTURE);
+		const auto building = row.sid.as<BuildingTypeUniqueID>();
+		ASSERT_TRUE(building.hasValue());
+		EXPECT_EQ(building.getBuilding(), BuildingID::TAVERN);
+		EXPECT_EQ(row.val, 1); EXPECT_EQ(row.valType, BonusValueType::ADDITIVE_VALUE);
+		EXPECT_EQ(row.duration, BonusDuration::PERMANENT);
+		EXPECT_FALSE(row.parameters); EXPECT_FALSE(row.limiter); EXPECT_FALSE(row.updater);
+		EXPECT_FALSE(row.propagationUpdater);
+		ASSERT_TRUE(row.propagator);
+		ASSERT_EQ(typeid(*row.propagator), typeid(CPropagatorNodeType));
+		EXPECT_EQ(row.propagator->getPropagatorType(), BonusNodeType::PLAYER);
+	}
 	for(auto * board : {parent.get(), reference.get()})
 	{
 		auto amount = board->battleGetUnitByID(primary)->getAvailableHealth() - 1;

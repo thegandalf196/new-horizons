@@ -13,6 +13,8 @@
 #include "../../AI/BattleAI/ForecastPerkPolicy.h"
 #include "../../lib/battle/BattleLayout.h"
 #include "../../lib/mapObjects/ObjectTemplate.h"
+#include "../../lib/mapObjects/CGCreature.h"
+#include "../../lib/mapObjectConstructors/AObjectTypeHandler.h"
 #include "../../server/battles/BattleProcessor.h"
 namespace forecastNativeAdapterTest
 {
@@ -25,6 +27,8 @@ protected:
 	std::shared_ptr<CBattleInfoCallback> visible;
 	std::shared_ptr<HypotheticBattle> parent;
 	Services * gameServices() override { return LIBRARY; }
+	// Keep random starting artifacts out of these controlled battle rosters.
+	void configurePlayer(PlayerSettings & settings) const override { settings.bonus = PlayerStartingBonus::GOLD; }
 	void TearDown() override
 	{
 		parent.reset(); visible.reset(); environment.reset(); handler.reset();
@@ -32,19 +36,26 @@ protected:
 	}
 	std::shared_ptr<CArmedInstance> army(PlayerColor owner, const char * name, const char * creature = "core:pikeman", int32_t count = 100, bool ammoCart = false)
 	{
-		auto value = std::make_shared<CArmedInstance>(gameState().get());
+		const CreatureID body(CreatureID::decode(creature));
+		auto value = std::make_shared<CGCreature>(gameState().get());
+		value->ID = Obj::MONSTER;
+		value->subID = MapObjectSubID(body.getNum());
 		value->tempOwner = owner;
 		value->pos = int3(4, 4, 0);
-		value->appearance = std::make_shared<ObjectTemplate>();
+		// Saving a registered map army also saves its template's object subtype.
+		// A default ObjectTemplate has NO_OBJ/0 and cannot be serialized.
+		const auto templates = value->getObjectHandler()->getTemplates();
+		if(templates.empty()) throw std::runtime_error("Forecast army needs a registered creature template");
+		value->appearance = templates.front();
 		value->instanceName = name;
-		value->setCreature(SlotID(0), CreatureID(CreatureID::decode(creature)), count);
+		value->setCreature(SlotID(0), body, count);
 		if(ammoCart) value->setCreature(SlotID(1), CreatureID::AMMO_CART, 1);
 		map()->addNewObject(value);
 		value->attachToBonusSystem(*gameState());
 		return value;
 	}
 	void prepare(bool conflux = false, bool oversized = false, bool selectedStatic = false,
-		const char * ordinaryAttacker = "core:pikeman", bool ammoCart = false, bool commandHero = false, const char * heroOverride = nullptr, bool splitEnemy = false)
+		const char * ordinaryAttacker = "core:pikeman", bool ammoCart = false, bool commandHero = false, const char * heroOverride = nullptr, bool splitEnemy = false, bool neutralDefender = false)
 	{
 		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
 		builder.size(36, false).name("Compact native forecast")
@@ -93,7 +104,8 @@ protected:
 			ASSERT_TRUE(forecast::ordinaryPerksSupported(*hero));
 		}
 		auto left = withHero ? std::shared_ptr<CArmedInstance>{} : army(PlayerColor(0), "compactLeft", ordinaryAttacker, 100, ammoCart);
-		auto right = army(PlayerColor(1), "compactRight", conflux ? "core:gnoll" : "core:pikeman", conflux ? 24 : 100);
+		const auto defenderOwner = neutralDefender ? PlayerColor::NEUTRAL : PlayerColor(1);
+		auto right = army(defenderOwner, "compactRight", conflux ? "core:gnoll" : "core:pikeman", conflux ? 24 : 100);
 		if(splitEnemy) right->setCreature(SlotID(1), CreatureID(CreatureID::decode("core:pikeman")), 1000);
 		BattleLayout layout;
 		layout.units[BattleSide::ATTACKER][0] = BattleHex(oversized ? 2 : 6, 5);

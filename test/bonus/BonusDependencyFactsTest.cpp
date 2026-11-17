@@ -3,10 +3,12 @@
 #include "../../lib/bonuses/BonusDependencyFacts.h"
 #include "../../lib/bonuses/CBonusSystemNode.h"
 #include "../../lib/bonuses/Updaters.h"
+#include "../../lib/bonuses/Propagators.h"
 #include "../../lib/bonuses/BonusGraphQuery.h"
 #include "../../lib/bonuses/BonusLimitation.h"
 #include "../../lib/bonuses/BonusDependencyCapture.h"
 #include "../../lib/bonuses/BonusParameters.h"
+#include "../../lib/json/JsonNode.h"
 #include "../../lib/bonuses/BonusCache.h"
 #include "../../lib/bonuses/OwnedRecipientBonusGraph.h"
 #include <array>
@@ -611,4 +613,161 @@ TEST(BonusDependencyFactsTest, ReboundEffectRecipeAndFrameRejectOldRootAfterExpi
 	ASSERT_TRUE(casualty);
 	EXPECT_EQ(casualty->prepared[0].unit.attack, 0);
 	EXPECT_EQ(casualty->prepared[0].unit.minDamage, 4);
+}
+
+TEST(BonusDependencyFactsTest, NativeRandomSpellcasterPoolSelectorIsOwnedExactScalarData)
+{
+	CBonusSystemNode stack(BonusNodeType::STACK_BATTLE);
+	auto sf = facts();
+	BonusEvaluationContext sc(stack, sf);
+	const std::array stages{Stage{sc, true, false}};
+	for(const int pool : {0, 1})
+	{
+		JsonNode selector; selector.Integer() = pool;
+		auto bonus = record(2);
+		bonus->type = BonusType::RANDOM_SPELLCASTER;
+		auto parameters = std::make_shared<BonusParameters>(selector);
+		bonus->parameters = parameters;
+		ASSERT_TRUE(classify(*bonus).supported);
+		const auto owned = capture(bonus, stages, sc);
+		parameters->toCustom<JsonNode>().Integer() = 1 - pool;
+		ASSERT_TRUE(owned.outputRecord()->parameters);
+		const auto & captured = owned.outputRecord()->parameters->toCustom<JsonNode>();
+		EXPECT_EQ(captured.getType(), JsonNode::JsonType::DATA_INTEGER);
+		EXPECT_EQ(captured.Integer(), pool);
+		EXPECT_EQ(owned.evaluate(21).value, 2);
+		EXPECT_TRUE(owned.canRefresh(Change::Count));
+	}
+}
+TEST(BonusDependencyFactsTest, RandomSpellcasterSelectorDoesNotAdmitOpaqueOrMalformedPayloads)
+{
+	for(const auto & text : {"null", "true", "false", "0.0", "0.5", "2", "-1", "[]", "[1]", "{}", "\"1\""})
+	{
+		SCOPED_TRACE(text);
+		const std::string encoded(text);
+		auto bonus = record(2);
+		bonus->type = BonusType::RANDOM_SPELLCASTER;
+		bonus->parameters = std::make_shared<BonusParameters>(JsonNode(encoded.data(), encoded.size(), "random-spellcaster-selector-test"));
+		EXPECT_FALSE(classify(*bonus).supported);
+	}
+	JsonNode selector; selector.Integer() = 1;
+	auto unrelated = record();
+	unrelated->parameters = std::make_shared<BonusParameters>(selector);
+	EXPECT_FALSE(classify(*unrelated).supported);
+	unrelated->type = BonusType::RANDOM_SPELLCASTER;
+	unrelated->parameters = std::make_shared<BonusParameters>(BonusParametersOnCombatEvent{});
+	EXPECT_FALSE(classify(*unrelated).supported);
+	unrelated->parameters = std::make_shared<BonusParameters>(selector);
+	unrelated->updater = std::make_shared<ForeignCount>();
+	EXPECT_FALSE(classify(*unrelated).supported);
+}
+
+namespace
+{
+std::shared_ptr<Bonus> heroBaseRecovery()
+{
+	auto bonus = record(1);
+	bonus->type = BonusType::MANA_REGENERATION;
+	bonus->source = BonusSource::HERO_BASE_SKILL;
+	bonus->sid = BonusSourceID(ObjectInstanceID(2));
+	bonus->valType = BonusValueType::BASE_NUMBER;
+	auto none = std::make_shared<NoneOfLimiter>();
+	none->add(std::make_shared<HasAnotherBonusLimiter>(BonusType::MANA_REGENERATION, BonusSource::SECONDARY_SKILL));
+	bonus->limiter = none;
+	return bonus;
+}
+}
+TEST(BonusDependencyFactsTest, HeroBaseRecoveryUsesNativePeersAndCannotRefreshEffectChanges)
+{
+	using Input = OwnedRecipientBonusGraph::NodeInput;
+	for(bool mysticism : {false, true})
+	{
+		Input hero, stack;
+		hero.facts = facts(BonusNodeType::HERO); stack.facts = facts(); stack.parents = {0};
+		auto attack = record(7); attack->type = BonusType::PRIMARY_SKILL;
+		attack->subtype = BonusSubtypeID(PrimarySkill::ATTACK);
+		auto minDamage = record(2); minDamage->type = BonusType::CREATURE_DAMAGE;
+		minDamage->subtype = BonusCustomSubtype::creatureDamageMin;
+		auto maxDamage = record(4); maxDamage->type = BonusType::CREATURE_DAMAGE;
+		maxDamage->subtype = BonusCustomSubtype::creatureDamageMax;
+		stack.local = {attack, minDamage, maxDamage};
+		auto daily = heroBaseRecovery(); hero.local = {daily};
+		if(mysticism)
+		{
+			auto peer = record(5); peer->type = BonusType::MANA_REGENERATION;
+			peer->source = BonusSource::SECONDARY_SKILL; peer->valType = BonusValueType::BASE_NUMBER;
+			hero.local.push_back(peer);
+		}
+		auto graph = OwnedRecipientBonusGraph::fromOwnedInputs({hero, stack}, 1);
+		const auto captured = captureNativeModifiers(*graph, graph->root());
+		const auto native = graph->query(Selector::type()(BonusType::MANA_REGENERATION), true);
+		EXPECT_EQ(native.totalValue(), mysticism ? 5 : 1);
+		EXPECT_FALSE(captured.canRefresh(Change::ActiveEffects));
+		std::array<nativeDamage::PreparedUnit, 2> base;
+		const auto numeric = captured.refresh(21, Change::Count, base, 0);
+		ASSERT_TRUE(numeric);
+		const auto occurrences = captured.occurrences();
+		ASSERT_EQ(numeric->scalar.size(), occurrences.size());
+		std::vector<Decision> recoveryDecisions;
+		for(size_t index = 0; index < occurrences.size(); ++index)
+			if(occurrences[index].rawType == BonusType::MANA_REGENERATION)
+				recoveryDecisions.push_back(numeric->scalar[index].decision);
+		const std::vector<Decision> expected = mysticism
+			? std::vector<Decision>{Decision::DISCARD, Decision::ACCEPT}
+			: std::vector<Decision>{Decision::ACCEPT};
+		EXPECT_EQ(recoveryDecisions, expected);
+		EXPECT_EQ(numeric->prepared[0].unit.attack, 7);
+		EXPECT_EQ(numeric->prepared[0].unit.minDamage, 2);
+		EXPECT_EQ(numeric->prepared[0].unit.maxDamage, 4);
+	}
+}
+TEST(BonusDependencyFactsTest, HeroBaseRecoveryRejectsWrongExporterAndManaOverlays)
+{
+	using Input = OwnedRecipientBonusGraph::NodeInput;
+	Input wrong; wrong.facts = facts(); wrong.local = {heroBaseRecovery()};
+	auto wrongGraph = OwnedRecipientBonusGraph::fromOwnedInputs({wrong}, 0);
+	EXPECT_THROW(captureNativeModifiers(*wrongGraph, wrongGraph->root()), std::invalid_argument);
+	Input hero, stack; hero.facts = facts(BonusNodeType::HERO); hero.local = {heroBaseRecovery()};
+	stack.facts = facts(); stack.parents = {0};
+	auto graph = OwnedRecipientBonusGraph::fromOwnedInputs({hero, stack}, 1);
+	recipientBonusOverlay::Records added{heroBaseRecovery()}, updated;
+	std::set<std::shared_ptr<Bonus>> removed;
+	std::optional<recipientBonusOverlay::Values> stacked;
+	std::optional<recipientBonusOverlay::Records> unstacked;
+	recipientBonusOverlay::Groups groups; bool veteran = false;
+	const std::array layers{recipientBonusOverlay::Layer({added, updated, removed, stacked, unstacked, groups, veteran})};
+	EXPECT_THROW(captureNativeOverlayModifiers(*graph, graph->root(), layers), std::invalid_argument);
+}
+TEST(BonusDependencyFactsTest, HeroBaseRecoveryRequiresExactProvenanceAndFullPeerBoundary)
+{
+	CBonusSystemNode stack(BonusNodeType::STACK_BATTLE);
+	auto sf = facts(); BonusEvaluationContext sc(stack, sf);
+	auto daily = heroBaseRecovery();
+	ASSERT_TRUE(classify(*daily).supported);
+	EXPECT_THROW(capture(daily, {}, sc), std::invalid_argument);
+	const auto refused = [&](const auto & mutate)
+	{
+		auto changed = heroBaseRecovery(); mutate(*changed);
+		EXPECT_FALSE(classify(*changed).supported);
+	};
+	refused([](Bonus & b) { b.source = BonusSource::OTHER; });
+	refused([](Bonus & b) { b.duration = BonusDuration::N_TURNS; });
+	refused([](Bonus & b) { b.val = 2; });
+	refused([](Bonus & b) { b.subtype = BonusSubtypeID(PrimarySkill::DEFENSE); });
+	refused([](Bonus & b) {
+		struct ForeignNone final : NoneOfLimiter {};
+		auto none = std::make_shared<ForeignNone>();
+		none->add(std::make_shared<HasAnotherBonusLimiter>(BonusType::MANA_REGENERATION, BonusSource::SECONDARY_SKILL));
+		b.limiter = none;
+	});
+	refused([](Bonus & b) { b.updater = std::make_shared<IUpdater>(); });
+	refused([](Bonus & b) { b.propagator = std::make_shared<IPropagator>(); });
+	auto propagated = heroBaseRecovery(); propagated->propagationUpdater = std::make_shared<IUpdater>();
+	EXPECT_FALSE(classifyMaterializedLocal(*propagated).supported);
+	refused([](Bonus & b) { b.limiter = std::make_shared<HasAnotherBonusLimiter>(BonusType::MANA_REGENERATION); });
+	refused([](Bonus & b) {
+		auto none = std::make_shared<NoneOfLimiter>();
+		none->add(std::make_shared<HasAnotherBonusLimiter>(BonusType::MANA_REGENERATION, BonusSource::ARTIFACT));
+		b.limiter = none;
+	});
 }

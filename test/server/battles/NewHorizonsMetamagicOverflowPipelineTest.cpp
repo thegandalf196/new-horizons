@@ -11,6 +11,8 @@
 #include "../../../lib/spells/CSpell.h"
 #include "../../../lib/spells/NewHorizonsSorcerySpells.h"
 #include "../../../lib/battle/CUnitState.h"
+#include "../../../lib/nativeRules/CapturedRuleSet.h"
+#include "../../../lib/nativeRules/CompiledMetamagicRules.h"
 #include "../../../lib/bonuses/BonusList.h"
 #include "../../../lib/networkPacks/SetStackEffect.h"
 #include "../../../lib/combatScripts/nativeEvents/NativeEventCommon.h"
@@ -364,23 +366,6 @@ TEST_F(MetamagicOverflowPipeline, SharedDefendingRerollContextIsNotAnIndependent
 	EXPECT_EQ(overflowSupport(*mechanics, {spells::Destination(primary)}, true), OverflowSupport::Unsupported);
 	EXPECT_FALSE(previewOverflow(*mechanics, {spells::Destination(primary)}));
 }
-TEST_F(MetamagicOverflowPipeline, RawMalformedChainIsRefusedBeforeAnyTargetOrConditionCallbacks)
-{
-	ASSERT_NO_FATAL_FAILURE(prepare());
-	auto event = cast(); auto mechanics = event.getSpell()->battleMechanics(&event);
-	auto & level = const_cast<CSpell::LevelInfo &>(event.getSpell()->getLevelInfo(mechanics->getEffectLevel()));
-	const auto original = level;
-	const auto restore = vstd::makeScopeGuard([&]() { level = original; });
-	std::vector<JsonNode> malformed{JsonNode("invalid"), JsonNode(std::numeric_limits<double>::quiet_NaN()),
-		JsonNode(std::numeric_limits<double>::infinity())};
-	EXPECT_CALL(random, nextInt(testing::_, testing::_)).Times(0);
-	for(const auto & bad : malformed)
-	{
-		level.battleEffects["malformed"]["chainLength"] = bad;
-		EXPECT_EQ(overflowSupport(*mechanics, {spells::Destination(primary)}), OverflowSupport::Unsupported);
-		EXPECT_FALSE(previewOverflow(*mechanics, {spells::Destination(primary)}));
-	}
-}
 class OpaqueOverflowEffect final : public spells::effects::native::UnitEffect
 {
 public:
@@ -393,6 +378,43 @@ public:
 	mutable unsigned nativeCalls = 0;
 	bool isReceptive(const spells::Mechanics *, const battle::Unit *) const override { ++nativeCalls; return true; }
 };
+class MetamagicMalformedOverflowPipeline : public MetamagicOverflowPipeline,
+	public testing::WithParamInterface<int> {};
+TEST_P(MetamagicMalformedOverflowPipeline, RawMalformedChainIsRefusedBeforeAnyTargetOrConditionCallbacks)
+{
+	const std::array<JsonNode, 3> malformed{JsonNode("invalid"),
+		JsonNode(std::numeric_limits<double>::quiet_NaN()), JsonNode(std::numeric_limits<double>::infinity())};
+	auto & level = const_cast<CSpell::LevelInfo &>(SpellID(SpellID::MAGIC_ARROW).toSpell()->getLevelInfo(0));
+	const auto original = level;
+	const auto restore = vstd::makeScopeGuard([&]() { level = original; });
+	// Raw registry descriptors are compiled once at world admission. A mutation
+	// after prepare() cannot replace an already admitted immutable target shape.
+	level.battleEffects["malformed"]["chainLength"] = malformed.at(GetParam());
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto owner = battle()->getCapturedMagicRules();
+	ASSERT_TRUE(owner);
+	const auto energy = owner->metamagicEnergy();
+	ASSERT_TRUE(energy);
+	const auto * facts = energy->identity(SpellID(SpellID::MAGIC_ARROW));
+	ASSERT_NE(facts, nullptr);
+	ASSERT_EQ(facts->effectCardinalityByLevel[0], nativeRules::MetamagicTargetShape::Unsupported);
+	level = original; // Queries must retain the admitted rejection even after restoration.
+	auto event = cast();
+	auto mechanics = event.getSpell()->battleMechanics(&event);
+	EXPECT_CALL(random, nextInt(testing::_, testing::_)).Times(0);
+	EXPECT_EQ(overflowSupport(*mechanics, {spells::Destination(primary)}), OverflowSupport::Unsupported);
+	EXPECT_FALSE(previewOverflow(*mechanics, {spells::Destination(primary)}));
+	auto effects = std::make_shared<spells::effects::Effects>();
+	auto opaque = std::make_shared<OpaqueOverflowEffect>();
+	for(auto & effectLevel : effects->data) effectLevel.emplace("opaque", opaque);
+	auto condition = std::make_shared<OpaqueOverflowCondition>();
+	spells::BattleSpellMechanics callbacks(&event, effects, condition);
+	EXPECT_EQ(overflowSupport(callbacks, {spells::Destination(primary)}), OverflowSupport::Unsupported);
+	EXPECT_FALSE(previewOverflow(callbacks, {spells::Destination(primary)}));
+	EXPECT_EQ(opaque->targetCalls, 0u);
+	EXPECT_EQ(condition->nativeCalls, 0u);
+}
+INSTANTIATE_TEST_SUITE_P(MalformedRawDescriptor, MetamagicMalformedOverflowPipeline, testing::Values(0, 1, 2));
 TEST_F(MetamagicOverflowPipeline, UnknownEffectAndConditionAreNotExecutedByPureSupportOrMistakenForBlockedZero)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());

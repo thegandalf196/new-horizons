@@ -14,6 +14,7 @@
 #include "../../lib/CStack.h"
 #include "../../lib/mapObjects/army/CStackBasicDescriptor.h"
 #include <limits>
+#include <string_view>
 
 namespace
 {
@@ -21,16 +22,139 @@ using namespace nativeRules;
 JsonNode perks() { return JsonNode(JsonPath::builtin("config/newHorizonsPerks")); }
 JsonNode magic() { return JsonNode(JsonPath::builtin("config/newHorizonsMagic")); }
 
+// Pin the complete v4 roster rather than relabeling installed v6 perks.
+// Source: config/newHorizonsPerks.json at d0647f2e5d (v5 adds only Overflow).
+JsonNode historicalMetamagicPerks()
+{
+	static constexpr std::string_view json = R"json([
+		{
+		  "id": "new-horizons:metamagic.conservedFormula",
+		  "name": "Conserved Formula",
+		  "requires": "basic",
+		  "description": "Refund the actual Mana paid for a valid single-target spell completely resisted by its sole recipient. The Hero Action remains spent.",
+		  "effect": {
+		    "status": "active",
+		    "description": "Refund the actual Mana paid for a valid single-target spell completely resisted by its sole recipient. The Hero Action remains spent."
+		  },
+		  "details": "No refund for cancellation, invalid targets, partial effects, absorption or damage reduced to zero. Combined refunds never exceed actual payment."
+		},
+		{
+		  "id": "new-horizons:metamagic.manaRecycling",
+		  "name": "Mana Recycling",
+		  "requires": "basic",
+		  "description": "Recover Mana from magical effects actually removed during your cast.",
+		  "effect": {
+		    "status": "active",
+		    "description": "Recover Mana from magical effects actually removed during your cast."
+		  },
+		  "details": "Once per original cast, refund min(floor(total normalized removed Mana / 4), floor(actual Mana paid / 2)), respecting Mana capacity and the combined payment cap. Free casts refund zero."
+		},
+		{
+		  "id": "new-horizons:metamagic.disruptiveCasting",
+		  "name": "Disruptive Casting",
+		  "requires": "basic",
+		  "description": "Actual spell damage removes the target's ordinary Defend bonus after the hit.",
+		  "effect": {
+		    "status": "active",
+		    "description": "Actual spell damage removes the target's ordinary Defend bonus after the hit."
+		  },
+		  "details": "Retaliation, spent actions, Wait and unrelated Orders remain unchanged."
+		},
+		{
+		  "id": "new-horizons:metamagic.purgingFormula",
+		  "name": "Purging Formula",
+		  "requires": "basic",
+		  "description": "A successful buff also removes one physical affliction from each actual friendly recipient.",
+		  "effect": {
+		    "status": "active",
+		    "description": "A successful buff also removes one physical affliction from each actual friendly recipient."
+		  },
+		  "details": "Physical removal releases no Metamagic energy. No additional target or selector is introduced."
+		},
+		{
+		  "id": "new-horizons:metamagic.spellSculpting",
+		  "name": "Spell Sculpting",
+		  "requires": "advanced",
+		  "description": "Your damaging hero spells deal no damage to friendly creatures.",
+		  "effect": {
+		    "status": "active",
+		    "description": "Your damaging hero spells deal no damage to friendly creatures."
+		  },
+		  "details": "Includes area, chain and global damage and your owned spell-created hazards; unrelated terrain, enemy spells and ordinary attacks are unchanged."
+		},
+		{
+		  "id": "new-horizons:metamagic.hexWeaving",
+		  "name": "Hex Weaving",
+		  "requires": "advanced",
+		  "description": "Successful non-damaging hostile hero spells also unravel temporary enemy enchantments.",
+		  "effect": {
+		    "status": "active",
+		    "description": "Successful non-damaging hostile hero spells also unravel temporary enemy enchantments."
+		  },
+		  "details": "Uses the same rank-based chance, one attempt per logical effect and separate 10 damage per removed Mana discharge. It cannot recurse."
+		},
+		{
+		  "id": "new-horizons:metamagic.widenSpell",
+		  "name": "Widen Spell",
+		  "requires": "advanced",
+		  "description": "Eligible centrally aimed area spells affect one additional hex ring, without extra Mana cost.",
+		  "effect": {
+		    "status": "active",
+		    "description": "Eligible centrally aimed area spells affect one additional hex ring, without extra Mana cost."
+		  },
+		  "details": "Excludes single-target spells, lines, cones, chains, global or mass spells, and persistent battlefield fields. Force Lance remains single-target."
+		},
+		{
+		  "id": "new-horizons:metamagic.matterbreaker",
+		  "name": "Matterbreaker",
+		  "requires": "advanced",
+		  "description": "Damaging area spells destroy ordinary physical obstacles intersecting their affected area.",
+		  "effect": {
+		    "status": "active",
+		    "description": "Damaging area spells destroy ordinary physical obstacles intersecting their affected area."
+		  },
+		  "details": "Adds no radius, fortification damage, magical-object removal, explosion or permission to target illegal empty hexes."
+		},
+		{
+		  "id": "new-horizons:metamagic.magicalMemory",
+		  "name": "Magical Memory",
+		  "requires": "expert",
+		  "description": "A spell family actually removed by Metamagic cannot be reapplied to that same recipient for the rest of combat.",
+		  "effect": {
+		    "status": "active",
+		    "description": "A spell family actually removed by Metamagic cannot be reapplied to that same recipient for the rest of combat."
+		  },
+		  "details": "Applies to cleansed allied curses and stripped enemy enchantments, including their single and mass variants, regardless of later caster. Does not block unrelated damage or extend durations."
+		},
+		{
+		  "id": "new-horizons:metamagic.arcaneRupture",
+		  "name": "Arcane Rupture",
+		  "requires": "expert",
+		  "description": "Metamagic's separate discharge bypasses magical protection and damage reduction.",
+		  "effect": {
+		    "status": "active",
+		    "description": "Metamagic's separate discharge bypasses magical protection and damage reduction."
+		  },
+		  "details": "The discharge remains 10 damage per removed Mana. Original spell admission, resistance and damage remain unchanged; a fully resisted spell cannot earn a discharge."
+		}
+	])json";
+	return JsonNode(json.data(), json.size(), "historical Metamagic fixture");
+}
+
 JsonNode metamagicProfile(int version)
 {
 	auto source = perks();
+	if(version == 6) return source;
 	auto & policy = source["metamagicPolicy"];
+	policy.Struct().clear();
 	policy["version"].Integer() = version;
-	policy.Struct().erase("arcaneOverflowPercentByRank");
-	policy.Struct().erase("friendlyDamageReductionPercentByRank");
-	policy.Struct().erase("debuffRetryChancePercentByRank");
+	policy["removalChancePercent"].Vector() = {JsonNode(0), JsonNode(20), JsonNode(30), JsonNode(40)};
+	policy["damagePerMana"].Integer() = 10;
+	policy["restorationPerMana"].Integer() = 15;
+	policy["halonRemovalChanceBonusPercent"].Integer() = 5;
 	if(version == 5)
 		policy["arcaneOverflowPercentByRank"].Vector() = {JsonNode(0), JsonNode(25), JsonNode(50), JsonNode(75)};
+	source["skills"]["new-horizons:metamagic"]["perks"] = historicalMetamagicPerks();
 	return source;
 }
 
@@ -111,6 +235,15 @@ TEST(CompiledMetamagicRules, PolicyFourRemainsDistinctAndPolicyFiveAddsOnlyOverf
 		for(const auto hero : {HeroTypeID::NONE, halon})
 			EXPECT_EQ(historical->metamagic().removalChance(rank, hero), current->metamagic().removalChance(rank, hero));
 	}
+	EXPECT_FALSE(historical->metamagic().policy()->optionalRemoval);
+	EXPECT_FALSE(current->metamagic().policy()->optionalRemoval);
+	for(int rank = 0; rank <= 3; ++rank)
+	{
+		EXPECT_EQ(historical->metamagic().friendlyReductionPercent(rank), 0);
+		EXPECT_EQ(current->metamagic().friendlyReductionPercent(rank), 0);
+		EXPECT_EQ(historical->metamagic().debuffRetryPercent(rank), 0);
+		EXPECT_EQ(current->metamagic().debuffRetryPercent(rank), 0);
+	}
 	EXPECT_EQ(current->metamagic().discharge(4), historical->metamagic().discharge(4));
 	EXPECT_EQ(current->metamagic().restoration(4), historical->metamagic().restoration(4));
 	for(size_t key = 0; key < static_cast<size_t>(MetamagicPerk::Count); ++key)
@@ -118,9 +251,9 @@ TEST(CompiledMetamagicRules, PolicyFourRemainsDistinctAndPolicyFiveAddsOnlyOverf
 			historical->metamagic().supports(static_cast<MetamagicPerk>(key)));
 }
 
-TEST(CompiledMetamagicRules, BothCompleteProfilesMatchReaderAndDetachFromChangedDefaults)
+TEST(CompiledMetamagicRules, AllCompleteProfilesMatchReaderAndDetachFromChangedDefaults)
 {
-	for(const int version : {4, 5})
+	for(const int version : {4, 5, 6})
 	{
 		auto source = metamagicProfile(version);
 		const auto owner = CapturedPerkRules::compile(source);
@@ -145,7 +278,7 @@ TEST(CompiledMetamagicRules, InvalidProfilesRejectBeforeReplacingAnExistingOwner
 		mutate(source["metamagicPolicy"]);
 		invalid.push_back(std::move(source));
 	};
-	for(const int version : {4, 5})
+	for(const int version : {4, 5, 6})
 	{
 		for(const auto * field : {"version", "removalChancePercent", "damagePerMana", "restorationPerMana", "halonRemovalChanceBonusPercent"})
 			changed(version, [&](JsonNode & p) { p.Struct().erase(field); });
@@ -154,7 +287,7 @@ TEST(CompiledMetamagicRules, InvalidProfilesRejectBeforeReplacingAnExistingOwner
 		changed(version, [](JsonNode & p) { p["removalChancePercent"].Vector()[0].Integer() = 1; });
 		changed(version, [](JsonNode & p) { p["removalChancePercent"].Vector()[1].Integer() = 21; });
 		changed(version, [](JsonNode & p) { p["unknown"].Integer() = 1; });
-		changed(version, [](JsonNode & p) { p["version"].Integer() = 6; });
+		changed(version, [](JsonNode & p) { p["version"].Integer() = 7; });
 	}
 	changed(4, [](JsonNode & p) { p["arcaneOverflowPercentByRank"].Vector() = {JsonNode(0), JsonNode(25), JsonNode(50), JsonNode(75)}; });
 	changed(5, [](JsonNode & p) { p.Struct().erase("arcaneOverflowPercentByRank"); });
@@ -167,6 +300,24 @@ TEST(CompiledMetamagicRules, InvalidProfilesRejectBeforeReplacingAnExistingOwner
 	}
 	changed(5, [](JsonNode & p) { p["arcaneOverflowPercentByRank"].Vector()[1].Integer() = -1; });
 	changed(5, [](JsonNode & p) { p["arcaneOverflowPercentByRank"].Vector()[3].Integer() = 101; });
+	for(const int version : {4, 5})
+		changed(version, [](JsonNode & p) { p["version"].Integer() = 6; });
+	for(const auto * field : {"arcaneOverflowPercentByRank", "friendlyDamageReductionPercentByRank", "debuffRetryChancePercentByRank"})
+	{
+		changed(6, [&](JsonNode & p) { p.Struct().erase(field); });
+		changed(6, [&](JsonNode & p) { p[field].Vector().pop_back(); });
+		changed(6, [&](JsonNode & p) { p[field].Vector().push_back(JsonNode(100)); });
+		for(size_t rank = 0; rank < 4; ++rank)
+		{
+			changed(6, [&](JsonNode & p) { p[field].Vector()[rank].Integer() += 1; });
+			changed(6, [&](JsonNode & p) { p[field].Vector()[rank] = JsonNode("30"); });
+			changed(6, [&](JsonNode & p) { p[field].Vector()[rank] = JsonNode(30.0); });
+		}
+		changed(6, [&](JsonNode & p) { p[field].Vector()[1].Integer() = -1; });
+		changed(6, [&](JsonNode & p) { p[field].Vector()[3].Integer() = 101; });
+		changed(6, [&](JsonNode & p) { p[field].Vector() = {JsonNode(0), JsonNode(25), JsonNode(50), JsonNode(75)}; });
+	}
+
 	auto published = CapturedPerkRules::compile(metamagicProfile(4));
 	const auto original = published;
 	const auto before = original->document();
@@ -219,19 +370,41 @@ TEST(CompiledMetamagicRules, RetiredPoliciesCannotAcquireOverflowExecution)
 	}
 }
 
-TEST(CompiledMetamagicRules, PerkHandlesBelongToTheirIndependentCapturedOwner)
+TEST(CompiledMetamagicRules, ExactCurrentAndHistoricalPerkHandlesBelongToTheirCapturedOwner)
 {
-	const auto first = CapturedPerkRules::compile(perks());
-	const auto second = CapturedPerkRules::compile(perks());
-	const auto & typed = first->metamagic();
-	for(size_t key = 0; key < static_cast<size_t>(MetamagicPerk::Count); ++key)
+	constexpr std::array historical{
+		MetamagicPerk::ConservedFormula, MetamagicPerk::ManaRecycling, MetamagicPerk::DisruptiveCasting, MetamagicPerk::PurgingFormula,
+		MetamagicPerk::SpellSculpting, MetamagicPerk::HexWeaving, MetamagicPerk::WidenSpell, MetamagicPerk::Matterbreaker,
+		MetamagicPerk::MagicalMemory, MetamagicPerk::ArcaneRupture};
+	constexpr std::array current{
+		MetamagicPerk::ConservedFormula, MetamagicPerk::DisruptiveCasting, MetamagicPerk::UnravelingMagic, MetamagicPerk::ReconstitutingMagic,
+		MetamagicPerk::SpellSculpting, MetamagicPerk::WidenSpells, MetamagicPerk::Levitation, MetamagicPerk::ArcaneBallistics,
+		MetamagicPerk::ArcaneCascade, MetamagicPerk::EmpoweredSpells};
+	for(const int version : {4, 5, 6})
 	{
-		const auto perk = static_cast<MetamagicPerk>(key);
-		ASSERT_TRUE(typed.supports(perk));
-		EXPECT_NE(first->catalogue().definition(typed.perk(perk)), nullptr);
-		EXPECT_EQ(second->catalogue().definition(typed.perk(perk)), nullptr);
+		SCOPED_TRACE(version);
+		const auto source = metamagicProfile(version);
+		const auto first = CapturedPerkRules::compile(source);
+		const auto second = CapturedPerkRules::compile(source);
+		const auto & typed = first->metamagic();
+		const auto & expected = version == 6 ? current : historical;
+		ASSERT_EQ(source["skills"]["new-horizons:metamagic"]["perks"].Vector().size(), 10u);
+		for(size_t entry = 0; entry < expected.size(); ++entry)
+		{
+			const auto * definition = first->catalogue().definition(typed.perk(expected[entry]));
+			ASSERT_NE(definition, nullptr);
+			EXPECT_EQ(definition->requiredRank, entry < 4 ? 1 : entry < 8 ? 2 : 3);
+		}
+		for(size_t key = 0; key < static_cast<size_t>(MetamagicPerk::Count); ++key)
+		{
+			const auto perk = static_cast<MetamagicPerk>(key);
+			const bool supported = std::find(expected.begin(), expected.end(), perk) != expected.end();
+			EXPECT_EQ(typed.supports(perk), supported) << key;
+			EXPECT_EQ(first->catalogue().definition(typed.perk(perk)) != nullptr, supported) << key;
+			EXPECT_EQ(second->catalogue().definition(typed.perk(perk)), nullptr) << key;
+		}
+		EXPECT_THROW(typed.perk(MetamagicPerk::Count), std::out_of_range);
 	}
-	EXPECT_THROW(typed.perk(MetamagicPerk::Count), std::out_of_range);
 }
 
 TEST(CompiledMetamagicRules, ChangedDefaultsAndInactiveCapturesCannotReplaceExistingPolicy)
@@ -342,6 +515,7 @@ TEST(CompiledMetamagicRules, RepeatedSealedQueriesPerformNoAdmissionOrIdentifier
 	Counters counters;
 	Scope scope(counters);
 	const auto owner = CapturedPerkRules::compile(perks());
+	const auto historical = CapturedPerkRules::compile(metamagicProfile(5));
 	const auto world = CapturedRuleDocument::compile(CapturedRuleKind::WorldMagic, magic());
 	ASSERT_GT(counters.count(Event::MetamagicAdmission), 0u);
 	ASSERT_GT(counters.count(Event::MetamagicEnergyAdmission), 0u);
@@ -351,10 +525,11 @@ TEST(CompiledMetamagicRules, RepeatedSealedQueriesPerformNoAdmissionOrIdentifier
 	for(int query = 0; query < 100; ++query)
 	{
 		EXPECT_EQ(policy.removalChance(3, HeroTypeID::NONE), 40);
-		EXPECT_TRUE(policy.supports(MetamagicPerk::ManaRecycling));
+		EXPECT_FALSE(policy.supports(MetamagicPerk::ManaRecycling));
+		EXPECT_TRUE(historical->metamagic().supports(MetamagicPerk::ManaRecycling));
 		EXPECT_EQ(policy.overflowPercent(3), policy.policy()->overflowPercentByRank[3]);
-		EXPECT_EQ(policy.recyclingRefund(true, 20, 12, 0, 100),
-			newHorizonsMetamagic::recyclingRefund(20, 12, 0, 100));
+		EXPECT_EQ(policy.recyclingRefund(true, 20, 12, 0, 100), 0);
+		EXPECT_EQ(historical->metamagic().recyclingRefund(true, 20, 12, 0, 100), 5);
 		EXPECT_NE(table->fuelDefinition(SpellID::HASTE), nullptr);
 	}
 	EXPECT_EQ(counters, sealed);
@@ -417,9 +592,13 @@ TEST(CompiledMetamagicRules, PolicySixCapturesIndependentCoreProcessesAndOptiona
 	const auto & rules = owner->metamagic();
 	ASSERT_NE(rules.policy(), nullptr);
 	ASSERT_TRUE(rules.policy()->optionalRemoval);
+	constexpr std::array expected{0, 30, 45, 60};
+	EXPECT_EQ(rules.policy()->overflowPercentByRank, expected);
+	EXPECT_EQ(rules.policy()->friendlyDamageReductionPercentByRank, expected);
+	EXPECT_EQ(rules.policy()->debuffRetryChancePercentByRank, expected);
 	for(int rank = 1; rank <= 3; ++rank)
 	{
-		const int percent = 15 + 15 * rank;
+		const int percent = expected[rank];
 		EXPECT_EQ(rules.overflowPercent(rank), percent);
 		EXPECT_EQ(rules.friendlyReductionPercent(rank), percent);
 		EXPECT_EQ(rules.debuffRetryPercent(rank), percent);

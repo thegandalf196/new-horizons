@@ -136,10 +136,12 @@ TEST(CapturedRulePool, InvalidTableAdmissionPreservesExistingPool)
 	EXPECT_EQ(pool.document(id, CapturedRuleKind::Mastery), before);
 }
 
-TEST(CapturedRulePool, NewFormatMinimumAndWriterAreCoherent)
+TEST(CapturedRulePool, ConsecratedArmsMinimumAndWriterRejectEarlierFormats)
 {
-	EXPECT_EQ(ESerializationVersion::CURRENT, ESerializationVersion::NEW_HORIZONS_SHARED_CAPTURED_RULES);
-	EXPECT_EQ(ESerializationVersion::MINIMAL, ESerializationVersion::NEW_HORIZONS_SHARED_CAPTURED_RULES);
+	EXPECT_EQ(ESerializationVersion::CURRENT, ESerializationVersion::NEW_HORIZONS_CONSECRATED_ARMS);
+	EXPECT_EQ(ESerializationVersion::MINIMAL, ESerializationVersion::NEW_HORIZONS_CONSECRATED_ARMS);
+	EXPECT_EQ(static_cast<int>(ESerializationVersion::MINIMAL), 1164);
+	EXPECT_LT(ESerializationVersion::NEW_HORIZONS_SHARED_CAPTURED_RULES, ESerializationVersion::MINIMAL);
 	EXPECT_LT(ESerializationVersion::NEW_HORIZONS_SORCERY_RETIREMENT, ESerializationVersion::MINIMAL);
 }
 

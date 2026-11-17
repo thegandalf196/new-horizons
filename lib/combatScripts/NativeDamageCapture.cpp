@@ -220,6 +220,9 @@ std::optional<PreparedUnit> prepareUnit(const battle::Unit & unit, bool shooting
 	facts.firstHealth = unit.getFirstHPleft();
 	facts.maxHealth = unit.getMaxHealth();
 	facts.phantomIntegrity = static_cast<double>(unit.getPhantomIntegrity());
+	// Forecast health transitions refresh these same existing observations.
+	facts.baseAmount = unit.unitBaseAmount();
+	facts.availableHealth = static_cast<double>(unit.getAvailableHealth());
 	facts.shooter = unit.isShooter();
 	facts.creatureKey = creatureKey(unit);
 	return result;

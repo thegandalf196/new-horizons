@@ -22,7 +22,6 @@ std::unique_ptr<StackWithBonuses> StackWithBonuses::prepareEffectDraft(const Hyp
 		? std::make_unique<StackWithBonuses>(prospective ? prospective : owner, ownedReadSource,
 			modifierBaseProgram, modifierBaseEffects)
 		: std::make_unique<StackWithBonuses>(prospective ? prospective : owner, originalUnit);
-	battle::UnitStateValueSnapshot::capture(*this).restore(*prepared);
 	prepared->origBearer = origBearer;
 	prepared->originalUnit = originalUnit;
 	prepared->projectedBearer = projectedBearer;
@@ -42,6 +41,12 @@ std::unique_ptr<StackWithBonuses> StackWithBonuses::prepareEffectDraft(const Hyp
 	prepared->exactLocalSpellEffects = exactLocalSpellEffects;
 	prepared->treeVersionLocal = treeVersionLocal + 1;
 	prepared->modifierQueriesVersion = prepared->treeVersionLocal;
+	// Snapshot context validation needs the CURRENT modifier/profile/count,
+	// not the immutable base used to construct this unpublished receiver.
+	// The shared native value inventory preserves every ledger while keeping
+	// the new receiver's owners; strict snapshot identity/context checks remain.
+	static_cast<battle::CUnitState &>(*prepared) = *this;
+	battle::UnitStateValueSnapshot::capture(*this).restore(*prepared);
 	prepared->preparedEffectBaseVersion = treeVersionLocal;
 	prepared->preparedEffectOriginOwner = owner;
 	return prepared;

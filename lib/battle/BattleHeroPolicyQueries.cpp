@@ -6,6 +6,9 @@
 #include "StdInc.h"
 #include "CBattleInfoEssentials.h"
 #include "IBattleState.h"
+#include "CPlayerBattleCallback.h"
+#include "BattleInfo.h"
+#include <typeinfo>
 
 bool CBattleInfoEssentials::battleDoWeKnowAbout(BattleSide side) const
 {
@@ -39,7 +42,18 @@ VisibleHeroPolicy CBattleInfoEssentials::battleGetVisibleHeroPolicy(BattleSide s
 	if(!getBattle() || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER))
 		return {side, VisibleHeroPolicy::Knowledge::UNAVAILABLE, nullptr};
 	if(!battleDoWeKnowAbout(side))
+	{
+		// Native battle Hero presence is already public through battleHasHero.
+		// Certify absence only in that exact source domain; a custom callback's
+		// missing legacy address never proves that a hidden Hero is absent.
+		if(typeid(*this) == typeid(CPlayerBattleCallback) && typeid(*getBattle()) == typeid(BattleInfo))
+		{
+			const auto observerSide = battleGetMySide();
+			if((observerSide == BattleSide::ATTACKER || observerSide == BattleSide::DEFENDER) && !battleHasHero(side))
+				return {side, VisibleHeroPolicy::Knowledge::KNOWN_ABSENT, nullptr};
+		}
 		return {side, VisibleHeroPolicy::Knowledge::HIDDEN_UNKNOWN, nullptr};
+	}
 	const auto * hero = getBattle()->getSideHero(side);
 	return {side, hero ? VisibleHeroPolicy::Knowledge::VISIBLE_HERO
 		: VisibleHeroPolicy::Knowledge::KNOWN_ABSENT, hero};

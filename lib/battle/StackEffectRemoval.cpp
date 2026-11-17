@@ -6,6 +6,7 @@
 #include "StdInc.h"
 #include "StackEffectRemoval.h"
 #include "ArcaneInspiration.h"
+#include "ConsecratedArms.h"
 #include "NewHorizonsSerpentsEmbrace.h"
 #include "../bonuses/Bonus.h"
 namespace battle
@@ -28,6 +29,11 @@ bool matchesStackEffectRemoval(const Bonus & selected, const Bonus & candidate)
 		&& selected.valType == candidate.valType
 		&& selected.effectRange == candidate.effectRange
 		&& (selected.type != BonusType::CONFUSION_PENDING || selected.spellCasterOwner == candidate.spellCasterOwner);
+	// Prayer components share source and numerical fields across distinct prayers.
+	// Removing one captured prayer must preserve the other five identities.
+	if(consecratedArms::identity(&selected) || consecratedArms::identity(&candidate))
+		return legacyMatch && selected.statusIdentity == candidate.statusIdentity
+			&& selected.stacking == candidate.stacking;
 	if(!legacyMatch || selected.type != BonusType::BIND_EFFECT)
 		return legacyMatch;
 	if(!newHorizonsSerpentsEmbrace::isMarker(selected) && !newHorizonsSerpentsEmbrace::isMarker(candidate))

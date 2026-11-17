@@ -8,13 +8,19 @@
 #include <stdexcept>
 namespace
 {
+const battle::Unit * selectedRole(const std::shared_ptr<HypotheticBattle> & source, BattleSide side)
+{
+	const auto units = source->battleGetUnitsIf([side](const battle::Unit * unit)
+	{ return unit->unitSide() == side && unit->unitSlot() == SlotID(0); });
+	if(units.size() != 1) throw std::logic_error("Selected fixture requires exactly one unit in its side's first slot");
+	return units.front();
+}
 AttackPossibility selectedPreview(const std::shared_ptr<HypotheticBattle> & source, bool ranged, BattleHex from)
 {
-	const auto ids = source->forecastState()->orderedIds();
 	DamageCache cache; cache.buildDamageCache(source, BattleSide::ATTACKER);
 	const auto world = std::make_shared<const VisibleCandidateWorld>(source);
-	return VisibleCandidateWorld::evaluate(world, source->battleGetUnitByID(ids.front()),
-		source->battleGetUnitByID(ids.back()), 0, ranged, from, cache);
+	return VisibleCandidateWorld::evaluate(world, selectedRole(source, BattleSide::ATTACKER),
+		selectedRole(source, BattleSide::DEFENDER), 0, ranged, from, cache);
 }
 void fullAgreement(const HypotheticBattle & actual, HypotheticBattle & native)
 {
@@ -34,10 +40,18 @@ void fullAgreement(const HypotheticBattle & actual, HypotheticBattle & native)
 TEST_F(ForecastNativeAdapterTest, SelectedMovementActualEntryMatchesSharedNativeAuthorityAndCompleteReaders)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
-	const auto id = parent->battleGetAllUnits(false).front()->unitId();
+	const auto attackers = parent->battleGetUnitsIf([](const battle::Unit * unit)
+	{ return unit->unitSide() == BattleSide::ATTACKER && unit->unitSlot() == SlotID(0); });
+	const auto defenders = parent->battleGetUnitsIf([](const battle::Unit * unit)
+	{ return unit->unitSide() == BattleSide::DEFENDER && unit->unitSlot() == SlotID(0); });
+	ASSERT_EQ(attackers.size(), 1u); ASSERT_EQ(defenders.size(), 1u);
+	const auto id = attackers.front()->unitId(), targetId = defenders.front()->unitId();
 	parent->getForUpdate(id)->setPosition(BattleHex(2, 5));
 	ASSERT_TRUE(forecast::NativeAdapter::prepareExchange(*parent));
 	const auto action = selectedPreview(parent, false, BattleHex(6, 5));
+	ASSERT_NE(action.attack.attacker, nullptr); ASSERT_NE(action.attack.defender, nullptr);
+	ASSERT_EQ(action.attack.attacker->unitId(), id);
+	ASSERT_EQ(action.attack.defender->unitId(), targetId);
 	ASSERT_TRUE(action.forecastSource);
 	auto child = std::make_shared<HypotheticBattle>(environment.get(), parent);
 	auto sibling = std::make_shared<HypotheticBattle>(environment.get(), parent);
@@ -62,11 +76,19 @@ TEST_F(ForecastNativeAdapterTest, SelectedMovementActualEntryMatchesSharedNative
 TEST_F(ForecastNativeAdapterTest, SelectedResourceActualEntryPreservesNativeFieldsHpAndAcceptedFocusWithoutDoublePayment)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare(false, false, false, "core:archer"));
-	const auto id = parent->battleGetAllUnits(false).front()->unitId();
+	const auto attackers = parent->battleGetUnitsIf([](const battle::Unit * unit)
+	{ return unit->unitSide() == BattleSide::ATTACKER && unit->unitSlot() == SlotID(0); });
+	const auto defenders = parent->battleGetUnitsIf([](const battle::Unit * unit)
+	{ return unit->unitSide() == BattleSide::DEFENDER && unit->unitSlot() == SlotID(0); });
+	ASSERT_EQ(attackers.size(), 1u); ASSERT_EQ(defenders.size(), 1u);
+	const auto id = attackers.front()->unitId(), targetId = defenders.front()->unitId();
 	auto root = parent->getForUpdate(id); root->setPosition(BattleHex(2, 5));
 	root->addUnitBonus(newHorizonsFocusMagic::enchantment(*root, SpellID(SpellID::decode(newHorizonsFocusMagic::SPELL))));
 	ASSERT_TRUE(forecast::NativeAdapter::prepareExchange(*parent));
 	auto action = selectedPreview(parent, true, BattleHex(2, 5));
+	ASSERT_NE(action.attack.attacker, nullptr); ASSERT_NE(action.attack.defender, nullptr);
+	ASSERT_EQ(action.attack.attacker->unitId(), id);
+	ASSERT_EQ(action.attack.defender->unitId(), targetId);
 	ASSERT_TRUE(action.forecastSource); ASSERT_TRUE(action.attackerState);
 	action.attackerState->archeryCrossfireAttackers = {21, 22};
 	action.attackerState->archeryCrossfireDefenders = {31, 32};
@@ -98,7 +120,7 @@ TEST_F(ForecastNativeAdapterTest, SelectedReceiptRejectsForeignSnapshotAndChange
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	ASSERT_TRUE(forecast::NativeAdapter::prepareExchange(*parent));
-	const auto id = parent->forecastState()->orderedIds().front();
+	const auto id = selectedRole(parent, BattleSide::ATTACKER)->unitId();
 	const auto action = selectedPreview(parent, false, parent->battleGetUnitByID(id)->getPosition());
 	auto child = std::make_shared<HypotheticBattle>(environment.get(), parent);
 	forecast::NativeAdapter::forkExchange(*parent, *child);
@@ -107,7 +129,7 @@ TEST_F(ForecastNativeAdapterTest, SelectedReceiptRejectsForeignSnapshotAndChange
 	auto foreign = action.attackerState->acquireState(); // Same ID/profile; not the retained AP object.
 	EXPECT_THROW(selectedAttackReceipt::restoreResources(action, *foreign, actor, actor, *child), std::logic_error);
 	EXPECT_EQ(actor->save(), values); EXPECT_TRUE(child->forecastState()->sameSnapshot(model)); EXPECT_EQ(child->stackStates, map);
-	int64_t damage = 1; auto changed = parent->getForUpdate(parent->forecastState()->orderedIds().back());
+	int64_t damage = 1; auto changed = parent->getForUpdate(action.attack.defender->unitId());
 	ASSERT_TRUE(forecast::NativeAdapter::damage(*parent, *changed, damage, battle::DamageProvenance::SPELL, nullptr));
 	EXPECT_THROW(forecast::NativeAdapter::validateAcceptedSnapshot(*action.attackerState, action), std::logic_error);
 	EXPECT_THROW(selectedAttackReceipt::commitMovement(action, *actor, *child), std::logic_error);
@@ -116,10 +138,18 @@ TEST_F(ForecastNativeAdapterTest, SelectedReceiptRejectsForeignSnapshotAndChange
 TEST_F(ForecastNativeAdapterTest, LateSelectedMovementBudgetRefusalRollsBackLazyPeersFlagsCacheAndObserver)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
-	const auto id = parent->battleGetAllUnits(false).front()->unitId();
+	const auto attackers = parent->battleGetUnitsIf([](const battle::Unit * unit)
+	{ return unit->unitSide() == BattleSide::ATTACKER && unit->unitSlot() == SlotID(0); });
+	const auto defenders = parent->battleGetUnitsIf([](const battle::Unit * unit)
+	{ return unit->unitSide() == BattleSide::DEFENDER && unit->unitSlot() == SlotID(0); });
+	ASSERT_EQ(attackers.size(), 1u); ASSERT_EQ(defenders.size(), 1u);
+	const auto id = attackers.front()->unitId(), targetId = defenders.front()->unitId();
 	parent->getForUpdate(id)->setPosition(BattleHex(2, 5));
 	ASSERT_TRUE(forecast::NativeAdapter::prepareExchange(*parent));
 	const auto action = selectedPreview(parent, false, BattleHex(6, 5));
+	ASSERT_NE(action.attack.attacker, nullptr); ASSERT_NE(action.attack.defender, nullptr);
+	ASSERT_EQ(action.attack.attacker->unitId(), id);
+	ASSERT_EQ(action.attack.defender->unitId(), targetId);
 	auto child = std::make_shared<HypotheticBattle>(environment.get(), parent);
 	forecast::NativeAdapter::forkExchange(*parent, *child);
 	auto actor = child->getForUpdate(id);
@@ -160,7 +190,7 @@ TEST_F(ForecastNativeAdapterTest, CompactSelectedOverwatchRefusesBeforeAllScalar
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	ASSERT_TRUE(forecast::NativeAdapter::prepareExchange(*parent));
-	const auto id = parent->forecastState()->orderedIds().front();
+	const auto id = selectedRole(parent, BattleSide::ATTACKER)->unitId();
 	auto action = selectedPreview(parent, false, parent->battleGetUnitByID(id)->getPosition());
 	action.overwatchHits.push_back({id, BattleHex(6, 5), 1});
 	auto child = std::make_shared<HypotheticBattle>(environment.get(), parent);
@@ -191,7 +221,7 @@ TEST_F(ForecastNativeAdapterTest, AcceptedSnapshotProofRejectsSameIdOwnedForeign
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	ASSERT_TRUE(forecast::NativeAdapter::prepareExchange(*parent));
-	const auto id = parent->forecastState()->orderedIds().front();
+	const auto id = selectedRole(parent, BattleSide::ATTACKER)->unitId();
 	const auto action = selectedPreview(parent, false, parent->battleGetUnitByID(id)->getPosition());
 	EXPECT_NO_THROW(forecast::NativeAdapter::validateAcceptedSnapshot(*action.attackerState, action));
 	auto foreign = std::make_shared<HypotheticBattle>(environment.get(), visible); // Independent capture: same numeric IDs.
@@ -217,7 +247,7 @@ TEST_F(ForecastNativeAdapterTest, AcceptedSnapshotProofRejectsSameIdOwnedForeign
 TEST_F(ForecastNativeAdapterTest, LateSelectedResourceBudgetRefusalRollsBackFocusVectorsAmmoAndAllOwnedState)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare(false, false, false, "core:archer"));
-	const auto id = parent->battleGetAllUnits(false).front()->unitId();
+	const auto id = selectedRole(parent, BattleSide::ATTACKER)->unitId();
 	auto root = parent->getForUpdate(id); root->setPosition(BattleHex(2, 5));
 	root->addUnitBonus(newHorizonsFocusMagic::enchantment(*root, SpellID(SpellID::decode(newHorizonsFocusMagic::SPELL))));
 	ASSERT_TRUE(forecast::NativeAdapter::prepareExchange(*parent));
@@ -258,7 +288,7 @@ TEST_F(ForecastNativeAdapterTest, ProducerSealRejectsSwappedSameProgramAncestorA
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	ASSERT_TRUE(forecast::NativeAdapter::prepareExchange(*parent));
-	const auto id = parent->forecastState()->orderedIds().front();
+	const auto id = selectedRole(parent, BattleSide::ATTACKER)->unitId();
 	auto ancestor = parent->getForUpdate(id)->acquireState();
 	auto sibling = std::make_shared<HypotheticBattle>(environment.get(), parent);
 	forecast::NativeAdapter::forkExchange(*parent, *sibling);
@@ -296,7 +326,7 @@ TEST_F(ForecastNativeAdapterTest, ForestAmbushRefreshUsesTrustedSealedProducerAn
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	ASSERT_TRUE(forecast::NativeAdapter::prepareExchange(*parent));
-	const auto id = parent->forecastState()->orderedIds().front();
+	const auto id = selectedRole(parent, BattleSide::ATTACKER)->unitId();
 	auto preview = selectedPreview(parent, false, parent->battleGetUnitByID(id)->getPosition());
 	auto child = std::make_shared<HypotheticBattle>(environment.get(), parent);
 	forecast::NativeAdapter::forkExchange(*parent, *child);

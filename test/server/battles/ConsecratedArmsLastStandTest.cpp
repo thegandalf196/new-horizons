@@ -29,8 +29,16 @@ protected:
 				std::string(newHorizonsArmorer::SKILL_ID) + "." + suffix});
 		}
 		ASSERT_TRUE(newHorizonsArmorer::hasLastStand(defenderSideHero));
+		defenderSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode(consecratedArms::SKILL)),
+			MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+		ASSERT_TRUE(defenderSideHero->setCreature(SlotID(0), creatureByName("core:pikeman"), 100));
 		startBattle();
-		target = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(rightHex), 100);
+		for(const auto & stack : battle()->stacks)
+			if(stack->unitSide() == BattleSide::DEFENDER && stack->unitSlot() == SlotID(0))
+				target = stack.get();
+		ASSERT_NE(target, nullptr);
+		ASSERT_EQ(target->getBattleStartMaximumAggregateHP(), int64_t{100} * target->getMaxHealth());
+		target->setPosition(BattleHex(rightHex));
 		beginCombat();
 		source = battle()->battleActiveUnit();
 		ASSERT_NE(source, nullptr);

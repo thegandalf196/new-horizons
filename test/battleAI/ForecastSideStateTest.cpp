@@ -168,6 +168,13 @@ class AbsentSideSource : public BattleStateMock
 {
 public:
 	std::shared_ptr<const nativeRules::CapturedRuleDocument> magic;
+	mutable unsigned profileReads = 0;
+	const newHorizonsElementalAttunement::Profile & getElementalAttunementProfile(BattleSide) const override
+	{
+		++profileReads;
+		static const newHorizonsElementalAttunement::Profile unrelated{.rank = 3};
+		return unrelated;
+	}
 	const JsonNode & getMagicRules() const override { return magic->document(); }
 	std::shared_ptr<const nativeRules::CapturedRuleDocument> getCapturedMagicRules() const override { return magic; }
 	PlayerColor getSidePlayer(BattleSide side) const override { return PlayerColor(static_cast<int>(side)); }
@@ -195,6 +202,17 @@ TEST(ForecastSideState, KnownAbsenceStaysDistinctFromHiddenAndNeverReadsHiddenHe
 	ASSERT_TRUE(absent); ASSERT_TRUE(hidden);
 	EXPECT_EQ(absent->knowledge, VisibleHeroPolicy::Knowledge::KNOWN_ABSENT);
 	EXPECT_EQ(hidden->knowledge, VisibleHeroPolicy::Knowledge::HIDDEN_UNKNOWN);
+	EXPECT_TRUE(absent->attunementKnown);
+	EXPECT_EQ(absent->attunement, newHorizonsElementalAttunement::Profile{});
+	EXPECT_FALSE(hidden->attunementKnown);
+	EXPECT_EQ(source.profileReads, 0u);
+	const auto knownAbsent = std::make_shared<const SideState>(*absent);
+	EXPECT_TRUE(SideTransitions::setAttunement(knownAbsent, knownAbsent->attunementMask));
+	EXPECT_FALSE(SideTransitions::setAttunement(knownAbsent, 1));
+	auto legacyMask = std::make_shared<SideState>(*absent);
+	legacyMask->attunementMask = 4; // Preserve an already captured value without authorizing a new activation.
+	EXPECT_TRUE(SideTransitions::setAttunement(legacyMask, 4));
+	EXPECT_FALSE(SideTransitions::setAttunement(legacyMask, 2));
 	EXPECT_FALSE(absent->mana); EXPECT_FALSE(hidden->mana); EXPECT_FALSE(absent->ledger); EXPECT_FALSE(hidden->ledger);
 	const auto unknown = std::make_shared<const SideState>(*hidden);
 	EXPECT_FALSE(SideTransitions::setAttunement(unknown, 1));

@@ -51,7 +51,7 @@ protected:
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
 		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 	}
-	void prepare()
+	void prepare(bool originalDefenders = false)
 	{
 		startGame();
 		attackerSideHero->setHeroType(HeroTypeID(HeroTypeID::decode("core:neela")));
@@ -61,11 +61,42 @@ protected:
 		giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
 		attackerSideHero->addSpellToSpellbook(SpellID::MAGIC_ARROW);
 		setTestSpellPointTotal(attackerSideHero, 100);
+		const auto pikeman = CreatureID(CreatureID::decode("core:pikeman"));
+		if(originalDefenders)
+		{
+			defenderSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode(consecratedArms::SKILL)),
+				MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+			ASSERT_TRUE(defenderSideHero->setCreature(SlotID(0), pikeman, 10));
+			ASSERT_TRUE(defenderSideHero->setCreature(SlotID(1), pikeman, 100));
+			ASSERT_TRUE(defenderSideHero->setCreature(SlotID(2), pikeman, 100));
+		}
 		startBattle();
-		primary = addStack(BattleSide::DEFENDER, CreatureID(CreatureID::decode("core:pikeman")), BattleHex(10, 5), 10);
-		second = addStack(BattleSide::DEFENDER, CreatureID(CreatureID::decode("core:pikeman")), BattleHex(11, 5), 100);
-		third = addStack(BattleSide::DEFENDER, CreatureID(CreatureID::decode("core:pikeman")), BattleHex(10, 6), 100);
+		if(originalDefenders)
+		{
+			for(const auto & unit : battle()->stacks)
+				if(unit->unitSide() == BattleSide::DEFENDER)
+				{
+					if(unit->unitSlot() == SlotID(0)) primary = unit.get();
+					if(unit->unitSlot() == SlotID(1)) second = unit.get();
+					if(unit->unitSlot() == SlotID(2)) third = unit.get();
+				}
+		}
+		else
+		{
+			primary = addStack(BattleSide::DEFENDER, pikeman, BattleHex(10, 5), 10);
+			second = addStack(BattleSide::DEFENDER, pikeman, BattleHex(11, 5), 100);
+			third = addStack(BattleSide::DEFENDER, pikeman, BattleHex(10, 6), 100);
+		}
 		ASSERT_NE(primary, nullptr); ASSERT_NE(second, nullptr); ASSERT_NE(third, nullptr);
+		if(originalDefenders)
+		{
+			primary->setPosition(BattleHex(10, 5));
+			second->setPosition(BattleHex(11, 5));
+			third->setPosition(BattleHex(10, 6));
+			for(const auto * unit : {primary, second, third})
+				ASSERT_EQ(unit->getBattleStartMaximumAggregateHP(),
+					static_cast<int64_t>(unit->unitBaseAmount()) * unit->getMaxHealth());
+		}
 		beginCombat();
 	}
 	void learn(const char * basic, const char * advanced = nullptr, const char * expert = nullptr)
@@ -181,6 +212,34 @@ TEST_F(MetamagicV2, DisruptionRemovesThreeFiniteShotsAndConvertedFocusWithoutGra
 	EXPECT_EQ(newHorizonsFocusMagic::charges(*third), 0);
 	EXPECT_FALSE(newHorizonsFocusMagic::converted(*third));
 	EXPECT_TRUE(server.casts.empty());
+}
+TEST_F(MetamagicV2, RetryEligibilityRecognizesLegacySlowButExcludesMassAndDisplacement)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	EXPECT_CALL(random, nextInt(testing::_, testing::_)).Times(0);
+	for(int level = 0; level <= 3; ++level)
+	{
+		SCOPED_TRACE(level);
+		auto ordinary = cast(SpellID::SLOW); ordinary.setSpellLevel(level);
+		auto mechanics = ordinary.getSpell()->battleMechanics(&ordinary);
+		EXPECT_TRUE(newHorizonsMetamagic::singleTargetSpell(*mechanics));
+		EXPECT_EQ(newHorizonsMetamagic::debuffRetryChance(*mechanics), 60);
+		auto forcedMass = ordinary; forcedMass.forceMassive = true;
+		auto forced = forcedMass.getSpell()->battleMechanics(&forcedMass);
+		EXPECT_TRUE(forced->isMassive());
+		EXPECT_EQ(newHorizonsMetamagic::debuffRetryChance(*forced), 0);
+		auto selectedMass = ordinary; selectedMass.setMassSlow(true);
+		auto selected = selectedMass.getSpell()->battleMechanics(&selectedMass);
+		EXPECT_TRUE(selected->isMassive());
+		EXPECT_EQ(newHorizonsMetamagic::debuffRetryChance(*selected), 0);
+		auto recall = cast(SpellID(SpellID::decode("new-horizons:forcedRecall")));
+		recall.setSpellLevel(level);
+		auto displacement = recall.getSpell()->battleMechanics(&recall);
+		EXPECT_EQ(newHorizonsMetamagic::debuffRetryChance(*displacement), 0);
+	}
+	auto damage = cast();
+	auto damaging = damage.getSpell()->battleMechanics(&damage);
+	EXPECT_EQ(newHorizonsMetamagic::debuffRetryChance(*damaging), 0);
 }
 TEST_F(MetamagicV2, RetryOnResistedSlowUsesOneAdditionalNormalCheckAndOneCompletedCast)
 {
@@ -299,7 +358,7 @@ TEST_F(MetamagicV2, DisabledCoreQueriesDoNotReadmitRulesOrResolveSpellRegistries
 }
 TEST_F(MetamagicV2, ForceLancePrimaryBypassesAbsorptionAndSpillUsesTheSecondaryShield)
 {
-	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_NO_FATAL_FAILURE(prepare(true));
 	const consecratedArms::Policy policy{3, 0};
 	for(auto * target : {primary, second})
 	{
@@ -309,6 +368,8 @@ TEST_F(MetamagicV2, ForceLancePrimaryBypassesAbsorptionAndSpillUsesTheSecondaryS
 		state->gainRedemptionShield(10000, 5000, false);
 		nativeEvents::changeUnit({authority, *battle(), nullptr, nullptr, JsonNode(), {}}, *state);
 	}
+	EXPECT_EQ(primary->getRedemptionShieldCapacity(), primary->getBattleStartMaximumAggregateHP() / 5);
+	EXPECT_EQ(second->getRedemptionShieldCapacity(), second->getBattleStartMaximumAggregateHP() / 5);
 	ASSERT_GT(primary->getRedemptionShieldHitPoints(), 0);
 	const auto shield2 = second->getRedemptionShieldHitPoints();
 	ASSERT_GT(shield2, 0);
@@ -387,7 +448,25 @@ TEST_F(MetamagicV2, ConservedFormulaRefundsOnlyAfterFinalResistanceAndKeepsTheHe
 	ASSERT_GT(cost, 0);
 	const int round = battle()->getRound();
 	const auto before = battle()->getHeroActionAllowances(BattleSide::ATTACKER).remainingCounts(round);
+	int resistanceObservations = 0;
+	ON_CALL(authority, apply(testing::Matcher<CPackForClient &>(testing::_))).WillByDefault([&](CPackForClient & packet)
+	{
+		if(const auto * accepted = dynamic_cast<const BattleSpellCast *>(&packet))
+		{
+			++resistanceObservations;
+			EXPECT_EQ(accepted->spellID, SpellID(SpellID::SLOW));
+			EXPECT_TRUE(accepted->resistedCres.contains(primary->unitId()));
+			EXPECT_TRUE(accepted->affectedCres.empty());
+			// The final result belongs to this active cast's resistance journal.
+			const auto cachedDraws = draws;
+			EXPECT_TRUE(mechanics->wouldResist(primary));
+			EXPECT_TRUE(mechanics->wouldResist(primary));
+			EXPECT_EQ(draws, cachedDraws);
+		}
+		gameHandler->sendAndApply(packet);
+	});
 	mechanics->cast(&authority, {spells::Destination(primary)});
+	EXPECT_EQ(resistanceObservations, 1);
 	EXPECT_EQ(draws, eagerDraws + 1);
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
 	ASSERT_EQ(server.casts.size(), 1u);
@@ -398,7 +477,8 @@ TEST_F(MetamagicV2, ConservedFormulaRefundsOnlyAfterFinalResistanceAndKeepsTheHe
 	EXPECT_EQ(before.orderActions, after.orderActions);
 	EXPECT_TRUE(mechanics->getResolvedHeroRecipients().empty());
 	const auto finalDraws = draws;
-	EXPECT_TRUE(mechanics->wouldResist(primary));
+	// cast() clears its journal and detaches authoritative RNG on return.
+	EXPECT_FALSE(mechanics->wouldResist(primary));
 	EXPECT_EQ(draws, finalDraws);
 }
 TEST_F(MetamagicV2, CreatureBindAndIndifferentStoneGazeAddNoResistanceDrawWithoutUnshakable)

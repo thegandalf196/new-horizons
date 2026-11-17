@@ -280,6 +280,8 @@ set(battleAI_HEADERS
 	ForecastPerkPolicy.h
 	ForecastNativeReadViewInternal.h
 	ForecastNativeReadView.h
+	ForecastSkillSpecialtyAdmission.h
+	ForecastAmmoCartAdmission.h
 	ForecastNativePreparation.h
 	ForecastNativeAdapter.h
 	ForecastHeroActionRouting.h
