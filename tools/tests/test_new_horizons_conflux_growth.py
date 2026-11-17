@@ -73,7 +73,7 @@ class ConfluxGrowthDataTest(unittest.TestCase):
             ['dwellingLvl4', 'dwellingUpLvl4'], ['dwellingLvl5', 'dwellingUpLvl5'],
             ['dwellingLvl7', 'dwellingUpLvl7']])
         self.assertEqual(slots['modify@3']['modify@3'], ['horde1'])
-        self.assertEqual(slots['modify@3']['appendItems'], [['horde2']])
+        self.assertEqual(slots['modify@3'], {'modify@3': ['horde1']})
         original = load('config/factions/conflux.json')['conflux']['town']
         self.assertEqual(
             original['hallSlots'][3][0], ['dwellingLvl1', 'dwellingUpLvl1'])
@@ -207,17 +207,22 @@ class ConfluxGrowthDataTest(unittest.TestCase):
             with self.subTest(creature=key):
                 validator.validate(creatures[key])
 
-    def test_vault_uses_one_standard_horde_producer_for_the_fire_upgrade_line(self):
-        self.assertEqual(self.town['horde']['modify@2'], 3)
-        vault = self.town['buildings']['horde2']
-        self.assertEqual(vault['name'], 'Vault of Ashes')
-        self.assertEqual(vault['requires'], ['dwellingLvl4'])
-        self.assertEqual(vault['cost#override']['gold'], 1000)
-        self.assertEqual(vault['cost#override']['ore'], 5)
-        self.assertNotIn('bonuses', vault, 'Do not double-count Horde growth')
+    def test_conflux_has_no_second_horde_building_or_fire_growth_producer(self):
+        original = load('config/factions/conflux.json')['conflux']['town']
+        self.assertEqual(original['horde'], [0, -1])
+        self.assertNotIn('horde', self.town, 'Keep the original disabled second Horde mapping')
+        self.assertIsNone(original['buildings']['horde2'])
+        self.assertIsNone(self.town['buildings']['horde2'])
+        self.assertIsNone(original['buildings']['horde2Upgr'])
+        self.assertNotIn('horde2Upgr', self.town['buildings'])
+        self.assertNotIn('horde2', original['structures'])
+        self.assertNotIn('horde2', self.town['structures'])
+        self.assertNotIn('horde2', json.dumps(original['hallSlots']))
+        self.assertNotIn('horde2', json.dumps(self.town['hallSlots']))
+        self.assertNotIn('Vault of Ashes', json.dumps(self.town))
         line = load('config/newHorizonsCreatureCategories.json')['growthLines']['core:fireElemental']
         self.assertEqual(line['weeklyBaseGrowth'], 4)
-        self.assertEqual(line['hordeGrowthOverride'], 2)
+        self.assertNotIn('hordeGrowthOverride', line)
         self.assertEqual(line['members'], ['core:fireElemental', 'core:energyElemental'])
 
     def test_original_building_icons_are_referenced_not_replaced_or_extracted(self):

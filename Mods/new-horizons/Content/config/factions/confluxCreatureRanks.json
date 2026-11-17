@@ -2,17 +2,13 @@
 	"core:conflux": {
 		"town": {
 			"buildingsIcons": "NH_conflux_buildings",
-			"horde": {
-				"modify@2": 3
-			},
 			"creatures": {
 				"modify@1": [ "pixie", "sprite" ],
 				"modify@6": [ "new-horizons:wisp", "new-horizons:wispUpgrade" ]
 			},
 			"hallSlots": {
 				"modify@3": {
-					"modify@3": [ "horde1" ],
-					"appendItems": [ [ "horde2" ] ]
+					"modify@3": [ "horde1" ]
 				},
 				"modify@4": [ [ "dwellingLvl1", "dwellingUpLvl1" ], [ "dwellingLvl6", "dwellingUpLvl6" ], [ "dwellingLvl2", "dwellingUpLvl2" ], [ "dwellingLvl3", "dwellingUpLvl3" ] ],
 				"modify@5": [ [ "dwellingLvl4", "dwellingUpLvl4" ], [ "dwellingLvl5", "dwellingUpLvl5" ], [ "dwellingLvl7", "dwellingUpLvl7" ] ]
@@ -181,20 +177,7 @@
 				"horde1": {
 					"description": "The Garden of Life increases weekly Pixie and Sprite growth by 4."
 				},
-				"horde2": {
-					"name": "Vault of Ashes",
-					"description": "The Vault of Ashes increases weekly Fire and Plasma Elemental growth by 2.",
-					"requires": [ "dwellingLvl4" ],
-					"cost#override": {
-						"gold": 1000,
-						"wood": 0,
-						"ore": 5,
-						"mercury": 0,
-						"sulfur": 0,
-						"crystal": 0,
-						"gems": 0
-					}
-				}
+				"horde2": null
 			}
 		}
 	}

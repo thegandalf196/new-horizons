@@ -53,7 +53,7 @@
 		"mathVersion": 1
 	},
 	"sourceDocument": "new-horizons-docs:canon/game-design.md",
-	"sourceSha256": "8191cfda875b7fa443fa2254238d443c87907419e8c976df86a0a35096e5245e",
+	"sourceSha256": "7a2e1b815d20911fee80dff9c45b835d5dfdd594e6f3abd3d4cf6d95a8856e9f",
 	"maxSkillChoices": 2,
 	"maxPerkChoices": 2,
 	"maxPerksPerSkill": 3,

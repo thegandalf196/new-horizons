@@ -238,7 +238,6 @@
 		},
 		"core:fireElemental": {
 			"weeklyBaseGrowth": 4,
-			"hordeGrowthOverride": 2,
 			"members": ["core:fireElemental", "core:energyElemental"]
 		}
 	}

@@ -15,6 +15,7 @@ read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 - Simplifies the four-offer level-up display and confirms a perk with one click.
 - Revises Sorcery and Academy Metamagic, including Focus Magic, Forced Recall
   and Force Lance. Retires Counterspell and the previous time-stasis mechanics.
+- Removes the Conflux Vault of Ashes and its additional Fire Elemental growth.
 - Reworks captured-rule storage, perk lookups and combat AI evaluation. Full
   integration, rendered gameplay and comparative performance acceptance remain
   pending; no speedup is claimed here.

@@ -61,7 +61,7 @@ class ElementalRebalanceDataTest(unittest.TestCase):
                 growth = self.categories['growthLines']['core:' + base]
                 self.assertEqual(growth['weeklyBaseGrowth'], 4)
                 self.assertEqual(growth['members'], ['core:' + base, 'core:' + upgrade])
-        self.assertEqual(self.categories['growthLines']['core:fireElemental']['hordeGrowthOverride'], 2)
+        self.assertNotIn('hordeGrowthOverride', self.categories['growthLines']['core:fireElemental'])
 
     def test_all_eight_altars_have_exact_costs_and_only_authored_prerequisites(self):
         for level, rare in enumerate(('gems', 'mercury', 'sulfur', 'crystal'), start=2):
