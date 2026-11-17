@@ -86,6 +86,21 @@ TEST_F(ForecastStateTest, ConsecutiveNativeHealthMutationsRetainForkAndSiblingIs
 	expected.heal(healing, EHealLevel::RESURRECT, EHealPower::ONE_BATTLE);
 	ASSERT_TRUE(forecast::Transitions::applyHealing(branch, id, 39, EHealLevel::RESURRECT, EHealPower::ONE_BATTLE, nullptr));
 	sameHealth(branch.unit(id)->health, expected);
+	// Retain a snapshot after private writes, then detach once and continue
+	// writing without another owner. Both paths preserve earlier observations.
+	const auto held = branch;
+	const auto heldHealth = held.unit(id)->health.available();
+	const auto heldRevision = held.revision();
+	for(const auto request : {3, 5})
+	{
+		ASSERT_TRUE(forecast::Transitions::applyDamage(branch, id, request,
+			battle::DamageProvenance::SPELL, false, nullptr));
+		EXPECT_EQ(held.unit(id)->health.available(), heldHealth);
+		EXPECT_EQ(held.revision(), heldRevision);
+		EXPECT_FALSE(branch.sameSnapshot(held));
+	}
+	EXPECT_EQ(branch.revision(), heldRevision + 2);
+	EXPECT_EQ(branch.unit(id)->health.available(), heldHealth - 8);
 	EXPECT_EQ(sibling.unit(id)->health.available(), parentState.unit(id)->health.available());
 	EXPECT_EQ(incoming->getAvailableHealth(), parentState.unit(id)->health.available());
 }

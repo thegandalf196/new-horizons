@@ -23,7 +23,7 @@ struct State::Layer
 	uint64_t revision = 0;
 	explicit Layer(size_t size) : units(size), dirty(size, Clean) {}
 };
-State::State(std::shared_ptr<const Root> root, std::shared_ptr<const Layer> layer, Counters counters)
+State::State(std::shared_ptr<const Root> root, std::shared_ptr<Layer> layer, Counters counters)
 	: root(std::move(root)), layer(std::move(layer)), counters(counters), round(this->root->source.round) {}
 State State::capture(SourceIdentity source, std::vector<UnitInput> units, EventMask planned)
 {
@@ -161,12 +161,17 @@ void State::commit(UnitId id, UnitDelta state, uint32_t dirty, bool neighborhood
 		(*replacement)[slot] = state.readView;
 		readers = std::move(replacement);
 	}
-	auto next = std::make_shared<Layer>(*layer);
-	next->units[slot] = std::make_shared<const UnitDelta>(std::move(state));
+	// Finish all throwing work before touching even an exclusive private layer.
+	// Copies of State, snapshot guards and MovePermit retain shared ownership,
+	// so their exact layer/revision forces the ordinary copy-on-write path.
+	auto value = std::make_shared<const UnitDelta>(std::move(state));
+	const auto nextRevision = revision() + 1;
+	auto next = layer.use_count() == 1 ? layer : std::make_shared<Layer>(*layer);
+	next->units[slot] = std::move(value);
 	next->dirty[slot] |= dirty;
 	if(neighborhood) for(auto & flags : next->dirty) flags |= Adjacency | Damage | Occupancy;
-	next->revision = revision() + 1;
-	layer = std::move(next); // Allocation/copy completed before the branch changes.
+	next->revision = nextRevision;
+	layer = std::move(next);
 	readerViews = std::move(readers);
 	counters.add(&Counters::committedTransitions);
 	if(neighborhood) counters.add(&Counters::neighborhoodInvalidations);

@@ -122,10 +122,23 @@ std::shared_ptr<const OwnedBonusQueryFrame> CapturedModifiers::refreshQueries(co
 	const auto priorCount = previous ? previous->binding().count : queryBinding->count;
 	if(priorCount != binding.count && !intersects(changes, Change::Count)) return {};
 	if(previous && previous->binding() == binding) return previous;
-	auto current = materialize(binding.count, changes, previous ? &previous->scalar : nullptr);
-	if(!current) return {};
 	try
 	{
+		std::optional<Materialized> current;
+		if(previous && std::ranges::none_of(*recipes, [&](const auto & recipe)
+			{ return intersects(recipe.dependencies(), changes); }))
+		{
+			// These recipient overlays contain fixed post-collector values. Their
+			// identity is already bound by ownsQueryFrame above. Reuse the stable
+			// reduction, then give this frame fresh owned query/removal handles.
+			current.emplace();
+			current->scalar = previous->scalar;
+			current->stacked = previous->stacked;
+			current->unstacked = previous->unstacked;
+			current->origins = previous->outputOrigins;
+		}
+		else current = materialize(binding.count, changes, previous ? &previous->scalar : nullptr);
+		if(!current) return {};
 		auto result = std::make_shared<OwnedBonusQueryFrame>();
 		result->captureIdentity = captureIdentity;
 		result->leafBaseIdentity = leafBaseIdentity;

@@ -353,3 +353,81 @@ TEST(BonusDependencyQueryFrameTest, FixedSourceLeaseDoesNotAdmitOtherFramesOrFor
 	EXPECT_FALSE(base->appendRecipientLayer(remove,{},*current,foreignLease.get()));
 	EXPECT_EQ(current->valOfBonuses(BonusType::PHYSICAL_DEFENSE),9);
 }
+
+
+TEST(BonusDependencyQueryFrameTest, StaticCountRefreshKeepsReductionAndFreshRemovalEntitlements)
+{
+	auto source = input();
+	auto staticAttack = std::make_shared<Bonus>(*source.local[1]);
+	staticAttack->updater.reset();
+	staticAttack->val = 14;
+	source.local[1] = staticAttack;
+	auto graph = OwnedRecipientBonusGraph::fromOwnedInputs({source}, 0);
+	auto context = binding();
+	const auto root = captureNativeModifiers(*graph, graph->root()).bindQueries(context, {});
+	ASSERT_TRUE(root);
+	const auto initial = root->refreshQueries(context, Change::None);
+	ASSERT_TRUE(initial);
+	auto added = emptyLayer();
+	added.added.push_back(row(BonusType::PHYSICAL_DEFENSE, 9));
+	const auto program = root->appendRecipientLayer(added, {}, *initial);
+	ASSERT_TRUE(program);
+	auto previous = program->refreshQueries(context, Change::None);
+	ASSERT_TRUE(previous);
+	const auto original = previous;
+	const auto held = previous->getAllBonuses(Selector::type()(BonusType::PHYSICAL_DEFENSE));
+	ASSERT_EQ(held->size(), 1u);
+	for(const int count : {8, 0, 15})
+	{
+		context.count = count;
+		const auto current = program->refreshQueries(context, Change::Count, previous);
+		ASSERT_TRUE(current);
+		EXPECT_NE(current, previous);
+		EXPECT_TRUE(program->ownsQueryFrame(*current));
+		EXPECT_TRUE(current->matches(context.recipientId, count, context.creature));
+		EXPECT_EQ(current->valOfBonuses(BonusType::PRIMARY_SKILL), 14);
+		EXPECT_TRUE(current->mayHaveBonusType(BonusType::PHYSICAL_DEFENSE));
+		const auto now = current->getAllBonuses(Selector::type()(BonusType::PHYSICAL_DEFENSE));
+		ASSERT_EQ(now->size(), 1u);
+		EXPECT_NE((*now)[0].get(), (*held)[0].get());
+		EXPECT_EQ((*now)[0]->val, 9);
+		auto removed = emptyLayer();
+		removed.removed.insert((*held)[0]);
+		EXPECT_FALSE(program->appendRecipientLayer(removed, {}, *current));
+		removed.removed.clear();
+		removed.removed.insert((*now)[0]);
+		const auto replacement = program->appendRecipientLayer(removed, {}, *current);
+		ASSERT_TRUE(replacement);
+		const auto after = replacement->refreshQueries(context, Change::None);
+		ASSERT_TRUE(after);
+		EXPECT_FALSE(after->hasBonusOfType(BonusType::PHYSICAL_DEFENSE));
+		EXPECT_EQ(program->refreshQueries(context, Change::None, current), current);
+		EXPECT_FALSE(program->refreshQueries(context, Change::ActiveEffects, current));
+		previous = current;
+	}
+	graph.reset();
+	EXPECT_EQ((*held)[0]->val, 9);
+	EXPECT_EQ(original->binding().count, 21);
+	EXPECT_EQ(original->valOfBonuses(BonusType::PRIMARY_SKILL), 14);
+}
+
+TEST(BonusDependencyQueryFrameTest, CountDependentRefreshStillRebuildsCurrentScalarPayloads)
+{
+	auto graph = OwnedRecipientBonusGraph::fromOwnedInputs({input()}, 0);
+	auto context = binding();
+	const auto program = captureNativeModifiers(*graph, graph->root()).bindQueries(context, {});
+	ASSERT_TRUE(program);
+	const auto first = program->refreshQueries(context, Change::None);
+	ASSERT_TRUE(first);
+	const int before = first->valOfBonuses(BonusType::PRIMARY_SKILL);
+	context.count = 8;
+	const auto casualty = program->refreshQueries(context, Change::Count, first);
+	ASSERT_TRUE(casualty);
+	EXPECT_LT(casualty->valOfBonuses(BonusType::PRIMARY_SKILL), before);
+	EXPECT_EQ(first->valOfBonuses(BonusType::PRIMARY_SKILL), before);
+	const auto oldRows = first->getAllBonuses(Selector::type()(BonusType::PRIMARY_SKILL));
+	const auto newRows = casualty->getAllBonuses(Selector::type()(BonusType::PRIMARY_SKILL));
+	ASSERT_EQ(oldRows->size(), 1u);
+	ASSERT_EQ(newRows->size(), 1u);
+	EXPECT_NE((*oldRows)[0].get(), (*newRows)[0].get());
+}

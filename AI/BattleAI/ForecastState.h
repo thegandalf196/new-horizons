@@ -149,19 +149,20 @@ struct Counters
 class Transitions;
 /// Immutable root plus a flat copy-on-write pointer array of changed-unit
 /// deltas. Raw facts remain shared; fork isolates only compact native reader
-/// observations and lazy receiver slots. Mutations copy a bounded array
-/// of handles, never a provider graph or all unit ledgers. Lookup has no parent
+/// observations and lazy receiver slots. A shared layer detaches on its first
+/// mutation; an exclusive private layer reuses its bounded array of handles.
+/// Neither path copies a provider graph or all unit ledgers. Lookup has no parent
 /// chain. Sparse public IDs map to contiguous slots, never allocation sizes.
 class DLL_LINKAGE State
 {
 	struct Root;
 	struct Layer;
 	std::shared_ptr<const Root> root;
-	std::shared_ptr<const Layer> layer;
+	std::shared_ptr<Layer> layer;
 	std::shared_ptr<const std::vector<std::shared_ptr<const NativeReadView>>> readerViews;
 	mutable Counters counters;
 	int32_t round;
-	State(std::shared_ptr<const Root> root, std::shared_ptr<const Layer> layer, Counters counters);
+	State(std::shared_ptr<const Root> root, std::shared_ptr<Layer> layer, Counters counters);
 	friend class Transitions;
 	friend class NativeAdapter;
 	void commit(UnitId id, UnitDelta state, uint32_t dirty, bool neighborhood);
