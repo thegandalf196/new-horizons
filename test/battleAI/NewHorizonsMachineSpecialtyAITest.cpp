@@ -7,6 +7,9 @@
  * Full text of license available in license.txt file, in main folder
  */
 #include "StdInc.h"
+#include "../../AI/BattleAI/BattleEvaluator.h"
+#include "../../AI/BattleAI/SearchBudget.h"
+#include "../../AI/BattleAI/SearchIncumbent.h"
 #include "../server/battles/NewHorizonsMachineSpecialtyFixture.h"
 #include "../../AI/BattleAI/AttackPossibility.h"
 #include "../../AI/BattleAI/BattleAI.h"
@@ -360,4 +363,59 @@ TEST_F(NewHorizonsMachineSpecialtyAITest, ActualCatapultCallbackUsesEnhancedTerm
 		EXPECT_EQ(branch->battleGetCatapultStructuralDamage(copy, 0), 0);
 	}
 	// Actual battle-bound machine identity and callback routing; no wall attack is claimed.
+}
+
+TEST_F(NewHorizonsMachineSpecialtyAITest, ExhaustedOptionalEvaluationUsesLegalMasterGunnerPass)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare("core:torosar", 0));
+	forceActorFirst();
+	beginCombat();
+	ASSERT_EQ(battle()->battleActiveUnit(), actor);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		BattleAction::makeHeroCommand(BattleSide::ATTACKER, HeroCommand::HOLD_THE_LINE)));
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		BattleAction::makeShotAttack(actor, victim)));
+	ASSERT_TRUE(battle()->battleHasPendingRangedFollowUp(actor));
+	auto branch = simulation();
+	branch->setSearchBudget(std::make_shared<battleSearch::SearchBudget>(battleSearch::WorkAmounts{}));
+	auto recorded = std::make_shared<MachineAIRecordingCallback>();
+	recorded->onBattleStarted(battle());
+	DamageCache damage;
+	const auto live = gameState()->saveToMemory();
+	const auto serverRng = rngBytes(*gameHandler->randomizer);
+	const auto defaultRng = rngBytes(CRandomGenerator::getDefault());
+	BattleEvaluator evaluator(environment, recorded, branch, damage, actor, PlayerColor(0),
+		BattleID(0), BattleSide::ATTACKER, 1.0f, 2);
+	const auto selected = evaluator.selectStackAction(actor);
+	EXPECT_EQ(selected.actionType, EActionType::NO_ACTION);
+	EXPECT_EQ(battleSearch::visibleIncumbent(environment.get(), callback, actor).actionType, EActionType::NO_ACTION);
+	EXPECT_EQ(gameState()->saveToMemory(), live);
+	EXPECT_EQ(rngBytes(*gameHandler->randomizer), serverRng);
+	EXPECT_EQ(rngBytes(CRandomGenerator::getDefault()), defaultRng);
+	EXPECT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), selected));
+	EXPECT_FALSE(battle()->battleHasPendingRangedFollowUp(actor));
+}
+
+TEST_F(NewHorizonsMachineSpecialtyAITest, PursuitOnlyIncumbentDeclinesMovementWithoutARejectedDefend)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare("core:torosar", 0));
+	forceActorFirst();
+	beginCombat();
+	ASSERT_EQ(battle()->battleActiveUnit(), actor);
+	actor->pursuitMovementRemaining = 1;
+	auto branch = simulation();
+	auto work = std::make_shared<battleSearch::SearchBudget>(battleSearch::WorkAmounts{});
+	branch->setSearchBudget(work);
+	DamageCache damage;
+	const auto live = gameState()->saveToMemory();
+	auto recorded = std::make_shared<MachineAIRecordingCallback>();
+	recorded->onBattleStarted(battle());
+	BattleEvaluator evaluator(environment, recorded, branch, damage, actor, PlayerColor(0),
+		BattleID(0), BattleSide::ATTACKER, 1.0f, 2);
+	const auto fallback = evaluator.selectStackAction(actor);
+	EXPECT_EQ(fallback.actionType, EActionType::NO_ACTION);
+	EXPECT_EQ(battleSearch::visibleIncumbent(environment.get(), callback, actor).actionType, EActionType::NO_ACTION);
+	EXPECT_EQ(gameState()->saveToMemory(), live);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), fallback));
+	EXPECT_EQ(actor->pursuitMovementRemaining, 0);
 }

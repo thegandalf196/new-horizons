@@ -51,6 +51,35 @@ class ArtSourceTransitionTest(unittest.TestCase):
         captured = (ROOT / 'client/windows/NewHorizonsCapturedPerkIcons.h').read_text()
         self.assertIn('!newHorizonsEstates::usesRevisedPolicy(capturedRules)', captured)
 
+    def test_consecrated_arms_neutral_roster_preserves_historical_divine_bindings(self):
+        path = 'client/windows/NewHorizonsPerkIcons.h'
+        current = (ROOT / path).read_text()
+        pattern = r'\{"(new-horizons:[^"]+)", "([^"]+)"\}'
+        bindings = dict(re.findall(pattern, current))
+        historical = dict(re.findall(pattern, read_historical_source(path)))
+        roster = json.loads((ROOT / 'config/newHorizonsPerks.json').read_text())
+        ids = {row['id'] for row in roster['skills']['new-horizons:divineMandate']['perks']}
+        self.assertEqual(len(ids), 10)
+        self.assertEqual({bindings[identity] for identity in ids}, {'NH_perk_neutral'})
+        old = {identity: icon for identity, icon in historical.items()
+               if identity.startswith('new-horizons:divineMandate.')}
+        self.assertTrue(old)
+        self.assertFalse(ids.intersection(old))
+        self.assertEqual({identity: icon for identity, icon in bindings.items()
+                          if identity.startswith('new-horizons:divineMandate.')},
+                         {**old, **dict.fromkeys(ids, 'NH_perk_neutral')})
+        with (ROOT / 'docs/NH_UI_ASSET_INVENTORY.csv').open() as stream:
+            inventory = list(csv.DictReader(stream))
+        for identity in ids:
+            rows = [row for row in inventory if row['Item / ID'].endswith('(' + identity + ')')]
+            self.assertEqual(len(rows), 1)
+            self.assertEqual(rows[0]['Area'], 'Active perk')
+            self.assertEqual(rows[0]['Art'], 'Not done')
+            self.assertIn('NH_perk_neutral', rows[0]['Live binding / source'])
+        for row in inventory:
+            if any(row['Item / ID'].endswith('(' + identity + ')') for identity in old):
+                self.assertNotEqual(row['Area'], 'Active perk')
+
     def test_transition_records_cannot_silently_change(self):
         with mock.patch.object(Path, 'read_bytes', return_value=b'{"unreviewed":true}'):
             with self.assertRaises(ValueError):

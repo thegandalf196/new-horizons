@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "ConsecratedArmsCombat.h"
 #include "NewHorizonsFocusMagic.h"
 #include "NewHorizonsSylvanTacticsV2.h"
 #include "NewHorizonsPassiveSpecialties.h"
@@ -2418,6 +2419,7 @@ DamageEstimation CBattleInfoCallback::calculateDmgRange(const BattleAttackInfo &
 	auto result = script->calculate(*this, payload);
 	battle::applyMagicalAttackReduction(*this, info, result);
 	spells::applyIncomingMagicalCreatureDamage(info, result);
+	consecratedArms::adjustRetaliationDamage(info, result);
 	result.attackerOrderCause = preparation.causes.attackerOrderCause;
 	result.defenderOrderCause = preparation.causes.defenderOrderCause;
 	result.attackerOrderCauses = std::move(preparation.causes.attackerOrderCauses);

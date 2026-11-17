@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "ConsecratedArmsOrder.h"
 #include "TimedEffectValueTransitions.h"
 #include "BattleRecallAnchors.h"
 #include "NewHorizonsCommandResources.h"
@@ -1412,6 +1413,7 @@ void BattleInfo::nextRound()
 
 		const bool serpentSourceWasAlive = s->alive();
 		s->afterNewRound(isFirstRound, true);
+		consecratedArms::refreshDivinePurpose(*this, *s);
 		if(serpentSourceWasAlive && !s->alive())
 			newHorizonsSerpentsEmbrace::releaseDeathBindings(*this, *s);
 	}

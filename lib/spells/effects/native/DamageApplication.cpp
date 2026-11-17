@@ -1,6 +1,8 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../../SpellDamageContext.h"
 #include "Damage.h"
+#include "../../NewHorizonsMetamagicOverflow.h"
 #include "../../ISpellMechanics.h"
 #include "../../CSpell.h"
 #include "../../NewHorizonsImplosion.h"
@@ -46,7 +48,9 @@ std::pair<int64_t, int64_t> beforeExecution(const Mechanics & mechanics, const b
 	const auto health = copy->getAvailableHealth();
 	const auto count = copy->getCount();
 	auto amount = mechanics.adjustEffectValueBeforeExecution(&unit);
-	copy->damage(amount);
+	std::optional<battle::VowCasualtyQuota> quota;
+	const auto damageContext = previewSpellDamageContext(mechanics, unit, quota);
+	copy->damageWithContext(amount, false, battle::DamageProvenance::SPELL, damageContext);
 	return {health - copy->getAvailableHealth(), count - copy->getCount()};
 }
 
@@ -111,7 +115,8 @@ std::pair<int64_t, int64_t> Damage::collateral(const nativeEvents::Context & con
 		blocked();
 		return {};
 	}
-	const auto result = nativeEvents::damage(context, *recipient, adjusted, mechanics->getUnitCaster(), true, nullptr, parameters["destroyRemains"].Bool());
+	const auto damageContext = mechanics->spellDamageContext(*recipient);
+	const auto result = nativeEvents::damage(context, *recipient, adjusted, mechanics->getUnitCaster(), true, nullptr, parameters["destroyRemains"].Bool(), false, nullptr, &damageContext);
 	clearFrozen();
 	MetaString message;
 	message.appendTextID("new-horizons.combat.handOfFate.collateral");
@@ -141,7 +146,11 @@ void Damage::apply(ServerCallback * server, const Mechanics * mechanics, const T
 		const auto origin = unit->getPosition();
 		const auto amount = damageForTarget(index, mechanics, unit);
 		const auto baseline = describeChanges && reaper ? beforeExecution(*mechanics, *unit) : std::pair<int64_t, int64_t>{};
-		const auto [damage, killed] = nativeEvents::damage(context, *unit, amount, mechanics->getUnitCaster(), true, nullptr, parameters["destroyRemains"].Bool());
+		newHorizonsMetamagic::OverflowPrimaryDamage witness;
+		const auto damageContext = mechanics->spellDamageContext(*unit);
+		const auto [damage, killed] = nativeEvents::damage(context, *unit, amount, mechanics->getUnitCaster(), true, nullptr, parameters["destroyRemains"].Bool(), false, &witness, &damageContext);
+		if(!indirect && mechanics->isGenuineHeroCast() && !mechanics->isRunicReflectionShare())
+			server->recordMetamagicOverflowPrimary(witness);
 		if(mechanics->getSpell()->isMagical() && !indirect)
 		{
 			if(const auto * current = context.battle.battleGetUnitByID(id)) nativeEvents::clearFrozen(context, *current);

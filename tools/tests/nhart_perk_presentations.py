@@ -3,6 +3,11 @@ import json
 import re
 
 OVERLOAD_SUFFIX = '\n\n/// Presentation-only distinction for a reused stable ID. Use the authored label\n/// from saved definitions or the immutable offer; never look up installed rules.\n/// Missing/renamed/translated labels conservatively retain the historical icon.\ninline const std::string & newHorizonsPerkIcon(const std::string & perkId, std::string_view capturedName)\n{\n\tif(perkId == "new-horizons:sorceryMagic.countermage" && capturedName == "Arcane Ballistics")\n\t{\n\t\tstatic const std::string arcaneBallistics = "NH_perk_arcane_ballistics";\n\t\treturn arcaneBallistics;\n\t}\n\treturn newHorizonsPerkIcon(perkId);\n}\n'
+CURRENT_OVERLOAD_SUFFIX = OVERLOAD_SUFFIX.replace(
+    'if(perkId == "new-horizons:sorceryMagic.countermage" && capturedName == "Arcane Ballistics")',
+    'if(perkId == "new-horizons:sorceryMagic.countermage"\n'
+    '\t\t&& (capturedName == "Arcane Ballistics" || capturedName == "Arcane Arsenal"))')
+CURRENT_CAPTURED_NAMES = ('Arcane Ballistics', 'Arcane Arsenal')
 CONDITION = ('new-horizons:sorceryMagic.countermage', 'Arcane Ballistics',
              'NH_perk_arcane_ballistics', 'NH_perk_countermage')
 
@@ -73,11 +78,14 @@ def header_before_reworked_perks(header):
 def header_before_perk_presentation(header):
     if 'std::string_view' not in header and 'NH_perk_arcane_ballistics' not in header:
         return header
-    if not header.endswith(OVERLOAD_SUFFIX) or header.count(OVERLOAD_SUFFIX) != 1:
+    suffixes = [suffix for suffix in (OVERLOAD_SUFFIX, CURRENT_OVERLOAD_SUFFIX)
+                if header.endswith(suffix) and header.count(suffix) == 1]
+    if len(suffixes) != 1:
         raise ValueError('Unrecognized conditional perk presentation overload')
+    suffix = suffixes[0]
     if header.count('#include <string_view>\n') != 1:
         raise ValueError('Unrecognized conditional perk presentation include')
-    return header[:-len(OVERLOAD_SUFFIX)].replace('#include <string_view>\n', '', 1)
+    return header[:-len(suffix)].replace('#include <string_view>\n', '', 1)
 
 
 def source_bound_icon(header, identity, captured_name):
@@ -89,7 +97,8 @@ def source_bound_icon(header, identity, captured_name):
     stable_id, name, icon, historical = CONDITION
     if bindings.get(stable_id) != historical:
         raise ValueError('Historical ID-only binding changed')
-    return icon if (identity, captured_name) == (stable_id, name) else bindings.get(identity, 'NH_perk_neutral')
+    names = CURRENT_CAPTURED_NAMES if header.endswith(CURRENT_OVERLOAD_SUFFIX) else (name,)
+    return icon if identity == stable_id and captured_name in names else bindings.get(identity, 'NH_perk_neutral')
 
 
 def validate_perk_presentation(row, header, captured_header=None, alliance_header=None):

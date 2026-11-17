@@ -13,7 +13,8 @@ class CapturedPerkRules;
 enum class MetamagicPerk : uint8_t
 {
 	ConservedFormula, ManaRecycling, DisruptiveCasting, PurgingFormula,
-	SpellSculpting, HexWeaving, WidenSpell, Matterbreaker, MagicalMemory, ArcaneRupture, Count
+	SpellSculpting, HexWeaving, WidenSpell, Matterbreaker, MagicalMemory, ArcaneRupture,
+	UnravelingMagic, ReconstitutingMagic, WidenSpells, Levitation, ArcaneBallistics, ArcaneCascade, EmpoweredSpells, Count
 };
 
 /// Immutable definitions from ONE admitted perk owner. Rank, selections, RNG,
@@ -31,6 +32,9 @@ public:
 	std::optional<SecondarySkill> skill() const { return capturedSkill; }
 	bool isHalon(HeroTypeID casterType) const { return halon.hasValue() && casterType == halon; }
 	int removalChance(int liveRank, HeroTypeID casterType) const;
+	int overflowPercent(int metamagicRank) const;
+	int friendlyReductionPercent(int rank) const;
+	int debuffRetryPercent(int rank) const;
 	const newHorizonsHeroes::PerkId & perk(MetamagicPerk key) const;
 	bool supports(MetamagicPerk key) const;
 	int64_t discharge(int64_t actuallyRemovedMana) const;
@@ -44,11 +48,15 @@ public:
 /// A WorldMagic document owns this table; battle/forecast copies share that exact
 /// immutable owner. Registry definitions supply identities/kinds, NEVER costs.
 /// No source callback, global cache, mutable rank or JSON survives into queries.
+enum class MetamagicTargetShape : uint8_t { Single, Multiple, Unsupported };
 struct MetamagicSpellIdentity
 {
 	SpellID family;
 	bool positive = false;
 	bool negative = false;
+	std::array<MetamagicTargetShape, 4> effectCardinalityByLevel{};
+	std::array<bool, 4> singleTargetByLevel{};
+	std::array<bool, 4> debuffByLevel{};
 };
 
 class DLL_LINKAGE CompiledMetamagicEnergy final

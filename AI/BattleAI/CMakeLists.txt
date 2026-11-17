@@ -1,4 +1,54 @@
 set(battleAI_SRCS
+	StackPreparedModifierSource.cpp
+	StackPreparedEffectState.cpp
+	StackOwnedReadSource.cpp
+	StackOwnedReadPublication.cpp
+	StackOwnedModifierQueries.cpp
+	StackOwnedEffectSource.cpp
+	StackModifierSource.cpp
+	StackFrozenScoringSource.cpp
+	SpellTargetPurify.cpp
+	SpellTargetGeometry.cpp
+	SpellTargetBudgetFallback.cpp
+	SelectedReceiptNativeReplay.cpp
+	SearchIncumbent.cpp
+	HeroHealthOutcomeKernel.cpp
+	HeroCandidateSelection.cpp
+	HeroCandidateSearch.cpp
+	ForecastUnitUpdateIntegration.cpp
+	ForecastStateTransitions.cpp
+	ForecastState.cpp
+	ForecastSpellPayment.cpp
+	ForecastSideIntegration.cpp
+	ForecastSelectedReceiptIntegration.cpp
+	ForecastRoundIntegration.cpp
+	ForecastReadViewCapture.cpp
+	ForecastReadSourceCapability.cpp
+	ForecastReadPublication.cpp
+	ForecastPerkPolicy.cpp
+	ForecastOwnedSourceAdmission.cpp
+	ForecastOwnedNativeLoan.cpp
+	ForecastOrderIntegration.cpp
+	ForecastNativeReadView.cpp
+	ForecastNativeReadEnvironment.cpp
+	ForecastNativePreparation.cpp
+	ForecastNativeAdapter.cpp
+	ForecastMovementIntegration.cpp
+	ForecastHeroActionRouting.cpp
+	ForecastHeroActionAdmission.cpp
+	ForecastFocusIntegration.cpp
+	ForecastExchangeIntegration.cpp
+	ForecastEffectIntegration.cpp
+	ForecastEffectHealth.cpp
+	ForecastEffectCapture.cpp
+	ForecastActivationIntegration.cpp
+	ForecastAcceptedSnapshotSeal.cpp
+	ForecastAcceptedSnapshotAdmission.cpp
+	ForecastAcceptedAttackIntegration.cpp
+	BattleEvaluatorOverflow.cpp
+	BattleEvaluatorCreatureRouting.cpp
+	BattleEvaluatorAttackSelection.cpp
+	ArcaneOverflowValue.cpp
 	HeroSpellRefinement.cpp
 	FlatDamageInputs.cpp
 	ForecastSideState.cpp
@@ -114,6 +164,9 @@ set(battleAI_SRCS
 		PassiveDivineFuryValue.cpp
 		PassiveDivineMandateProjection.cpp
 		PassiveDivineMandateValue.cpp
+		ConsecratedArmsValue.cpp
+		ConsecratedStrikeProjection.cpp
+		SpellApplicationChance.cpp
 		TemporaryGatingAI.cpp
 		TemporaryGatingProjection.cpp
 		HeroActionSelection.cpp
@@ -212,6 +265,29 @@ set(battleAI_SRCS
 )
 
 set(battleAI_HEADERS
+	StackOwnedReadSource.h
+	SpellTargetBudgetFallback.h
+	SelectionStageTiming.h
+	SearchWorkDiagnostics.h
+	SearchIncumbent.h
+	MovementExchangeTiming.h
+	HypotheticUnitEnvironment.h
+	HeroCandidateSearch.h
+	ForecastStateTransitions.h
+	ForecastState.h
+	ForecastSpellPayment.h
+	ForecastPreparedRound.h
+	ForecastPerkPolicy.h
+	ForecastNativeReadViewInternal.h
+	ForecastNativeReadView.h
+	ForecastNativePreparation.h
+	ForecastNativeAdapter.h
+	ForecastHeroActionRouting.h
+	ForecastHeroActionAdmission.h
+	ForecastEffectLimits.h
+	ForecastAcceptedSnapshotSeal.h
+	CandidateCompletion.h
+	ArcaneOverflowValue.h
 	HeroSpellRefinement.h
 	FlatDamageInputs.h
 	ForecastSideState.h
@@ -303,6 +379,8 @@ set(battleAI_HEADERS
 		PassiveDivineFuryValue.h
 		PassiveDivineMandateProjection.h
 		PassiveDivineMandateValue.h
+		ConsecratedArmsValue.h
+		ConsecratedStrikeProjection.h
 		TemporaryGatingAI.h
 		TemporaryGatingProjection.h
 		HeroActionSelection.h

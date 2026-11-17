@@ -23,14 +23,15 @@ struct StrikeDebuff
 	BonusType type;
 	BonusSubtypeID subtype;
 	BonusValueType valueType;
+	creatureAbility::Native nativeIdentity;
 };
 const std::array<StrikeDebuff, 2> debuffs{{
 	{"core:calh", "core:gog", "new-horizons:ordinary-creature-specialty:core:calh:scorchingImpact",
 		"scorchingImpact", "Scorching Impact", true, BonusType::GENERAL_ATTACK_REDUCTION,
-		BonusSubtypeID(), BonusValueType::BASE_NUMBER},
+		BonusSubtypeID(), BonusValueType::BASE_NUMBER, creatureAbility::Native::SCORCHING_IMPACT},
 	{"core:nymus", "core:pitFiend", "new-horizons:ordinary-creature-specialty:core:nymus:cruelOverseer",
 		"cruelOverseer", "Cruel Overseer", false, BonusType::PRIMARY_SKILL,
-		BonusSubtypeID(PrimarySkill::DEFENSE), BonusValueType::ADDITIVE_VALUE}
+		BonusSubtypeID(PrimarySkill::DEFENSE), BonusValueType::ADDITIVE_VALUE, creatureAbility::Native::CRUEL_OVERSEER}
 }};
 }
 bool isEffect(const Bonus * bonus)
@@ -83,6 +84,8 @@ std::shared_ptr<Bonus> primaryHit(const CBattleInfoCallback & battle, const Batt
 		effect->stacking = row.identity;
 		effect->statusIdentity = row.status;
 		effect->statusTags = {BonusStatusTag::DEBUFF, BonusStatusTag::NON_TRANSFERABLE};
+		effect->abilityDescriptor = creatureAbility::nativeAffliction(row.nativeIdentity,
+			creatureAbility::Family::CREATURE_ABILITY, battle.battleGetOwner(attack.attacker));
 		effect->description.appendRawString(std::string(row.name) + ": "
 			+ (row.shooting ? "ordinary attack damage -" : "Defense -") + std::to_string(amount)
 			+ (row.shooting ? "%" : "")

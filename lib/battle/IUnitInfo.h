@@ -25,10 +25,15 @@ namespace battle
 
 class Unit;
 class UnitCreatureResolver;
+class OwnedUnitStateLoanSource;
 
 class DLL_LINKAGE IUnitEnvironment
 {
 public:
+	/// Optional OWNING acquire capability, distinct from gameplay environment
+	/// contributions. Absence keeps native/reference acquisition unchanged.
+	/// A present capability must return an owned state or throw, never borrow.
+	virtual const OwnedUnitStateLoanSource * ownedUnitStateLoanSource() const noexcept { return nullptr; }
 	/// nullopt retains native spell lookup. An owned environment must either
 	/// classify within its captured identity domain or explicitly refuse.
 	virtual bool unitHasAmmoCart(const Unit * unit) const = 0; //todo: handle ammo cart with bonus system

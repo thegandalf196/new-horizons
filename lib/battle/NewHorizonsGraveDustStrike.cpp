@@ -41,9 +41,14 @@ newHorizonsOrdinaryStrike::EffectPlan plan(const CBattleInfoCallback & battle,
 	const int value = coefficient(battle, attack);
 	if(value <= 0) return {};
 	auto result = newHorizonsGraveDust::prepareApplication(*attack.defender, value, battle.battleGetOwner(attack.attacker));
+	const auto descriptor = creatureAbility::nativeAffliction(creatureAbility::Native::GRAVE_DUST,
+		creatureAbility::Family::CREATURE_ABILITY, battle.battleGetOwner(attack.attacker));
 	for(auto & record : result.add)
+	{
+		record.abilityDescriptor = descriptor;
 		record.description.appendRawString("Grave Dust: received eligible healing is reduced by " + std::to_string(value)
 			+ " basis points until the next accepted Creature Action completes, including Wait");
+	}
 	return result;
 }
 }

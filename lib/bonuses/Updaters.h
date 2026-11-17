@@ -43,6 +43,8 @@ public:
 class DLL_LINKAGE GrowsWithLevelUpdater : public IUpdater
 {
 public:
+	/// Shared scalar kernel for native execution and owned numerical forecasts.
+	int valueForLevel(int value, std::optional<int> level) const;
 	int valPer20 = 0;
 	int stepSize = 1;
 
@@ -65,6 +67,8 @@ class DLL_LINKAGE TimesHeroLevelUpdater : public IUpdater
 {
 	int stepSize = 1;
 public:
+	/// Shared scalar kernel for native execution and owned numerical forecasts.
+	int valueForLevel(int value, std::optional<int> level) const;
 	TimesHeroLevelUpdater() = default;
 	TimesHeroLevelUpdater(int stepSize)
 		: stepSize(stepSize)
@@ -92,6 +96,8 @@ class DLL_LINKAGE TimesStackSizeUpdater : public IUpdater
 	int stepSize = 1;
 	int stepValue = 1;
 public:
+	/// Shared scalar kernel for native execution and owned numerical forecasts.
+	int valueForCount(int count) const;
 	TimesStackSizeUpdater() = default;
 	TimesStackSizeUpdater(int minimum, int maximum, int stepSize, int stepValue)
 		: minimum(minimum)
@@ -147,6 +153,8 @@ class DLL_LINKAGE TimesStackLevelUpdater : public IUpdater
 	std::shared_ptr<Bonus> apply(const std::shared_ptr<Bonus> & b, int level) const;
 
 public:
+	/// Shared scalar kernel for native execution and owned numerical forecasts.
+	int valueForLevel(int value, std::optional<int> level) const;
 	std::shared_ptr<Bonus> createUpdatedBonus(const std::shared_ptr<Bonus> & b, const BonusEvaluationContext & context) const override;
 	std::string toString() const override;
 	JsonNode toJsonNode() const override;
@@ -157,6 +165,8 @@ class DLL_LINKAGE DivideStackLevelUpdater : public IUpdater
 	std::shared_ptr<Bonus> apply(const std::shared_ptr<Bonus> & b, int level) const;
 
 public:
+	/// Shared scalar kernel for native execution and owned numerical forecasts.
+	int valueForLevel(int value, std::optional<int> level) const;
 	// when non-zero, value is computed as val * (heroLevel / stackLevel) with H3 rounding instead of val / stackLevel
 	int heroLevel = 0;
 
@@ -176,6 +186,8 @@ class DLL_LINKAGE TimesHeroLevelDivideStackLevelUpdater : public TimesHeroLevelU
 {
 	std::shared_ptr<DivideStackLevelUpdater> divideStackLevel;
 public:
+	/// Read-only preflight for owned numerical capture, including private payload edges.
+	bool hasScalarDivider() const;
 	template <typename Handler> void serialize(Handler & h)
 	{
 		h & static_cast<TimesHeroLevelUpdater &>(*this);
@@ -194,6 +206,7 @@ public:
 class DLL_LINKAGE OwnerUpdater : public IUpdater
 {
 public:
+	PlayerColor ownerFor(PlayerColor owner) const;
 	std::shared_ptr<Bonus> createUpdatedBonus(const std::shared_ptr<Bonus>& b, const BonusEvaluationContext& context) const override;
 	std::string toString() const override;
 	JsonNode toJsonNode() const override;

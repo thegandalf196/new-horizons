@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "ConsecratedStrikeProjection.h"
 #include "AttackAbilityPrefix.h"
 #include "NominalAbilityChance.h"
 #include "../../lib/battle/AttackAbilityQueries.h"
@@ -78,10 +79,11 @@ Query query(const CBattleInfoCallback & battle, const battle::Unit & source, con
 			if(!selected.records.empty()) condition = std::move(selected);
 		}
 		const auto rounding = creatureAbilityChance::rounding(source, ability.chance);
+		const int resistance = consecratedArmsAI::afflictionResistanceBP(battle, source, target, *spell);
 		result.attempts.push_back({id, ability.chance, nominalAbilityChance::success(rounding,
-			harmful ? result.nominalRerollAvailability : 0), harmful,
+			harmful ? result.nominalRerollAvailability : 0) * (1 - resistance / 10000.0), harmful,
 			chance.has_value() || (id == SpellID::POISON && newHorizonsSpecialtyProcs::poisonPotencyMultiplier(battle, source) > 1),
-			mechanics->getEffectDuration(), std::move(condition)});
+			mechanics->getEffectDuration(), std::move(condition), resistance});
 		if(!harmful) continue;
 		result.eligibleHarmfulAttempts.push_back(id);
 		result.nominalRerollAvailability = nominalAbilityChance::availableAfter(rounding, result.nominalRerollAvailability);
@@ -92,8 +94,11 @@ Query query(const CBattleInfoCallback & battle, const battle::Unit & source, con
 	{
 		const auto rounding = creatureAbilityChance::rounding(source, stunChance);
 		result.stunChancePercent = stunChance;
+		result.stunResistanceBasisPoints = consecratedArmsAI::afflictionResistanceBP(battle, source, target,
+			creatureAbility::Native::CONCUSSIVE_STUN);
 		result.stunCondition = StatusKey{target.unitId(), SpellID::NONE, {}};
-		result.stunSuccess = nominalAbilityChance::success(rounding, result.nominalRerollAvailability);
+		result.stunSuccess = nominalAbilityChance::success(rounding, result.nominalRerollAvailability)
+			* (1 - result.stunResistanceBasisPoints / 10000.0);
 		result.nominalRerollAvailability = nominalAbilityChance::availableAfter(rounding, result.nominalRerollAvailability);
 	}
 	return result;

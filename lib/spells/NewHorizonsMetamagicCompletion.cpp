@@ -2,6 +2,7 @@
 #include "StdInc.h"
 #include "../nativeRules/CompiledMetamagicRules.h"
 #include "NewHorizonsMetamagicCompletion.h"
+#include "NewHorizonsMetamagicAmmunition.h"
 #include "NewHorizonsMagicalMemory.h"
 #include "ISpellMechanics.h"
 #include "CSpell.h"
@@ -87,7 +88,10 @@ void discharge(ServerCallback & server, const CBattleInfoCallback & battle, cons
 		amount = newHorizonsCommand::mitigateIncomingDamage(battle, &unit, amount);
 	}
 	if(amount > 0)
-		nativeEvents::damage(context(server, battle), unit, amount, nullptr, true, spell);
+	{
+		const auto damageContext = mechanics.spellDamageContext(unit);
+		nativeEvents::damage(context(server, battle), unit, amount, nullptr, true, spell, false, true, nullptr, &damageContext);
+	}
 }
 
 void restore(ServerCallback & server, const CBattleInfoCallback & battle, const battle::Unit & unit, int64_t mana,
@@ -131,6 +135,8 @@ RecipientSnapshots captureRecipients(const CBattleInfoCallback & battle, const s
 	if(!battle.getBattle() || !mechanics.isGenuineHeroCast() || !hero || nativeRules::metamagicSkillRank(hero) <= 0
 		|| (!nativeRules::metamagicRules(hero) || !nativeRules::metamagicRules(hero)->policy()))
 		return result;
+	if(nativeRules::metamagicRules(hero)->policy()->optionalRemoval
+		&& !perk(hero, MetamagicPerk::UnravelingMagic) && !perk(hero, MetamagicPerk::ReconstitutingMagic)) return result;
 	for(const auto * unit : battle.getBattle()->getUnitsIf([](const battle::Unit *) { return true; }))
 		if(unit && unit->alive() && !unit->isGhost())
 			result.emplace(unit->unitId(), RecipientSnapshot{
@@ -147,7 +153,8 @@ bool singleTargetFormula(const CSpell & spell, int32_t mastery)
 	{
 		if(node.isStruct())
 			for(const auto & [key, child] : node.Struct())
-				if((key == "chainLength" && child.Integer() > 1) || hasChain(child))
+				if(((key == "chainLength" && child.isNumber() && child.Float() > 1)
+					|| (key == "handOfFate" && child.isBool() && child.Bool())) || hasChain(child))
 					return true;
 		if(node.isVector())
 			for(const auto & child : node.Vector())
@@ -192,10 +199,12 @@ CompletionReceipt completeCast(ServerCallback & server, const CBattleInfoCallbac
 		if(owner == PlayerColor::CANNOT_DETERMINE || mechanics.getCasterColor() == PlayerColor::CANNOT_DETERMINE)
 			continue;
 		const bool friendly = owner == mechanics.getCasterColor();
-		const bool restoration = friendly && spell->isPositive() && unit->alive();
+		const bool restoration = friendly && spell->isPositive() && unit->alive()
+			&& (!policy->policy()->optionalRemoval || perk(hero, MetamagicPerk::ReconstitutingMagic));
 		const bool damagingHit = spell->isDamage() && std::any_of(injuries.begin(), injuries.end(),
 			[id](const BattleStackAttacked & hit) { return hit.stackAttacked == id; });
-		const bool offense = !friendly && (damagingHit || (!spell->isDamage() && spell->isNegative() && perk(hero, MetamagicPerk::HexWeaving)));
+		const bool offense = !friendly && (damagingHit || (!spell->isDamage() && spell->isNegative() && perk(hero, MetamagicPerk::HexWeaving)))
+			&& (!policy->policy()->optionalRemoval || perk(hero, MetamagicPerk::UnravelingMagic));
 		if(!restoration && !offense)
 			continue;
 		const auto kind = restoration ? ResolutionKind::RESTORATION : ResolutionKind::OFFENSE;
@@ -241,9 +250,14 @@ void applyGuaranteedCompletion(ServerCallback & server, const CBattleInfoCallbac
 		const auto * unit = battle.battleGetUnitByID(id);
 		if(!unit || !unit->alive() || !seen.insert(id).second)
 			continue;
-		if(perk(hero, MetamagicPerk::DisruptiveCasting) && std::any_of(injuries.begin(), injuries.end(),
-			[id](const BattleStackAttacked & hit) { return hit.stackAttacked == id && hit.damageAmount > 0; }))
-			disrupt(server, battle, *unit);
+		if(perk(hero, MetamagicPerk::DisruptiveCasting)
+			&& battle.battleGetOwner(unit) != mechanics.getCasterColor()
+			&& std::any_of(injuries.begin(), injuries.end(),
+				[id](const BattleStackAttacked & hit) { return hit.stackAttacked == id && hit.damageAmount > 0; }))
+		{
+			if(nativeRules::metamagicRules(hero)->policy()->optionalRemoval) destroyShots(server, battle, *unit);
+			else disrupt(server, battle, *unit);
+		}
 		if(spell->isPositive() && battle.battleGetOwner(unit) == mechanics.getCasterColor()
 			&& perk(hero, MetamagicPerk::PurgingFormula))
 			purge(server, battle, *unit);

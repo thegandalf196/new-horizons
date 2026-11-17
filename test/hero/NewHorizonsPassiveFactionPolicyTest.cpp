@@ -13,9 +13,11 @@ JsonNode passiveRules()
 {
 	JsonNode rules(JsonPath::builtin("config/newHorizonsPerks"));
 	// These epoch-1155 fixtures explicitly retain historical marks-based capture.
-	rules["metamagicPolicy"] = JsonNode(JsonMap{});
 	for(const auto * key : {"metamagicPolicy", "divineMandatePolicy", "demonicGatingPolicy", "bloodragePolicy"})
+	{
+		rules[key] = JsonNode(JsonMap{});
 		rules[key]["version"].Integer() = 2;
+	}
 	rules.setOverrideFlag(true);
 	return rules;
 }

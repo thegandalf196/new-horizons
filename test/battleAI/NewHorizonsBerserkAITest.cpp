@@ -7,6 +7,8 @@
  * Full text of license available in license.txt file, in main folder
  */
 #include "StdInc.h"
+#include "../../AI/BattleAI/SearchBudget.h"
+#include "../../AI/BattleAI/SearchIncumbent.h"
 #include "../PerkTestSetup.h"
 
 #include "../server/battles/HeroCommandFixture.h"
@@ -562,3 +564,355 @@ TEST_F(NewHorizonsBerserkAITest, FullEvaluatorChoosesBerserkWhenItPreventsAShotA
 	EXPECT_EQ(enemyAlly->getAvailableHealth(), allyHealthBefore);
 	EXPECT_EQ(active->getAvailableHealth(), activeHealthBefore);
 }
+
+TEST_F(NewHorizonsBerserkAITest, ExhaustedOptionalSearchRetainsAnAuthoritativelyLegalForcedAttack)
+{
+	ASSERT_NO_FATAL_FAILURE(startEmptyBattle());
+	auto * actor = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(8, 5), 5);
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(9, 5), 5);
+	ASSERT_NE(actor, nullptr);
+	ASSERT_NE(enemy, nullptr);
+	addBerserkBonus(actor);
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = actor->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+	const auto forced = battle()->getBerserkForcedActions(actor);
+	ASSERT_FALSE(forced.empty());
+	ASSERT_EQ(forced.front().type, EActionType::WALK_AND_ATTACK);
+	auto callback = std::make_shared<BerserkCallback>();
+	callback->onBattleStarted(battle());
+	auto environment = std::make_shared<BerserkEnvironment>(gameState());
+	auto branch = std::make_shared<HypotheticBattle>(environment.get(), callback->getBattle(BattleID(0)));
+	branch->setSearchBudget(std::make_shared<battleSearch::SearchBudget>(battleSearch::WorkAmounts{0, 0, 0, 1000, 0}));
+	DamageCache damage;
+	const auto serverRandom = serializedState(*gameHandler->randomizer);
+	const auto defaultRandom = serializedState(CRandomGenerator::getDefault());
+	const auto actorHealth = actor->getAvailableHealth(), enemyHealth = enemy->getAvailableHealth();
+	BattleEvaluator evaluator(environment, callback, branch, damage, actor, PlayerColor(0),
+		BattleID(0), BattleSide::ATTACKER, 1.0f, 2);
+	const auto chosen = evaluator.selectStackAction(actor);
+	EXPECT_EQ(chosen.actionType, EActionType::WALK_AND_ATTACK);
+	EXPECT_EQ(chosen.getTarget(battle()).front().hexValue, forced.front().target->getPosition());
+	EXPECT_EQ(actor->getAvailableHealth(), actorHealth);
+	EXPECT_EQ(enemy->getAvailableHealth(), enemyHealth);
+	EXPECT_EQ(serializedState(*gameHandler->randomizer), serverRandom);
+	EXPECT_EQ(serializedState(CRandomGenerator::getDefault()), defaultRandom);
+	EXPECT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), chosen));
+}
+
+TEST_F(NewHorizonsBerserkAITest, ExhaustionAfterACompletedForcedAttackAlwaysRemovesScopedSpeed)
+{
+	CStack * actor = nullptr;
+	CStack * originalTarget = nullptr;
+	ASSERT_NO_FATAL_FAILURE(prepareActualBerserk(true, actor, originalTarget));
+	const auto radius = BattleHex::getDistance(actor->getPosition(), originalTarget->getPosition());
+	CStack * tiedTarget = nullptr;
+	for(int index = 0; index != GameConstants::BFIELD_SIZE && !tiedTarget; ++index)
+	{
+		const BattleHex hex(index);
+		if(!hex.isAvailable() || battle()->battleGetUnitByPos(hex, true)
+			|| BattleHex::getDistance(actor->getPosition(), hex) != radius) continue;
+		auto * probe = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), hex, 20);
+		auto trial = makeForecast();
+		const auto bonus = newHorizonsBerserk::forcedActivationSpeedBonus(*trial, actor);
+		ASSERT_TRUE(bonus);
+		trial->addUnitBonus(actor->unitId(), {*bonus});
+		const auto forced = trial->getBerserkForcedActions(trial->battleGetUnitByID(actor->unitId()));
+		if(forced.size() > 1) tiedTarget = probe;
+		else
+		{
+			BattleUnitsChanged remove;
+			remove.battleID = BattleID(0);
+			remove.changedStacks.emplace_back(probe->unitId(), UnitChanges::EOperation::REMOVE);
+			gameHandler->sendAndApply(remove);
+		}
+	}
+	ASSERT_NE(tiedTarget, nullptr);
+	auto branch = makeForecast();
+	const auto speed = branch->battleGetUnitByID(actor->unitId())->getMovementRange();
+	auto budget = std::make_shared<battleSearch::SearchBudget>(battleSearch::WorkAmounts{1, 0, 0, 100000, 10000});
+	branch->setSearchBudget(budget);
+	DamageCache damage;
+	PotentialTargets targets(branch->battleGetUnitByID(actor->unitId()), damage, branch);
+	ASSERT_EQ(targets.possibleAttacks.size(), 1u);
+	EXPECT_GT(budget->refusals()[0], 0u);
+	for(const auto & attack : targets.possibleAttacks)
+	{
+		ASSERT_NE(attack.effectPreview, nullptr);
+		EXPECT_EQ(attack.effectPreview->battleGetUnitByID(actor->unitId())->getMovementRange(), speed);
+	}
+	EXPECT_EQ(branch->battleGetUnitByID(actor->unitId())->getMovementRange(), speed);
+	EXPECT_EQ(actor->getMovementRange(), speed);
+}
+
+TEST_F(NewHorizonsBerserkAITest, NativeSubjectReachabilityCacheMissChargesCurrentMovementOwner)
+{
+	ASSERT_NO_FATAL_FAILURE(startEmptyBattle());
+	auto * actor = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 5), 10);
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(12, 5), 10);
+	ASSERT_NE(actor, nullptr);
+	ASSERT_NE(enemy, nullptr);
+	auto branch = makeForecast();
+	auto work = std::make_shared<battleSearch::SearchBudget>(battleSearch::WorkAmounts{1000, 0, 0, 50000, 1000});
+	branch->setSearchBudget(work);
+	std::vector<battle::Units> order;
+	branch->battleGetTurnOrder(order, 0, 2);
+	ReachabilityMapCache cache;
+	cache.update(order, branch);
+	const auto before = work->spent();
+	const auto live = gameState()->saveToMemory();
+	auto native = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+	cache.getOneTurnReachableUnits(native, forecastEnvironment, order, 0, enemy->getPosition());
+	EXPECT_GT(work->spent()[4], before[4]);
+	EXPECT_GT(work->spent()[3], before[3]);
+	EXPECT_EQ(gameState()->saveToMemory(), live);
+	ASSERT_TRUE(work->consume(battleSearch::WorkKind::Movement, work->available()[4]));
+	const auto exhausted = work->spent();
+	EXPECT_THROW(cache.getOneTurnReachableUnits(native, forecastEnvironment, order, 0, actor->getPosition()),
+		battleSearch::BudgetExhausted);
+	EXPECT_EQ(work->spent()[3], exhausted[3]) << "No branch capture before Movement admission";
+	EXPECT_EQ(gameState()->saveToMemory(), live);
+}
+
+TEST_F(NewHorizonsBerserkAITest, ZeroMovementForcedContinuationUsesAuthoritativelyAcceptedPass)
+{
+	ASSERT_NO_FATAL_FAILURE(startEmptyBattle());
+	auto * actor = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 5), 10);
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(12, 5), 10);
+	ASSERT_NE(actor, nullptr);
+	ASSERT_NE(enemy, nullptr);
+	addBerserkBonus(actor);
+	actor->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
+		BonusType::STACKS_SPEED, BonusSource::OTHER, -1000, BonusSourceID()));
+	ASSERT_EQ(actor->getMovementRange(), 0);
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = actor->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+	ASSERT_TRUE(battle()->getBerserkForcedActions(actor).empty());
+	auto callback = std::make_shared<BerserkCallback>();
+	callback->onBattleStarted(battle());
+	auto environment = std::make_shared<BerserkEnvironment>(gameState());
+	auto view = callback->getBattle(BattleID(0));
+	auto branch = std::make_shared<HypotheticBattle>(environment.get(), view);
+	auto work = std::make_shared<battleSearch::SearchBudget>(battleSearch::WorkAmounts{});
+	branch->setSearchBudget(work);
+	DamageCache damage;
+	const auto live = gameState()->saveToMemory();
+	BattleEvaluator evaluator(environment, callback, branch, damage, actor, PlayerColor(0),
+		BattleID(0), BattleSide::ATTACKER, 1.0f, 2);
+	const auto selected = evaluator.selectStackAction(actor);
+	EXPECT_EQ(selected.actionType, EActionType::NO_ACTION);
+	EXPECT_EQ(battleSearch::visibleIncumbent(environment.get(), view, actor).actionType, EActionType::NO_ACTION);
+	EXPECT_EQ(gameState()->saveToMemory(), live);
+	EXPECT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), selected));
+}
+
+TEST_F(NewHorizonsBerserkAITest, ExplicitReservedOwnerPaysCaptureWhenParentHasNoUnreservedWork)
+{
+	ASSERT_NO_FATAL_FAILURE(startEmptyBattle());
+	ASSERT_NE(addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 5), 10), nullptr);
+	ASSERT_NE(addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(12, 5), 10), nullptr);
+	auto parent = makeForecast();
+	const auto captureUnits = static_cast<uint32_t>(parent->battleGetAllUnits(false).size()) + 1;
+	auto root = std::make_shared<battleSearch::SearchBudget>(battleSearch::WorkAmounts{0, 0, 0, captureUnits + 4, 0});
+	battleSearch::WorkAmounts quota{};
+	quota[3] = captureUnits;
+	auto reserved = root->reserve(quota);
+	ASSERT_TRUE(reserved);
+	auto child = std::make_shared<battleSearch::SearchBudget>(std::move(*reserved));
+	ASSERT_TRUE(root->consume(battleSearch::WorkKind::Node, root->available()[3]));
+	parent->setSearchBudget(root);
+	const auto live = gameState()->saveToMemory();
+	std::shared_ptr<HypotheticBattle> result;
+	ASSERT_NO_THROW(result = std::make_shared<HypotheticBattle>(forecastEnvironment.get(), parent,
+		std::shared_ptr<const battle::OwnedBattleFrameBatch>(), child));
+	ASSERT_NE(result, nullptr);
+	EXPECT_EQ(result->searchBudget(), child);
+	EXPECT_EQ(child->spent()[3], captureUnits);
+	EXPECT_EQ(root->available()[3], 0u);
+	EXPECT_EQ(gameState()->saveToMemory(), live);
+}
+
+TEST_F(NewHorizonsBerserkAITest, RejectedMeleeGeometrySpendsWorkWithoutCompletingAnAttack)
+{
+	ASSERT_NO_FATAL_FAILURE(startEmptyBattle());
+	auto * actor = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(2, 5), 10);
+	ASSERT_NE(actor, nullptr);
+	ASSERT_NE(addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(15, 5), 10), nullptr);
+	auto branch = makeForecast();
+	auto work = std::make_shared<battleSearch::SearchBudget>(battleSearch::WorkAmounts{100, 0, 0, 100, 1});
+	branch->setSearchBudget(work);
+	const auto live = gameState()->saveToMemory();
+	DamageCache damage;
+	PotentialTargets targets(branch->battleGetUnitByID(actor->unitId()), damage, branch);
+	EXPECT_TRUE(targets.possibleAttacks.empty());
+	EXPECT_GT(work->spent()[3], 0u) << "Rejected defender admission is charged";
+	EXPECT_EQ(work->spent()[4], 1u);
+	EXPECT_GT(work->refusals()[4], 0u) << "Rejected hex probes cannot scan past the cap";
+	EXPECT_EQ(gameState()->saveToMemory(), live);
+}
+
+#ifdef NH_PERF_EXPERIMENTS
+#include "../../AI/BattleAI/SearchWorkDiagnostics.h"
+#include "../../AI/BattleAI/BattleAI.h"
+#include "../../lib/battle/AutocombatPreferences.h"
+namespace
+{
+class SearchDiagnosticCallback final : public CBattleCallback
+{
+public:
+	std::vector<BattleAction> submitted;
+	SearchDiagnosticCallback() : CBattleCallback(PlayerColor(0), nullptr) {}
+	void battleMakeUnitAction(const BattleID &, const BattleAction & action) override { submitted.push_back(action); }
+	void battleMakeSpellAction(const BattleID &, const BattleAction & action) override { submitted.push_back(action); }
+};
+}
+TEST_F(NewHorizonsBerserkAITest, DiagnosticRootIncludesNativeNestedWorkAndRefusalAfterChildrenSettle)
+{
+	ASSERT_NO_FATAL_FAILURE(startEmptyBattle());
+	auto * actor = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 5), 10);
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(12, 5), 10);
+	ASSERT_NE(actor, nullptr);
+	ASSERT_NE(enemy, nullptr);
+	auto source = makeForecast();
+	battleSearch::SearchLimits limits;
+	limits.decision = {32, 8, 4, 8192, 256};
+	battleSearch::RootSearchWorkCapture capture;
+	auto root = capture.begin(battleSearch::Profile::Full, limits);
+	const auto live = gameState()->saveToMemory();
+	const auto authorityRng = serializedState(*gameHandler->randomizer);
+	const auto aiRng = serializedState(CRandomGenerator::getDefault());
+	{
+		auto reservation = root->reserve({8, 0, 0, 4096, 128});
+		ASSERT_TRUE(reservation);
+		auto child = std::make_shared<battleSearch::SearchBudget>(std::move(*reservation));
+		auto branch = std::make_shared<HypotheticBattle>(forecastEnvironment.get(), source,
+			std::shared_ptr<const battle::OwnedBattleFrameBatch>(), child);
+		auto nested = std::make_shared<HypotheticBattle>(forecastEnvironment.get(), branch);
+		EXPECT_EQ(nested->searchBudget(), child);
+		std::vector<battle::Units> order;
+		nested->battleGetTurnOrder(order, 0, 2);
+		ReachabilityMapCache cache;
+		cache.update(order, nested);
+		ASSERT_TRUE(child->consume(battleSearch::WorkKind::Movement, child->available()[4]));
+		auto native = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+		EXPECT_THROW(cache.getOneTurnReachableUnits(native, forecastEnvironment, order, 0, enemy->getPosition()),
+			battleSearch::BudgetExhausted);
+		// Additional root-only work proves the snapshot is not the child's copy.
+		root->require(battleSearch::WorkKind::Node);
+		EXPECT_GT(root->spent()[3], child->spent()[3]);
+	}
+	const auto spent = root->spent();
+	const auto refused = root->refusals();
+	root.reset(); // The receipt itself must retain the decision owner.
+	capture.complete();
+	capture.complete(); // Completing an already published decision is idempotent.
+	CBattleAI::TimingSummary sink;
+	sink.searchWork.accumulate(capture.summary());
+	EXPECT_EQ(sink.searchWork.startedDecisions, 1u);
+	EXPECT_EQ(sink.searchWork.completedFiniteDecisions, 1u);
+	EXPECT_EQ(sink.searchWork.profileMask, 1u);
+	for(size_t i = 0; i < battleSearch::workKindCount; ++i)
+	{
+		EXPECT_EQ(sink.searchWork.spent[i], spent[i]);
+		EXPECT_EQ(sink.searchWork.refusals[i], refused[i]);
+	}
+	EXPECT_GT(sink.searchWork.spent[3], 0u);
+	EXPECT_GT(sink.searchWork.spent[4], 0u);
+	EXPECT_GT(sink.searchWork.refusals[4], 0u);
+	EXPECT_EQ(gameState()->saveToMemory(), live);
+	EXPECT_EQ(serializedState(*gameHandler->randomizer), authorityRng);
+	EXPECT_EQ(serializedState(CRandomGenerator::getDefault()), aiRng);
+}
+TEST_F(NewHorizonsBerserkAITest, DiagnosticRootSurvivesConstructorExhaustionAndAuthoritativelyLegalFallback)
+{
+	ASSERT_NO_FATAL_FAILURE(startEmptyBattle());
+	auto * actor = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 5), 10);
+	ASSERT_NE(actor, nullptr);
+	ASSERT_NE(addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(12, 5), 10), nullptr);
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = actor->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+	auto source = makeForecast();
+	battleSearch::SearchLimits limits;
+	limits.decision = {};
+	battleSearch::RootSearchWorkCapture capture;
+	auto root = capture.begin(battleSearch::Profile::Full, limits);
+	const auto live = gameState()->saveToMemory();
+	EXPECT_THROW(std::make_shared<HypotheticBattle>(forecastEnvironment.get(), source,
+		std::shared_ptr<const battle::OwnedBattleFrameBatch>(), root), battleSearch::BudgetExhausted);
+	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+	const auto fallback = battleSearch::visibleIncumbent(forecastEnvironment.get(), callback, actor);
+	capture.complete();
+	CBattleAI::TimingSummary sink;
+	sink.searchWork.accumulate(capture.summary());
+	EXPECT_EQ(sink.searchWork.completedFiniteDecisions, 1u);
+	EXPECT_EQ(sink.searchWork.missingRootDecisions, 0u);
+	EXPECT_GT(sink.searchWork.refusals[3], 0u);
+	EXPECT_EQ(gameState()->saveToMemory(), live);
+	EXPECT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), fallback));
+}
+TEST_F(NewHorizonsBerserkAITest, ActualAICallbackPublishesRootWorkWithFullAndFastIdentity)
+{
+	ASSERT_NO_FATAL_FAILURE(startEmptyBattle());
+	auto * actor = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 5), 10);
+	ASSERT_NE(actor, nullptr);
+	ASSERT_NE(addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(6, 5), 10), nullptr);
+	auto source = makeForecast();
+	const auto live = gameState()->saveToMemory();
+	const auto authorityRng = serializedState(*gameHandler->randomizer);
+	const auto aiRng = serializedState(CRandomGenerator::getDefault());
+	for(auto profile : {battleSearch::Profile::Full, battleSearch::Profile::BeamOneTwoActors})
+	{
+		auto callback = std::make_shared<SearchDiagnosticCallback>();
+		callback->onBattleStarted(battle());
+		CBattleAI ai(nullptr, nullptr, profile);
+		AutocombatPreferences preferences;
+		preferences.enableSpellsUsage = false;
+		preferences.enableTacticsUsage = false;
+		ai.initBattleInterface(forecastEnvironment, callback, preferences);
+		ai.battleStart(BattleID(0), attackerSideHero, defenderSideHero, int3(4, 4, 0),
+			attackerSideHero, defenderSideHero, BattleSide::ATTACKER, false);
+		ai.activeStack(BattleID(0), actor);
+		ASSERT_EQ(callback->submitted.size(), 1u);
+		const auto timing = ai.getTimingSummary();
+		ASSERT_TRUE(timing);
+		EXPECT_GT(timing->searchWork.startedDecisions, 0u);
+		EXPECT_EQ(timing->searchWork.startedDecisions, timing->searchWork.completedFiniteDecisions);
+		EXPECT_EQ(timing->searchWork.profileMask, profile == battleSearch::Profile::Full ? 1u : 4u);
+		EXPECT_EQ(timing->searchWork.missingRootDecisions, 0u);
+		EXPECT_EQ(timing->searchWork.unsupportedDecisions, 0u);
+		EXPECT_GT(timing->searchWork.spent[3], 0u);
+		EXPECT_EQ(gameState()->saveToMemory(), live);
+		EXPECT_EQ(serializedState(*gameHandler->randomizer), authorityRng);
+		EXPECT_EQ(serializedState(CRandomGenerator::getDefault()), aiRng);
+	}
+}
+TEST(SearchWorkDiagnostics, MissingAndUnsupportedOwnersAreDistinctFromMeasuredZero)
+{
+	battleSearch::RootSearchWorkCapture unsupported;
+	EXPECT_FALSE(unsupported.begin(battleSearch::Profile::LegacyUnlimited, std::nullopt));
+	unsupported.complete();
+	EXPECT_EQ(unsupported.summary().unsupportedDecisions, 1u);
+	EXPECT_EQ(unsupported.summary().completedFiniteDecisions, 0u);
+	EXPECT_EQ(unsupported.summary().profileMask, 8u);
+	battleSearch::RootSearchWorkCapture missing;
+	EXPECT_FALSE(missing.begin(battleSearch::Profile::Full, std::nullopt));
+	missing.complete();
+	EXPECT_EQ(missing.summary().missingRootDecisions, 1u);
+	EXPECT_EQ(missing.summary().unsupportedDecisions, 0u);
+	EXPECT_EQ(missing.summary().completedFiniteDecisions, 0u);
+	battleSearch::SearchWorkSummary saturated, increment;
+	saturated.spent[3] = std::numeric_limits<uint64_t>::max();
+	increment.spent[3] = 1;
+	saturated.accumulate(increment);
+	EXPECT_TRUE(saturated.saturated);
+	EXPECT_EQ(saturated.spent[3], std::numeric_limits<uint64_t>::max());
+}
+#endif

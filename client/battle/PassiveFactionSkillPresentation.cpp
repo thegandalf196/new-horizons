@@ -1,6 +1,8 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
 #include "PassiveFactionSkillPresentation.h"
+#include "CurrentFactionSkillPresentation.h"
+#include "../../lib/nativeRules/CompiledMetamagicRules.h"
 #include "../../lib/battle/CBattleInfoCallback.h"
 #include "../../lib/battle/IBattleState.h"
 #include "../../lib/battle/PassiveDivineMandate.h"
@@ -42,6 +44,9 @@ std::optional<SkillStatusText> elementalAttunement(const CGHeroInstance & hero,
 std::optional<SkillStatusText> divineMandate(const CGHeroInstance & hero,
 	const CBattleInfoCallback & battle, BattleSide side)
 {
+	if(consecratedArms::enabled(hero.getPerkState().getRules()))
+		return battle.getBattle() ? consecratedText(consecratedArms::capturePolicy(&hero),
+			consecratedArms::actualFaith(hero)) : std::nullopt;
 	if(newHorizonsPassiveDivineMandate::enabled(hero.getPerkState().getRules()))
 	{
 		const auto policy = newHorizonsPassiveDivineMandate::capturePolicy(&hero);
@@ -78,5 +83,25 @@ std::optional<SkillStatusText> divineMandate(const CGHeroInstance & hero,
 			+ std::to_string(mandate.pendingFollowup->expiryRound) + ".";
 	}
 	return SkillStatusText{std::to_string(remaining) + " / " + std::to_string(mandate.maximumPairs), details, false};
+}
+
+std::optional<SkillStatusText> metamagic(const CGHeroInstance & hero)
+{
+	const auto * rules = nativeRules::metamagicRules(&hero);
+	const int rank = nativeRules::metamagicSkillRank(&hero);
+	if(!rules || !rules->policy() || !rules->policy()->optionalRemoval || rank <= 0)
+		return std::nullopt;
+	using Perk = nativeRules::MetamagicPerk;
+	MetamagicReadout input{rank, rules->overflowPercent(rank), rules->friendlyReductionPercent(rank),
+		rules->debuffRetryPercent(rank), std::nullopt, std::nullopt};
+	input.arcaneCascade = nativeRules::hasMetamagicPerk(&hero, Perk::ArcaneCascade);
+	if(nativeRules::hasMetamagicPerk(&hero, Perk::SpellSculpting))
+		input.friendlyReductionPercent = 100;
+	const int removal = rules->removalChance(rank, hero.getHeroTypeID());
+	if(nativeRules::hasMetamagicPerk(&hero, Perk::UnravelingMagic))
+		input.unravelChance = removal;
+	if(nativeRules::hasMetamagicPerk(&hero, Perk::ReconstitutingMagic))
+		input.reconstituteChance = removal;
+	return metamagicText(input);
 }
 }

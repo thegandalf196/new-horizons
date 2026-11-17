@@ -32,3 +32,20 @@ DLL_LINKAGE void bonusRedAncestors(const BonusGraphQuery & graph, const CBonusSy
 DLL_LINKAGE std::shared_ptr<Bonus> propagatedBonus(const std::shared_ptr<Bonus> & bonus,
 	const CBonusSystemNode & destination, const BonusEvaluationContext & source);
 DLL_LINKAGE bool removePropagatedBonus(BonusList & local, const std::shared_ptr<Bonus> & bonus);
+
+/// Optional cold capture observer; the native collector remains the only owner
+/// of updater, limitation and hero-rating suppression order. No observer can
+/// affect collection decisions. Borrowed lists/contexts live only in the call.
+class DLL_LINKAGE BonusCollectionObserver
+{
+public:
+	virtual ~BonusCollectionObserver() = default;
+	virtual void local(const BonusList & destination, const BonusList & records,
+		const CBonusSystemNode & exporter) = 0;
+	virtual void updated(const BonusList & input, size_t index, const BonusList & output,
+		const std::shared_ptr<Bonus> & value, const CBonusSystemNode & node,
+		const BonusEvaluationContext & context, bool inheritedPrimary, bool retained) = 0;
+	virtual void retire(const BonusList & temporary) = 0;
+};
+DLL_LINKAGE void collectBonusGraphObserved(const BonusGraphQuery & graph, const CBonusSystemNode & node,
+	BonusList & out, BonusCollectionObserver & observer, bool inherited = false);

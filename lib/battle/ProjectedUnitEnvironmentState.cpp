@@ -18,29 +18,8 @@ battle::ProjectedUnitEnvironmentState battle::ProjectedUnitEnvironmentState::cap
 	result.capturedRules = source.getMagicRules();
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
-		auto & inputs = result.captured.at(side);
-		inputs.color = source.getSidePlayer(side);
-		const auto * hero = source.getSideHero(side);
-		for(const auto & order : source.getHeroOrderStates(side))
-			if(order.passiveDivineMandate && order.passiveDivineMandate->has(
-				newHorizonsPassiveDivineMandate::Perk::RIGHTEOUS_DISCIPLINE))
-				throw std::invalid_argument("Projected environment does not capture active Righteous Discipline Orders");
-		if(newHorizonsPassiveDivineMandate::capturePolicy(hero).has(
-			newHorizonsPassiveDivineMandate::Perk::RIGHTEOUS_DISCIPLINE))
-			throw std::invalid_argument("Projected environment does not capture dynamic Righteous Discipline Orders");
-		inputs.ammoArtifact = heroHasAmmoCartArtifact(hero);
-		inputs.veteranCohesion = newHorizonsDiscipline::hasVeteranCohesion(hero);
-		inputs.necromancy = newHorizonsNecromancy::captureCombatPassives(hero);
-		inputs.elementalAttunementProfile = source.getElementalAttunementProfile(side);
-		inputs.bloodrageRank = source.getBloodrageRank(side);
-		inputs.bloodrageCap = source.getBloodrageCapPercent(side);
-		inputs.bloodrageSpeed = source.getBloodrageSpeedBonus(side);
-		inputs.bloodrageRetaliations = source.getBloodrageAdditionalRetaliations(side);
-		inputs.bloodragePain = source.getBloodragePainIncrement(side);
-		auto & state = result.states.at(side);
-		state.fortune = source.getSylvanLuckState(side);
-		state.bloodrageDamagePercent = source.getBloodrageDamagePercent(side);
-		state.elementalAttunementMask = source.getElementalAttunementMask(side);
+		result.captured.at(side) = captureInputs(source, side);
+		result.states.at(side) = captureState(source, side);
 	}
 	return result;
 }
@@ -49,3 +28,36 @@ const battle::ProjectedUnitEnvironmentState::SideInputs & battle::ProjectedUnitE
 const battle::ProjectedUnitEnvironmentState::SideState & battle::ProjectedUnitEnvironmentState::state(BattleSide side) const { return states.at(side); }
 battle::ProjectedUnitEnvironmentState::SideState & battle::ProjectedUnitEnvironmentState::state(BattleSide side) { return states.at(side); }
 const JsonNode & battle::ProjectedUnitEnvironmentState::magicRules() const { return capturedRules; }
+
+battle::ProjectedUnitEnvironmentState::SideInputs battle::ProjectedUnitEnvironmentState::captureInputs(const IBattleInfo & source, BattleSide side)
+{
+	SideInputs inputs;
+	inputs.color = source.getSidePlayer(side);
+	const auto * hero = source.getSideHero(side);
+	for(const auto & order : source.getHeroOrderStates(side))
+		if(order.passiveDivineMandate && order.passiveDivineMandate->has(
+			newHorizonsPassiveDivineMandate::Perk::RIGHTEOUS_DISCIPLINE))
+			throw std::invalid_argument("Projected environment does not capture active Righteous Discipline Orders");
+	if(newHorizonsPassiveDivineMandate::capturePolicy(hero).has(
+		newHorizonsPassiveDivineMandate::Perk::RIGHTEOUS_DISCIPLINE))
+		throw std::invalid_argument("Projected environment does not capture dynamic Righteous Discipline Orders");
+	inputs.ammoArtifact = heroHasAmmoCartArtifact(hero);
+	inputs.veteranCohesion = newHorizonsDiscipline::hasVeteranCohesion(hero);
+	inputs.necromancy = newHorizonsNecromancy::captureCombatPassives(hero);
+	inputs.elementalAttunementProfile = source.getElementalAttunementProfile(side);
+	inputs.bloodrageRank = source.getBloodrageRank(side);
+	inputs.bloodrageCap = source.getBloodrageCapPercent(side);
+	inputs.bloodrageSpeed = source.getBloodrageSpeedBonus(side);
+	inputs.bloodrageRetaliations = source.getBloodrageAdditionalRetaliations(side);
+	inputs.bloodragePain = source.getBloodragePainIncrement(side);
+	return inputs;
+}
+
+battle::ProjectedUnitEnvironmentState::SideState battle::ProjectedUnitEnvironmentState::captureState(const IBattleInfo & source, BattleSide side)
+{
+	SideState state;
+	state.fortune = source.getSylvanLuckState(side);
+	state.bloodrageDamagePercent = source.getBloodrageDamagePercent(side);
+	state.elementalAttunementMask = source.getElementalAttunementMask(side);
+	return state;
+}

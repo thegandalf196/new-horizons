@@ -8,6 +8,7 @@
  *
  */
 #pragma once
+#include "ForecastState.h"
 #include <atomic>
 #include "../../lib/battle/ReachabilityInfo.h"
 #include "../../lib/callback/CGameInterface.h"
@@ -19,6 +20,9 @@
 #include "HypotheticBattleTypes.h"
 #include "VinesCandidateValueReuse.h"
 #include "BattleSearchPolicy.h"
+#ifdef NH_PERF_EXPERIMENTS
+#include "SearchWorkDiagnostics.h"
+#endif
 
 class CSpell;
 class CBattleInfoCallback;
@@ -69,7 +73,11 @@ class DLL_LINKAGE CBattleAI : public CBattleGameInterface
 	const battleSearch::Profile searchProfile;
 	const std::shared_ptr<const battleAIDiagnostic::Mask> diagnosticAdmissionMask;
 	battleAIDiagnostic::Observer * diagnosticAdmissionObserver;
-	BattleEvaluator makeEvaluator(const BattleID & battleID, const CStack * stack);
+	BattleEvaluator makeEvaluator(const BattleID & battleID, const CStack * stack
+#ifdef NH_PERF_EXPERIMENTS
+		, TimingScope * diagnostics = nullptr
+#endif
+	);
 	bool attemptHeroAction(BattleEvaluator & evaluator, const CStack * stack);
 
 	BattleSide side;
@@ -92,6 +100,10 @@ public:
 	/// Diagnostic callback wall time only; not CPU time or authoritative action latency.
 	struct TimingSummary
 	{
+#ifdef NH_PERF_EXPERIMENTS
+		battleSearch::SearchWorkSummary searchWork;
+#endif
+		forecast::Counters forecast;
 		uint64_t battleWallMicroseconds = 0;
 		uint64_t activeStackCalls = 0;
 		uint64_t activeStackTotalMicroseconds = 0;

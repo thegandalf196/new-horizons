@@ -75,60 +75,11 @@
 		"elementalAttunementPolicy": {"type": "object", "additionalProperties": false, "required": ["version"], "properties": {"version": {"type": "integer", "enum": [1]}}, "description": "Current deterministic Conflux Attunement and revised perk meanings; a full active registry requires version 1."},
 		"commandPolicyVersion": {"type": "integer", "enum": [1], "description": "Current finite-Command perk meanings; a full active registry must carry version 1."},
 		"metamagicPolicy": {
-			"oneOf": [
-				{
-					"$ref": "#/definitions/metamagicPolicyV3"
-				},
-				{
-					"type": "object",
-					"additionalProperties": false,
-					"required": [
-						"version",
-						"removalChancePercent",
-						"damagePerMana",
-						"restorationPerMana",
-						"halonRemovalChanceBonusPercent"
-					],
-					"properties": {
-						"version": {
-							"type": "integer",
-							"enum": [
-								4
-							]
-						},
-						"removalChancePercent": {
-							"type": "array",
-							"minItems": 4,
-							"maxItems": 4,
-							"items": {
-								"type": "integer",
-								"minimum": 0,
-								"maximum": 100
-							}
-						},
-						"damagePerMana": {
-							"type": "integer",
-							"enum": [
-								10
-							]
-						},
-						"restorationPerMana": {
-							"type": "integer",
-							"enum": [
-								15
-							]
-						},
-						"halonRemovalChanceBonusPercent": {
-							"type": "integer",
-							"enum": [
-								5
-							]
-						}
-					}
-				}
-			]
+			"oneOf": [{"$ref": "#/definitions/metamagicPolicyV3"}, {"$ref": "#/definitions/metamagicPolicyV4"}, {"$ref": "#/definitions/metamagicPolicyV5"}, {"$ref": "#/definitions/metamagicPolicyV6"}]
 		},
-		"divineMandatePolicy": {"$ref": "#/definitions/passiveFactionSkillPolicyV2"},
+		"divineMandatePolicy": {
+			"oneOf": [{"$ref": "#/definitions/passiveFactionSkillPolicyV2"}, {"$ref": "#/definitions/consecratedArmsPolicyV3"}]
+		},
 		"demonicGatingPolicy": {"$ref": "#/definitions/passiveFactionSkillPolicyV2"},
 		"bloodragePolicy": {"$ref": "#/definitions/passiveFactionSkillPolicyV2"},
 		"connoisseurPolicy": {
@@ -887,6 +838,10 @@
 					}
 				}
 			}
-		}
+		},
+		"metamagicPolicyV4": {"type": "object", "additionalProperties": false, "required": ["version", "removalChancePercent", "damagePerMana", "restorationPerMana", "halonRemovalChanceBonusPercent"], "properties": {"version": {"type": "integer", "enum": [4]}, "removalChancePercent": {"type": "array", "minItems": 4, "maxItems": 4, "additionalItems": false, "items": [{"type": "integer", "enum": [0]}, {"type": "integer", "enum": [20]}, {"type": "integer", "enum": [30]}, {"type": "integer", "enum": [40]}]}, "damagePerMana": {"type": "integer", "enum": [10]}, "restorationPerMana": {"type": "integer", "enum": [15]}, "halonRemovalChanceBonusPercent": {"type": "integer", "enum": [5]}}},
+		"metamagicPolicyV5": {"type": "object", "additionalProperties": false, "required": ["version", "removalChancePercent", "damagePerMana", "restorationPerMana", "halonRemovalChanceBonusPercent", "arcaneOverflowPercentByRank"], "properties": {"version": {"type": "integer", "enum": [5]}, "removalChancePercent": {"type": "array", "minItems": 4, "maxItems": 4, "additionalItems": false, "items": [{"type": "integer", "enum": [0]}, {"type": "integer", "enum": [20]}, {"type": "integer", "enum": [30]}, {"type": "integer", "enum": [40]}]}, "damagePerMana": {"type": "integer", "enum": [10]}, "restorationPerMana": {"type": "integer", "enum": [15]}, "halonRemovalChanceBonusPercent": {"type": "integer", "enum": [5]}, "arcaneOverflowPercentByRank": {"type": "array", "minItems": 4, "maxItems": 4, "additionalItems": false, "description": "Arcane Overflow percentage by Skill rank: none, Basic, Advanced, Expert.", "items": [{"type": "integer", "enum": [0]}, {"type": "integer", "enum": [25]}, {"type": "integer", "enum": [50]}, {"type": "integer", "enum": [75]}]}}},
+		"metamagicPolicyV6": {"type": "object", "additionalProperties": false, "required": ["version", "removalChancePercent", "damagePerMana", "restorationPerMana", "halonRemovalChanceBonusPercent", "arcaneOverflowPercentByRank", "friendlyDamageReductionPercentByRank", "debuffRetryChancePercentByRank"], "properties": {"version": {"type": "integer", "enum": [6]}, "removalChancePercent": {"type": "array", "minItems": 4, "maxItems": 4, "additionalItems": false, "items": [{"type": "integer", "enum": [0]}, {"type": "integer", "enum": [20]}, {"type": "integer", "enum": [30]}, {"type": "integer", "enum": [40]}]}, "damagePerMana": {"type": "integer", "enum": [10]}, "restorationPerMana": {"type": "integer", "enum": [15]}, "halonRemovalChanceBonusPercent": {"type": "integer", "enum": [5]}, "arcaneOverflowPercentByRank": {"type": "array", "minItems": 4, "maxItems": 4, "additionalItems": false, "items": [{"type": "integer", "enum": [0]}, {"type": "integer", "enum": [30]}, {"type": "integer", "enum": [45]}, {"type": "integer", "enum": [60]}]}, "friendlyDamageReductionPercentByRank": {"type": "array", "minItems": 4, "maxItems": 4, "additionalItems": false, "items": [{"type": "integer", "enum": [0]}, {"type": "integer", "enum": [30]}, {"type": "integer", "enum": [45]}, {"type": "integer", "enum": [60]}]}, "debuffRetryChancePercentByRank": {"type": "array", "minItems": 4, "maxItems": 4, "additionalItems": false, "items": [{"type": "integer", "enum": [0]}, {"type": "integer", "enum": [30]}, {"type": "integer", "enum": [45]}, {"type": "integer", "enum": [60]}]}}},
+		"consecratedArmsPolicyV3": {"type": "object", "additionalProperties": false, "required": ["version", "potencyFaithBonusByRank", "ferventInvocationAdditionalFaith"], "properties": {"version": {"type": "integer", "enum": [3]}, "potencyFaithBonusByRank": {"type": "array", "minItems": 4, "maxItems": 4, "additionalItems": false, "items": [{"type": "integer", "enum": [0]}, {"type": "integer", "enum": [0]}, {"type": "integer", "enum": [50]}, {"type": "integer", "enum": [100]}]}, "ferventInvocationAdditionalFaith": {"type": "integer", "enum": [100]}}}
 	}
 }

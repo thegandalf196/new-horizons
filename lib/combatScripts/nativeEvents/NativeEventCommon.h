@@ -4,6 +4,7 @@
 #include "../../battle/CBattleInfoCallback.h"
 #include "../../battle/IBattleState.h"
 #include "../../battle/Unit.h"
+#include "../../battle/UnitShieldState.h"
 #include "../../bonuses/Bonus.h"
 #include "../../json/JsonNode.h"
 #include <vcmi/ServerCallback.h>
@@ -45,8 +46,8 @@ void perish(const Context & context, const battle::Unit * victim, int64_t killed
 void spellDamageLog(const Context & context, const CSpell & spell, const battle::Unit * victim, int64_t damage, int64_t killed);
 void lifeDrainedLog(const Context & context, int64_t healed, int64_t resurrected, int originalCount);
 
-std::pair<int64_t, int64_t> damage(const Context & context, const battle::Unit & unit, int64_t amount,
-	const battle::Unit * source, bool magical = false, const CSpell * spell = nullptr, bool destroyRemains = false);
+DLL_LINKAGE std::pair<int64_t, int64_t> damage(const Context & context, const battle::Unit & unit, int64_t amount,
+	const battle::Unit * source, bool magical = false, const CSpell * spell = nullptr, bool destroyRemains = false, bool secondary = false, newHorizonsMetamagic::OverflowPrimaryDamage * witness = nullptr, const battle::DamageContext * damageContext = nullptr);
 std::pair<int64_t, int64_t> heal(const Context & context, const battle::Unit & unit, int64_t amount,
 	EHealLevel level, EHealPower power);
 void animation(const Context & context, const battle::Unit & unit, const std::string & animation,
@@ -54,7 +55,7 @@ void animation(const Context & context, const battle::Unit & unit, const std::st
 void addBonus(const Context & context, const battle::Unit & unit, const Bonus & bonus, bool cumulative);
 void removeBonuses(const Context & context, const battle::Unit & unit, const BonusList & bonuses);
 void clearFrozen(const Context & context, const battle::Unit & unit);
-void changeUnit(const Context & context, battle::Unit & state, int64_t healthDelta = 0);
+DLL_LINKAGE void changeUnit(const Context & context, battle::Unit & state, int64_t healthDelta = 0);
 void moveUnit(const Context & context, const battle::Unit & unit, BattleHex destination, bool teleport);
 const battle::Unit * addUnit(const Context & context, battle::UnitInfo info);
 void removeUnit(const Context & context, const battle::Unit & unit);

@@ -2,6 +2,8 @@
 #include "StdInc.h"
 #include "PetrifyingBloodValue.h"
 #include "AttackPossibility.h"
+#include "ConsecratedStrikeProjection.h"
+#include "../../lib/spells/CSpell.h"
 #include <map>
 #include "../../lib/battle/CUnitState.h"
 #include "../../lib/battle/CBattleInfoCallback.h"
@@ -23,7 +25,9 @@ float valueAfterSequence(const std::shared_ptr<CBattleInfoCallback> & battle,
 		return 0;
 	const float opportunity = AttackPossibility::calculateDamageReduce(&recipient, &attacker,
 		attacker.getAvailableHealth(), cache, battle);
-	chanceProbability = chance / 10000.0f;
+	const auto resistance = consecratedArmsAI::afflictionResistanceBP(*battle, recipient, attacker,
+		*SpellID(SpellID::STONE_GAZE).toSpell());
+	chanceProbability = chance / 10000.0f * (1 - resistance / 10000.0f);
 	return opportunity * chanceProbability;
 }
 }

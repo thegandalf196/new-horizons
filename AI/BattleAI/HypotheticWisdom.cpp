@@ -4,7 +4,9 @@
 
 const WisdomCombatState & HypotheticBattle::getWisdomCombatState(BattleSide side) const
 {
-	return wisdomCombatStates.at(side);
+	static const WisdomCombatState unknown;
+	const auto & state = forecastSide(side);
+	return state->ledger ? state->ledger->wisdom : unknown;
 }
 
 void HypotheticBattle::HypotheticServerCallback::recordCompletedWisdomSpellCast(
@@ -19,7 +21,8 @@ void HypotheticBattle::HypotheticServerCallback::recordCompletedWisdomSpellCast(
 		throw std::invalid_argument("Wisdom cast does not match the begun projected action");
 	if(!automatic && begun && owner->recordedWisdomActionEpochs.at(side) == begun->action.epoch)
 		throw std::logic_error("Wisdom cast was already recorded for this projected action");
-	owner->wisdomCombatStates.at(side).recordCompletedCast(spell, round);
+	const auto receipt = forecast::SideTransitions::recordWisdom(owner->forecastSide(side), spell, round, owner->searchBudget().get());
+	if(!receipt || !owner->commitForecastSide(side, *receipt)) throw std::invalid_argument("Unknown projected Wisdom owner");
 	if(!automatic && begun)
 		owner->recordedWisdomActionEpochs.at(side) = begun->action.epoch;
 }

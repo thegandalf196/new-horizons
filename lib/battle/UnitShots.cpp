@@ -2,13 +2,19 @@
 #include "StdInc.h"
 #include "CUnitState.h"
 #include "NewHorizonsFocusMagic.h"
+#include "../bonuses/Bonus.h"
 
 namespace battle
 {
 ///CShots
 CShots::CShots(const battle::Unit * Owner)
 	: CAmmo(Owner, Selector::type()(BonusType::SHOTS)),
-	shooter(Owner, Selector::type()(BonusType::SHOOTER))
+	shooter(Owner, Selector::type()(BonusType::SHOOTER)),
+	disruptedSupply(Owner, CSelector([](const Bonus * bonus)
+	{
+		return bonus && bonus->type == BonusType::NONE && bonus->source == BonusSource::OTHER
+			&& bonus->stacking == DISRUPTED_SUPPLY && bonus->duration == BonusDuration::ONE_BATTLE && bonus->val == 1;
+	}))
 {
 }
 
@@ -21,7 +27,7 @@ CShots & CShots::operator=(const CShots & other)
 
 bool CShots::isLimited() const
 {
-	if(newHorizonsFocusMagic::converted(*owner))
+	if(newHorizonsFocusMagic::converted(*owner) || disruptedSupply.hasBonus())
 		return true;
 	return !shooter.hasBonus() || !env->unitHasAmmoCart(owner);
 }

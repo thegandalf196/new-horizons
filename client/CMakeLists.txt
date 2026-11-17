@@ -60,6 +60,8 @@ set(vcmiclientcommon_SRCS
 	battle/BattleSiegeController.cpp
 	battle/AerialSupremacyPresentation.cpp
 	battle/BattleStacksController.cpp
+	battle/BattleStackAmountPresentation.cpp
+	battle/StackInfoVitalStatus.cpp
 	battle/BattleTargetSelectionPanel.cpp
 	battle/BattleWindow.cpp
 	battle/PassiveFactionSkillPresentation.cpp
@@ -395,12 +397,14 @@ set(vcmiclientcommon_HEADERS
 	battle/BattleSidePanel.h
 	battle/BattleSiegeController.h
 	battle/BattleStacksController.h
+	battle/ShieldPresentation.h
 	battle/AerialSupremacyReturnPresentation.h
 	battle/BattleStackColorPresentation.h
 	battle/SummonLifetimePresentation.h
 	battle/BattleTargetSelectionPanel.h
 	battle/BattleWindow.h
 	battle/PassiveFactionSkillPresentation.h
+	battle/CurrentFactionSkillPresentation.h
 	battle/NewHorizonsRealityWarpPreview.h
 	battle/CreatureAnimation.h
 	battle/HeroInfoWindow.h

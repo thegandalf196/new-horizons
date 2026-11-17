@@ -3,22 +3,26 @@
 #include "../../lib/battle/PassiveDivineMandate.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "HypotheticBattle.h"
+#include "../../lib/battle/SideInBattle.h"
 #include "../../lib/constants/NumericConstants.h"
 void HypotheticBattle::captureHeroActionState(const CBattleInfoCallback & source, BattleSide side)
 {
-	wisdomCombatStates[side] = source.getBattle()->getWisdomCombatState(side);
 	rapidResponseStates[side] = source.getBattle()->getRapidResponseState(side);
 	reducedExtraActivationStates[side] = source.getBattle()->getReducedExtraActivationState(side);
 	crossSchoolFormulaStates[side] = source.getBattle()->getCrossSchoolFormulaState(side);
-	spellResponseStates[side] = source.getBattle()->getSpellResponseState(side);
 	extendSpellRounds[side] = source.getBattle()->getExtendSpellLastRound(side);
-	overwhelmingFormulaStates[side] = source.getBattle()->getOverwhelmingFormulaState(side);
-	heroOrderStates[side] = source.getBattle()->getHeroOrderStates(side);
+	if(const auto lease = source.preparedHeroOrderStates(side))
+		heroOrderStates[side] = lease;
+	else
+	{
+		auto captured = source.getBattle()->getHeroOrderStates(side);
+		SideInBattle::validateOrderCollection(captured);
+		heroOrderStates[side] = std::make_shared<const std::vector<HeroOrderState>>(std::move(captured));
+	}
 	relentlessAssaultStates[side] = source.getBattle()->getRelentlessAssaultState(side);
 	battlecraftMasteryAwardRounds[side] = source.getBattle()->getBattlecraftMasteryAwardRound(side);
 	armorerLastStandUsedStates[side] = source.getBattle()->armorerLastStandUsed(side);
 	armorerDefiantStates[side] = source.getBattle()->getArmorerDefiantState(side);
-	heroActionAllowances[side] = source.getBattle()->getHeroActionAllowances(side);
 	if(const auto * parent = dynamic_cast<const HypotheticBattle *>(&source))
 		commandResources[side] = parent->commandResources.at(side);
 	else
@@ -30,14 +34,6 @@ void HypotheticBattle::captureHeroActionState(const CBattleInfoCallback & source
 	}
 	doubleCommandStates[side] = source.getBattle()->getDoubleCommandState(side);
 	preCombatOrderStates[side] = source.getBattle()->getPreCombatOrderState(side);
-	heroSpellCastCompletedStates[side] = source.getBattle()->hasCompletedHeroSpellCast(side);
-	completedHeroSpellLevelMasks[side] = 0;
-	for(int32_t level = 1; level <= GameConstants::SPELL_LEVELS; ++level)
-		if(source.getBattle()->hasCompletedHeroSpellLevel(side, level))
-			completedHeroSpellLevelMasks[side] |= static_cast<std::uint8_t>(1u << (level - 1));
-	const auto * snapshotHero = source.getBattle()->getSideHero(side);
-	if(snapshotHero && newHorizonsPassiveDivineMandate::enabled(snapshotHero->getPerkState().getRules()))
-		projectedCastSpells[side] = source.getBattle()->getCastSpells(side);
 	chainGateArmedStates[side] = source.getBattle()->getChainGateArmed(side);
 	masterGateUsedStates[side] = source.getBattle()->getMasterGateUsed(side);
 	passiveDivineMandateUses[side] = source.getBattle()->getPassiveDivineMandateUses(side);

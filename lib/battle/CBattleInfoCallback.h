@@ -412,6 +412,12 @@ public:
 	{
 		return nullptr;
 	}
+	/// Owning immutable Order lease. Null means unavailable, including unknown
+	/// knowledge; an admitted empty collection has a non-null owning lease.
+	virtual std::shared_ptr<const std::vector<HeroOrderState>> preparedHeroOrderStates(BattleSide) const
+	{
+		return nullptr;
+	}
 	/// Internal immutable getter-chain proof, never authority or policy knowledge.
 	virtual bool hasCanonicalDamageQuerySources(size_t remaining = 512, const BattleInfo * expected = nullptr) const;
 

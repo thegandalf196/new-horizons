@@ -120,7 +120,8 @@ std::vector<Collected> collect(const battle::BattleEffectSnapshot & snapshot, co
 		{
 			const auto & first = group.bundle.bonuses.front();
 			return first.sid == bonus.sid && first.statusIdentity == bonus.statusIdentity
-				&& first.spellCasterOwner == bonus.spellCasterOwner;
+				&& first.spellCasterOwner == bonus.spellCasterOwner
+				&& creatureAbility::sameDescriptor(first.abilityDescriptor, bonus.abilityDescriptor);
 		});
 		if(found == result.end())
 		{
@@ -380,7 +381,8 @@ PreparedExchange prepareExchange(const CBattleInfoCallback & callback, uint32_t 
 			{
 				const auto & firstBonus = group.bundle.bonuses.front();
 				if(firstBonus.sid == bonus.sid && firstBonus.statusIdentity == bonus.statusIdentity
-					&& firstBonus.spellCasterOwner == bonus.spellCasterOwner)
+					&& firstBonus.spellCasterOwner == bonus.spellCasterOwner
+					&& creatureAbility::sameDescriptor(firstBonus.abilityDescriptor, bonus.abilityDescriptor))
 				{
 					if(group.reason != StayReason::MOVED)
 						replacement.effects.push_back(bonus);
@@ -392,7 +394,8 @@ PreparedExchange prepareExchange(const CBattleInfoCallback & callback, uint32_t 
 			{
 				const auto & firstBonus = group.bundle.bonuses.front();
 				if(firstBonus.sid != original.sid || firstBonus.statusIdentity != original.statusIdentity
-					|| firstBonus.spellCasterOwner != original.spellCasterOwner)
+					|| firstBonus.spellCasterOwner != original.spellCasterOwner
+					|| !creatureAbility::sameDescriptor(firstBonus.abilityDescriptor, original.abilityDescriptor))
 					continue;
 				if(group.reason == StayReason::MOVED)
 				{

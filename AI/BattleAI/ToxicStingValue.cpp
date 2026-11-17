@@ -6,6 +6,7 @@
 #include "AttackPossibility.h"
 #include "AttackAbilityPrefix.h"
 #include "NominalAbilityChance.h"
+#include "ConsecratedStrikeProjection.h"
 #include "PhysicalPoisonValue.h"
 #include "../../lib/battle/AttackAbilityQueries.h"
 #include "../../lib/battle/CreatureAbilityChance.h"
@@ -22,7 +23,7 @@ Budget budget(const battle::CUnitState & unit)
 		unit.physicalPoisonSourceStackId, unit.physicalPoisonSpellSide};
 }
 void prefix(std::map<Outcome, double> & outcomes, const creatureAbilityChance::Rounding & chance,
-	const std::optional<attackAbilityPrefix::StatusKey> & condition)
+	const std::optional<attackAbilityPrefix::StatusKey> & condition, int resistanceBasisPoints)
 {
 	std::map<Outcome, double> next;
 	for(const auto & [state, mass] : outcomes)
@@ -32,7 +33,8 @@ void prefix(std::map<Outcome, double> & outcomes, const creatureAbilityChance::R
 			next[state] += mass;
 			continue;
 		}
-		const auto transition = nominalAbilityChance::harmful(chance, state.available);
+		const auto transition = nominalAbilityChance::afterPrevention(
+			nominalAbilityChance::harmful(chance, state.available), resistanceBasisPoints);
 		for(int i = 0; i < 4; ++i)
 			if(transition[i] > 0)
 			{
@@ -81,6 +83,8 @@ float attempt(std::map<Outcome, double> & outcomes, const newHorizonsToxicSting:
 {
 	std::map<Outcome, double> next;
 	double value = 0;
+	const auto resistance = consecratedArmsAI::afflictionResistanceBP(*battle, source, target,
+		creatureAbility::Native::PHYSICAL_POISON);
 	for(const auto & [state, mass] : outcomes)
 	{
 		const auto before = state.budgets.at(plan.target);
@@ -92,7 +96,8 @@ float attempt(std::map<Outcome, double> & outcomes, const newHorizonsToxicSting:
 		const Budget after{plan.baseDamage, 3, static_cast<int32_t>(plan.source)};
 		const auto increment = measure ? std::max(0.0f, utility(battle, &source, target, after, cache)
 			- utility(battle, &source, target, before, cache)) : 0;
-		const auto transition = nominalAbilityChance::harmful(chance, state.available);
+		const auto transition = nominalAbilityChance::afterPrevention(
+			nominalAbilityChance::harmful(chance, state.available), resistance);
 		for(int i = 0; i < 4; ++i)
 			if(transition[i] > 0)
 			{
@@ -194,9 +199,11 @@ float Opportunities::preparedValue(const std::shared_ptr<HypotheticBattle> & bat
 	// Only current native eligibility is queried. Counterfactual effects of
 	// unrelated passive spells and future revival choices remain unvalued.
 	for(const auto & attempt : info.attempts)
-		if(attempt.harmful) prefix(ledger.outcomes, creatureAbilityChance::rounding(*source, attempt.chancePercent), attempt.condition);
+		if(attempt.harmful) prefix(ledger.outcomes, creatureAbilityChance::rounding(*source, attempt.chancePercent),
+			attempt.condition, attempt.resistanceBasisPoints);
 	if(info.stunChancePercent > 0)
-		prefix(ledger.outcomes, creatureAbilityChance::rounding(*source, info.stunChancePercent), info.stunCondition);
+		prefix(ledger.outcomes, creatureAbilityChance::rounding(*source, info.stunChancePercent), info.stunCondition,
+			info.stunResistanceBasisPoints);
 	return attempt(ledger.outcomes, *plan, creatureAbilityChance::rounding(*source, plan->chancePercent),
 		queryBattle, *source, *target, cache, measure);
 }

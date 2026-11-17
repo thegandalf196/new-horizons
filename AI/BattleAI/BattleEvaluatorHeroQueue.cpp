@@ -8,6 +8,8 @@
  *
  */
 #include "StdInc.h"
+#include "ForecastNativeAdapter.h"
+#include "ConsecratedStrikeProjection.h"
 #include "ActivationForfeit.h"
 #include "DreadCavalryProjection.h"
 #include "../../lib/battle/NewHorizonsDreadCavalry.h"
@@ -150,32 +152,10 @@ void BattleEvaluator::projectHeroActionQueueActivation(PossibleSpellcast::ValueM
 		}
 		else
 		{
-			auto stackWithBonuses = state->getForUpdate(unit->unitId());
-			const bool attackerWasAlive = stackWithBonuses->alive();
-			*stackWithBonuses = *attackPossibility.attackerState;
-			state->recordBloodrageTransition(stackWithBonuses, attackerWasAlive);
-
-			if(attackPossibility.defenderDamageReduce > 0)
-			{
-				stackWithBonuses->removeUnitBonus(Bonus::UntilAttack);
-				stackWithBonuses->removeUnitBonus(Bonus::UntilOwnAttack);
-			}
-			if(attackPossibility.attackerDamageReduce > 0)
-				stackWithBonuses->removeUnitBonus(Bonus::UntilBeingAttacked);
-
-			for(auto affected : attackPossibility.affectedUnits)
-			{
-				stackWithBonuses = state->getForUpdate(affected->unitId());
-				const bool affectedWasAlive = stackWithBonuses->alive();
-				*stackWithBonuses = *affected;
-				state->recordBloodrageTransition(stackWithBonuses, affectedWasAlive);
-
-				if(attackPossibility.defenderDamageReduce > 0)
-					stackWithBonuses->removeUnitBonus(Bonus::UntilBeingAttacked);
-				if(attackPossibility.attackerDamageReduce > 0 && attackPossibility.attack.defender->unitId() == affected->unitId())
-					stackWithBonuses->removeUnitBonus(Bonus::UntilAttack);
-			}
-			AttackPreviewHitContext::replayOrdinaryStrikeEffects(*state, attackPossibility);
+			if(!forecast::NativeAdapter::applyAcceptedAttack(*state, activated, attackPossibility,
+				forecast::AcceptedAttackRoute::HeroQueue))
+				forecast::NativeAdapter::replayAcceptedAttackNative(*state, unit, attackPossibility,
+					forecast::AcceptedAttackRoute::HeroQueue);
 		}
 	}
 
@@ -200,7 +180,10 @@ void BattleEvaluator::projectHeroActionQueueActivation(PossibleSpellcast::ValueM
 	if(!potentialTargets.possibleAttacks.empty()
 		&& completed->pursuitMovementRemaining == 0 && !completed->dreadCavalryState.pending
 		&& !state->battleHasPendingRangedFollowUp(completed.get()))
+	{
+		consecratedArmsAI::completeObservedAction(*state, unit->unitId());
 		newHorizonsPlague::completeActivation(*state, *state->getServerCallback(), unit->unitId());
+	}
 	state->completeNormalActivation(unit->unitId());
 	newHorizonsDivineMandate::completeDisciplineActivation(*state, unit->unitId());
 	state->completeSeizeInitiativeActivation(unit->unitId());

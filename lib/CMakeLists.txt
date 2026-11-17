@@ -56,6 +56,25 @@ set(lib_SRCS
 )
 
 set(lib_MAIN_SRCS
+	spells/NewHorizonsMetamagicCore.cpp
+	spells/NewHorizonsMetamagicEnchantments.cpp
+	spells/NewHorizonsMetamagicAmmunition.cpp
+	spells/BattleSpellReceptivity.cpp
+	spells/SpellDamageContext.cpp
+	spells/SpellCreatureAbility.cpp
+	spells/NewHorizonsMetamagicOverflow.cpp
+	combatScripts/NativePreparedBonuses.cpp
+	bonuses/OwnedFrozenScoringSource.cpp
+	bonuses/FrozenScoringBonuses.cpp
+	bonuses/BonusDependencyValues.cpp
+	bonuses/BonusDependencyQueryFrame.cpp
+	bonuses/BonusDependencyQueryBuilder.cpp
+	bonuses/BonusDependencyOverlay.cpp
+	bonuses/BonusDependencyFacts.cpp
+	bonuses/BonusDependencyCapture.cpp
+	battle/UnitStateValueSnapshot.cpp
+	battle/OwnedFrameModifierCapture.cpp
+	battle/OrdinaryUnitTransitions.cpp
 	mapObjects/TownMachineCapabilities.cpp
 	battle/MechanicsPresence.cpp
 	battle/UnitMechanicsQueries.cpp
@@ -220,6 +239,18 @@ set(lib_MAIN_SRCS
 	battle/BattleLuckQueries.cpp
 	battle/BattleMoraleQueries.cpp
 	battle/PassiveDivineMandate.cpp
+	battle/ConsecratedArms.cpp
+	battle/ConsecratedArmsCombat.cpp
+	battle/ConsecratedArmsEffects.cpp
+	battle/ConsecratedArmsOrder.cpp
+	battle/UnitShieldState.cpp
+	battle/UnitShieldSerialization.cpp
+	battle/UnitShieldPreview.cpp
+	battle/UnitShieldEffects.cpp
+	battle/CHealthCasualtyLimit.cpp
+	battle/CreatureAbility.cpp
+	battle/CreatureAbilityJson.cpp
+	battle/RedemptionEvent.cpp
 	battle/PassiveDivineMandateInspiration.cpp
 	battle/PassiveDivineMandateOrders.cpp
 	battle/PassiveDivineMandatePolicy.cpp
@@ -1160,6 +1191,24 @@ set(lib_HEADERS
 )
 
 set(lib_MAIN_HEADERS
+	spells/NewHorizonsMetamagicOverflow.h
+	spells/NewHorizonsMetamagicCore.h
+	spells/SpellDamageContext.h
+	spells/NewHorizonsMetamagicEnchantments.h
+	spells/NewHorizonsMetamagicAmmunition.h
+	combatScripts/NativePreparedBonuses.h
+	bonuses/RecipientLayerSource.h
+	bonuses/OwnedFrozenScoringSource.h
+	bonuses/FrozenScoringBonuses.h
+	bonuses/BonusOutputOrigin.h
+	bonuses/BonusDependencyQueryFrame.h
+	bonuses/BonusDependencyOverlay.h
+	bonuses/BonusDependencyFacts.h
+	bonuses/BonusDependencyTerrain.h
+	bonuses/BonusDependencyCapture.h
+	battle/UnitStateValueSnapshot.h
+	battle/OwnedUnitStateLoanSource.h
+	battle/OrdinaryUnitTransitions.h
 	battle/MechanicsPresence.h
 	entities/hero/CompiledPerkCatalogue.h
 	nativeRules/CapturedPerkRules.h
@@ -1335,6 +1384,12 @@ set(lib_MAIN_HEADERS
 	battle/NewHorizonsConfusionControl.h
 	battle/NewHorizonsConfusionState.h
 	battle/PassiveDivineMandate.h
+	battle/ConsecratedArms.h
+	battle/ConsecratedArmsCombat.h
+	battle/ConsecratedArmsOrder.h
+	battle/UnitShieldState.h
+	battle/CreatureAbility.h
+	battle/RedemptionEvent.h
 	battle/PassiveDivineMandateInspiration.h
 	battle/PassiveDivineMandateSpellPool.h
 	battle/PassiveDivineMandateVanguard.h

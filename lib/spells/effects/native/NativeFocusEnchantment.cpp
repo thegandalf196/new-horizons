@@ -8,6 +8,7 @@
 #include "../../../battle/NewHorizonsFocusMagic.h"
 #include "../../../networkPacks/SetStackEffect.h"
 #include "../../../mapObjects/CGHeroInstance.h"
+#include <typeinfo>
 
 namespace spells::effects::native
 {
@@ -50,6 +51,11 @@ public:
 
 namespace nativeSpells
 {
+bool isFocusEnchantmentEffect(const spells::effects::Effect & effect)
+{
+	return typeid(effect) == typeid(spells::effects::native::FocusEnchantment);
+}
+
 std::shared_ptr<spells::effects::Effect> createFocusEnchantmentEffect(const std::string & path)
 {
 	return path == "spells/focusMagicEnchantment" ? std::make_shared<spells::effects::native::FocusEnchantment>() : nullptr;

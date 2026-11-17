@@ -6,6 +6,7 @@
 #include <optional>
 #include <vcmi/spells/Magic.h>
 namespace spells { class Mechanics; }
+namespace battleSearch { class SearchBudget; }
 class Environment;
 class CBattleInfoCallback;
 class PossibleSpellcast;
@@ -25,5 +26,6 @@ DLL_LINKAGE bool spellScoutCandidate(const PossibleSpellcast & candidate);
 DLL_LINKAGE std::optional<float> spellScoutUtility(const Environment * environment,
 	const std::shared_ptr<CBattleInfoCallback> & source, BattleSide side,
 	const PossibleSpellcast & candidate, const DamageCache & originalDamage,
-	const BattleExchangeEvaluator & utility, Baseline * pressure);
+	const BattleExchangeEvaluator & utility, Baseline * pressure,
+	const std::shared_ptr<battleSearch::SearchBudget> & budget = std::shared_ptr<battleSearch::SearchBudget>());
 }

@@ -22,6 +22,9 @@ DLL_LINKAGE Bonus forceLancePin(SpellID spell);
 }
 namespace nativeSpells
 {
+/// Native owner attests the exact loaded final implementation, not its name.
+DLL_LINKAGE bool isFocusEnchantmentEffect(const spells::effects::Effect &);
+DLL_LINKAGE bool isForceLanceEffect(const spells::effects::Effect &);
 DLL_LINKAGE std::shared_ptr<spells::effects::Effect> createFocusEnchantmentEffect(const std::string & path);
 DLL_LINKAGE std::shared_ptr<spells::effects::Effect> createForcedRecallEffect(const std::string & path);
 DLL_LINKAGE std::shared_ptr<spells::effects::Effect> createForceLanceEffect(const std::string & path);

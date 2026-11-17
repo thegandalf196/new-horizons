@@ -1,18 +1,20 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt and AUTHORS. */
 #pragma once
 #include "../../Global.h"
+#include "SearchBudget.h"
 #include <optional>
 #include <string_view>
 
 namespace battleSearch
 {
 /// Search approximation only; never spell/Order legality or native effect rules.
-enum class Profile { Full, BeamOne, BeamOneTwoActors };
+enum class Profile { Full, BeamOne, BeamOneTwoActors, LegacyUnlimited };
 DLL_LINKAGE std::optional<Profile> profileForAIName(std::string_view name);
 DLL_LINKAGE bool forecastBeamOne();
 DLL_LINKAGE unsigned forecastFutureActors();
 /// Admitted Hero candidates only. Zero retains Full; no wall-clock cutoff.
 DLL_LINKAGE unsigned heroRefinementLimit();
+DLL_LINKAGE std::optional<SearchLimits> workLimits();
 
 /// One synchronous decision on its executing thread. Nested reference scopes win
 /// and restore the preceding policy, including on exceptions. Workers must enter

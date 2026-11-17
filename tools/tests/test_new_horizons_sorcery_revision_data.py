@@ -9,9 +9,9 @@ from jsonschema import Draft4Validator
 from .test_new_horizons_content import load, validate_rules
 
 ROOT = Path(__file__).resolve().parents[2]
-PERKS = ('conservedFormula', 'manaRecycling', 'disruptiveCasting', 'purgingFormula',
-         'spellSculpting', 'hexWeaving', 'widenSpell', 'matterbreaker',
-         'magicalMemory', 'arcaneRupture')
+PERKS = ('conservedFormula', 'disruptiveCasting', 'unravelingMagic',
+         'reconstitutingMagic', 'spellSculpting', 'widenSpells', 'levitation',
+         'arcaneBallistics', 'arcaneCascade', 'empoweredSpells')
 
 
 class SorceryRevisionDataTest(unittest.TestCase):
@@ -69,9 +69,12 @@ class SorceryRevisionDataTest(unittest.TestCase):
         self.assertEqual([p['requires'] for p in pool], ['basic'] * 4 + ['advanced'] * 4 + ['expert'] * 2)
         self.assertNotIn('Metamagic point', json.dumps(skill))
         self.assertEqual(rules['metamagicPolicy'], {
-            'version': 4, 'removalChancePercent': [0, 20, 30, 40],
+            'version': 6, 'removalChancePercent': [0, 20, 30, 40],
             'damagePerMana': 10, 'restorationPerMana': 15,
-            'halonRemovalChanceBonusPercent': 5})
+            'halonRemovalChanceBonusPercent': 5,
+            'arcaneOverflowPercentByRank': [0, 30, 45, 60],
+            'friendlyDamageReductionPercentByRank': [0, 30, 45, 60],
+            'debuffRetryChancePercentByRank': [0, 30, 45, 60]})
         Draft4Validator(load('config/schemas/newHorizonsPerks.json')).validate(rules)
     def test_current_data_requires_ordered_one_per_tier_policy(self):
         rules = load('config/newHorizonsPerks.json')

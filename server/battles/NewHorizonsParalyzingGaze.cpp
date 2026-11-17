@@ -56,7 +56,10 @@ void applyAfterShot(CGameHandler & handler, const CBattleInfoCallback & battle,
 		return;
 	SetStackEffect effect;
 	effect.battleID = battle.getBattle()->getBattleID();
-	effect.toAdd.emplace_back(targetId, std::vector<Bonus>{marker()});
+	auto token = marker();
+	token.abilityDescriptor = creatureAbility::nativeAffliction(creatureAbility::Native::PARALYZING_GAZE,
+		creatureAbility::Family::CREATURE_ABILITY, battle.battleGetOwner(source));
+	effect.toAdd.emplace_back(targetId, std::vector<Bonus>{token});
 	handler.sendAndApply(effect);
 }
 }

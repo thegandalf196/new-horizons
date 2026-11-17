@@ -19,13 +19,15 @@ constexpr uint16_t temporaryDuration = BonusDuration::ONE_BATTLE | BonusDuration
 bool sameEffect(const RemovalCandidate & first, const RemovalCandidate & second)
 {
 	return first.recipient == second.recipient && first.family == second.family
-		&& first.caster == second.caster && first.statusIdentity == second.statusIdentity;
+		&& first.caster == second.caster && first.statusIdentity == second.statusIdentity
+		&& creatureAbility::sameDescriptor(first.abilityDescriptor, second.abilityDescriptor);
 }
 
 bool belongsTo(const Bonus & bonus, const RemovalCandidate & candidate)
 {
 	return bonus.source == BonusSource::SPELL_EFFECT && bonus.spellCasterOwner == candidate.caster
 		&& bonus.statusIdentity == candidate.statusIdentity
+		&& creatureAbility::sameDescriptor(bonus.abilityDescriptor, candidate.abilityDescriptor)
 		&& std::any_of(candidate.bonuses.begin(), candidate.bonuses.end(),
 			[&](const Bonus & original) { return original.sid == bonus.sid; });
 }
@@ -53,24 +55,46 @@ int32_t refundRoom(int32_t paid, int32_t refunded, int32_t room)
 std::optional<ResolutionPolicy> resolutionPolicy(const JsonNode & rules)
 {
 	const auto & policy = rules["metamagicPolicy"];
-	const auto integer = [](const JsonNode & node, int64_t low, int64_t high)
-		{ return node.getType() == JsonNode::JsonType::DATA_INTEGER && node.Integer() >= low && node.Integer() <= high; };
-	if(!integer(policy["version"], 4, 4) || !policy["removalChancePercent"].isVector()
-		|| policy["removalChancePercent"].Vector().size() != 4
-		|| !integer(policy["damagePerMana"], 1, 1000000) || !integer(policy["restorationPerMana"], 1, 1000000)
-		|| !integer(policy["halonRemovalChanceBonusPercent"], 0, 100))
+	if(!policy.isStruct() || policy["version"].getType() != JsonNode::JsonType::DATA_INTEGER)
 		return std::nullopt;
-	ResolutionPolicy result;
-	for(size_t index = 0; index < result.chance.size(); ++index)
+	const auto version = policy["version"].Integer();
+	if((version != 4 && version != 5 && version != 6) || policy.Struct().size() != (version == 6 ? 8u : version == 5 ? 6u : 5u))
+		return std::nullopt;
+	const auto exactInteger = [](const JsonNode & value, int32_t expected)
+		{ return value.getType() == JsonNode::JsonType::DATA_INTEGER && value.Integer() == expected; };
+	const auto exactRanks = [&](const JsonNode & values, const std::array<int32_t, 4> & expected)
 	{
-		const auto & chance = policy["removalChancePercent"].Vector()[index];
-		if(!integer(chance, 0, 100) || (index == 0 && chance.Integer() != 0))
+		if(!values.isVector() || values.Vector().size() != expected.size())
+			return false;
+		for(size_t rank = 0; rank < expected.size(); ++rank)
+			if(!exactInteger(values.Vector()[rank], expected[rank]))
+				return false;
+		return true;
+	};
+	ResolutionPolicy result{{0, 20, 30, 40}, 10, 15, 5};
+	if(!exactRanks(policy["removalChancePercent"], result.chance)
+		|| !exactInteger(policy["damagePerMana"], result.damagePerMana)
+		|| !exactInteger(policy["restorationPerMana"], result.restorationPerMana)
+		|| !exactInteger(policy["halonRemovalChanceBonusPercent"], result.halonChanceBonus))
+		return std::nullopt;
+	if(version >= 5)
+	{
+		result.overflowPercentByRank = version == 6 ? std::array<int32_t, 4>{0, 30, 45, 60}
+			: std::array<int32_t, 4>{0, 25, 50, 75};
+		if(!exactRanks(policy["arcaneOverflowPercentByRank"], result.overflowPercentByRank))
 			return std::nullopt;
-		result.chance[index] = static_cast<int32_t>(chance.Integer());
 	}
-	result.damagePerMana = static_cast<int32_t>(policy["damagePerMana"].Integer());
-	result.restorationPerMana = static_cast<int32_t>(policy["restorationPerMana"].Integer());
-	result.halonChanceBonus = static_cast<int32_t>(policy["halonRemovalChanceBonusPercent"].Integer());
+	else if(policy.Struct().contains("arcaneOverflowPercentByRank"))
+		return std::nullopt;
+	if(version == 6)
+	{
+		result.optionalRemoval = true;
+		result.friendlyDamageReductionPercentByRank = {0, 30, 45, 60};
+		result.debuffRetryChancePercentByRank = {0, 30, 45, 60};
+		if(!exactRanks(policy["friendlyDamageReductionPercentByRank"], result.friendlyDamageReductionPercentByRank)
+			|| !exactRanks(policy["debuffRetryChancePercentByRank"], result.debuffRetryChancePercentByRank))
+			return std::nullopt;
+	}
 	return result;
 }
 
@@ -122,6 +146,8 @@ std::vector<RemovalCandidate> collectRemovalCandidates(uint32_t recipient, Playe
 	{
 		if(bonus.source != BonusSource::SPELL_EFFECT)
 			continue;
+		if(bonus.abilityDescriptor && bonus.abilityDescriptor->family != creatureAbility::Family::HERO_SPELL
+			&& bonus.abilityDescriptor->family != creatureAbility::Family::CREATURE_SPELL) continue;
 		const auto spell = bonus.sid.as<SpellID>();
 		const auto definition = resolver(spell);
 		if(!definition || !definition->family.hasValue() || definition->listedMana <= 0
@@ -129,7 +155,7 @@ std::vector<RemovalCandidate> collectRemovalCandidates(uint32_t recipient, Playe
 			|| (kind == ResolutionKind::OFFENSE ? !definition->positive : !definition->negative))
 			continue;
 		const RemovalCandidate identity{recipient, spell, definition->family,
-			bonus.spellCasterOwner, bonus.statusIdentity, definition->listedMana, {}};
+			bonus.spellCasterOwner, bonus.statusIdentity, definition->listedMana, {}, bonus.abilityDescriptor};
 		auto found = std::find_if(groups.begin(), groups.end(), [&](const auto & group) { return sameEffect(group, identity); });
 		if(found == groups.end())
 		{

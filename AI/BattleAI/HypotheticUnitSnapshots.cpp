@@ -10,6 +10,10 @@
 void HypotheticBattle::captureUnitSnapshots(const CBattleInfoCallback & source, bool hasParent)
 {
 	using namespace hypotheticEffectSnapshotRules;
+	// Complete native values/raw clocks/query owners were already sealed at
+	// the source decision or a real transition. An unchanged owned fork shares
+	// those handles; never scan/materialize its whole recipient roster again.
+	if(compactReadSession) return;
 	if(ownedFrameBatch)
 	{
 		getForUpdate(static_cast<uint32_t>(activeUnitId));

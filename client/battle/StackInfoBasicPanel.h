@@ -13,6 +13,7 @@
 #include "NewHorizonsBattleStatus.h"
 #include "ArcaneInspirationPresentation.h"
 #include "ElementalAttunementPresentation.h"
+#include "../../lib/battle/UnitShieldState.h"
 
 #include <cstdint>
 #include <array>
@@ -43,6 +44,9 @@ private:
 	std::shared_ptr<CPlayerBattleCallback> battleCallback;
 	newHorizonsBattleStatus::StackInfoStatusSnapshot displayedStatus;
 	int displayedFocusCharges = 0;
+	battle::ShieldSnapshot displayedShields;
+	std::optional<battle::ShieldSnapshot> shieldPresentationOverride;
+	void appendVitalStatus(const CStack * stack);
 	newHorizonsBattleStatus::BattleMoraleReadback displayedMoraleReadback;
 	newHorizonsBattleStatus::BattleLuckReadback displayedLuckReadback;
 	std::string displayedSoulChainSignature;
@@ -58,10 +62,12 @@ private:
 
 public:
 	StackInfoBasicPanel(
-		const CStack * stack, std::shared_ptr<CPlayerBattleCallback> battleCallback, bool initializeBackground);
+		const CStack * stack, std::shared_ptr<CPlayerBattleCallback> battleCallback, bool initializeBackground,
+		std::optional<battle::ShieldSnapshot> shields = std::nullopt);
 
 	void initializeData(const CStack * stack);
 	void update(const CStack * updatedInfo);
-	void refreshDefendStatus(const CStack * updatedInfo);
+	void refreshDefendStatus(const CStack * updatedInfo,
+		std::optional<battle::ShieldSnapshot> shields = std::nullopt);
 	bool containsPoint(const Point & point) const;
 };

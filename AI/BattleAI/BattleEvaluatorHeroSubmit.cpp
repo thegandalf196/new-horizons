@@ -32,7 +32,8 @@ bool BattleEvaluator::submitHeroAction(const PossibleSpellcast & castToPerform,
 			const auto targetId = castToPerform.focusFire.value().targetUnitId;
 			if(!cb->getBattle(battleID)->battleCanConfirmHeroCommand(side, castToPerform.command, targetId))
 				return false;
-			heroActionTiming::SubmitScope submit(timing);
+			decisionBaseOpen = false;
+	heroActionTiming::SubmitScope submit(timing);
 			cb->battleMakeSpellAction(battleID,
 				BattleAction::makeTargetedHeroCommand(side, castToPerform.command, targetId));
 		}
@@ -47,7 +48,8 @@ bool BattleEvaluator::submitHeroAction(const PossibleSpellcast & castToPerform,
 					castToPerform.commandTargets.front(), castToPerform.commandTargets.back());
 			else
 				action = BattleAction::makeHeroCommand(side, castToPerform.command);
-			heroActionTiming::SubmitScope submit(timing);
+			decisionBaseOpen = false;
+	heroActionTiming::SubmitScope submit(timing);
 			cb->battleMakeSpellAction(battleID, action);
 		}
 		activeActionMade = true;
@@ -85,7 +87,8 @@ bool BattleEvaluator::submitHeroAction(const PossibleSpellcast & castToPerform,
 	spellcast.side = side;
 	spellcast.stackNumber = -1;
 	{
-		heroActionTiming::SubmitScope submit(timing);
+		decisionBaseOpen = false;
+	heroActionTiming::SubmitScope submit(timing);
 		cb->battleMakeSpellAction(battleID, spellcast);
 	}
 	activeActionMade = true;

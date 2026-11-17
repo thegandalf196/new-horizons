@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "ForecastNativeAdapter.h"
 #include "SylvanTacticsProjection.h"
 #include "PhysicalStrikeProjection.h"
 #include "HypotheticBattle.h"
@@ -85,7 +86,8 @@ bool dynamicDamage(const CBattleInfoCallback & battle,
 }
 
 void StrikeProjection::damage(const CBattleInfoCallback & world, const BattleAttackInfo & attack,
-	battle::CUnitState & target, int64_t & amount, battle::DamageProvenance provenance, int64_t * postShieldDamage)
+	battle::CUnitState & target, int64_t & amount, battle::DamageProvenance provenance,
+	int64_t * postShieldDamage, battle::DamageContext * context)
 {
 	Pending * captured = nullptr;
 	bool mayRebirth = false;
@@ -126,7 +128,10 @@ void StrikeProjection::damage(const CBattleInfoCallback & world, const BattleAtt
 		world, attack.attacker, &target, attack.shooting, 1);
 	int64_t localPostShieldDamage = 0;
 	auto * hitDamage = postShieldDamage ? postShieldDamage : &localPostShieldDamage;
-	target.damage(amount, false, provenance, hitDamage);
+	if(context)
+		target.damageWithContext(amount, false, provenance, *context, hitDamage);
+	else if(!branch || !forecast::NativeAdapter::damage(*branch, target, amount, provenance, hitDamage))
+		target.damage(amount, false, provenance, hitDamage);
 	// Clone destruction zeroes casualty damage despite a positive resolved hit.
 	if(*hitDamage > 0 && disarmed > 0)
 		target.counterAttacks.use(disarmed);

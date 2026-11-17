@@ -2,6 +2,7 @@
 #include "StdInc.h"
 #include "OwnedRecipientBonusGraph.h"
 #include "BonusLimitation.h"
+#include "BonusDependencyCapture.h"
 #include <stdexcept>
 namespace
 {
@@ -53,4 +54,14 @@ BonusList OwnedRecipientBonusGraph::queryRootRecords(const CSelector & selector,
 	if(!unstacked) accepted.stackBonuses();
 	accepted.getBonuses(selected, selector);
 	return selected;
+}
+
+bonusDependencies::CapturedModifiers OwnedRecipientBonusGraph::captureRootModifiers(
+	const RootQuery & query, const BonusList & selectedRaw, const battle::Unit * ownedUnit) const
+{
+	validateRootQuery(query);
+	TCNodesVector selectedParents;
+	for(const auto index : query.parents) selectedParents.push_back(&queryNode(index));
+	RootQueryGraph view(*this, query.facts, selectedParents, selectedRaw, ownedUnit);
+	return bonusDependencies::captureNativeModifiers(view, root());
 }

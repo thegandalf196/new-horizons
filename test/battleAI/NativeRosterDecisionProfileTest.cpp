@@ -4,6 +4,9 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#ifdef NH_PERF_EXPERIMENTS
+#include "../benchmark/SearchWorkXml.h"
+#endif
 #include "../game/GameStateTest.h"
 #include "../../AI/BattleAI/BattleAI.h"
 #include "../../lib/GameLibrary.h"
@@ -325,6 +328,9 @@ TEST_F(NativeRosterDecisionProfileTest, FourteenStackOrdinaryFirstDecision)
 	RecordProperty("workCountersAvailable", timing ? "1" : "0");
 	if(timing)
 	{
+#ifdef NH_PERF_EXPERIMENTS
+		nativeBenchmark::recordSearchWorkDiagnostics("side0", *timing);
+#endif
 		RecordProperty("callbackCount", std::to_string(timing->activeStackCalls));
 		RecordProperty("roundsObserved", std::to_string(timing->roundsObserved));
 		RecordProperty("movementExchangeCount", std::to_string(timing->movementExchangeBody.calls));

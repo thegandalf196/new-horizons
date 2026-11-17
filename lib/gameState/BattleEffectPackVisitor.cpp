@@ -7,6 +7,7 @@
 #include "../battle/IBattleState.h"
 #include "../battle/Unit.h"
 #include "../battle/CUnitState.h"
+#include "../battle/UnitShieldState.h"
 #include "../battle/NewHorizonsSerpentsEmbrace.h"
 #include "../spells/HydrasVitalityIdentity.h"
 #include "../networkPacks/SetStackEffect.h"
@@ -65,6 +66,7 @@ void BattleStatePackVisitor::visitSetStackEffect(SetStackEffect & pack)
 	for(const auto & stackData : pack.toAdd)
 		battleState.addUnitBonus(stackData.first, stackData.second);
 
+	battle::synchronizePrayerEffects(battleState, pack);
 	if(capacityAffectedStacks.empty())
 		return;
 	const auto hydrasCapacity = hydrasVitalitySource.And(Selector::type()(BonusType::STACK_HEALTH));

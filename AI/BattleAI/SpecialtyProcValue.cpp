@@ -31,7 +31,8 @@ float armyPressure(const std::shared_ptr<CBattleInfoCallback> & board, PlayerCol
 }
 }
 void Opportunities::transition(Ledger & ledger, const battle::Unit & source,
-	int chance, bool harmful, const std::optional<Key> & key, const std::optional<attackAbilityPrefix::StatusKey> & condition)
+	int chance, bool harmful, const std::optional<Key> & key, const std::optional<attackAbilityPrefix::StatusKey> & condition,
+	int resistanceBasisPoints)
 {
 	std::map<Outcome, double> next;
 	for(const auto & [state, mass] : ledger.outcomes)
@@ -42,7 +43,8 @@ void Opportunities::transition(Ledger & ledger, const battle::Unit & source,
 			continue;
 		}
 		const auto rounding = creatureAbilityChance::rounding(source, chance);
-		const auto probabilities = nominalAbilityChance::harmful(rounding, harmful && state.rerollAvailable);
+		const auto probabilities = nominalAbilityChance::afterPrevention(
+			nominalAbilityChance::harmful(rounding, harmful && state.rerollAvailable), resistanceBasisPoints);
 		for(size_t index = 0; index < probabilities.size(); ++index)
 			if(probabilities[index] > 0)
 			{
@@ -110,13 +112,15 @@ void Opportunities::observe(const std::shared_ptr<HypotheticBattle> & board, con
 				}
 			if(!effect.selectedRecords.empty()) { key = selected; ledger.effects[*key] = std::move(effect); }
 		}
-		transition(ledger, *attack.attacker, attempt.chancePercent, attempt.harmful, key, attempt.condition);
+		transition(ledger, *attack.attacker, attempt.chancePercent, attempt.harmful, key, attempt.condition,
+			attempt.resistanceBasisPoints);
 	}
 	if(includeStun && info.stunChancePercent > 0)
 	{
 		const Key key{attack.defender->unitId(), Kind::STUN, 0, {}};
 		ledger.effects.try_emplace(key);
-		transition(ledger, *attack.attacker, info.stunChancePercent, true, key, info.stunCondition);
+		transition(ledger, *attack.attacker, info.stunChancePercent, true, key, info.stunCondition,
+			info.stunResistanceBasisPoints);
 	}
 }
 void Opportunities::observeStun(const std::shared_ptr<HypotheticBattle> & board, const BattleAttackInfo & attack)
@@ -130,7 +134,8 @@ void Opportunities::observeStun(const std::shared_ptr<HypotheticBattle> & board,
 	if(inserted) ledger.outcomes[Outcome{info.initialNominalRerollAvailability > 0, {}, {}}] = 1;
 	const Key key{attack.defender->unitId(), Kind::STUN, 0, {}};
 	ledger.effects.try_emplace(key);
-	transition(ledger, *attack.attacker, info.stunChancePercent, true, key, info.stunCondition);
+	transition(ledger, *attack.attacker, info.stunChancePercent, true, key, info.stunCondition,
+		info.stunResistanceBasisPoints);
 }
 void Opportunities::observeCounter(const std::shared_ptr<HypotheticBattle> & board,
 	const battle::Unit & actor, const battle::Unit & target)

@@ -1,7 +1,10 @@
 /* Part of VCMI / New Horizons. GPL v2.0 or later; see license.txt. */
 #include "StdInc.h"
+#include "SearchBudget.h"
+#include "../../lib/spells/CSpell.h"
 #include "HeroDecisionPressure.h"
 #include "HeroSpellRefinement.h"
+#include "ForecastHeroActionAdmission.h"
 #include "FlatDamageInputs.h"
 #include "BattleSearchPolicy.h"
 #include "AttackPossibility.h"
@@ -101,10 +104,11 @@ namespace
 {
 std::optional<float> scoutOrder(Baseline * baseline, const Environment * environment,
 	const std::shared_ptr<CBattleInfoCallback> & source, BattleSide side,
-	const PossibleSpellcast & candidate)
+	const PossibleSpellcast & candidate, const std::shared_ptr<battleSearch::SearchBudget> & budget)
 {
 	if(!baseline) return {};
-	auto state = std::make_shared<HypotheticBattle>(environment, source);
+	auto state = std::make_shared<HypotheticBattle>(environment, source,
+		std::shared_ptr<const battle::OwnedBattleFrameBatch>(), budget);
 	const auto admission = heroActionProjection::admitCandidate(*state, side, candidate);
 	if(!admission.admitted || !admission.orderEffects || !admission.orderAllowance
 		|| !state->projectAcceptedHeroOrder(side, *admission.orderEffects, *admission.orderAllowance))
@@ -124,7 +128,9 @@ std::optional<float> scoutOrder(Baseline * baseline, const Environment * environ
 void prepareShortlist(Experiment & result, const Environment * environment,
 	const std::shared_ptr<CBattleInfoCallback> & source, BattleSide side,
 	const std::vector<PossibleSpellcast> & candidates, const DamageCache & originalDamage,
-	const BattleExchangeEvaluator & utility)
+	const BattleExchangeEvaluator & utility, const std::shared_ptr<battleSearch::SearchBudget> & budget,
+	const battleSearch::SearchLimits * limits,
+	const std::shared_ptr<CBattleInfoCallback> & ownedDecisionSource)
 {
 	result.declined.assign(candidates.size(), false);
 	const auto supportedCommand = [&](HeroCommand command)
@@ -132,23 +138,43 @@ void prepareShortlist(Experiment & result, const Environment * environment,
 		return command == HeroCommand::FOCUS_FIRE || command == HeroCommand::RIPOSTE
 			|| (result.refinementLimit && command == HeroCommand::HOLD_THE_LINE);
 	};
-	if(std::count_if(candidates.begin(), candidates.end(), [&](const auto & candidate)
+	if((!budget || !limits || !limits->refineScouted) && std::count_if(candidates.begin(), candidates.end(), [&](const auto & candidate)
 		{ return supportedCommand(candidate.command) || (result.refinementLimit && spellScoutCandidate(candidate)); })
 		<= static_cast<std::ptrdiff_t>(result.refinementLimit ? result.refinementLimit : 2))
 		return;
 	++result.baselineAttempts;
-	auto baseline = Baseline::create(environment, source, side, std::nullopt, true, &originalDamage, &utility);
+	std::unique_ptr<Baseline> baseline;
+	try { baseline = Baseline::create(environment, source, side, std::nullopt, true, &originalDamage, &utility, budget); }
+	catch(const battleSearch::BudgetExhausted &) {}
+	battleSearch::FamilyReservations scouts(budget.get(), battleSearch::WorkKind::Scout,
+		limits ? limits->scoutsPerFamily : 0, budget && limits && limits->refineScouted);
 	result.baselineReady = baseline != nullptr;
 	for(size_t index = 0; index < candidates.size(); ++index)
 	{
 		const auto & candidate = candidates[index];
 		std::optional<float> marginal;
+		const auto family = candidate.command != HeroCommand::NONE ? battleSearch::Family::Orders
+			: battleSearch::spellFamily(candidate.spell->getJsonKey(), candidate.spell->isDamage(), candidate.spell->isPositive(), false);
+		auto * scout = scouts.forFamily(family);
+		if(scout && !scout->consume(battleSearch::WorkKind::Scout)) continue;
+		try
+		{
+		// Reuse the exact decision root only after its complete candidate closure
+		// is proved; optional scouting never executes an unsupported prefix.
+		const auto & scoutSource = ownedDecisionSource ? ownedDecisionSource : source;
+		if(ownedDecisionSource && budget)
+			budget->require(battleSearch::WorkKind::Node,
+				static_cast<uint32_t>(ownedDecisionSource->battleGetAllUnits(false).size()) + 1);
+		if(ownedDecisionSource && forecast::heroAction::classify(*scoutSource, side, candidate).route
+			!= forecast::heroAction::Route::Compact) continue;
 		if(supportedCommand(candidate.command))
-			marginal = scoutOrder(baseline.get(), environment, source, side, candidate);
+			marginal = scoutOrder(baseline.get(), environment, scoutSource, side, candidate, budget);
 		else if(result.refinementLimit && spellScoutCandidate(candidate))
-			marginal = spellScoutUtility(environment, source, side, candidate,
-				originalDamage, utility, baseline.get());
+			marginal = spellScoutUtility(environment, scoutSource, side, candidate,
+				originalDamage, utility, baseline.get(), budget);
 		if(marginal && std::isfinite(*marginal)) result.cheapScores.push_back({index, *marginal});
+		}
+		catch(const battleSearch::BudgetExhausted &) {} // Unscouted, not illegal; reference quota remains.
 	}
 	result.refinedOrdinals = result.refinementLimit
 		? boundedRefinements(result.cheapScores, result.refinementLimit)
@@ -160,8 +186,9 @@ void prepareShortlist(Experiment & result, const Environment * environment,
 
 Baseline::Baseline(const Environment * environment,
 	std::shared_ptr<CBattleInfoCallback> source, BattleSide side, const DamageCache * originalDamage,
-	const BattleExchangeEvaluator * utility)
-	: source(std::move(source)), reference(std::make_shared<HypotheticBattle>(environment, this->source)),
+	const BattleExchangeEvaluator * utility, std::shared_ptr<battleSearch::SearchBudget> budget)
+	: source(std::move(source)), reference(std::make_shared<HypotheticBattle>(environment, this->source,
+		std::shared_ptr<const battle::OwnedBattleFrameBatch>(), budget)),
 	  damage(std::make_unique<DamageCache>(originalDamage)), side(side),
 	  positiveMultiplier(utility ? utility->getPositiveEffectMultiplier() : 1.0f),
 	  negativeMultiplier(utility ? utility->getNegativeEffectMultiplier() : 1.0f)
@@ -173,7 +200,8 @@ Baseline::~Baseline() = default;
 std::unique_ptr<Baseline> Baseline::create(const Environment * environment,
 	const std::shared_ptr<CBattleInfoCallback> & source, BattleSide side,
 	const std::optional<std::vector<Approach>> & completeExistingApproaches, bool directOnly,
-	const DamageCache * originalDamage, const BattleExchangeEvaluator * utility)
+	const DamageCache * originalDamage, const BattleExchangeEvaluator * utility,
+	std::shared_ptr<battleSearch::SearchBudget> budget)
 {
 	if(!environment || !source || typeid(*source) != typeid(CPlayerBattleCallback)
 		|| !source->getBattle() || typeid(*source->getBattle()) != typeid(BattleInfo)
@@ -191,7 +219,7 @@ std::unique_ptr<Baseline> Baseline::create(const Environment * environment,
 	{
 		return {}; // Optional identity recognition is not a policy permission.
 	}
-	auto result = std::unique_ptr<Baseline>(new Baseline(environment, source, side, originalDamage, utility));
+	auto result = std::unique_ptr<Baseline>(new Baseline(environment, source, side, originalDamage, utility, std::move(budget)));
 	result->hasApproachFacts = completeExistingApproaches.has_value();
 	if(!result->prepare(completeExistingApproaches.value_or(std::vector<Approach>{}), directOnly, !originalDamage))
 		return {};
@@ -213,7 +241,9 @@ bool Baseline::prepare(const std::vector<Approach> & existingApproaches, bool di
 		|| newHorizonsDivineMandate::hasSharedPurposePerk(hero)))
 		return false; // Unvalued random/morale companions are not a zero estimate.
 	for(const auto * unit : units)
-		if(unit->hasBonusOfType(BonusType::COMBAT_EVENT_TRIGGER)
+		{
+			battleSearch::require(reference->searchBudget().get(), battleSearch::WorkKind::Node);
+			if(unit->hasBonusOfType(BonusType::COMBAT_EVENT_TRIGGER)
 			|| unit->hasBonusOfType(BonusType::ON_COMBAT_EVENT)
 			|| unit->hasBonusOfType(BonusType::SPELL_BEFORE_ATTACK)
 			|| unit->hasBonusOfType(BonusType::SPELL_AFTER_ATTACK)
@@ -222,11 +252,16 @@ bool Baseline::prepare(const std::vector<Approach> & existingApproaches, bool di
 				|| unit->hasBonusOfType(BonusType::ATTACKS_ALL_ADJACENT)
 				|| unit->hasBonusOfType(BonusType::SPELL_LIKE_ATTACK)
 				|| unit->hasBonusOfType(BonusType::RANGED_RETALIATION))))
-			return false; // Event/area/multistrike attacks need their existing full forecast.
+			return false;
+		} // Event/area/multistrike attacks need their existing full forecast.
 	for(const auto * unit : units)
-		reference->getForUpdate(unit->unitId()); // Isolate retaliation totalCache latches.
+		{
+			battleSearch::require(reference->searchBudget().get(), battleSearch::WorkKind::Node);
+			reference->getForUpdate(unit->unitId());
+		} // Isolate retaliation totalCache latches.
 	for(const auto * original : units)
 	{
+		battleSearch::require(reference->searchBudget().get(), battleSearch::WorkKind::Node);
 		const auto * actor = reference->battleGetUnitByID(original->unitId());
 		if(!actor->alive() || actor->isGhost() || actor->isTurret())
 			continue;
@@ -235,6 +270,7 @@ bool Baseline::prepare(const std::vector<Approach> & existingApproaches, bool di
 		heroActionProjection::CanonicalSourceAdmission admission(*actor, *reference);
 		for(const auto * enemy : units)
 		{
+			battleSearch::require(reference->searchBudget().get(), battleSearch::WorkKind::Node);
 			const auto * victim = reference->battleGetUnitByID(enemy->unitId());
 			if(!victim->alive() || victim->isGhost() || victim->isTurret()
 				|| reference->battleGetOwner(actor) == reference->battleGetOwner(victim))
@@ -246,17 +282,26 @@ bool Baseline::prepare(const std::vector<Approach> & existingApproaches, bool di
 				continue;
 			bool adjacent = false;
 			for(const auto & from : actor->getHexes())
-				for(const auto & to : victim->getHexes())
-					adjacent |= from.isValid() && to.isValid() && BattleHex::getDistance(from, to) == 1;
+				{
+					battleSearch::require(reference->searchBudget().get(), battleSearch::WorkKind::Node);
+					for(const auto & to : victim->getHexes())
+					{
+						battleSearch::require(reference->searchBudget().get(), battleSearch::WorkKind::Node);
+						adjacent |= from.isValid() && to.isValid() && BattleHex::getDistance(from, to) == 1;
+					}
+				}
 			if(actor->willMove(0) && (!shooting && !adjacent))
 				directTopology = false;
 			int distance = 0;
 			for(const auto & fact : existingApproaches)
-				if(fact.attacker == actor->unitId() && fact.victim == victim->unitId()
+				{
+					battleSearch::require(reference->searchBudget().get(), battleSearch::WorkKind::Node);
+					if(fact.attacker == actor->unitId() && fact.victim == victim->unitId()
 					&& fact.shooting == shooting && fact.voluntaryDistance >= 3)
 				{
 					distance = fact.voluntaryDistance;
 					break;
+				}
 				}
 			pairs.push_back({actor->unitId(), victim->unitId(), shooting, distance, 0});
 		}
@@ -269,7 +314,10 @@ bool Baseline::prepare(const std::vector<Approach> & existingApproaches, bool di
 	if(battleSearch::forecastBeamOne()) flat.prepareRoster(*reference);
 	FlatDamageInputs::Scope prepared(*reference, &flat);
 	for(auto & pair : pairs)
-		pair.referenceValue = pairValue(*reference, pair);
+		{
+			battleSearch::require(reference->searchBudget().get(), battleSearch::WorkKind::Node);
+			pair.referenceValue = pairValue(*reference, pair);
+		}
 	referencePressure = pressure(*reference);
 	return true;
 }
@@ -310,6 +358,7 @@ float Baseline::pressure(HypotheticBattle & view)
 	std::map<uint32_t, float> best;
 	for(const auto & pair : pairs)
 	{
+		battleSearch::require(reference->searchBudget().get(), battleSearch::WorkKind::Node);
 		const float value = &view == reference.get() ? pair.referenceValue : pairValue(view, pair);
 		auto & maximum = best[pair.attacker];
 		maximum = std::max(maximum, value);
@@ -317,7 +366,10 @@ float Baseline::pressure(HypotheticBattle & view)
 	float result = 0;
 	const auto own = reference->sideToPlayer(side);
 	for(const auto & [id, value] : best)
-		result += reference->battleGetOwner(reference->battleGetUnitByID(id)) == own ? value : -value;
+		{
+			battleSearch::require(reference->searchBudget().get(), battleSearch::WorkKind::Node);
+			result += reference->battleGetOwner(reference->battleGetUnitByID(id)) == own ? value : -value;
+		}
 	return result;
 }
 
@@ -326,8 +378,8 @@ std::optional<float> Baseline::extraActivationUtility(const HypotheticBattle & a
 	const auto order = accepted.getHeroOrderState(side);
 	if(!order || order->command != HeroCommand::SECOND_WIND)
 		return {};
-	const auto activation = heroOrderValue::projectSecondWindActivation(*source,
-		reference->env, source, side, order->primaryTargetUnitId);
+	const auto activation = heroOrderValue::projectSecondWindActivation(*reference,
+		reference->env, reference, side, order->primaryTargetUnitId);
 	if(!activation)
 		return {}; // Keep obstacle, Double Command and incomplete activation fallback.
 	auto isolated = std::make_shared<HypotheticBattle>(reference->env,

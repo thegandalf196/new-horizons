@@ -600,6 +600,26 @@
 			"pattern" : "^[^\\u0000-\\u001F\\u007F]*$",
 			"description" : "Optional grouping identity for component bonuses representing one status; a nonempty identity requires statusTags."
 		},
+		"abilityProvenance" : {
+			"type" : "object",
+			"additionalProperties" : false,
+			"required" : [ "family", "categories", "interactions", "resolution", "sourceOwner" ],
+			"properties" : {
+				"family" : { "type" : "integer", "minimum" : 0, "maximum" : 5 },
+				"categories" : { "type" : "integer", "minimum" : 1, "maximum" : 63 },
+				"interactions" : { "type" : "integer", "minimum" : 0, "maximum" : 31 },
+				"resolution" : { "type" : "integer", "minimum" : 0, "maximum" : 1 },
+				"sourceOwner" : { "type" : "integer", "minimum" : -3, "maximum" : 7 },
+				"spell" : { "type" : "string" },
+				"script" : { "type" : "string" },
+				"trait" : { "type" : "string" },
+				"native" : { "type" : "integer", "minimum" : 0, "maximum" : 10 }
+			},
+			"oneOf" : [
+				{ "required" : [ "spell" ] }, { "required" : [ "script" ] },
+				{ "required" : [ "trait" ] }, { "required" : [ "native" ] }
+			]
+		},
 		"propagator" : {
 			"description" : "propagator",
 			"type" : "string",

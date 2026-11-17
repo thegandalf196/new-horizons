@@ -4,6 +4,7 @@
 #include "BattleInterface.h"
 #include "HeroInfoWindow.h"
 #include "PassiveFactionSkillPresentation.h"
+#include "CurrentFactionSkillPresentation.h"
 #include "../windows/InfoWindows.h"
 #include "../../lib/CSkillHandler.h"
 #include "../../lib/CConfigHandler.h"
@@ -11,6 +12,102 @@
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/battle/IBattleState.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
+
+namespace
+{
+std::vector<const CSkill *> appendCurrentFactionStatuses(const CGHeroInstance & hero,
+	const CBattleInfoCallback & battle, BattleSide side, std::vector<CombatStatusEntry> & entries)
+{
+	using namespace passiveFactionSkillPresentation;
+	std::vector<const CSkill *> displayed;
+	for(const auto & skill : LIBRARY->skillh->objects)
+	{
+		if(!skill)
+			continue;
+		const int rank = hero.getPerkSkillRank(skill->getJsonKey());
+		if(rank <= 0)
+			continue;
+		std::optional<SkillStatusText> readout;
+		switch(currentSkill(skill->getJsonKey()))
+		{
+			case CurrentSkill::METAMAGIC:
+				readout = metamagic(hero);
+				break;
+			case CurrentSkill::CONSECRATED_ARMS:
+				if(consecratedArms::enabled(hero.getPerkState().getRules()))
+					readout = divineMandate(hero, battle, side);
+				break;
+			case CurrentSkill::NONE:
+				break;
+		}
+		if(!readout)
+			continue;
+		entries.push_back({skill->at(std::clamp(rank, 1, 3)).iconSmall, skill->getNameTranslated(),
+			readout->value, CInfoWindow::genText(skill->getNameTranslated(), readout->details)});
+		displayed.push_back(skill.get());
+	}
+	return displayed;
+}
+
+std::vector<CombatStatusEntry> heroSkillStatuses(const CGHeroInstance * hero,
+	const CBattleInfoCallback * battleCallback, BattleSide side)
+{
+	std::vector<CombatStatusEntry> entries;
+	const auto * battle = battleCallback->getBattle();
+	if(const auto attunement = passiveFactionSkillPresentation::elementalAttunement(*hero, *battleCallback, side))
+		entries.push_back({{}, "Attunement", attunement->value,
+			CInfoWindow::genText("Elemental Attunement", attunement->details)});
+	const auto currentSkills = appendCurrentFactionStatuses(*hero, *battleCallback, side, entries);
+	for(const auto & skill : LIBRARY->skillh->objects)
+	{
+		if(!skill || std::find(currentSkills.begin(), currentSkills.end(), skill.get()) != currentSkills.end()
+			|| skill->getCombatStatusProvider() == CSkill::CombatStatusProvider::NONE)
+			continue;
+		const int skillRank = hero->getPerkSkillRank(skill->getJsonKey());
+		if(skillRank <= 0)
+			continue;
+
+		std::string value;
+		std::string providerDetails;
+		bool replaceProviderDescription = false;
+		switch(skill->getCombatStatusProvider())
+		{
+			case CSkill::CombatStatusProvider::BLOODRAGE_DAMAGE:
+			{
+				const int cap = battle->getBloodrageCapPercent(side);
+				if(cap <= 0)
+					continue;
+				const int current = std::clamp(battle->getBloodrageDamagePercent(side), 0, cap);
+				// Keep current/cap legible in the compact 42 px value column.
+				// The localized tooltip carries the fully expanded explanation.
+				value = "+" + std::to_string(current) + "/" + std::to_string(cap) + "%";
+				break;
+			}
+			case CSkill::CombatStatusProvider::DIVINE_MANDATE_USES:
+			{
+				const auto readout = passiveFactionSkillPresentation::divineMandate(*hero, *battleCallback, side);
+				if(!readout)
+					continue;
+				value = readout->value;
+				providerDetails = readout->details;
+				replaceProviderDescription = readout->replacesProviderDescription;
+				break;
+			}
+			case CSkill::CombatStatusProvider::RESERVED_METAMAGIC_USES:
+			case CSkill::CombatStatusProvider::NONE:
+				continue;
+		}
+		const auto description = replaceProviderDescription ? std::string{}
+			: skill->getCombatStatusDescriptionTranslated();
+		const auto details = providerDetails.empty()
+			? (description.empty() ? value : description + "\n\n" + value)
+			: (description.empty() ? providerDetails : description + "\n\n" + providerDetails);
+		entries.push_back({skill->at(std::clamp(skillRank, 1, 3)).iconSmall,
+			skill->getNameTranslated(), value, CInfoWindow::genText(skill->getNameTranslated(), details)});
+	}
+	return entries;
+}
+}
 
 void BattleWindow::refreshHeroBattleStatus(BattleSide side)
 {
@@ -27,55 +124,7 @@ void BattleWindow::refreshHeroBattleStatus(BattleSide side)
 
 	if(const auto * hero = visibleHero)
 	{
-		if(const auto attunement = passiveFactionSkillPresentation::elementalAttunement(*hero, *battleCallback, side))
-			entries.push_back({{}, "Attunement", attunement->value,
-				CInfoWindow::genText("Elemental Attunement", attunement->details)});
-		for(const auto & skill : LIBRARY->skillh->objects)
-		{
-			if(!skill || skill->getCombatStatusProvider() == CSkill::CombatStatusProvider::NONE)
-				continue;
-			const int skillRank = hero->getPerkSkillRank(skill->getJsonKey());
-			if(skillRank <= 0)
-				continue;
-
-			std::string value;
-			std::string providerDetails;
-			bool replaceProviderDescription = false;
-			switch(skill->getCombatStatusProvider())
-			{
-				case CSkill::CombatStatusProvider::BLOODRAGE_DAMAGE:
-				{
-					const int cap = battle->getBloodrageCapPercent(side);
-					if(cap <= 0)
-						continue;
-					const int current = std::clamp(battle->getBloodrageDamagePercent(side), 0, cap);
-					// Keep current/cap legible in the compact 42 px value column.
-					// The localized tooltip carries the fully expanded explanation.
-					value = "+" + std::to_string(current) + "/" + std::to_string(cap) + "%";
-					break;
-				}
-				case CSkill::CombatStatusProvider::DIVINE_MANDATE_USES:
-				{
-					const auto readout = passiveFactionSkillPresentation::divineMandate(*hero, *battleCallback, side);
-					if(!readout)
-						continue;
-					value = readout->value;
-					providerDetails = readout->details;
-					replaceProviderDescription = readout->replacesProviderDescription;
-					break;
-				}
-				case CSkill::CombatStatusProvider::RESERVED_METAMAGIC_USES:
-				case CSkill::CombatStatusProvider::NONE:
-					continue;
-			}
-			const auto description = replaceProviderDescription ? std::string{}
-				: skill->getCombatStatusDescriptionTranslated();
-			const auto details = providerDetails.empty()
-				? (description.empty() ? value : description + "\n\n" + value)
-				: (description.empty() ? providerDetails : description + "\n\n" + providerDetails);
-			entries.push_back({skill->at(std::clamp(skillRank, 1, 3)).iconSmall,
-				skill->getNameTranslated(), value, CInfoWindow::genText(skill->getNameTranslated(), details)});
-		}
+		entries = heroSkillStatuses(hero, battleCallback.get(), side);
 	}
 
 	const bool showNormalHeroAction = battleCallback->battleUsesHeroCommands()

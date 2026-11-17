@@ -95,7 +95,15 @@ else()
 endif()
 
 set(test_SRCS
+		spells/NewHorizonsMetamagicOverflowTest.cpp
+		server/battles/NewHorizonsMetamagicOverflowPipelineTest.cpp
+		bonus/OwnedFrozenScoringSourceTest.cpp
+		bonus/BonusDependencyQueryFrameTest.cpp
+		bonus/BonusDependencyOverlayTest.cpp
+		bonus/BonusDependencyFactsTest.cpp
+		bonus/BonusDependencyTerrainTest.cpp
 		client/DirectionalMissileFramesTest.cpp
+		client/ShieldPresentationTest.cpp
 		hero/LeadershipEfficiencyRulesTest.cpp
 		server/battles/LeadershipEfficiencyBattleTest.cpp
 		server/battles/CreatureSupplementalStatsTest.cpp
@@ -133,6 +141,18 @@ set(test_SRCS
 		bonus/PreparedNativeBonusRuleTest.cpp
 		battle/AutomaticHeroCastReceiptTest.cpp
 		battle/PassiveDivineMandatePolicyTest.cpp
+		battle/ConsecratedArmsRulesTest.cpp
+		battle/UnitShieldStateTest.cpp
+		bonus/CreatureAbilitySerializationTest.cpp
+		server/battles/CreatureAbilityApplicationTest.cpp
+		server/battles/ConsecratedArmsOrderTest.cpp
+		server/battles/ConsecratedArmsLastStandTest.cpp
+		server/battles/ConsecratedArmsBurnMarkTest.cpp
+		server/battles/CreatureBurnRedemptionTest.cpp
+		hero/ConsecratedArmsPolicyTest.cpp
+		hero/CurrentFactionSkillPresentationTest.cpp
+		spells/NewHorizonsMetamagicCoreTest.cpp
+		server/battles/NewHorizonsMetamagicV2Test.cpp
 		game/HistoricalFactionPerkRulesTest.cpp
 		game/NewHorizonsPassiveFactionCaptureTest.cpp
 		hero/NewHorizonsPassiveFactionPolicyTest.cpp
@@ -1155,6 +1175,34 @@ if(ENABLE_BATTLE_AI)
 	list(FILTER BATTLE_AI_TEST_SRCS EXCLUDE REGEX ".*main\\.cpp$")
 
 	list(APPEND test_SRCS
+		battleAI/FrozenScoringReadViewTest.cpp
+		battleAI/ForecastStateTest.cpp
+		battleAI/ForecastSpellPaymentTest.cpp
+		battleAI/ForecastSideTestFixture.h
+		battleAI/ForecastSideStateTest.cpp
+		battleAI/ForecastSelectedReceiptIntegrationTest.cpp
+		battleAI/ForecastReadPublicationTest.cpp
+		battleAI/ForecastOverflowConsumerTest.cpp
+		battleAI/ForecastNativeRetaliationForkTest.cpp
+		battleAI/ForecastNativeReadWorkTest.cpp
+		battleAI/ForecastNativeReadViewTest.cpp
+		battleAI/ForecastNativeJoinTest.cpp
+		battleAI/ForecastNativeAdapterTest.cpp
+		battleAI/ForecastTerrainNativeIntegrationTest.cpp
+		battleAI/ForecastNativeAdapterFixture.h
+		battleAI/ForecastModifierOverlayBindingTest.cpp
+		battleAI/ForecastModifierOriginBindingTest.cpp
+		battleAI/ForecastLifecycleIntegrationTest.cpp
+		battleAI/ForecastHeroActionRoutingTest.cpp
+		battleAI/ForecastHeroActionAdmissionTest.cpp
+		battleAI/ForecastFrozenRoleTest.cpp
+		battleAI/ForecastFortificationSnapshotTest.cpp
+		battleAI/ForecastFocusIntegrationTest.cpp
+		battleAI/ForecastEffectConsumerTest.cpp
+		battleAI/ForecastCasterFactsTest.cpp
+		battleAI/ForecastAcceptedAttackIntegrationTest.cpp
+		battleAI/ArcaneOverflowValueTest.cpp
+		battleAI/ArcaneOverflowProjectionTest.cpp
 		battleAI/LeadershipProjectionTest.cpp
 		battleAI/LeadershipDamageCacheTest.cpp
 		${BATTLE_AI_TEST_SRCS}
@@ -1163,6 +1211,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/PassiveFactionAIValueTest.cpp
 		battleAI/PassiveTemporaryGatingAITest.cpp
 		battleAI/PassiveDivineMandateAITest.cpp
+		battleAI/ConsecratedArmsValueTest.cpp
 		server/battles/NewHorizonsAvatarOfRageTest.cpp
 		server/battles/NewHorizonsBloodrageDeathPerksTest.cpp
 		server/battles/NewHorizonsVeteranCohesionTest.cpp

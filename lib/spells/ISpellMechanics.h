@@ -19,8 +19,11 @@
 #include <vcmi/ServerCallback.h>
 
 #include "AutomaticHeroCast.h"
+#include "NewHorizonsMetamagicOverflow.h"
 #include "../battle/Destination.h"
 #include "../battle/BattleSide.h"
+#include "../battle/UnitShieldState.h"
+#include "../battle/CreatureAbility.h"
 #include "../battle/NewHorizonsHeroLuck.h"
 #include "../int3.h"
 #include "../GameConstants.h"
@@ -158,6 +161,7 @@ public:
 	virtual bool getMassSlow() const { return false; }
 	virtual int32_t getShadowGiftSacrificePercent() const { return 0; }
 	virtual AutomaticHeroCastReceipt getAutomaticHeroCast() const { return {}; }
+	virtual creatureAbility::Descriptor getCreatureAbilityDescriptor() const { return {}; }
 	virtual std::optional<newHorizonsHeroLuck::Receipt> getHeroLuck() const { return std::nullopt; }
 
 	virtual OptionalValue64 getEffectValue() const = 0;
@@ -202,6 +206,7 @@ public:
 	bool getMassSlow() const override;
 	int32_t getShadowGiftSacrificePercent() const override;
 	AutomaticHeroCastReceipt getAutomaticHeroCast() const override;
+	creatureAbility::Descriptor getCreatureAbilityDescriptor() const override { return creatureAbilityDescriptor; }
 	std::optional<newHorizonsHeroLuck::Receipt> getHeroLuck() const override;
 
 	OptionalValue64 getEffectValue() const override;
@@ -221,6 +226,7 @@ public:
 	void setMassSlow(bool value);
 	void setShadowGiftSacrificePercent(int32_t value);
 	void setAutomaticHeroCast(AutomaticHeroCastReceipt value);
+	void setCreatureAbilityDescriptor(creatureAbility::Descriptor value);
 	void setHeroLuck(const newHorizonsHeroLuck::Receipt & value);
 
 	void setEffectValue(Value64 value);
@@ -265,6 +271,7 @@ private:
 	bool massSlow = false;
 	int32_t shadowGiftSacrificePercent = 0;
 	AutomaticHeroCastReceipt automaticHeroCast;
+	creatureAbility::Descriptor creatureAbilityDescriptor;
 	std::optional<newHorizonsHeroLuck::Receipt> heroLuck;
 
 	Mode mode;
@@ -331,6 +338,10 @@ public:
 	/// Immutable genuine-Hero facts captured once; recipient marks remain live
 	/// in the actual/detached UnitState supplied to this mechanics instance.
 	virtual bool isGenuineHeroCast() const { return false; }
+	virtual battle::DamageContext spellDamageContext(const battle::Unit & recipient) const;
+	virtual std::optional<newHorizonsMetamagic::OverflowPreview> metamagicOverflowReceipt() const { return {}; }
+	virtual void setMetamagicOverflowProjectionOutcome(newHorizonsMetamagic::OverflowProjectionOutcome)
+	{ throw std::logic_error("Custom mechanics cannot certify an Overflow projection outcome"); }
 	virtual const newHorizonsMetamagic::CastProfile * getMetamagicCastProfile() const { return nullptr; }
 	virtual int32_t getTargetAwareManaCost(const Target & target) const;
 	/// Captured optional Mana surcharge; mechanics without that cast input use zero.
@@ -460,6 +471,7 @@ public:
 	virtual int64_t getStormOfDaggersDamagePerTarget(int32_t) const { return 0; }
 	virtual int64_t getStormOfDaggersTotalDamage(int32_t) const { return 0; }
 	virtual AutomaticHeroCastReceipt getAutomaticHeroCast() const { return {}; }
+	virtual creatureAbility::Descriptor getCreatureAbilityDescriptor() const { return {}; }
 	virtual std::span<const uint32_t> getResolvedHeroRecipients() const { return {}; }
 	virtual std::span<const BattleStackAttacked> getResolvedHeroInjuries() const { return {}; }
 	virtual bool usesNewHorizonsMagic() const { return false; }
@@ -633,6 +645,7 @@ public:
 	int64_t getStormOfDaggersDamagePerTarget(int32_t selectedTargetCount) const override;
 	int64_t getStormOfDaggersTotalDamage(int32_t selectedTargetCount) const override;
 	AutomaticHeroCastReceipt getAutomaticHeroCast() const override;
+	creatureAbility::Descriptor getCreatureAbilityDescriptor() const override { return creatureAbilityDescriptor; }
 	JsonNode getCapturedMdrPenetration() const override;
 	int32_t getPlaguePropagationLimit() const override;
 	bool usesNewHorizonsMagic() const override;
@@ -733,6 +746,7 @@ private:
 	bool massSlow = false;
 	int32_t shadowGiftSacrificePercent = 0;
 	AutomaticHeroCastReceipt automaticHeroCast;
+	creatureAbility::Descriptor creatureAbilityDescriptor;
 	bool overwhelmingFormulaEligible = false;
 	uint64_t overwhelmingFormulaToken = 0;
 

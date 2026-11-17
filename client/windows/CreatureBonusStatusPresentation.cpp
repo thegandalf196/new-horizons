@@ -3,6 +3,7 @@
 #include "CreatureBonusStatusPresentation.h"
 #include "SylvanFactionStatusPresentation.h"
 #include "../battle/ArcaneInspirationPresentation.h"
+#include "../battle/CurrentFactionSkillPresentation.h"
 #include "../../lib/CStack.h"
 #include "../../lib/bonuses/BonusParameters.h"
 #include "../../lib/GameLibrary.h"
@@ -33,6 +34,9 @@ std::vector<Row> visibleRows(const IBonusBearer & bonusSource, const CStackInsta
 	std::vector<Row> rows;
 	for(const auto & bonus : visibleBonuses)
 	{
+		// The supplemental row carries this marker's captured potency and lifetime.
+		if(bonus->type == BonusType::NONE && consecratedArms::identity(bonus.get()))
+			continue;
 		Row row;
 		row.description = describe(bonus);
 		row.imagePath = stackNode.bonusToGraphics(bonus);
@@ -100,6 +104,14 @@ std::vector<Row> supplementalRows(const CStack * battleStack, const CStackInstan
 			status.bonusSource = BonusSource::SPELL_EFFECT;
 			rows.push_back(std::move(status));
 		}
+	}
+	for(const auto & prayer : passiveFactionSkillPresentation::prayerTexts(consecratedArms::activePrayers(*battleStack)))
+	{
+		Row status;
+		status.description = prayer.value;
+		status.tooltip = prayer.details;
+		status.bonusSource = BonusSource::SECONDARY_SKILL;
+		rows.push_back(std::move(status));
 	}
 
 	if(battleStack->getBattle() && callback)

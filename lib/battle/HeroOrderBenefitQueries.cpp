@@ -105,7 +105,10 @@ bool beneficiary(const CBattleInfoCallback & battle, const battle::Unit * unit)
 	const auto side = battle.playerToSide(battle.battleGetOwner(unit));
 	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER) return false;
 	if(heroCommands::activeVanguardBonuses(unit)) return true;
-	const auto orders = battle.battleGetHeroOrderStates(side);
+	const auto lease = battle.preparedHeroOrderStates(side);
+	std::vector<HeroOrderState> fallback;
+	if(!lease) fallback = battle.battleGetHeroOrderStates(side);
+	const auto & orders = lease ? *lease : fallback;
 	return std::ranges::any_of(orders, [&battle, side, unit](const HeroOrderState & order)
 		{ return battle.battleOrderBenefitAppliesTo(order, side, unit); });
 }

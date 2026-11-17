@@ -13,6 +13,8 @@ battle::StackInitializationReceipts::StackInitializationReceipts(const CUnitStat
 	restoredQueueFlags = std::make_tuple(state.waiting, state.waitedThisTurn, state.movedThisRound,
 		state.defending, state.hadMorale, state.battlecraftWaitBonusUsed, state.battlecraftWaitMasteryDoubled);
 	restoredVeteranCohesion = state.veteranCohesionEarned;
+	restoredCompletedAction = state.completedActionThisRound;
+	restoredPoisonDescriptor = state.physicalPoisonDescriptor;
 	restoredConfusionState = state.confusionState;
 	restoredDemonicGateOpened = state.demonicGateOpened;
 	restoredPhysicalPoison = std::make_tuple(state.physicalPoisonBaseDamage, state.physicalPoisonActivationsRemaining,
@@ -44,6 +46,8 @@ void battle::StackInitializationReceipts::initialize(CUnitState & state,
 		state.battlecraftWaitBonusUsed, state.battlecraftWaitMasteryDoubled) = restoredQueueFlags;
 	state.personalBloodrageIncrement = restoredPersonalBloodrageIncrement;
 	state.veteranCohesionEarned = restoredVeteranCohesion;
+	state.completedActionThisRound = restoredCompletedAction;
+	state.physicalPoisonDescriptor = restoredPoisonDescriptor;
 	// Binary stack descriptors carry pending Confusion and target history too;
 	// rebinding the stack to the battle must not consume either value.
 	state.confusionState = restoredConfusionState;

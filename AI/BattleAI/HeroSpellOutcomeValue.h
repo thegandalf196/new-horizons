@@ -6,10 +6,14 @@
 #include <memory>
 #include <span>
 class HypotheticBattle;
+class PlayerColor;
+namespace battleSearch { class SearchBudget; }
 struct BattleStackAttacked;
 namespace heroSpellProjection
 {
 using OutcomeKernel = std::function<float(const std::shared_ptr<HypotheticBattle> &)>;
+/// Synchronous existing signed health kernel; caller retains the budget owner.
+DLL_LINKAGE OutcomeKernel healthOutcomeKernel(PlayerColor, battleSearch::SearchBudget *);
 struct OutcomeReceipt
 {
 	std::span<const uint32_t> resolved;

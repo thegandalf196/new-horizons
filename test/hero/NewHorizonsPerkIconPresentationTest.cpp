@@ -17,7 +17,7 @@ newHorizonsHeroes::PerkDefinition definition(const JsonNode & rules)
 {
 	const auto perk = newHorizonsHeroes::perkDefinition(rules, skillId, stableId);
 	if(!perk)
-		throw std::runtime_error("Missing Arcane Ballistics fixture");
+		throw std::runtime_error("Missing Sorcery focus-damage perk fixture");
 	return *perk;
 }
 
@@ -28,11 +28,27 @@ TEST(NewHorizonsPerkIconPresentation, CurrentDefinitionUsesNewArtWithoutChanging
 	const JsonNode rules(JsonPath::builtin("config/newHorizonsPerks"));
 	const auto before = rules;
 	const auto perk = definition(rules);
-	ASSERT_EQ(perk.name, "Arcane Ballistics");
+	ASSERT_EQ(perk.name, "Arcane Arsenal");
 	EXPECT_EQ(newHorizonsPerkIcon(perk.id, perk.name), newBallistics);
 	EXPECT_EQ(newHorizonsPerkIcon(perk.id), oldShield);
 	EXPECT_EQ(definition(rules), perk);
 	EXPECT_EQ(rules, before);
+}
+
+TEST(NewHorizonsPerkIconPresentation, HistoricalCapturedBallisticsKeepsSelectedArt)
+{
+	auto captured = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+	for(auto & row : captured["skills"][skillId]["perks"].Vector())
+		if(row["id"].String() == stableId)
+			row["name"].String() = "Arcane Ballistics";
+	const auto before = captured;
+	const auto historical = definition(captured);
+	EXPECT_EQ(historical.name, "Arcane Ballistics");
+	EXPECT_EQ(newHorizonsPerkIcon(historical.id, historical.name), newBallistics);
+	EXPECT_EQ(newHorizonsPerkIcon(historical.id, "Arcane Arsenal"), newBallistics);
+	EXPECT_EQ(newHorizonsPerkIcon(historical.id, "arcane arsenal"), oldShield);
+	EXPECT_EQ(newHorizonsPerkIcon(historical.id, "Translated Arcane Arsenal"), oldShield);
+	EXPECT_EQ(captured, before);
 }
 
 TEST(NewHorizonsPerkIconPresentation, HistoricalCountermageUnknownAndLocalizedNamesRetainShield)
@@ -92,6 +108,7 @@ TEST(NewHorizonsPerkIconPresentation, UnrelatedStableIdentitiesAndFallbacksAreUn
 		if(id == std::string_view(stableId))
 			continue;
 		EXPECT_EQ(newHorizonsPerkIcon(id, "Arcane Ballistics"), resource);
+		EXPECT_EQ(newHorizonsPerkIcon(id, "Arcane Arsenal"), resource);
 		EXPECT_EQ(newHorizonsPerkIcon(id, "Countermage"), resource);
 	}
 	EXPECT_EQ(newHorizonsPerkIcon("unknown:perk", "Arcane Ballistics"), "NH_perk_neutral");

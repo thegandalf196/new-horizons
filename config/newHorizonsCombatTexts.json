@@ -467,7 +467,15 @@
 	"new-horizons.spellbook.effect.focusShooter": "%s ranged charges with +%s% ranged damage",
 	"new-horizons.spellbook.effect.focusShooter.short": "%s shots / +%s% ranged",
 	"new-horizons.spellbook.effect.focusShooter.short.narrow": "%s shots +%s%",
-	"new-horizons.spellbook.focusRecipient": "Nonshooters gain ordinary physical ranged attacks. Native shooters receive the listed damage bonus. Arcane Ballistics and specialty premiums also strengthen converted shots. Each ranged strike spends one of three charges; Ammo Cart cannot replenish them. Recasting resets the charges.",
+	"new-horizons.spellbook.focusRecipient": "Nonshooters gain ordinary physical ranged attacks. Native shooters receive the listed damage bonus. Arcane Arsenal and specialty premiums also strengthen converted shots. Each ranged strike spends one of three charges; Ammo Cart cannot replenish them. Recasting resets the charges.",
 	"new-horizons.settings.rollingReplay.hover": "Recent-turn replay (new games)",
-	"new-horizons.settings.rollingReplay.help": "Record recent turns for replay in new games. Saved games keep their original setting. Record Game always records the full game."
+	"new-horizons.settings.rollingReplay.help": "Record recent turns for replay in new games. Saved games keep their original setting. Record Game always records the full game.",
+	"new-horizons.metamagic.arcaneOverflow.preview": " | Arcane Overflow: %s, %s potential damage",
+	"new-horizons.consecratedArms.prayers.divinePurpose": "Divine Purpose",
+	"new-horizons.consecratedArms.prayers.dauntlessAssault": "Dauntless Assault",
+	"new-horizons.consecratedArms.prayers.steadfastSoul": "Steadfast Soul",
+	"new-horizons.consecratedArms.prayers.vicariousRedemption": "Vicarious Redemption",
+	"new-horizons.consecratedArms.prayers.unbrokenVow": "Unbroken Vow",
+	"new-horizons.consecratedArms.prayers.heavensJudgment": "Heaven's Judgment",
+	"new-horizons.logs.consecratedArmsGranted": "Consecrated Arms grants %s (potency Faith %d, %d rounds) to %s."
 }

@@ -804,6 +804,8 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 	captureOriginalSpellSpecialties(event);
 	heroLuck = event->getHeroLuck();
 	automaticHeroCast = event->getAutomaticHeroCast();
+	creatureAbilityDescriptor = event->getCreatureAbilityDescriptor();
+	if(creatureAbilityDescriptor) creatureAbilityDescriptor->validate();
 	automaticHeroCast.validateShape();
 	massSlow = event->getMassSlow();
 	shadowGiftSacrificePercent = event->getShadowGiftSacrificePercent();

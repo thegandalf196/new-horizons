@@ -191,7 +191,7 @@ int BonusCachePerTurn::getValue(int turns) const
 	}
 }
 
-const UnitBonusValuesProxy::SelectorsArray * UnitBonusValuesProxy::generateSelectors()
+const UnitBonusValuesProxy::SelectorsArray & UnitBonusValuesProxy::canonicalSelectors()
 {
 	static const CSelector additionalAttack = Selector::type()(BonusType::ADDITIONAL_ATTACK);
 	static const CSelector selectorMelee = Selector::effectRange()(BonusLimitEffect::NO_LIMIT).Or(Selector::effectRange()(BonusLimitEffect::ONLY_MELEE_FIGHT));
@@ -220,5 +220,10 @@ const UnitBonusValuesProxy::SelectorsArray * UnitBonusValuesProxy::generateSelec
 		Selector::type()(BonusType::NONE).And(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(SpellID(SpellID::CLONE))))
 	};
 
-	return &selectors;
+	return selectors;
+}
+
+const UnitBonusValuesProxy::SelectorsArray * UnitBonusValuesProxy::generateSelectors()
+{
+	return &canonicalSelectors();
 }

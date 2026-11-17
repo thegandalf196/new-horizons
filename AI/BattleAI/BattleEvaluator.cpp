@@ -8,6 +8,9 @@
  *
  */
 #include "StdInc.h"
+#include "SearchBudget.h"
+#include "SelectionStageTiming.h"
+#include "HeroCandidateSearch.h"
 #include "BattleSearchPolicy.h"
 #include "RunicReflectionValue.h"
 #include "MoraleActivationValue.h"
@@ -17,6 +20,7 @@
 #include "../../lib/ScopeGuard.h"
 #include "../../lib/battle/NewHorizonsFrozen.h"
 #include "BattleEvaluator.h"
+#include "ForecastNativeAdapter.h"
 #include "PhysicalStrikeProjection.h"
 #include "DefendEvaluation.h"
 #include "SummonEvaluation.h"
@@ -104,6 +108,7 @@
 // CUnitState should be private and CStack should be removed completely
 #include "../../lib/CStack.h"
 #include "HypotheticBattle.h"
+#include "CandidateCompletion.h"
 #include "HypotheticBattleTypes.h"
 
 #define LOGL(text) print(text)
@@ -901,7 +906,8 @@ float projectedCapacityRegenerationValue(
 		return 0.0f;
 
 	auto forecast = std::make_shared<HypotheticBattle>(environment, afterCast);
-	auto baseline = std::make_shared<HypotheticBattle>(environment, beforeCast);
+	auto baseline = std::make_shared<HypotheticBattle>(environment, beforeCast,
+		std::shared_ptr<const battle::OwnedBattleFrameBatch>(), afterCast->searchBudget());
 	DamageCache forecastDamage(&damageCache);
 	DamageCache baselineDamage(&damageCache);
 	forecastDamage.buildDamageCache(forecast, ourSide);
@@ -1081,7 +1087,8 @@ float projectedVampirismValue(
 	};
 
 	auto forecast = std::make_shared<HypotheticBattle>(environment, afterCast);
-	auto baseline = std::make_shared<HypotheticBattle>(environment, beforeCast);
+	auto baseline = std::make_shared<HypotheticBattle>(environment, beforeCast,
+		std::shared_ptr<const battle::OwnedBattleFrameBatch>(), afterCast->searchBudget());
 	DamageCache forecastDamage(&damageCache);
 	DamageCache baselineDamage(&damageCache);
 	forecastDamage.buildDamageCache(forecast, ourSide);
@@ -1980,10 +1987,7 @@ std::pair<float, float> completeProjectedPlagueValue(HypotheticBattle & battle, 
 		if(actor->alive())
 			actor->addUnitBonus(std::vector<Bonus>{newHorizonsPuppetMaster::lucidityMarker()});
 	}
-	actor->removeUnitBonus(CSelector([](const Bonus * bonus)
-	{
-		return Bonus::UntilActivationEnds(bonus) && !newHorizonsOffense::isNoQuarterMoralePenalty(bonus);
-	}));
+	forecast::NativeAdapter::expireActivationEffects(battle, *actor);
 	actor->consumeNoQuarterActivation();
 	const auto firstPlague = battle.getProjectedPlagueHits().size();
 	newHorizonsPlague::completeActivation(battle, *battle.getServerCallback(), unitId);
@@ -2022,6 +2026,7 @@ bool defensiveStanceMakesDefendWorthwhile(const Environment * environment,
 	if(!projectedTarget)
 		return false;
 	projectedTarget->defending = true;
+	consecratedArmsAI::completeObservedAction(*defendedPreview, stack->unitId());
 	projectedTarget->addUnitBonus(std::vector<Bonus>{
 		Bonus(BonusDuration::STACK_GETS_TURN, BonusType::UNIT_DEFENDING, BonusSource::OTHER, 0, BonusSourceID())});
 	const int maintenanceHealing = capabilities.maintenance
@@ -2449,49 +2454,12 @@ bool BattleEvaluator::hasWorkingTowers() const
 }
 
 
-namespace
-{
-template<typename StageTiming>
-class SelectionStageScope
-{
-	using Clock = std::chrono::steady_clock;
-	StageTiming * timing;
-	StageTiming * aggregate;
-	Clock::time_point started;
-
-public:
-	explicit SelectionStageScope(StageTiming * timing, StageTiming * aggregate = nullptr)
-		: timing(timing), aggregate(aggregate), started(timing ? Clock::now() : Clock::time_point{})
-	{}
-
-	~SelectionStageScope()
-	{
-		if(timing)
-		{
-			const auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(
-				Clock::now() - started).count();
-			++timing->calls;
-			timing->totalMicroseconds += elapsed;
-			if(aggregate)
-			{
-				++aggregate->calls;
-				aggregate->totalMicroseconds += elapsed;
-			}
-		}
-	}
-};
-
-template<typename StageTiming, typename Callable>
-decltype(auto) measureSelectionStage(StageTiming * timing,
-	Callable && action, StageTiming * aggregate = nullptr)
-{
-	SelectionStageScope measurement(timing, aggregate);
-	return std::forward<Callable>(action)();
-}
-}
+using battleSelectionTiming::measureSelectionStage;
 
 BattleAction BattleEvaluator::selectStackAction(const CStack * stack, SelectionTiming * timing)
 {
+	try
+	{
 #if BATTLE_TRACE_LEVEL >= 1
 	logAi->trace("Select stack action");
 #endif
@@ -2584,70 +2552,7 @@ BattleAction BattleEvaluator::selectStackAction(const CStack * stack, SelectionT
 
 			if (moveTarget.score <= score)
 			{
-				if(evaluationResult.wait && !stack->acquireState()->waitedThisTurn)
-				{
-					return BattleAction::makeWait(stack);
-				}
-				else if(bestAttack.attack.shooting)
-				{
-					activeActionMade = true;
-					const auto * hero = hb->battleGetFightingHero(stack->unitSide());
-					if(bestAttack.from.isValid() && bestAttack.from != stack->getPosition()
-						&& newHorizonsArchery::canUseSkirmisher(hero, stack)
-						&& hb->battleCanSkirmisherAttackFromHex(stack,
-							bestAttack.attack.defender->getPosition(), bestAttack.from))
-					{
-						// Skirmisher encodes its chosen legal move-and-fire destination through
-						// the existing WALK_AND_ATTACK packet.
-						auto action = BattleAction::makeMeleeAttack(stack,
-							bestAttack.attack.defender->getPosition(), bestAttack.from, false);
-						action.archerySkirmisherAttack = true;
-						action.perfectMoment = bestAttack.perfectMoment;
-						return action;
-					}
-					auto action = BattleAction::makeShotAttack(stack, bestAttack.attack.defender);
-					action.perfectMoment = bestAttack.perfectMoment;
-					return action;
-				}
-				else
-				{
-					if(bestAttack.collateralDamageReduce
-						&& bestAttack.collateralDamageReduce >= bestAttack.defenderDamageReduce / 2
-						&& score < 0)
-					{
-						return BattleAction::makeDefend(stack);
-					}
-
-					bool isTargetOutsideFort = !hb->battleIsInsideWalls(bestAttack.from);
-					bool siegeDefense = stack->unitSide() == BattleSide::DEFENDER
-						&& !bestAttack.attack.shooting
-						&& hasWorkingTowers()
-						&& !enemyMellee.empty()
-						&& isTargetOutsideFort;
-
-					if(siegeDefense)
-					{
-						logAi->trace("Evaluating exchange at %d self-defense", stack->getPosition());
-
-						BattleAttackInfo bai(stack, stack, 0, false);
-						AttackPossibility apDefend(stack->getPosition(), stack->getPosition(), bai);
-
-						float defenseValue = measureSelectionStage(timing ? &timing->siegeDefense : nullptr, [&]()
-						{
-							return scoreEvaluator.evaluateExchange(apDefend, 0, *targets, damageCache, hb);
-						}, timing ? &timing->targetExchange : nullptr);
-
-						if((defenseValue > score && score <= 0) || (defenseValue > 2 * score && score > 0))
-						{
-							return BattleAction::makeDefend(stack);
-						}
-					}
-
-					activeActionMade = true;
-					auto action = BattleAction::makeMeleeAttack(stack, bestAttack.attack.defenderPos, bestAttack.from);
-					action.perfectMoment = bestAttack.perfectMoment;
-					return action;
-				}
+				return evaluatedAttackAction(stack, evaluationResult, score, !enemyMellee.empty(), timing);
 			}
 		}
 	}
@@ -2721,6 +2626,12 @@ BattleAction BattleEvaluator::selectStackAction(const CStack * stack, SelectionT
 	if(worthwhileDefense)
 		return BattleAction::makeDefend(stack);
 	return BattleAction::makeWait(stack);
+
+	}
+	catch(const battleSearch::BudgetExhausted &)
+	{
+		return legalSearchIncumbent(stack);
+	}
 }
 
 uint64_t timeElapsed(std::chrono::time_point<std::chrono::steady_clock> start)
@@ -2811,7 +2722,7 @@ BattleAction BattleEvaluator::goTowardsNearest(const CStack * stack, const Battl
 {
 	if(movementCompletionValue)
 		*movementCompletionValue = {};
-	SelectionStageScope measurement(timing ? &timing->goTowards : nullptr);
+	battleSelectionTiming::SelectionStageScope measurement(timing ? &timing->goTowards : nullptr);
 	auto reachability = cb->getBattle(battleID)->getReachability(stack);
 	auto avHexes = cb->getBattle(battleID)->battleGetAvailableHexes(reachability, stack, false);
 
@@ -2944,6 +2855,8 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 	heroDecisionPressure::Experiment * orderExperiment, arrowContinuation::Reuse::TestControl * arrowReuse,
 	const battleAIDiagnostic::Admission * admission)
 {
+	try
+	{
 	if(orderExperiment) orderExperiment->reset();
 	const auto battleView = cb->getBattle(battleID);
 	constexpr bool mandatoryOrder = false;
@@ -2959,6 +2872,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 	LOGL("Casting spells sounds like fun. Let's see...");
 	const auto divineMandateStatus = battleView->battleGetDivineMandateStatus(side);
 		//Get all spells we can cast
+	battleSearch::HeroCandidateSearch heroSearch(workBudget, workLimits);
 	auto possibleSpells = collectCastableHeroSpellOptions(battleView, hero, allowSpells,
 		mandatoryOrder, divineMandateStatus, admission);
 	const bool hasFollowupCandidate = !mandatoryOrder && (divineMandateStatus.active
@@ -2970,7 +2884,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 
 	LOGFL("I can cast %d spells.", possibleSpells.size());
 
-	const auto battleCallback = battleView;
+	const std::shared_ptr<CBattleInfoCallback> battleCallback = hb;
 	vstd::erase_if(possibleSpells, [&](const SpellOption & option)
 	{
 		if(!battleSpellCandidates::isBattleSpell(option.spell))
@@ -3032,21 +2946,13 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 	}
 
 	//Get viable spell-target pairs
-	std::vector<battle::Units> regenerationTurnOrder;
-	bool regenerationTurnOrderPrepared = false;
-	auto getRegenerationTurnOrder = [&]() -> const std::vector<battle::Units> &
-	{
-		if(!regenerationTurnOrderPrepared)
-		{
-			cb->getBattle(battleID)->battleGetTurnOrder(regenerationTurnOrder, 0, 4);
-			regenerationTurnOrderPrepared = true;
-		}
-		return regenerationTurnOrder;
-	};
+	battleSearch::RegenerationTurnQueue regenerationQueue(battleCallback, workBudget);
 	std::vector<PossibleSpellcast> possibleCasts;
 	for(const auto & spellOption : possibleSpells)
 	{
 		const auto * spell = spellOption.spell;
+		auto spellWork = heroSearch.prepareSpell(spell);
+		if(!spellWork) continue;
 		const bool divineMandateFollowup = spellOption.divineMandateFollowup;
 		const auto [maxOvercharge, canUseSelectiveDispel, canUseTemporalField,
 			cureAfflictionChoices, shadowGiftChoices] = heroSpellVariants::prepare(
@@ -3061,19 +2967,18 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 			{
 				if(selectiveDispel && !canUseSelectiveDispel)
 					continue;
-				const std::shared_ptr<CBattleInfoCallback> selectionBoard = isCanonicalPurify(spell)
-					? std::static_pointer_cast<CBattleInfoCallback>(hb)
-					: std::static_pointer_cast<CBattleInfoCallback>(cb->getBattle(battleID));
+				const std::shared_ptr<CBattleInfoCallback> selectionBoard = hb;
 				spells::BattleCast temp(selectionBoard.get(), hero, spells::Mode::HERO, spell);
 				temp.setCureAffliction(cureAffliction);
 				temp.setCurePhysicalAffliction(curePhysicalAffliction);
 			temp.setMassSlow(massSlow);
 			temp.setShadowGiftSacrificePercent(shadowGiftSacrificePercent);
 			temp.setSelectiveDispel(selectiveDispel);
-			for(const auto & target : SpellTargetEvaluator::getViableTargets(spell->battleMechanics(&temp).get()))
+			for(const auto & target : SpellTargetEvaluator::getViableTargets(spell->battleMechanics(&temp).get(), spellWork.targetBudget()))
 				{
 					for(int overcharge = 0; overcharge <= maxOvercharge; ++overcharge)
 					{
+						if(!spellWork.consumePreparation()) break;
 						spells::BattleCast candidateCast(selectionBoard.get(), hero, spells::Mode::HERO, spell);
 						candidateCast.setCureAffliction(cureAffliction);
 						candidateCast.setCurePhysicalAffliction(curePhysicalAffliction);
@@ -3197,7 +3102,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 								continue;
 
 							const auto targetId = ps.dest.front().unitValue->unitId();
-							auto projected = createHypotheticBattle(battleCallback);
+							auto projected = createHeroCandidateBattle(battleCallback, ps);
 							const auto * projectedUnit = projected->battleGetUnitByID(targetId);
 							if(!projectedUnit)
 								continue;
@@ -3212,7 +3117,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 							projectedMechanics->castEval(projected->getServerCallback(), projectedTarget);
 
 							ps.spellPlacementHeuristicValue = projectedCapacityRegenerationValue(
-								env.get(), battleCallback, projected, getRegenerationTurnOrder(), targetId,
+								env.get(), battleCallback, projected, regenerationQueue.get(), targetId,
 								damageCache, side, playerID, scoreEvaluator.getPositiveEffectMultiplier());
 							if(ps.spellPlacementHeuristicValue <= 0.0f)
 								continue;
@@ -3249,9 +3154,10 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 	{
 		const Environment * environment;
 		DamageCache & cache;
+		std::shared_ptr<HypotheticBattle> projectionSource;
 	public:
-		OrderValuation(const Environment * environment, DamageCache & cache)
-			: environment(environment), cache(cache)
+		OrderValuation(const Environment * environment, DamageCache & cache, std::shared_ptr<HypotheticBattle> source)
+			: environment(environment), cache(cache), projectionSource(std::move(source))
 		{
 		}
 		float score(const heroOrderCandidates::ValuationRequest & request) const override
@@ -3260,20 +3166,20 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 			// Do not enter legacy perk forecasts or combat search during admission.
 			if(heroOrderValue::usesRevisedArmyHeuristic(*request.battle, request.command))
 				return 1.0f;
-			return canonicalOrderHeuristic(*request.battle, request.side, request.command,
-				request.targets, request.focusFirePercent, environment, cache, request.battle);
+			return canonicalOrderHeuristic(*projectionSource, request.side, request.command,
+				request.targets, request.focusFirePercent, environment, cache, projectionSource);
 		}
-	} orderValuation(env.get(), damageCache);
-	heroOrderCandidates::appendOrders(possibleCasts, *cb, battleID, side, mandatoryOrder, orderValuation, admission);
+	} orderValuation(env.get(), damageCache, hb);
+	heroOrderCandidates::appendOrders(possibleCasts, *cb, battleID, side, mandatoryOrder, orderValuation, admission, heroSearch.orderGenerationBudget());
 	LOGFL("Found %d spell-target combinations.", possibleCasts.size());
 	if(possibleCasts.empty())
 		return false;
-	if(!regenerationTurnOrderPrepared && std::any_of(possibleCasts.begin(), possibleCasts.end(),
+	if(!regenerationQueue.prepared() && std::any_of(possibleCasts.begin(), possibleCasts.end(),
 		[&](const PossibleSpellcast & candidate)
 		{
 			return isCanonicalRegeneration(candidate.spell, battleCallback->getBattle()->getMagicRules());
 		}))
-		getRegenerationTurnOrder();
+		regenerationQueue.get();
 
 	using ValueMap = PossibleSpellcast::ValueMap;
 
@@ -3338,20 +3244,25 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 	HeroCandidateValueReuse values(vinesReuse, lifeDrainReuse);
 	arrowContinuation::Reuse arrowValues(arrowReuse);
 	RegenerationBaselineReuse regenerationBaseline(regenerationReuse);
-	heroDecisionPressure::Experiment fastRefinement;
-	if(!orderExperiment && battleSearch::heroRefinementLimit())
-	{
-		fastRefinement.refinementLimit = battleSearch::heroRefinementLimit();
-		orderExperiment = &fastRefinement;
-	}
+	orderExperiment = heroSearch.experiment(orderExperiment);
 	if(orderExperiment && orderExperiment->enableShortlist && !mandatoryOrder)
-		heroDecisionPressure::prepareShortlist(*orderExperiment, env.get(), battleView, side, possibleCasts, damageCache, scoreEvaluator);
+		heroDecisionPressure::prepareShortlist(*orderExperiment, env.get(), battleView, side, possibleCasts, damageCache, scoreEvaluator, workBudget, workLimits ? &*workLimits : nullptr,
+			decisionBase && decisionBase->forecastState() ? decisionBase : nullptr);
+	heroSearch.preparePlan(possibleCasts, orderExperiment);
 	timing.prepare(possibleCasts.size());
 	{
 		heroActionTiming::LoopScope loop(timing.candidateSlots(), timing.sink());
 			for(size_t i = 0; i != possibleCasts.size(); i++)
 			{
 				auto & ps = possibleCasts[i];
+				auto continuationBudget = heroSearch.beginCandidate(i);
+				if(heroSearch.budgeted())
+				{
+					ps.value = std::numeric_limits<float>::lowest();
+					if(!continuationBudget) continue;
+				}
+				try
+				{
 				bool arrowCompleted = false;
 				const auto clearIncompleteArrow = vstd::makeScopeGuard([&]()
 				{
@@ -3370,7 +3281,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						? ps.spell->getId().getNum() : -1;
 				}
 				heroActionTiming::Scope candidateScope(candidateTiming ? &candidateTiming->candidate : nullptr);
-				if(orderExperiment && !orderExperiment->declined.empty() && orderExperiment->declined[i])
+				if(!heroSearch.scoutPlan() && orderExperiment && !orderExperiment->declined.empty() && orderExperiment->declined[i])
 				{
 					ps.value = std::numeric_limits<float>::lowest(); // Policy-declined, not illegal.
 					continue;
@@ -3379,7 +3290,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				battleEvaluatorProjection::SpellProjection projection;
 				std::optional<float> metamagicBenefit = 0;
 				bool metamagicComputed = false;
-				auto state = createHypotheticBattle(cb->getBattle(battleID));
+				auto state = createHeroCandidateBattle(cb->getBattle(battleID), ps, continuationBudget);
 				const auto baseline = cachedAttack.score > static_cast<float>(EvaluationResult::INEFFECTIVE_SCORE / 2)
 					? cachedAttack.score : 0.0f;
 				heroActionProjection::Admission admission;
@@ -3392,6 +3303,8 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				admission = heroActionProjection::admitCandidate(*state, side, ps);
 				const auto includeRunicValue = vstd::makeScopeGuard([&]()
 				{
+					battleSearch::completeCandidate(ps.value, [&]()
+					{
 					if(admission.admitted && ps.value > std::numeric_limits<float>::lowest() / 2)
 					{
 						if(projection.accepted && !metamagicComputed)
@@ -3405,6 +3318,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						}
 						else ps.spellRunicEstimatePartial = true; // Legal candidate; unsupported finite projection.
 					}
+					});
 				});
 				if(!admission.admitted)
 				{
@@ -3572,7 +3486,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 						scoreEvaluator.getNegativeEffectMultiplier());
 					if(isCanonicalVampirism(*cb->getBattle(battleID), ps.spell))
 					{
-						ps.value = baseline + projectedVampirismValue(env.get(), cb->getBattle(battleID),
+						ps.value = baseline + projectedVampirismValue(env.get(), battleCallback,
 							state, vampirismTurnOrder, targetId, damageCache, side, playerID,
 							scoreEvaluator.getPositiveEffectMultiplier());
 						continue;
@@ -3583,19 +3497,13 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					auto completed = heroActionProjection::completeOrder(*state, *battleCallback, side, ps, admission,
 						[&](const HeroOrderState & acceptedOrder)
 						{
-							if(!acceptedOrder.passiveDivineMandate) return;
 							passiveDivineMandateAI::Workload work;
-							automaticBenefit = passiveDivineMandateAI::projectedValue(env.get(), state, side,
+							automaticBenefit = passiveDivineMandateAI::projectedAcceptedOrderValue(env.get(), state, side,
 								acceptedOrder, damageCache, scoreEvaluator.getPositiveEffectMultiplier(),
 								scoreEvaluator.getNegativeEffectMultiplier(), &work);
-							if(!automaticBenefit)
-							{
-								if(!work.uncertainAutomaticBenefit)
-									throw std::logic_error("Unsupported native passive Divine Mandate forecast");
-								// Explicit conservative lower bound: keep the legal Order's normal
-								// utility, credit no hidden uncertain automatic-spell benefit.
-								if(observer) observer->uncertainAutomaticBenefit(i);
-							}
+							if(work.uncertainAutomaticBenefit && observer) observer->uncertainAutomaticBenefit(i);
+							if(!automaticBenefit && !work.uncertainAutomaticBenefit)
+								throw std::logic_error("Unsupported native accepted Order companion forecast");
 						});
 					if(!completed.accepted)
 					{
@@ -3700,8 +3608,8 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				float projectedCrusadeBonusScore = 0;
 				if(isCanonicalRegeneration(ps.spell, state->getBattle()->getMagicRules()))
 				{
-					damageToHostilesScore += projectedRegenerationValue(env.get(), cb->getBattle(battleID), state,
-						regenerationTurnOrder, newHorizonsMagic::spellVariantBase(state->getBattle()->getMagicRules(), ps.spell->getId()),
+					damageToHostilesScore += projectedRegenerationValue(env.get(), battleCallback, state,
+						regenerationQueue.get(), newHorizonsMagic::spellVariantBase(state->getBattle()->getMagicRules(), ps.spell->getId()),
 						innerCache, side, playerID, scoreEvaluator.getPositiveEffectMultiplier(), &regenerationBaseline);
 				}
 				if(isCanonicalHolyArmor(ps.spell) && targetId != std::numeric_limits<uint32_t>::max())
@@ -3988,6 +3896,11 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 #if BATTLE_TRACE_LEVEL >= 1
 				logAi->trace("Total score for %s: %2f (action: %2f, friedly damage: %2f, hostile damage: %2f)", ps.name(), ps.value, stackActionScore, damageToFriendliesScore, damageToHostilesScore);
 #endif
+				}
+				catch(const battleSearch::BudgetExhausted &)
+				{
+					ps.value = std::numeric_limits<float>::lowest(); // Not evaluated; never zero utility.
+				}
 			}
 	}
 
@@ -4000,24 +3913,13 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 
 	LOGFL("Evaluation took %d ms", timer.getDiff());
 
-	const auto selection = heroActionSelection::choose(possibleCasts, noCastBaseline, mandatoryOrder, observer);
-	if(!selection)
-		return false; // Existing nonempty guard above makes this defensive only.
-	auto castToPerform = possibleCasts[selection->ordinal];
-	if(selection->disposition == heroActionSelection::Disposition::RETAIN_FOLLOWUP)
+	return finishHeroSelection(possibleCasts, noCastBaseline, mandatoryOrder, observer, timing.sink());
+
+	}
+	catch(const battleSearch::BudgetExhausted &)
 	{
-		LOGL("No beneficial hero action; retaining the Spell Action for this round.");
 		return false;
 	}
-	if(selection->disposition == heroActionSelection::Disposition::PERFORM)
-	{
-		LOGFL("Best hero action is %s (value %d). Will perform.", castToPerform.name() % castToPerform.value);
-		return submitHeroAction(castToPerform, timing.sink());
-	}
-
-	LOGFL("Best hero action is %s. But it is actually useless (value %d).", castToPerform.name() % castToPerform.value);
-
-	return false;
 }
 
 //Below method works only for offensive spells
@@ -4032,7 +3934,7 @@ std::pair<float, float> BattleEvaluator::evaluateCreatureCastBeforeCompletion(co
 {
 	using ValueMap = PossibleSpellcast::ValueMap;
 
-	auto projected = createHypotheticBattle(cb->getBattle(battleID));
+	auto projected = createCreatureCandidateBattle(stack, ps.spell, ps.dest);
 	auto & state = *projected;
 	TStacks all = cb->getBattle(battleID)->battleGetAllStacks(false);
 

@@ -12,6 +12,9 @@
 #include "NewHorizonsPurify.h"
 #include "NewHorizonsHandOfFateTargeting.h"
 #include "CSpell.h"
+#include "NewHorizonsSpellAvailability.h"
+#include "TargetCondition.h"
+#include "../serializer/JsonDeserializer.h"
 #include "NewHorizonsMagic.h"
 #include "NewHorizonsSpellcraft.h"
 #include "../mapObjects/CGHeroInstance.h"
@@ -25,17 +28,39 @@
 
 #include <set>
 #include <limits>
+#include <typeinfo>
 
 namespace spells
 {
-bool BattleSpellMechanics::delegateConcentratedProjection(ServerCallback * server, const Target & target)
+RecipientConditionResult BattleSpellMechanics::checkOverflowRecipient(const battle::Unit * unit) const
+{
+	const auto * condition = dynamic_cast<const TargetCondition *>(targetCondition.get());
+	if(!unit || !condition || typeid(*condition) != typeid(TargetCondition)) return RecipientConditionResult::UNSUPPORTED_CONDITION;
+	const auto family = newHorizonsMagic::spellVariantBase(battle()->getBattle()->getMagicRules(), owner->getId());
+	return condition->checkRecipient({owner, family, battle()->battleGetSpellLevel(owner->getId()),
+		usesNewHorizonsMagicV3(), true, unit->getShadowGiftMaximumHealth()}, unit);
+}
+bool BattleSpellMechanics::isOverflowRecipientReceptive(const battle::Unit * unit) const
+{
+	if(!unit) return false;
+	const JsonNode empty;
+	JsonDeserializer reader(nullptr, empty);
+	TargetCondition ordinary;
+	ordinary.serializeJson(reader, TargetConditionItemFactory::getDefault());
+	return ordinary.isReceptive(this, unit) && targetCondition->isReceptive(this, unit);
+}
+
+bool BattleSpellMechanics::delegateConcentratedProjection(ServerCallback * server, const Target & target, uint64_t evaluationToken)
 {
 	if(!eventSnapshot || eventSnapshot->hasSpellcraftTargetSnapshot() || mode != Mode::HERO
 		|| !getHeroCaster() || !getHeroCaster()->hasActivePerk(std::string(newHorizonsMagic::SPELLCRAFT_SKILL),
 			std::string(newHorizonsSpellcraft::CONCENTRATION)))
 		return false;
+	if(server) server->allowSpellEvaluationDelegation(evaluationToken);
 	auto concentrated = eventSnapshot->mechanicsForTarget(target);
+	concentrated->setMetamagicOverflowProjectionOutcome(overflowProjectionOutcome);
 	concentrated->castEval(server, target);
+	evaluatedOverflow = concentrated->metamagicOverflowReceipt();
 	vinesProjectionReceipt = concentrated->vengefulVinesProjectionReceipt();
 	lifeDrainReceipt = concentrated->lifeDrainProjectionReceipt();
 	evaluatedHeroRecipients.assign(concentrated->getResolvedHeroRecipients().begin(),

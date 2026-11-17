@@ -44,7 +44,8 @@ struct Admission
 /// resolving the opposing ward. A refusal can retain a begun private action; the
 /// caller must discard that candidate branch, not continue its valuation or commit.
 /// This is neither command validation nor an authoritative action/mana mutation.
-Admission admitCandidate(HypotheticBattle & state, BattleSide side, const PossibleSpellcast & candidate);
+DLL_LINKAGE Admission admitCandidate(HypotheticBattle & state, BattleSide side, const PossibleSpellcast & candidate,
+	std::optional<int32_t> originalMechanicsCost = {});
 
 struct OrderCompletion
 {

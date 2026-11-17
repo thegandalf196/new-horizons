@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "SearchBudget.h"
 #include "SpellTargetsEvaluator.h"
 #include "HypotheticBattle.h"
 #include "AttackPossibility.h"
@@ -49,6 +50,8 @@ SpellTargetEvaluator::handOfFateExpectedDamageValue(const Mechanics * spellMecha
 	const Target & target, PlayerColor scoringPlayer, std::shared_ptr<CBattleInfoCallback> battleState, const Environment * environment,
 	const heroSpellProjection::OutcomeValue & outcomeValue, const std::shared_ptr<HypotheticBattle> & runicBoard)
 {
+	const auto * budgetState = dynamic_cast<const HypotheticBattle *>(battleState.get());
+	auto * budget = budgetState ? budgetState->searchBudget().get() : nullptr;
 	if(!canonicalFate(spellMechanics) || target.size() != 1 || !target.front().unitValue
 		|| spellMechanics->getTargetTypes() != std::vector<AimType>{AimType::CREATURE})
 		return std::nullopt;
@@ -84,18 +87,7 @@ SpellTargetEvaluator::handOfFateExpectedDamageValue(const Mechanics * spellMecha
 
 	DamageCache damageCache;
 	HandOfFateExpectedDamageValue result;
-	const auto kernel = [&](const std::shared_ptr<HypotheticBattle> & board)
-	{
-		DamageCache local; float value = 0.0f;
-		for(const auto * unit : board->battleGetAllUnits(false))
-			if(unit && unit->alive() && !unit->isGhost() && !unit->isTurret())
-			{
-				const auto potential = AttackPossibility::calculateDamageReduce(nullptr, unit,
-					unit->getAvailableHealth(), local, board);
-				value += board->battleGetOwner(unit) == scoringPlayer ? potential : -potential;
-			}
-		return value;
-	};
+	const auto kernel = heroSpellProjection::healthOutcomeKernel(scoringPlayer, budget);
 	auto coreBoard = outcomeValue ? std::make_shared<HypotheticBattle>(environment, battleState) : nullptr;
 	const float coreOnly = outcomeValue ? outcomeValue(coreBoard, {}, false, false, {}).value : 0.0f;
 	const auto localCore = outcomeValue ? heroSpellProjection::localReceiptMarginal(coreBoard, kernel) : 0.0f;
@@ -115,6 +107,7 @@ SpellTargetEvaluator::handOfFateExpectedDamageValue(const Mechanics * spellMecha
 	std::vector<const battle::Unit *> collateralPool;
 	for(const auto * unit : battle->battleGetAllUnits(false))
 	{
+		battleSearch::require(budget, battleSearch::WorkKind::Node);
 		if(!unit || unit == primary || !unit->alive() || !unit->getPosition().isValid() || unit->isTurret())
 			continue;
 		collateralPool.push_back(unit);
@@ -142,6 +135,7 @@ SpellTargetEvaluator::handOfFateExpectedDamageValue(const Mechanics * spellMecha
 	const auto * nativeDamage = spellMechanics->findEffect<spells::effects::native::Damage>();
 	for(const auto * recipient : collateralPool)
 	{
+		battleSearch::require(budget, battleSearch::WorkKind::Node);
 		// This check is deliberately after pool construction: an invalid or
 		// unreceptive recipient absorbs its share of the random selection chance.
 		if(!recipient->isValidTarget(false) || recipient->isInvincible()

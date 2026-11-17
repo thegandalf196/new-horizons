@@ -181,7 +181,7 @@
 			"specialty": {
 				"name": "Focus Magic",
 				"tooltip": "Focus Magic grants +10 percentage points of ranged damage",
-				"description": "Focus Magic cast by this hero grants an additional 10 percentage points of ranged damage, independent of hero level and creature tier. This stacks with Arcane Ballistics."
+				"description": "Focus Magic cast by this hero grants an additional 10 percentage points of ranged damage, independent of hero level and creature tier. This stacks with Arcane Arsenal."
 			}
 		},
 		"specialty": {
@@ -204,7 +204,7 @@
 			"specialty": {
 				"name": "Focus Magic",
 				"tooltip": "Focus Magic grants +10 percentage points of ranged damage",
-				"description": "Focus Magic cast by this hero grants an additional 10 percentage points of ranged damage, independent of hero level and creature tier. This stacks with Arcane Ballistics."
+				"description": "Focus Magic cast by this hero grants an additional 10 percentage points of ranged damage, independent of hero level and creature tier. This stacks with Arcane Arsenal."
 			}
 		},
 		"specialty": {
@@ -227,7 +227,7 @@
 			"specialty": {
 				"name": "Focus Magic",
 				"tooltip": "Focus Magic grants +10 percentage points of ranged damage",
-				"description": "Focus Magic cast by this hero grants an additional 10 percentage points of ranged damage, independent of hero level and creature tier. This stacks with Arcane Ballistics."
+				"description": "Focus Magic cast by this hero grants an additional 10 percentage points of ranged damage, independent of hero level and creature tier. This stacks with Arcane Arsenal."
 			}
 		},
 		"specialty": {

@@ -3,6 +3,7 @@
 #include "../battle/NewHorizonsPassiveSpecialties.h"
 #include "../battle/NewHorizonsCommandResources.h"
 #include "NewHorizonsMetamagicEffects.h"
+#include "NewHorizonsMetamagicEnchantments.h"
 #include "NewHorizonsMetamagicTimedStatus.h"
 #include "ISpellMechanics.h"
 #include "BattleSpellMechanics.h"
@@ -178,6 +179,7 @@ void adjustAppliedBonuses(const CastProfile * cast, const CBattleInfoCallback & 
 	};
 	adjust(packet.toAdd);
 	adjust(packet.toUpdate);
+	enchantmentCapabilities(cast->hero, callback, acceptedSpell, effectSpell, packet);
 }
 
 }

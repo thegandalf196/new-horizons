@@ -63,7 +63,8 @@ float projectedRegenerationValue(
 	auto session = reuse ? reuse->prepare(environment, *beforeCast, turnOrder, damageCache, ourSide, ourPlayer)
 		: RegenerationBaselineReuse::Session{};
 	auto forecast = std::make_shared<HypotheticBattle>(environment, afterCast);
-	auto baseline = session.observations ? nullptr : std::make_shared<HypotheticBattle>(environment, beforeCast);
+	auto baseline = session.observations ? nullptr : std::make_shared<HypotheticBattle>(environment, beforeCast,
+		std::shared_ptr<const battle::OwnedBattleFrameBatch>(), afterCast->searchBudget());
 	DamageCache forecastDamage(&damageCache);
 	DamageCache baselineDamage(&damageCache);
 	forecastDamage.buildDamageCache(forecast, ourSide);

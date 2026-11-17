@@ -71,8 +71,10 @@ void resolveFrozenAttack(CGameHandler & gameHandler, const FrozenAttackContext &
 	{
 		SetStackEffect frozen;
 		frozen.battleID = battle.getBattle()->getBattleID();
-		frozen.toAdd.emplace_back(defender->unitId(), std::vector<Bonus>{
-			newHorizonsFrozen::makeFrozenMarker(BonusSourceID(attacker->creatureId()), battle.battleGetRound())});
+		auto marker = newHorizonsFrozen::makeFrozenMarker(BonusSourceID(attacker->creatureId()), battle.battleGetRound());
+		marker.abilityDescriptor = creatureAbility::nativeAffliction(creatureAbility::Native::FROZEN,
+			creatureAbility::Family::CREATURE_ABILITY, battle.battleGetOwner(attacker));
+		frozen.toAdd.emplace_back(defender->unitId(), std::vector<Bonus>{marker});
 		gameHandler.sendAndApply(frozen);
 	}
 }

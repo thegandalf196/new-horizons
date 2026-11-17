@@ -2,10 +2,11 @@
 
 ## Current save boundary
 
-The Sorcery and Metamagic redesign requires a new game. Both the minimum accepted
-format and the current writer are **1163**,
-`NEW_HORIZONS_SHARED_CAPTURED_RULES`. The unpublished 1162 feature layout is
-also rejected; it has no shared captured-rule table. `CLoadFile` rejects earlier formats before
+Consecrated Arms and the replacement Metamagic profile require a new game. Both
+the minimum accepted format and the current writer are **1164**,
+`NEW_HORIZONS_CONSECRATED_ARMS`. Format 1163 introduced the shared captured-rule
+table but predates the replacement faction perk identities and prayer state.
+The unpublished 1162 feature layout is also rejected. `CLoadFile` rejects earlier formats before
 reading their payload. Retired spell and Metamagic state is not converted or
 reinterpreted; existing save files remain untouched.
 
@@ -29,7 +30,7 @@ atomically as a duplicate, rather than remapping its component identities.
 
 Standalone binary hero snapshots carry their own table envelope. Standalone perk
 or mastery components carry an explicit inline envelope when no table scope exists.
-Format 1163 also retains the new-game replay capture policy; see
+The current format retains the new-game replay capture policy; see
 [Replay persistence](ReplayPersistence.md) for rolling and full-game recording.
 Serializer scopes restore their previous context on exceptions; decoded immutable
 components own their lifetimes independently of a live world. Native prepared
@@ -47,7 +48,7 @@ retains mandatory pending tier choices. Format1160,
 `NEW_HORIZONS_FOUR_OFFER_PROGRESSION`, adds the distinct four-offer policy and
 pending parent identities, with live perk eligibility checked when choosing.
 Format1161 added revised Estates policy and transaction state. These historical
-layouts do not admit pre1163 saves or silently migrate their selected perk tiers.
+layouts do not admit pre1164 saves or silently migrate their selected perk tiers.
 Unsupported writes reject new captures before enclosing prefixes. Battle-side state retains permanent combat-start
 composition for Authority and detached copies. Old Command awards and incompatible
 perk definitions are rejected rather than reinterpreted. Elemental Attunement,

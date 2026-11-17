@@ -448,61 +448,6 @@ std::shared_ptr<IImage> BattleStacksController::getStackAmountBox(const CStack *
 	return amountEffNeutral;
 }
 
-void BattleStacksController::showStackAmountBox(Canvas & canvas, const CStack * stack)
-{
-	auto amountBG = getDisplayedStackAmountBox(stack);
-
-	bool doubleWide = stack->doubleWide();
-	bool turnedRight = facingRight(stack);
-	bool attacker = stack->unitSide() == BattleSide::ATTACKER;
-
-	BattleHex stackPos = stack->getPosition();
-
-	// double-wide unit turned around - use opposite hex for stack label
-	if (doubleWide && turnedRight != attacker)
-		stackPos = stack->occupiedHex();
-
-	BattleHex frontPos = turnedRight ?
-		stackPos.cloneInDirection(BattleHex::RIGHT) :
-		stackPos.cloneInDirection(BattleHex::LEFT);
-
-	bool moveInside = !owner.fieldController->stackCountOutsideHex(frontPos);
-
-	Point boxPosition;
-
-	if (moveInside)
-	{
-		boxPosition = owner.fieldController->hexPositionLocal(stackPos).center() + Point(-15, 1);
-	}
-	else
-	{
-		if (turnedRight)
-			boxPosition = owner.fieldController->hexPositionLocal(frontPos).center() + Point (-22, 1);
-		else
-			boxPosition = owner.fieldController->hexPositionLocal(frontPos).center() + Point(-8, -14);
-	}
-
-	Point textPosition = Point(amountBG->dimensions().x/2 + boxPosition.x, boxPosition.y + amountBG->dimensions().y/2);
-
-	int32_t displayedCount = getDisplayedStackAmount(stack);
-
-	if(settings["battle"]["showHealthBar"].Bool())
-	{
-		double healthMaxType = stack->unitType()->getMaxHealth();
-		double healthMaxStack = stack->getMaxHealth();
-		double healthMaxRatio = std::min(healthMaxStack / healthMaxType, 1.0);
-		double healthRemaining = std::max(getDisplayedStackHealth(stack) - (displayedCount - 1) * healthMaxStack, .0) * healthMaxRatio;
-		Rect r(boxPosition.x, boxPosition.y - 3, amountBG->width(), 4);
-		canvas.drawColor(r, Colors::RED);
-		canvas.drawColor(Rect(r.x, r.y, (r.w / healthMaxStack) * healthRemaining, r.h), Colors::GREEN);
-		canvas.drawBorder(r, Colors::YELLOW);
-	}
-	canvas.draw(amountBG, boxPosition);
-	canvas.drawText(textPosition, EFonts::FONT_TINY, Colors::WHITE, ETextAlignment::CENTER, TextOperations::formatMetric(displayedCount, 4));
-
-	showLeadershipEfficiency(canvas, stack, boxPosition, amountBG->width(), amountBG->height(), displayedCount);
-}
-
 void BattleStacksController::showStack(Canvas & canvas, const CStack * stack)
 {
 	const bool physicallyFrozen = stack->alive() && newHorizonsFrozen::isFrozen(*stack);
@@ -627,40 +572,6 @@ void BattleStacksController::stackRemoved(uint32_t stackID)
 		owner.addToAnimationStage(EAnimationEvents::HIT, startFade);
 	else
 		startFade();
-}
-
-void BattleStacksController::lockStackAmountBox(const CStack * stack)
-{
-	displayedStackSnapshot.try_emplace(stack->unitId(), DisplayedStackSnapshot{stack->getCount(), stack->getAvailableHealth(), getStackAmountBox(stack)});
-}
-
-void BattleStacksController::unlockStackAmountBox(uint32_t stackID)
-{
-	displayedStackSnapshot.erase(stackID);
-}
-
-int32_t BattleStacksController::getDisplayedStackAmount(const CStack * stack) const
-{
-	auto it = displayedStackSnapshot.find(stack->unitId());
-	if(it != displayedStackSnapshot.end())
-		return it->second.count;
-	return stack->getCount();
-}
-
-int64_t BattleStacksController::getDisplayedStackHealth(const CStack * stack) const
-{
-	auto it = displayedStackSnapshot.find(stack->unitId());
-	if(it != displayedStackSnapshot.end())
-		return it->second.availableHealth;
-	return stack->getAvailableHealth();
-}
-
-std::shared_ptr<IImage> BattleStacksController::getDisplayedStackAmountBox(const CStack * stack)
-{
-	auto it = displayedStackSnapshot.find(stack->unitId());
-	if(it != displayedStackSnapshot.end())
-		return it->second.amountBox;
-	return getStackAmountBox(stack);
 }
 
 void BattleStacksController::stacksAreAttacked(std::vector<StackAttackedInfo> attackedInfos)

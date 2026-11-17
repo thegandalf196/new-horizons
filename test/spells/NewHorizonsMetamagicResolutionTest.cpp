@@ -194,3 +194,36 @@ TEST(NewHorizonsMetamagicResolution, CurrentPolicyIsExplicitAndOwnsRankChanceHal
 	policy["version"].Integer() = 3;
 	EXPECT_FALSE(resolutionPolicy(rules));
 }
+TEST(NewHorizonsMetamagicResolution, CreatureAbilityWrappersCannotSupplySpellRemovalEnergy)
+{
+	battle::BattleEffectSnapshot snapshot;
+	auto bonus = effect(SpellID(1));
+	bonus.abilityDescriptor = creatureAbility::spellEffect(SpellID(1), creatureAbility::Family::CREATURE_ABILITY,
+		creatureAbility::BENEFICIAL, creatureAbility::REMOVABLE | creatureAbility::DISPELLABLE, PlayerColor(1));
+	snapshot.effects = {bonus};
+	EXPECT_TRUE(collect(snapshot).empty());
+	bonus.abilityDescriptor = creatureAbility::spellEffect(SpellID(1), creatureAbility::Family::HERO_SPELL,
+		creatureAbility::BENEFICIAL, creatureAbility::REMOVABLE | creatureAbility::DISPELLABLE, PlayerColor(1));
+	snapshot.effects = {bonus};
+	const auto candidates = collect(snapshot);
+	ASSERT_EQ(candidates.size(), 1u);
+	EXPECT_EQ(candidates.front().listedMana, 4);
+}
+TEST(NewHorizonsMetamagicResolution, DistinctCapturedProducerOriginsRemainSeparateLogicalSpellGroups)
+{
+	auto hero = effect(SpellID(1));
+	auto creature = hero;
+	hero.abilityDescriptor = creatureAbility::spellEffect(SpellID(1), creatureAbility::Family::HERO_SPELL,
+		creatureAbility::BENEFICIAL, creatureAbility::REMOVABLE, PlayerColor(1));
+	creature.abilityDescriptor = creatureAbility::spellEffect(SpellID(1), creatureAbility::Family::CREATURE_SPELL,
+		creatureAbility::BENEFICIAL, creatureAbility::REMOVABLE, PlayerColor(1));
+	battle::BattleEffectSnapshot snapshot;
+	snapshot.effects = {hero, creature};
+	const auto candidates = collect(snapshot);
+	ASSERT_EQ(candidates.size(), 2u);
+	ResolutionLedger ledger;
+	int draws = 0;
+	for(const auto & candidate : candidates)
+		EXPECT_TRUE(ledger.attempt(candidate, 3, [&](int) { ++draws; return true; }));
+	EXPECT_EQ(draws, 2);
+}

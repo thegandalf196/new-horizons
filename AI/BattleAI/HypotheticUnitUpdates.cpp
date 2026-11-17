@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "ForecastNativeAdapter.h"
 #include "../../lib/battle/TimedEffectValueTransitions.h"
 #include "FocusMagicProjection.h"
 #include "../../lib/battle/NewHorizonsFocusMagic.h"
@@ -47,6 +48,7 @@ std::optional<SpellID> entangleSpellId()
 
 void HypotheticBattle::addUnit(uint32_t id, const JsonNode & data)
 {
+	if(forecastState()) throw std::logic_error("Roster creation requires a preflighted reference closure");
 	if(usesOwnedFrameQueries()) throw std::logic_error("Owned creation requires an admitted source-domain recipe");
 	invalidateLifeDrainFriendlyObservation(id);
 	battle::UnitInfo info;
@@ -70,6 +72,7 @@ void HypotheticBattle::addUnit(uint32_t id, const JsonNode & data)
 
 void HypotheticBattle::moveUnit(uint32_t id, const BattleHex & destination)
 {
+	if(forecast::NativeAdapter::moveUnit(*this, id, destination)) return;
 	std::shared_ptr<StackWithBonuses> changed = getForUpdate(id);
 	const bool moved = changed->position != destination;
 	if(moved && changed->hasBonusOfType(BonusType::BIND_EFFECT))
@@ -187,6 +190,7 @@ std::vector<ProjectedOverwatchHit> HypotheticBattle::projectVoluntaryMovement(ui
 
 void HypotheticBattle::updateUnit(uint32_t id, const JsonNode & data, int64_t healthDelta)
 {
+	if(forecast::NativeAdapter::updateUnit(*this, id, data, healthDelta)) return;
 	std::shared_ptr<StackWithBonuses> changed = getForUpdateImpl(id);
 	const bool wasAlive = changed->alive();
 	const bool sourceKilled = wasAlive && healthDelta <= -changed->getAvailableHealth();
@@ -237,6 +241,7 @@ void HypotheticBattle::updateUnit(uint32_t id, const JsonNode & data, int64_t he
 
 void HypotheticBattle::removeUnit(uint32_t id)
 {
+	if(forecastState()) throw std::logic_error("Roster removal requires a preflighted reference closure");
 	std::set<uint32_t> ids;
 	ids.insert(id);
 
@@ -340,6 +345,8 @@ battle::BattleEffectSnapshot HypotheticBattle::captureBattleEffects(uint32_t id)
 
 void HypotheticBattle::exchangeBattleEffects(const battle::BattleEffectExchange & exchange)
 {
+	if(forecastState() && !exchange.endpoints.empty())
+		throw std::logic_error("Effect exchange requires a preflighted reference closure");
 	if(usesOwnedFrameQueries()) throw std::logic_error("Owned exchange requires its canonical transaction metadata");
 	for(const auto & endpoint : exchange.endpoints)
 		invalidateLifeDrainFriendlyObservation(endpoint.id);
@@ -366,18 +373,27 @@ void HypotheticBattle::exchangeBattleEffects(const battle::BattleEffectExchange 
 
 void HypotheticBattle::addUnitBonus(uint32_t id, const std::vector<Bonus> & bonus)
 {
+	if(forecastState())
+	{
+		std::optional<int32_t> stamp;
+		for(const auto & row : bonus)
+			if(const auto round = newHorizonsFrozen::markerApplicationRound(row)) stamp = round;
+		if(forecast::NativeAdapter::effectApplication(*this, id, {}, bonus, stamp)) return;
+	}
 	getForUpdate(id)->addUnitBonus(bonus);
 	bonusTreeVersion++;
 }
 
 void HypotheticBattle::updateUnitBonus(uint32_t id, const std::vector<Bonus> & bonus)
 {
+	if(forecast::NativeAdapter::effectUpdate(*this, id, bonus)) return;
 	getForUpdate(id)->updateUnitBonus(bonus);
 	bonusTreeVersion++;
 }
 
 void HypotheticBattle::removeUnitBonus(uint32_t id, const std::vector<Bonus> & bonus)
 {
+	if(forecast::NativeAdapter::effectApplication(*this, id, bonus, {})) return;
 	const auto unit = getForUpdate(id);
 	const auto markers = unit->getBonuses(CSelector(battle::isPolymorphMarker));
 	const bool removesForm = std::ranges::any_of(bonus, [&markers](const Bonus & entry)

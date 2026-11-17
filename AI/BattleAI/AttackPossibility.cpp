@@ -855,7 +855,9 @@ AttackPossibility AttackPossibility::evaluate(
 				{
 					const float opportunity = calculateDamageReduce(ap.attackerState.get(), defenderState.get(),
 						defenderState->getAvailableHealth(), damageCache, state);
-					const float chance = newHorizonsFrozen::chancePercent(state->getBattle()->getMagicRules()) / 100.0f;
+					const float chance = newHorizonsFrozen::chancePercent(state->getBattle()->getMagicRules()) / 100.0f
+						* (1 - consecratedArmsAI::afflictionResistanceBP(*state, *ap.attackerState, *defenderState,
+							creatureAbility::Native::FROZEN) / 10000.0f);
 					const auto remaining = freezeRemainingProbability.try_emplace(u->unitId(), 1.0f).first;
 					const float probability = chance * remaining->second;
 					if(freezeCanApply)
@@ -1432,8 +1434,10 @@ AttackPossibility AttackPossibility::evaluate(
 
 						const auto projectedRetaliationDamage = battleAIProjectDamage(
 							targetState.get(), rawDamage, retaliation->damageProvenance);
-						const auto damageReduce = calculateDamageReduce(retaliatorState.get(), targetState.get(),
+						const auto counterDamageReduce = calculateDamageReduce(retaliatorState.get(), targetState.get(),
 							projectedRetaliationDamage.healthLoss, damageCache, state);
+						const auto damageReduce = counterDamageReduce
+							- consecratedArmsAI::fearlessCounterCorrection(*ap.attackerState, counterDamageReduce);
 						if(targetState->unitId() == attacker->unitId())
 						{
 							ap.attackerDamageReduce += damageReduce;
@@ -1538,6 +1542,8 @@ AttackPossibility AttackPossibility::evaluate(
 					fortunePreview->projectFrozenShatter(counter, {{targetState->unitId(), actualDamage}});
 					if(counterVictim.freezes && targetState->alive())
 						ap.frozenControlValue -= newHorizonsFrozen::chancePercent(state->getBattle()->getMagicRules()) / 100.0f
+							* (1 - consecratedArmsAI::afflictionResistanceBP(*state, *retaliatorState, *targetState,
+								creatureAbility::Native::FROZEN) / 10000.0f)
 							* calculateDamageReduce(retaliatorState.get(), targetState.get(), targetState->getAvailableHealth(), damageCache, state);
 				}
 				if(retaliation && pendingLastStandDefends.contains(targetState->unitId()))
@@ -1748,6 +1754,7 @@ AttackPossibility AttackPossibility::evaluate(
 		meleeSpecialtyAI::complete(ap);
 
 		const auto reprisal = tactics.reprisalValue(damageCache, state, state->battleGetOwner(attacker));
+		ap.uncertainAfflictionProjection = tactics.uncertainAfflictions();
 		ap.attackerDamageReduce += reprisal.first;
 		ap.defenderDamageReduce += reprisal.second;
 		if(!bestAp.dest.isValid() || ap.attackValue() > bestAp.attackValue())

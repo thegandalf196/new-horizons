@@ -22,6 +22,11 @@
 #include "../../lib/battle/CUnitState.h"
 #include "../../lib/battle/GraveDustEffectChanges.h"
 
+namespace frozenScoring { class OwnedSource; }
+namespace bonusDependencies { struct QueryFrameBinding; class CapturedModifiers; class OwnedBonusQueryFrame; class RecipientLayerSource; }
+namespace forecast { class NativeReadView; class NativeAdapter; }
+namespace forecastEffects { class State; }
+struct PreparedOwnedReadSource;
 class HypotheticBattle;
 class OwnedStackQuerySource;
 class OwnedFrameEffectQueries;
@@ -37,10 +42,13 @@ class DLL_LINKAGE StackWithBonuses : public battle::CUnitState, public virtual I
 {
 	friend class InitialExportBattleSubject;
 	friend class HypotheticBattle;
+	friend class forecast::NativeAdapter;
 	friend class OwnedFrameEffectQueries;
 public:
 	/// Exact original export owner plus uncopied unit-local overlay identities.
 	bool captureMeleeBonusSource(MeleeBonusSource & result) const;
+	std::shared_ptr<const bonusDependencies::CapturedModifiers> captureModifierFacts(
+		const battle::OwnedUnitBonusFrame * authorizedOwnedFrame) const;
 	void suppressMeleeBonusIdentities(const std::set<std::shared_ptr<Bonus>> & records);
 	// Queries must retain each local record's identity: descendant removals
 	// suppress the original pointer, not every bonus with an equal value.
@@ -49,6 +57,14 @@ public:
 	std::set<std::shared_ptr<Bonus>> bonusesToRemove;
 	int treeVersionLocal;
 
+	StackWithBonuses(const HypotheticBattle *, std::shared_ptr<const forecast::NativeReadView>,
+		std::shared_ptr<const bonusDependencies::CapturedModifiers>, std::shared_ptr<const forecastEffects::State>);
+	std::unique_ptr<PreparedOwnedReadSource> prepareOwnedReadSource(std::shared_ptr<const forecast::NativeReadView>,
+		std::shared_ptr<const bonusDependencies::CapturedModifiers>, std::shared_ptr<const forecastEffects::State>) const;
+	std::optional<std::vector<std::shared_ptr<const Bonus>>> ownedLocalOtherEffects() const;
+	std::pair<std::shared_ptr<const bonusDependencies::CapturedModifiers>,
+		std::shared_ptr<const bonusDependencies::OwnedBonusQueryFrame>> ownedModifierFacts() const;
+	void publishOwnedReadSource(PreparedOwnedReadSource &) noexcept;
 	StackWithBonuses(const HypotheticBattle * Owner, const battle::CUnitState * Stack);
 
 	StackWithBonuses(const HypotheticBattle * Owner, const battle::Unit * Stack);
@@ -96,6 +112,15 @@ public:
 	bool captureRecipientOverlayLayers(std::vector<recipientBonusOverlay::Layer> & layers,
 		const CStack * & native) const;
 
+	/// Same original bearer/environment; copies VALUES and overlay records, never
+	/// wraps this view and reapplies its overlays. No live state is mutated.
+	std::unique_ptr<StackWithBonuses> prepareEffectDraft(const HypotheticBattle * prospective = nullptr) const;
+	std::shared_ptr<const bonusDependencies::CapturedModifiers> capturePreparedModifierFacts(const StackWithBonuses &) const;
+	int preparedModifierWarfare() const;
+	bool preparedEffectSourceMatches(const StackWithBonuses & prepared) const noexcept;
+	/// Caller completed all validation/queries on the draft before publication.
+	/// Keeps this object's identity, owners, environment and cache closures.
+	void publishPreparedEffects(StackWithBonuses & prepared) noexcept;
 	void addUnitBonus(const std::vector<Bonus> & bonus);
 	std::vector<Bonus> localSpellEffects() const;
 	void replaceLocalSpellEffectsExact(const std::vector<Bonus> & replacement);
@@ -113,6 +138,11 @@ public:
 	void removeGamblerLuckPenalty(HypotheticLifecycleTiming::EffectWorkTiming * timing);
 	/// Freeze the current bonus inputs for a retained pre-damage scoring snapshot.
 	void freezeDamageScoringBonusSnapshot();
+	/// Preparation-only; enclosing T2 receipt grants source authority.
+	std::shared_ptr<const frozenScoring::OwnedSource> captureFrozenScoringSource(
+		bonusDependencies::QueryFrameBinding binding) const;
+	bool stageOwnedModifierFacts(std::shared_ptr<const bonusDependencies::CapturedModifiers>,
+		std::shared_ptr<const bonusDependencies::OwnedBonusQueryFrame>);
 	void applyNoQuarter(int32_t moraleActivationsRemaining, bool appliedByEnemy = false);
 	void consumeNoQuarterActivation();
 	void clearNoQuarterRoundBlocker();
@@ -123,6 +153,13 @@ public:
 	std::string getDescription() const override;
 
 private:
+	std::shared_ptr<const bonusDependencies::CapturedModifiers> modifierBaseProgram;
+	std::shared_ptr<const bonusDependencies::RecipientLayerSource> modifierSourceLease;
+	mutable std::shared_ptr<const bonusDependencies::CapturedModifiers> modifierCurrentProgram;
+	mutable std::shared_ptr<const bonusDependencies::OwnedBonusQueryFrame> modifierQueryFrame;
+	mutable std::optional<int> modifierQueriesVersion;
+	recipientBonusOverlay::Layer ownModifierLayer() const;
+	std::shared_ptr<const bonusDependencies::OwnedBonusQueryFrame> currentModifierQueries() const;
 	friend class ProjectedAdjacencyBonuses;
 	TConstBonusListPtr mergeBonusesImpl(const CSelector & selector, const std::string & cachingStr,
 		bool unstacked, const ProjectedAdjacencyQuery * adjacency) const;
@@ -153,6 +190,8 @@ private:
 	void captureEffects();
 	void captureEffects(HypotheticLifecycleTiming::EffectWorkTiming * timing);
 	void captureLocalSpellEffects();
+	std::optional<int> preparedEffectBaseVersion;
+	const HypotheticBattle * preparedEffectOriginOwner = nullptr;
 	std::optional<std::vector<Bonus>> exactLocalSpellEffects;
 	// New hypothetical units own a detached CStack as their creature/army bonus
 	// provenance. Descendant projections retain the projected bearer that they
@@ -160,6 +199,8 @@ private:
 	std::unique_ptr<OwnedStackQuerySource> ownedQuerySource;
 	std::shared_ptr<CStack> ownedBearer;
 	std::shared_ptr<const StackWithBonuses> projectedBearer;
+	std::shared_ptr<const forecast::NativeReadView> ownedReadSource;
+	std::shared_ptr<const forecastEffects::State> modifierBaseEffects;
 	const IBonusBearer * origBearer;
 	/// Typed view of the final bearer binding; bonus values are still queried live.
 	const battle::Unit * originalUnit = nullptr;

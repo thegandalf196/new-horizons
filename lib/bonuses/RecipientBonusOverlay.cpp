@@ -35,7 +35,9 @@ bool projectedEffect(const Bonus * bonus)
 		|| newHorizonsElementalRebirth::isElementalMemoryBonus(*bonus));
 }
 
-void actualizeEffect(BonusList & target, const Bonus & ef)
+struct NoOutputObservation {};
+template<typename Observer>
+void actualizeEffect(BonusList & target, const Bonus & ef, Observer & observer)
 {
 	std::unordered_map<const Bonus *, std::shared_ptr<Bonus>> updatedCopies;
 	for(auto & bonus : target)
@@ -50,6 +52,7 @@ void actualizeEffect(BonusList & target, const Bonus & ef)
 				{
 					copy->second = std::make_shared<Bonus>(*bonus);
 					copy->second->turnsRemain = ef.turnsRemain;
+					if constexpr(!std::is_same_v<Observer, NoOutputObservation>) observer.cloned(*bonus, copy->second);
 				}
 				bonus = copy->second;
 			}
@@ -132,7 +135,9 @@ void copyInherited(BonusList & target, const BonusList & inherited, const View &
 	});
 }
 
-void append(BonusList & target, const View & layer, const CSelector & mergeSelector, bool unstacked)
+template<typename Observer>
+void appendKernel(BonusList & target, const View & layer, const CSelector & mergeSelector,
+	bool unstacked, Observer & observer)
 {
 	if(unstacked)
 	{
@@ -144,7 +149,11 @@ void append(BonusList & target, const View & layer, const CSelector & mergeSelec
 	else if(layer.stackedSnapshot)
 		for(const auto & bonus : *layer.stackedSnapshot)
 			if(mergeSelector(&bonus))
-				target.push_back(std::make_shared<Bonus>(bonus));
+			{
+				const auto value = std::make_shared<Bonus>(bonus);
+				if constexpr(!std::is_same_v<Observer, NoOutputObservation>) observer.cloned(bonus, value);
+				target.push_back(value);
+			}
 
 	for(const auto & record : layer.updated)
 	{
@@ -156,7 +165,7 @@ void append(BonusList & target, const View & layer, const CSelector & mergeSelec
 			if(refreshableSource && target.getFirst(Selector::source(bonus.source, bonus.sid)
 				.And(Selector::typeSubtypeValueType(bonus.type, bonus.subtype, bonus.valType))))
 			{
-				actualizeEffect(target, bonus);
+				actualizeEffect(target, bonus, observer);
 			}
 			else
 			{
@@ -172,6 +181,16 @@ void append(BonusList & target, const View & layer, const CSelector & mergeSelec
 	}
 }
 
+void append(BonusList & target, const View & layer, const CSelector & selector, bool unstacked)
+{
+	NoOutputObservation observer;
+	appendKernel(target, layer, selector, unstacked, observer);
+}
+void appendObserved(BonusList & target, const View & layer, const CSelector & selector,
+	bool unstacked, OutputObserver & observer)
+{
+	appendKernel(target, layer, selector, unstacked, observer);
+}
 TConstBonusListPtr finish(TBonusListPtr target, const View & layer, const CSelector & selector)
 {
 	if(!layer.updated.empty())

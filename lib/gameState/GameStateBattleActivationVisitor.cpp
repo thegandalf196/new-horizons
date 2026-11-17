@@ -12,6 +12,15 @@ void GameStatePackVisitor::visitBattleSetActiveStack(BattleSetActiveStack & pack
 
 void GameStatePackVisitor::visitEndAction(EndAction & pack)
 {
+	if(pack.completedUnitAction >= 0)
+	{
+		auto * battle = gs.getBattle(pack.battleID);
+		if(!battle) throw std::runtime_error("Completed action references a missing battle");
+		auto * unit = battle->getStack(pack.completedUnitAction, false);
+		if(!unit) throw std::runtime_error("Completed action references a missing unit");
+		unit->completedActionThisRound = true;
+	}
+
 	if(pack.endsFortuneActivation)
 	{
 		auto * battle = gs.getBattle(pack.battleID);

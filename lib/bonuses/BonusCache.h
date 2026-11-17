@@ -122,6 +122,8 @@ public:
 	static constexpr size_t KEYS_COUNT = static_cast<size_t>(ECacheKeys::TOTAL_KEYS);
 
 	using SelectorsArray = BonusValuesArrayCache<KEYS_COUNT>::SelectorsArray;
+	/// Same native selector inventory for owned numerical reduction.
+	static DLL_LINKAGE const SelectorsArray & canonicalSelectors();
 
 	UnitBonusValuesProxy(const IBonusBearer * Target):
 		cache(Target, generateSelectors())

@@ -12,11 +12,33 @@
 #include "../../lib/spells/ISpellMechanics.h"
 #include "../../lib/spells/RecipientSpellEffectPreview.h"
 #include "../../lib/spells/NewHorizonsSorcerySpells.h"
+#include "../../lib/spells/NewHorizonsMetamagicOverflow.h"
+#include "../../lib/texts/MetaString.h"
 #include "../windows/SpellbookEntryPresentation.h"
 #include "../GameInstance.h"
 
 namespace
 {
+/// Present the shared, read-only spill estimate without extending selection.
+std::string overflowStatus(const CBattleInfoCallback & battle,
+	const spells::Mechanics & mechanics, const spells::Target & target)
+{
+	const auto preview = newHorizonsMetamagic::previewOverflow(mechanics, target);
+	if(!preview || preview->damageIfLands <= 0)
+		return {};
+	const auto * recipient = battle.battleGetStackByID(preview->recipient, false);
+	if(!recipient)
+		return {};
+	const bool conditional = preview->primaryResistancePercent > 0
+		|| preview->secondaryResistancePercent > 0 || preview->conditionalRebirth;
+	const auto damage = (conditional ? "0 - " : std::string())
+		+ std::to_string(preview->damageIfLands);
+	auto text = MetaString::createFromTextID("new-horizons.metamagic.arcaneOverflow.preview");
+	text.replaceRawString(recipient->getName());
+	text.replaceRawString(damage);
+	return text.toString(&GAME->translator());
+}
+
 /// Preview the established native effect without repeating scripted formulas.
 std::string recipientEffectStatus(const spells::Mechanics & mechanics,
 	const battle::Unit * recipient)
@@ -76,7 +98,8 @@ std::string BattleActionsController::spellTargetManaStatus(PossiblePlayerBattleA
 		return {};
 	mechanics->setStormOfDaggersTargetCount(static_cast<int32_t>(preview.target.size()));
 	return " | Mana: " + std::to_string(mechanics->getTargetAwareManaCost(target))
-		+ recipientEffectStatus(*mechanics, getStackForHex(targetHex));
+		+ recipientEffectStatus(*mechanics, getStackForHex(targetHex))
+		+ overflowStatus(*battle, *mechanics, target);
 }
 
 bool BattleActionsController::isForcedRecallSpell(const CSpell * spell)

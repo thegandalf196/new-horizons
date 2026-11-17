@@ -1,7 +1,9 @@
 {
 	"schemaVersion": 1,
 	"rulesetVersion": 2,
-	"commandAuthorityPolicy": {"version": 1},
+	"commandAuthorityPolicy": {
+		"version": 1
+	},
 	"warfarePolicyVersion": 1,
 	"offerWeightPolicyVersion": 2,
 	"perkProgressionPolicyVersion": 2,
@@ -9,7 +11,7 @@
 	"estatesPolicyVersion": 1,
 	"sylvanTacticsPolicy": 3,
 	"metamagicPolicy": {
-		"version": 4,
+		"version": 6,
 		"removalChancePercent": [
 			0,
 			20,
@@ -18,10 +20,35 @@
 		],
 		"damagePerMana": 10,
 		"restorationPerMana": 15,
-		"halonRemovalChanceBonusPercent": 5
+		"halonRemovalChanceBonusPercent": 5,
+		"arcaneOverflowPercentByRank": [
+			0,
+			30,
+			45,
+			60
+		],
+		"friendlyDamageReductionPercentByRank": [
+			0,
+			30,
+			45,
+			60
+		],
+		"debuffRetryChancePercentByRank": [
+			0,
+			30,
+			45,
+			60
+		]
 	},
 	"divineMandatePolicy": {
-		"version": 2
+		"version": 3,
+		"potencyFaithBonusByRank": [
+			0,
+			0,
+			50,
+			100
+		],
+		"ferventInvocationAdditionalFaith": 100
 	},
 	"demonicGatingPolicy": {
 		"version": 2
@@ -34,7 +61,12 @@
 	},
 	"necromancyPolicy": {
 		"version": 4,
-		"skeletonLeadershipReductionPercent": [0, 50, 60, 70],
+		"skeletonLeadershipReductionPercent": [
+			0,
+			50,
+			60,
+			70
+		],
 		"lordOfTheDeadLeadershipReductionPercent": 90,
 		"deathMarchSpeed": 2,
 		"bonewardMagicalReductionPercent": 0,
@@ -53,7 +85,7 @@
 		"mathVersion": 1
 	},
 	"sourceDocument": "new-horizons-docs:canon/game-design.md",
-	"sourceSha256": "01de3f5c98e629bc034cc6e65c7c9a8a48b49fd5dd25629c975e652dcf723d1e",
+	"sourceSha256": "2151baf43c43b14cd72573dcc745475e2d5fd237eac6b06f4080220f1667a01d",
 	"maxSkillChoices": 2,
 	"maxPerkChoices": 2,
 	"maxPerksPerSkill": 3,
@@ -910,7 +942,10 @@
 					"effect": {
 						"status": "active",
 						"description": "Each point of positive hero Morale grants +5 percentage points of Order Efficiency to attribute-derived Order components, capped at +30 percentage points.",
-						"parameters": {"efficiencyBonusPPPerMorale": 5, "maximumEfficiencyBonusPP": 30}
+						"parameters": {
+							"efficiencyBonusPPPerMorale": 5,
+							"maximumEfficiencyBonusPP": 30
+						}
 					},
 					"details": "Capture the issuing hero's actual Morale when the Order is accepted: min(30, 5 × max(0, hero Morale)) percentage points. The issued Order retains that strength. Slot-specific Courage is not hero Morale. This grants no additional Hero Action."
 				}
@@ -1065,7 +1100,9 @@
 					"effect": {
 						"status": "active",
 						"description": "Attribute-derived Order components operate at 110% Order Efficiency; fixed base components are unchanged.",
-						"parameters": {"orderEfficiencyPercent": 110}
+						"parameters": {
+							"orderEfficiencyPercent": 110
+						}
 					},
 					"details": "Fixed base portions remain unchanged. Efficiency bonuses add as percentage points. Warfare grants no Command, resource capacity or additional action."
 				},
@@ -1074,7 +1111,9 @@
 					"effect": {
 						"status": "active",
 						"description": "Attribute-derived Order components operate at 120% Order Efficiency; fixed base components are unchanged.",
-						"parameters": {"orderEfficiencyPercent": 120}
+						"parameters": {
+							"orderEfficiencyPercent": 120
+						}
 					},
 					"details": "Fixed base portions remain unchanged. Efficiency bonuses add as percentage points. Warfare grants no Command, resource capacity or additional action."
 				},
@@ -1083,7 +1122,9 @@
 					"effect": {
 						"status": "active",
 						"description": "Attribute-derived Order components operate at 130% Order Efficiency; fixed base components are unchanged.",
-						"parameters": {"orderEfficiencyPercent": 130}
+						"parameters": {
+							"orderEfficiencyPercent": 130
+						}
 					},
 					"details": "Fixed base portions remain unchanged. Efficiency bonuses add as percentage points. Warfare grants no Command, resource capacity or additional action."
 				}
@@ -1097,7 +1138,9 @@
 					"effect": {
 						"status": "active",
 						"description": "Attack-derived components of Orders receive an additional +20 percentage points of Order Efficiency.",
-						"parameters": {"attackEfficiencyBonusPP": 20}
+						"parameters": {
+							"attackEfficiencyBonusPP": 20
+						}
 					}
 				},
 				{
@@ -1108,7 +1151,9 @@
 					"effect": {
 						"status": "active",
 						"description": "Defense-derived components of Orders receive an additional +20 percentage points of Order Efficiency.",
-						"parameters": {"defenseEfficiencyBonusPP": 20}
+						"parameters": {
+							"defenseEfficiencyBonusPP": 20
+						}
 					}
 				},
 				{
@@ -1129,7 +1174,9 @@
 					"effect": {
 						"status": "active",
 						"description": "The first successfully issued Order each combat gains +20 percentage points of efficiency on its attribute-derived components.",
-						"parameters": {"firstOrderEfficiencyBonusPP": 20}
+						"parameters": {
+							"firstOrderEfficiencyBonusPP": 20
+						}
 					},
 					"details": "The Order spends its ordinary Hero Action. Rejected Orders, previews and cancelled targeting do not consume this benefit. No free precombat Order or Command capacity is granted."
 				},
@@ -1141,7 +1188,11 @@
 					"effect": {
 						"status": "active",
 						"description": "Friendly stacks currently benefiting from your Orders gain +2 Creature Attack and +2 Creature Defense.",
-						"parameters": {"creatureAttack": 2, "creatureDefense": 2, "requiresActiveOrder": true}
+						"parameters": {
+							"creatureAttack": 2,
+							"creatureDefense": 2,
+							"requiresActiveOrder": true
+						}
 					}
 				},
 				{
@@ -1152,7 +1203,11 @@
 					"effect": {
 						"status": "active",
 						"description": "Focus Fire grants melee attacks half its damage bonus; Feint reduces retaliation damage by 5 additional percentage points, capped at 60%.",
-						"parameters": {"focusFireMeleeBonusPercent": 50, "feintReductionBonusPP": 5, "feintReductionCapPercent": 60}
+						"parameters": {
+							"focusFireMeleeBonusPercent": 50,
+							"feintReductionBonusPP": 5,
+							"feintReductionCapPercent": 60
+						}
 					},
 					"details": "Focus Fire! grants friendly melee attacks 50% of its damage bonus against the designated target. Feint! grants an additional +5 percentage points of retaliation damage reduction, up to its final 60% cap."
 				},
@@ -1175,7 +1230,10 @@
 					"effect": {
 						"status": "active",
 						"description": "Friendly stacks currently benefiting from your Orders take 20% less damage from attacks and spells.",
-						"parameters": {"attackAndSpellReductionPercent": 20, "requiresActiveOrder": true}
+						"parameters": {
+							"attackAndSpellReductionPercent": 20,
+							"requiresActiveOrder": true
+						}
 					},
 					"details": "Applies once while at least one actual Order benefit remains active on the recipient. It ends when the last benefit expires, is consumed or is broken. Independent mitigation combines multiplicatively; an Order record alone is insufficient."
 				},
@@ -1187,7 +1245,9 @@
 					"effect": {
 						"status": "active",
 						"description": "All attribute-derived Order components receive an additional +15 percentage points of Order Efficiency. Fixed base portions are unchanged.",
-						"parameters": {"allEfficiencyBonusPP": 15}
+						"parameters": {
+							"allEfficiencyBonusPP": 15
+						}
 					}
 				},
 				{
@@ -1198,9 +1258,15 @@
 					"effect": {
 						"status": "active",
 						"description": "Friendly stacks currently benefiting from your Orders deal +10% direct creature-attack damage.",
-						"parameters": {"directAttackDamagePercent": 10, "requiresActiveOrder": true}
+						"parameters": {
+							"directAttackDamagePercent": 10,
+							"requiresActiveOrder": true
+						}
 					},
-					"legacyIdentity": {"id": "new-horizons:command.seizeInitiative", "commandPolicyVersion": 1},
+					"legacyIdentity": {
+						"id": "new-horizons:command.seizeInitiative",
+						"commandPolicyVersion": 1
+					},
 					"details": "Replaces the released passive Warfare Grand Marshal only under commandPolicyVersion 1. Historical activation-reordering Seize Initiative is not migrated. Melee, ranged and retaliation attacks qualify, including magical creature attacks; spells, healing, reflection and damage-over-time do not. Multiple qualifying Orders never multiply this passive bonus."
 				}
 			]
@@ -1215,15 +1281,33 @@
 			"ranks": {
 				"basic": {
 					"description": "Increases effective Leadership by +15%.",
-					"effect": {"status": "active", "description": "Increases effective Leadership by +15%.", "parameters": {"leadershipPercent": 15}}
+					"effect": {
+						"status": "active",
+						"description": "Increases effective Leadership by +15%.",
+						"parameters": {
+							"leadershipPercent": 15
+						}
+					}
 				},
 				"advanced": {
 					"description": "Increases effective Leadership by +30% total.",
-					"effect": {"status": "active", "description": "Increases effective Leadership by +30% total.", "parameters": {"leadershipPercent": 30}}
+					"effect": {
+						"status": "active",
+						"description": "Increases effective Leadership by +30% total.",
+						"parameters": {
+							"leadershipPercent": 30
+						}
+					}
 				},
 				"expert": {
 					"description": "Increases effective Leadership by +45% total.",
-					"effect": {"status": "active", "description": "Increases effective Leadership by +45% total.", "parameters": {"leadershipPercent": 45}}
+					"effect": {
+						"status": "active",
+						"description": "Increases effective Leadership by +45% total.",
+						"parameters": {
+							"leadershipPercent": 45
+						}
+					}
 				}
 			},
 			"perks": [
@@ -1235,7 +1319,9 @@
 					"effect": {
 						"status": "active",
 						"description": "Increases effective Leadership by +25% when calculating capacity for Core creatures.",
-						"parameters": {"coreLeadershipPercent": 25}
+						"parameters": {
+							"coreLeadershipPercent": 25
+						}
 					}
 				},
 				{
@@ -1246,7 +1332,9 @@
 					"effect": {
 						"status": "active",
 						"description": "Increases effective Leadership by +25% when calculating capacity for Elite and Champion creatures.",
-						"parameters": {"eliteChampionLeadershipPercent": 25}
+						"parameters": {
+							"eliteChampionLeadershipPercent": 25
+						}
 					}
 				},
 				{
@@ -1257,7 +1345,9 @@
 					"effect": {
 						"status": "active",
 						"description": "Increases effective Leadership by +20% when calculating capacity for creatures belonging to the hero's native faction.",
-						"parameters": {"nativeFactionLeadershipPercent": 20}
+						"parameters": {
+							"nativeFactionLeadershipPercent": 20
+						}
 					}
 				},
 				{
@@ -1268,7 +1358,9 @@
 					"effect": {
 						"status": "active",
 						"description": "Increases effective Leadership by +30% when calculating capacity for creatures not belonging to the hero's native faction.",
-						"parameters": {"foreignFactionLeadershipPercent": 30}
+						"parameters": {
+							"foreignFactionLeadershipPercent": 30
+						}
 					}
 				},
 				{
@@ -1279,7 +1371,9 @@
 					"effect": {
 						"status": "active",
 						"description": "Increases effective Leadership by +25% for creatures without an intrinsic ranged attack.",
-						"parameters": {"meleeLeadershipPercent": 25}
+						"parameters": {
+							"meleeLeadershipPercent": 25
+						}
 					}
 				},
 				{
@@ -1290,7 +1384,9 @@
 					"effect": {
 						"status": "active",
 						"description": "Increases effective Leadership by +25% for creatures with an intrinsic ranged attack.",
-						"parameters": {"rangedLeadershipPercent": 25}
+						"parameters": {
+							"rangedLeadershipPercent": 25
+						}
 					}
 				},
 				{
@@ -1301,7 +1397,9 @@
 					"effect": {
 						"status": "active",
 						"description": "Increases effective Leadership by +25% for all stacks when the battle-start army has at least three distinct creature lines and no repeated lines. Upgrades belong to their base creature line.",
-						"parameters": {"regimentalLeadershipPercent": 25}
+						"parameters": {
+							"regimentalLeadershipPercent": 25
+						}
 					}
 				},
 				{
@@ -1312,7 +1410,9 @@
 					"effect": {
 						"status": "active",
 						"description": "Increases effective Leadership by +35% for all stacks when the battle-start army includes Core, Elite and Champion creature lines. Temporary summons do not change eligibility.",
-						"parameters": {"combinedArmsLeadershipPercent": 35}
+						"parameters": {
+							"combinedArmsLeadershipPercent": 35
+						}
 					}
 				},
 				{
@@ -1323,7 +1423,9 @@
 					"effect": {
 						"status": "active",
 						"description": "Increases effective Leadership by +25% for all stacks.",
-						"parameters": {"allStacksLeadershipPercent": 25}
+						"parameters": {
+							"allStacksLeadershipPercent": 25
+						}
 					}
 				},
 				{
@@ -1334,7 +1436,9 @@
 					"effect": {
 						"status": "active",
 						"description": "Increases effective Leadership by +50% when calculating capacity for Core creatures.",
-						"parameters": {"coreLeadershipPercent": 50}
+						"parameters": {
+							"coreLeadershipPercent": 50
+						}
 					}
 				}
 			]
@@ -1977,7 +2081,7 @@
 				},
 				{
 					"id": "new-horizons:sorceryMagic.countermage",
-					"name": "Arcane Ballistics",
+					"name": "Arcane Arsenal",
 					"requires": "advanced",
 					"description": "Focus Magic grants an additional 20 percentage points of ranged damage: +40% for native shooters and +20% for converted nonshooters.",
 					"effect": {
@@ -3344,137 +3448,146 @@
 		},
 		"new-horizons:divineMandate": {
 			"id": "new-horizons:divineMandate",
-			"name": "Divine Mandate",
+			"name": "Consecrated Arms",
 			"domain": "Faction",
 			"availability": "Castle heroes only",
-			"description": "Orders can automatically cast a useful beneficial Light spell you know, free of Mana and additional Hero Actions. Rank improves attribute-derived Order effects and the number of free spell activations.",
+			"description": "Each committed Order grants one uniformly random prayer to its recipients. Faith is Spell Power plus Knowledge; rank adds potency Faith only. Different prayers coexist; repeat prayers refresh without stacking or refilling shields.",
 			"ranks": {
 				"basic": {
-					"description": "Strengthen attribute-based Order effects by 5 percentage points; up to 1 Orders each combat also cast a useful known Light blessing for free.",
+					"description": "Each committed Order grants one uniformly random prayer. Prayer potency uses Spell Power + Knowledge + 0 Faith; duration uses actual Spell Power + Knowledge: min(4, 2 + floor(Faith / 150)) rounds.",
 					"effect": {
 						"status": "active",
-						"description": "Strengthen attribute-based Order effects by 5 percentage points; up to 1 Orders each combat also cast a useful known Light blessing for free."
+						"description": "Each committed Order grants one uniformly random prayer. Prayer potency uses Spell Power + Knowledge + 0 Faith; duration uses actual Spell Power + Knowledge: min(4, 2 + floor(Faith / 150)) rounds."
 					},
-					"details": "Orders gain +5 percentage points on attribute-derived effects. Up to 1 Orders per combat also trigger a useful known beneficial Light spell, free of Mana and additional Hero Actions. No useful spell spends no activation."
+					"details": "Six prayers: Divine Purpose grants Morale/Luck/Speed; Dauntless Assault reduces provoked retaliation damage; Steadfast Soul resists non-damaging hostile spells; Vicarious Redemption converts actual casualties into a finite physical-and-magical shield; Unbroken Vow caps casualties per attack or damaging spell; Heaven's Judgment adds magical attack and retaliation damage. No Light spell, charge pool or additional Order attribute scaling. Reapplication refreshes without duplicate strength or shield refill."
 				},
 				"advanced": {
-					"description": "Strengthen attribute-based Order effects by 10 percentage points; up to 2 Orders each combat also cast a useful known Light blessing for free.",
+					"description": "Each committed Order grants one uniformly random prayer. Prayer potency uses Spell Power + Knowledge + 50 Faith; duration uses actual Spell Power + Knowledge: min(4, 2 + floor(Faith / 150)) rounds.",
 					"effect": {
 						"status": "active",
-						"description": "Strengthen attribute-based Order effects by 10 percentage points; up to 2 Orders each combat also cast a useful known Light blessing for free."
+						"description": "Each committed Order grants one uniformly random prayer. Prayer potency uses Spell Power + Knowledge + 50 Faith; duration uses actual Spell Power + Knowledge: min(4, 2 + floor(Faith / 150)) rounds."
 					},
-					"details": "Orders gain +10 percentage points on attribute-derived effects. Up to 2 Orders per combat also trigger a useful known beneficial Light spell, free of Mana and additional Hero Actions. No useful spell spends no activation."
+					"details": "Six prayers: Divine Purpose grants Morale/Luck/Speed; Dauntless Assault reduces provoked retaliation damage; Steadfast Soul resists non-damaging hostile spells; Vicarious Redemption converts actual casualties into a finite physical-and-magical shield; Unbroken Vow caps casualties per attack or damaging spell; Heaven's Judgment adds magical attack and retaliation damage. No Light spell, charge pool or additional Order attribute scaling. Reapplication refreshes without duplicate strength or shield refill."
 				},
 				"expert": {
-					"description": "Strengthen attribute-based Order effects by 15 percentage points; up to 3 Orders each combat also cast a useful known Light blessing for free.",
+					"description": "Each committed Order grants one uniformly random prayer. Prayer potency uses Spell Power + Knowledge + 100 Faith; duration uses actual Spell Power + Knowledge: min(4, 2 + floor(Faith / 150)) rounds.",
 					"effect": {
 						"status": "active",
-						"description": "Strengthen attribute-based Order effects by 15 percentage points; up to 3 Orders each combat also cast a useful known Light blessing for free."
+						"description": "Each committed Order grants one uniformly random prayer. Prayer potency uses Spell Power + Knowledge + 100 Faith; duration uses actual Spell Power + Knowledge: min(4, 2 + floor(Faith / 150)) rounds."
 					},
-					"details": "Orders gain +15 percentage points on attribute-derived effects. Up to 3 Orders per combat also trigger a useful known beneficial Light spell, free of Mana and additional Hero Actions. No useful spell spends no activation."
+					"details": "Six prayers: Divine Purpose grants Morale/Luck/Speed; Dauntless Assault reduces provoked retaliation damage; Steadfast Soul resists non-damaging hostile spells; Vicarious Redemption converts actual casualties into a finite physical-and-magical shield; Unbroken Vow caps casualties per attack or damaging spell; Heaven's Judgment adds magical attack and retaliation damage. No Light spell, charge pool or additional Order attribute scaling. Reapplication refreshes without duplicate strength or shield refill."
 				}
 			},
 			"perks": [
 				{
-					"id": "new-horizons:divineMandate.sacredCommand",
-					"name": "Sacred Command",
+					"id": "new-horizons:divineMandate.enduringPrayer",
+					"name": "Enduring Prayer",
 					"requires": "basic",
-					"description": "Order recipients gain +1 Morale and +1 Luck for the Order's duration.",
+					"description": "Prayers last one additional round after the normal four-round duration cap.",
 					"effect": {
 						"status": "active",
-						"description": "Order recipients gain +1 Morale and +1 Luck for the Order's duration."
-					}
-				},
-				{
-					"id": "new-horizons:divineMandate.knightlyValor",
-					"name": "Knightly Valor",
-					"requires": "basic",
-					"description": "Order recipients deal 10% more melee damage for the Order's duration.",
-					"effect": {
-						"status": "active",
-						"description": "Order recipients deal 10% more melee damage for the Order's duration."
-					}
-				},
-				{
-					"id": "new-horizons:divineMandate.chaplainSReserve",
-					"name": "Chaplain's Reserve",
-					"requires": "basic",
-					"description": "Each successful free Divine Mandate spell restores three Mana.",
-					"effect": {
-						"status": "active",
-						"description": "Each successful free Divine Mandate spell restores three Mana."
-					}
-				},
-				{
-					"id": "new-horizons:divineMandate.shieldOfFaith",
-					"name": "Shield of Faith",
-					"requires": "basic",
-					"description": "Order recipients suffer 10% less damage from enemy attacks for the Order's duration.",
-					"effect": {
-						"status": "active",
-						"description": "Order recipients suffer 10% less damage from enemy attacks for the Order's duration."
-					}
-				},
-				{
-					"id": "new-horizons:divineMandate.righteousDiscipline",
-					"name": "Righteous Discipline",
-					"requires": "advanced",
-					"description": "Order recipients gain one additional retaliation for the Order's duration.",
-					"effect": {
-						"status": "active",
-						"description": "Order recipients gain one additional retaliation for the Order's duration."
-					}
-				},
-				{
-					"id": "new-horizons:divineMandate.unwaveringStandard",
-					"name": "Unwavering Standard",
-					"requires": "advanced",
-					"description": "Order recipients treat negative Morale as zero for the Order's duration.",
-					"effect": {
-						"status": "active",
-						"description": "Order recipients treat negative Morale as zero for the Order's duration."
-					}
-				},
-				{
-					"id": "new-horizons:divineMandate.inspiringLeadership",
-					"name": "Inspiring Leadership",
-					"requires": "advanced",
-					"description": "Recipients of the free Divine Mandate Light spell gain +2 Speed for the issuing Order's scheduled duration. Initiative is unchanged.",
-					"effect": {
-						"status": "active",
-						"description": "Recipients of the free Divine Mandate Light spell gain +2 Speed for the issuing Order's scheduled duration. Initiative is unchanged."
-					}
-				},
-				{
-					"id": "new-horizons:divineMandate.consecratedArms",
-					"name": "Consecrated Arms",
-					"requires": "advanced",
-					"description": "Order recipients ignore 10% of their target's Defense in melee for the Order's duration.",
-					"effect": {
-						"status": "active",
-						"description": "Order recipients ignore 10% of their target's Defense in melee for the Order's duration."
-					}
-				},
-				{
-					"id": "new-horizons:divineMandate.mandateOfHeaven",
-					"name": "Mandate of Heaven",
-					"requires": "expert",
-					"description": "Divine Mandate can trigger two additional free Light spells each combat, for five at Expert rank.",
-					"effect": {
-						"status": "active",
-						"description": "Divine Mandate can trigger two additional free Light spells each combat, for five at Expert rank."
-					}
-				},
-				{
-					"id": "new-horizons:divineMandate.divineFury",
-					"name": "Divine Fury",
-					"requires": "expert",
-					"description": "While under an Order, attacks and retaliations have a 10% chance to cast free Holy Wrath using your hero’s current power and mastery.",
-					"effect": {
-						"status": "active",
-						"description": "While under an Order, attacks and retaliations have a 10% chance to cast free Holy Wrath using your hero’s current power and mastery."
+						"description": "Prayers last one additional round after the normal four-round duration cap."
 					},
-					"details": "While under an Order, melee attacks, ranged attacks and retaliations have a 10% chance to cast free Holy Wrath with your hero’s current power and mastery."
+					"details": "Duration uses actual Spell Power plus Knowledge, without rank or Fervent potency bonuses."
+				},
+				{
+					"id": "new-horizons:divineMandate.joyfulDevotion",
+					"name": "Joyful Devotion",
+					"requires": "basic",
+					"description": "Divine Purpose grants +1 additional Morale and Luck after its own three-point cap.",
+					"effect": {
+						"status": "active",
+						"description": "Divine Purpose grants +1 additional Morale and Luck after its own three-point cap."
+					},
+					"details": "Adds no Speed; ordinary attribute caps and creature eligibility remain."
+				},
+				{
+					"id": "new-horizons:divineMandate.fearlessAdvance",
+					"name": "Fearless Advance",
+					"requires": "basic",
+					"description": "Under Dauntless Assault, melee attacks have a 20% chance to provoke no retaliation.",
+					"effect": {
+						"status": "active",
+						"description": "Under Dauntless Assault, melee attacks have a 20% chance to provoke no retaliation."
+					},
+					"details": "Otherwise the prayer applies its ordinary retaliation-damage reduction."
+				},
+				{
+					"id": "new-horizons:divineMandate.unshakableFaith",
+					"name": "Unshakable Faith",
+					"requires": "basic",
+					"description": "Steadfast Soul resistance also protects against hostile Creature Ability afflictions, including Poison, Stun, Petrification and Treant Bind.",
+					"effect": {
+						"status": "active",
+						"description": "Steadfast Soul resistance also protects against hostile Creature Ability afflictions, including Poison, Stun, Petrification and Treant Bind."
+					},
+					"details": "Check each logical affliction once, not each component. Explicitly irresistible effects remain irresistible; Force Lance's hero-spell pin is unchanged."
+				},
+				{
+					"id": "new-horizons:divineMandate.communionOfSaints",
+					"name": "Communion of Saints",
+					"requires": "advanced",
+					"description": "Vicarious Redemption also creates shield from casualties in other friendly stacks at half its ordinary conversion rate.",
+					"effect": {
+						"status": "active",
+						"description": "Vicarious Redemption also creates shield from casualties in other friendly stacks at half its ordinary conversion rate."
+					},
+					"details": "Each recipient retains its own shield cap. Its own casualties use the full rate, never full plus half."
+				},
+				{
+					"id": "new-horizons:divineMandate.righteousSentence",
+					"name": "Righteous Sentence",
+					"requires": "advanced",
+					"description": "Heaven's Judgment deals 50% more bonus magical damage against enemies that have already acted this round.",
+					"effect": {
+						"status": "active",
+						"description": "Heaven's Judgment deals 50% more bonus magical damage against enemies that have already acted this round."
+					},
+					"details": "Completing an action or Defending qualifies. Waiting alone does not. Target magical defenses still apply."
+				},
+				{
+					"id": "new-horizons:divineMandate.ferventInvocation",
+					"name": "Fervent Invocation",
+					"requires": "advanced",
+					"description": "Calculate prayer potency with 100 additional Faith.",
+					"effect": {
+						"status": "active",
+						"description": "Calculate prayer potency with 100 additional Faith."
+					},
+					"details": "Duration still uses actual Spell Power plus Knowledge. Ordinary potency caps remain."
+				},
+				{
+					"id": "new-horizons:divineMandate.sacredAccord",
+					"name": "Sacred Accord",
+					"requires": "advanced",
+					"description": "Each other distinct active prayer increases a prayer's potency by 10%, up to 30%.",
+					"effect": {
+						"status": "active",
+						"description": "Each other distinct active prayer increases a prayer's potency by 10%, up to 30%."
+					},
+					"details": "One/two/three/four-to-six prayers grant 0/10/20/30%. Count each distinct prayer once, without recursive amplification or extra duration; ordinary potency caps remain."
+				},
+				{
+					"id": "new-horizons:divineMandate.antiphonalPrayer",
+					"name": "Antiphonal Prayer",
+					"requires": "expert",
+					"description": "Each Order grants two different uniformly random prayers instead of one.",
+					"effect": {
+						"status": "active",
+						"description": "Each Order grants two different uniformly random prayers instead of one."
+					},
+					"details": "Sample without replacement; no usefulness filtering, reroll loop or dependency on Common Devotion."
+				},
+				{
+					"id": "new-horizons:divineMandate.livingLiturgy",
+					"name": "Living Liturgy",
+					"requires": "expert",
+					"description": "Each Order also refreshes all existing Consecrated Arms prayers on its recipients to their full current duration.",
+					"effect": {
+						"status": "active",
+						"description": "Each Order also refreshes all existing Consecrated Arms prayers on its recipients to their full current duration."
+					},
+					"details": "Preserve existing Redemption shield without refill. Other schools' spells and the Order itself are not refreshed; refresh does not replay cast procs."
 				}
 			]
 		},
@@ -3625,37 +3738,36 @@
 				}
 			]
 		},
-
 		"new-horizons:metamagic": {
 			"id": "new-horizons:metamagic",
 			"name": "Metamagic",
 			"domain": "Faction",
 			"availability": "Tower heroes only",
-			"description": "Damaging spells unravel enemy enchantments; successful buffs cleanse enemy curses from allies. Removed magic becomes damage or restoration.",
+			"description": "Single-target spell overkill spills to the nearest enemy. Own area, chain and global friendly damage is reduced; resisted single-target debuffs can retry once. Optional perks unravel or reconstitute magic.",
 			"ranks": {
 				"basic": {
-					"description": "20% chance per temporary magical effect to unravel enemy enchantments after damaging spells or cleanse enemy curses after friendly buffs. Each removed Mana yields 10 bonus damage or 15 shared healing and resurrection HP.",
+					"description": "Arcane Overflow transfers 30% of primary single-target spell overkill to the nearest other enemy. Own area, chain and global spells deal 70% friendly damage. Resisted single-target debuffs have a 30% chance to retry once with normal resistance.",
 					"effect": {
 						"status": "active",
-						"description": "20% chance per temporary magical effect to unravel enemy enchantments after damaging spells or cleanse enemy curses after friendly buffs. Each removed Mana yields 10 bonus damage or 15 shared healing and resurrection HP."
+						"description": "Arcane Overflow transfers 30% of primary single-target spell overkill to the nearest other enemy. Own area, chain and global spells deal 70% friendly damage. Resisted single-target debuffs have a 30% chance to retry once with normal resistance."
 					},
-					"details": "Each actual recipient and logical effect is checked once per original hero cast. Only successful removal yields energy; mass spells use their ordinary family Mana cost. Restoration cannot exceed battle-start strength or use destroyed remains. Self-authored curses yield no restoration energy."
+					"details": "Overflow is damage only and cannot recurse. Each secondary keeps normal magical defenses; immunity is not a resisted debuff. No extra Mana, Hero Action or manual secondary target. Unraveling and reconstitution require their respective perks."
 				},
 				"advanced": {
-					"description": "30% chance per temporary magical effect to unravel enemy enchantments after damaging spells or cleanse enemy curses after friendly buffs. Each removed Mana yields 10 bonus damage or 15 shared healing and resurrection HP.",
+					"description": "Arcane Overflow transfers 45% of primary single-target spell overkill to the nearest other enemy. Own area, chain and global spells deal 55% friendly damage. Resisted single-target debuffs have a 45% chance to retry once with normal resistance.",
 					"effect": {
 						"status": "active",
-						"description": "30% chance per temporary magical effect to unravel enemy enchantments after damaging spells or cleanse enemy curses after friendly buffs. Each removed Mana yields 10 bonus damage or 15 shared healing and resurrection HP."
+						"description": "Arcane Overflow transfers 45% of primary single-target spell overkill to the nearest other enemy. Own area, chain and global spells deal 55% friendly damage. Resisted single-target debuffs have a 45% chance to retry once with normal resistance."
 					},
-					"details": "Each actual recipient and logical effect is checked once per original hero cast. Only successful removal yields energy; mass spells use their ordinary family Mana cost. Restoration cannot exceed battle-start strength or use destroyed remains. Self-authored curses yield no restoration energy."
+					"details": "Overflow is damage only and cannot recurse. Each secondary keeps normal magical defenses; immunity is not a resisted debuff. No extra Mana, Hero Action or manual secondary target. Unraveling and reconstitution require their respective perks."
 				},
 				"expert": {
-					"description": "40% chance per temporary magical effect to unravel enemy enchantments after damaging spells or cleanse enemy curses after friendly buffs. Each removed Mana yields 10 bonus damage or 15 shared healing and resurrection HP.",
+					"description": "Arcane Overflow transfers 60% of primary single-target spell overkill to the nearest other enemy. Own area, chain and global spells deal 40% friendly damage. Resisted single-target debuffs have a 60% chance to retry once with normal resistance.",
 					"effect": {
 						"status": "active",
-						"description": "40% chance per temporary magical effect to unravel enemy enchantments after damaging spells or cleanse enemy curses after friendly buffs. Each removed Mana yields 10 bonus damage or 15 shared healing and resurrection HP."
+						"description": "Arcane Overflow transfers 60% of primary single-target spell overkill to the nearest other enemy. Own area, chain and global spells deal 40% friendly damage. Resisted single-target debuffs have a 60% chance to retry once with normal resistance."
 					},
-					"details": "Each actual recipient and logical effect is checked once per original hero cast. Only successful removal yields energy; mass spells use their ordinary family Mana cost. Restoration cannot exceed battle-start strength or use destroyed remains. Self-authored curses yield no restoration energy."
+					"details": "Overflow is damage only and cannot recurse. Each secondary keeps normal magical defenses; immunity is not a resisted debuff. No extra Mana, Hero Action or manual secondary target. Unraveling and reconstitution require their respective perks."
 				}
 			},
 			"perks": [
@@ -3663,111 +3775,111 @@
 					"id": "new-horizons:metamagic.conservedFormula",
 					"name": "Conserved Formula",
 					"requires": "basic",
-					"description": "Refund the actual Mana paid for a valid single-target spell completely resisted by its sole recipient. The Hero Action remains spent.",
+					"description": "Refund 100% of actual Mana paid when a valid single-target spell ultimately fails through full resistance, after any debuff retry. The Hero Action remains spent.",
 					"effect": {
 						"status": "active",
-						"description": "Refund the actual Mana paid for a valid single-target spell completely resisted by its sole recipient. The Hero Action remains spent."
+						"description": "Refund 100% of actual Mana paid when a valid single-target spell ultimately fails through full resistance, after any debuff retry. The Hero Action remains spent."
 					},
-					"details": "No refund for cancellation, invalid targets, partial effects, absorption or damage reduced to zero. Combined refunds never exceed actual payment."
-				},
-				{
-					"id": "new-horizons:metamagic.manaRecycling",
-					"name": "Mana Recycling",
-					"requires": "basic",
-					"description": "Recover Mana from magical effects actually removed during your cast.",
-					"effect": {
-						"status": "active",
-						"description": "Recover Mana from magical effects actually removed during your cast."
-					},
-					"details": "Once per original cast, refund min(floor(total normalized removed Mana / 4), floor(actual Mana paid / 2)), respecting Mana capacity and the combined payment cap. Free casts refund zero."
+					"details": "No refund for cancellation, invalid targets, immunity rejection, absorption or ordinary damage reduced to zero."
 				},
 				{
 					"id": "new-horizons:metamagic.disruptiveCasting",
 					"name": "Disruptive Casting",
 					"requires": "basic",
-					"description": "Actual spell damage removes the target's ordinary Defend bonus after the hit.",
+					"description": "Destroy three shots from each enemy stack actually damaged by the original hero spell, once per stack per cast.",
 					"effect": {
 						"status": "active",
-						"description": "Actual spell damage removes the target's ordinary Defend bonus after the hit."
+						"description": "Destroy three shots from each enemy stack actually damaged by the original hero spell, once per stack per cast."
 					},
-					"details": "Retaliation, spent actions, Wait and unrelated Orders remain unchanged."
+					"details": "Does not remove Defend, retaliation or Creature Activations. Multiple damage packets do not repeat the ammunition loss."
 				},
 				{
-					"id": "new-horizons:metamagic.purgingFormula",
-					"name": "Purging Formula",
+					"id": "new-horizons:metamagic.unravelingMagic",
+					"name": "Unraveling Magic",
 					"requires": "basic",
-					"description": "A successful buff also removes one physical affliction from each actual friendly recipient.",
+					"description": "Damaging hero spells attempt to remove enemy enchantments at 20/30/40%. Each normalized removed Mana deals 10 magical damage.",
 					"effect": {
 						"status": "active",
-						"description": "A successful buff also removes one physical affliction from each actual friendly recipient."
+						"description": "Damaging hero spells attempt to remove enemy enchantments at 20/30/40%. Each normalized removed Mana deals 10 magical damage."
 					},
-					"details": "Physical removal releases no Metamagic energy. No additional target or selector is introduced."
+					"details": "Damaging hero spells have a 20/30/40% chance per eligible temporary enemy enchantment to remove it after original damage. Each normalized removed Mana deals 10 magical damage. One attempt per original cast, recipient and logical effect; no attempts from rejected or fully resisted casts, overflow, ongoing damage or triggered damage. Normalize mass costs to their single-target family; Orders, traits, equipment and physical afflictions provide no energy."
+				},
+				{
+					"id": "new-horizons:metamagic.reconstitutingMagic",
+					"name": "Reconstituting Magic",
+					"requires": "basic",
+					"description": "Successful buffs attempt to remove hostile magical debuffs at 20/30/40%. Each normalized removed Mana provides 15 shared healing and resurrection HP.",
+					"effect": {
+						"status": "active",
+						"description": "Successful buffs attempt to remove hostile magical debuffs at 20/30/40%. Each normalized removed Mana provides 15 shared healing and resurrection HP."
+					},
+					"details": "Successful buffs have a 20/30/40% chance per hostile magical debuff to remove it from surviving friendly recipients. Each normalized removed Mana provides 15 shared healing and resurrection HP. Works on creature bodies including Golems and Gargoyles, up to original strength. No destroyed remains, corpse retargeting, permanent summoned recruits or energy from friendly-origin curses. Count logical effects once and normalize mass costs."
 				},
 				{
 					"id": "new-horizons:metamagic.spellSculpting",
 					"name": "Spell Sculpting",
 					"requires": "advanced",
-					"description": "Your damaging hero spells deal no damage to friendly creatures.",
+					"description": "Your damaging hero spells deal no damage to friendly creatures, replacing the core friendly-fire reduction.",
 					"effect": {
 						"status": "active",
-						"description": "Your damaging hero spells deal no damage to friendly creatures."
+						"description": "Your damaging hero spells deal no damage to friendly creatures, replacing the core friendly-fire reduction."
 					},
-					"details": "Includes area, chain and global damage and your owned spell-created hazards; unrelated terrain, enemy spells and ordinary attacks are unchanged."
+					"details": "Applies regardless of spell geometry, including owned spell-created hazards. Enemy spells, ordinary creature attacks and unrelated terrain are unchanged."
 				},
 				{
-					"id": "new-horizons:metamagic.hexWeaving",
-					"name": "Hex Weaving",
+					"id": "new-horizons:metamagic.widenSpells",
+					"name": "Widen Spells",
 					"requires": "advanced",
-					"description": "Successful non-damaging hostile hero spells also unravel temporary enemy enchantments.",
+					"description": "Eligible conventional aimed area spells gain one extra hex ring, without additional Mana cost.",
 					"effect": {
 						"status": "active",
-						"description": "Successful non-damaging hostile hero spells also unravel temporary enemy enchantments."
+						"description": "Eligible conventional aimed area spells gain one extra hex ring, without additional Mana cost."
 					},
-					"details": "Uses the same rank-based chance, one attempt per logical effect and separate 10 damage per removed Mana discharge. It cannot recurse."
+					"details": "Single-target, chain, global, mass, line, cone and persistent-field spells keep their geometry. Force Lance remains single-target."
 				},
 				{
-					"id": "new-horizons:metamagic.widenSpell",
-					"name": "Widen Spell",
+					"id": "new-horizons:metamagic.levitation",
+					"name": "Levitation",
 					"requires": "advanced",
-					"description": "Eligible centrally aimed area spells affect one additional hex ring, without extra Mana cost.",
+					"description": "Your beneficial enchantments also grant Flying for their own duration.",
 					"effect": {
 						"status": "active",
-						"description": "Eligible centrally aimed area spells affect one additional hex ring, without extra Mana cost."
+						"description": "Your beneficial enchantments also grant Flying for their own duration."
 					},
-					"details": "Excludes single-target spells, lines, cones, chains, global or mass spells, and persistent battlefield fields. Force Lance remains single-target."
+					"details": "Instant healing and spells without an enchantment lifetime grant no flight. Original spell-specific target restrictions remain."
 				},
 				{
-					"id": "new-horizons:metamagic.matterbreaker",
-					"name": "Matterbreaker",
+					"id": "new-horizons:metamagic.arcaneBallistics",
+					"name": "Arcane Ballistics",
 					"requires": "advanced",
-					"description": "Damaging area spells destroy ordinary physical obstacles intersecting their affected area.",
+					"description": "Creatures carrying your enchantments can shoot while engaged by adjacent enemies.",
 					"effect": {
 						"status": "active",
-						"description": "Damaging area spells destroy ordinary physical obstacles intersecting their affected area."
+						"description": "Creatures carrying your enchantments can shoot while engaged by adjacent enemies."
 					},
-					"details": "Adds no radius, fortification damage, magical-object removal, explosion or permission to target illegal empty hexes."
+					"details": "Normal ammunition and other shooting penalties remain. Includes Focus Magic converted shooters; does not grant shooting to otherwise unenchanted nonshooters, extra attacks or creature spellcasting."
 				},
 				{
-					"id": "new-horizons:metamagic.magicalMemory",
-					"name": "Magical Memory",
+					"id": "new-horizons:metamagic.arcaneCascade",
+					"name": "Arcane Cascade",
 					"requires": "expert",
-					"description": "A spell family actually removed by Metamagic cannot be reapplied to that same recipient for the rest of combat.",
+					"description": "Arcane Overflow strikes the two nearest distinct other enemies simultaneously. Each receives the full spill amount before its normal magical defenses.",
 					"effect": {
 						"status": "active",
-						"description": "A spell family actually removed by Metamagic cannot be reapplied to that same recipient for the rest of combat."
+						"description": "Arcane Overflow strikes the two nearest distinct other enemies simultaneously. Each receives the full spill amount before its normal magical defenses."
 					},
-					"details": "Applies to cleansed allied curses and stripped enemy enchantments, including their single and mass variants, regardless of later caster. Does not block unrelated damage or extend durations."
+					"details": "One remaining secondary receives the spill once. Damage only: no division, revisits, further jumps, pin, debuffs, destroyed-remains propagation or secondary unraveling attempts."
 				},
 				{
-					"id": "new-horizons:metamagic.arcaneRupture",
-					"name": "Arcane Rupture",
+					"id": "new-horizons:metamagic.empoweredSpells",
+					"name": "Empowered Spells",
 					"requires": "expert",
-					"description": "Metamagic's separate discharge bypasses magical protection and damage reduction.",
+					"description": "Your single-target damaging hero spells cannot be resisted. Magical immunity, protection and damage reduction still apply.",
 					"effect": {
 						"status": "active",
-						"description": "Metamagic's separate discharge bypasses magical protection and damage reduction."
+						"description": "Your single-target damaging hero spells cannot be resisted. Magical immunity, protection and damage reduction still apply."
 					},
-					"details": "The discharge remains 10 damage per removed Mana. Original spell admission, resistance and damage remain unchanged; a fully resisted spell cannot earn a discharge."
+					"details": "Debuffs, Forced Recall, area, chain and global spells retain normal resistance and applicable retry rules. Force Lance retains its separate stronger bypass and exactly one-round pin."
 				}
 			]
 		},
@@ -4179,7 +4291,9 @@
 					"effect": {
 						"status": "active",
 						"description": "Reduce Leadership Requirement of Skeletons and Skeleton Warriors by 90% total.",
-						"parameters": {"skeletonRequirementDiscountPercent": 90}
+						"parameters": {
+							"skeletonRequirementDiscountPercent": 90
+						}
 					},
 					"details": "Replaces the Necromancy rank discount with a 90% total Leadership Requirement reduction for all commanded Skeletons and Skeleton Warriors. Round the resulting Requirement upward, with a minimum of one. Grants no maximum-HP bonus."
 				}
@@ -4578,7 +4692,9 @@
 					"effect": {
 						"status": "active",
 						"description": "Your Elementals, Firebirds and Phoenixes deal +15% direct creature-attack and retaliation damage.",
-						"parameters": {"directAttackDamagePercent": 15}
+						"parameters": {
+							"directAttackDamagePercent": 15
+						}
 					},
 					"details": "A standing damage bonus independent of Elemental Attunement. Includes melee, ranged and retaliation attacks, including magical creature attacks. Excludes hero spells, healing, reflection, damage-over-time and unrelated triggered damage; this does not create a slot permission or change creature tiers."
 				},

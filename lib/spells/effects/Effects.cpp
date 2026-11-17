@@ -431,6 +431,8 @@ public:
 			if(applied)
 			{
 				state->physicalPoisonSpellSide = mechanics->getEffectCasterSide();
+				state->physicalPoisonDescriptor = creatureAbility::spellEffect(mechanics->getSpellId(), creatureAbility::Family::HERO_SPELL,
+					creatureAbility::HOSTILE_AFFLICTION, creatureAbility::NORMAL_RESISTIBLE | creatureAbility::REMOVABLE, mechanics->getCasterColor());
 				BattleUnitsChanged changed;
 				changed.battleID = mechanics->getBattleID();
 				UnitChanges update(state->unitId(), UnitChanges::EOperation::UPDATE);

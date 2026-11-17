@@ -8,6 +8,7 @@
  *
  */
 #pragma once
+#include "SearchBudget.h"
 #include "../../lib/battle/ReachabilityInfo.h"
 #include "PossibleSpellcast.h"
 #include "PotentialTargets.h"
@@ -44,15 +45,30 @@ struct CachedAttack
 
 class DLL_LINKAGE BattleEvaluator
 {
+	std::optional<battleSearch::SearchLimits> workLimits;
+	std::shared_ptr<battleSearch::SearchBudget> workBudget;
 	std::shared_ptr<MovementQueryCache> movementMemo;
-	std::shared_ptr<HypotheticBattle> createHypotheticBattle(const HypotheticBattle::Subject & source) const;
+	HypotheticBattle::Subject decisionNativeSource;
+	std::shared_ptr<HypotheticBattle> decisionBase;
+	forecast::Counters decisionPreparation;
+	std::shared_ptr<forecast::NativeReadWork> decisionReadWork;
+	bool decisionBaseOpen = true;
+	std::shared_ptr<HypotheticBattle> createHypotheticBattle(const HypotheticBattle::Subject & source,
+		std::shared_ptr<battleSearch::SearchBudget> explicitWork = {}) const;
+	std::shared_ptr<HypotheticBattle> createHeroCandidateBattle(const HypotheticBattle::Subject &,
+		const PossibleSpellcast &, std::shared_ptr<battleSearch::SearchBudget> = {}) const;
+	std::shared_ptr<HypotheticBattle> createCreatureCandidateBattle(const CStack *, const CSpell *,
+		const spells::Target &, std::optional<int> spellLevel = {}) const;
 	std::unique_ptr<PotentialTargets> targets;
 	std::shared_ptr<HypotheticBattle> hb;
 	BattleExchangeEvaluator scoreEvaluator;
 	std::shared_ptr<CBattleCallback> cb;
 	std::shared_ptr<Environment> env;
 	bool activeActionMade = false;
+	BattleAction legalSearchIncumbent(const CStack * stack) const;
 	bool submitHeroAction(const PossibleSpellcast & castToPerform, heroActionTiming::Summary * timing);
+	bool finishHeroSelection(const std::vector<PossibleSpellcast> &, float, bool,
+		heroActionSelection::Observer *, heroActionTiming::Summary *);
 	CachedAttack cachedAttack;
 	void includeSyntheticInspiration(PossibleSpellcast &, const std::shared_ptr<HypotheticBattle> &, uint32_t actorId);
 	float conditionalInspirationUtility(const std::shared_ptr<HypotheticBattle> &, uint32_t actorId, bool full);
@@ -61,6 +77,7 @@ class DLL_LINKAGE BattleEvaluator
 	heroSpellProjection::OutcomeValue inspirationOutcomeEvaluator(const PossibleSpellcast &, const spells::Mechanics &, uint32_t actorId);
 	bool prepareBlinkOutcome(PossibleSpellcast &, spells::Mechanics &, uint32_t actorId);
 	bool prepareExpectedOutcomes(PossibleSpellcast &, spells::Mechanics &, uint32_t actorId);
+	bool prepareOverflowOutcome(PossibleSpellcast &, spells::Mechanics &, uint32_t actorId);
 
 	PlayerColor playerID;
 	BattleID battleID;
@@ -95,6 +112,8 @@ class DLL_LINKAGE BattleEvaluator
 	bool applyCreatureCastProjection(HypotheticBattle & state, const CStack * stack, PossibleSpellcast & ps);
 
 public:
+	forecast::Counters takeForecastPreparation() noexcept
+	{ auto result = decisionPreparation; decisionPreparation = {}; return result; }
 	/// Effective chosen-spell proficiency, matching authoritative creature-cast resolution.
 	static int creatureAbilitySpellLevel(const CStack * caster, const CSpell * spell, int abilityLevel);
 	/// Optional call-local wall diagnostics. Not gameplay state and never serialized.
@@ -116,6 +135,16 @@ public:
 		StageTiming siegeDefense;
 		StageTiming defensiveStance;
 	};
+
+private:
+	BattleAction evaluatedAttackAction(const CStack *, const EvaluationResult &, float, bool, SelectionTiming *);
+public:
+	bool usesFiniteSearchWork() const { return workBudget != nullptr; }
+	battleSearch::WorkAmounts searchWorkSpent() const { return workBudget ? workBudget->spent() : battleSearch::WorkAmounts{}; }
+	std::array<uint64_t, battleSearch::workKindCount> searchWorkRefusals() const
+	{
+		return workBudget ? workBudget->refusals() : std::array<uint64_t, battleSearch::workKindCount>{};
+	}
 
 	BattleAction selectStackAction(const CStack * stack, SelectionTiming * timing = nullptr);
 	/// New captured Gating only; invoked after ordinary Hero/typed decisions.
@@ -182,7 +211,12 @@ public:
 		BattleSide side,
 		float strengthRatio,
 		int simulationTurnsCount,
-		std::shared_ptr<MovementQueryCache> movementCache = nullptr);
+		std::shared_ptr<MovementQueryCache> movementCache = nullptr
+#ifdef NH_PERF_EXPERIMENTS
+		, std::shared_ptr<battleSearch::SearchBudget> diagnosticRoot = nullptr,
+		std::shared_ptr<forecast::NativeReadWork> diagnosticReads = nullptr
+#endif
+	);
 
 	BattleEvaluator(
 		std::shared_ptr<Environment> env,

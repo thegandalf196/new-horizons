@@ -16,6 +16,7 @@
 #include <optional>
 #include <utility>
 
+namespace battleSearch { class SearchBudget; }
 class Environment;
 class CBattleInfoCallback;
 struct ReachabilityInfo;
@@ -45,8 +46,8 @@ public:
 
 	/// Existing negative magical application forecast, including native marks
 	/// and the authoritative available hostile-resistance reroll convention.
-	static float applicationChance(const spells::Mechanics *, const battle::Unit *);
-	static std::vector<spells::Target> getViableTargets(spells::Mechanics * spellMechanics);
+	static DLL_LINKAGE float applicationChance(const spells::Mechanics *, const battle::Unit *);
+	static std::vector<spells::Target> getViableTargets(spells::Mechanics * spellMechanics, battleSearch::SearchBudget * budget = nullptr);
 	/// Signed change in reachable upcoming activation pressure after the actual
 	/// atomic exchange has been applied to a detached battle. Fresh damage caches
 	/// include transferred attacker bonuses and recipient defensive effects.
@@ -58,10 +59,10 @@ public:
 	/// Enumerates canonical Earthquake's full legal location set without merging
 	/// equal creature footprints. Siege aims are the attackable fortification
 	/// section hexes; field aims retain distinct area centers.
-	static std::vector<spells::Target> canonicalEarthquakeTargets(const spells::Mechanics * spellMechanics);
+	static std::vector<spells::Target> canonicalEarthquakeTargets(const spells::Mechanics * spellMechanics, battleSearch::SearchBudget * budget = nullptr);
 	/// Enumerates the ordinary nondominated creature targets plus distinct legal
 	/// Meteor Shower centers whose area reaches fortifications or ordinary scenery.
-	static std::vector<spells::Target> canonicalHavocStructureTargets(const spells::Mechanics * spellMechanics);
+	static std::vector<spells::Target> canonicalHavocStructureTargets(const spells::Mechanics * spellMechanics, battleSearch::SearchBudget * budget = nullptr);
 	/// Counts physical travel hexes along the reachability predecessor path.
 	/// Flyers use geometric hex distance; invalid or unreachable destinations
 	/// return -1. Movement-cost distance remains available on ReachabilityInfo.
@@ -83,7 +84,7 @@ public:
 	/// Selects the most valuable legal negative source groups for each friendly
 	/// stack around a canonical Purify center. The result is a read-only snapshot.
 	static PurifySelection purifySelection(const spells::Mechanics * spellMechanics,
-		const spells::Target & target, physicalCleanseAI::MobilityQuery * mobility = nullptr);
+		const spells::Target & target, physicalCleanseAI::MobilityQuery * mobility = nullptr, battleSearch::SearchBudget * budget = nullptr);
 	/// Returns a deterministic pressure value for a canonical New Horizons Land
 	/// Mine placement.  The value is deliberately read-only and only considers
 	/// the live battle snapshot; it is used by BattleAI when a mine has no
@@ -166,22 +167,24 @@ private:
 		WORSE
 	};
 
-	static std::vector<spells::Target> creaturePairTargets(const spells::Mechanics * spellMechanics);
-	static std::vector<spells::Target> creatureLocationTargets(const spells::Mechanics * spellMechanics);
-	static std::vector<spells::Target> defaultLocationSpellHeuristics(const spells::Mechanics * spellMechanics);
-	static std::vector<spells::Target> canonicalLandMineTargets(const spells::Mechanics * spellMechanics);
-	static std::vector<spells::Target> canonicalQuicksandTargets(const spells::Mechanics * spellMechanics);
-	static std::vector<spells::Target> canonicalFireWallTargets(const spells::Mechanics * spellMechanics);
-	static std::vector<spells::Target> canonicalNaturePoisonTargets(const spells::Mechanics * spellMechanics);
-	static std::vector<spells::Target> canonicalSoulChainTargets(spells::Mechanics * spellMechanics);
-	static std::vector<spells::Target> allTargetableCreatures(const spells::Mechanics * spellMechanics, bool exactUnit);
-	static std::vector<spells::Target> theBestLocationCasts(const spells::Mechanics * spellMechanics);
+	static bool isCanonicalPurify(const spells::Mechanics *);
+	static std::vector<spells::Target> purifyTargets(const spells::Mechanics *, battleSearch::SearchBudget *);
+	static std::vector<spells::Target> creaturePairTargets(const spells::Mechanics * spellMechanics, battleSearch::SearchBudget * budget = nullptr);
+	static std::vector<spells::Target> creatureLocationTargets(const spells::Mechanics * spellMechanics, battleSearch::SearchBudget * budget = nullptr);
+	static std::vector<spells::Target> defaultLocationSpellHeuristics(const spells::Mechanics * spellMechanics, battleSearch::SearchBudget * budget = nullptr);
+	static std::vector<spells::Target> canonicalLandMineTargets(const spells::Mechanics * spellMechanics, battleSearch::SearchBudget * budget = nullptr);
+	static std::vector<spells::Target> canonicalQuicksandTargets(const spells::Mechanics * spellMechanics, battleSearch::SearchBudget * budget = nullptr);
+	static std::vector<spells::Target> canonicalFireWallTargets(const spells::Mechanics * spellMechanics, battleSearch::SearchBudget * budget = nullptr);
+	static std::vector<spells::Target> canonicalNaturePoisonTargets(const spells::Mechanics * spellMechanics, battleSearch::SearchBudget * budget = nullptr);
+	static std::vector<spells::Target> canonicalSoulChainTargets(spells::Mechanics * spellMechanics, battleSearch::SearchBudget * budget = nullptr);
+	static std::vector<spells::Target> allTargetableCreatures(const spells::Mechanics * spellMechanics, bool exactUnit, battleSearch::SearchBudget * budget = nullptr);
+	static std::vector<spells::Target> theBestLocationCasts(const spells::Mechanics * spellMechanics, battleSearch::SearchBudget * budget = nullptr);
 	static Compare compareAffectedStacks(
-	const spells::Mechanics * spellMechanics, const std::set<const CStack *> & newCast, const std::set<const CStack *> & oldCast);
+	const spells::Mechanics * spellMechanics, const std::set<const CStack *> & newCast, const std::set<const CStack *> & oldCast, battleSearch::SearchBudget * budget = nullptr);
 	static Compare compareAffectedStacksSubset(
 	const spells::Mechanics * spellMechanics, const std::set<const CStack *> & newSubset, const std::set<const CStack *> & oldSubset);
 	static SpellTargetEvaluator::Compare reverse(Compare compare);
-	static bool isCastHarmful(const spells::Mechanics * spellMechanics, const std::set<const CStack *> & affectedStacks);
-	static bool canBeCastAt(const spells::Mechanics * spellMechanics, BattleHex hex);
-	static void addIfCanBeCast(const spells::Mechanics * spellMechanics, BattleHex hex, std::vector<spells::Target> & targets);
+	static bool isCastHarmful(const spells::Mechanics * spellMechanics, const std::set<const CStack *> & affectedStacks, battleSearch::SearchBudget * budget = nullptr);
+	static bool canBeCastAt(const spells::Mechanics * spellMechanics, BattleHex hex, battleSearch::SearchBudget * budget = nullptr);
+	static void addIfCanBeCast(const spells::Mechanics * spellMechanics, BattleHex hex, std::vector<spells::Target> & targets, battleSearch::SearchBudget * budget = nullptr);
 };

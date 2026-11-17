@@ -9,5 +9,8 @@
 
 bool StackWithBonuses::isBonusCacheable() const
 {
-	return !ownedQuerySource && !owner->initialExportSubject();
+	// Native scratch/count transitions can precede outer publication. The
+	// owned programme keys Count+leaf internally; legacy proxy version alone
+	// does not certify those changes. Query its immutable frame directly.
+	return !modifierBaseProgram && !ownedQuerySource && !owner->initialExportSubject();
 }

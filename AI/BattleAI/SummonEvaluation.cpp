@@ -5,6 +5,7 @@
  */
 #include "StdInc.h"
 #include "SummonEvaluation.h"
+#include "SearchBudget.h"
 #include "../../lib/battle/CBattleInfoCallback.h"
 #include "../../lib/battle/CUnitState.h"
 #include "../../lib/CCreatureHandler.h"
@@ -23,7 +24,7 @@ bool usesSelectedPlacement(const Mechanics * spellMechanics)
 		|| spell->getJsonKey() == "new-horizons:summonLivingArmor");
 }
 
-std::vector<Target> placementTargets(const Mechanics * spellMechanics)
+std::vector<Target> placementTargets(const Mechanics * spellMechanics, battleSearch::SearchBudget * budget)
 {
 	std::vector<Target> result;
 	if(!usesSelectedPlacement(spellMechanics) || !spellMechanics->battle()
@@ -32,6 +33,7 @@ std::vector<Target> placementTargets(const Mechanics * spellMechanics)
 
 	for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
 	{
+		if(budget && !budget->consume(battleSearch::WorkKind::Generation)) break;
 		const BattleHex hex(index);
 		if(!hex.isAvailable())
 			continue;

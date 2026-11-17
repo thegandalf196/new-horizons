@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "ForecastNativeAdapter.h"
 #include "GnollHarriersProjection.h"
 #include "BattleShroudStrike.h"
 #include "SelectedAttackReceipt.h"
@@ -45,15 +46,8 @@ void SelectedAttackReceipt::captureDamage(HypotheticBattle & branch)
 BattleHex selectedAttackReceipt::commitMovement(const AttackPossibility & ap, battle::CUnitState & actor,
 	HypotheticBattle & branch)
 {
-	const auto originalPosition = actor.getPosition();
-	const bool replayVoluntaryApproach = gnollHarriersAI::replaysSameApproach(ap, actor);
-	applySelectedNightProwler(branch, actor, originalPosition, ap.from);
-	if(!ap.overwatchHits.empty())
-		branch.projectVoluntaryMovement(actor.unitId(), ap.from, replayVoluntaryApproach);
-	selectedAttackReceipt::restorePosition(ap, actor, branch);
-	if(replayVoluntaryApproach)
-		gnollHarriersAI::record(branch, actor.unitId(), originalPosition, actor.getPosition());
-	return originalPosition;
+	if(const auto original = forecast::NativeAdapter::selectedReceiptMovement(branch, ap, actor)) return *original;
+	return replayMovementNative(ap, actor, branch);
 }
 
 void selectedAttackReceipt::restorePosition(const AttackPossibility & ap, battle::CUnitState & actor,
@@ -86,64 +80,11 @@ void selectedAttackReceipt::restorePosition(const AttackPossibility & ap, battle
 }
 
 void selectedAttackReceipt::restoreResources(const AttackPossibility & ap, const battle::CUnitState & captured,
-	const std::shared_ptr<StackWithBonuses> & unitToUpdate,
+	const std::shared_ptr<StackWithBonuses> & recipient,
 	const std::shared_ptr<StackWithBonuses> & originalActor, HypotheticBattle & branch)
 {
-	// The preview may contain several strikes or consume only one of several
-	// retaliations. Copy consumption, not a boolean can-retaliate transition.
-	// CAmmo assignment keeps this unit's owner-bound bonus caches intact.
-	static_cast<battle::CAmmo &>(unitToUpdate->shots) = captured.shots;
-	static_cast<battle::CAmmo &>(unitToUpdate->counterAttacks) = captured.counterAttacks;
-	// Preserve the physical reaction's round receipt and target provenance
-	// when this selected preview becomes a later exchange's starting state.
-	unitToUpdate->aerialRetaliationRound = captured.aerialRetaliationRound;
-	unitToUpdate->dreadCavalryState = captured.dreadCavalryState;
-	unitToUpdate->archeryCounterfireRound = captured.archeryCounterfireRound;
-	unitToUpdate->archeryCrossfireRound = captured.archeryCrossfireRound;
-	unitToUpdate->archeryCrossfireAttackers = captured.archeryCrossfireAttackers;
-	unitToUpdate->archeryCrossfireDefenders = captured.archeryCrossfireDefenders;
-	unitToUpdate->forestAmbush = captured.forestAmbush;
-	unitToUpdate->battlecraftWaitBonusUsed = captured.battlecraftWaitBonusUsed;
-	unitToUpdate->battlecraftWaitMasteryDoubled = captured.battlecraftWaitMasteryDoubled;
-	unitToUpdate->battlecraftDefendMasteryDoubled = captured.battlecraftDefendMasteryDoubled;
-	unitToUpdate->battlecraftPreemptiveStrikeRound = captured.battlecraftPreemptiveStrikeRound;
-	unitToUpdate->petrifyingBloodRound = captured.petrifyingBloodRound;
-	unitToUpdate->battlecraftOverwatchReadyRound = captured.battlecraftOverwatchReadyRound;
-	unitToUpdate->battlecraftOverwatchUsedRound = captured.battlecraftOverwatchUsedRound;
-	unitToUpdate->cleaveUsedThisActivation = captured.cleaveUsedThisActivation;
-	unitToUpdate->bulwarkPreemptiveUsed = captured.bulwarkPreemptiveUsed;
-	unitToUpdate->bulwarkMireGripApplied = captured.bulwarkMireGripApplied;
-	unitToUpdate->bulwarkDefendPhysicalDamage = captured.bulwarkDefendPhysicalDamage;
-	unitToUpdate->bulwarkImmovableRound = captured.bulwarkImmovableRound;
-	unitToUpdate->armorerBastionRound = captured.armorerBastionRound;
-	unitToUpdate->armorerLastStandEndedActivation = captured.armorerLastStandEndedActivation;
-	unitToUpdate->armorerLastStandDefending = captured.armorerLastStandDefending;
-	unitToUpdate->bulwarkToxicSpinesRound = captured.bulwarkToxicSpinesRound;
-	unitToUpdate->physicalPoisonBaseDamage = captured.physicalPoisonBaseDamage;
-	unitToUpdate->physicalPoisonActivationsRemaining = captured.physicalPoisonActivationsRemaining;
-	unitToUpdate->physicalPoisonSourceStackId = captured.physicalPoisonSourceStackId;
-	unitToUpdate->physicalPoisonSpellSide = captured.physicalPoisonSpellSide;
-	unitToUpdate->guardianSpiritHitPoints = captured.guardianSpiritHitPoints;
-	unitToUpdate->guardianSpiritRoundsRemaining = captured.guardianSpiritRoundsRemaining;
-	unitToUpdate->luckyOwnAttackSequence = captured.luckyOwnAttackSequence;
-	if(unitToUpdate->unitId() == originalActor->unitId()
-		&& (newHorizonsOpportunist::hasPerk(branch, unitToUpdate.get())
-			|| captured.dreadCavalryState.usedThisActivation))
-		unitToUpdate->pursuitMovementRemaining = captured.pursuitMovementRemaining;
-	unitToUpdate->rangedFollowUpDamagePercent = captured.rangedFollowUpDamagePercent;
-	// The forecasted continuation is one accepted shot. Consume its copied
-	// allowance here so this detached branch cannot price another reduced
-	// shot on the same activation or carry it into the next one.
-	if(unitToUpdate->unitId() == originalActor->unitId()
-		&& ap.attack.shooting && ap.attack.physicalDamage
-		&& unitToUpdate->rangedFollowUpDamagePercent > 0)
-		unitToUpdate->rangedFollowUpDamagePercent = 0;
-	// The detached forecast records explicitly classified hits and reactions
-	// even when they are not represented by a Fortune strike. Copy its total
-	// interval rather than guessing that residual HP loss was physical.
-	unitToUpdate->veteranPhysicalDamageSinceActivation =
-		captured.veteranPhysicalDamageSinceActivation;
-
+	if(forecast::NativeAdapter::selectedReceiptResources(branch, ap, captured, recipient, originalActor)) return;
+	replayResourcesNative(ap, captured, recipient, originalActor, branch);
 }
 
 void selectedAttackReceipt::applyCapturedDamage(HypotheticBattle & branch,
@@ -151,7 +92,8 @@ void selectedAttackReceipt::applyCapturedDamage(HypotheticBattle & branch,
 {
 	const bool wasAlive = recipient->alive();
 	const auto destroyed = PhysicalStrikeProjection::captureForecastDamage(branch, *recipient);
-	recipient->damage(damage);
+	if(!forecast::NativeAdapter::damage(branch, *recipient, damage, battle::DamageProvenance::OTHER, nullptr))
+		recipient->damage(damage);
 	if(wasAlive && !recipient->alive())
 		branch.releaseSerpentBindingsForDeath(*recipient);
 	branch.recordBloodrageTransition(recipient, wasAlive);
@@ -191,8 +133,9 @@ std::unique_ptr<AttackPossibility> selectedAttackReceipt::refreshForestAmbush(
 	auto attack = preview.attack;
 	attack.attacker = actor;
 	attack.defender = target;
-	return std::make_unique<AttackPossibility>(AttackPossibility::evaluate(
-		attack, preview.from, damageCache, branch, false, std::nullopt, nullptr,
+	const auto owner = std::make_shared<const VisibleCandidateWorld>(branch);
+	return std::make_unique<AttackPossibility>(VisibleCandidateWorld::evaluateRefreshed(
+		owner, attack, preview.from, damageCache,
 		gnollHarriersAI::replaysSameApproach(preview, *actor), preview.validatedApproachOrigin));
 }
 

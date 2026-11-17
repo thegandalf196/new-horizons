@@ -483,16 +483,6 @@ public:
 
 	BattleField battlefieldType; //like !!BA:B
 	TerrainId terrainType; //used for some stack nativity checks (not the bonus limiters though that have their own copy)
-	// When a real Hero Action leaves every surviving stack in Time Stop, the
-	// normal creature queue still has to drain before the caster gets another
-	// Hero Action.  Keep the caster side in the authoritative battle snapshot so
-	// a round boundary (and a save/load in the middle of that boundary) cannot
-	// accidentally hand control to the side whose marker merely happens to be
-	// encountered last in the queue.
-	// A second side may cast Time Stop before the first origin reaches its next
-	// Hero Action. Keep both origins pending instead of collapsing them into the
-	// scalar compatibility field above.
-
 	BattleSide tacticsSide; //which side is requested to play tactics phase
 	ui8 tacticDistance; //how many hexes we can go forward (1 = only hexes adjacent to margin line)
 	std::set<uint32_t> bloodrageDestroyedUnits;
@@ -1344,9 +1334,6 @@ public:
 
 	void nextRound() override;
 	void nextTurn(uint32_t unitId, BattleUnitTurnReason reason) override;
-	/// Remove Time Stop state created by the given hero side.  This is called at
-	/// the beginning of that side's next Hero Action, not at a round boundary.
-
 	void addUnit(uint32_t id, const JsonNode & data) override;
 	void moveUnit(uint32_t id, const BattleHex & destination) override;
 	void updateUnit(uint32_t id, const JsonNode & data, int64_t healthDelta) override;

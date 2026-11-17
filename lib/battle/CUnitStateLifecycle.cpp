@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "OrdinaryUnitTransitions.h"
 #include "NewHorizonsFocusMagic.h"
 #include "CUnitState.h"
 
@@ -47,6 +48,7 @@ void CUnitState::reset()
 	ghost = false;
 	ghostPending = false;
 	movedThisRound = false;
+	completedActionThisRound = false;
 	rangedFollowUpDamagePercent = 0;
 	luckyOwnAttackSequence = false;
 	regenerationRateMillionths = 0;
@@ -78,6 +80,8 @@ void CUnitState::reset()
 	physicalPoisonActivationsRemaining = 0;
 	physicalPoisonSourceStackId = -1;
 	physicalPoisonSpellSide = BattleSide::NONE;
+	physicalPoisonDescriptor.reset();
+	redemptionShield.clear();
 	guardianSpiritHitPoints = 0;
 	guardianSpiritRoundsRemaining = 0;
 	phantomInitialIntegrity = 0;
@@ -123,11 +127,8 @@ void CUnitState::afterAttack(bool ranged, bool counter, bool physical)
 	if(ranged && !newHorizonsFocusMagic::converted(*this))
 		shots.use();
 
-	if(physical && waitedThisTurn)
-	{
-		battlecraftWaitBonusUsed = true;
-		battlecraftWaitMasteryDoubled = false;
-	}
+	finishOrdinaryAttackFlags(waitedThisTurn, physical,
+		battlecraftWaitBonusUsed, battlecraftWaitMasteryDoubled);
 }
 
 void CUnitState::afterWait()
@@ -147,6 +148,7 @@ void CUnitState::afterWait()
 
 void CUnitState::afterNewRound(bool isFirstRound, bool deferBattleFormRestoration)
 {
+	completedActionThisRound = false;
 	forestAmbush = {};
 	moraleExtraActivation = false;
 	battlecraftOverwatchReadyRound = -1;
@@ -179,20 +181,15 @@ void CUnitState::afterNewRound(bool isFirstRound, bool deferBattleFormRestoratio
 	// Defend's action flag blocks movement only for this round. Its separate
 	// UNIT_DEFENDING bonus remains the authoritative stance marker until the
 	// stack's next activation, so retain the captured stance values here.
-	defending = false;
+	resetOrdinaryRoundFlags(defending, waiting, waitedThisTurn, movedThisRound, hadMorale,
+		battlecraftWaitBonusUsed, battlecraftWaitMasteryDoubled);
 	activationMovementBonus = 0;
 	bulwarkPreemptiveUsed = false;
-	waiting = false;
-	waitedThisTurn = false;
-	battlecraftWaitBonusUsed = false;
-	battlecraftWaitMasteryDoubled = false;
-	movedThisRound = false;
 	pursuitMovementRemaining = 0;
 	cleaveUsedThisActivation = false;
 	rangedFollowUpDamagePercent = 0;
 	luckyOwnAttackSequence = false;
 	archeryCounterfireRound = -1;
-	hadMorale = false;
 	castSpellThisTurn = false;
 	fear = false;
 	drainedMana = false;
@@ -249,6 +246,7 @@ void CUnitState::makeGhost()
 	armorerLastStandEndedActivation = false;
 	armorerLastStandDefending = false;
 	veteranPhysicalDamageSinceActivation = 0;
+	redemptionShield.clear();
 	guardianSpiritHitPoints = 0;
 	guardianSpiritRoundsRemaining = 0;
 	phantomIntegrity = 0;
@@ -280,6 +278,7 @@ void CUnitState::onRemoved()
 	health.reset(false);
 	capacityHealthReferenceMax = 0;
 	capacityRegenerationRemainderTenths = 0;
+	redemptionShield.clear();
 	guardianSpiritHitPoints = 0;
 	guardianSpiritRoundsRemaining = 0;
 	phantomIntegrity = 0;
@@ -296,6 +295,7 @@ void CUnitState::clearDeadUnitTransientState()
 	luckyOwnAttackSequence = false;
 	pursuitMovementRemaining = 0;
 	veteranPhysicalDamageSinceActivation = 0;
+	redemptionShield.clear();
 	guardianSpiritHitPoints = 0;
 	guardianSpiritRoundsRemaining = 0;
 	// Marks belong to surviving wounds only and must never carry through death.

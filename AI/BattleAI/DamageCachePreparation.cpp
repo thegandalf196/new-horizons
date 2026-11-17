@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "SearchBudget.h"
 #include "AttackPossibility.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/battle/HeroCommand.h"
@@ -50,6 +51,7 @@ void DamageCache::buildUnitDamageCache(std::shared_ptr<HypotheticBattle> hb, Bat
 
 	for(auto stack : stacks)
 	{
+		battleSearch::require(hb->searchBudget().get(), battleSearch::WorkKind::Node);
 		if(stack->unitSide() == side)
 			ourUnits.push_back(stack);
 		else
@@ -58,11 +60,13 @@ void DamageCache::buildUnitDamageCache(std::shared_ptr<HypotheticBattle> hb, Bat
 
 	for(auto ourUnit : ourUnits)
 	{
+		battleSearch::require(hb->searchBudget().get(), battleSearch::WorkKind::Node);
 		if(!ourUnit->alive())
 			continue;
 
 		for(auto enemyUnit : enemyUnits)
 		{
+			battleSearch::require(hb->searchBudget().get(), battleSearch::WorkKind::Node);
 			if(enemyUnit->alive())
 			{
 				cacheDamage(ourUnit, enemyUnit, hb);

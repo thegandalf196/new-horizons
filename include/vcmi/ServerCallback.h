@@ -22,6 +22,7 @@ namespace vstd
 }
 
 namespace newHorizonsCrossSchoolFormula { struct Receipt; }
+namespace newHorizonsMetamagic { struct OverflowPrimaryDamage; }
 namespace spells { struct AutomaticHeroCastReceipt; }
 class SpellID;
 
@@ -43,10 +44,19 @@ struct StacksInjured;
 struct BattleObstaclesChanged;
 struct CatapultAttack;
 
+/// Read-only evaluation context only. Authoritative cast execution does not enter it.
+enum class SpellEvaluationKind : uint8_t { OTHER, MANUAL_HERO, AUTOMATIC_HERO };
+
 class DLL_LINKAGE ServerCallback : public scripting::ApiRawPointer<ServerCallback>
 {
 public:
 	virtual ~ServerCallback() = default;
+	/// Optional forecast resource scope; zero is the legacy no-op token.
+	virtual uint64_t beginSpellEvaluation(SpellEvaluationKind, BattleSide, const SpellID &) { return 0; }
+	virtual void admitSpellEvaluation(uint64_t, int32_t, bool) {}
+	/// Exact native concentration delegation only, never an additional cast.
+	virtual void allowSpellEvaluationDelegation(uint64_t) {}
+	virtual void endSpellEvaluation(uint64_t, bool) noexcept {}
 
 	virtual void complain(const std::string & problem) = 0;
 	virtual bool describeChanges() const = 0;
@@ -88,6 +98,8 @@ public:
 	virtual void recordArcaneInspirationEffects(const SetStackEffect &) {}
 	/// Trusted effect acceptance receipt. Live/default callbacks retain no observer state.
 	virtual void recordResolvedSpellRecipient(uint32_t) {}
+	/// Original native pre-casualty witness; only a cast-local recorder retains it.
+	virtual void recordMetamagicOverflowPrimary(const newHorizonsMetamagic::OverflowPrimaryDamage &) {}
 	virtual void recordCompletedHeroSpellCast(BattleSide side) { (void)side; }
 	/// Detached accepted-cast receipt; live state is changed only by BattleSpellCast.
 	/// Detached branches override this; live state uses its validated BattleSpellCast receipt.

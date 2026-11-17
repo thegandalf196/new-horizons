@@ -7,6 +7,7 @@
 #include "HypotheticBattle.h"
 #include "InitialExportBattleSubject.h"
 #include "ProjectedAdjacencyBonuses.h"
+#include "ForecastNativeReadView.h"
 #include <stdexcept>
 
 HypotheticSourceBinding::HypotheticSourceBinding(const std::shared_ptr<CBattleInfoCallback> & subject,
@@ -42,6 +43,23 @@ std::shared_ptr<InitialExportBattleSubject> HypotheticBattle::initialExportSubje
 
 battle::Units HypotheticBattle::getUnitsIf(const battle::UnitFilter & predicate) const
 {
+	const auto * owned = compactForecast ? &*compactForecast : compactReadSession ? &*compactReadSession : nullptr;
+	if(owned)
+	{
+		battle::Units result;
+		result.reserve(owned->orderedIds().size());
+		for(const auto id : owned->orderedIds())
+		{
+			const auto replacement = stackStates.find(id);
+			const auto * value = owned->unit(id);
+			if(!value || !owned->readView(id)) throw std::logic_error("Incomplete owned native read occurrence");
+			const battle::Unit * current = replacement == stackStates.end()
+				? &owned->readView(id)->unit() : replacement->second.get();
+			if(predicate(current)) result.push_back(current);
+		}
+		return result;
+	}
+
 	if(ownedFrameBatch) return ownedFrameUnitsIf(predicate);
 	if(initialExportSubject())
 		return ownedExportUnitsIf(predicate);

@@ -13,7 +13,15 @@ std::shared_ptr<StackWithBonuses> HypotheticBattle::getForUpdateImpl(uint32_t id
 	if(iter == stackStates.end())
 	{
 		std::shared_ptr<StackWithBonuses> ret;
-		if(ownedFrameBatch)
+		const auto * owned = compactForecast ? &*compactForecast : compactReadSession ? &*compactReadSession : nullptr;
+		if(owned)
+		{
+			const auto * value = owned->unit(id);
+			if(!value || !owned->readView(id) || !value->nativeValues || !value->currentModifiers || !value->effects)
+				throw std::invalid_argument("Owned branch has no complete occurrence for this ID");
+			ret = std::make_shared<StackWithBonuses>(this, owned->readView(id), value->currentModifiers, value->effects);
+		}
+		else if(ownedFrameBatch)
 		{
 			const auto frame = ownedFrameFor(id);
 			if(!frame) throw std::invalid_argument("Owned branch has no admitted occurrence for this ID");

@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "NewHorizonsDivineMandate.h"
 #include "PassiveDivineMandate.h"
+#include "ConsecratedArms.h"
 #include "CBattleInfoCallback.h"
 #include "IBattleState.h"
 #include "HeroOrderRecipients.h"
@@ -147,6 +148,7 @@ namespace
 bool hasActiveDivineMandate(const CGHeroInstance * hero)
 {
 	if(!hero || newHorizonsPassiveDivineMandate::enabled(hero->getPerkState().getRules())
+		|| consecratedArms::enabled(hero->getPerkState().getRules())
 		|| hero->getFactionID() != FactionID::CASTLE
 		|| !hero->usesPrimaryGrowth()
 		|| !hero->compiledDevelopment()->active()

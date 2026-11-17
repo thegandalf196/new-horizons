@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../../SpellDamageContext.h"
 #include "SummonHelpers.h"
 #include "Damage.h"
 #include "../../CSpell.h"
@@ -11,7 +12,8 @@ namespace
 void applyMagic(const nativeEvents::Context & context, const Mechanics * mechanics, const battle::Unit & unit, int64_t amount)
 {
 	const auto id = unit.unitId();
-	const auto [damage, killed] = nativeEvents::damage(context, unit, amount, mechanics->getUnitCaster(), true);
+	const auto damageContext = mechanics->spellDamageContext(unit);
+	const auto [damage, killed] = nativeEvents::damage(context, unit, amount, mechanics->getUnitCaster(), true, nullptr, false, false, nullptr, &damageContext);
 	if(const auto * current = context.battle.battleGetUnitByID(id)) nativeEvents::clearFrozen(context, *current);
 	if(damage > 0 && context.server.describeChanges())
 		nativeEvents::spellDamageLog(context, *mechanics->getSpellId().toSpell(), &unit, damage, killed);
@@ -51,7 +53,9 @@ public:
 				auto copy = unit->acquireState();
 				const auto beforeHealth = copy->getAvailableHealth(); const auto beforeCount = copy->getCount();
 				auto amount = mechanics->getPandemoniumDamage(unit, count);
-				copy->damage(amount);
+				std::optional<battle::VowCasualtyQuota> quota;
+				const auto damageContext = previewSpellDamageContext(*mechanics, *unit, quota);
+				copy->damageWithContext(amount, false, battle::DamageProvenance::SPELL, damageContext);
 				result.hpDelta += copy->getAvailableHealth() - beforeHealth; result.unitsDelta += copy->getCount() - beforeCount;
 			}
 		return result;
@@ -121,7 +125,9 @@ public:
 			{
 				const auto beforeHealth = copy->getAvailableHealth(); const auto beforeCount = copy->getCount();
 				auto amount = mechanics->getNaturesWrathDamage(unit, static_cast<int32_t>(index));
-				copy->damage(amount);
+				std::optional<battle::VowCasualtyQuota> quota;
+				const auto damageContext = previewSpellDamageContext(*mechanics, *unit, quota);
+				copy->damageWithContext(amount, false, battle::DamageProvenance::SPELL, damageContext);
 				result.hpDelta += copy->getAvailableHealth() - beforeHealth; result.unitsDelta += copy->getCount() - beforeCount;
 			}
 		}

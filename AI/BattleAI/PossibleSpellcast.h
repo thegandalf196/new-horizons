@@ -95,6 +95,7 @@ public:
 	float spellShadowGiftHeuristicValue = 0.0f;
 	/// Weighted completion marginal from the existing finite outcome loop, added once.
 	std::optional<float> spellInspirationExpectedValue;
+	std::optional<float> spellOverflowExpectedValue;
 	/// Canonical New Horizons Fire Wall placement direction.  The target vector
 	/// used during AI evaluation contains the complete three-hex footprint, but
 	/// the authoritative action protocol carries only its start hex and this

@@ -19,6 +19,8 @@ class DLL_LINKAGE StackInitializationReceipts final
 	int32_t restoredPersonalBloodrageIncrement;
 	std::tuple<bool, bool, bool, bool, bool, bool, bool> restoredQueueFlags;
 	bool restoredVeteranCohesion;
+	bool restoredCompletedAction;
+	creatureAbility::Descriptor restoredPoisonDescriptor;
 	ConfusionState restoredConfusionState;
 	bool restoredDemonicGateOpened;
 	std::tuple<int64_t, int32_t, int32_t, BattleSide> restoredPhysicalPoison;

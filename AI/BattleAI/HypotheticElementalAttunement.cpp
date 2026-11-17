@@ -11,24 +11,13 @@ void HypotheticBattle::captureElementalAttunement(const Subject & source)
 {
 	if(const auto * parent = dynamic_cast<const HypotheticBattle *>(source.get()))
 	{
-		elementalAttunementProfiles = parent->elementalAttunementProfiles;
-		elementalAttunementMasks = parent->elementalAttunementMasks;
-		elementalAttunementProfileKnown = parent->elementalAttunementProfileKnown;
 		committedElementalFacts = parent->committedElementalFacts;
 		committedElementalEffects = parent->committedElementalEffects;
 		return;
 	}
 	const battle::LiveUnitEnvironmentContext context(*source);
 	committedElementalEffects = context.committedElementalEffects();
-	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
-	{
-		const bool known = context.knowsElementalAttunementProfile(side);
-		elementalAttunementProfileKnown.at(side) = known;
-		elementalAttunementProfiles.at(side) = known
-			? source->getBattle()->getElementalAttunementProfile(side)
-			: newHorizonsElementalAttunement::Profile{};
-		elementalAttunementMasks.at(side) = source->getBattle()->getElementalAttunementMask(side);
-	}
+
 	if(!committedElementalEffects) return;
 	// Ghosts and turrets remain registered native occurrences in the complete
 	// current-bonus roster; they must not be mistaken for projected creations.
@@ -79,12 +68,13 @@ void HypotheticBattle::setElementalAttunementMask(BattleSide side, uint8_t mask)
 {
 	if((mask & ~newHorizonsElementalAttunement::ALL_ELEMENTS) != 0)
 		throw std::invalid_argument("Unknown projected elemental Attunement flag");
-	auto & current = elementalAttunementMasks.at(side);
+	const auto current = getElementalAttunementMask(side);
 	if(current == mask)
 		return;
-	if(!elementalAttunementProfileKnown.at(side))
+	if(!forecastSide(side)->attunementKnown)
 		throw std::invalid_argument("An unknown hero profile cannot project a new elemental activation");
-	current = mask;
+	const auto receipt = forecast::SideTransitions::setAttunement(forecastSide(side), mask, searchBudget().get());
+	if(!receipt || !commitForecastSide(side, *receipt)) throw std::invalid_argument("Unsupported projected Attunement owner");
 	++bonusTreeVersion;
 	// An untouched recipient may still be the source's native/parent unit. Bind
 	// matching creatures to this branch before its unit-level damage queries.
@@ -110,7 +100,7 @@ newHorizonsElementalAttunement::UnitPassives HypotheticBattle::unitElementalAttu
 	const auto side = unit->unitSide();
 	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
 		return {};
-	if(!elementalAttunementProfileKnown.at(side))
+	if(!forecastSide(side)->attunementKnown)
 	{
 		// Same-owner unpublished clones are used by atomic effect exchange and
 		// damage snapshots, including localInit before map publication. They still
@@ -128,8 +118,8 @@ newHorizonsElementalAttunement::UnitPassives HypotheticBattle::unitElementalAttu
 		return committedElementalEffects->evaluate(*unit);
 	}
 	if(const auto * resolver = unit->unitCreatureResolver())
-		return newHorizonsElementalAttunement::passivesForCreatureKey(elementalAttunementProfiles.at(side),
-			elementalAttunementMasks.at(side), resolver->encode(unit->creatureId().getNum()));
-	return newHorizonsElementalAttunement::passivesForCreature(elementalAttunementProfiles.at(side),
-		elementalAttunementMasks.at(side), unit->creatureId());
+		return newHorizonsElementalAttunement::passivesForCreatureKey(getElementalAttunementProfile(side),
+			getElementalAttunementMask(side), resolver->encode(unit->creatureId().getNum()));
+	return newHorizonsElementalAttunement::passivesForCreature(getElementalAttunementProfile(side),
+		getElementalAttunementMask(side), unit->creatureId());
 }

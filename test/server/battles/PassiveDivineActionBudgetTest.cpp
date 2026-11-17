@@ -2,6 +2,7 @@
 #include "StdInc.h"
 #include "../../../lib/spells/NewHorizonsWisdom.h"
 #include "HeroCommandFixture.h"
+#include "HistoricalPassiveDivineRules.h"
 #include "../../../lib/battle/PassiveDivineMandate.h"
 #include "../../../lib/battle/SideInBattle.h"
 #include "../../../lib/battle/PassiveDivineMandateSpellPool.h"
@@ -20,7 +21,7 @@
 #include "../../../lib/callback/GameRandomizer.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
 
-class PassiveDivineActionBudgetTest : public HeroCommandFixture
+class HistoricalPassiveDivineActionBudgetTest : public HeroCommandFixture
 {
 protected:
 	bool enableRetiredCrusade = false;
@@ -35,6 +36,7 @@ protected:
 	{
 		HeroCommandFixture::mapLoaded(loaded);
 		JsonNode perks(JsonPath::builtin("config/newHorizonsPerks"));
+		captureHistoricalPassiveDivineRules(perks);
 		if(historicalMetamagic)
 		{
 			perks["metamagicPolicy"] = JsonNode();
@@ -142,7 +144,7 @@ protected:
 	}
 };
 
-TEST_F(PassiveDivineActionBudgetTest, OrderAutomaticLightAndTypedSecondOrderDoNotInventThirdAction)
+TEST_F(HistoricalPassiveDivineActionBudgetTest, OrderAutomaticLightAndTypedSecondOrderDoNotInventThirdAction)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	const SecondarySkill wisdom(SecondarySkill::decode("new-horizons:wisdom"));
@@ -202,7 +204,7 @@ TEST_F(PassiveDivineActionBudgetTest, OrderAutomaticLightAndTypedSecondOrderDoNo
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), 0);
 }
 
-TEST_F(PassiveDivineActionBudgetTest, AutomaticLightPreservesRealDoubleCommandContinuation)
+TEST_F(HistoricalPassiveDivineActionBudgetTest, AutomaticLightPreservesRealDoubleCommandContinuation)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare(true));
 	ASSERT_TRUE(issue(HeroCommand::CHARGE));
@@ -218,7 +220,7 @@ TEST_F(PassiveDivineActionBudgetTest, AutomaticLightPreservesRealDoubleCommandCo
 	EXPECT_EQ(battle()->getPassiveDivineMandateUses(BattleSide::ATTACKER), 1);
 }
 
-TEST_F(PassiveDivineActionBudgetTest, ExplicitlyEnabledCrusadeIsNotAUsefulGenericDurationRefresh)
+TEST_F(HistoricalPassiveDivineActionBudgetTest, ExplicitlyEnabledCrusadeIsNotAUsefulGenericDurationRefresh)
 {
 	enableRetiredCrusade = true; // Only this captured fixture retains the retired spell.
 	ASSERT_NO_FATAL_FAILURE(prepare());
@@ -251,7 +253,7 @@ TEST_F(PassiveDivineActionBudgetTest, ExplicitlyEnabledCrusadeIsNotAUsefulGeneri
 		receipt, {recipient->unitId()}).empty());
 }
 
-TEST_F(PassiveDivineActionBudgetTest, ChosenRefreshUsesItsNativeCappedDuration)
+TEST_F(HistoricalPassiveDivineActionBudgetTest, ChosenRefreshUsesItsNativeCappedDuration)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	const auto spell = SpellID(SpellID::decode("new-horizons:theChosen"));
@@ -290,7 +292,7 @@ TEST_F(PassiveDivineActionBudgetTest, ChosenRefreshUsesItsNativeCappedDuration)
 			EXPECT_NE(target.aimUnitId, recipient->unitId());
 }
 
-TEST_F(PassiveDivineActionBudgetTest, AutomaticPurifyDoesNotSpendActivationToReturnControlledEnemy)
+TEST_F(HistoricalPassiveDivineActionBudgetTest, AutomaticPurifyDoesNotSpendActivationToReturnControlledEnemy)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	const auto purify = newHorizonsPurify::spellID();
@@ -324,7 +326,7 @@ TEST_F(PassiveDivineActionBudgetTest, AutomaticPurifyDoesNotSpendActivationToRet
 	EXPECT_TRUE(controlled->hasBonusOfType(BonusType::HYPNOTIZED));
 }
 
-TEST_F(PassiveDivineActionBudgetTest, RetiredCrusadeCannotEnterTheCurrentAutomaticPool)
+TEST_F(HistoricalPassiveDivineActionBudgetTest, RetiredCrusadeCannotEnterTheCurrentAutomaticPool)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	const auto spell = SpellID(SpellID::decode("new-horizons:crusade"));
@@ -337,23 +339,23 @@ TEST_F(PassiveDivineActionBudgetTest, RetiredCrusadeCannotEnterTheCurrentAutomat
 	EXPECT_EQ(battle()->getPassiveDivineMandateUses(BattleSide::ATTACKER), 0);
 }
 
-TEST_F(PassiveDivineActionBudgetTest, FreshFullGuardianSpiritDoesNotSpendSecondAutomaticActivation)
+TEST_F(HistoricalPassiveDivineActionBudgetTest, FreshFullGuardianSpiritDoesNotSpendSecondAutomaticActivation)
 {
 	ASSERT_NO_FATAL_FAILURE(checkFreshFixedProtection("new-horizons:guardianSpirit"));
 }
-TEST_F(PassiveDivineActionBudgetTest, FreshFullHolyArmorDoesNotSpendSecondAutomaticActivation)
+TEST_F(HistoricalPassiveDivineActionBudgetTest, FreshFullHolyArmorDoesNotSpendSecondAutomaticActivation)
 {
 	ASSERT_NO_FATAL_FAILURE(checkFreshFixedProtection("new-horizons:holyArmor"));
 }
-TEST_F(PassiveDivineActionBudgetTest, FreshFullHeavenlyGaleDoesNotSpendSecondAutomaticActivation)
+TEST_F(HistoricalPassiveDivineActionBudgetTest, FreshFullHeavenlyGaleDoesNotSpendSecondAutomaticActivation)
 {
 	ASSERT_NO_FATAL_FAILURE(checkFreshFixedProtection("new-horizons:heavenlyGale"));
 }
-TEST_F(PassiveDivineActionBudgetTest, FreshFullDivineRetributionDoesNotSpendSecondAutomaticActivation)
+TEST_F(HistoricalPassiveDivineActionBudgetTest, FreshFullDivineRetributionDoesNotSpendSecondAutomaticActivation)
 {
 	ASSERT_NO_FATAL_FAILURE(checkFreshFixedProtection("new-horizons:divineRetribution"));
 }
-TEST_F(PassiveDivineActionBudgetTest, PartiallyDepletedFullDurationGuardianRefillsAtZeroSpellPower)
+TEST_F(HistoricalPassiveDivineActionBudgetTest, PartiallyDepletedFullDurationGuardianRefillsAtZeroSpellPower)
 {
 	ASSERT_NO_FATAL_FAILURE(prepareFixedProtection("new-horizons:guardianSpirit", 0));
 	ASSERT_TRUE(issue(HeroCommand::CHARGE));
@@ -393,7 +395,7 @@ TEST_F(PassiveDivineActionBudgetTest, PartiallyDepletedFullDurationGuardianRefil
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), 0);
 }
 
-TEST_F(PassiveDivineActionBudgetTest, FixedProtectionAppliesExtendOnceAndDoesNotRefreshItAway)
+TEST_F(HistoricalPassiveDivineActionBudgetTest, FixedProtectionAppliesExtendOnceAndDoesNotRefreshItAway)
 {
 	ASSERT_NO_FATAL_FAILURE(prepareFixedProtection("new-horizons:holyArmor", 100));
 	const auto skill = SecondarySkill(SecondarySkill::decode("new-horizons:spellcraft"));
@@ -423,7 +425,7 @@ TEST_F(PassiveDivineActionBudgetTest, FixedProtectionAppliesExtendOnceAndDoesNot
 	EXPECT_EQ(bonuses->front()->turnsRemain, 3);
 }
 
-TEST_F(PassiveDivineActionBudgetTest, ShortFixedTimerRefreshRetainsNativeOrdinaryMagnitude)
+TEST_F(HistoricalPassiveDivineActionBudgetTest, ShortFixedTimerRefreshRetainsNativeOrdinaryMagnitude)
 {
 	ASSERT_NO_FATAL_FAILURE(prepareFixedProtection("new-horizons:holyArmor", 100));
 	ASSERT_TRUE(issue(HeroCommand::CHARGE));
@@ -452,7 +454,7 @@ TEST_F(PassiveDivineActionBudgetTest, ShortFixedTimerRefreshRetainsNativeOrdinar
 
 
 
-TEST_F(PassiveDivineActionBudgetTest, RecalculatedRefreshRequiresWisdomEffectiveness)
+TEST_F(HistoricalPassiveDivineActionBudgetTest, RecalculatedRefreshRequiresWisdomEffectiveness)
 {
 	ASSERT_NO_FATAL_FAILURE(prepareFixedProtection("new-horizons:holyArmor", 100));
 	ASSERT_TRUE(issue(HeroCommand::CHARGE));

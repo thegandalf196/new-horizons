@@ -8,6 +8,8 @@
  *
  */
 #include "StdInc.h"
+#include "../combatScripts/NativeDamageFacts.h"
+#include <cmath>
 #include "NewHorizonsSpecialtyEvents.h"
 #include "NewHorizonsAttackControllers.h"
 #include "ArcaneInspiration.h"
@@ -97,7 +99,10 @@ void CBattleInfoCallback::finalizeDamagePayload(const BattleAttackInfo & info,
 	payload.doubleDamage = info.doubleDamage;
 	if(!info.attacker->hasBonusOfType(BonusType::SIEGE_WEAPON))
 	{
-		payload.leadershipEfficiency = battleLeadershipReadout(info.attacker).efficiency;
+		const auto * prepared = preparedUnitDamageFacts(*info.attacker, info.shooting);
+		const auto efficiency = prepared ? prepared->leadershipEfficiency : std::nullopt;
+		payload.leadershipEfficiency = efficiency && std::isfinite(*efficiency) && *efficiency >= 0.0 && *efficiency <= 1.0
+			? *efficiency : battleLeadershipReadout(info.attacker).efficiency;
 	}
 	else
 	{

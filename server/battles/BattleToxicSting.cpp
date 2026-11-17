@@ -2,6 +2,7 @@
 #include "StdInc.h"
 #include "BattleToxicSting.h"
 #include "BattleProcessor.h"
+#include "CreatureAbilityApplication.h"
 #include "../CGameHandler.h"
 #include "../../lib/CStack.h"
 #include "../../lib/battle/BattleAttackInfo.h"
@@ -44,8 +45,14 @@ void apply(CGameHandler & game, BattleProcessor & processor, const CBattleInfoCa
 	const int chance = game.randomizer->prepareFavorableCreatureAbilityChance(*source, prepared->chancePercent);
 	const auto draw = [&game, army, chance]() { return game.randomizer->rollCombatAbility(army->id, chance); };
 	if(!processor.resolveAdverseCombatRoll(battle.getBattle()->getBattleID(), affected,
-		chance > 0 && chance < 100, true, draw) || !newHorizonsToxicSting::apply(*prepared, *state))
+		chance > 0 && chance < 100, true, draw))
 		return;
+	const auto descriptor = creatureAbility::nativeAffliction(creatureAbility::Native::PHYSICAL_POISON,
+		creatureAbility::Family::CREATURE_ABILITY, battle.battleGetOwner(source));
+	if(creatureAbilityApplication::resisted(game, battle, *target, descriptor)
+		|| !newHorizonsToxicSting::apply(*prepared, *state))
+		return;
+	state->physicalPoisonDescriptor = descriptor;
 	BattleUnitsChanged changed;
 	changed.battleID = battle.getBattle()->getBattleID();
 	UnitChanges update(state->unitId(), UnitChanges::EOperation::UPDATE);

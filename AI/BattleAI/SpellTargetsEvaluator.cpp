@@ -43,6 +43,8 @@
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/CRandomGenerator.h"
 #include "SpellTargetsEvaluator.h"
+#include "SpellTargetBudgetFallback.h"
+#include "SearchBudget.h"
 #include "SummonEvaluation.h"
 #include "../../lib/spells/NewHorizonsSpellAvailability.h"
 #include <vcmi/spells/Spell.h>
@@ -55,40 +57,53 @@ using namespace spells;
 
 namespace
 {
-std::vector<Target> realityWarpTargets(const Mechanics * mechanics)
+std::vector<Target> realityWarpTargets(const Mechanics * mechanics, battleSearch::SearchBudget * budget = nullptr)
 {
 	std::vector<Target> result;
-	if(!mechanics || !mechanics->battle() || !mechanics->usesNewHorizonsMagicV3()
-		|| !newHorizonsMagic::spellAllowedByBattleRoster(*mechanics->battle(), mechanics->getSpellId()))
+	try
+	{
+
+		if(!mechanics || !mechanics->battle() || !mechanics->usesNewHorizonsMagicV3()
+			|| !newHorizonsMagic::spellAllowedByBattleRoster(*mechanics->battle(), mechanics->getSpellId()))
+			return result;
+		const auto * hero = mechanics->getHeroCaster();
+		if(!hero)
+			return result;
+		const bool breaker = hero->hasActivePerk("new-horizons:chaosMagic", "new-horizons:chaosMagic.realityBreaker");
+		const auto * callback = mechanics->battle();
+		const auto units = callback->battleGetAllUnits(false);
+		for(size_t first = 0; first < units.size(); ++first)
+			{
+				battleSearch::require(budget, battleSearch::WorkKind::Generation);
+				for(size_t second = first + 1; second < units.size(); ++second)
+			{
+				battleSearch::require(budget, battleSearch::WorkKind::Generation);
+				const auto * one = units[first];
+				const auto * two = units[second];
+				const bool firstFriendly = callback->battleGetOwner(one) == mechanics->getCasterColor();
+				const bool secondFriendly = callback->battleGetOwner(two) == mechanics->getCasterColor();
+				if(!breaker && firstFriendly == secondFriendly)
+					continue;
+				// Complete pairs only: the native effect intentionally rejects prefixes.
+				// Ordinary pairs are friendly-first; a symmetric exchange needs no reverse duplicate.
+				Target target{Destination(!breaker && !firstFriendly ? two : one),
+					Destination(!breaker && !firstFriendly ? one : two)};
+				detail::ProblemImpl problem;
+				if(!mechanics->canBeCastAt(target, problem))
+					continue;
+				const auto prepared = newHorizonsRealityWarp::prepareExchange(*callback, one->unitId(), two->unitId());
+				if(prepared.exchange && std::any_of(prepared.previews.begin(), prepared.previews.end(), [](const auto & preview)
+					{ return preview.reason == newHorizonsRealityWarp::StayReason::MOVED; }))
+					result.push_back(std::move(target));
+			}
+			}
 		return result;
-	const auto * hero = mechanics->getHeroCaster();
-	if(!hero)
+
+	}
+	catch(const battleSearch::BudgetExhausted &)
+	{
 		return result;
-	const bool breaker = hero->hasActivePerk("new-horizons:chaosMagic", "new-horizons:chaosMagic.realityBreaker");
-	const auto * callback = mechanics->battle();
-	const auto units = callback->battleGetAllUnits(false);
-	for(size_t first = 0; first < units.size(); ++first)
-		for(size_t second = first + 1; second < units.size(); ++second)
-		{
-			const auto * one = units[first];
-			const auto * two = units[second];
-			const bool firstFriendly = callback->battleGetOwner(one) == mechanics->getCasterColor();
-			const bool secondFriendly = callback->battleGetOwner(two) == mechanics->getCasterColor();
-			if(!breaker && firstFriendly == secondFriendly)
-				continue;
-			// Complete pairs only: the native effect intentionally rejects prefixes.
-			// Ordinary pairs are friendly-first; a symmetric exchange needs no reverse duplicate.
-			Target target{Destination(!breaker && !firstFriendly ? two : one),
-				Destination(!breaker && !firstFriendly ? one : two)};
-			detail::ProblemImpl problem;
-			if(!mechanics->canBeCastAt(target, problem))
-				continue;
-			const auto prepared = newHorizonsRealityWarp::prepareExchange(*callback, one->unitId(), two->unitId());
-			if(prepared.exchange && std::any_of(prepared.previews.begin(), prepared.previews.end(), [](const auto & preview)
-				{ return preview.reason == newHorizonsRealityWarp::StayReason::MOVED; }))
-				result.push_back(std::move(target));
-		}
-	return result;
+	}
 }
 
 // Transfigure Matter is represented as a location-targeted spell by the
@@ -134,87 +149,117 @@ bool isCanonicalHandOfFate(const Mechanics * spellMechanics)
 		&& newHorizonsMagic::spellAllowedBySavedRoster(magicRules, spellMechanics->getSpellId());
 }
 
-std::vector<Target> canonicalHandOfFateTargets(const Mechanics * spellMechanics)
+std::vector<Target> canonicalHandOfFateTargets(const Mechanics * spellMechanics, battleSearch::SearchBudget * budget = nullptr)
 {
 	std::vector<Target> result;
-	if(!isCanonicalHandOfFate(spellMechanics) || !spellMechanics->battle()
-		|| spellMechanics->getTargetTypes() != std::vector<AimType>{AimType::CREATURE})
-		return result;
-
-	const auto casterSide = spellMechanics->getCasterSide();
-	if(casterSide != BattleSide::ATTACKER && casterSide != BattleSide::DEFENDER)
-		return result;
-
-	const auto enemySide = spellMechanics->battle()->otherSide(casterSide);
-	for(const auto * unit : spellMechanics->battle()->battleGetAllUnits(false))
+	try
 	{
-		if(!unit || unit->unitSide() != enemySide || !unit->alive() || !unit->isValidTarget(false))
-			continue;
 
-		Target target{Destination(unit)};
-		detail::ProblemImpl problem;
-		if(spellMechanics->canBeCastAt(target, problem))
-			result.push_back(std::move(target));
+		if(!isCanonicalHandOfFate(spellMechanics) || !spellMechanics->battle()
+			|| spellMechanics->getTargetTypes() != std::vector<AimType>{AimType::CREATURE})
+			return result;
+
+		const auto casterSide = spellMechanics->getCasterSide();
+		if(casterSide != BattleSide::ATTACKER && casterSide != BattleSide::DEFENDER)
+			return result;
+
+		const auto enemySide = spellMechanics->battle()->otherSide(casterSide);
+		for(const auto * unit : spellMechanics->battle()->battleGetAllUnits(false))
+		{
+			battleSearch::require(budget, battleSearch::WorkKind::Generation);
+			if(!unit || unit->unitSide() != enemySide || !unit->alive() || !unit->isValidTarget(false))
+				continue;
+
+			Target target{Destination(unit)};
+			detail::ProblemImpl problem;
+			if(spellMechanics->canBeCastAt(target, problem))
+				result.push_back(std::move(target));
+		}
+		return result;
+
 	}
-	return result;
+	catch(const battleSearch::BudgetExhausted &)
+	{
+		return result;
+	}
 }
 
-std::vector<Target> canonicalHydrasVitalityTargets(const Mechanics * spellMechanics)
+std::vector<Target> canonicalHydrasVitalityTargets(const Mechanics * spellMechanics, battleSearch::SearchBudget * budget = nullptr)
 {
 	std::vector<Target> result;
-	if(!isCanonicalHydrasVitality(spellMechanics) || !spellMechanics->battle()
-		|| spellMechanics->getTargetTypes() != std::vector<AimType>{AimType::CREATURE})
-		return result;
-
-	const auto casterSide = spellMechanics->getCasterSide();
-	if(casterSide != BattleSide::ATTACKER && casterSide != BattleSide::DEFENDER)
-		return result;
-
-	for(const auto * unit : spellMechanics->battle()->battleGetAllUnits(false))
+	try
 	{
-		if(!unit || !unit->alive() || !unit->isValidTarget(false))
-			continue;
 
-		// Shared mechanics owns the living/organic target rules. Keep candidates
-		// aligned with execution instead of duplicating creature tags here.
-		Target target{Destination(unit)};
-		detail::ProblemImpl problem;
-		if(spellMechanics->canBeCastAt(target, problem))
-			result.push_back(std::move(target));
+		if(!isCanonicalHydrasVitality(spellMechanics) || !spellMechanics->battle()
+			|| spellMechanics->getTargetTypes() != std::vector<AimType>{AimType::CREATURE})
+			return result;
+
+		const auto casterSide = spellMechanics->getCasterSide();
+		if(casterSide != BattleSide::ATTACKER && casterSide != BattleSide::DEFENDER)
+			return result;
+
+		for(const auto * unit : spellMechanics->battle()->battleGetAllUnits(false))
+		{
+			battleSearch::require(budget, battleSearch::WorkKind::Generation);
+			if(!unit || !unit->alive() || !unit->isValidTarget(false))
+				continue;
+
+			// Shared mechanics owns the living/organic target rules. Keep candidates
+			// aligned with execution instead of duplicating creature tags here.
+			Target target{Destination(unit)};
+			detail::ProblemImpl problem;
+			if(spellMechanics->canBeCastAt(target, problem))
+				result.push_back(std::move(target));
+		}
+
+		return result;
+
 	}
-
-	return result;
+	catch(const battleSearch::BudgetExhausted &)
+	{
+		return result;
+	}
 }
 
-std::vector<Target> canonicalVerdantPrisonTargets(const Mechanics * spellMechanics)
+std::vector<Target> canonicalVerdantPrisonTargets(const Mechanics * spellMechanics, battleSearch::SearchBudget * budget = nullptr)
 {
 	std::vector<Target> result;
-	if(!isCanonicalVerdantPrison(spellMechanics) || !spellMechanics->battle()
-		|| spellMechanics->getTargetTypes() != std::vector<AimType>{AimType::CREATURE})
-		return result;
-
-	const auto casterSide = spellMechanics->getCasterSide();
-	if(casterSide != BattleSide::ATTACKER && casterSide != BattleSide::DEFENDER)
-		return result;
-
-	const auto enemySide = spellMechanics->battle()->otherSide(casterSide);
-	for(const auto * unit : spellMechanics->battle()->battleGetAllUnits(false))
+	try
 	{
-		if(!unit || unit->unitSide() != enemySide || !unit->alive() || !unit->isValidTarget(false))
-			continue;
 
-		// The shared spell mechanics consult Verdant Prison's canonical ring
-		// placement when answering canBeCastAt. This keeps the AI's candidate list
-		// aligned with execution and rejects targets whose ring has no legal hexes.
-		if(spellMechanics->rangeInHexes(unit->getPosition()).empty())
-			continue;
+		if(!isCanonicalVerdantPrison(spellMechanics) || !spellMechanics->battle()
+			|| spellMechanics->getTargetTypes() != std::vector<AimType>{AimType::CREATURE})
+			return result;
 
-		Target target{Destination(unit)};
-		detail::ProblemImpl problem;
-		if(spellMechanics->canBeCastAt(target, problem))
-			result.push_back(std::move(target));
+		const auto casterSide = spellMechanics->getCasterSide();
+		if(casterSide != BattleSide::ATTACKER && casterSide != BattleSide::DEFENDER)
+			return result;
+
+		const auto enemySide = spellMechanics->battle()->otherSide(casterSide);
+		for(const auto * unit : spellMechanics->battle()->battleGetAllUnits(false))
+		{
+			battleSearch::require(budget, battleSearch::WorkKind::Generation);
+			if(!unit || unit->unitSide() != enemySide || !unit->alive() || !unit->isValidTarget(false))
+				continue;
+
+			// The shared spell mechanics consult Verdant Prison's canonical ring
+			// placement when answering canBeCastAt. This keeps the AI's candidate list
+			// aligned with execution and rejects targets whose ring has no legal hexes.
+			if(spellMechanics->rangeInHexes(unit->getPosition()).empty())
+				continue;
+
+			Target target{Destination(unit)};
+			detail::ProblemImpl problem;
+			if(spellMechanics->canBeCastAt(target, problem))
+				result.push_back(std::move(target));
+		}
+		return result;
+
 	}
-	return result;
+	catch(const battleSearch::BudgetExhausted &)
+	{
+		return result;
+	}
 }
 
 bool isCanonicalLifeDrain(const Mechanics * spellMechanics)
@@ -223,45 +268,59 @@ bool isCanonicalLifeDrain(const Mechanics * spellMechanics)
 	return spell && spell->getJsonKey() == newHorizonsMagic::SHADOW_LIFE_DRAIN_SPELL;
 }
 
-std::vector<Target> canonicalLifeDrainTargets(const Mechanics * spellMechanics)
+std::vector<Target> canonicalLifeDrainTargets(const Mechanics * spellMechanics, battleSearch::SearchBudget * budget = nullptr)
 {
 	std::vector<Target> result;
-	if(!spellMechanics || !spellMechanics->battle())
-		return result;
-
-	const auto casterSide = spellMechanics->getCasterSide();
-	if(casterSide != BattleSide::ATTACKER && casterSide != BattleSide::DEFENDER)
-		return result;
-
-	std::vector<const battle::Unit *> enemies;
-	std::vector<const battle::Unit *> friendlies;
-	for(const auto * unit : spellMechanics->battle()->battleGetAllUnits(false))
+	try
 	{
-		// Life Drain requires two surviving, targetable stacks. In particular, do
-		// not offer corpses to the healing half of the pair: this spell cannot
-		// restore dead creatures.
-		if(!unit || !unit->alive() || !unit->isValidTarget(false))
-			continue;
 
-		if(unit->unitSide() == casterSide)
-			friendlies.push_back(unit);
-		else if(unit->unitSide() == spellMechanics->battle()->otherSide(casterSide))
-			enemies.push_back(unit);
-	}
+		if(!spellMechanics || !spellMechanics->battle())
+			return result;
 
-	// Target order is part of the spell contract: the hostile source is first,
-	// then the friendly recipient. Validate only complete pairs because Life
-	// Drain has no meaningful one-creature prefix target.
-	for(const auto * enemy : enemies)
-		for(const auto * friendly : friendlies)
+		const auto casterSide = spellMechanics->getCasterSide();
+		if(casterSide != BattleSide::ATTACKER && casterSide != BattleSide::DEFENDER)
+			return result;
+
+		std::vector<const battle::Unit *> enemies;
+		std::vector<const battle::Unit *> friendlies;
+		for(const auto * unit : spellMechanics->battle()->battleGetAllUnits(false))
 		{
-			Target target{Destination(enemy), Destination(friendly)};
-			detail::ProblemImpl problem;
-			if(spellMechanics->canBeCastAt(target, problem))
-				result.push_back(std::move(target));
+			battleSearch::require(budget, battleSearch::WorkKind::Generation);
+			// Life Drain requires two surviving, targetable stacks. In particular, do
+			// not offer corpses to the healing half of the pair: this spell cannot
+			// restore dead creatures.
+			if(!unit || !unit->alive() || !unit->isValidTarget(false))
+				continue;
+
+			if(unit->unitSide() == casterSide)
+				friendlies.push_back(unit);
+			else if(unit->unitSide() == spellMechanics->battle()->otherSide(casterSide))
+				enemies.push_back(unit);
 		}
 
-	return result;
+		// Target order is part of the spell contract: the hostile source is first,
+		// then the friendly recipient. Validate only complete pairs because Life
+		// Drain has no meaningful one-creature prefix target.
+		for(const auto * enemy : enemies)
+			{
+				battleSearch::require(budget, battleSearch::WorkKind::Generation);
+				for(const auto * friendly : friendlies)
+			{
+				battleSearch::require(budget, battleSearch::WorkKind::Generation);
+				Target target{Destination(enemy), Destination(friendly)};
+				detail::ProblemImpl problem;
+				if(spellMechanics->canBeCastAt(target, problem))
+					result.push_back(std::move(target));
+			}
+			}
+
+		return result;
+
+	}
+	catch(const battleSearch::BudgetExhausted &)
+	{
+		return result;
+	}
 }
 
 bool isPhysicalObstacle(const CObstacleInstance & obstacle)
@@ -306,95 +365,113 @@ bool isVengefulVines(const Mechanics * spellMechanics)
 	return spell && spell->getJsonKey() == newHorizonsVengefulVines::SPELL_KEY;
 }
 
-std::vector<Target> canonicalVengefulVinesTargets(const Mechanics * spellMechanics)
+std::vector<Target> canonicalVengefulVinesTargets(const Mechanics * spellMechanics, battleSearch::SearchBudget * budget = nullptr)
 {
 	std::vector<Target> result;
-	if(!spellMechanics || !spellMechanics->battle()
-		|| spellMechanics->getTargetTypes() != std::vector<AimType>{
-			AimType::LOCATION, AimType::LOCATION, AimType::LOCATION})
-		return result;
-
-	const auto * battle = spellMechanics->battle();
-	const auto * battleInfo = battle->getBattle();
-	if(!battleInfo || !newHorizonsVengefulVines::enabled(battleInfo->getMagicRules(), spellMechanics->getSpellId()))
-		return result;
-
-	const auto casterSide = spellMechanics->getCasterSide();
-	if(casterSide != BattleSide::ATTACKER && casterSide != BattleSide::DEFENDER)
-		return result;
-
-	const auto enemySide = battle->otherSide(casterSide);
-	std::set<BattleHex> enemyOccupiedHexes;
-	for(const auto * unit : battle->battleGetAllUnits(false))
+	try
 	{
-		if(!unit || !unit->alive() || !unit->isValidTarget(false) || unit->isInvincible()
-			|| unit->unitSide() != enemySide || !spellMechanics->isReceptive(unit))
-			continue;
 
-		for(const auto & hex : unit->getHexes())
-			enemyOccupiedHexes.insert(hex);
-	}
-	if(enemyOccupiedHexes.empty())
-		return result;
+		if(!spellMechanics || !spellMechanics->battle()
+			|| spellMechanics->getTargetTypes() != std::vector<AimType>{
+				AimType::LOCATION, AimType::LOCATION, AimType::LOCATION})
+			return result;
 
-	for(const auto & footprint : newHorizonsVengefulVines::connectedTriples())
-	{
-		const bool intersectsEnemy = std::any_of(footprint.begin(), footprint.end(), [&](const BattleHex & hex)
+		const auto * battle = spellMechanics->battle();
+		const auto * battleInfo = battle->getBattle();
+		if(!battleInfo || !newHorizonsVengefulVines::enabled(battleInfo->getMagicRules(), spellMechanics->getSpellId()))
+			return result;
+
+		const auto casterSide = spellMechanics->getCasterSide();
+		if(casterSide != BattleSide::ATTACKER && casterSide != BattleSide::DEFENDER)
+			return result;
+
+		const auto enemySide = battle->otherSide(casterSide);
+		std::set<BattleHex> enemyOccupiedHexes;
+		for(const auto * unit : battle->battleGetAllUnits(false))
 		{
-			return enemyOccupiedHexes.contains(hex);
-		});
-		if(!intersectsEnemy)
-			continue;
+			battleSearch::require(budget, battleSearch::WorkKind::Generation);
+			if(!unit || !unit->alive() || !unit->isValidTarget(false) || unit->isInvincible()
+				|| unit->unitSide() != enemySide || !spellMechanics->isReceptive(unit))
+				continue;
 
-		Target target;
-		target.reserve(footprint.size());
-		for(const auto & hex : footprint)
-			target.emplace_back(hex);
+			for(const auto & hex : unit->getHexes())
+				{
+					battleSearch::require(budget, battleSearch::WorkKind::Generation);
+					enemyOccupiedHexes.insert(hex);
+				}
+		}
+		if(enemyOccupiedHexes.empty())
+			return result;
 
-		detail::ProblemImpl problem;
-		if(spellMechanics->canBeCastAt(target, problem))
-			result.push_back(std::move(target));
+		for(const auto & footprint : newHorizonsVengefulVines::connectedTriples())
+		{
+			battleSearch::require(budget, battleSearch::WorkKind::Generation);
+			const bool intersectsEnemy = std::any_of(footprint.begin(), footprint.end(), [&](const BattleHex & hex)
+			{
+				return enemyOccupiedHexes.contains(hex);
+			});
+			if(!intersectsEnemy)
+				continue;
+
+			Target target;
+			target.reserve(footprint.size());
+			for(const auto & hex : footprint)
+				{
+					battleSearch::require(budget, battleSearch::WorkKind::Generation);
+					target.emplace_back(hex);
+				}
+
+			detail::ProblemImpl problem;
+			if(spellMechanics->canBeCastAt(target, problem))
+				result.push_back(std::move(target));
+		}
+
+		return result;
+
 	}
-
-	return result;
+	catch(const battleSearch::BudgetExhausted &)
+	{
+		return result;
+	}
 }
 
-std::vector<Target> canonicalSanctuaryTargets(const Mechanics * spellMechanics)
+std::vector<Target> canonicalSanctuaryTargets(const Mechanics * spellMechanics, battleSearch::SearchBudget * budget = nullptr)
 {
 	std::vector<Target> result;
-	if(!isCanonicalSanctuary(spellMechanics) || !spellMechanics->battle())
-		return result;
-
-	const auto * battle = spellMechanics->battle();
-	const auto * battleInfo = battle->getBattle();
-	if(!battleInfo || !newHorizonsMagic::rulesActive(battleInfo->getMagicRules()))
-		return result;
-
-	for(const auto * unit : battle->battleGetAllUnits(false))
+	try
 	{
-		if(!unit || !unit->alive() || !unit->isValidTarget(false) || unit->isGhost() || unit->isTurret()
-			|| unit->hasBonusOfType(BonusType::SANCTIFIED)
-			|| unit->unitSide() != spellMechanics->getCasterSide())
-			continue;
 
-		Target target{Destination(unit)};
-		detail::ProblemImpl problem;
-		if(spellMechanics->canBeCastAt(target, problem))
-			result.push_back(std::move(target));
+		if(!isCanonicalSanctuary(spellMechanics) || !spellMechanics->battle())
+			return result;
+
+		const auto * battle = spellMechanics->battle();
+		const auto * battleInfo = battle->getBattle();
+		if(!battleInfo || !newHorizonsMagic::rulesActive(battleInfo->getMagicRules()))
+			return result;
+
+		for(const auto * unit : battle->battleGetAllUnits(false))
+		{
+			battleSearch::require(budget, battleSearch::WorkKind::Generation);
+			if(!unit || !unit->alive() || !unit->isValidTarget(false) || unit->isGhost() || unit->isTurret()
+				|| unit->hasBonusOfType(BonusType::SANCTIFIED)
+				|| unit->unitSide() != spellMechanics->getCasterSide())
+				continue;
+
+			Target target{Destination(unit)};
+			detail::ProblemImpl problem;
+			if(spellMechanics->canBeCastAt(target, problem))
+				result.push_back(std::move(target));
+		}
+
+		return result;
+
 	}
-
-	return result;
+	catch(const battleSearch::BudgetExhausted &)
+	{
+		return result;
+	}
 }
 
-bool isCanonicalPurify(const Mechanics * spellMechanics)
-{
-	const auto * spell = spellMechanics ? spellMechanics->getSpell() : nullptr;
-	const auto * callback = spellMechanics ? spellMechanics->battle() : nullptr;
-	const auto * battle = callback ? callback->getBattle() : nullptr;
-	return spell && battle
-		&& spell->getJsonKey() == newHorizonsPurify::SPELL_ID
-		&& newHorizonsPurify::enabled(battle->getMagicRules(), spell->getId());
-}
 
 bool isCanonicalNaturePoison(const Mechanics * spellMechanics)
 {
@@ -436,7 +513,7 @@ bool isCanonicalShadowGift(const Mechanics * spellMechanics)
 	return newHorizonsMagic::shadowGiftEnabled(magicRules, spell->getId());
 }
 
-int distanceToUnit(const BattleHex & hex, const battle::Unit * unit);
+int distanceToUnit(const BattleHex & hex, const battle::Unit * unit, battleSearch::SearchBudget * budget = nullptr);
 
 float shadowGiftAttackLikelihood(const Mechanics * spellMechanics, const battle::Unit * attacker,
 	const battle::Unit * defender)
@@ -456,27 +533,6 @@ float shadowGiftAttackLikelihood(const Mechanics * spellMechanics, const battle:
 	if(distance <= movement + 3)
 		return 0.2f;
 	return 0.0f;
-}
-
-float spellApplicationChance(const Mechanics * spellMechanics, const battle::Unit * unit)
-{
-	if(!spellMechanics || !unit || !spellMechanics->isNegativeSpell() || !spellMechanics->isMagicalEffect())
-		return 1.0f;
-	if(spellMechanics->getSpellId().toSpell()->getJsonKey() == "new-horizons:forceLance") return 1.0f;
-	const int resistance = unit->magicResistance();
-	float chance = 1.0f - static_cast<float>(std::clamp(resistance, 0, 100)) / 100.0f;
-	const auto * battle = spellMechanics->battle();
-	if(!battle || !battle->getBattle() || chance <= 0.0f || chance >= 1.0f)
-		return chance;
-	const auto recipientSide = battle->playerToSide(battle->battleGetOwner(unit));
-	const auto casterSide = spellMechanics->isMagicMirror()
-		? battle->otherSide(spellMechanics->getCasterSide()) : spellMechanics->getCasterSide();
-	if((recipientSide == BattleSide::ATTACKER || recipientSide == BattleSide::DEFENDER)
-		&& (casterSide == BattleSide::ATTACKER || casterSide == BattleSide::DEFENDER)
-		&& recipientSide != casterSide
-		&& battle->getBattle()->getAdverseCombatRerollState(recipientSide).available())
-		chance *= chance;
-	return chance;
 }
 
 bool isSoulChainTargetUnit(const Mechanics * spellMechanics, const battle::Unit * unit)
@@ -509,34 +565,7 @@ bool isNaturePoisonTarget(const Mechanics * spellMechanics, const battle::Unit *
 		&& !unit->hasAbsoluteImmunity(spellMechanics->getSpellId());
 }
 
-bool canonicalLandMineHexIsEmpty(const CBattleInfoCallback & battle,
-	const AccessibilityInfo & accessibility, const BattleHex & hex)
-{
-	// Keep this predicate in lockstep with the authoritative action validator.
-	// In particular, ACCESSIBLE is intentionally stricter than merely
-	// passable: a gate, wall, side column, moat, or destructible wall is not a
-	// legal canonical mine tile.
-	if(!hex.isAvailable()
-		|| accessibility[hex.toInt()] != EAccessibility::ACCESSIBLE
-		|| battle.battleGetUnitByPos(hex, true)
-		|| !battle.battleGetAllObstaclesOnPos(hex, false).empty())
-		return false;
 
-	if(!battle.hasFortifications())
-		return true;
-
-	const auto wallPart = battle.battleHexToWallPart(hex);
-	if(wallPart == EWallPart::INVALID)
-		return true;
-	if(wallPart == EWallPart::INDESTRUCTIBLE_PART
-		|| wallPart == EWallPart::INDESTRUCTIBLE_PART_OF_GATE
-		|| wallPart == EWallPart::BOTTOM_TOWER
-		|| wallPart == EWallPart::UPPER_TOWER)
-		return false;
-
-	const auto wallState = battle.battleGetWallState(wallPart);
-	return wallState == EWallState::NONE || wallState == EWallState::DESTROYED;
-}
 
 struct LandMineHexScore
 {
@@ -582,36 +611,45 @@ bool isLandMineAffectable(const Mechanics * spellMechanics, const battle::Unit *
 	return resistance < 100 && landMineDamagePotential(spellMechanics, enemy) > 0;
 }
 
-std::vector<const battle::Unit *> landMineEnemies(const Mechanics * spellMechanics, bool includeFlyers = false)
+std::vector<const battle::Unit *> landMineEnemies(const Mechanics * spellMechanics, bool includeFlyers = false, battleSearch::SearchBudget * budget = nullptr)
 {
 	std::vector<const battle::Unit *> result;
 	for(const auto * unit : spellMechanics->battle()->battleGetAllUnits(false))
-		if(isLandMineAffectable(spellMechanics, unit, includeFlyers))
+		{
+			battleSearch::require(budget, battleSearch::WorkKind::Generation);
+			if(isLandMineAffectable(spellMechanics, unit, includeFlyers))
 			result.push_back(unit);
+		}
 	return result;
 }
 
-std::vector<const battle::Unit *> landMineAllies(const Mechanics * spellMechanics, bool includeFlyers = false)
+std::vector<const battle::Unit *> landMineAllies(const Mechanics * spellMechanics, bool includeFlyers = false, battleSearch::SearchBudget * budget = nullptr)
 {
 	std::vector<const battle::Unit *> result;
 	for(const auto * unit : spellMechanics->battle()->battleGetAllUnits(false))
-		if(isGroundAlly(spellMechanics, unit, includeFlyers))
+		{
+			battleSearch::require(budget, battleSearch::WorkKind::Generation);
+			if(isGroundAlly(spellMechanics, unit, includeFlyers))
 			result.push_back(unit);
+		}
 	return result;
 }
 
-int distanceToUnit(const BattleHex & hex, const battle::Unit * unit)
+int distanceToUnit(const BattleHex & hex, const battle::Unit * unit, battleSearch::SearchBudget * budget)
 {
 	int result = std::numeric_limits<int>::max();
 	for(const auto & occupied : unit->getHexes())
-		if(occupied.isValid())
+		{
+			battleSearch::require(budget, battleSearch::WorkKind::Generation);
+			if(occupied.isValid())
 			result = std::min(result, static_cast<int>(BattleHex::getDistance(hex, occupied)));
+		}
 	return result;
 }
 
 int64_t projectedSoulChainTriggerDamage(const Mechanics * spellMechanics,
 	const battle::Unit * secondary, DamageCache & damageCache,
-	const std::shared_ptr<CBattleInfoCallback> & battleState)
+	const std::shared_ptr<CBattleInfoCallback> & battleState, battleSearch::SearchBudget * budget = nullptr)
 {
 	if(!spellMechanics || !secondary || !secondary->alive() || !secondary->isValidTarget(false))
 		return 0;
@@ -624,6 +662,7 @@ int64_t projectedSoulChainTriggerDamage(const Mechanics * spellMechanics,
 	double expectedDamage = 0.0;
 	for(const auto * attacker : battle->battleGetAllUnits(false))
 	{
+		battleSearch::require(budget, battleSearch::WorkKind::Generation);
 		if(!attacker || attacker->unitSide() != casterSide || !attacker->alive()
 			|| !attacker->isValidTarget(false) || attacker->isGhost() || attacker->isTurret()
 			|| (!attacker->willMove() && !attacker->willMove(1)))
@@ -640,7 +679,7 @@ int64_t projectedSoulChainTriggerDamage(const Mechanics * spellMechanics,
 			attackLikelihood = 0.75f;
 		else
 		{
-			const int distance = distanceToUnit(secondary->getPosition(), attacker);
+			const int distance = distanceToUnit(secondary->getPosition(), attacker, budget);
 			const int movement = std::max(0, static_cast<int>(attacker->getMovementRange(0)));
 			if(distance <= 1)
 				attackLikelihood = 0.90f;
@@ -651,15 +690,18 @@ int64_t projectedSoulChainTriggerDamage(const Mechanics * spellMechanics,
 		}
 		const auto damagePerActivation = static_cast<double>(damage) * attackCount;
 		for(const int turn : {0, 1})
-			if(attacker->willMove(turn))
+			{
+				battleSearch::require(budget, battleSearch::WorkKind::Generation);
+				if(attacker->willMove(turn))
 				expectedDamage += damagePerActivation * attackLikelihood;
+			}
 	}
 
 	// A stack may be attacked several times, but expected incoming damage cannot
 	// exceed its remaining health over Soul Chain's two-round window.
 	expectedDamage = std::min(expectedDamage,
 		static_cast<double>(std::max<int64_t>(0, secondary->getAvailableHealth())));
-	const auto applicationChance = spellApplicationChance(spellMechanics, secondary);
+	const auto applicationChance = SpellTargetEvaluator::applicationChance(spellMechanics, secondary);
 	const auto resistedExpectedDamage = expectedDamage * applicationChance;
 	return static_cast<int64_t>(std::llround(resistedExpectedDamage));
 }
@@ -683,7 +725,7 @@ float expectedSoulChainEchoValue(const Mechanics * spellMechanics,
 		*battle, spellMechanics->getCasterSide(), projectedPrimary.get(),
 		expectedSecondaryDamage, echoBasisPoints, &capturedPenetration,
 		spellMechanics->getHeroLuckDamageMultiplierPercent());
-	const auto primaryApplicationChance = spellApplicationChance(spellMechanics, primary);
+	const auto primaryApplicationChance = SpellTargetEvaluator::applicationChance(spellMechanics, primary);
 	const auto expectedEcho = static_cast<int64_t>(std::llround(
 		static_cast<double>(adjustedEcho) * primaryApplicationChance));
 	const auto actualEcho = std::min<int64_t>(
@@ -725,7 +767,7 @@ float fireWallTriggerLikelihood(const spells::Target & target, const battle::Uni
 
 LandMineHexScore scoreLandMineHex(const Mechanics * spellMechanics, const BattleHex & hex,
 	const std::vector<const battle::Unit *> & enemies,
-	const std::vector<const battle::Unit *> & allies)
+	const std::vector<const battle::Unit *> & allies, battleSearch::SearchBudget * budget = nullptr)
 {
 	LandMineHexScore result;
 	result.hex = hex;
@@ -736,7 +778,8 @@ LandMineHexScore scoreLandMineHex(const Mechanics * spellMechanics, const Battle
 	// favouring reachable-looking ground paths toward our army.
 	for(const auto * enemy : enemies)
 	{
-		const int enemyDistance = distanceToUnit(hex, enemy);
+		battleSearch::require(budget, battleSearch::WorkKind::Generation);
+		const int enemyDistance = distanceToUnit(hex, enemy, budget);
 		if(enemyDistance == std::numeric_limits<int>::max())
 			continue;
 		// Placement must follow the value of the delayed damage, rather than the
@@ -766,14 +809,20 @@ LandMineHexScore scoreLandMineHex(const Mechanics * spellMechanics, const Battle
 		// but avoids putting every mine in an irrelevant corner of the field.
 		int closestAllyDistance = std::numeric_limits<int>::max();
 		for(const auto * ally : allies)
-			closestAllyDistance = std::min(closestAllyDistance, distanceToUnit(enemy->getPosition(), ally));
+			{
+				battleSearch::require(budget, battleSearch::WorkKind::Generation);
+				closestAllyDistance = std::min(closestAllyDistance, distanceToUnit(enemy->getPosition(), ally, budget));
+			}
 		if(closestAllyDistance != std::numeric_limits<int>::max())
 		{
 			const int candidateToAlly = [&]()
 			{
 				int distance = std::numeric_limits<int>::max();
 				for(const auto * ally : allies)
-					distance = std::min(distance, distanceToUnit(hex, ally));
+					{
+						battleSearch::require(budget, battleSearch::WorkKind::Generation);
+						distance = std::min(distance, distanceToUnit(hex, ally, budget));
+					}
 				return distance;
 			}();
 			if(candidateToAlly < closestAllyDistance)
@@ -835,535 +884,641 @@ double maximumWeightLandMineAssignment(const std::vector<std::vector<double>> & 
 	return *std::max_element(best.begin(), best.end());
 }
 
-std::vector<LandMineHexScore> legalLandMineHexes(const Mechanics * spellMechanics)
+std::vector<LandMineHexScore> legalLandMineHexes(const Mechanics * spellMechanics, battleSearch::SearchBudget * budget = nullptr)
 {
 	std::vector<LandMineHexScore> result;
 	const auto * battle = spellMechanics->battle();
 	const auto accessibility = battle->getAccessibility();
-	const auto enemies = landMineEnemies(spellMechanics);
-	const auto allies = landMineAllies(spellMechanics);
+	const auto enemies = landMineEnemies(spellMechanics, false, budget);
+	const auto allies = landMineAllies(spellMechanics, false, budget);
 	for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
 	{
+		battleSearch::require(budget, battleSearch::WorkKind::Generation);
 		const BattleHex hex(index);
-		if(!canonicalLandMineHexIsEmpty(*battle, accessibility, hex))
+		if(!spellTargetBudgetFallback::mineHexIsEmpty(*battle, accessibility, hex))
 			continue;
-		result.push_back(scoreLandMineHex(spellMechanics, hex, enemies, allies));
+		result.push_back(scoreLandMineHex(spellMechanics, hex, enemies, allies, budget));
 	}
 	return result;
 }
 
-bool targetUsesDistinctLegalLandMineHexes(const Mechanics * spellMechanics, const Target & target)
+bool targetUsesDistinctLegalLandMineHexes(const Mechanics * spellMechanics, const Target & target, battleSearch::SearchBudget * budget = nullptr)
 {
 	const auto * battle = spellMechanics->battle();
 	const auto accessibility = battle->getAccessibility();
 	std::set<int> seen;
 	for(const auto & destination : target)
 	{
+		battleSearch::require(budget, battleSearch::WorkKind::Generation);
 		if(destination.unitValue != nullptr
 			|| !destination.hexValue.isValid()
 			|| !seen.insert(destination.hexValue.toInt()).second
-			|| !canonicalLandMineHexIsEmpty(*battle, accessibility, destination.hexValue))
+			|| !spellTargetBudgetFallback::mineHexIsEmpty(*battle, accessibility, destination.hexValue))
 			return false;
 	}
 	return true;
 }
 
-std::vector<Target> physicalObstacleTargets(const Mechanics * spellMechanics)
+std::vector<Target> physicalObstacleTargets(const Mechanics * spellMechanics, battleSearch::SearchBudget * budget = nullptr)
 {
 	std::vector<Target> result;
-	std::set<BattleHex> seen;
-
-	for(const auto & obstacle : spellMechanics->battle()->battleGetAllObstacles())
+	try
 	{
-		if(!obstacle || !isPhysicalObstacle(*obstacle))
-			continue;
 
-		// Use an affected tile so the aim is a real battlefield hex and the
-		// authoritative validator can resolve the object by position.
-		const auto affectedTiles = obstacle->getAffectedTiles();
-		if(affectedTiles.empty())
-			continue;
+		std::set<BattleHex> seen;
 
-		const auto aimHex = affectedTiles.front();
-		if(!aimHex.isValid() || !seen.insert(aimHex).second)
-			continue;
+		for(const auto & obstacle : spellMechanics->battle()->battleGetAllObstacles())
+		{
+			battleSearch::require(budget, battleSearch::WorkKind::Generation);
+			if(!obstacle || !isPhysicalObstacle(*obstacle))
+				continue;
 
-		Target target{Destination(aimHex)};
-		detail::ProblemImpl problem;
-		if(spellMechanics->canBeCastAt(target, problem))
-			result.push_back(std::move(target));
+			// Use an affected tile so the aim is a real battlefield hex and the
+			// authoritative validator can resolve the object by position.
+			const auto affectedTiles = obstacle->getAffectedTiles();
+			if(affectedTiles.empty())
+				continue;
+
+			const auto aimHex = affectedTiles.front();
+			if(!aimHex.isValid() || !seen.insert(aimHex).second)
+				continue;
+
+			Target target{Destination(aimHex)};
+			detail::ProblemImpl problem;
+			if(spellMechanics->canBeCastAt(target, problem))
+				result.push_back(std::move(target));
+		}
+
+		return result;
+
 	}
-
-	return result;
+	catch(const battleSearch::BudgetExhausted &)
+	{
+		return result;
+	}
 }
 
-std::vector<Target> stormOfDaggersTargets(Mechanics * spellMechanics)
+
+namespace
 {
+// Protected finalization work publishes only complete native-valid selections.
+// It supplies an incumbent when scoring/ranking reaches its exploration ceiling.
+
+
+
+}
+std::vector<Target> stormOfDaggersTargets(Mechanics * spellMechanics, battleSearch::SearchBudget * budget = nullptr)
+{
+	std::optional<battleSearch::SearchBudget> completion;
+	if(budget)
+	{
+		battleSearch::WorkAmounts amount{};
+		amount[0] = std::min<uint32_t>(64, budget->available()[0] / 2);
+		completion = budget->reserve(amount);
+		if(!completion) return {};
+	}
+
 	std::vector<Target> result;
-	if(!spellMechanics || !spellMechanics->battle())
-		return result;
-
-	constexpr size_t maxTargets = 5;
-	std::vector<const battle::Unit *> enemies;
-	std::set<uint32_t> seenUnitIds;
-	for(const auto * unit : spellMechanics->battle()->battleGetAllUnits(false))
+	try
 	{
-		if(!unit || !unit->alive() || !unit->isValidTarget(false)
-			|| spellMechanics->battle()->battleGetOwner(unit) == spellMechanics->getCasterColor()
-			|| !seenUnitIds.insert(unit->unitId()).second)
-			continue;
-		enemies.push_back(unit);
-	}
-	std::sort(enemies.begin(), enemies.end(), [](const battle::Unit * lhs, const battle::Unit * rhs)
-	{
-		return lhs->unitId() < rhs->unitId();
-	});
 
-	// Keep one best direct-damage subset for each target count. The shared
-	// mechanics supplies the ranked, target-adjusted damage for that count, and
-	// BattleAI's ordinary damage-reduction score ranks the independent targets.
-	// This is exact for the separable expected direct-health score at a fixed N:
-	// selecting the N highest individual values maximizes their sum. The full
-	// hypothetical pass compares at most five casts instead of projecting every
-	// combination (C(21, 1..5) = 27,895 at a full enemy stack count). Final AI
-	// valuation remains approximate for cross-target effects: castEval projects
-	// all targets as hits while MR discounts direct hostile-health score, omits
-	// reflection branches, and different kills can change the active stack's
-	// follow-up action. Record MR/reflection projection and kill/follow-up search
-	// as Phase 2 interactions.
-	const auto * battle = spellMechanics->battle();
-	auto battleState = std::shared_ptr<CBattleInfoCallback>(
-		const_cast<CBattleInfoCallback *>(battle), [](CBattleInfoCallback *) {});
-	DamageCache damageCache;
-	struct Candidate
-	{
-		const battle::Unit * unit;
-		float value;
-	};
-	for(size_t targetCount = 1; targetCount <= std::min(maxTargets, enemies.size()); ++targetCount)
-	{
-		if(!spellMechanics->setStormOfDaggersTargetCount(static_cast<int32_t>(targetCount)))
-			continue;
-
-		std::vector<Candidate> rankedEnemies;
-		rankedEnemies.reserve(enemies.size());
-		for(const auto * enemy : enemies)
-		{
-			// Filter individually before ranking: an illegal high-value target must
-			// not occupy a slot in the best-N set and hide legal alternatives.
-			Target singleton{Destination(enemy)};
-			detail::ProblemImpl singletonProblem;
-			if(!spellMechanics->canBeCastAt(singleton, singletonProblem))
-				continue;
-
-			const auto adjustedDamage = std::max<int64_t>(0, spellMechanics->adjustEffectValue(enemy));
-			const auto cappedDamage = std::min<uint64_t>(static_cast<uint64_t>(adjustedDamage),
-				static_cast<uint64_t>(std::max<int64_t>(0, enemy->getAvailableHealth())));
-			const auto damageValue = AttackPossibility::calculateDamageReduce(
-				nullptr, enemy, cappedDamage, damageCache, battleState);
-			const float expectedHitChance = spellApplicationChance(spellMechanics, enemy);
-			rankedEnemies.push_back({enemy, damageValue * expectedHitChance});
-		}
-		if(rankedEnemies.size() < targetCount)
-			continue;
-		std::sort(rankedEnemies.begin(), rankedEnemies.end(), [](const Candidate & lhs, const Candidate & rhs)
-		{
-			if(lhs.value != rhs.value)
-				return lhs.value > rhs.value;
-			return lhs.unit->unitId() < rhs.unit->unitId();
-		});
-
-		Target selected;
-		selected.reserve(targetCount);
-		for(size_t index = 0; index < targetCount; ++index)
-			selected.emplace_back(rankedEnemies[index].unit);
-
-		detail::ProblemImpl problem;
-		if(spellMechanics->canBeCastAt(selected, problem))
-			result.push_back(std::move(selected));
-	}
-	return result;
-}
-
-std::vector<Target> enumerateSoulChainTargets(Mechanics * spellMechanics)
-{
-	std::vector<Target> result;
-	if(!isCanonicalSoulChain(spellMechanics) || !spellMechanics->battle())
-		return result;
-
-	const auto casterSide = spellMechanics->getCasterSide();
-	const auto * battle = spellMechanics->battle();
-	std::vector<const battle::Unit *> enemies;
-	for(const auto * unit : battle->battleGetAllUnits(false))
-	{
-		if(!isSoulChainTargetUnit(spellMechanics, unit))
-			continue;
-		enemies.push_back(unit);
-	}
-	std::sort(enemies.begin(), enemies.end(), [](const battle::Unit * lhs, const battle::Unit * rhs)
-	{
-		return lhs->unitId() < rhs->unitId();
-	});
-	if(enemies.empty())
-		return result;
-
-	auto battleState = std::shared_ptr<CBattleInfoCallback>(
-		const_cast<CBattleInfoCallback *>(battle), [](CBattleInfoCallback *) {});
-	DamageCache damageCache;
-	std::map<uint32_t, int64_t> expectedTriggerDamage;
-	for(const auto * enemy : enemies)
-		expectedTriggerDamage.emplace(enemy->unitId(), projectedSoulChainTriggerDamage(
-			spellMechanics, enemy, damageCache, battleState));
-
-	const auto completeTargetIsLegal = [&](const Target & target)
-	{
-		if(!newHorizonsSoulChain::validEnemyTargetSet(*battle, casterSide, target))
-			return false;
-		detail::ProblemImpl problem;
-		return spellMechanics->canBeCastAt(target, problem);
-	};
-
-	struct SecondaryCandidate
-	{
-		const battle::Unit * unit = nullptr;
-		float value = 0.0f;
-	};
-	constexpr size_t MAX_SECONDARY_CANDIDATES_PER_PRIMARY = 6;
-
-	for(const auto * primary : enemies)
-	{
-		const auto echoBasisPoints = spellMechanics->getRecipientSoulChainEchoBasisPoints(primary);
-		Target primaryOnly{Destination(primary)};
-		if(!completeTargetIsLegal(primaryOnly))
-			continue;
-
-		// Runtime permits one primary with no secondary; it is intentionally a
-		// zero-value option, but keeping it here reflects the canonical 1–3 shape.
-		result.push_back(primaryOnly);
-
-		std::vector<SecondaryCandidate> rankedSecondaries;
-		for(const auto * secondary : enemies)
-		{
-			if(secondary->unitId() == primary->unitId())
-				continue;
-			const auto triggerDamage = expectedTriggerDamage.at(secondary->unitId());
-			if(triggerDamage <= 0)
-				continue;
-
-			const float value = expectedSoulChainEchoValue(spellMechanics, primary, secondary,
-				triggerDamage, echoBasisPoints, damageCache, battleState);
-			if(value > 0.0f)
-				rankedSecondaries.push_back({secondary, value});
-		}
-		std::sort(rankedSecondaries.begin(), rankedSecondaries.end(), [](const auto & lhs, const auto & rhs)
-		{
-			if(lhs.value != rhs.value)
-				return lhs.value > rhs.value;
-			return lhs.unit->unitId() < rhs.unit->unitId();
-		});
-
-		// Retain only the best legal one-secondary set for each primary. This
-		// keeps BattleEvaluator from projecting every ordered pair.
-		for(const auto & candidate : rankedSecondaries)
-		{
-			Target selected{Destination(primary), Destination(candidate.unit)};
-			if(completeTargetIsLegal(selected))
-			{
-				result.push_back(std::move(selected));
-				break;
-			}
-		}
-
-		// The two-secondary value is separable before the primary's health cap,
-		// so the strongest individual echo contributions supply the best pair.
-		// Search a small fallback prefix in case spell-specific validation rejects
-		// the first combination; candidate count remains bounded by 3*N.
-		const auto fallbackCount = std::min(MAX_SECONDARY_CANDIDATES_PER_PRIMARY,
-			rankedSecondaries.size());
-		float bestPairValue = 0.0f;
-		Target bestPair;
-		for(size_t first = 0; first < fallbackCount; ++first)
-			for(size_t second = first + 1; second < fallbackCount; ++second)
-			{
-				Target selected{Destination(primary), Destination(rankedSecondaries[first].unit),
-					Destination(rankedSecondaries[second].unit)};
-				const float value = rankedSecondaries[first].value + rankedSecondaries[second].value;
-				if(value <= bestPairValue || !completeTargetIsLegal(selected))
-					continue;
-				bestPairValue = value;
-				bestPair = std::move(selected);
-			}
-		if(!bestPair.empty())
-			result.push_back(std::move(bestPair));
-	}
-
-	return result;
-}
-}
-
-std::vector<Target> SpellTargetEvaluator::canonicalSoulChainTargets(Mechanics * spellMechanics)
-{
-	return enumerateSoulChainTargets(spellMechanics);
-}
-
-std::vector<Target> SpellTargetEvaluator::getViableTargets(Mechanics * spellMechanics)
-{
-	if(spellMechanics && spellMechanics->getSpell()
-		&& spellMechanics->getSpell()->getJsonKey() == newHorizonsRealityWarp::SPELL_KEY)
-		return realityWarpTargets(spellMechanics);
-	if(spellMechanics && spellMechanics->getSpell()
-		&& spellMechanics->getSpell()->getJsonKey() == newHorizonsPandemonium::SPELL_KEY)
-	{
-		if(!newHorizonsPandemonium::enabled(*spellMechanics))
-			return {};
-		detail::ProblemImpl problem;
-		const Target target;
-		return spellMechanics->canBeCastAt(target, problem)
-			? std::vector<Target>{target} : std::vector<Target>{};
-	}
-	if(spellMechanics && spellMechanics->getSpell()
-		&& spellMechanics->getSpell()->getJsonKey() == newHorizonsNaturesWrath::SPELL_KEY)
-	{
-		std::vector<Target> result;
-		if(!newHorizonsNaturesWrath::enabled(*spellMechanics))
+		if(!spellMechanics || !spellMechanics->battle())
 			return result;
-		// A healthy or immune first conductor can still produce valuable later
-		// recipients. Only the shared cast legality may exclude a starting stack.
+
+		constexpr size_t maxTargets = 5;
+		std::vector<const battle::Unit *> enemies;
+		std::set<uint32_t> seenUnitIds;
 		for(const auto * unit : spellMechanics->battle()->battleGetAllUnits(false))
 		{
-			if(!newHorizonsNaturesWrath::validConductor(unit))
+			battleSearch::require(budget, battleSearch::WorkKind::Generation);
+			if(!unit || !unit->alive() || !unit->isValidTarget(false)
+				|| spellMechanics->battle()->battleGetOwner(unit) == spellMechanics->getCasterColor()
+				|| !seenUnitIds.insert(unit->unitId()).second)
 				continue;
-			Target target{Destination(unit)};
+			enemies.push_back(unit);
+		}
+		std::sort(enemies.begin(), enemies.end(), [](const battle::Unit * lhs, const battle::Unit * rhs)
+		{
+			return lhs->unitId() < rhs->unitId();
+		});
+
+		// Keep one best direct-damage subset for each target count. The shared
+		// mechanics supplies the ranked, target-adjusted damage for that count, and
+		// BattleAI's ordinary damage-reduction score ranks the independent targets.
+		// This is exact for the separable expected direct-health score at a fixed N:
+		// selecting the N highest individual values maximizes their sum. The full
+		// hypothetical pass compares at most five casts instead of projecting every
+		// combination (C(21, 1..5) = 27,895 at a full enemy stack count). Final AI
+		// valuation remains approximate for cross-target effects: castEval projects
+		// all targets as hits while MR discounts direct hostile-health score, omits
+		// reflection branches, and different kills can change the active stack's
+		// follow-up action. Record MR/reflection projection and kill/follow-up search
+		// as Phase 2 interactions.
+		const auto * battle = spellMechanics->battle();
+		auto battleState = std::shared_ptr<CBattleInfoCallback>(
+			const_cast<CBattleInfoCallback *>(battle), [](CBattleInfoCallback *) {});
+		DamageCache damageCache;
+		struct Candidate
+		{
+			const battle::Unit * unit;
+			float value;
+		};
+		for(size_t targetCount = 1; targetCount <= std::min(maxTargets, enemies.size()); ++targetCount)
+		{
+			battleSearch::require(budget, battleSearch::WorkKind::Generation);
+			if(!spellMechanics->setStormOfDaggersTargetCount(static_cast<int32_t>(targetCount)))
+				continue;
+
+			std::vector<Candidate> rankedEnemies;
+			rankedEnemies.reserve(enemies.size());
+			for(const auto * enemy : enemies)
+			{
+				battleSearch::require(budget, battleSearch::WorkKind::Generation);
+				// Filter individually before ranking: an illegal high-value target must
+				// not occupy a slot in the best-N set and hide legal alternatives.
+				Target singleton{Destination(enemy)};
+				detail::ProblemImpl singletonProblem;
+				if(!spellMechanics->canBeCastAt(singleton, singletonProblem))
+					continue;
+
+				const auto adjustedDamage = std::max<int64_t>(0, spellMechanics->adjustEffectValue(enemy));
+				const auto cappedDamage = std::min<uint64_t>(static_cast<uint64_t>(adjustedDamage),
+					static_cast<uint64_t>(std::max<int64_t>(0, enemy->getAvailableHealth())));
+				const auto damageValue = AttackPossibility::calculateDamageReduce(
+					nullptr, enemy, cappedDamage, damageCache, battleState);
+				const float expectedHitChance = SpellTargetEvaluator::applicationChance(spellMechanics, enemy);
+				rankedEnemies.push_back({enemy, damageValue * expectedHitChance});
+			}
+			if(rankedEnemies.size() < targetCount)
+				continue;
+			std::sort(rankedEnemies.begin(), rankedEnemies.end(), [](const Candidate & lhs, const Candidate & rhs)
+			{
+				if(lhs.value != rhs.value)
+					return lhs.value > rhs.value;
+				return lhs.unit->unitId() < rhs.unit->unitId();
+			});
+
+			Target selected;
+			selected.reserve(targetCount);
+			for(size_t index = 0; index < targetCount; ++index)
+				{
+					battleSearch::require(budget, battleSearch::WorkKind::Generation);
+					selected.emplace_back(rankedEnemies[index].unit);
+				}
+
+			detail::ProblemImpl problem;
+			if(spellMechanics->canBeCastAt(selected, problem))
+				result.push_back(std::move(selected));
+		}
+		return result;
+
+	}
+	catch(const battleSearch::BudgetExhausted &)
+	{
+		if(result.empty()) return spellTargetBudgetFallback::firstUnitAim(spellMechanics, true, completion ? &*completion : nullptr);
+		return result;
+	}
+}
+
+std::vector<Target> enumerateSoulChainTargets(Mechanics * spellMechanics, battleSearch::SearchBudget * budget = nullptr)
+{
+	std::optional<battleSearch::SearchBudget> completion;
+	if(budget)
+	{
+		battleSearch::WorkAmounts amount{};
+		amount[0] = std::min<uint32_t>(64, budget->available()[0] / 2);
+		completion = budget->reserve(amount);
+		if(!completion) return {};
+	}
+
+	std::vector<Target> result;
+	try
+	{
+
+		if(!isCanonicalSoulChain(spellMechanics) || !spellMechanics->battle())
+			return result;
+
+		const auto casterSide = spellMechanics->getCasterSide();
+		const auto * battle = spellMechanics->battle();
+		std::vector<const battle::Unit *> enemies;
+		for(const auto * unit : battle->battleGetAllUnits(false))
+		{
+			battleSearch::require(budget, battleSearch::WorkKind::Generation);
+			if(!isSoulChainTargetUnit(spellMechanics, unit))
+				continue;
+			enemies.push_back(unit);
+		}
+		std::sort(enemies.begin(), enemies.end(), [](const battle::Unit * lhs, const battle::Unit * rhs)
+		{
+			return lhs->unitId() < rhs->unitId();
+		});
+		if(enemies.empty())
+			return result;
+
+		auto battleState = std::shared_ptr<CBattleInfoCallback>(
+			const_cast<CBattleInfoCallback *>(battle), [](CBattleInfoCallback *) {});
+		DamageCache damageCache;
+		std::map<uint32_t, int64_t> expectedTriggerDamage;
+		for(const auto * enemy : enemies)
+			{
+				battleSearch::require(budget, battleSearch::WorkKind::Generation);
+				expectedTriggerDamage.emplace(enemy->unitId(), projectedSoulChainTriggerDamage(
+				spellMechanics, enemy, damageCache, battleState, budget));
+			}
+
+		const auto completeTargetIsLegal = [&](const Target & target)
+		{
+			if(!newHorizonsSoulChain::validEnemyTargetSet(*battle, casterSide, target))
+				return false;
+			detail::ProblemImpl problem;
+			return spellMechanics->canBeCastAt(target, problem);
+		};
+
+		struct SecondaryCandidate
+		{
+			const battle::Unit * unit = nullptr;
+			float value = 0.0f;
+		};
+		constexpr size_t MAX_SECONDARY_CANDIDATES_PER_PRIMARY = 6;
+
+		for(const auto * primary : enemies)
+		{
+			battleSearch::require(budget, battleSearch::WorkKind::Generation);
+			const auto echoBasisPoints = spellMechanics->getRecipientSoulChainEchoBasisPoints(primary);
+			Target primaryOnly{Destination(primary)};
+			if(!completeTargetIsLegal(primaryOnly))
+				continue;
+
+			// Runtime permits one primary with no secondary; it is intentionally a
+			// zero-value option, but keeping it here reflects the canonical 1–3 shape.
+			result.push_back(primaryOnly);
+
+			std::vector<SecondaryCandidate> rankedSecondaries;
+			for(const auto * secondary : enemies)
+			{
+				battleSearch::require(budget, battleSearch::WorkKind::Generation);
+				if(secondary->unitId() == primary->unitId())
+					continue;
+				const auto triggerDamage = expectedTriggerDamage.at(secondary->unitId());
+				if(triggerDamage <= 0)
+					continue;
+
+				const float value = expectedSoulChainEchoValue(spellMechanics, primary, secondary,
+					triggerDamage, echoBasisPoints, damageCache, battleState);
+				if(value > 0.0f)
+					rankedSecondaries.push_back({secondary, value});
+			}
+			std::sort(rankedSecondaries.begin(), rankedSecondaries.end(), [](const auto & lhs, const auto & rhs)
+			{
+				if(lhs.value != rhs.value)
+					return lhs.value > rhs.value;
+				return lhs.unit->unitId() < rhs.unit->unitId();
+			});
+
+			// Retain only the best legal one-secondary set for each primary. This
+			// keeps BattleEvaluator from projecting every ordered pair.
+			for(const auto & candidate : rankedSecondaries)
+			{
+				battleSearch::require(budget, battleSearch::WorkKind::Generation);
+				Target selected{Destination(primary), Destination(candidate.unit)};
+				if(completeTargetIsLegal(selected))
+				{
+					result.push_back(std::move(selected));
+					break;
+				}
+			}
+
+			// The two-secondary value is separable before the primary's health cap,
+			// so the strongest individual echo contributions supply the best pair.
+			// Search a small fallback prefix in case spell-specific validation rejects
+			// the first combination; candidate count remains bounded by 3*N.
+			const auto fallbackCount = std::min(MAX_SECONDARY_CANDIDATES_PER_PRIMARY,
+				rankedSecondaries.size());
+			float bestPairValue = 0.0f;
+			Target bestPair;
+			for(size_t first = 0; first < fallbackCount; ++first)
+				{
+					battleSearch::require(budget, battleSearch::WorkKind::Generation);
+					for(size_t second = first + 1; second < fallbackCount; ++second)
+				{
+					battleSearch::require(budget, battleSearch::WorkKind::Generation);
+					Target selected{Destination(primary), Destination(rankedSecondaries[first].unit),
+						Destination(rankedSecondaries[second].unit)};
+					const float value = rankedSecondaries[first].value + rankedSecondaries[second].value;
+					if(value <= bestPairValue || !completeTargetIsLegal(selected))
+						continue;
+					bestPairValue = value;
+					bestPair = std::move(selected);
+				}
+				}
+			if(!bestPair.empty())
+				result.push_back(std::move(bestPair));
+		}
+
+		return result;
+
+	}
+	catch(const battleSearch::BudgetExhausted &)
+	{
+		if(result.empty()) return spellTargetBudgetFallback::firstUnitAim(spellMechanics, false, completion ? &*completion : nullptr);
+		return result;
+	}
+}
+}
+
+std::vector<Target> SpellTargetEvaluator::canonicalSoulChainTargets(Mechanics * spellMechanics, battleSearch::SearchBudget * budget)
+{
+	try
+	{
+		return enumerateSoulChainTargets(spellMechanics, budget);
+
+	}
+	catch(const battleSearch::BudgetExhausted &)
+	{
+		return {};
+	}
+}
+
+std::vector<Target> SpellTargetEvaluator::getViableTargets(Mechanics * spellMechanics, battleSearch::SearchBudget * budget)
+{
+	std::vector<Target> result;
+	try
+	{
+		if(spellMechanics && spellMechanics->getSpell()
+			&& spellMechanics->getSpell()->getJsonKey() == newHorizonsRealityWarp::SPELL_KEY)
+			return realityWarpTargets(spellMechanics, budget);
+		if(spellMechanics && spellMechanics->getSpell()
+			&& spellMechanics->getSpell()->getJsonKey() == newHorizonsPandemonium::SPELL_KEY)
+		{
+			if(!newHorizonsPandemonium::enabled(*spellMechanics))
+				return {};
+			detail::ProblemImpl problem;
+			const Target target;
+			return spellMechanics->canBeCastAt(target, problem)
+				? std::vector<Target>{target} : std::vector<Target>{};
+		}
+		if(spellMechanics && spellMechanics->getSpell()
+			&& spellMechanics->getSpell()->getJsonKey() == newHorizonsNaturesWrath::SPELL_KEY)
+		{
+			if(!newHorizonsNaturesWrath::enabled(*spellMechanics))
+				return result;
+			// A healthy or immune first conductor can still produce valuable later
+			// recipients. Only the shared cast legality may exclude a starting stack.
+			for(const auto * unit : spellMechanics->battle()->battleGetAllUnits(false))
+			{
+				battleSearch::require(budget, battleSearch::WorkKind::Generation);
+				if(!newHorizonsNaturesWrath::validConductor(unit))
+					continue;
+				Target target{Destination(unit)};
+				detail::ProblemImpl problem;
+				if(spellMechanics->canBeCastAt(target, problem))
+					result.push_back(std::move(target));
+			}
+			return result;
+		}
+		// Installed spell content must not broaden a pre-v3 saved battle's target
+		// roster. For active v3 casts, let the authoritative heal effect decide which
+		// friendly stacks have usable remains, wounds, and an accessible corpse hex.
+		if(spellMechanics)
+		{
+			const auto * spell = spellMechanics->getSpell();
+			const auto * callback = spellMechanics->battle();
+			const auto * battle = callback ? callback->getBattle() : nullptr;
+			if(spell && spell->getJsonKey() == newHorizonsMagic::SHADOW_REANIMATE_SPELL
+				&& (!battle || !newHorizonsMagic::reanimateEnabled(battle->getMagicRules(), spell->getId())))
+				return {};
+			if(spell && spell->getJsonKey() == newHorizonsMagic::SHADOW_SOUL_REAPER_SPELL
+				&& (!battle || !newHorizonsMagic::soulReaperEnabled(battle->getMagicRules(), spell->getId())))
+				return {};
+		}
+
+		// Handle this identity before the saved-profile helpers below query the
+		// numeric spell ID. The canonical New Horizons spell has a content key of
+		// its own and needs no legacy/core-ID translation for target enumeration.
+		if(isCanonicalLifeDrain(spellMechanics))
+		{
+			if(spellMechanics->getTargetTypes() != std::vector<AimType>{AimType::CREATURE, AimType::CREATURE})
+				return {};
+			return canonicalLifeDrainTargets(spellMechanics, budget);
+		}
+		if(isHandOfFateSpell(spellMechanics))
+			return canonicalHandOfFateTargets(spellMechanics, budget);
+		if(isCanonicalHydrasVitality(spellMechanics))
+			return canonicalHydrasVitalityTargets(spellMechanics, budget);
+		if(isCanonicalVerdantPrison(spellMechanics))
+			return canonicalVerdantPrisonTargets(spellMechanics, budget);
+		if(isCanonicalSanctuary(spellMechanics))
+			return canonicalSanctuaryTargets(spellMechanics, budget);
+		if(isVengefulVines(spellMechanics))
+			return canonicalVengefulVinesTargets(spellMechanics, budget);
+		if(isCanonicalPurify(spellMechanics))
+			return purifyTargets(spellMechanics, budget);
+		if(spellMechanics && spellMechanics->isNewHorizonsStormOfDaggers())
+			return stormOfDaggersTargets(spellMechanics, budget);
+		if(isCanonicalSoulChain(spellMechanics))
+			return canonicalSoulChainTargets(spellMechanics, budget);
+		if(isCanonicalNaturePoison(spellMechanics))
+			return canonicalNaturePoisonTargets(spellMechanics, budget);
+		if(isCanonicalFireWall(spellMechanics))
+			return canonicalFireWallTargets(spellMechanics, budget);
+		if(isCanonicalLandMine(spellMechanics))
+			return canonicalLandMineTargets(spellMechanics, budget);
+		if(spellMechanics && spellMechanics->usesNewHorizonsHavocStructures()
+			&& spellMechanics->getTargetTypes() == std::vector<AimType>{AimType::LOCATION})
+			return canonicalHavocStructureTargets(spellMechanics, budget);
+		if(spellMechanics && spellMechanics->usesNewHorizonsEarthquake())
+			return canonicalEarthquakeTargets(spellMechanics, budget);
+		if(isSelectedQuicksand(spellMechanics))
+			return canonicalQuicksandTargets(spellMechanics, budget);
+
+
+		std::vector<AimType> targetTypes = spellMechanics->getTargetTypes();
+		if(isTransfigureMatter(spellMechanics))
+			return physicalObstacleTargets(spellMechanics, budget);
+		if(summonEvaluation::usesSelectedPlacement(spellMechanics))
+			return summonEvaluation::placementTargets(spellMechanics, budget);
+
+		if(targetTypes == std::vector<AimType>{AimType::CREATURE, AimType::LOCATION})
+			return creatureLocationTargets(spellMechanics, budget);
+		if(targetTypes == std::vector<AimType>{AimType::CREATURE, AimType::CREATURE})
+			return creaturePairTargets(spellMechanics, budget);
+		if(targetTypes.size() != 1)
+			return result;
+
+		auto targetType = targetTypes.front();
+
+		switch(targetType)
+		{
+			case AimType::CREATURE:
+				return allTargetableCreatures(spellMechanics, true, budget);
+			case AimType::LOCATION:
+			{
+				if(spellMechanics->isNeutralSpell())
+					return defaultLocationSpellHeuristics(
+						spellMechanics
+					, budget); // theoretically anything can be a useful destination, so we balance performance and validity
+				else
+					return theBestLocationCasts(spellMechanics, budget);
+			}
+			case AimType::NOTHING:
+				return std::vector<Target>(1); //default-constructed target means cast without destination
+			default:
+				return result;
+		}
+
+	}
+	catch(const battleSearch::BudgetExhausted &)
+	{
+		return result;
+	}
+}
+
+std::vector<Target> SpellTargetEvaluator::canonicalEarthquakeTargets(const Mechanics * spellMechanics, battleSearch::SearchBudget * budget)
+{
+	std::vector<Target> result;
+	try
+	{
+
+		if(!spellMechanics || !spellMechanics->usesNewHorizonsEarthquake()
+			|| spellMechanics->getTargetTypes() != std::vector<AimType>{AimType::LOCATION})
+			return result;
+
+		// A location candidate is the selected center for field mode and the
+		// selected wall section for siege mode. Keep every geometrically distinct
+		// legal hex: terrain footprints can differ even when the creature victims do
+		// not, and an empty unit footprint is still meaningful in siege mode.
+		result.reserve(GameConstants::BFIELD_SIZE);
+		for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
+		{
+			battleSearch::require(budget, battleSearch::WorkKind::Generation);
+			const BattleHex hex(index);
+			if(!hex.isValid())
+				continue;
+
+			Target target{Destination(hex)};
 			detail::ProblemImpl problem;
 			if(spellMechanics->canBeCastAt(target, problem))
 				result.push_back(std::move(target));
 		}
 		return result;
-	}
-	// Installed spell content must not broaden a pre-v3 saved battle's target
-	// roster. For active v3 casts, let the authoritative heal effect decide which
-	// friendly stacks have usable remains, wounds, and an accessible corpse hex.
-	if(spellMechanics)
-	{
-		const auto * spell = spellMechanics->getSpell();
-		const auto * callback = spellMechanics->battle();
-		const auto * battle = callback ? callback->getBattle() : nullptr;
-		if(spell && spell->getJsonKey() == newHorizonsMagic::SHADOW_REANIMATE_SPELL
-			&& (!battle || !newHorizonsMagic::reanimateEnabled(battle->getMagicRules(), spell->getId())))
-			return {};
-		if(spell && spell->getJsonKey() == newHorizonsMagic::SHADOW_SOUL_REAPER_SPELL
-			&& (!battle || !newHorizonsMagic::soulReaperEnabled(battle->getMagicRules(), spell->getId())))
-			return {};
-	}
 
-	// Handle this identity before the saved-profile helpers below query the
-	// numeric spell ID. The canonical New Horizons spell has a content key of
-	// its own and needs no legacy/core-ID translation for target enumeration.
-	if(isCanonicalLifeDrain(spellMechanics))
-	{
-		if(spellMechanics->getTargetTypes() != std::vector<AimType>{AimType::CREATURE, AimType::CREATURE})
-			return {};
-		return canonicalLifeDrainTargets(spellMechanics);
 	}
-	if(isHandOfFateSpell(spellMechanics))
-		return canonicalHandOfFateTargets(spellMechanics);
-	if(isCanonicalHydrasVitality(spellMechanics))
-		return canonicalHydrasVitalityTargets(spellMechanics);
-	if(isCanonicalVerdantPrison(spellMechanics))
-		return canonicalVerdantPrisonTargets(spellMechanics);
-	if(isCanonicalSanctuary(spellMechanics))
-		return canonicalSanctuaryTargets(spellMechanics);
-	if(isVengefulVines(spellMechanics))
-		return canonicalVengefulVinesTargets(spellMechanics);
-	if(isCanonicalPurify(spellMechanics))
+	catch(const battleSearch::BudgetExhausted &)
 	{
-		std::vector<Target> purifyTargets;
-		physicalCleanseAI::MobilityQuery mobility;
+		return result;
+	}
+}
+
+std::vector<Target> SpellTargetEvaluator::canonicalHavocStructureTargets(const Mechanics * spellMechanics, battleSearch::SearchBudget * budget)
+{
+	std::vector<Target> result;
+	try
+	{
+
+		if(!spellMechanics || !spellMechanics->usesNewHorizonsHavocStructures()
+			|| spellMechanics->getTargetTypes() != std::vector<AimType>{AimType::LOCATION})
+			return result;
+
+		const auto * battle = spellMechanics->battle();
+		if(!battle)
+			return result;
+
+		// Preserve the existing creature-damage optimums, then add only geometry
+		// signatures that change the affected units, live fortification sections, or
+		// ordinary-scene obstacles. This avoids detached castEval for every hex.
+		result = theBestLocationCasts(spellMechanics, budget);
+		using GeometrySignature = std::tuple<std::vector<uint32_t>, std::vector<int>, std::vector<int32_t>>;
+		std::set<GeometrySignature> structuralSignatures;
+		std::set<BattleHex> selectedHexes;
+
+		auto signatureFor = [&](const Target & target)
+		{
+			GeometrySignature signature;
+			bool hasStructure = false;
+			if(target.size() != 1 || !target.front().hexValue.isValid())
+				return std::pair{signature, hasStructure};
+
+			std::set<uint32_t> affectedUnits;
+			for(const auto * unit : spellMechanics->getAffectedStacks(target))
+				{
+					battleSearch::require(budget, battleSearch::WorkKind::Generation);
+					if(unit)
+					affectedUnits.insert(unit->unitId());
+				}
+			std::get<0>(signature).assign(affectedUnits.begin(), affectedUnits.end());
+
+			const auto affectedHexes = spellMechanics->rangeInHexes(target.front().hexValue);
+			std::set<int> affectedWallParts;
+			for(int index = 0; index < static_cast<int>(EWallPart::PARTS_COUNT); ++index)
+			{
+				battleSearch::require(budget, battleSearch::WorkKind::Generation);
+				const auto wallPart = static_cast<EWallPart>(index);
+				const auto wallHex = battle->wallPartToBattleHex(wallPart);
+				if(battle->isWallPartAttackable(wallPart) && battle->getWallStructuralHP(wallPart) > 0
+					&& wallHex.isValid() && affectedHexes.contains(wallHex))
+					affectedWallParts.insert(static_cast<int>(wallPart));
+			}
+			std::get<1>(signature).assign(affectedWallParts.begin(), affectedWallParts.end());
+
+			std::set<int32_t> affectedObstacles;
+			for(const auto & obstacle : battle->battleGetAllObstacles())
+			{
+				battleSearch::require(budget, battleSearch::WorkKind::Generation);
+				if(!obstacle || obstacle->obstacleType != CObstacleInstance::USUAL)
+					continue;
+				for(const auto & hex : obstacle->getAffectedTiles())
+					{
+						battleSearch::require(budget, battleSearch::WorkKind::Generation);
+						if(affectedHexes.contains(hex))
+					{
+						affectedObstacles.insert(obstacle->uniqueID);
+						break;
+					}
+					}
+			}
+			std::get<2>(signature).assign(affectedObstacles.begin(), affectedObstacles.end());
+			hasStructure = !affectedWallParts.empty() || !affectedObstacles.empty();
+			return std::pair{std::move(signature), hasStructure};
+		};
+
+		for(const auto & target : result)
+		{
+			battleSearch::require(budget, battleSearch::WorkKind::Generation);
+			if(target.size() != 1 || !target.front().hexValue.isValid())
+				continue;
+			selectedHexes.insert(target.front().hexValue);
+			auto [signature, hasStructure] = signatureFor(target);
+			if(hasStructure)
+				structuralSignatures.insert(std::move(signature));
+		}
+
 		for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
 		{
-			const BattleHex center(index);
-			if(!center.isValid())
+			battleSearch::require(budget, battleSearch::WorkKind::Generation);
+			const BattleHex hex(index);
+			if(!hex.isValid() || selectedHexes.contains(hex))
 				continue;
 
-			Target target{Destination(center)};
+			Target target{Destination(hex)};
 			detail::ProblemImpl problem;
-			if(spellMechanics->canBeCastAt(target, problem)
-				&& purifySelection(spellMechanics, target, &mobility).value > 0.0f)
-				purifyTargets.push_back(std::move(target));
-		}
-		return purifyTargets;
-	}
-	if(spellMechanics && spellMechanics->isNewHorizonsStormOfDaggers())
-		return stormOfDaggersTargets(spellMechanics);
-	if(isCanonicalSoulChain(spellMechanics))
-		return canonicalSoulChainTargets(spellMechanics);
-	if(isCanonicalNaturePoison(spellMechanics))
-		return canonicalNaturePoisonTargets(spellMechanics);
-	if(isCanonicalFireWall(spellMechanics))
-		return canonicalFireWallTargets(spellMechanics);
-	if(isCanonicalLandMine(spellMechanics))
-		return canonicalLandMineTargets(spellMechanics);
-	if(spellMechanics && spellMechanics->usesNewHorizonsHavocStructures()
-		&& spellMechanics->getTargetTypes() == std::vector<AimType>{AimType::LOCATION})
-		return canonicalHavocStructureTargets(spellMechanics);
-	if(spellMechanics && spellMechanics->usesNewHorizonsEarthquake())
-		return canonicalEarthquakeTargets(spellMechanics);
-	if(isSelectedQuicksand(spellMechanics))
-		return canonicalQuicksandTargets(spellMechanics);
-
-	std::vector<Target> result;
-	std::vector<AimType> targetTypes = spellMechanics->getTargetTypes();
-	if(isTransfigureMatter(spellMechanics))
-		return physicalObstacleTargets(spellMechanics);
-	if(summonEvaluation::usesSelectedPlacement(spellMechanics))
-		return summonEvaluation::placementTargets(spellMechanics);
-
-	if(targetTypes == std::vector<AimType>{AimType::CREATURE, AimType::LOCATION})
-		return creatureLocationTargets(spellMechanics);
-	if(targetTypes == std::vector<AimType>{AimType::CREATURE, AimType::CREATURE})
-		return creaturePairTargets(spellMechanics);
-	if(targetTypes.size() != 1)
-		return result;
-
-	auto targetType = targetTypes.front();
-
-	switch(targetType)
-	{
-		case AimType::CREATURE:
-			return allTargetableCreatures(spellMechanics, true);
-		case AimType::LOCATION:
-		{
-			if(spellMechanics->isNeutralSpell())
-				return defaultLocationSpellHeuristics(
-					spellMechanics
-				); // theoretically anything can be a useful destination, so we balance performance and validity
-			else
-				return theBestLocationCasts(spellMechanics);
-		}
-		case AimType::NOTHING:
-			return std::vector<Target>(1); //default-constructed target means cast without destination
-		default:
-			return result;
-	}
-}
-
-std::vector<Target> SpellTargetEvaluator::canonicalEarthquakeTargets(const Mechanics * spellMechanics)
-{
-	std::vector<Target> result;
-	if(!spellMechanics || !spellMechanics->usesNewHorizonsEarthquake()
-		|| spellMechanics->getTargetTypes() != std::vector<AimType>{AimType::LOCATION})
-		return result;
-
-	// A location candidate is the selected center for field mode and the
-	// selected wall section for siege mode. Keep every geometrically distinct
-	// legal hex: terrain footprints can differ even when the creature victims do
-	// not, and an empty unit footprint is still meaningful in siege mode.
-	result.reserve(GameConstants::BFIELD_SIZE);
-	for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
-	{
-		const BattleHex hex(index);
-		if(!hex.isValid())
-			continue;
-
-		Target target{Destination(hex)};
-		detail::ProblemImpl problem;
-		if(spellMechanics->canBeCastAt(target, problem))
-			result.push_back(std::move(target));
-	}
-	return result;
-}
-
-std::vector<Target> SpellTargetEvaluator::canonicalHavocStructureTargets(const Mechanics * spellMechanics)
-{
-	std::vector<Target> result;
-	if(!spellMechanics || !spellMechanics->usesNewHorizonsHavocStructures()
-		|| spellMechanics->getTargetTypes() != std::vector<AimType>{AimType::LOCATION})
-		return result;
-
-	const auto * battle = spellMechanics->battle();
-	if(!battle)
-		return result;
-
-	// Preserve the existing creature-damage optimums, then add only geometry
-	// signatures that change the affected units, live fortification sections, or
-	// ordinary-scene obstacles. This avoids detached castEval for every hex.
-	result = theBestLocationCasts(spellMechanics);
-	using GeometrySignature = std::tuple<std::vector<uint32_t>, std::vector<int>, std::vector<int32_t>>;
-	std::set<GeometrySignature> structuralSignatures;
-	std::set<BattleHex> selectedHexes;
-
-	auto signatureFor = [&](const Target & target)
-	{
-		GeometrySignature signature;
-		bool hasStructure = false;
-		if(target.size() != 1 || !target.front().hexValue.isValid())
-			return std::pair{signature, hasStructure};
-
-		std::set<uint32_t> affectedUnits;
-		for(const auto * unit : spellMechanics->getAffectedStacks(target))
-			if(unit)
-				affectedUnits.insert(unit->unitId());
-		std::get<0>(signature).assign(affectedUnits.begin(), affectedUnits.end());
-
-		const auto affectedHexes = spellMechanics->rangeInHexes(target.front().hexValue);
-		std::set<int> affectedWallParts;
-		for(int index = 0; index < static_cast<int>(EWallPart::PARTS_COUNT); ++index)
-		{
-			const auto wallPart = static_cast<EWallPart>(index);
-			const auto wallHex = battle->wallPartToBattleHex(wallPart);
-			if(battle->isWallPartAttackable(wallPart) && battle->getWallStructuralHP(wallPart) > 0
-				&& wallHex.isValid() && affectedHexes.contains(wallHex))
-				affectedWallParts.insert(static_cast<int>(wallPart));
-		}
-		std::get<1>(signature).assign(affectedWallParts.begin(), affectedWallParts.end());
-
-		std::set<int32_t> affectedObstacles;
-		for(const auto & obstacle : battle->battleGetAllObstacles())
-		{
-			if(!obstacle || obstacle->obstacleType != CObstacleInstance::USUAL)
+			if(!spellMechanics->canBeCastAt(target, problem))
 				continue;
-			for(const auto & hex : obstacle->getAffectedTiles())
-				if(affectedHexes.contains(hex))
-				{
-					affectedObstacles.insert(obstacle->uniqueID);
-					break;
-				}
+
+			auto [signature, hasStructure] = signatureFor(target);
+			if(hasStructure && structuralSignatures.insert(std::move(signature)).second)
+			{
+				selectedHexes.insert(hex);
+				result.push_back(std::move(target));
+			}
 		}
-		std::get<2>(signature).assign(affectedObstacles.begin(), affectedObstacles.end());
-		hasStructure = !affectedWallParts.empty() || !affectedObstacles.empty();
-		return std::pair{std::move(signature), hasStructure};
-	};
 
-	for(const auto & target : result)
-	{
-		if(target.size() != 1 || !target.front().hexValue.isValid())
-			continue;
-		selectedHexes.insert(target.front().hexValue);
-		auto [signature, hasStructure] = signatureFor(target);
-		if(hasStructure)
-			structuralSignatures.insert(std::move(signature));
+		return result;
+
 	}
-
-	for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
+	catch(const battleSearch::BudgetExhausted &)
 	{
-		const BattleHex hex(index);
-		if(!hex.isValid() || selectedHexes.contains(hex))
-			continue;
-
-		Target target{Destination(hex)};
-		detail::ProblemImpl problem;
-		if(!spellMechanics->canBeCastAt(target, problem))
-			continue;
-
-		auto [signature, hasStructure] = signatureFor(target);
-		if(hasStructure && structuralSignatures.insert(std::move(signature)).second)
-		{
-			selectedHexes.insert(hex);
-			result.push_back(std::move(target));
-		}
+		return result;
 	}
-
-	return result;
 }
 
 int SpellTargetEvaluator::physicalTravelDistance(const ReachabilityInfo & reachability, BattleHex destination)
@@ -1512,285 +1667,187 @@ std::optional<float> SpellTargetEvaluator::havocStructuralHPValue(
 	return casterSide == BattleSide::ATTACKER ? structuralValue : -structuralValue;
 }
 
-SpellTargetEvaluator::PurifySelection SpellTargetEvaluator::purifySelection(
-	const Mechanics * spellMechanics, const Target & target, physicalCleanseAI::MobilityQuery * mobility)
-{
-	physicalCleanseAI::MobilityQuery localMobility;
-	if(!mobility) mobility = &localMobility;
-	PurifySelection selection;
-	if(!isCanonicalPurify(spellMechanics) || target.size() != 1
-		|| target.front().unitValue != nullptr || !target.front().hexValue.isValid())
-		return selection;
 
-	detail::ProblemImpl problem;
-	if(!spellMechanics->canBeCastAt(target, problem))
-		return selection;
 
-	const auto * callback = spellMechanics->battle();
-	const auto * hero = spellMechanics->getHeroCaster();
-	const int32_t spellPower = hero
-		? std::max<int32_t>(0, hero->getPrimSkillLevel(PrimarySkill::SPELL_POWER))
-		: std::max<int32_t>(0, spellMechanics->getEffectPower());
-	const bool purifierPerk = newHorizonsPurify::hasPurifierPerk(hero);
-	const auto eligibleStacks = newHorizonsPurify::eligibleStacks(*callback,
-		spellMechanics->getCasterSide(), target.front().hexValue, spellPower, purifierPerk);
-	auto battleState = std::shared_ptr<CBattleInfoCallback>(
-		const_cast<CBattleInfoCallback *>(callback), [](CBattleInfoCallback *) {});
-	DamageCache damageCache;
-
-	struct RankedGroup
-	{
-		SpellID spell = SpellID::NONE;
-		float value = 0.0f;
-	};
-
-	for(const auto & eligible : eligibleStacks)
-	{
-		const auto * unit = callback->battleGetUnitByID(static_cast<uint32_t>(eligible.unitId));
-		// Shared eligibility already resolves effective allegiance (including Hypnotize).
-		if(!unit || !unit->alive())
-			continue;
-
-		if(eligible.stunAutomaticallyCleared && !newHorizonsFrozen::isFrozen(*unit))
-			selection.value += creatureActivationValue::expectedTargetActivationValue(unit, damageCache, battleState, true);
-		if(eligible.crippleAutomaticallyCleared)
-			selection.value += mobility->crippleValue(*callback, *unit);
-		float physicalPoisonValue = 0.0f;
-		if(eligible.physicalPoison || eligible.physicalPoisonAutomaticallyCleared)
-		{
-			const auto * liveState = dynamic_cast<const battle::CUnitState *>(unit);
-			if(liveState)
-			{
-				auto poisonState = liveState->acquireState();
-				int64_t remainingHealth = std::max<int64_t>(0, unit->getAvailableHealth());
-				int64_t preventedDamage = 0;
-				while(remainingHealth > 0 && poisonState->physicalPoisonActivationsRemaining > 0)
-				{
-					const auto tick = newHorizonsBulwark::physicalPoisonTickDamage(poisonState.get());
-					const auto applied = std::min(remainingHealth, tick);
-					preventedDamage += applied;
-					remainingHealth -= applied;
-					newHorizonsBulwark::advancePhysicalPoison(poisonState.get());
-				}
-				if(preventedDamage > 0)
-				{
-					physicalPoisonValue = AttackPossibility::calculateDamageReduce(nullptr, unit,
-						static_cast<uint64_t>(preventedDamage), damageCache, battleState);
-					if(physicalPoisonValue <= 0.0f)
-						physicalPoisonValue = static_cast<float>(preventedDamage);
-				}
-			}
-		}
-		if(eligible.physicalPoisonAutomaticallyCleared && physicalPoisonValue > 0.0f)
-		{
-			selection.value += physicalPoisonValue;
-			selection.physicalPoisonStackIds.push_back(eligible.unitId);
-		}
-
-		std::vector<RankedGroup> groups;
-		if(eligible.physicalPoison && !eligible.physicalPoisonAutomaticallyCleared
-			&& physicalPoisonValue > 0.0f)
-			groups.push_back({newHorizonsPurify::physicalPoisonChoiceID(), physicalPoisonValue});
-		for(const auto effectSpell : eligible.spellEffectGroups)
-		{
-			const auto * statusSpell = effectSpell.toSpell();
-			if(!statusSpell || !statusSpell->isMagical() || !statusSpell->isNegative())
-				continue;
-
-			const auto bonuses = newHorizonsPurify::spellEffectGroupBonuses(unit, effectSpell);
-			if(bonuses.empty())
-				continue;
-			// Cleansing the transfer itself would return this recruited enemy to
-			// its original hostile side. Do not score that group as a benefit.
-			// Inspect actual bonuses, not a particular spell's authored identity.
-			if(unit->unitSide() != spellMechanics->getCasterSide()
-				&& std::ranges::any_of(bonuses, [](const Bonus & bonus)
-				{
-					return bonus.type == BonusType::HYPNOTIZED;
-				}))
-				continue;
-
-			int remainingRounds = 0;
-			bool timed = false;
-			for(const auto & bonus : bonuses)
-				if(Bonus::NTurns(&bonus))
-				{
-					timed = true;
-					remainingRounds = std::max(remainingRounds,
-						std::max<int32_t>(0, bonus.turnsRemain));
-				}
-
-			// longer-lived groups when a stack has more eligible effects than its cap.
-			const float health = static_cast<float>(std::max<int64_t>(1, unit->getAvailableHealth()));
-			const float levelFactor = 0.75f + 0.05f
-				* static_cast<float>(std::clamp(statusSpell->getLevel(), 1, 5));
-			const float durationFactor = timed
-				? std::clamp(0.4f + 0.2f * static_cast<float>(remainingRounds), 0.4f, 1.0f)
-				: 1.0f;
-			groups.push_back({effectSpell, health * 0.9f * levelFactor * durationFactor});
-		}
-		std::sort(groups.begin(), groups.end(), [](const RankedGroup & lhs, const RankedGroup & rhs)
-		{
-			if(lhs.value != rhs.value)
-				return lhs.value > rhs.value;
-			return lhs.spell.getNum() < rhs.spell.getNum();
-		});
-
-		const auto choiceCount = std::min<size_t>(
-			static_cast<size_t>(std::max(0, eligible.maximumSpellEffectChoices)), groups.size());
-		for(size_t index = 0; index < choiceCount; ++index)
-		{
-			selection.spellEffectGroups.emplace_back(eligible.unitId, groups[index].spell);
-			selection.value += groups[index].value;
-			if(groups[index].spell == newHorizonsPurify::physicalPoisonChoiceID())
-				selection.physicalPoisonStackIds.push_back(eligible.unitId);
-		}
-	}
-
-	std::sort(selection.spellEffectGroups.begin(), selection.spellEffectGroups.end(),
-		[](const auto & lhs, const auto & rhs)
-		{
-			if(lhs.first != rhs.first)
-				return lhs.first < rhs.first;
-			return lhs.second.getNum() < rhs.second.getNum();
-		});
-	std::sort(selection.physicalPoisonStackIds.begin(), selection.physicalPoisonStackIds.end());
-	selection.physicalPoisonStackIds.erase(std::unique(selection.physicalPoisonStackIds.begin(),
-		selection.physicalPoisonStackIds.end()), selection.physicalPoisonStackIds.end());
-	return selection;
-}
-
-std::vector<Target> SpellTargetEvaluator::canonicalNaturePoisonTargets(const Mechanics * spellMechanics)
+std::vector<Target> SpellTargetEvaluator::canonicalNaturePoisonTargets(const Mechanics * spellMechanics, battleSearch::SearchBudget * budget)
 {
 	std::vector<Target> result;
-	if(!isCanonicalNaturePoison(spellMechanics))
+	try
+	{
+
+		if(!isCanonicalNaturePoison(spellMechanics))
+			return result;
+
+		for(const auto * unit : spellMechanics->battle()->battleGetAllUnits(false))
+		{
+			battleSearch::require(budget, battleSearch::WorkKind::Generation);
+			if(!isNaturePoisonTarget(spellMechanics, unit))
+				continue;
+
+			Target target{Destination(unit)};
+			detail::ProblemImpl problem;
+			if(spellMechanics->canBeCastAt(target, problem))
+				result.push_back(std::move(target));
+		}
+
 		return result;
 
-	for(const auto * unit : spellMechanics->battle()->battleGetAllUnits(false))
-	{
-		if(!isNaturePoisonTarget(spellMechanics, unit))
-			continue;
-
-		Target target{Destination(unit)};
-		detail::ProblemImpl problem;
-		if(spellMechanics->canBeCastAt(target, problem))
-			result.push_back(std::move(target));
 	}
-
-	return result;
+	catch(const battleSearch::BudgetExhausted &)
+	{
+		return result;
+	}
 }
 
-std::vector<Target> SpellTargetEvaluator::canonicalFireWallTargets(const Mechanics * spellMechanics)
+std::vector<Target> SpellTargetEvaluator::canonicalFireWallTargets(const Mechanics * spellMechanics, battleSearch::SearchBudget * budget)
 {
 	std::vector<Target> result;
-	const auto * battle = spellMechanics->battle();
-	const auto accessibility = battle->getAccessibility();
-
-	for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
+	try
 	{
-		const BattleHex start(index);
-		if(!canonicalLandMineHexIsEmpty(*battle, accessibility, start))
-			continue;
 
-		for(const auto direction : BattleHex::hexagonalDirections())
+		const auto * battle = spellMechanics->battle();
+		const auto accessibility = battle->getAccessibility();
+
+		for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
 		{
-			Target line;
-			BattleHex current = start;
-			bool legal = true;
-			for(int length = 0; length < 3; ++length)
-			{
-				if(!canonicalLandMineHexIsEmpty(*battle, accessibility, current))
-				{
-					legal = false;
-					break;
-				}
-				line.emplace_back(current);
-				if(length != 2)
-					current = current.cloneInDirection(direction, false);
-			}
-			if(!legal)
+			battleSearch::require(budget, battleSearch::WorkKind::Generation);
+			const BattleHex start(index);
+			if(!spellTargetBudgetFallback::mineHexIsEmpty(*battle, accessibility, start))
 				continue;
 
-			detail::ProblemImpl problem;
-			if(spellMechanics->canBeCastAt(line, problem))
-				result.push_back(std::move(line));
-		}
-	}
+			for(const auto direction : BattleHex::hexagonalDirections())
+			{
+				battleSearch::require(budget, battleSearch::WorkKind::Generation);
+				Target line;
+				BattleHex current = start;
+				bool legal = true;
+				for(int length = 0; length < 3; ++length)
+				{
+					battleSearch::require(budget, battleSearch::WorkKind::Generation);
+					if(!spellTargetBudgetFallback::mineHexIsEmpty(*battle, accessibility, current))
+					{
+						legal = false;
+						break;
+					}
+					line.emplace_back(current);
+					if(length != 2)
+						current = current.cloneInDirection(direction, false);
+				}
+				if(!legal)
+					continue;
 
-	return result;
+				detail::ProblemImpl problem;
+				if(spellMechanics->canBeCastAt(line, problem))
+					result.push_back(std::move(line));
+			}
+		}
+
+		return result;
+
+	}
+	catch(const battleSearch::BudgetExhausted &)
+	{
+		return result;
+	}
 }
 
-std::vector<Target> SpellTargetEvaluator::canonicalLandMineTargets(const Mechanics * spellMechanics)
+std::vector<Target> SpellTargetEvaluator::canonicalLandMineTargets(const Mechanics * spellMechanics, battleSearch::SearchBudget * budget)
 {
-	const int required = spellMechanics->getNewHorizonsLandMinePatchCount();
-	auto candidates = legalLandMineHexes(spellMechanics);
-	if(candidates.size() < static_cast<size_t>(required))
-		return {};
-
-	// Greedy coverage keeps the target vector useful against multiple hostile
-	// ground stacks instead of selecting four adjacent hexes around one stack
-	// solely because they happen to have the same local score.  Ties are broken
-	// by battlefield index, making replay/network output deterministic.
-	std::vector<LandMineHexScore> selected;
-	std::set<uint32_t> coveredEnemies;
-	for(int index = 0; index < required; ++index)
+	std::optional<battleSearch::SearchBudget> completion;
+	if(budget)
 	{
-		auto best = candidates.end();
-		int64_t bestScore = std::numeric_limits<int64_t>::min();
-		for(auto candidate = candidates.begin(); candidate != candidates.end(); ++candidate)
-		{
-			if(vstd::contains_if(selected, [&](const LandMineHexScore & previous)
-			{
-				return previous.hex == candidate->hex;
-			}))
-				continue;
-
-			int64_t score = candidate->score;
-			for(const auto enemy : candidate->adjacentEnemies)
-				if(!coveredEnemies.contains(enemy))
-					score += 5000;
-
-			if(best == candidates.end() || score > bestScore
-				|| (score == bestScore && candidate->hex.toInt() < best->hex.toInt()))
-			{
-				best = candidate;
-				bestScore = score;
-			}
-		}
-
-		if(best == candidates.end())
-			return {};
-		selected.push_back(*best);
-		coveredEnemies.insert(best->adjacentEnemies.begin(), best->adjacentEnemies.end());
+		battleSearch::WorkAmounts amount{};
+		amount[0] = std::min<uint32_t>(64, budget->available()[0] / 2);
+		completion = budget->reserve(amount);
+		if(!completion) return {};
 	}
 
-	Target result;
-	result.reserve(selected.size());
-	for(const auto & candidate : selected)
-		result.emplace_back(candidate.hex);
+	try
+	{
+		const int required = spellMechanics->getNewHorizonsLandMinePatchCount();
+		auto candidates = legalLandMineHexes(spellMechanics, budget);
+		if(candidates.size() < static_cast<size_t>(required))
+			return {};
 
-	// The strict live-state predicate above mirrors the server's fast rejection
-	// path.  The spell script remains the final local check for any content-level
-	// applicability rule, and only a complete vector is ever returned.
-	detail::ProblemImpl problem;
-	if(!targetUsesDistinctLegalLandMineHexes(spellMechanics, result)
-		|| !spellMechanics->canBeCastAt(result, problem))
-		return {};
+		// Greedy coverage keeps the target vector useful against multiple hostile
+		// ground stacks instead of selecting four adjacent hexes around one stack
+		// solely because they happen to have the same local score.  Ties are broken
+		// by battlefield index, making replay/network output deterministic.
+		std::vector<LandMineHexScore> selected;
+		std::set<uint32_t> coveredEnemies;
+		for(int index = 0; index < required; ++index)
+		{
+			battleSearch::require(budget, battleSearch::WorkKind::Generation);
+			auto best = candidates.end();
+			int64_t bestScore = std::numeric_limits<int64_t>::min();
+			for(auto candidate = candidates.begin(); candidate != candidates.end(); ++candidate)
+			{
+				battleSearch::require(budget, battleSearch::WorkKind::Generation);
+				if(vstd::contains_if(selected, [&](const LandMineHexScore & previous)
+				{
+					return previous.hex == candidate->hex;
+				}))
+					continue;
 
-	return {std::move(result)};
+				int64_t score = candidate->score;
+				for(const auto enemy : candidate->adjacentEnemies)
+					{
+						battleSearch::require(budget, battleSearch::WorkKind::Generation);
+						if(!coveredEnemies.contains(enemy))
+						score += 5000;
+					}
+
+				if(best == candidates.end() || score > bestScore
+					|| (score == bestScore && candidate->hex.toInt() < best->hex.toInt()))
+				{
+					best = candidate;
+					bestScore = score;
+				}
+			}
+
+			if(best == candidates.end())
+				return {};
+			selected.push_back(*best);
+			coveredEnemies.insert(best->adjacentEnemies.begin(), best->adjacentEnemies.end());
+		}
+
+		Target result;
+		result.reserve(selected.size());
+		for(const auto & candidate : selected)
+			{
+				battleSearch::require(budget, battleSearch::WorkKind::Generation);
+				result.emplace_back(candidate.hex);
+			}
+
+		// The strict live-state predicate above mirrors the server's fast rejection
+		// path.  The spell script remains the final local check for any content-level
+		// applicability rule, and only a complete vector is ever returned.
+		detail::ProblemImpl problem;
+		if(!targetUsesDistinctLegalLandMineHexes(spellMechanics, result, budget)
+			|| !spellMechanics->canBeCastAt(result, problem))
+			return {};
+
+		return {std::move(result)};
+
+	}
+	catch(const battleSearch::BudgetExhausted &)
+	{
+		return spellTargetBudgetFallback::firstPlacementAim(spellMechanics, true, completion ? &*completion : nullptr);
+	}
 }
 
 namespace
 {
-float quicksandHexPressure(const Mechanics * mechanics, const BattleHex & hex)
+float quicksandHexPressure(const Mechanics * mechanics, const BattleHex & hex, battleSearch::SearchBudget * budget = nullptr)
 {
 	float pressure = 0.0f;
 	for(const auto * unit : mechanics->battle()->battleGetAllUnits(false))
 	{
+		battleSearch::require(budget, battleSearch::WorkKind::Generation);
 		if(!isGroundHostile(mechanics, unit) && !isGroundAlly(mechanics, unit))
 			continue;
 
-		const int distance = distanceToUnit(hex, unit);
+		const int distance = distanceToUnit(hex, unit, budget);
 		if(distance == std::numeric_limits<int>::max())
 			continue;
 		const int movement = std::max(0, static_cast<int>(unit->getMovementRange(0)));
@@ -1805,39 +1862,60 @@ float quicksandHexPressure(const Mechanics * mechanics, const BattleHex & hex)
 }
 }
 
-std::vector<Target> SpellTargetEvaluator::canonicalQuicksandTargets(const Mechanics * spellMechanics)
+std::vector<Target> SpellTargetEvaluator::canonicalQuicksandTargets(const Mechanics * spellMechanics, battleSearch::SearchBudget * budget)
 {
-	const int required = spellMechanics->getNewHorizonsQuicksandPatchCount();
-	if(!isSelectedQuicksand(spellMechanics) || required <= 0)
-		return {};
-
-	std::vector<std::pair<float, BattleHex>> candidates;
-	for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
+	std::optional<battleSearch::SearchBudget> completion;
+	if(budget)
 	{
-		const BattleHex hex(index);
-		if(newHorizonsMagic::quicksandPlacementHexIsLegal(*spellMechanics->battle(), hex))
-			candidates.emplace_back(quicksandHexPressure(spellMechanics, hex), hex);
+		battleSearch::WorkAmounts amount{};
+		amount[0] = std::min<uint32_t>(64, budget->available()[0] / 2);
+		completion = budget->reserve(amount);
+		if(!completion) return {};
 	}
-	if(candidates.size() < static_cast<size_t>(required))
-		return {};
-	std::sort(candidates.begin(), candidates.end(), [](const auto & left, const auto & right)
+
+	try
 	{
-		return left.first == right.first
-			? left.second.toInt() < right.second.toInt()
-			: left.first > right.first;
-	});
-	if(candidates.front().first <= 0.0f)
-		return {};
+		const int required = spellMechanics->getNewHorizonsQuicksandPatchCount();
+		if(!isSelectedQuicksand(spellMechanics) || required <= 0)
+			return {};
 
-	Target result;
-	result.reserve(required);
-	for(int index = 0; index < required; ++index)
-		result.emplace_back(candidates[index].second);
+		std::vector<std::pair<float, BattleHex>> candidates;
+		for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
+		{
+			battleSearch::require(budget, battleSearch::WorkKind::Generation);
+			const BattleHex hex(index);
+			if(newHorizonsMagic::quicksandPlacementHexIsLegal(*spellMechanics->battle(), hex))
+				candidates.emplace_back(quicksandHexPressure(spellMechanics, hex, budget), hex);
+		}
+		if(candidates.size() < static_cast<size_t>(required))
+			return {};
+		std::sort(candidates.begin(), candidates.end(), [](const auto & left, const auto & right)
+		{
+			return left.first == right.first
+				? left.second.toInt() < right.second.toInt()
+				: left.first > right.first;
+		});
+		if(candidates.front().first <= 0.0f)
+			return {};
 
-	detail::ProblemImpl problem;
-	if(!spellMechanics->canBeCastAt(result, problem))
-		return {};
-	return {std::move(result)};
+		Target result;
+		result.reserve(required);
+		for(int index = 0; index < required; ++index)
+			{
+				battleSearch::require(budget, battleSearch::WorkKind::Generation);
+				result.emplace_back(candidates[index].second);
+			}
+
+		detail::ProblemImpl problem;
+		if(!spellMechanics->canBeCastAt(result, problem))
+			return {};
+		return {std::move(result)};
+
+	}
+	catch(const battleSearch::BudgetExhausted &)
+	{
+		return spellTargetBudgetFallback::firstPlacementAim(spellMechanics, false, completion ? &*completion : nullptr);
+	}
 }
 
 float SpellTargetEvaluator::quicksandPlacementValue(const Mechanics * spellMechanics,
@@ -2090,7 +2168,7 @@ float SpellTargetEvaluator::naturePoisonPlacementValue(const Mechanics * spellMe
 	// resistance roll before applying this physical status. Existing Poison
 	// continues regardless of this cast's outcome, so discount only the
 	// incremental candidate value.
-	const float applicationChance = spellApplicationChance(spellMechanics, liveTarget);
+	const float applicationChance = SpellTargetEvaluator::applicationChance(spellMechanics, liveTarget);
 
 	return incrementalValue * applicationChance;
 }
@@ -2205,7 +2283,7 @@ float SpellTargetEvaluator::plagueDelayedDamageValue(const Mechanics * spellMech
 	// The initial hostile magical application can be resisted. Automatic spread
 	// is a propagation event, so it uses the runtime's receptor filter without a
 	// second probabilistic resistance roll.
-	const float applicationChance = spellApplicationChance(spellMechanics, liveTarget);
+	const float applicationChance = SpellTargetEvaluator::applicationChance(spellMechanics, liveTarget);
 
 	return totalValue * applicationChance;
 }
@@ -2239,7 +2317,7 @@ float SpellTargetEvaluator::soulChainDelayedDamageValue(const Mechanics * spellM
 	const auto * primary = target.front().unitValue;
 	auto projectedPrimary = primary->acquireState();
 	const auto echoBasisPoints = spellMechanics->getRecipientSoulChainEchoBasisPoints(primary);
-	const auto primaryApplicationChance = spellApplicationChance(spellMechanics, primary);
+	const auto primaryApplicationChance = SpellTargetEvaluator::applicationChance(spellMechanics, primary);
 	DamageCache damageCache;
 	float value = 0.0f;
 
@@ -2395,15 +2473,27 @@ float SpellTargetEvaluator::shadowGiftTradeValue(const Mechanics * spellMechanic
 	return std::max(0.0f, bestExpectedBenefit - healthCost);
 }
 
+
+namespace
+{
+battleSearch::SearchBudget * detachedSearchBudget(const std::shared_ptr<CBattleInfoCallback> & view)
+{
+	const auto * state = dynamic_cast<const HypotheticBattle *>(view.get());
+	return state ? state->searchBudget().get() : nullptr;
+}
+}
 float SpellTargetEvaluator::realityWarpExchangeValue(const Environment * environment,
 	std::shared_ptr<CBattleInfoCallback> before, std::shared_ptr<CBattleInfoCallback> after,
 	PlayerColor scoringPlayer, const Target & selection, PlayerColor caster)
 {
+	const auto * budgetState = dynamic_cast<const HypotheticBattle *>(after.get());
+	const auto work = budgetState ? budgetState->searchBudget() : nullptr;
 	if(!environment || !before || !after || selection.size() != 2 || caster == PlayerColor::CANNOT_DETERMINE)
 		return 0.0f;
 	float applicationChance = 1.0f;
 	for(const auto & destination : selection)
 	{
+		battleSearch::require(work.get(), battleSearch::WorkKind::Node);
 		const auto * original = destination.unitValue
 			? before->battleGetUnitByID(destination.unitValue->unitId()) : nullptr;
 		if(!original)
@@ -2413,16 +2503,21 @@ float SpellTargetEvaluator::realityWarpExchangeValue(const Environment * environ
 	}
 	const auto pressure = [&](std::shared_ptr<CBattleInfoCallback> source)
 	{
-		auto board = std::make_shared<HypotheticBattle>(environment, std::move(source));
+		auto board = std::make_shared<HypotheticBattle>(environment, std::move(source),
+			std::shared_ptr<const battle::OwnedBattleFrameBatch>(), work);
 		// Snapshot every participant before valuing any attack: attacker/defender
 		// references must read this branch's bonuses, never a live stack fallback.
 		const auto originals = board->battleGetAllUnits(false);
 		for(const auto * unit : originals)
-			board->getForUpdate(unit->unitId());
+			{
+				battleSearch::require(work.get(), battleSearch::WorkKind::Node);
+				board->getForUpdate(unit->unitId());
+			}
 		DamageCache damage;
 		float value = 0.0f;
 		for(const auto * unit : board->battleGetAllUnits(false))
 		{
+			battleSearch::require(work.get(), battleSearch::WorkKind::Node);
 			if(!unit->alive() || !unit->isValidTarget(false) || unit->isTurret()
 				|| (!unit->willMove(0) && !unit->willMove(1)))
 				continue;
@@ -2453,7 +2548,7 @@ std::optional<float> SpellTargetEvaluator::confusionExpectedActivationValue(
 		battleState = std::shared_ptr<CBattleInfoCallback>(
 			const_cast<CBattleInfoCallback *>(spellMechanics->battle()), [](CBattleInfoCallback *) {});
 	const auto unitID = target.front().unitValue->unitId();
-	const auto pressure = [unitID](const std::shared_ptr<HypotheticBattle> & board) -> float
+	const auto pressure = [unitID, &battleState](const std::shared_ptr<HypotheticBattle> & board) -> float
 	{
 		const auto unit = board->getForUpdate(unitID);
 		if(!unit || !unit->alive() || (!unit->willMove() && !unit->willMove(1)))
@@ -2470,6 +2565,7 @@ std::optional<float> SpellTargetEvaluator::confusionExpectedActivationValue(
 		for(const auto & outcome : newHorizonsConfusion::enumerateOutcomes(*board, unit.get(),
 			unit->confusionState.previousResolved, unit->confusionState.pendingConfounder))
 		{
+			battleSearch::require(detachedSearchBudget(battleState), battleSearch::WorkKind::Node);
 			const auto & action = outcome.action;
 			if(!action.target || (action.type != EActionType::SHOOT && action.type != EActionType::WALK_AND_ATTACK))
 				continue;
@@ -2500,7 +2596,7 @@ std::optional<float> SpellTargetEvaluator::confusionExpectedActivationValue(
 		without = std::make_shared<HypotheticBattle>(environment, projected);
 		without->reverseArcaneInspirationEffects(projected->getArcaneInspirationEffects());
 	}
-	const auto chance = spellApplicationChance(spellMechanics, target.front().unitValue);
+	const auto chance = SpellTargetEvaluator::applicationChance(spellMechanics, target.front().unitValue);
 	const auto original = (before - pressure(without)) * chance;
 	if(outcomeValue && inspirationValue)
 	{
@@ -2578,8 +2674,11 @@ std::optional<float> SpellTargetEvaluator::battleFormExpectedOffensiveValue(
 
 		float value = 0.0f;
 		for(int turn = 0; turn < rounds; ++turn)
-			if(projectedTarget->willMove(turn))
+			{
+				battleSearch::require(detachedSearchBudget(battleState), battleSearch::WorkKind::Node);
+				if(projectedTarget->willMove(turn))
 				value += actionValue;
+			}
 		return value;
 	};
 
@@ -2603,10 +2702,11 @@ std::optional<float> SpellTargetEvaluator::battleFormExpectedOffensiveValue(
 	};
 	const auto localCore = outcomeValue ? heroSpellProjection::localReceiptMarginal(coreBoard, kernel) : 0.0f;
 	if(inspirationValue) *inspirationValue = coreOnly;
-	const auto applicationChance = spellApplicationChance(spellMechanics, originalTarget);
+	const auto applicationChance = SpellTargetEvaluator::applicationChance(spellMechanics, originalTarget);
 	double signedPressureReduction = 0.0;
 	for(const auto & candidate : forms)
 	{
+		battleSearch::require(detachedSearchBudget(battleState), battleSearch::WorkKind::Node);
 		auto projectedBattle = std::make_shared<HypotheticBattle>(environment, battleState);
 		auto projectedTarget = projectedBattle->getForUpdate(unitId);
 		try
@@ -2643,274 +2743,4 @@ std::optional<float> SpellTargetEvaluator::battleFormExpectedOffensiveValue(
 	}
 
 	return static_cast<float>(signedPressureReduction) * applicationChance;
-}
-
-std::vector<Target> SpellTargetEvaluator::creaturePairTargets(const spells::Mechanics * spellMechanics)
-{
-	std::vector<Target> result;
-	// This query includes corpses. Sacrifice chooses a corpse BEFORE a living
-	// victim; do not replace it with an alive-only target list or reorder pairs.
-	const auto units = spellMechanics->battle()->battleGetAllUnits(false);
-	for(const auto * first : units)
-	{
-		Target target{Destination(first)};
-		detail::ProblemImpl prefixProblem;
-		if(!spellMechanics->canBeCastAt(target, prefixProblem))
-			continue;
-		for(const auto * second : units)
-		{
-			target.resize(1);
-			target.emplace_back(second);
-			detail::ProblemImpl pairProblem;
-			if(spellMechanics->canBeCastAt(target, pairProblem))
-				result.push_back(target);
-		}
-	}
-	return result;
-}
-
-std::vector<Target> SpellTargetEvaluator::creatureLocationTargets(const spells::Mechanics * spellMechanics)
-{
-	std::vector<Target> result;
-	for(const auto * unit : spellMechanics->battle()->battleGetAllUnits(false))
-	{
-		Target target{Destination(unit)};
-		detail::ProblemImpl sourceProblem;
-		if(!spellMechanics->canBeCastAt(target, sourceProblem))
-			continue;
-
-		// Preserve the exact source unit. The spell validator decides occupancy,
-		// double-wide placement, walls/moats and rank restrictions for each pair.
-		for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
-		{
-			const BattleHex destination(index);
-			if(destination == unit->getPosition())
-				continue; // Moving nowhere cannot improve the hypothetical battle.
-			target.resize(1);
-			target.emplace_back(destination);
-			detail::ProblemImpl destinationProblem;
-			if(spellMechanics->canBeCastAt(target, destinationProblem))
-				result.push_back(target);
-		}
-	}
-	return result;
-}
-
-std::vector<Target> SpellTargetEvaluator::defaultLocationSpellHeuristics(const spells::Mechanics * spellMechanics)
-{
-	std::vector<Target> result = allTargetableCreatures(spellMechanics, false);
-	auto units = spellMechanics->battle()->battleGetAllUnits(false);
-	for(const auto * unit : units) //insert a random surrounding hex
-	{
-		auto surroundingHexes = unit->getSurroundingHexes();
-		if(!surroundingHexes.empty())
-		{
-			auto randomSurroundingHex = *RandomGeneratorUtil::nextItem(surroundingHexes, CRandomGenerator::getDefault()); // don't think this method bias matter with such small numbers
-			addIfCanBeCast(spellMechanics, randomSurroundingHex, result);
-		}
-	}
-	// OBSTACLE spells (including Remove Obstacle) are normalized to LOCATION
-	// by BaseMechanics. Unit-neighbour sampling alone misses distant obstacles.
-	std::set<BattleHex> considered;
-	for(const auto & target : result)
-		considered.insert(target.front().hexValue);
-	for(const auto & obstacle : spellMechanics->battle()->battleGetAllObstacles())
-		for(const auto hex : obstacle->getAffectedTiles())
-			if(considered.insert(hex).second)
-				addIfCanBeCast(spellMechanics, hex, result);
-	return result;
-}
-
-std::vector<Target> SpellTargetEvaluator::allTargetableCreatures(const spells::Mechanics * spellMechanics, bool exactUnit)
-{
-	std::vector<Target> result;
-	const auto units = spellMechanics->battle()->battleGetAllUnits(false);
-	for(const auto * unit : units)
-	{
-		Target target{exactUnit ? Destination(unit) : Destination(unit->getPosition())};
-		detail::ProblemImpl problem;
-		if(spellMechanics->canBeCastAt(target, problem))
-			result.push_back(target);
-	}
-	return result;
-}
-
-std::vector<Target> SpellTargetEvaluator::theBestLocationCasts(const spells::Mechanics * spellMechanics)
-{
-	std::vector<Target> result;
-	std::map<BattleHex, std::set<const CStack *>> allCasts;
-	std::map<BattleHex, std::set<const CStack *>> bestCasts;
-	for(int i = 0; i < GameConstants::BFIELD_SIZE; i++)
-	{
-		BattleHex dest(i);
-		if(canBeCastAt(spellMechanics, dest))
-		{
-			Target target;
-			target.emplace_back(dest);
-			auto temp = spellMechanics->getAffectedStacks(target);
-			std::set<const CStack *> affectedStacks(temp.begin(), temp.end());
-			allCasts[dest] = affectedStacks;
-		}
-	}
-
-	for(const auto & cast : allCasts)
-	{
-		std::set<BattleHex> worseCasts;
-		if(isCastHarmful(spellMechanics, cast.second))
-			continue;
-
-		bool isBestCast = true;
-		for(const auto & bestCast : bestCasts)
-		{
-			Compare compare = compareAffectedStacks(spellMechanics, cast.second, bestCast.second);
-
-			if(compare == Compare::WORSE || compare == Compare::EQUAL)
-			{
-				isBestCast = false;
-				break;
-			}
-
-			if(compare == Compare::BETTER)
-			{
-				worseCasts.insert(bestCast.first);
-			}
-		}
-
-		if(isBestCast)
-		{
-			bestCasts.insert(cast);
-			for(BattleHex worseCast : worseCasts)
-				bestCasts.erase(worseCast);
-		}
-	}
-
-	for(const auto & cast : bestCasts)
-	{
-		Destination des(cast.first);
-		result.push_back({des});
-	}
-	return result;
-}
-
-bool SpellTargetEvaluator::isCastHarmful(const spells::Mechanics * spellMechanics, const std::set<const CStack *> & affectedStacks)
-{
-
-	bool isAffectedAlly = false;
-	bool isAffectedEnemy = false;
-
-	for(const CStack * affectedUnit : affectedStacks)
-	{
-		// Hypnotize changes control without changing the unit's original side.
-		if(spellMechanics->battle()->battleGetOwner(affectedUnit) == spellMechanics->getCasterColor())
-			isAffectedAlly = true;
-		else
-			isAffectedEnemy = true;
-	}
-
-	return (spellMechanics->isPositiveSpell() && !isAffectedAlly) || (spellMechanics->isNegativeSpell() && !isAffectedEnemy);
-}
-
-SpellTargetEvaluator::Compare SpellTargetEvaluator::compareAffectedStacks(
-	const spells::Mechanics * spellMechanics, const std::set<const CStack *> & newCast, const std::set<const CStack *> & oldCast)
-{
-	if(newCast == oldCast)
-		return Compare::EQUAL;
-
-	auto getAlliedUnits = [&spellMechanics](const std::set<const CStack *> & allUnits) -> std::set<const CStack *>
-	{
-		std::set<const CStack *> alliedUnits;
-		for(auto stack : allUnits)
-		{
-			if(spellMechanics->battle()->battleGetOwner(stack) == spellMechanics->getCasterColor())
-				alliedUnits.insert(stack);
-		}
-		return alliedUnits;
-	};
-
-	auto getEnemyUnits = [&spellMechanics](const std::set<const CStack *> & allUnits) -> std::set<const CStack *>
-	{
-		std::set<const CStack *> enemyUnits;
-		for(auto stack : allUnits)
-		{
-			if(spellMechanics->battle()->battleGetOwner(stack) != spellMechanics->getCasterColor())
-				enemyUnits.insert(stack);
-		}
-		return enemyUnits;
-	};
-
-	Compare alliedSubsetComparison = compareAffectedStacksSubset(spellMechanics, getAlliedUnits(newCast), getAlliedUnits(oldCast));
-	Compare enemySubsetComparison = compareAffectedStacksSubset(spellMechanics, getEnemyUnits(newCast), getEnemyUnits(oldCast));
-
-	if(spellMechanics->isPositiveSpell())
-		enemySubsetComparison = reverse(enemySubsetComparison);
-	else if(spellMechanics->isNegativeSpell())
-		alliedSubsetComparison = reverse(alliedSubsetComparison);
-
-	std::set<Compare> comparisonResults = {alliedSubsetComparison, enemySubsetComparison};
-	std::set<std::set<Compare>> possibleBetterResults = {
-		{Compare::BETTER, Compare::BETTER},
-        {Compare::BETTER, Compare::EQUAL }
-	};
-	std::set<std::set<Compare>> possibleWorstResults = {
-		{Compare::WORSE, Compare::WORSE},
-        {Compare::WORSE, Compare::EQUAL}
-	};
-
-	if(possibleBetterResults.find(comparisonResults) != possibleBetterResults.end())
-		return Compare::BETTER;
-	if(possibleWorstResults.find(comparisonResults) != possibleWorstResults.end())
-		return Compare::WORSE;
-
-	return Compare::DIFFERENT;
-}
-
-SpellTargetEvaluator::Compare SpellTargetEvaluator::compareAffectedStacksSubset(
-    const spells::Mechanics * spellMechanics, const std::set<const CStack *> & newSubset, const std::set<const CStack *> & oldSubset)
-{
-	if(newSubset.size() == oldSubset.size())
-		return newSubset == oldSubset ? Compare::EQUAL : Compare::DIFFERENT;
-
-	if(oldSubset.size() > newSubset.size())
-		return reverse(compareAffectedStacksSubset(spellMechanics, oldSubset, newSubset));
-
-	const std::set<const CStack *> & biggerSet = newSubset;
-	const std::set<const CStack *> & smallerSet = oldSubset;
-
-	if(std::includes(biggerSet.begin(), biggerSet.end(), smallerSet.begin(), smallerSet.end()))
-		return Compare::BETTER;
-	else
-		return Compare::DIFFERENT;
-}
-
-SpellTargetEvaluator::Compare SpellTargetEvaluator::reverse(SpellTargetEvaluator::Compare compare)
-{
-	switch(compare)
-	{
-		case Compare::BETTER:
-			return Compare::WORSE;
-		case Compare::WORSE:
-			return Compare::BETTER;
-		default:
-			return compare;
-	}
-}
-
-bool SpellTargetEvaluator::canBeCastAt(const spells::Mechanics * spellMechanics, BattleHex hex)
-{
-	detail::ProblemImpl ignored;
-	Destination des(hex);
-	return spellMechanics->canBeCastAt({des}, ignored);
-}
-
-void SpellTargetEvaluator::addIfCanBeCast(const spells::Mechanics * spellMechanics, BattleHex hex, std::vector<Target> & targets)
-{
-	detail::ProblemImpl ignored;
-	Destination des(hex);
-	if(spellMechanics->canBeCastAt({des}, ignored))
-		targets.push_back({des});
-}
-
-float SpellTargetEvaluator::applicationChance(const Mechanics * mechanics, const battle::Unit * recipient)
-{
-	return spellApplicationChance(mechanics, recipient);
 }

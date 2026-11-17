@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "BattleConsecratedArms.h"
 #include "BattleFocusMagic.h"
 #include "../../lib/battle/NewHorizonsFocusMagic.h"
 #include "../../lib/battle/NewHorizonsPassiveSpecialties.h"
@@ -1334,7 +1335,8 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 				firstStrikeBlocked = battle.battleHasMagicalRetaliationBlock(stack);
 		}
 		if(i == 0 && firstStrike && openingAttackTarget->ableToRetaliate() && !firstStrikeBlocked
-			&& !stack->isInvincible() && !longWeaponAttack && !longReachAttack)
+			&& !stack->isInvincible() && !longWeaponAttack && !longReachAttack
+			&& !battleConsecratedArms::fearlessAdvance(*gameHandler, battle, *stack))
 		{
 			makeAttack(battle, openingAttackTarget, stack, {.targetHex = stack->getPosition(), .first = true,
 				.counter = true, .retaliation = true});
@@ -1383,7 +1385,8 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 				shroudBlocked = false;
 		}
 		if(battle::canRetaliateAfterOrdinaryMelee(*stack, *attackTarget,
-			{counterBlocked, longWeaponAttack, longReachAttack, i, firstStrike, shroudBlocked, frozenBeforeHit}))
+			{counterBlocked, longWeaponAttack, longReachAttack, i, firstStrike, shroudBlocked, frozenBeforeHit})
+			&& !battleConsecratedArms::fearlessAdvance(*gameHandler, battle, *stack))
 		{
 			makeAttack(battle, attackTarget, stack, {.targetHex = stack->getPosition(), .first = true,
 				.counter = true, .retaliation = true,
@@ -2421,6 +2424,11 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 			&& (updatedStack->pursuitMovementRemaining > 0 || updatedStack->dreadCavalryState.pending);
 		EndAction endAction;
 		endAction.battleID = battle.getBattle()->getBattleID();
+		if(result && effectiveAction.isUnitAction() && !battle.battleTacticDist()
+			&& effectiveAction.actionType != EActionType::WAIT && effectiveAction.actionType != EActionType::NO_ACTION
+			&& !(masterGateActivationContinuationOut && *masterGateActivationContinuationOut)
+			&& !pursuitContinuation && !rangedFollowUpStillPending)
+			endAction.completedUnitAction = effectiveAction.stackNumber;
 		endAction.endsFortuneActivation = result && effectiveAction.isUnitAction() && !battle.battleTacticDist()
 			&& stack
 			&& !(masterGateActivationContinuationOut && *masterGateActivationContinuationOut)
@@ -3513,6 +3521,7 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 
 	const auto divineFurySide = battle.playerToSide(battle.battleGetOwner(attacker));
 	const bool divineFuryUnderOrder = newHorizonsPassiveDivineMandate::activeOrderRiders(battle, attacker).fury;
+	battleConsecratedArms::AttackContext consecrated;
 	// only primary target
 	if(defender && defender->alive())
 	{
@@ -3520,7 +3529,8 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 			attack, false, attack.brace, attack.preemptiveDamagePercent,
 			attack.cleaveDamagePercent, protectIntercepted,
 			relentlessAssault && relentlessAssault->eligible ? relentlessAssault->damagePercent : 0,
-			attack.archeryRangedDamageMultiplierPercent, attack.retaliation, lastStandUsedThisAttack, attack.dreadCavalryDamagePercent);
+			attack.archeryRangedDamageMultiplierPercent, attack.retaliation, lastStandUsedThisAttack,
+			attack.dreadCavalryDamagePercent, consecrated);
 		appendArcheryFeedback(estimation, defender);
 		appendGuardianSpiritFeedback(estimation, defender);
 		if(relentlessAssault && relentlessAssault->eligible
@@ -3573,7 +3583,8 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 			attack, true, attack.brace, attack.preemptiveDamagePercent,
 			attack.cleaveDamagePercent, false,
 			relentlessAssault && relentlessAssault->eligible ? relentlessAssault->damagePercent : 0,
-			attack.archeryRangedDamageMultiplierPercent, attack.retaliation, lastStandUsedThisAttack, attack.dreadCavalryDamagePercent);
+			attack.archeryRangedDamageMultiplierPercent, attack.retaliation, lastStandUsedThisAttack,
+			attack.dreadCavalryDamagePercent, consecrated);
 		appendArcheryFeedback(estimation, unit);
 		appendGuardianSpiritFeedback(estimation, unit);
 		const auto attackerOrderCauses = damageOrderCauses(estimation, true);
@@ -3819,13 +3830,18 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 		bat.bsa,
 		attack.manaLeechSequenceSpent && *attack.manaLeechSequenceSpent);
 	const auto primaryEffects = preparePrimaryStrikeAftermath(battle, attacker, defender, attack, bat);
+	const auto judgment = battleConsecratedArms::prepareJudgment(battle, *attacker,
+		!bat.spellLike() && !attack.brace && attack.preemptiveDamagePercent <= 0, bat.bsa, consecrated);
 	if(attack.hostileCreatureKills)
 		for(const auto & hit : bat.bsa)
 			if(const auto * victim = battle.battleGetUnitByID(hit.stackAttacked); victim
 				&& newHorizonsAttackControllers::barrageKillQualifies(battle, *attacker, *victim, hit.killedAmount))
 				*attack.hostileCreatureKills += hit.killedAmount;
 	battleFocusMagic::capturePresentation(bat, *attacker);
+	consecrated.redemption.record(battle, bat.bsa);
 	gameHandler->sendAndApply(bat);
+	battleConsecratedArms::applyJudgment(*gameHandler, battle, judgment, consecrated);
+	consecrated.redemption.complete(battle, *gameHandler->spellcastEnvironment());
 	battleFocusMagic::consumeAcceptedStrike(*gameHandler->spellEnv, battle, bat);
 	battlePrimaryStrikeAftermath::recordPrimaryMelee(primaryEffects, primaryMeleeTarget);
 
@@ -4054,7 +4070,12 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 						newHorizonsBulwark::toxicSpinesPoisonBase(hit.damageAmount),
 						static_cast<int32_t>(defender->unitId()));
 				if(poisonApplied)
+				{
+					reflectedAttackerState->physicalPoisonDescriptor = creatureAbility::nativeAffliction(
+						creatureAbility::Native::PHYSICAL_POISON, creatureAbility::Family::SKILL,
+						battle.battleGetOwner(defender));
 					hit.newState.data = reflectedAttackerState->save();
+				}
 				BattleLogMessage reflectionLog;
 				reflectionLog.battleID = battle.getBattle()->getBattleID();
 				MetaString reflectionLine;
@@ -4284,7 +4305,8 @@ DamageEstimation BattleActionProcessor::applyBattleEffects(const CBattleInfoCall
 	const battle::Unit * def, const AttackDescriptor & attack, bool secondary, bool bracePreemptive,
 	int preemptiveDamagePercent, int cleaveDamagePercent, bool protectIntercepted,
 	int relentlessAssaultDamagePercent, int archeryRangedDamageMultiplierPercent,
-	bool retaliation, std::array<bool, 2> & lastStandUsedThisAttack, int dreadCavalryDamagePercent) const
+	bool retaliation, std::array<bool, 2> & lastStandUsedThisAttack, int dreadCavalryDamagePercent,
+	battleConsecratedArms::AttackContext & consecrated) const
 {
 	BattleStackAttacked bsa;
 	if(secondary)
@@ -4337,8 +4359,9 @@ DamageEstimation BattleActionProcessor::applyBattleEffects(const CBattleInfoCall
 		const auto standSide = battle.playerToSide(battle.battleGetOwner(def));
 		const bool validStandSide = standSide == BattleSide::ATTACKER || standSide == BattleSide::DEFENDER;
 		const auto * targetHero = validStandSide ? battle.battleGetFightingHero(standSide) : nullptr;
+		const auto damageContext = battleConsecratedArms::damageContext(consecrated, *def, bai.physicalDamage);
 		defenderStateChanged = battleLastStandDamage::prepare(battle, bai, bat, bsa,
-			*defenderState, lastStandUsedThisAttack, retaliation);
+			*defenderState, lastStandUsedThisAttack, retaliation, damageContext);
 		const bool bastionProtectionConsumed = newHorizonsCombatSkills::isPhysicalCreatureAttack(
 			attackerState.get(), bai.physicalDamage) && battle.battleHasBastionProtection(def);
 		const auto damageProvenance = !bai.physicalDamage
@@ -4347,7 +4370,7 @@ DamageEstimation BattleActionProcessor::applyBattleEffects(const CBattleInfoCall
 				: battle::DamageProvenance::OTHER;
 		int64_t postShieldBeforeCasualties = 0;
 		CStack::prepareAttacked(bsa, gameHandler->getRandomGenerator(), defenderState,
-			false, false, damageProvenance, &postShieldBeforeCasualties); //calculate casualties
+			false, false, damageProvenance, &postShieldBeforeCasualties, &damageContext); //calculate casualties
 		// The live target still has its pre-packet identity/effects here, even if its prepared body died.
 		if(const auto reprisal = arcaneInspiration::captureReprisal(battle, bai, postShieldBeforeCasualties))
 			payload.arcaneReprisals.push_back(*reprisal);

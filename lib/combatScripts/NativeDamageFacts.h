@@ -41,6 +41,8 @@ struct UnitFacts
 struct PreparedUnit
 {
 	UnitFacts unit;
+	/// Exact branch/current-count value; absent retains native reference policy.
+	std::optional<double> leadershipEfficiency;
 	double physicalDefense = 0;
 	double enemyDefenseReduction = 0, enemyAttackReduction = 0, attackReduction = 0;
 	double damageBoost = 0, petrification = 0;

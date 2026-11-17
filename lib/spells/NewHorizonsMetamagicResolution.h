@@ -13,7 +13,14 @@ struct DLL_LINKAGE ResolutionPolicy
 	int32_t damagePerMana;
 	int32_t restorationPerMana;
 	int32_t halonChanceBonus;
+	/// Historical 4/5 profiles retain their exact arithmetic; policy 6 adds the new core.
+	std::array<int32_t, 4> overflowPercentByRank{};
+	std::array<int32_t, 4> friendlyDamageReductionPercentByRank{};
+	std::array<int32_t, 4> debuffRetryChancePercentByRank{};
+	bool optionalRemoval = false;
 };
+/// Strict decoder shared by cold admission and one-time typed compilation.
+/// Only complete authored policy 4/5/6 profiles are executable.
 DLL_LINKAGE std::optional<ResolutionPolicy> resolutionPolicy(const JsonNode & rules);
 DLL_LINKAGE int removalChancePercent(const ResolutionPolicy &, int rank, bool halon);
 DLL_LINKAGE int64_t energyHitPoints(int64_t removedMana, int32_t multiplier);
@@ -41,6 +48,7 @@ struct DLL_LINKAGE RemovalCandidate
 	std::string statusIdentity;
 	int32_t listedMana = 0;
 	std::vector<Bonus> bonuses;
+	creatureAbility::Descriptor abilityDescriptor;
 };
 
 /// Immutable logical effects; RNG and state changes belong to simulation callers.

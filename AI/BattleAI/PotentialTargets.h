@@ -20,12 +20,12 @@ public:
 	bool berserk = false;
 
 	PotentialTargets(){};
-	PotentialTargets(
+	DLL_LINKAGE PotentialTargets(
 		const battle::Unit * attacker,
 		DamageCache & damageCache,
 		std::shared_ptr<HypotheticBattle> hb);
 
-	const AttackPossibility & bestAction() const;
+	DLL_LINKAGE const AttackPossibility & bestAction() const;
 	int64_t bestActionValue() const;
 	/// Expected immediate action value across the deterministic tied Berserk candidates,
 	/// measured from the berserker's side in AttackPossibility damage-reduction units.
@@ -33,6 +33,9 @@ public:
 	float expectedBerserkActionValue() const;
 
 private:
+	void enumerateCandidates(const battle::Unit * attacker, DamageCache & damage,
+		const std::shared_ptr<HypotheticBattle> & state,
+		const ReachabilityInfo & reachability, const BattleHexArray & availableHexes);
 	// Frenzied Curse is evaluated in an isolated hypothetical battle. Keep its
 	// unit snapshots alive because forced actions and AttackPossibility retain
 	// pointers into that branch.

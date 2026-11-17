@@ -30,6 +30,100 @@ HypotheticBattle::HypotheticServerCallback::HypotheticServerCallback(HypotheticB
 {
 }
 
+void HypotheticBattle::rejectProjectedSpellEvaluation(BattleSide side) noexcept
+{
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+	{
+		spellPaymentScopes.invalidate();
+		return;
+	}
+	const auto & begun = begunProjectedSpellAllowances.at(side);
+	if(begun) rejectedSpellPaymentEpochs.at(side) = begun->action.epoch;
+	evaluatedSpellPayments.at(side).reset();
+}
+uint64_t HypotheticBattle::HypotheticServerCallback::beginSpellEvaluation(SpellEvaluationKind kind,
+	BattleSide side, const SpellID & spell)
+{
+	std::optional<uint64_t> epoch;
+	try
+	{
+		if(kind == SpellEvaluationKind::MANUAL_HERO)
+		{
+			const auto & begun = owner->begunProjectedSpellAllowances.at(side);
+			if(begun)
+			{
+				epoch = begun->action.epoch;
+				owner->nativeSpellAttemptEpochs.at(side) = epoch;
+				if(begun->spell != spell || begun->action.epoch != owner->projectedActionEpochs.at(side)
+					|| begun->action.receipt.round != owner->projectedRound
+					|| owner->rejectedSpellPaymentEpochs.at(side) == epoch)
+					throw std::invalid_argument("Native evaluation does not match an admissible begun action");
+			}
+		}
+		return owner->spellPaymentScopes.begin(kind, side, spell, epoch);
+	}
+	catch(...)
+	{
+		if(kind == SpellEvaluationKind::MANUAL_HERO) owner->rejectProjectedSpellEvaluation(side);
+		throw;
+	}
+}
+void HypotheticBattle::HypotheticServerCallback::admitSpellEvaluation(uint64_t token, int32_t cost, bool admitted)
+{
+	const auto kind = owner->spellPaymentScopes.currentKind();
+	const auto side = owner->spellPaymentScopes.currentSide();
+	const auto manual = owner->spellPaymentScopes.activeManualAction();
+	try
+	{
+		if(manual)
+		{
+			const auto & prior = owner->evaluatedSpellPayments.at(side);
+			if(owner->rejectedSpellPaymentEpochs.at(side) == manual->second
+				|| (prior && (prior->evaluated || prior->exactCost != cost || prior->actionEpoch != manual->second)))
+				throw std::invalid_argument("Native evaluation cost does not match its preflight action");
+		}
+		const auto * state = kind == SpellEvaluationKind::OTHER ? nullptr : owner->forecastSide(side).get();
+		owner->spellPaymentScopes.admit(token, state, cost, admitted);
+	}
+	catch(...)
+	{
+		if(kind == SpellEvaluationKind::MANUAL_HERO) owner->rejectProjectedSpellEvaluation(side);
+		throw;
+	}
+}
+void HypotheticBattle::HypotheticServerCallback::allowSpellEvaluationDelegation(uint64_t token)
+{
+	owner->spellPaymentScopes.allowDelegation(token);
+}
+void HypotheticBattle::HypotheticServerCallback::endSpellEvaluation(uint64_t token, bool completed) noexcept
+{
+	const auto manual = owner->spellPaymentScopes.activeManualAction();
+	const bool delegated = owner->spellPaymentScopes.completedDelegation();
+	auto ticket = owner->spellPaymentScopes.finish(token, completed);
+	if(manual && (!completed || !owner->spellPaymentScopes.healthy()))
+		owner->rejectProjectedSpellEvaluation(manual->first);
+	if(!ticket)
+	{
+		// An unadmitted outer concentration frame may have delegated exactly one
+		// completed inner evaluation. Every other incomplete attempt is inert.
+		if(manual)
+		{
+			const auto & prior = owner->evaluatedSpellPayments.at(manual->first);
+			if(!completed || !delegated || !prior || !prior->evaluated || prior->actionEpoch != manual->second)
+				owner->rejectProjectedSpellEvaluation(manual->first);
+		}
+		return;
+	}
+	const auto & begun = owner->begunProjectedSpellAllowances.at(ticket->side);
+	if(!begun || begun->spell != ticket->spell || begun->action.epoch != ticket->actionEpoch
+		|| owner->rejectedSpellPaymentEpochs.at(ticket->side) == ticket->actionEpoch)
+	{
+		owner->rejectProjectedSpellEvaluation(ticket->side);
+		return;
+	}
+	owner->evaluatedSpellPayments.at(ticket->side) = std::move(ticket);
+}
+
 void HypotheticBattle::HypotheticServerCallback::complain(const std::string & problem)
 {
 	logAi->error(problem);
@@ -57,15 +151,8 @@ void HypotheticBattle::HypotheticServerCallback::recordCompletedHeroSpellCast(Ba
 {
 	if(side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)
 	{
-		if(auto & count = owner->projectedCastSpells.at(side); count)
-		{
-			if(*count == std::numeric_limits<int32_t>::max())
-				throw std::overflow_error("Projected completed spell count overflow");
-			++*count;
-		}
-		owner->heroSpellCastCompletedStates.at(side) = true;
-		if(spellLevel >= 1 && spellLevel <= GameConstants::SPELL_LEVELS)
-			owner->completedHeroSpellLevelMasks.at(side) |= static_cast<std::uint8_t>(1u << (spellLevel - 1));
+		const auto receipt = forecast::SideTransitions::recordCompletion(owner->forecastSide(side), spellLevel, owner->searchBudget().get());
+		if(!receipt || !owner->commitForecastSide(side, *receipt)) throw std::invalid_argument("Unknown projected cast completion owner");
 	}
 }
 
@@ -75,10 +162,13 @@ void HypotheticBattle::HypotheticServerCallback::recordCompletedAutomaticHeroSpe
 	const auto * hero = owner->battleGetFightingHero(side);
 	if(!spells::automaticHeroCastAllowed(*owner, hero, spell.toSpell(), receipt))
 		throw std::runtime_error("Invalid automatic hero cast projection receipt");
+	const auto completed = forecast::SideTransitions::recordCompletion(owner->forecastSide(side),
+		owner->battleGetSpellLevel(spell), owner->searchBudget().get(), spell);
+	if(!completed) throw std::invalid_argument("Unsupported projected automatic cast owner");
 	if(receipt.kind == spells::AutomaticHeroCastKind::DIVINE_MANDATE)
 		owner->setPassiveDivineMandateUses(side, receipt.mandateUseOrdinal);
-
-	recordCompletedHeroSpellCast(side, owner->battleGetSpellLevel(spell));
+	if(!owner->commitForecastSide(side, *completed))
+		throw std::logic_error("Stale synchronous automatic cast receipt");
 }
 
 vstd::RNG * HypotheticBattle::HypotheticServerCallback::getRNG()
@@ -136,7 +226,8 @@ bool HypotheticBattle::HypotheticServerCallback::resolveAdverseCombatRoll(const 
 void HypotheticBattle::HypotheticServerCallback::apply(CPackForClient & pack)
 {
 	if(const auto * mana = dynamic_cast<const SetMana *>(&pack);
-		mana && mana->operation == SetMana::Operation::RESTORE_NORMAL)
+		mana && (mana->operation == SetMana::Operation::RESTORE_NORMAL
+			|| mana->operation == SetMana::Operation::REFUND_HERO_LUCK))
 	{
 		owner->restoreProjectedNormalMana(*mana);
 		return;

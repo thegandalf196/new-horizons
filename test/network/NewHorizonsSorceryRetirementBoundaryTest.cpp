@@ -20,6 +20,8 @@ TEST(NewHorizonsSorceryRetirementBoundary, RejectsMissingOldAndFutureProtocolBef
 	};
 	setWireVersion(static_cast<uint32_t>(ESerializationVersion::NEW_HORIZONS_ESTATES));
 	EXPECT_THROW(gameConnectionProtocol::validateHeader(bytes, ESerializationVersion::CURRENT), std::runtime_error);
+	setWireVersion(static_cast<uint32_t>(ESerializationVersion::NEW_HORIZONS_SHARED_CAPTURED_RULES));
+	EXPECT_THROW(gameConnectionProtocol::validateHeader(bytes, ESerializationVersion::CURRENT), std::runtime_error);
 	setWireVersion(static_cast<uint32_t>(ESerializationVersion::CURRENT) + 1);
 	EXPECT_THROW(gameConnectionProtocol::validateHeader(bytes, ESerializationVersion::CURRENT), std::runtime_error);
 	bytes[0] = std::byte{0};
@@ -42,7 +44,7 @@ TEST(NewHorizonsSorceryRetirementBoundary, OldSaveRejectsBeforePayloadAndPreserv
 		boost::filesystem::path path;
 		~Cleanup() { boost::system::error_code ignored; boost::filesystem::remove(path, ignored); }
 	} cleanup{path};
-	const auto oldVersion = ESerializationVersion::NEW_HORIZONS_ESTATES;
+	const auto oldVersion = ESerializationVersion::NEW_HORIZONS_SHARED_CAPTURED_RULES;
 	std::string bytes("VCMI");
 	bytes.append(reinterpret_cast<const char *>(&oldVersion), sizeof(oldVersion));
 	bytes.append("invalid retired payload");
@@ -57,7 +59,7 @@ TEST(NewHorizonsSorceryRetirementBoundary, OldSaveRejectsBeforePayloadAndPreserv
 	}
 	catch(const std::runtime_error & error)
 	{
-		EXPECT_NE(std::string(error.what()).find("Sorcery and Metamagic redesign"), std::string::npos);
+		EXPECT_NE(std::string(error.what()).find("start a new game"), std::string::npos);
 	}
 	std::ifstream input(path.string(), std::ios::binary);
 	const std::string preserved((std::istreambuf_iterator<char>(input)), std::istreambuf_iterator<char>());

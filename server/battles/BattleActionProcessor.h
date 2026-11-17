@@ -43,6 +43,7 @@ class BattleProcessor;
 class ICombatEventScript;
 namespace newHorizonsLivingInferno { struct Trail; }
 namespace battlePrimaryStrikeAftermath { struct Prepared; }
+namespace battleConsecratedArms { struct AttackContext; }
 
 /// Processes incoming battle action queries and applies requested action(s)
 class BattleActionProcessor : boost::noncopyable
@@ -233,7 +234,8 @@ class BattleActionProcessor : boost::noncopyable
 		const battle::Unit * def, const AttackDescriptor & attack, bool secondary, bool bracePreemptive,
 		int preemptiveDamagePercent, int cleaveDamagePercent, bool protectIntercepted,
 		int relentlessAssaultDamagePercent, int archeryRangedDamageMultiplierPercent,
-		bool retaliation, std::array<bool, 2> & lastStandUsedThisAttack, int dreadCavalryDamagePercent) const;
+		bool retaliation, std::array<bool, 2> & lastStandUsedThisAttack, int dreadCavalryDamagePercent,
+		battleConsecratedArms::AttackContext & consecrated) const;
 	void publishHeroOrderState(const CBattleInfoCallback & battle, BattleSide side) const;
 
 	void addGenericKilledLog(BattleLogMessage & blm, const CStack * defender, int32_t killed, bool multiple) const;

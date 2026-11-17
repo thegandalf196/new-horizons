@@ -8,11 +8,13 @@
  *
  */
 #include "StdInc.h"
+#include "OrdinaryUnitTransitions.h"
 #include "NewHorizonsFocusMagic.h"
 #include "NewHorizonsSpecialtyRoundEffects.h"
 #include "NewHorizonsAerialSupremacy.h"
 
 #include "CUnitState.h"
+#include "OwnedUnitStateLoanSource.h"
 #include "UnitStateEffectReceipts.h"
 #include "PhysicalPoisonSpellOrigin.h"
 #include "SummonLifetime.h"
@@ -51,7 +53,7 @@ const JsonNode * findJsonField(const JsonNode & object, const std::string & name
 bool validDamageProvenance(const int64_t value)
 {
 	return value >= static_cast<int64_t>(DamageProvenance::OTHER)
-		&& value <= static_cast<int64_t>(DamageProvenance::SPELL);
+		&& value <= static_cast<int64_t>(DamageProvenance::MAGICAL_CREATURE);
 }
 
 bool inspectCasualtyProvenanceJson(const JsonNode & healthNode)
@@ -96,7 +98,8 @@ bool inspectCasualtyProvenanceJson(const JsonNode & healthNode)
 				|| !validDamageProvenance(provenanceValue)
 				|| temporaryValue < 0 || temporaryValue > countValue)
 				throw std::runtime_error("Invalid casualty provenance cohort values");
-			hasMagicalCasualty |= provenanceValue == static_cast<int64_t>(DamageProvenance::SPELL);
+			hasMagicalCasualty |= provenanceValue == static_cast<int64_t>(DamageProvenance::SPELL)
+				|| provenanceValue == static_cast<int64_t>(DamageProvenance::MAGICAL_CREATURE);
 		}
 	}
 	return initialized && hasMagicalCasualty;
@@ -230,7 +233,10 @@ int32_t CAmmo::available() const
 
 bool CAmmo::canUse(int32_t amount) const
 {
-	return (available() - amount >= 0) || !isLimited();
+	const auto current = available();
+	// Preserve short-circuit query order, including legacy negative preflights.
+	if(amount < 0) return static_cast<int64_t>(current) - amount >= 0 || !isLimited();
+	return consumeCounterValue(current, true, amount).has_value() || !isLimited();
 }
 
 bool CAmmo::isLimited() const
@@ -744,7 +750,8 @@ int32_t CHealth::getCasualtyCount(const DamageProvenance provenance) const
 
 bool CHealth::hasCasualtyProvenanceState() const
 {
-	return getCasualtyCount(DamageProvenance::SPELL) > 0;
+	return getCasualtyCount(DamageProvenance::SPELL) > 0
+		|| getCasualtyCount(DamageProvenance::MAGICAL_CREATURE) > 0;
 }
 
 int64_t CHealth::getTemporaryHitPoints() const
@@ -1191,7 +1198,7 @@ void CHealth::CasualtyProvenanceCohort::serializeJson(JsonSerializeFormat & hand
 	handler.serializeInt("provenance", rawProvenance);
 	handler.serializeInt("temporarilyRestored", temporarilyRestored);
 	if(rawProvenance < static_cast<int32_t>(DamageProvenance::OTHER)
-		|| rawProvenance > static_cast<int32_t>(DamageProvenance::SPELL))
+		|| rawProvenance > static_cast<int32_t>(DamageProvenance::MAGICAL_CREATURE))
 		throw std::runtime_error("Invalid casualty provenance kind");
 	provenance = static_cast<DamageProvenance>(rawProvenance);
 }
@@ -1828,6 +1835,13 @@ int CUnitState::getMaxDamage(bool ranged) const
 
 std::shared_ptr<Unit> CUnitState::acquire() const
 {
+	if(env)
+		if(const auto * owned = env->ownedUnitStateLoanSource())
+		{
+			auto state = owned->acquireOwnedState(*this);
+			if(!state) throw std::logic_error("Owning native acquire returned an empty state");
+			return state;
+		}
 	auto ret = std::make_shared<CUnitStateDetached>(this, this);
 	ret->captureBonusProviderDispatch();
 	// Cloning copies the complete typed value inventory, including health and
@@ -1840,6 +1854,13 @@ std::shared_ptr<Unit> CUnitState::acquire() const
 
 std::shared_ptr<CUnitState> CUnitState::acquireState() const
 {
+	if(env)
+		if(const auto * owned = env->ownedUnitStateLoanSource())
+		{
+			auto state = owned->acquireOwnedState(*this);
+			if(!state) throw std::logic_error("Owning native acquire returned an empty state");
+			return state;
+		}
 	auto ret = std::make_shared<CUnitStateDetached>(this, this);
 	ret->captureBonusProviderDispatch();
 	// Cloning copies the complete typed value inventory, including health and
@@ -1955,6 +1976,9 @@ void CUnitState::serializeJson(JsonSerializeFormat & handler)
 		|| physicalPoisonActivationsRemaining > 3
 		|| ((physicalPoisonBaseDamage == 0) != (physicalPoisonActivationsRemaining == 0)))
 		throw std::runtime_error("Invalid physical Poison state");
+	serializePhysicalPoisonDescriptor(handler, *this);
+	redemptionShield.serializeJson(handler);
+	handler.serializeBool("completedActionThisRound", completedActionThisRound);
 	handler.serializeInt("guardianSpiritHitPoints", guardianSpiritHitPoints, 0);
 	handler.serializeInt("guardianSpiritRoundsRemaining", guardianSpiritRoundsRemaining, 0);
 	if(guardianSpiritHitPoints < 0 || guardianSpiritRoundsRemaining < 0
@@ -2102,6 +2126,12 @@ void CUnitState::load(const JsonNode & data)
 	newHorizonsAerialSupremacy::hasRoundState(data);
 	hasHeroicSpiritState(data);
 	hasMoraleActivationState(data);
+	hasConsecratedUnitState(data);
+	if(data["state"]["redemptionShieldInitialized"].isBool()
+		&& data["state"]["redemptionShieldInitialized"].Bool()
+		&& data["state"]["redemptionShieldCapacity"].Integer() != getBattleStartMaximumAggregateHP() / 5)
+		throw std::runtime_error("Redemption shield capacity disagrees with captured combat-start HP");
+
 	const auto incomingActivation = parseUnitStateEffectReceipts(data);
 	const bool previousBattleFormState = hasBattleFormState();
 	reset();
@@ -2156,7 +2186,7 @@ void CUnitState::damageShadowGiftSacrifice(int64_t & amount)
 }
 
 void CUnitState::damageInternal(int64_t & amount, bool destroyRemains, bool bypassTemporaryHitPoints,
-	DamageProvenance provenance, int64_t * postShieldBeforeCasualties)
+	DamageProvenance provenance, int64_t * postShieldBeforeCasualties, const DamageContext * context)
 {
 	if(postShieldBeforeCasualties)
 		*postShieldBeforeCasualties = 0;
@@ -2180,7 +2210,7 @@ void CUnitState::damageInternal(int64_t & amount, bool destroyRemains, bool bypa
 	const int32_t firstHPleftBefore = health.getFirstHPleft();
 	const int32_t countBefore = health.getCount();
 	const int32_t maximumCreatureHealth = getMaxHealth();
-	absorbGuardianSpiritDamage(amount, provenance, bypassTemporaryHitPoints);
+	absorbShields(amount, provenance, bypassTemporaryHitPoints, context);
 	if(postShieldBeforeCasualties)
 		*postShieldBeforeCasualties = amount;
 
@@ -2213,11 +2243,15 @@ void CUnitState::damageInternal(int64_t & amount, bool destroyRemains, bool bypa
 	}
 	else
 	{
+		constrainVowDamage(amount, context, bypassTemporaryHitPoints);
+		if(postShieldBeforeCasualties) *postShieldBeforeCasualties = amount;
 		const int64_t creatureHealthBefore = health.getCreatureHealthAvailable();
 		const bool activeBattleForm = battleFormOriginalHealth.isBattleFormProvenance();
 		health.damage(amount, activeBattleForm ? false : destroyRemains, bypassTemporaryHitPoints,
 			provenance, !activeBattleForm);
 		normalizeCapacityHealth();
+		if(context && context->vow && context->damageClass != DamageClass::HEALTH_COST)
+			context->vow->consume(countBefore, health.getCount());
 		const int64_t creatureHealthAfter = health.getCreatureHealthAvailable();
 		if(activeBattleForm)
 		{

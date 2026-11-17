@@ -131,6 +131,7 @@ TEST(OwnedBonusCaptureCodecTest, ExplicitKnownWireEpochsSelectConcreteBonusProfi
 		EXPECT_EQ(OwnedBonusCaptureCodec::current().version(), Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS);
 	else if(Version::CURRENT == Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN
 		|| Version::CURRENT == Version::NEW_HORIZONS_COMMAND_AUTHORITY
+		|| Version::CURRENT == Version::NEW_HORIZONS_CONSECRATED_ARMS
 		|| Version::CURRENT == Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY)
 		EXPECT_EQ(OwnedBonusCaptureCodec::current().version(), Version::CURRENT);
 	else if(Version::CURRENT == Version::NEW_HORIZONS_FOUR_OFFER_PROGRESSION
@@ -244,7 +245,7 @@ TEST(OwnedBonusCaptureCodecTest, Revision1156SourceUses1155BonusOnlyProfileAndDe
 	ASSERT_EQ(revised, passive);
 	const auto codec = OwnedBonusCaptureCodec::fromSourceEpoch(Version::NEW_HORIZONS_FACTION_SKILL_REVISIONS, revised);
 	EXPECT_EQ(codec.version(), Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS);
-	EXPECT_EQ(OwnedBonusCaptureCodec::current().version(), Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY);
+	EXPECT_EQ(OwnedBonusCaptureCodec::current().version(), Version::NEW_HORIZONS_CONSECRATED_ARMS);
 	EXPECT_THROW(OwnedBonusCaptureCodec::fromSourceEpoch(Version::NEW_HORIZONS_FACTION_SKILL_REVISIONS,
 		capabilities(Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES)), std::invalid_argument);
 	EXPECT_THROW(OwnedBonusCaptureCodec::fromSourceEpoch(Version::NEW_HORIZONS_FACTION_SKILL_REVISIONS,
@@ -276,7 +277,7 @@ TEST(OwnedBonusCaptureCodecTest, Historical1157And1158ProfilesRemainSeparateFrom
 	EXPECT_EQ(OwnedBonusCaptureCodec::fromSourceEpoch(Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN,
 		capabilities(Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN)).version(), Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN);
 	EXPECT_EQ(codec.version(), Version::NEW_HORIZONS_COMMAND_AUTHORITY);
-	EXPECT_EQ(OwnedBonusCaptureCodec::current().version(), Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY);
+	EXPECT_EQ(OwnedBonusCaptureCodec::current().version(), Version::NEW_HORIZONS_CONSECRATED_ARMS);
 	EXPECT_NE(OwnedBonusCaptureCodec::current().version(), codec.version());
 	EXPECT_THROW(OwnedBonusCaptureCodec::fromSourceEpoch(Version::NEW_HORIZONS_COMMAND_AUTHORITY,
 		capabilities(Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES)), std::invalid_argument);

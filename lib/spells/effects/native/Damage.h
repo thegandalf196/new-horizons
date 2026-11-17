@@ -12,6 +12,8 @@ public:
 	ResistanceShareKind resistanceShareKind() const override;
 	SpellEffectValue getHealthChange(const Mechanics *, const Target &) const override;
 	ForecastImplementation forecastImplementation(const Mechanics *) const override { return ForecastImplementation::CANONICAL_DAMAGE; }
+	/// Exact finite HP-damage recipe; excludes stochastic/counted/destructive variants.
+	bool supportsFiniteForecast() const;
 	int64_t damageForTarget(size_t index, const Mechanics *, const battle::Unit *) const;
 protected:
 	bool isReceptive(const Mechanics *, const battle::Unit *) const override;

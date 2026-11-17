@@ -5,6 +5,7 @@
  */
 #include "StdInc.h"
 #include "BracePrimaryState.h"
+#include "ForecastNativeAdapter.h"
 #include "HypotheticBattle.h"
 
 namespace attackPreview
@@ -16,10 +17,15 @@ void finishBracePrimaryState(HypotheticBattle & branch, uint32_t actorId,
 	auto victim = branch.getForUpdate(victimId);
 	// Native actor resources are captured before recipient UPDATE can remove
 	// or unpropagate records. Brace is physical, but never a counter spend.
-	actor->afterAttack(false, false, true);
-	if(victim->getAvailableHealth() < victimHealthBefore)
-		victim->removeUnitBonus(Bonus::UntilBeingAttacked);
-	actor->removeUnitBonus(Bonus::UntilAttack);
-	actor->removeUnitBonus(Bonus::UntilOwnAttack);
+	if(!forecast::NativeAdapter::afterAttack(branch, *actor, false, false, true))
+		actor->afterAttack(false, false, true);
+	const auto expire = [&](const std::shared_ptr<StackWithBonuses> & unit, const CSelector & selector)
+	{
+		if(!forecast::NativeAdapter::expireEffectSelector(branch, unit->unitId(), selector))
+			unit->removeUnitBonus(selector);
+	};
+	if(victim->getAvailableHealth() < victimHealthBefore) expire(victim, Bonus::UntilBeingAttacked);
+	expire(actor, Bonus::UntilAttack);
+	expire(actor, Bonus::UntilOwnAttack);
 }
 }

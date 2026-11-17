@@ -7,6 +7,8 @@
 #include "VisibleCandidateWorld.h"
 #include "AttackPossibility.h"
 #include "HypotheticBattle.h"
+#include "ForecastState.h"
+#include "ForecastAcceptedSnapshotSeal.h"
 #include "../../lib/battle/NewHorizonsArchery.h"
 #include <stdexcept>
 
@@ -47,8 +49,35 @@ AttackPossibility VisibleCandidateWorld::evaluate(const std::shared_ptr<const Vi
 	}
 	// Run the same ordinary preview, with the SAME concrete callback object:
 	// RTTI/lazy reaction paths, partial/unknown handling and scalar math stay put.
+	const auto before = owner->source->forecastState();
+	auto stamp = before ? std::make_shared<const forecast::State>(*before) : nullptr;
 	auto result = AttackPossibility::evaluate(attack, from, damageCache, owner->source, false, std::nullopt, nullptr,
 		validatedVoluntaryApproach && from.isAvailable() && from != attacker->getPosition(), attacker->getPosition());
-	result.queryWorld = owner; // Actual borrowed actor/victim/provider lifetime, not shadow evidence.
+	finishProduced(result, owner, std::move(stamp));
+	return result;
+}
+
+void VisibleCandidateWorld::finishProduced(AttackPossibility & result,
+	const std::shared_ptr<const VisibleCandidateWorld> & owner, std::shared_ptr<const forecast::State> stamp)
+{
+	result.forecastSource = std::move(stamp);
+	result.queryWorld = owner; // Actual source interval; not a claim of immutable snapshot contents.
+	if(result.forecastSource)
+		result.snapshotSeal = std::shared_ptr<const forecast::AcceptedSnapshotSeal>(new forecast::AcceptedSnapshotSeal(result));
+}
+AttackPossibility VisibleCandidateWorld::evaluateRefreshed(const std::shared_ptr<const VisibleCandidateWorld> & owner,
+	const BattleAttackInfo & attack, const BattleHex & from, DamageCache & cache,
+	bool validatedApproach, BattleHex approachOrigin)
+{
+	if(!owner || !attack.attacker || !attack.defender
+		|| owner->source->battleGetUnitByID(attack.attacker->unitId()) != attack.attacker
+		|| owner->source->battleGetUnitByID(attack.defender->unitId()) != attack.defender)
+		throw std::invalid_argument("Refreshed actors must belong to their actual query world");
+	const auto before = owner->source->forecastState();
+	auto stamp = before ? std::make_shared<const forecast::State>(*before) : nullptr;
+	// EXACT previous Forest Ambush re-evaluation arguments and attack metadata.
+	auto result = AttackPossibility::evaluate(attack, from, cache, owner->source, false, std::nullopt, nullptr,
+		validatedApproach, approachOrigin);
+	finishProduced(result, owner, std::move(stamp));
 	return result;
 }

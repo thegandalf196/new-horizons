@@ -47,8 +47,13 @@ void applyBinding(CGameHandler & handler, const CBattleInfoCallback & battle,
 		return;
 	SetStackEffect effect;
 	effect.battleID = battle.getBattle()->getBattleID();
-	effect.toAdd.emplace_back(binding->target, std::vector<Bonus>{binding->restraint});
+	auto restraint = binding->restraint;
+	restraint.abilityDescriptor = creatureAbility::nativeAffliction(creatureAbility::Native::SERPENTS_EMBRACE,
+		creatureAbility::Family::CREATURE_ABILITY, battle.battleGetOwner(source));
+	effect.toAdd.emplace_back(binding->target, std::vector<Bonus>{restraint});
 	handler.sendAndApply(effect);
+	if(releasePlan(*target, binding->source).empty())
+		return; // Unshakable Faith may have prevented the whole logical binding.
 	BattleLogMessage feedback;
 	feedback.battleID = effect.battleID;
 	MetaString line;

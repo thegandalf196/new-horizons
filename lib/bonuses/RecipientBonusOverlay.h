@@ -72,6 +72,16 @@ DLL_LINKAGE bool isInPhysicalAfflictionGroup(const Bonus * bonus, const Groups &
 DLL_LINKAGE bool isCapturedProjectionEffect(const Bonus * bonus, const Groups & history);
 DLL_LINKAGE void copyInherited(BonusList & target, const BonusList & inherited,
 	const View & layer, bool unstacked);
+/// Cold ownership tracing only. Ordinary append instantiates a compile-time
+/// no-op kernel; no callback/observer branch is added to native live queries.
+class DLL_LINKAGE OutputObserver
+{
+public:
+	virtual ~OutputObserver() = default;
+	virtual void cloned(const Bonus & source, const std::shared_ptr<Bonus> & output) = 0;
+};
+DLL_LINKAGE void appendObserved(BonusList & target, const View & layer,
+	const CSelector & mergeSelector, bool unstacked, OutputObserver & observer);
 DLL_LINKAGE void append(BonusList & target, const View & layer,
 	const CSelector & mergeSelector, bool unstacked);
 DLL_LINKAGE TConstBonusListPtr finish(TBonusListPtr target, const View & layer, const CSelector & selector);

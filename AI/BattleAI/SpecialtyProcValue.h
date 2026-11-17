@@ -48,7 +48,8 @@ class Opportunities
 	std::map<BattleSide, Ledger> ledgers;
 	/// Uniform recipients use bounded marginals, not a recipient-subset tree.
 	std::map<Key, std::pair<double, Effect>> bloodlust;
-	static void transition(Ledger &, const battle::Unit &, int chance, bool harmful, const std::optional<Key> &, const std::optional<attackAbilityPrefix::StatusKey> &);
+	static void transition(Ledger &, const battle::Unit &, int chance, bool harmful, const std::optional<Key> &,
+		const std::optional<attackAbilityPrefix::StatusKey> &, int resistanceBasisPoints = 0);
 public:
 	static bool requiresPreview(const CBattleInfoCallback &, const BattleAttackInfo &);
 	/// Accepted post-primary, before generic reactions, in native attempt order.

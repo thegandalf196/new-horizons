@@ -6,6 +6,8 @@
 #include "../../lib/battle/CBattleInfoCallback.h"
 #include "../../lib/battle/IBattleState.h"
 #include "../../lib/battle/NewHorizonsCreatureBurn.h"
+#include "../../lib/battle/RedemptionEvent.h"
+#include "../../lib/battle/UnitShieldState.h"
 #include "../../lib/networkPacks/PacksForClientBattle.h"
 #include "../../lib/networkPacks/SetStackEffect.h"
 namespace battleCreatureBurn
@@ -26,12 +28,17 @@ bool onActivation(CGameHandler & game, const CBattleInfoCallback & battle, const
 	hit.attackerID = tick.source;
 	hit.stackAttacked = target.unitId();
 	hit.damageAmount = tick.damage;
+	const battle::DamageContext damageContext{battle::DamageClass::MAGICAL,
+		battle::DamageOrigin::PERIODIC};
 	CStack::prepareAttacked(hit, game.getRandomGenerator(), target.acquireState(),
-		false, false, battle::DamageProvenance::OTHER);
+		false, false, battle::DamageProvenance::OTHER, nullptr, &damageContext);
 	StacksInjured injury;
 	injury.battleID = battle.getBattle()->getBattleID();
 	injury.stacks.push_back(hit);
+	battle::RedemptionEvent redemption;
+	redemption.record(battle, injury.stacks);
 	game.sendAndApply(injury);
+	redemption.complete(battle, *game.spellcastEnvironment());
 	if(hit.damageAmount > 0)
 	{
 		BattleLogMessage message;

@@ -1,6 +1,9 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt and AUTHORS. */
 #include "StdInc.h"
 #include "NativeEncounterBenchmarkSupport.h"
+#ifdef NH_PERF_EXPERIMENTS
+#include "SearchWorkXml.h"
+#endif
 #include "../SpellPointTestUtils.h"
 #include "../../lib/CCreatureHandler.h"
 #include "../../lib/entities/hero/NewHorizonsLeadership.h"
@@ -296,6 +299,9 @@ protected:
 			const auto timing = ais[index]->getTimingSummary();
 			ASSERT_TRUE(timing);
 			const auto prefix = std::string("side") + std::to_string(index);
+#ifdef NH_PERF_EXPERIMENTS
+			nativeBenchmark::recordSearchWorkDiagnostics(prefix, *timing);
+#endif
 			RecordProperty(prefix + "MovementExchanges", std::to_string(timing->movementExchangeBody.calls));
 			RecordProperty(prefix + "NormalExchanges", std::to_string(timing->bestTargetNormalBody.calls));
 			RecordProperty(prefix + "WaitedExchanges", std::to_string(timing->bestTargetWaitedBody.calls));

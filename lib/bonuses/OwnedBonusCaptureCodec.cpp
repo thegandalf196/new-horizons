@@ -49,6 +49,9 @@ OwnedBonusCaptureCodec OwnedBonusCaptureCodec::fromSourceEpoch(ESerializationVer
 	case Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY:
 		profile = Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY;
 		break;
+	case Version::NEW_HORIZONS_CONSECRATED_ARMS:
+		profile = Version::NEW_HORIZONS_CONSECRATED_ARMS;
+		break;
 	default:
 		throw std::invalid_argument("Unknown owned bonus source epoch");
 	}
@@ -76,6 +79,8 @@ OwnedBonusCaptureCodec OwnedBonusCaptureCodec::fromSourceCapabilities(
 		version = Version::NEW_HORIZONS_COMMAND_AUTHORITY;
 	else if(capabilities == Context::fromHandler(CodecFeatures{Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY}))
 		version = Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY;
+	else if(capabilities == Context::fromHandler(CodecFeatures{Version::NEW_HORIZONS_CONSECRATED_ARMS}))
+		version = Version::NEW_HORIZONS_CONSECRATED_ARMS;
 	else throw std::invalid_argument("Unknown or partial owned bonus capture capabilities");
 	return OwnedBonusCaptureCodec(version);
 }

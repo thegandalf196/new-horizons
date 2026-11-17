@@ -45,7 +45,7 @@ bool SideTransitions::commit(std::shared_ptr<const SideState> & current, const S
 std::optional<SideReceipt> SideTransitions::acceptedAction(const std::shared_ptr<const SideState> & current,
 	const HeroActionAllowanceState::Receipt & action, const HeroActionAllowanceState & consumed,
 	bool lightSpell, uint8_t maximumPairs, const std::vector<uint32_t> & recipients,
-	std::optional<CastCost> cost, battleSearch::SearchBudget * budget)
+	std::optional<CastCost> cost, battleSearch::SearchBudget * budget, std::span<const battle::spellPoints::Payment> refunds)
 {
 	std::vector<uint32_t> overlap;
 	std::optional<uint64_t> token;
@@ -65,7 +65,15 @@ std::optional<SideReceipt> SideTransitions::acceptedAction(const std::shared_ptr
 		}
 		else if(action.grantId != 0 || consumed != ledger)
 			throw std::invalid_argument("Invalid legacy compact forecast action receipt");
-		if(cost) token = charge(next, *cost);
+		if(!cost && !refunds.empty()) throw std::invalid_argument("Refund without original cast payment");
+		if(cost)
+		{
+			token = charge(next, *cost);
+			auto & original = next.castCharges.back();
+			for(const auto & refund : refunds)
+				if(!battle::spellPoints::refundCharge(*next.mana, original.paid, original.refunded, refund))
+					throw std::invalid_argument("Scoped cast refund exceeds actual payment provenance");
+		}
 	}, budget);
 	if(receipt) { receipt->mandateOverlap = std::move(overlap); receipt->paymentToken = token; }
 	return receipt;

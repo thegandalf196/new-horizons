@@ -9,6 +9,9 @@ namespace spells::effects::native
 class DLL_LINKAGE UnitEffect : public Effect
 {
 public:
+	/// Pure descriptor gate BEFORE transformTarget/filterTarget or enumeration.
+	/// The same inherited recipe is used by Damage, Timed and native Focus.
+	bool supportsFiniteForecastTargeting(const Mechanics &) const;
 	void adjustAffectedHexes(BattleHexArray &, const Mechanics *, const Target &) const override;
 	bool applicableGeneral(Problem &, const Mechanics *) const override;
 	bool applicableTarget(Problem &, const Mechanics *, const Target &) const override;

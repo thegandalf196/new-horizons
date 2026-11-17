@@ -10,6 +10,9 @@
 #include "StdInc.h"
 #include "BattleAI.h"
 #include "BattleEvaluator.h"
+#ifdef NH_PERF_EXPERIMENTS
+#include "BattleAITiming.h"
+#endif
 #include "BattleStrengthRatio.h"
 #include "HeroDecisionPressure.h"
 #include "BattleAIDiagnosticAdmission.h"
@@ -52,10 +55,21 @@ int getSimulationTurnsCount(const StartInfo * startInfo)
 	return startInfo->difficulty < 4 ? 2 : 10;
 }
 
-BattleEvaluator CBattleAI::makeEvaluator(const BattleID & battleID, const CStack * stack)
+BattleEvaluator CBattleAI::makeEvaluator(const BattleID & battleID, const CStack * stack
+#ifdef NH_PERF_EXPERIMENTS
+	, TimingScope * diagnostics
+#endif
+)
 {
+#ifdef NH_PERF_EXPERIMENTS
+	const auto diagnosticRoot = diagnostics ? diagnostics->beginSearchDecision(searchProfile) : nullptr;
+#endif
 	return BattleEvaluator(env, cb, stack, playerID, battleID, side,
-		battleAI::strengthRatio(*cb->getBattle(battleID), side), getSimulationTurnsCount(env->game()->getStartInfo()));
+		battleAI::strengthRatio(*cb->getBattle(battleID), side), getSimulationTurnsCount(env->game()->getStartInfo())
+#ifdef NH_PERF_EXPERIMENTS
+		, {}, diagnosticRoot, diagnostics ? diagnostics->forecastWorkSink() : nullptr
+#endif
+	);
 }
 
 bool CBattleAI::attemptHeroAction(BattleEvaluator & evaluator, const CStack * stack)

@@ -9,6 +9,7 @@
 #include "BonusLimitation.h"
 #include "Propagators.h"
 #include "Updaters.h"
+#include <type_traits>
 
 class LiveBonusGraphQuery final : public BonusGraphQuery
 {
@@ -20,12 +21,19 @@ public:
 	BonusEvaluationContext evaluation(const CBonusSystemNode & node) const override { return node; }
 };
 
-void collectBonusGraph(const BonusGraphQuery & graph, const CBonusSystemNode & node, BonusList & out, bool inherited)
+namespace
+{
+struct NoObservation {};
+template<class Observer>
+void collectBonusGraphImpl(const BonusGraphQuery & graph, const CBonusSystemNode & node,
+	BonusList & out, bool inherited, Observer & observer)
 {
 	BonusList beforeUpdate;
 	for(const auto * parent : graph.parents(node))
-		collectBonusGraph(graph, *parent, beforeUpdate, true);
-	graph.local(node).getAllBonuses(beforeUpdate);
+		collectBonusGraphImpl(graph, *parent, beforeUpdate, true, observer);
+	const auto & local = graph.local(node);
+	local.getAllBonuses(beforeUpdate);
+	if constexpr(!std::is_same_v<Observer, NoObservation>) observer.local(beforeUpdate, local, node);
 	const auto context = graph.evaluation(node);
 	if(inherited && node.isPrimaryRatingNode())
 	{
@@ -40,13 +48,33 @@ void collectBonusGraph(const BonusGraphQuery & graph, const CBonusSystemNode & n
 				&& (bonus->subtype == BonusSubtypeID(PrimarySkill::ATTACK) || bonus->subtype == BonusSubtypeID(PrimarySkill::DEFENSE));
 			// Keep creature-specific specialties/bonuses which do NOT apply as
 			// hero ratings; filter only the hero's own effective A/D contribution.
-			if(!rating || !vstd::contains(heroApplicable, bonus))
-				out.push_back(bonus);
+			const bool retained = !rating || !vstd::contains(heroApplicable, bonus);
+			if(retained) out.push_back(bonus);
+			if constexpr(!std::is_same_v<Observer, NoObservation>) observer.updated(beforeUpdate, static_cast<size_t>(&bonus - &updated[0]), out, bonus, node, context, true, retained);
 		}
+		if constexpr(!std::is_same_v<Observer, NoObservation>) observer.retire(beforeUpdate);
 		return;
 	}
 	for(const auto & bonus : beforeUpdate)
-		out.push_back(bonus->updater ? bonus->updater->createUpdatedBonus(bonus, context) : bonus);
+	{
+		auto updated = bonus->updater ? bonus->updater->createUpdatedBonus(bonus, context) : bonus;
+		out.push_back(updated);
+		if constexpr(!std::is_same_v<Observer, NoObservation>) observer.updated(beforeUpdate, static_cast<size_t>(&bonus - &beforeUpdate[0]), out, updated, node, context, false, true);
+	}
+	if constexpr(!std::is_same_v<Observer, NoObservation>) observer.retire(beforeUpdate);
+}
+}
+
+void collectBonusGraph(const BonusGraphQuery & graph, const CBonusSystemNode & node, BonusList & out, bool inherited)
+{
+	NoObservation observer;
+	collectBonusGraphImpl(graph, node, out, inherited, observer);
+}
+
+void collectBonusGraphObserved(const BonusGraphQuery & graph, const CBonusSystemNode & node,
+	BonusList & out, BonusCollectionObserver & observer, bool inherited)
+{
+	collectBonusGraphImpl(graph, node, out, inherited, observer);
 }
 
 void collectLiveBonusGraph(const CBonusSystemNode & node, BonusList & out, bool inherited)

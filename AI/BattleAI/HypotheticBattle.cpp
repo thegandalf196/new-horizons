@@ -8,6 +8,9 @@
  *
  */
 #include "StdInc.h"
+#include "SearchBudget.h"
+#include "ForecastNativeAdapter.h"
+#include <limits>
 #include "MoraleActivationValue.h"
 #include "HypotheticBattle.h"
 #include "InitialExportBattleSubject.h"
@@ -43,13 +46,50 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle)
 {
 }
 
+namespace
+{
+std::shared_ptr<battleSearch::SearchBudget> inheritedSearchWork(const HypotheticBattle::Subject & source)
+{
+	const auto * parent = dynamic_cast<const HypotheticBattle *>(source.get());
+	return parent ? parent->searchBudget() : nullptr;
+}
+const HypotheticBattle::Subject & admitForecastCapture(const HypotheticBattle::Subject & source,
+	const std::shared_ptr<battleSearch::SearchBudget> & explicitWork)
+{
+	const auto work = explicitWork ? explicitWork : inheritedSearchWork(source);
+	if(work)
+	{
+		work->require(battleSearch::WorkKind::Node); // Input roster lookup is one native primitive.
+		const auto * parent = dynamic_cast<const HypotheticBattle *>(source.get());
+		const auto ownedCount = parent ? parent->ownedForecastSize() : std::nullopt;
+		// Preserve the existing conservative deterministic charge, but do not
+		// enumerate/materialize an unchanged owned roster just to count it.
+		const auto count = ownedCount ? *ownedCount : source->battleGetAllUnits(false).size();
+		if(count > std::numeric_limits<uint32_t>::max()) throw battleSearch::BudgetExhausted(battleSearch::WorkKind::Node);
+		work->require(battleSearch::WorkKind::Node, static_cast<uint32_t>(count));
+	}
+	return source;
+}
+}
+
 HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle,
 	std::shared_ptr<const battle::OwnedBattleFrameBatch> batch)
-	: BattleProxy(InitialExportBattleSubject::forkForBranch(realBattle)),
-	sourceBinding(subject, *realBattle, batch || ownedFrameSource(realBattle)),
+	: HypotheticBattle(ENV, std::move(realBattle), std::move(batch), {}) {}
+
+HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle,
+	std::shared_ptr<const battle::OwnedBattleFrameBatch> batch,
+	std::shared_ptr<battleSearch::SearchBudget> budget)
+	: BattleProxy(InitialExportBattleSubject::forkForBranch(admitForecastCapture(realBattle, budget))),
+	sourceBinding(subject, *realBattle, batch || ownedFrameSource(realBattle) || forecastReadSource(realBattle)),
+	workBudget(budget ? std::move(budget) : inheritedSearchWork(realBattle)),
+	readWorkSink(dynamic_cast<const HypotheticBattle *>(realBattle.get())
+		? static_cast<const HypotheticBattle *>(realBattle.get())->forecastWorkSink() : nullptr),
 	env(ENV),
 	bonusTreeVersion(1)
 {
+	if(const auto * source = dynamic_cast<const HypotheticBattle *>(realBattle.get()))
+		forecastReferenceOnly = source->referenceForecastOnly();
+	captureForecastSides(*realBattle);
 	captureNecromancyPassives(*realBattle);
 	captureElementalAttunement(realBattle);
 	captureCurrentBonusOperations(realBattle);
@@ -58,12 +98,13 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle,
 	const auto * parent = dynamic_cast<const HypotheticBattle *>(realBattle.get());
 	if(parent)
 	{
+		if(parent->compactForecast || parent->compactReadSession)
+			compactReadSession = forecast::NativeAdapter::forkOwnedState(*parent);
 		movementMemo = parent->movementMemo;
 		mayContainSerpentBindings = parent->mayContainSerpentBindings;
-		projectedMana = parent->projectedMana;
-		manaLeechStartingPools = projectedMana;
 		projectedPlagueHits = parent->projectedPlagueHits;
 		forfeitedActivations = parent->forfeitedActivations;
+		bloodrageDestroyedUnits = parent->bloodrageDestroyedUnits;
 		bloodrageFirstBloodUsed = parent->bloodrageFirstBloodUsed;
 		inheritOwnedFrames(*parent);
 	}
@@ -94,16 +135,6 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle,
 	serverCallback.reset(new HypotheticServerCallback(this));
 	if(ownedFrameBatch) { localEnvironment->closeNativeSource(); env = localEnvironment.get(); }
 	captureUnitSnapshots(*realBattle, parent != nullptr);
-}
-
-bool HypotheticBattle::hasCompletedHeroSpellLevel(BattleSide side, int32_t level) const
-{
-	if((side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
-		|| level < 1 || level > GameConstants::SPELL_LEVELS)
-		return false;
-
-	const auto bit = static_cast<std::uint8_t>(1u << (level - 1));
-	return (completedHeroSpellLevelMasks.at(side) & bit) != 0;
 }
 
 bool HypotheticBattle::unitHasAmmoCart(const battle::Unit * unit) const
@@ -199,55 +230,12 @@ void HypotheticBattle::consumeExtendSpell(BattleSide side)
 	extendSpellRounds.at(side) = getRound();
 }
 
-const SpellResponseState & HypotheticBattle::getSpellResponseState(BattleSide side) const
-{
-	static const SpellResponseState empty;
-	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
-		return empty;
-	return spellResponseStates.at(side);
-}
-
 void HypotheticBattle::setCrossSchoolFormulaState(BattleSide side, const newHorizonsCrossSchoolFormula::State & state)
 {
 	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
 		throw std::runtime_error("Invalid detached Cross-School Formula side");
 	newHorizonsCrossSchoolFormula::validateState(*this, state);
 	crossSchoolFormulaStates.at(side) = state;
-}
-
-void HypotheticBattle::setSpellResponseState(BattleSide side, const SpellResponseState & state)
-{
-	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
-		throw std::invalid_argument("Invalid hypothetical Spell Response side");
-	state.validate();
-	if(state.hasState() && !state.isReadyAt(projectedRound))
-		throw std::runtime_error("Hypothetical Spell Response state is outside its round window");
-	if(state.hasState())
-	{
-		// Validate an internal native receipt against its actual side owner.
-		// Public hero queries remain player-filtered.
-		const auto * hero = getSideHero(side);
-		if(!hero || !hero->hasActivePerk(std::string(newHorizonsMagic::SPELLCRAFT_SKILL),
-			std::string(newHorizonsMagic::SPELLCRAFT_COUNTERPRESSURE)))
-			throw std::runtime_error("Hypothetical Spell Response state requires Counterpressure");
-	}
-	spellResponseStates.at(side) = state;
-}
-
-const OverwhelmingFormulaState & HypotheticBattle::getOverwhelmingFormulaState(BattleSide side) const
-{
-	static const OverwhelmingFormulaState empty;
-	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
-		return empty;
-	return overwhelmingFormulaStates.at(side);
-}
-
-void HypotheticBattle::setOverwhelmingFormulaState(BattleSide side, const OverwhelmingFormulaState & state)
-{
-	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
-		throw std::invalid_argument("Invalid hypothetical Overwhelming Formula side");
-	state.validateShape();
-	overwhelmingFormulaStates.at(side) = state;
 }
 
 const RapidResponseState & HypotheticBattle::getRapidResponseState(BattleSide side) const
@@ -294,14 +282,29 @@ void HypotheticBattle::setPreCombatOrderState(BattleSide side, const PreCombatOr
 	preCombatOrderStates.at(side) = state;
 }
 
+const std::vector<HeroOrderState> & HypotheticBattle::localHeroOrderStates(BattleSide side) const
+{
+	const auto & lease = heroOrderStates.at(side);
+	if(!lease) throw std::logic_error("Hypothetical Orders have not been captured");
+	return *lease;
+}
+
+std::shared_ptr<const std::vector<HeroOrderState>> HypotheticBattle::preparedHeroOrderStates(BattleSide side) const
+{
+	const auto & known = forecastSide(side);
+	if(!known || (known->knowledge != VisibleHeroPolicy::Knowledge::VISIBLE_HERO
+		&& known->knowledge != VisibleHeroPolicy::Knowledge::KNOWN_ABSENT)) return {};
+	return heroOrderStates.at(side);
+}
+
 std::vector<HeroOrderState> HypotheticBattle::getHeroOrderStates(BattleSide side) const
 {
-	return heroOrderStates.at(side);
+	return localHeroOrderStates(side);
 }
 
 std::optional<HeroOrderState> HypotheticBattle::getHeroOrderState(BattleSide side, HeroCommand command) const
 {
-	const auto & states = heroOrderStates.at(side);
+	const auto & states = localHeroOrderStates(side);
 	const auto found = std::find_if(states.begin(), states.end(), [command](const HeroOrderState & state)
 	{
 		return state.command == command;
@@ -311,7 +314,7 @@ std::optional<HeroOrderState> HypotheticBattle::getHeroOrderState(BattleSide sid
 
 std::optional<HeroOrderState> HypotheticBattle::getHeroOrderState(BattleSide side) const
 {
-	const auto & states = heroOrderStates.at(side);
+	const auto & states = localHeroOrderStates(side);
 	return states.empty() ? std::optional<HeroOrderState>() : states.back();
 }
 
@@ -335,7 +338,7 @@ HeroCommand HypotheticBattle::getActiveOrder(BattleSide side) const
 {
 	if(!heroCommands::isCanonicalRules(getHeroCommandRules()))
 		return BattleProxy::getActiveOrder(side);
-	const auto & states = heroOrderStates.at(side);
+	const auto & states = localHeroOrderStates(side);
 	return states.empty() ? HeroCommand::NONE : states.back().command;
 }
 
@@ -371,19 +374,17 @@ void HypotheticBattle::recordRelentlessAssaultAttack(BattleSide side, uint32_t t
 	relentlessAssaultStates.at(side).recordAttack(targetUnitId);
 }
 
-const HeroActionAllowanceState & HypotheticBattle::getHeroActionAllowances(BattleSide side) const
-{
-	return heroActionAllowances.at(side);
-}
-
 void HypotheticBattle::setHeroOrderStates(BattleSide side, const std::vector<HeroOrderState> & states)
 {
 	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
 		throw std::invalid_argument("Invalid hypothetical Hero Order side");
 	SideInBattle::validateOrderCollection(states);
-	if(heroOrderStates.at(side) == states)
+	if(localHeroOrderStates(side) == states)
 		return;
-	heroOrderStates.at(side) = states;
+	auto lease = std::make_shared<const std::vector<HeroOrderState>>(states);
+	auto derived = forecast::NativeAdapter::prepareOrderChange(*this, side, lease);
+	heroOrderStates.at(side) = std::move(lease);
+	if(derived) compactForecast = std::move(derived);
 	++bonusTreeVersion;
 }
 
@@ -397,7 +398,7 @@ void HypotheticBattle::setHeroOrderState(BattleSide side, const std::optional<He
 		return;
 	}
 	state->validateShape();
-	auto states = heroOrderStates.at(side);
+	auto states = localHeroOrderStates(side);
 	const auto found = std::find_if(states.begin(), states.end(), [&](const HeroOrderState & current)
 	{
 		return current.command == state->command;
@@ -443,7 +444,9 @@ void HypotheticBattle::setFocusFireState(BattleSide side, const FocusFireState &
 	state.validateShape();
 	if(state.issuedRound != battleGetRound())
 		throw std::invalid_argument("Invalid hypothetical Focus Fire round");
+	auto derived = forecast::NativeAdapter::prepareFocusFireChange(*this, side, state);
 	focusFireStates[side] = state;
+	if(derived) compactForecast = std::move(derived);
 	++bonusTreeVersion;
 }
 
@@ -576,10 +579,6 @@ void HypotheticBattle::applyArmorerLastStandDefend(uint32_t unitId)
 		addUnitBonus(unitId, {*stance.holdFastBonus});
 }
 
-
-
-
-
 int32_t HypotheticBattle::getBloodrageDamagePercent(BattleSide side) const
 {
 	return bloodrageDamagePercents.at(side);
@@ -616,9 +615,9 @@ IBattleInfo::ObstacleCList HypotheticBattle::getAllObstacles() const
 	return projectedObstacles;
 }
 
-
 void HypotheticBattle::addObstacle(const ObstacleChanges & changes)
 {
+	if(forecastState()) throw std::logic_error("Obstacle creation requires a preflighted reference closure");
 	if(usesOwnedFrameQueries()) throw std::logic_error("Owned obstacle transitions require captured typed obstacle values");
 	auto obstacle = std::make_shared<SpellCreatedObstacle>();
 	obstacle->fromInfo(changes);
@@ -628,6 +627,7 @@ void HypotheticBattle::addObstacle(const ObstacleChanges & changes)
 
 void HypotheticBattle::updateObstacle(const ObstacleChanges& changes)
 {
+	if(forecastState()) throw std::logic_error("Obstacle update requires a preflighted reference closure");
 	if(usesOwnedFrameQueries()) throw std::logic_error("Owned obstacle transitions require captured typed obstacle values");
 	auto changed = std::make_shared<SpellCreatedObstacle>();
 	changed->fromInfo(changes);
@@ -650,6 +650,7 @@ void HypotheticBattle::updateObstacle(const ObstacleChanges& changes)
 
 void HypotheticBattle::removeObstacle(uint32_t id)
 {
+	if(forecastState()) throw std::logic_error("Obstacle removal requires a preflighted reference closure");
 	if(usesOwnedFrameQueries()) throw std::logic_error("Owned obstacle transitions require captured typed obstacle values");
 	const auto found = std::find_if(projectedObstacles.begin(), projectedObstacles.end(),
 		[id](const auto & obstacle) { return obstacle->uniqueID == id; });

@@ -18,4 +18,9 @@ std::optional<float> projectedValue(const Environment * environment,
 	const HeroOrderState & order, const DamageCache & damage,
 	float positiveEffectMultiplier, float negativeEffectMultiplier,
 	Workload * workload = nullptr);
+/// Current Consecrated Arms uses bounded arithmetic exposure; historical
+/// automatic Light captures retain their original projection contract.
+std::optional<float> projectedAcceptedOrderValue(const Environment *,
+	const std::shared_ptr<HypotheticBattle> &, BattleSide, const HeroOrderState &,
+	const DamageCache &, float positive, float negative, Workload *);
 }

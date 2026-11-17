@@ -189,13 +189,14 @@ bool hasPhysicalPoison(const battle::Unit * unit)
 bool clearPhysicalPoison(battle::CUnitState * state)
 {
 	if(!state || (state->physicalPoisonBaseDamage <= 0 && state->physicalPoisonActivationsRemaining <= 0
-		&& state->physicalPoisonSourceStackId < 0 && state->physicalPoisonSpellSide == BattleSide::NONE))
+		&& state->physicalPoisonSourceStackId < 0 && state->physicalPoisonSpellSide == BattleSide::NONE && !state->physicalPoisonDescriptor))
 		return false;
 
 	state->physicalPoisonBaseDamage = 0;
 	state->physicalPoisonActivationsRemaining = 0;
 	state->physicalPoisonSourceStackId = -1;
 	state->physicalPoisonSpellSide = BattleSide::NONE;
+	state->physicalPoisonDescriptor.reset();
 	return true;
 }
 

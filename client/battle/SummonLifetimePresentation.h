@@ -18,6 +18,6 @@ inline std::string compact(int32_t rounds)
 inline std::string tooltip(int32_t rounds)
 {
 	return compact(rounds) + ". The current round counts toward its lifetime. "
-		"The stack disappears when its remaining lifetime expires. Stasis pauses this countdown.";
+		"The stack disappears when its remaining lifetime expires.";
 }
 }

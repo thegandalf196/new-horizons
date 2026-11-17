@@ -128,6 +128,7 @@ JsonNode Bonus::toJsonNode() const
 	if(!hasValidStatusMetadata())
 		throw std::runtime_error("Invalid bonus status metadata");
 	JsonNode root;
+	if(abilityDescriptor) root["abilityProvenance"] = abilityDescriptor->toJson();
 	if(appliedByEnemy)
 		root["appliedByEnemy"].Bool() = true;
 	if(spellCasterOwner != PlayerColor::CANNOT_DETERMINE)
@@ -395,6 +396,12 @@ void validateUnsupportedOwnedBonuses(const Bonus * root, const BonusParameters *
 		const auto * bonus = pending.back();
 		pending.pop_back();
 		if(!visited.insert(bonus).second) continue;
+		if(bonus->abilityDescriptor)
+		{
+			bonus->abilityDescriptor->validate();
+			if(!context.creatureAbilityProvenanceSupported)
+				throw std::runtime_error("Nested Creature Ability provenance requires format1164");
+		}
 		validateCommandArmySerialization(*bonus, context);
 		const bool stonecaller = newHorizonsCreatureSpecialtyCapabilities::isStonecallerShooterProfile(*bonus);
 		(void)newHorizonsAttackControllers::isCripple(bonus);
@@ -437,6 +444,12 @@ bool Bonus::isExtendedOrdinarySpecialtyEffect() const
 
 void Bonus::validateAdjacencyCapabilitySerialization(BonusSerializationContext context) const
 {
+	if(abilityDescriptor)
+	{
+		abilityDescriptor->validate();
+		if(!context.creatureAbilityProvenanceSupported)
+			throw std::runtime_error("Creature Ability provenance requires format1164");
+	}
 	validateCommandArmySerialization(*this, context);
 	const bool stonecaller = newHorizonsCreatureSpecialtyCapabilities::isStonecallerShooterProfile(*this);
 	(void)newHorizonsAttackControllers::isCripple(this);
@@ -464,7 +477,7 @@ void Bonus::validateAdjacencyCapabilitySerialization(BonusSerializationContext c
 	if(context.adjacencyFiltersSupported && context.ordinaryRangedSpecialtiesSupported
 		&& context.ordinaryMaintenanceSpecialtiesSupported && context.ordinaryCombatSpecialtiesSupported
 		&& context.extendedOrdinarySpecialtiesSupported && context.passiveFactionSkillsSupported
-		&& context.nativeRulesRedesignSupported && context.commandAuthoritySupported)
+		&& context.nativeRulesRedesignSupported && context.commandAuthoritySupported && context.creatureAbilityProvenanceSupported)
 	{
 		if(limiter) limiter->validateBonusTypeSerialization(true, context.extendedOrdinarySpecialtiesSupported);
 		return;
@@ -477,6 +490,6 @@ void BonusParameters::validateAdjacencyCapabilitySerialization(BonusSerializatio
 	if(context.adjacencyFiltersSupported && context.ordinaryRangedSpecialtiesSupported
 		&& context.ordinaryMaintenanceSpecialtiesSupported && context.ordinaryCombatSpecialtiesSupported
 		&& context.extendedOrdinarySpecialtiesSupported && context.passiveFactionSkillsSupported
-		&& context.nativeRulesRedesignSupported && context.commandAuthoritySupported) return;
+		&& context.nativeRulesRedesignSupported && context.commandAuthoritySupported && context.creatureAbilityProvenanceSupported) return;
 	validateUnsupportedOwnedBonuses(nullptr, this, context);
 }

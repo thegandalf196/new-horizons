@@ -1,5 +1,8 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt and AUTHORS. */
 #include "StdInc.h"
+#include "SearchBudget.h"
+#include "MovementExchangeTiming.h"
+using battleSearchTiming::MovementExchangeScope;
 #include "BattleSearchPolicy.h"
 #include "BattleExchangeVariant.h"
 #include "VisibleCandidateWorld.h"
@@ -21,30 +24,7 @@
 
 namespace
 {
-class MovementExchangeScope
-{
-	using Clock = std::chrono::steady_clock;
-	BattleMovementTiming::StageTiming * timing;
-	Clock::time_point started;
-public:
-	explicit MovementExchangeScope(BattleMovementTiming::StageTiming * timing)
-		: timing(timing), started(timing ? Clock::now() : Clock::time_point{})
-	{}
-	~MovementExchangeScope()
-	{
-		finish();
-	}
-	void finish()
-	{
-		if(timing)
-		{
-			++timing->calls;
-			timing->totalMicroseconds += std::chrono::duration_cast<std::chrono::microseconds>(
-				Clock::now() - started).count();
-			timing = nullptr;
-		}
-	}
-};
+
 
 }
 
@@ -319,8 +299,9 @@ EvaluationResult BattleExchangeEvaluator::findBestTarget(
 			float score;
 			{
 				MovementExchangeScope measurement(timing ? &timing->waitedExchange : nullptr);
-				score = evaluateExchange(ap, 0, targets, damageCache, hbWaited,
-					timing ? &timing->waitedDetails : nullptr);
+				try { score = evaluateExchange(ap, 0, targets, damageCache, hbWaited,
+					timing ? &timing->waitedDetails : nullptr); }
+				catch(const battleSearch::BudgetExhausted &) { return result; }
 			}
 
 			if(score > result.score)
@@ -367,8 +348,9 @@ EvaluationResult BattleExchangeEvaluator::findBestTarget(
 		float score;
 		{
 			MovementExchangeScope measurement(timing ? &timing->normalExchange : nullptr);
-			score = evaluateExchange(ap, 0, targets, damageCache, hb,
-				timing ? &timing->normalDetails : nullptr);
+			try { score = evaluateExchange(ap, 0, targets, damageCache, hb,
+				timing ? &timing->normalDetails : nullptr); }
+			catch(const battleSearch::BudgetExhausted &) { return result; }
 		}
 		bool sameScoreButWaited = vstd::isAlmostEqual(score, result.score) && result.wait;
 

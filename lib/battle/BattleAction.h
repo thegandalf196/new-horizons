@@ -67,9 +67,7 @@ public:
 
 	BattleAction();
 	bool operator==(const BattleAction &) const = default;
-	/// Explicitly closes a control-visible Time Stop activation without
-	/// changing the stack. The server accepts this only for the active stopped
-	/// stack; it is not a creature action or a way around stasis.
+	/// Completes a native no-action activation without moving the stack.
 	static BattleAction makeNoAction(const battle::Unit * stack);
 	static BattleAction makeHeroCommand(BattleSide side, HeroCommand command);
 	static BattleAction makeTargetedHeroCommand(BattleSide side, HeroCommand command, uint32_t targetUnitId);

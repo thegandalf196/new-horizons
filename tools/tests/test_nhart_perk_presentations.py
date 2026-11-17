@@ -4,7 +4,7 @@ import hashlib
 from pathlib import Path
 import unittest
 from .nhart_source_transitions import read_historical_source
-from .nhart_perk_presentations import (CONDITION, OVERLOAD_SUFFIX,
+from .nhart_perk_presentations import (CONDITION, OVERLOAD_SUFFIX, CURRENT_OVERLOAD_SUFFIX,
     header_before_perk_presentation, source_bound_icon, validate_perk_presentation,
     WISDOM_REBINDINGS, header_before_wisdom_rebindings,
     WARCASTING_REBINDINGS, LEARNING_REBINDINGS, ESTATES_REBINDINGS,
@@ -106,3 +106,28 @@ class PerkPresentationTest(unittest.TestCase):
         changed = self.header.replace('NH_perk_neutral', 'NH_changed_neutral')
         self.assertNotEqual(hashlib.sha256(header_before_perk_presentation(changed).encode()).digest(),
                             hashlib.sha256(base.encode()).digest())
+
+
+class CurrentPerkLabelPresentationTest(unittest.TestCase):
+    def test_current_header_accepts_only_two_exact_authored_labels(self):
+        current = (ROOT / 'client/windows/NewHorizonsPerkIcons.h').read_text()
+        base = header_before_perk_presentation(current)
+        self.assertTrue(current.endswith(CURRENT_OVERLOAD_SUFFIX))
+        self.assertEqual(header_before_perk_presentation(
+            current[:-len(CURRENT_OVERLOAD_SUFFIX)] + OVERLOAD_SUFFIX), base)
+        for label in ('Arcane Arsenal', 'Arcane Ballistics'):
+            self.assertEqual(source_bound_icon(current, CONDITION[0], label), CONDITION[2])
+        for label in ('Countermage', '', 'arcane arsenal', 'arcane ballistics',
+                      'Translated Arcane Arsenal', 'Arcane Arsenal II'):
+            self.assertEqual(source_bound_icon(current, CONDITION[0], label), CONDITION[3])
+        for label in ('Arcane Arsenal', 'Arcane Ballistics'):
+            self.assertEqual(source_bound_icon(current, 'unknown:perk', label), 'NH_perk_neutral')
+        for changed in (current.replace('capturedName == "Arcane Arsenal"',
+                                        'capturedName == "Unapproved Arsenal"'),
+                        current.replace('NH_perk_arcane_ballistics', 'NH_unapproved_icon'),
+                        current + '\n', current + CURRENT_OVERLOAD_SUFFIX):
+            with self.assertRaises(ValueError):
+                header_before_perk_presentation(changed)
+        changed = current.replace('NH_perk_neutral', 'NH_changed_neutral')
+        self.assertEqual(header_before_perk_presentation(changed),
+                         base.replace('NH_perk_neutral', 'NH_changed_neutral'))

@@ -1,14 +1,17 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #pragma once
 #include "../../lib/battle/IUnitInfo.h"
+#include "../../lib/battle/OwnedUnitStateLoanSource.h"
 class HypotheticBattle;
 /// Unit-stat dispatch must remain on the branch, including detached state copies.
 /// This adapter is deliberately not a CBattleInfoCallback: it never falls through
 /// to a live hero's stat policy via CUnitState's native callback fast path.
-class HypotheticUnitEnvironment final : public battle::IUnitEnvironment
+class HypotheticUnitEnvironment final : public battle::IUnitEnvironment, public battle::OwnedUnitStateLoanSource
 {
 	const HypotheticBattle & owner;
 public:
+	const battle::OwnedUnitStateLoanSource * ownedUnitStateLoanSource() const noexcept override;
+	std::shared_ptr<battle::CUnitState> acquireOwnedState(const battle::CUnitState &) const override;
 	explicit HypotheticUnitEnvironment(const HypotheticBattle & owner) : owner(owner) {}
 	bool unitHasAmmoCart(const battle::Unit * unit) const override;
 	PlayerColor unitEffectiveOwner(const battle::Unit * unit) const override;

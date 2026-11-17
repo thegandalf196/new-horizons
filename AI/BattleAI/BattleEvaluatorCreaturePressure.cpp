@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "SearchBudget.h"
 #include "../../lib/entities/hero/NewHorizonsGenieSage.h"
 #include "BattleEvaluator.h"
 #include "CreatureSpellTiming.h"
@@ -71,6 +72,7 @@ float BattleEvaluator::beneficialCreaturePressure(const std::shared_ptr<Hypothet
 		return unit->alive() && unit->unitId() != spentCasterId;
 	}))
 	{
+		battleSearch::require(workBudget.get(), battleSearch::WorkKind::Node);
 		// Reuse ordinary spell evaluation's physical-attack valuation, without
 		// advancing turns or running a battle queue for each random outcome.
 		if(timing)
@@ -98,6 +100,7 @@ std::optional<PossibleSpellcast> BattleEvaluator::findBestRandomCreatureSpell(co
 	std::optional<PossibleSpellcast> best;
 	for(const auto * recipient : battle->battleAliveUnits())
 	{
+		battleSearch::require(workBudget.get(), battleSearch::WorkKind::Node);
 		if(timing)
 			++timing->recipients;
 		const auto pool = battle->getAvailableRandomCreatureSpells(stack, recipient);
@@ -110,8 +113,11 @@ std::optional<PossibleSpellcast> BattleEvaluator::findBestRandomCreatureSpell(co
 		}
 		double total = 0;
 		for(const auto spell : pool)
-			total += beneficialCreatureOutcomeValue(stack, recipient, spell.toSpell(),
+			{
+				battleSearch::require(workBudget.get(), battleSearch::WorkKind::Node);
+				total += beneficialCreatureOutcomeValue(stack, recipient, spell.toSpell(),
 				creatureAbilitySpellLevel(stack, spell.toSpell(), abilityLevel), baselinePressure, timing);
+			}
 		const float value = static_cast<float>(total / pool.size());
 		if(std::isfinite(value) && value > 0 && (!best || value > best->value))
 		{
@@ -165,8 +171,11 @@ std::optional<PossibleSpellcast> BattleEvaluator::findBestCreatureSpell(const CS
 	SpellID creatureSpellToCast = cb->getBattle(battleID)->getRandomCastedSpell(CRandomGenerator::getDefault(), stack);
 
 	for(const auto & bonus : *bl)
-		if(!bonus->parameters && bonus->subtype.as<SpellID>().hasValue())
+		{
+			battleSearch::require(workBudget.get(), battleSearch::WorkKind::Node);
+			if(!bonus->parameters && bonus->subtype.as<SpellID>().hasValue())
 			spellsToCast.push_back(bonus->subtype.as<SpellID>());
+		}
 
 	if(creatureSpellToCast.hasValue())
 		spellsToCast.push_back(creatureSpellToCast);
@@ -178,6 +187,7 @@ std::optional<PossibleSpellcast> BattleEvaluator::findBestCreatureSpell(const CS
 
 	for(const auto spellID : spellsToCast)
 	{
+		battleSearch::require(workBudget.get(), battleSearch::WorkKind::Node);
 		if(timing)
 			++timing->ordinarySpells;
 		const CSpell * spell = spellID.toSpell();
@@ -192,9 +202,10 @@ std::optional<PossibleSpellcast> BattleEvaluator::findBestCreatureSpell(const CS
 		if(!spell->canBeCast(cb->getBattle(battleID).get(), spells::Mode::CREATURE_ACTIVE, caster))
 			continue;
 
-		spells::BattleCast temp(cb->getBattle(battleID).get(), caster, spells::Mode::CREATURE_ACTIVE, spell);
-		for(const auto & target : SpellTargetEvaluator::getViableTargets(spell->battleMechanics(&temp).get()))
+		spells::BattleCast temp(hb.get(), caster, spells::Mode::CREATURE_ACTIVE, spell);
+		for(const auto & target : SpellTargetEvaluator::getViableTargets(spell->battleMechanics(&temp).get(), workBudget.get()))
 		{
+			battleSearch::require(workBudget.get(), battleSearch::WorkKind::Node);
 			if(timing)
 				++timing->ordinaryTargets;
 			PossibleSpellcast ps;
@@ -275,7 +286,7 @@ float BattleEvaluator::beneficialCreatureOutcomeValue(const CStack * caster,
 		return 0;
 	auto state = creatureSpellTiming::measure(timing ? &timing->outcomeSetup : nullptr, [&]()
 	{
-		return createHypotheticBattle(battle);
+		return createCreatureCandidateBattle(caster, spell, {spells::Destination(recipient)}, spellLevel);
 	});
 	const auto * projectedCaster = state->battleGetUnitByID(caster->unitId());
 	const auto * projectedRecipient = state->battleGetUnitByID(recipient->unitId());
@@ -312,8 +323,11 @@ float BattleEvaluator::expectedBeneficialCreatureSpellValue(const CStack * caste
 	const float baselinePressure = beneficialCreaturePressure(baseline, caster->unitId(), cache);
 	double total = 0;
 	for(const auto spell : pool)
-		total += beneficialCreatureOutcomeValue(caster, recipient, spell.toSpell(),
+		{
+			battleSearch::require(workBudget.get(), battleSearch::WorkKind::Node);
+			total += beneficialCreatureOutcomeValue(caster, recipient, spell.toSpell(),
 			creatureAbilitySpellLevel(caster, spell.toSpell(), ability->val), baselinePressure);
+		}
 	return static_cast<float>(total / pool.size());
 }
 

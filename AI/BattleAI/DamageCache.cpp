@@ -8,6 +8,8 @@
  *
  */
 #include "StdInc.h"
+#include "SearchBudget.h"
+#include "HypotheticBattle.h"
 #include "../../lib/battle/NewHorizonsSpecialtyEvents.h"
 #include "../../lib/battle/NewHorizonsPassiveSpecialties.h"
 #include "../../lib/battle/NewHorizonsPrismaticVanguard.h"
@@ -96,6 +98,8 @@ void DamageCache::cacheDamage(const battle::Unit * attacker, const battle::Unit 
 void DamageCache::cacheDamageMeasured(const battle::Unit * attacker, const battle::Unit * defender,
 	std::shared_ptr<CBattleInfoCallback> hb, DamageCacheProbeTiming * timing)
 {
+	if(const auto * state = dynamic_cast<const HypotheticBattle *>(hb.get()))
+		battleSearch::require(state->searchBudget().get(), battleSearch::WorkKind::Node);
 	DamageCachePhaseScope preflight(timing, &DamageCacheProbeTiming::preflight);
 	if(defender->intrinsicMagicalDamageReductionPercent() > 0)
 		intrinsicMdrTargets.insert(defender->unitId());
@@ -241,6 +245,8 @@ int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit
 	std::shared_ptr<CBattleInfoCallback> hb, DamageCacheProbeTiming * receiver,
 	DamageCacheAdmission * mainProbeAdmission)
 {
+	if(const auto * state = dynamic_cast<const HypotheticBattle *>(hb.get()))
+		battleSearch::require(state->searchBudget().get(), battleSearch::WorkKind::Node);
 	DamageCacheOperationScope operation(receiver);
 	auto * timing = operation.receiver();
 	if(timing)
@@ -395,6 +401,8 @@ int64_t DamageCache::getOriginalDamage(const battle::Unit * attacker, const batt
 int64_t DamageCache::getOriginalDamage(const battle::Unit * attacker, const battle::Unit * defender,
 	std::shared_ptr<CBattleInfoCallback> hb, DamageCacheProbeTiming * receiver)
 {
+	if(const auto * state = dynamic_cast<const HypotheticBattle *>(hb.get()))
+		battleSearch::require(state->searchBudget().get(), battleSearch::WorkKind::Node);
 	DamageCacheOperationScope operation(receiver);
 	auto * timing = operation.receiver();
 	if(timing)

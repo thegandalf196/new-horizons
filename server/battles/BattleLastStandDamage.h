@@ -5,10 +5,11 @@ class CBattleInfoCallback;
 struct BattleAttackInfo;
 struct BattleAttack;
 struct BattleStackAttacked;
-namespace battle { class CUnitState; }
+namespace battle { class CUnitState; struct DamageContext; }
 namespace battleLastStandDamage
 {
 /// Authoritative pre-casualty Last Stand packet/state preparation. No RNG or publication.
 bool prepare(const CBattleInfoCallback &, const BattleAttackInfo &, BattleAttack &,
-	BattleStackAttacked &, battle::CUnitState &, std::array<bool, 2> & usedThisAttack, bool retaliation);
+	BattleStackAttacked &, battle::CUnitState &, std::array<bool, 2> & usedThisAttack, bool retaliation,
+	const battle::DamageContext & context);
 }

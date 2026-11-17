@@ -136,6 +136,8 @@ newHorizonsOrdinaryStrike::EffectPlan plan(const CBattleInfoCallback & battle,
 		&& newHorizonsHeroes::ordinaryCreatureSpecialtyValue(battle, *attack.attacker, "core:rashka") > 0
 		? "core:rashka" : "core:ignissa"));
 	Bonus next = marker(hero, attack.attacker->unitId(), budget);
+	next.abilityDescriptor = creatureAbility::nativeAffliction(creatureAbility::Native::ORDINARY_BURN,
+		creatureAbility::Family::CREATURE_ABILITY, battle.battleGetOwner(attack.attacker));
 	const auto existingBurns = attack.defender->getUnstackedBonuses(CSelector([](const Bonus * bonus) { return isBurn(bonus); }));
 	for(const auto & existing : *existingBurns)
 	{

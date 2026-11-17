@@ -6,7 +6,8 @@
 #include <type_traits>
 #include <unordered_map>
 #include <unordered_set>
-namespace battle { class OwnedUnitBonusFrame; }
+namespace battle { class OwnedUnitBonusFrame; class OwnedFrameBranchQueries; }
+namespace bonusDependencies { class CapturedModifiers; }
 /// Pure owned inheritance storage, not live capture/admission. Context currently
 /// covers copied scalar/type/terrain/rank/acceptance domains; no live frame/roster.
 class DLL_LINKAGE OwnedRecipientBonusGraph final : public BonusGraphQuery, boost::noncopyable
@@ -77,6 +78,8 @@ public:
 	BonusEvaluationContext evaluation(const CBonusSystemNode & node) const override;
 private:
 	friend class battle::OwnedUnitBonusFrame;
+	friend class battle::OwnedFrameBranchQueries;
+	bonusDependencies::CapturedModifiers captureRootModifiers(const RootQuery & query, const BonusList & records, const battle::Unit * ownedUnit) const;
 	BonusList queryRootRecords(const CSelector & selector, bool unstacked, const RootQuery & query, const BonusList & records, const battle::Unit * ownedUnit = nullptr) const;
 	struct Node;
 	std::shared_ptr<ownedBonusPayloads::Captured> payloads; // Last graph retires the one nested alias pool.

@@ -1,6 +1,7 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
 #include "PassiveDivineMandateProjection.h"
+#include "ConsecratedArmsValue.h"
 #include "FixedActionValue.h"
 #include "LightSpellProtectionValue.h"
 #include "HeroPurifyProjection.h"
@@ -17,6 +18,22 @@
 
 namespace passiveDivineMandateAI
 {
+std::optional<float> projectedAcceptedOrderValue(const Environment * environment,
+	const std::shared_ptr<HypotheticBattle> & postOrder, BattleSide side,
+	const HeroOrderState & order, const DamageCache & damage, float positive, float negative, Workload * workload)
+{
+	if(workload) *workload = {};
+	const auto policy = postOrder ? consecratedArms::capturePolicy(postOrder->battleGetFightingHero(side)) : consecratedArms::Policy{};
+	if(policy.rank)
+	{
+		// All pool entries retain their mass. Missing future shield/control/magic
+		// exposure is explicit partial knowledge, even when arithmetic succeeds.
+		if(workload) workload->uncertainAutomaticBenefit = 1;
+		return consecratedArmsAI::projectedValue(environment, postOrder, side, order, policy, damage, positive, negative);
+	}
+	return projectedValue(environment, postOrder, side, order, damage, positive, negative, workload);
+}
+
 std::optional<float> projectedValue(const Environment * environment,
 	const std::shared_ptr<HypotheticBattle> & postOrder, BattleSide side,
 	const HeroOrderState & order, const DamageCache & damage,

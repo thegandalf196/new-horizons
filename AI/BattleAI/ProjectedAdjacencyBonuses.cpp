@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../../lib/bonuses/FrozenScoringBonuses.h"
 #include "ProjectedAdjacencyBonuses.h"
 #include "StackWithBonuses.h"
 #include "HypotheticBattle.h"
@@ -315,23 +316,8 @@ TConstBonusListPtr StackWithBonuses::mergeBonusesImpl(const CSelector & selector
 	const std::string & cachingStr, bool unstacked, const ProjectedAdjacencyQuery * adjacency) const
 {
 	if(damageScoringBonuses)
-	{
-		auto ret = std::make_shared<BonusList>();
-		if(unstacked)
-		{
-			if(damageScoringUnstackedBonuses)
-				for(const auto & bonus : *damageScoringUnstackedBonuses)
-					if(bonus && selector(bonus.get()))
-						ret->push_back(bonus);
-		}
-		else
-			for(const auto & bonus : *damageScoringBonuses)
-				if(selector(&bonus))
-					ret->push_back(std::make_shared<Bonus>(bonus));
-		if(!unstacked)
-			ret->stackBonuses();
-		return newHorizonsDiscipline::veteranCohesionBonuses(ret, selector, veteranCohesionEarned);
-	}
+		return frozenScoring::query({*damageScoringBonuses, damageScoringUnstackedBonuses,
+			veteranCohesionEarned}, selector, unstacked);
 	const CreatureID sourceCreature = originalUnit ? originalUnit->unitType()->getId() : sourceCreatureType;
 	const CreatureID effectiveCreature = battleFormCreature();
 	const bool replaceNativeCreatureBonuses = effectiveCreature != sourceCreature;

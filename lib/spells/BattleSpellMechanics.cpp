@@ -12,6 +12,9 @@
 #include "SpellEffectScalingProfile.h"
 #include "SpellBonusProvenance.h"
 #include "NewHorizonsMetamagicCompletion.h"
+#include "NewHorizonsMetamagicCore.h"
+#include "NewHorizonsMetamagicEnchantments.h"
+#include "NewHorizonsMetamagicOverflow.h"
 #include "NewHorizonsMetamagicArea.h"
 #include "NewHorizonsMagicalMemory.h"
 #include "../battle/NewHorizonsSpecialtyProcs.h"
@@ -154,10 +157,14 @@ public:
 
 	EffectPacketRecorder(ServerCallback & delegate, const CBattleInfoCallback & battle,
 		const Mechanics & mechanics, PlayerColor casterOwner, SpellID castSpellId, SpellID effectSpellId,
-		bool captureArmyChanges, bool captureMetamagic = false)
+		bool captureArmyChanges, bool captureMetamagic = false,
+		newHorizonsMetamagic::OverflowState overflow = newHorizonsMetamagic::OverflowState(),
+		newHorizonsMetamagic::OverflowProjectionOutcome overflowOutcome = newHorizonsMetamagic::OverflowProjectionOutcome::Nominal)
 		: delegate(delegate)
 		, battle(battle)
 		, mechanics(mechanics)
+		, overflow(std::move(overflow))
+		, overflowOutcome(overflowOutcome)
 		, casterOwner(casterOwner)
 		, castSpellId(castSpellId)
 		, effectSpellId(effectSpellId)
@@ -176,6 +183,22 @@ public:
 				}
 	}
 
+	uint64_t beginSpellEvaluation(SpellEvaluationKind kind, BattleSide side, const SpellID & spell) override
+	{ return delegate.beginSpellEvaluation(kind, side, spell); }
+	void admitSpellEvaluation(uint64_t token, int32_t cost, bool admitted) override
+	{ delegate.admitSpellEvaluation(token, cost, admitted); }
+	void allowSpellEvaluationDelegation(uint64_t token) override
+	{ delegate.allowSpellEvaluationDelegation(token); }
+	void endSpellEvaluation(uint64_t token, bool completed) noexcept override
+	{ delegate.endSpellEvaluation(token, completed); }
+
+	void recordMetamagicOverflowPrimary(const newHorizonsMetamagic::OverflowPrimaryDamage & damage) override
+	{
+		// Reflected Runic/compound components share this recorder but are never
+		// another original cast or a source of excess.
+		if(mechanics.isGenuineHeroCast() && !mechanics.isRunicReflectionShare()) overflow.observe(damage);
+	}
+	const std::optional<newHorizonsMetamagic::OverflowPreview> & overflowReceipt() const { return overflowPreview; }
 	void recordResolvedSpellRecipient(uint32_t id) override
 	{
 		if(captureResolvedRecipients && mechanics.isGenuineHeroCast()
@@ -192,6 +215,7 @@ public:
 	{
 		if(!acceptedManualCaster && !mechanics.isGenuineHeroCast())
 			publishDelayedHeroDamage();
+		overflowPreview = newHorizonsMetamagic::completeOverflow(delegate, battle, mechanics, overflow, overflowOutcome);
 		const auto resolved = resolvedSpellRecipientIds();
 		newHorizonsMetamagic::applyGuaranteedCompletion(delegate, battle, mechanics, resolved, originalHeroInjuries);
 		arcaneInspiration::publishCompletedSpell(delegate, battle, mechanics, originalHeroInjuries, acceptedManualCaster);
@@ -365,6 +389,9 @@ private:
 	ServerCallback & delegate;
 	const CBattleInfoCallback & battle;
 	const Mechanics & mechanics;
+	mutable newHorizonsMetamagic::OverflowState overflow;
+	newHorizonsMetamagic::OverflowProjectionOutcome overflowOutcome;
+	mutable std::optional<newHorizonsMetamagic::OverflowPreview> overflowPreview;
 	PlayerColor casterOwner;
 	SpellID castSpellId;
 	SpellID effectSpellId;
@@ -674,21 +701,9 @@ private:
 			for(const auto & endpoint : pack.exchange->endpoints)
 				recordResolvedSpellRecipient(endpoint.id);
 		captureHypnotizeCeiling(pack);
-		if(casterOwner != PlayerColor::CANNOT_DETERMINE)
-		{
-			const auto stamp = [&](auto & changes)
-			{
-				for(auto & [unitId, bonuses] : changes)
-				{
-					const auto * recipient = battle.battleGetUnitByID(unitId);
-					const auto recipientOwner = recipient ? battle.battleGetOwner(recipient) : PlayerColor::CANNOT_DETERMINE;
-					for(auto & bonus : bonuses)
-						stampSpellBonusProvenance(bonus, castSpellId, effectSpellId, casterOwner, recipientOwner);
-				}
-			};
-			stamp(pack.toAdd);
-			stamp(pack.toUpdate);
-		}
+		stampSpellEffectOrigins(mechanics, battle, casterOwner, castSpellId, effectSpellId, pack);
+		if(mechanics.isGenuineHeroCast())
+			newHorizonsMetamagic::enchantmentCapabilities(mechanics.getHeroCaster(), battle, castSpellId, effectSpellId, pack);
 		newHorizonsMetamagic::filterNewBonuses(battle, pack);
 
 		std::vector<uint32_t> touched;
@@ -989,6 +1004,8 @@ BattleSpellMechanics::~BattleSpellMechanics() = default;
 void BattleSpellMechanics::applyEffects(ServerCallback * server, const Target & targets, bool indirect, bool ignoreImmunity) const
 {
 	if(runicReadOnly || runicRetiredCaster) throw std::logic_error("Read-only Runic view cannot apply effects");
+	spellCasualtyQuotas.clear();
+	spellRedemption = battle::RedemptionEvent{};
 	Target unlockedTargets = targets;
 	const bool naturesWrath = newHorizonsNaturesWrath::enabled(*this);
 	const auto * battleState = battle() ? battle()->getBattle() : nullptr;
@@ -1016,6 +1033,7 @@ void BattleSpellMechanics::applyEffects(ServerCallback * server, const Target & 
 	};
 
 	effects->forEachEffect(getEffectLevel(), callback);
+	if(server) spellRedemption.complete(*battle(), *server);
 }
 
 bool BattleSpellMechanics::canBeCast(Problem & problem) const
@@ -1630,6 +1648,9 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 {
 	evaluatedHeroRecipients.clear();
 	evaluatedHeroInjuries.clear();
+	evaluatedOverflow.reset();
+	spellCasualtyQuotas.clear();
+	spellRedemption = battle::RedemptionEvent{};
 	if(runicReadOnly || runicRetiredCaster) throw std::logic_error("Read-only Runic view cannot cast");
 	if(eventSnapshot && !eventSnapshot->hasSpellcraftTargetSnapshot()
 		&& mode == Mode::HERO && getHeroCaster()
@@ -1860,7 +1881,8 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 	EffectPacketRecorder effectRecorder(*server, *battle(), *this, effectCasterOwner,
 		acceptedSpellId, effectSpellId,
 		originalHeroCast && battleRound >= 0
-			&& (hasCounterpressurePerk(battleInfo->getSideHero(battle()->otherSide(originalCasterSide)))), true);
+			&& (hasCounterpressurePerk(battleInfo->getSideHero(battle()->otherSide(originalCasterSide)))), true,
+		newHorizonsMetamagic::prepareOverflow(*this, target, effectsToApply, originalHeroCast));
 	doRemoveEffects(&effectRecorder, affectedUnits, std::bind(&BattleSpellMechanics::counteringSelector, this, _1));
 
 	// Wrath captures every conductor in route order, including blocked hops,
@@ -1946,7 +1968,9 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 	effectRecorder.publishResolvedHeroEffects(originalHeroCast ? std::optional(originalCasterSide) : std::nullopt);
 	evaluatedHeroRecipients = effectRecorder.resolvedSpellRecipientIds();
 	evaluatedHeroInjuries = effectRecorder.heroInjuries();
+	evaluatedOverflow = effectRecorder.overflowReceipt();
 	const auto metamagicReceipt = effectRecorder.completeMetamagic();
+	spellRedemption.complete(*battle(), *server);
 	if(originalHeroCast && !target.empty())
 		newHorizonsMetamagic::breakMatter(*server, *battle(), *this, spellRangeInHexes(target.front().hexValue));
 	// BattleSpellCast spends the typed grant before effects resolve. Publish the
@@ -2068,7 +2092,8 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 		if(originalHeroCast)
 		{
 			const bool soleTarget = target.size() == 1 && target.front().unitValue
-				&& !isMassive() && newHorizonsMetamagic::singleTargetFormula(*owner, getRangeLevel());
+				&& newHorizonsMetamagic::singleTargetSpell(*this)
+				&& newHorizonsMetamagic::singleRecipientEffectPayload(*this) == true;
 			const bool fullyResisted = soleTarget && sc.resistedCres.size() == 1 && sc.affectedCres.empty()
 				&& sc.resistedCres.contains(target.front().unitValue->unitId())
 				&& effectRecorder.resolvedSpellRecipientIds().empty();
@@ -2265,13 +2290,27 @@ void BattleSpellMechanics::beforeCast(ServerCallback * server, BattleSpellCast &
 
 void BattleSpellMechanics::castEval(ServerCallback * server, const Target & target)
 {
+	const auto evaluationKind = mode != Mode::HERO ? SpellEvaluationKind::OTHER
+		: getAutomaticHeroCast().automatic() ? SpellEvaluationKind::AUTOMATIC_HERO : SpellEvaluationKind::MANUAL_HERO;
+	const uint64_t evaluationToken = server ? server->beginSpellEvaluation(evaluationKind, casterSide, getSpellId()) : 0;
+	bool evaluationCompleted = false;
+	const auto closeEvaluation = vstd::makeScopeGuard([&]()
+	{
+		if(server) server->endSpellEvaluation(evaluationToken, evaluationCompleted);
+	});
 	evaluatedHeroRecipients.clear();
 	evaluatedHeroInjuries.clear();
+	evaluatedOverflow.reset();
+	spellCasualtyQuotas.clear();
+	spellRedemption = battle::RedemptionEvent{};
 	if(runicReadOnly || runicRetiredCaster) throw std::logic_error("Read-only Runic view cannot execute a projection");
 	vinesProjectionReceipt.reset();
 	lifeDrainReceipt.reset();
-	if(delegateConcentratedProjection(server, target))
+	if(delegateConcentratedProjection(server, target, evaluationToken))
+	{
+		evaluationCompleted = true;
 		return;
+	}
 	clearPandemoniumDebuffs();
 	const auto clearPandemoniumSnapshot = vstd::makeScopeGuard([this]()
 	{
@@ -2306,6 +2345,9 @@ void BattleSpellMechanics::castEval(ServerCallback * server, const Target & targ
 	const bool completedHeroProjection = server && mode == Mode::HERO
 		&& (casterSide == BattleSide::ATTACKER || casterSide == BattleSide::DEFENDER)
 		&& getHeroCaster() && canBeCastAt(target);
+	const int32_t evaluationCost = evaluationKind == SpellEvaluationKind::MANUAL_HERO ? getTargetAwareManaCost(target) : 0;
+	if(server) server->admitSpellEvaluation(evaluationToken, evaluationCost,
+		completedHeroProjection || evaluationKind == SpellEvaluationKind::OTHER);
 	const auto * projectedHeroCaster = completedHeroProjection ? getHeroCaster() : nullptr;
 	const auto projectedCasterSide = casterSide;
 	const auto projectedBattleInfo = battle()->getBattle();
@@ -2333,6 +2375,9 @@ void BattleSpellMechanics::castEval(ServerCallback * server, const Target & targ
 	if(completedHeroProjection
 		&& newHorizonsSpellcraft::extendAvailable(*projectedBattleInfo, projectedCasterSide, *owner, getEffectLevel()))
 		server->recordExtendSpellCast(projectedCasterSide);
+	if(overflowProjectionOutcome == newHorizonsMetamagic::OverflowProjectionOutcome::PrimaryResisted
+		&& newHorizonsMetamagic::overflowSupport(*this, target, true) == newHorizonsMetamagic::OverflowSupport::Supported)
+		effectsToApply.clear();
 	auto unitTargets = collectTargets();
 
 	auto selector = std::bind(&BattleSpellMechanics::counteringSelector, this, _1);
@@ -2351,7 +2396,8 @@ void BattleSpellMechanics::castEval(ServerCallback * server, const Target & targ
 		effectRecorder.emplace(*server, *battle(), *this, effectCasterOwner,
 			acceptedSpellId, effectSpellId,
 			projectedOriginalHeroCast
-				&& (hasCounterpressurePerk(projectedBattleInfo->getSideHero(battle()->otherSide(projectedCasterSide)))));
+				&& (hasCounterpressurePerk(projectedBattleInfo->getSideHero(battle()->otherSide(projectedCasterSide)))), false,
+			newHorizonsMetamagic::prepareOverflow(*this, target, effectsToApply, completedHeroProjection), overflowProjectionOutcome);
 		effectServer = &*effectRecorder;
 	}
 
@@ -2377,12 +2423,15 @@ void BattleSpellMechanics::castEval(ServerCallback * server, const Target & targ
 				consumeProjectedResponse, projectedResponseAfterCast}, effectRecorder ? &*effectRecorder : nullptr);
 	else if(effectRecorder)
 		effectRecorder->publishDelayedHeroDamage();
+	if(effectRecorder) evaluatedOverflow = effectRecorder->overflowReceipt();
+	if(server) spellRedemption.complete(*battle(), *server);
 	// Application can load additional Lua dependencies: certify again only once
 	// every effect and completed-cast reaction has returned successfully.
 	if(preparedReceipt.vines && newHorizonsVengefulVines::supportsProjection(*this, effectsToApply))
 		vinesProjectionReceipt = std::move(preparedReceipt.vines);
 	if(preparedReceipt.lifeDrain && newHorizonsLifeDrain::supportsProjection(*this, effectsToApply))
 		lifeDrainReceipt = std::move(preparedReceipt.lifeDrain);
+	evaluationCompleted = true;
 }
 
 void BattleSpellMechanics::doRemoveEffects(ServerCallback * server, const battle::Units & targets, const CSelector & selector)
@@ -2540,52 +2589,6 @@ std::vector<AimType> BattleSpellMechanics::getTargetTypes() const
 	return ret;
 }
 
-bool BattleSpellMechanics::isReceptive(const battle::Unit * target) const
-{
-	if(owner->getJsonKey() == newHorizonsSorcerySpells::FORCE_LANCE)
-		return target && target->alive() && target->isValidTarget(false) && !target->isInvincible() && ownerMatches(target);
-	// Memory prevents an exact enchantment family, never a damage component of a
-	// mixed spell. Packet filtering independently guards the enchantment records.
-	if(target && !owner->isDamage() && battle() && battle()->getBattle()
-		&& newHorizonsMetamagic::blocksEnchantment(*target, *battle()->getBattle(),
-			owner->getId(), owner->isPositive(), owner->isNegative()))
-		return false;
-	if(target && owner->getJsonKey() == newHorizonsRealityWarp::SPELL_KEY && usesNewHorizonsMagicV3())
-	{
-		// The paired cast rolls hostile resistance once during beforeCast;
-		// captured-effect recipient checks themselves are deterministic.
-		if(const auto * conditions = dynamic_cast<const TargetCondition *>(targetCondition.get()))
-			return conditions->isReceptiveIgnoringMagicResistance(this, target);
-	}
-	if(target && newHorizonsPandemonium::enabled(*this))
-	{
-		// Preview and damage adjustment retain all immunity conditions, while
-		// actual casts consume the existing cached resistance roll exactly once.
-		if(const auto * conditions = dynamic_cast<const TargetCondition *>(targetCondition.get()))
-			return conditions->isReceptiveIgnoringMagicResistance(this, target);
-	}
-	if(target && newHorizonsNaturesWrath::enabled(*this))
-	{
-		// The ordered hostile-recipient consumer handles resistance, not the
-		// routing or heal immunity check. All other immunity conditions remain.
-		if(const auto * conditions = dynamic_cast<const TargetCondition *>(targetCondition.get()))
-			return conditions->isReceptiveIgnoringMagicResistance(this, target);
-	}
-	if(target && newHorizonsPuppetMaster::isMentalControlSpell(owner->getJsonKey())
-		&& newHorizonsPuppetMaster::hasLucidity(target))
-		return false;
-
-	if(target && isNewHorizonsBlinkSpell(owner) && usesNewHorizonsMagicV3()
-		&& target->unitSide() == casterSide)
-	{
-
-		if(const auto * conditions = dynamic_cast<const TargetCondition *>(targetCondition.get()))
-			return conditions->isReceptiveIgnoringMagicResistance(this, target);
-	}
-
-	return target
-		&& targetCondition->isReceptive(this, target);
-}
 
 bool BattleSpellMechanics::isSmart() const
 {

@@ -3,6 +3,11 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../../AI/BattleAI/BattleEvaluator.h"
+#include "../../AI/BattleAI/SearchBudget.h"
+#include "../../AI/BattleAI/SearchIncumbent.h"
+#include "../../lib/callback/CBattleCallback.h"
+#include "../../lib/networkPacks/PacksForClientBattle.h"
 
 #include "../server/battles/HeroCommandFixture.h"
 #include "../../AI/BattleAI/PotentialTargets.h"
@@ -150,4 +155,58 @@ TEST_F(NewHorizonsPuppetMasterAITest, DetachedCastKeepsPhysicalSideButScoresForm
 
 	EXPECT_EQ(originalSideAlly->getAvailableHealth(),
 		liveAllyHealth);
+}
+
+namespace
+{
+class PuppetBudgetCallback final : public CBattleCallback
+{
+public:
+	PuppetBudgetCallback() : CBattleCallback(PlayerColor(0), nullptr) {}
+};
+}
+TEST_F(NewHorizonsPuppetMasterAITest, ExhaustedSelectorPreservesPuppetControllerOverRetainedBerserk)
+{
+	prepare();
+	auto * nearestFriendly = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(11, 5), 20);
+	ASSERT_NE(nearestFriendly, nullptr);
+	BattleSetActiveStack activate;
+	activate.battleID = BattleID(0);
+	activate.stack = controllerAlly->unitId();
+	activate.reason = BattleUnitTurnReason::TURN_QUEUE;
+	gameHandler->sendAndApply(activate);
+	BattleAction cast;
+	cast.side = BattleSide::ATTACKER;
+	cast.actionType = EActionType::HERO_SPELL;
+	cast.spell = puppetMasterSpell();
+	cast.aimToUnit(controlled);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), cast));
+	controlled->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
+		BonusType::ATTACKS_NEAREST_CREATURE, BonusSource::SPELL_EFFECT, 1,
+		BonusSourceID(SpellID(SpellID::BERSERK))));
+	activate.stack = controlled->unitId();
+	gameHandler->sendAndApply(activate);
+	ASSERT_TRUE(newHorizonsPuppetMaster::hasValidControlMarker(*battle(), controlled));
+	ASSERT_EQ(battle()->battleGetActionController(controlled), PlayerColor(0));
+	ASSERT_TRUE(controlled->hasBonusOfType(BonusType::ATTACKS_NEAREST_CREATURE));
+	auto environment = std::make_shared<PuppetMasterEnvironment>(gameState());
+	auto callback = std::make_shared<PuppetBudgetCallback>();
+	callback->onBattleStarted(battle());
+	auto view = callback->getBattle(BattleID(0));
+	const auto incumbent = battleSearch::visibleIncumbent(environment.get(), view, controlled);
+	EXPECT_EQ(incumbent.actionType, EActionType::DEFEND);
+	// Deliberately create an exact standalone fixture first, then attach the
+	// exhausted decision owner; the production constructor has its own owner.
+	auto branch = std::make_shared<HypotheticBattle>(environment.get(), view);
+	auto work = std::make_shared<battleSearch::SearchBudget>(battleSearch::WorkAmounts{});
+	branch->setSearchBudget(work);
+	DamageCache damage;
+	const auto live = gameState()->saveToMemory();
+	BattleEvaluator evaluator(environment, callback, branch, damage, controlled,
+		PlayerColor(0), BattleID(0), BattleSide::ATTACKER, 1.0f, 2);
+	const auto selected = evaluator.selectStackAction(controlled);
+	EXPECT_EQ(selected.actionType, EActionType::DEFEND);
+	EXPECT_EQ(gameState()->saveToMemory(), live);
+	EXPECT_GT(work->refusals()[0] + work->refusals()[3] + work->refusals()[4], 0u);
+	EXPECT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), selected));
 }

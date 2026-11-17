@@ -474,8 +474,13 @@
 	"authority": {
 		"name": "Authority",
 		"specialty": [],
-		"tags": {"special": true},
-		"gainChance": {"might": 1, "magic": 1},
+		"tags": {
+			"special": true
+		},
+		"gainChance": {
+			"might": 1,
+			"magic": 1
+		},
 		"basic": {
 			"description": "Increases effective Leadership by +15%.",
 			"images": {
@@ -1376,66 +1381,44 @@
 		}
 	},
 	"divineMandate": {
-		"name": "Divine Mandate",
+		"name": "Consecrated Arms",
 		"specialty": [],
 		"tags": {
 			"special": true
-		},
-		"combatStatus": {
-			"provider": "divineMandateUses",
-			"description": "Remaining Divine Mandate pairs for this combat. A Hero Action casting a Light Spell grants an Order-only follow-up; issuing an Order grants a Light-Spell-only follow-up. The follow-up lasts until round end and spends a use only when performed. It does not block creature actions or create another pair."
 		},
 		"gainChance": {
 			"might": 0,
 			"magic": 0
 		},
 		"basic": {
-			"description": "Strengthen attribute-based Order effects by 5 percentage points; up to 1 Orders each combat also cast a useful known Light blessing for free.",
+			"description": "Each committed Order grants one uniformly random prayer. Prayer potency uses Spell Power + Knowledge + 0 Faith; duration uses actual Spell Power + Knowledge: min(4, 2 + floor(Faith / 150)) rounds.",
 			"images": {
 				"small": "NH_divineMandate_basic_small.png",
 				"medium": "NH_divineMandate_basic_medium.png",
 				"large": "NH_divineMandate_basic_large.png",
 				"scenarioBonus": "NH_divineMandate_basic_scenarioBonus.png"
 			},
-			"effects": {
-				"newHorizonsPlaceholder": {
-					"type": "MORALE",
-					"valueType": "BASE_NUMBER",
-					"val": 0
-				}
-			}
+			"effects": {}
 		},
 		"advanced": {
-			"description": "Strengthen attribute-based Order effects by 10 percentage points; up to 2 Orders each combat also cast a useful known Light blessing for free.",
+			"description": "Each committed Order grants one uniformly random prayer. Prayer potency uses Spell Power + Knowledge + 50 Faith; duration uses actual Spell Power + Knowledge: min(4, 2 + floor(Faith / 150)) rounds.",
 			"images": {
 				"small": "NH_divineMandate_advanced_small.png",
 				"medium": "NH_divineMandate_advanced_medium.png",
 				"large": "NH_divineMandate_advanced_large.png",
 				"scenarioBonus": "NH_divineMandate_advanced_scenarioBonus.png"
 			},
-			"effects": {
-				"newHorizonsPlaceholder": {
-					"type": "MORALE",
-					"valueType": "BASE_NUMBER",
-					"val": 0
-				}
-			}
+			"effects": {}
 		},
 		"expert": {
-			"description": "Strengthen attribute-based Order effects by 15 percentage points; up to 3 Orders each combat also cast a useful known Light blessing for free.",
+			"description": "Each committed Order grants one uniformly random prayer. Prayer potency uses Spell Power + Knowledge + 100 Faith; duration uses actual Spell Power + Knowledge: min(4, 2 + floor(Faith / 150)) rounds.",
 			"images": {
 				"small": "NH_divineMandate_expert_small.png",
 				"medium": "NH_divineMandate_expert_medium.png",
 				"large": "NH_divineMandate_expert_large.png",
 				"scenarioBonus": "NH_divineMandate_expert_scenarioBonus.png"
 			},
-			"effects": {
-				"newHorizonsPlaceholder": {
-					"type": "MORALE",
-					"valueType": "BASE_NUMBER",
-					"val": 0
-				}
-			}
+			"effects": {}
 		}
 	},
 	"sylvanLuck": {
@@ -1508,7 +1491,7 @@
 			"magic": 0
 		},
 		"basic": {
-			"description": "20% chance per temporary magical effect to unravel enemy enchantments after damaging spells or cleanse enemy curses after friendly buffs. Each removed Mana yields 10 bonus damage or 15 shared healing and resurrection HP.",
+			"description": "Arcane Overflow transfers 30% of primary single-target spell overkill to the nearest other enemy. Own area, chain and global spells deal 70% friendly damage. Resisted single-target debuffs have a 30% chance to retry once with normal resistance.",
 			"images": {
 				"small": "NH_metamagic_prism_basic_small.png",
 				"medium": "NH_metamagic_prism_basic_medium.png",
@@ -1518,7 +1501,7 @@
 			"effects": {}
 		},
 		"advanced": {
-			"description": "30% chance per temporary magical effect to unravel enemy enchantments after damaging spells or cleanse enemy curses after friendly buffs. Each removed Mana yields 10 bonus damage or 15 shared healing and resurrection HP.",
+			"description": "Arcane Overflow transfers 45% of primary single-target spell overkill to the nearest other enemy. Own area, chain and global spells deal 55% friendly damage. Resisted single-target debuffs have a 45% chance to retry once with normal resistance.",
 			"images": {
 				"small": "NH_metamagic_prism_advanced_small.png",
 				"medium": "NH_metamagic_prism_advanced_medium.png",
@@ -1528,7 +1511,7 @@
 			"effects": {}
 		},
 		"expert": {
-			"description": "40% chance per temporary magical effect to unravel enemy enchantments after damaging spells or cleanse enemy curses after friendly buffs. Each removed Mana yields 10 bonus damage or 15 shared healing and resurrection HP.",
+			"description": "Arcane Overflow transfers 60% of primary single-target spell overkill to the nearest other enemy. Own area, chain and global spells deal 40% friendly damage. Resisted single-target debuffs have a 60% chance to retry once with normal resistance.",
 			"images": {
 				"small": "NH_metamagic_prism_expert_small.png",
 				"medium": "NH_metamagic_prism_expert_medium.png",

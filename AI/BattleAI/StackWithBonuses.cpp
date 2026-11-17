@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "../../lib/battle/TimedEffectValueTransitions.h"
 #include "StackWithBonuses.h"
+#include "../../lib/bonuses/BonusDependencyQueryFrame.h"
 #include "OwnedStackQuerySource.h"
 #include "../../lib/battle/UnitCreatureResolver.h"
 #include "../../lib/bonuses/CBonusSystemNode.h"
@@ -264,6 +265,8 @@ TConstBonusListPtr StackWithBonuses::getUnstackedBonuses(const CSelector & selec
 TConstBonusListPtr StackWithBonuses::getBonusesBeforeCreatureAbilitySuppression(
 	const CSelector & selector, const std::string & cachingStr, const bool unstacked) const
 {
+	if(modifierBaseProgram && !damageScoringBonuses && !damageScoringUnstackedBonuses)
+		return currentModifierQueries()->query(selector, unstacked);
 	if(ownedQuerySource && !damageScoringBonuses)
 		return ownedQuerySource->current().unit().getBonusesBeforeCreatureAbilitySuppression(selector, cachingStr, unstacked);
 	if(!damageScoringBonuses)

@@ -5,6 +5,7 @@
 #include "../CGameHandler.h"
 #include "../../lib/battle/CBattleInfoCallback.h"
 #include "../../lib/battle/IBattleState.h"
+#include "../../lib/battle/ConsecratedArmsOrder.h"
 #include "../../lib/battle/PassiveDivineMandateSpellPool.h"
 #include "../../lib/battle/HeroOrderRecipients.h"
 #include "../../lib/battle/Unit.h"
@@ -12,10 +13,45 @@
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/spells/ISpellMechanics.h"
 #include "../../lib/CRandomGenerator.h"
+#include "../../lib/networkPacks/SetStackEffect.h"
+#include "../../lib/networkPacks/PacksForClientBattle.h"
 
 void BattleActionProcessor::castPassiveDivineMandate(const CBattleInfoCallback & battle,
 	BattleSide side, const HeroOrderState & order)
 {
+	const auto * issuingHero = battle.battleGetFightingHero(side);
+	const auto prayerPolicy = consecratedArms::capturePolicy(issuingHero);
+	if(prayerPolicy.rank)
+	{
+		auto & rng = gameHandler->getRandomGenerator();
+		const int first = rng.nextInt(5);
+		const int second = prayerPolicy.has(consecratedArms::Perk::ANTIPHONAL_PRAYER) ? rng.nextInt(4) : 0;
+		const auto prayers = consecratedArms::selectPrayers(prayerPolicy, first, second);
+		const int faith = consecratedArms::actualFaith(*issuingHero);
+		auto effects = consecratedArms::orderEffects(battle, side,
+			heroCommands::recipientIds(battle, side, order), prayers, prayerPolicy, faith);
+		gameHandler->sendAndApply(effects);
+		BattleLogMessage message;
+		message.battleID = battle.getBattle()->getBattleID();
+		for(const auto prayer : prayers)
+		{
+			auto line = MetaString::createFromTextID("new-horizons.logs.consecratedArmsGranted");
+			line.replaceTextID(consecratedArms::textID(prayer));
+			line.replaceNumber(consecratedArms::potencyFaith(faith, prayerPolicy));
+			line.replaceNumber(consecratedArms::duration(faith, prayerPolicy));
+			std::string recipientIds;
+			for(const auto & recipient : effects.toAdd)
+			{
+				if(!recipientIds.empty())
+					recipientIds += ", ";
+				recipientIds += std::to_string(recipient.first);
+			}
+			line.replaceRawString(recipientIds);
+			message.lines.push_back(std::move(line));
+		}
+		gameHandler->sendAndApply(message);
+		return;
+	}
 	if(!order.passiveDivineMandate)
 		return;
 	const auto * hero = battle.battleGetFightingHero(side);

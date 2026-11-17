@@ -23,6 +23,13 @@
 
 namespace
 {
+template<typename Sample>
+void accumulateSelection(CBattleAI::StageTiming & aggregate, const Sample & local)
+{
+	aggregate.calls += local.calls;
+	aggregate.totalMicroseconds += local.totalMicroseconds;
+}
+
 bool waitTimingEnabled()
 {
 	static const bool requested = []
@@ -334,6 +341,11 @@ BattleEvaluator::SelectionTiming * CBattleAI::TimingScope::selectionSink()
 void CBattleAI::TimingScope::submitUnitAction(std::shared_ptr<CBattleCallback> callback,
 	const BattleID & battleID, const BattleAction & action)
 {
+#ifdef NH_PERF_EXPERIMENTS
+	// Includes the constructor-exhaustion legal fallback. No forecast work is
+	// performed after this boundary before direct authoritative submission.
+	completeSearchDecision();
+#endif
 	// Only a selected direct WAIT is certified here. Hero-action returns have
 	// no invented submission timestamps; the owner may die during submission.
 	if(traceRequested && action.actionType == EActionType::WAIT)
@@ -415,6 +427,11 @@ CBattleAI::TimingScope::~TimingScope()
 	std::optional<TimingSummary> report;
 	{
 		std::lock_guard lock(state->mutex);
+#ifdef NH_PERF_EXPERIMENTS
+		// Aggregate captured values only; no root query/callback in a destructor.
+		state->summary.searchWork.accumulate(rootSearchWork.summary());
+#endif
+		state->summary.forecast.accumulate(stageTotals.forecast);
 		uint64_t classifiedMicroseconds = 0;
 		for(auto stage : {&TimingSummary::evaluatorConstruction, &TimingSummary::stackActionSelection,
 			&TimingSummary::heroAction, &TimingSummary::directUnitSubmission})
@@ -425,12 +442,6 @@ CBattleAI::TimingScope::~TimingScope()
 			aggregate.totalMicroseconds += local.totalMicroseconds;
 			classifiedMicroseconds += local.totalMicroseconds;
 		}
-		const auto accumulateSelection = [](StageTiming & aggregate,
-			const auto & local)
-		{
-			aggregate.calls += local.calls;
-			aggregate.totalMicroseconds += local.totalMicroseconds;
-		};
 		accumulateSelection(state->summary.selectionCreatureSpell, selectionTotals.creatureSpell);
 		const auto accumulateEffectWork = [](HypotheticLifecycleTiming::EffectWorkTiming & aggregate,
 			const HypotheticLifecycleTiming::EffectWorkTiming & sample)
@@ -451,6 +462,7 @@ CBattleAI::TimingScope::~TimingScope()
 		accumulateSelection(state->summary.movementGoTowards, movement.goTowards);
 		accumulateSelection(state->summary.movementFindMoveExchangeSubset, movement.findMoveExchange);
 		const auto & exchange = movement.findMoveExchangeDetails;
+		state->summary.forecast.accumulate(exchange.forecast);
 		accumulateSelection(state->summary.movementExchangeBody, exchange.body);
 		accumulateSelection(state->summary.movementExchangeMembership, exchange.membership);
 		accumulateSelection(state->summary.movementExchangeProjectionSetup, exchange.projectionSetup);
@@ -477,6 +489,8 @@ CBattleAI::TimingScope::~TimingScope()
 		accumulateSelection(state->summary.selectionTargetExchange, selectionTotals.targetExchange);
 		accumulateSelection(state->summary.selectionBestTarget, selectionTotals.bestTarget);
 		const auto & bestTarget = selectionTotals.bestTargetDetails;
+		state->summary.forecast.accumulate(bestTarget.waitedDetails.forecast);
+		state->summary.forecast.accumulate(bestTarget.normalDetails.forecast);
 		accumulateSelection(state->summary.bestTargetWaitedExchange, bestTarget.waitedExchange);
 		accumulateSelection(state->summary.bestTargetWaitedBody, bestTarget.waitedDetails.body);
 		accumulateSelection(state->summary.bestTargetWaitedMembership, bestTarget.waitedDetails.membership);

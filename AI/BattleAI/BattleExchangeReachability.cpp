@@ -1,5 +1,7 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "SearchBudget.h"
+#include <cassert>
 #include "BattleExchangeVariant.h"
 #include "HypotheticBattle.h"
 #include "EnemyBypassReachability.h"
@@ -9,10 +11,13 @@
 
 void ReachabilityMapCache::update(const std::vector<battle::Units> & turnOrder, std::shared_ptr<HypotheticBattle> hb)
 {
+	workBudget = hb->searchBudget();
 	for(auto turn : turnOrder)
 	{
+		battleSearch::require(hb->searchBudget().get(), battleSearch::WorkKind::Movement);
 		for(auto u : turn)
 		{
+			battleSearch::require(hb->searchBudget().get(), battleSearch::WorkKind::Movement);
 			if(!vstd::contains(unitReachabilityMap, u->unitId()))
 			{
 				unitReachabilityMap[u->unitId()] = hb->getReachability(u);
@@ -54,14 +59,19 @@ battle::Units ReachabilityMapCache::computeOneTurnReachableUnits(std::shared_ptr
 		return result;
 	// These queries never advance or mutate the projection. Reuse it only for
 	// this hex/turn-order evaluation; no state is retained across cache misses.
-	HypotheticBattle turnBattle(env.get(), cb);
+	battleSearch::require(workBudget.get(), battleSearch::WorkKind::Movement);
+	HypotheticBattle turnBattle(env.get(), cb,
+		std::shared_ptr<const battle::OwnedBattleFrameBatch>(), workBudget);
+	assert(!workBudget || turnBattle.searchBudget() == workBudget);
 
 	for(int i = 0; i < turnOrder.size(); i++, turn++)
 	{
+		battleSearch::require(turnBattle.searchBudget().get(), battleSearch::WorkKind::Movement);
 		auto & turnQueue = turnOrder[i];
 
 		for(const battle::Unit * unit : turnQueue)
 		{
+			battleSearch::require(turnBattle.searchBudget().get(), battleSearch::WorkKind::Movement);
 			if(unit->isTurret())
 				continue;
 
@@ -102,6 +112,7 @@ battle::Units ReachabilityMapCache::computeOneTurnReachableUnits(std::shared_ptr
 				{
 					for(const BattleHex & neighbour : hex.getNeighbouringTiles())
 					{
+						battleSearch::require(turnBattle.searchBudget().get(), battleSearch::WorkKind::Movement);
 						reachable = unitReachability.isReachable(neighbour)
 							&& unitReachability.distances.at(neighbour.toInt()) <= radius;
 

@@ -6,6 +6,18 @@
 #include <stdexcept>
 namespace nominalAbilityChance
 {
+Outcomes afterPrevention(Outcomes outcomes, int resistanceBasisPoints)
+{
+	if(resistanceBasisPoints == 0) return outcomes;
+	const double chance = std::clamp(resistanceBasisPoints, 0, 10000) / 10000.0;
+	for(const auto success : {1, 3})
+	{
+		const auto prevented = outcomes[success] * chance;
+		outcomes[success - 1] += prevented;
+		outcomes[success] -= prevented;
+	}
+	return outcomes;
+}
 Outcomes harmful(const creatureAbilityChance::Rounding & chance, bool available)
 {
 	if(chance.remainderBasisPoints < 0 || chance.remainderBasisPoints >= 100

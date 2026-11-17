@@ -35,6 +35,8 @@ const float * expectedValueView(const PossibleSpellcast & ps)
 	// Control has no immediate HP delta; retain its precomputed activation swing.
 	if(ps.command == HeroCommand::NONE && ps.spellPuppetMasterExpectedValue.has_value())
 		return &*ps.spellPuppetMasterExpectedValue;
+	if(ps.command == HeroCommand::NONE && ps.spellOverflowExpectedValue.has_value())
+		return &*ps.spellOverflowExpectedValue;
 	return nullptr;
 }
 }

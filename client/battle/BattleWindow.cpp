@@ -690,7 +690,8 @@ void BattleWindow::updateStackInfoWindow(const CStack * stack)
 
 	if(stack && stack->unitSide() == BattleSide::DEFENDER)
 	{
-		defenderStackWindow = std::make_shared<StackInfoBasicPanel>(stack, battleCallback, true);
+		defenderStackWindow = std::make_shared<StackInfoBasicPanel>(stack, battleCallback, true,
+			owner.stacksController->getDisplayedStackShields(stack));
 		defenderStackWindow->setEnabled(showInfoWindows);
 	}
 	else
@@ -698,7 +699,8 @@ void BattleWindow::updateStackInfoWindow(const CStack * stack)
 	
 	if(stack && stack->unitSide() == BattleSide::ATTACKER)
 	{
-		attackerStackWindow = std::make_shared<StackInfoBasicPanel>(stack, battleCallback, true);
+		attackerStackWindow = std::make_shared<StackInfoBasicPanel>(stack, battleCallback, true,
+			owner.stacksController->getDisplayedStackShields(stack));
 		attackerStackWindow->setEnabled(showInfoWindows);
 	}
 	else
@@ -716,7 +718,7 @@ void BattleWindow::refreshHoveredStackStatus(const CStack * stack)
 
 	auto panel = stack->unitSide() == BattleSide::DEFENDER ? defenderStackWindow : attackerStackWindow;
 	if(panel)
-		panel->refreshDefendStatus(stack);
+		panel->refreshDefendStatus(stack, owner.stacksController->getDisplayedStackShields(stack));
 }
 
 bool BattleWindow::cursorOverStackInfoWindow() const

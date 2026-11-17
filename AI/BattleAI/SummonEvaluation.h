@@ -8,11 +8,12 @@
 
 class CSpell;
 
+namespace battleSearch { class SearchBudget; }
 namespace summonEvaluation
 {
 /// Canonical selected-empty-hex summons sharing the bounded board-wide shortlist.
 bool usesSelectedPlacement(const spells::Mechanics * mechanics);
-std::vector<spells::Target> placementTargets(const spells::Mechanics * mechanics);
+std::vector<spells::Target> placementTargets(const spells::Mechanics * mechanics, battleSearch::SearchBudget * budget = nullptr);
 /// Exact partial-stack value for newly created friendly summons skipped by the
 /// ordinary health delta. Caller establishes creation and friendly ownership.
 /// No extra lifetime weight: the existing continuation owns the bounded horizon.

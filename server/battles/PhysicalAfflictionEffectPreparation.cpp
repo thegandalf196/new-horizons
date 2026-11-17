@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "../CGameHandler.h"
+#include "CreatureAbilityApplication.h"
 
 #include "../../lib/battle/BattleInfo.h"
 #include "../../lib/battle/PhysicalAffliction.h"
@@ -83,4 +84,5 @@ void CGameHandler::stampPhysicalAfflictionEffects(SetStackEffect & effects)
 			physicalAfflictions::stampEffectChanges(*unit, removed, incoming);
 		}
 	}
+	creatureAbilityApplication::preventDirectAfflictions(*this, effects);
 }

@@ -17,4 +17,5 @@ std::optional<SkillStatusText> elementalAttunement(const CGHeroInstance & hero,
 	const CBattleInfoCallback & battle, BattleSide side);
 std::optional<SkillStatusText> divineMandate(const CGHeroInstance & hero,
 	const CBattleInfoCallback & battle, BattleSide side);
+std::optional<SkillStatusText> metamagic(const CGHeroInstance & hero);
 }

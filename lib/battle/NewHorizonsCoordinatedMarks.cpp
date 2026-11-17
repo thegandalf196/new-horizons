@@ -48,6 +48,8 @@ std::shared_ptr<Bonus> marker(const CBattleInfoCallback & battle, const battle::
 	result->stacking = shot ? consecrated : feathered;
 	result->statusIdentity = statusIdentity(shot);
 	result->statusTags = {BonusStatusTag::DEBUFF, BonusStatusTag::NON_TRANSFERABLE};
+	result->abilityDescriptor = creatureAbility::nativeAffliction(creatureAbility::Native::COORDINATED_MARK,
+		creatureAbility::Family::CREATURE_ABILITY, battle.battleGetOwner(&actor));
 	result->parameters = std::make_shared<BonusParameters>(std::vector<int32_t>{static_cast<int32_t>(side), static_cast<int32_t>(actor.unitId())});
 	result->description.appendRawString(shot
 		? "Consecrated Target: the next allied primary melee strike ignores " + std::to_string(value) + "% Creature Defense this round."

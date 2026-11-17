@@ -30,17 +30,27 @@ inline constexpr std::pair<const char *, const char *> newHorizonsPerkIconBindin
 		{"new-horizons:authority.counterattackTraining", "NH_perk_authority_counterattack_training"},
 		{"new-horizons:authority.protectiveTraining", "NH_perk_authority_protective_training"},
 		{"new-horizons:authority.veteranCorps", "NH_perk_authority_veteran_corps"},
-		// New Metamagic paintings remain provisional; use the existing neutral icon.
+		// Current Metamagic and Consecrated Arms perks await purpose-made artwork.
 		{"new-horizons:metamagic.conservedFormula", "NH_perk_neutral"},
-		{"new-horizons:metamagic.manaRecycling", "NH_perk_neutral"},
 		{"new-horizons:metamagic.disruptiveCasting", "NH_perk_neutral"},
-		{"new-horizons:metamagic.purgingFormula", "NH_perk_neutral"},
+		{"new-horizons:metamagic.unravelingMagic", "NH_perk_neutral"},
+		{"new-horizons:metamagic.reconstitutingMagic", "NH_perk_neutral"},
 		{"new-horizons:metamagic.spellSculpting", "NH_perk_neutral"},
-		{"new-horizons:metamagic.hexWeaving", "NH_perk_neutral"},
-		{"new-horizons:metamagic.widenSpell", "NH_perk_neutral"},
-		{"new-horizons:metamagic.matterbreaker", "NH_perk_neutral"},
-		{"new-horizons:metamagic.magicalMemory", "NH_perk_neutral"},
-		{"new-horizons:metamagic.arcaneRupture", "NH_perk_neutral"},
+		{"new-horizons:metamagic.widenSpells", "NH_perk_neutral"},
+		{"new-horizons:metamagic.levitation", "NH_perk_neutral"},
+		{"new-horizons:metamagic.arcaneBallistics", "NH_perk_neutral"},
+		{"new-horizons:metamagic.arcaneCascade", "NH_perk_neutral"},
+		{"new-horizons:metamagic.empoweredSpells", "NH_perk_neutral"},
+		{"new-horizons:divineMandate.enduringPrayer", "NH_perk_neutral"},
+		{"new-horizons:divineMandate.joyfulDevotion", "NH_perk_neutral"},
+		{"new-horizons:divineMandate.fearlessAdvance", "NH_perk_neutral"},
+		{"new-horizons:divineMandate.unshakableFaith", "NH_perk_neutral"},
+		{"new-horizons:divineMandate.communionOfSaints", "NH_perk_neutral"},
+		{"new-horizons:divineMandate.righteousSentence", "NH_perk_neutral"},
+		{"new-horizons:divineMandate.ferventInvocation", "NH_perk_neutral"},
+		{"new-horizons:divineMandate.sacredAccord", "NH_perk_neutral"},
+		{"new-horizons:divineMandate.antiphonalPrayer", "NH_perk_neutral"},
+		{"new-horizons:divineMandate.livingLiturgy", "NH_perk_neutral"},
 		{"new-horizons:divineMandate.knightlyValor", "NH_perk_knightly_sequence"},
 		{"new-horizons:divineMandate.shieldOfFaith", "NH_perk_shared_purpose"},
 		{"new-horizons:divineMandate.righteousDiscipline", "NH_perk_crown_and_altar"},
@@ -375,7 +385,8 @@ inline const std::string & newHorizonsPerkIcon(const std::string & perkId)
 /// Missing/renamed/translated labels conservatively retain the historical icon.
 inline const std::string & newHorizonsPerkIcon(const std::string & perkId, std::string_view capturedName)
 {
-	if(perkId == "new-horizons:sorceryMagic.countermage" && capturedName == "Arcane Ballistics")
+	if(perkId == "new-horizons:sorceryMagic.countermage"
+		&& (capturedName == "Arcane Ballistics" || capturedName == "Arcane Arsenal"))
 	{
 		static const std::string arcaneBallistics = "NH_perk_arcane_ballistics";
 		return arcaneBallistics;

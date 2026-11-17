@@ -76,7 +76,8 @@ struct DLL_LINKAGE SetStackEffect : public CPackForClient
 				|| containsBonusType(toUpdate, BonusType::ELEMENTAL_SPELL_DAMAGE_RECEIVED)
 				|| containsBonusType(toRemove, BonusType::ELEMENTAL_SPELL_DAMAGE_RECEIVED)))
 			throw std::runtime_error("Cannot discard incoming elemental spell damage in stack-effect packet");
-		if(h.saving && (!h.hasFeature(Handler::Version::NEW_HORIZONS_ADJACENCY_FILTERS)
+		if(h.saving && (!h.hasFeature(Handler::Version::NEW_HORIZONS_CONSECRATED_ARMS)
+			|| !h.hasFeature(Handler::Version::NEW_HORIZONS_ADJACENCY_FILTERS)
 			|| !h.hasFeature(Handler::Version::NEW_HORIZONS_ORDINARY_RANGED_SPECIALTIES)
 			|| !h.hasFeature(Handler::Version::NEW_HORIZONS_ORDINARY_MAINTENANCE_SPECIALTIES)
 			|| !h.hasFeature(Handler::Version::NEW_HORIZONS_ORDINARY_COMBAT_SPECIALTIES)

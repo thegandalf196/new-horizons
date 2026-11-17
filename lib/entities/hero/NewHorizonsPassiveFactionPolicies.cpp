@@ -2,6 +2,7 @@
 #include "StdInc.h"
 #include "NewHorizonsPerkRules.h"
 #include "NewHorizonsRuleValidation.h"
+#include "../../spells/NewHorizonsMetamagicResolution.h"
 #include <array>
 
 namespace newHorizonsHeroes
@@ -12,20 +13,20 @@ using detail::fields;
 using detail::integer;
 using detail::require;
 
-void validateMetamagicV4(const JsonNode & policy)
+void validateConsecratedArms(const JsonNode & policy)
 {
-	fields(policy, {"version", "removalChancePercent", "damagePerMana", "restorationPerMana", "halonRemovalChanceBonusPercent"});
-	require(policy.Struct().size() == 5, "Metamagic v4 requires its complete captured profile");
-	const auto & chances = policy["removalChancePercent"];
-	require(chances.isVector() && chances.Vector().size() == 4, "Metamagic removal chances require four ranks");
-	constexpr std::array expected{0, 20, 30, 40};
-	for(size_t rank = 0; rank < expected.size(); ++rank)
-		require(chances.Vector()[rank].getType() == JsonNode::JsonType::DATA_INTEGER
-			&& chances.Vector()[rank].Integer() == expected[rank], "Unsupported Metamagic removal chance");
-	for(const auto & [key, expectedValue] : std::array<std::pair<const char *, int>, 3>{{
-		{"damagePerMana", 10}, {"restorationPerMana", 15}, {"halonRemovalChanceBonusPercent", 5}}})
-		require(policy[key].getType() == JsonNode::JsonType::DATA_INTEGER
-			&& policy[key].Integer() == expectedValue, std::string("Unsupported Metamagic ") + key);
+	fields(policy, {"version", "potencyFaithBonusByRank", "ferventInvocationAdditionalFaith"});
+	const auto & ranks = policy["potencyFaithBonusByRank"];
+	static constexpr std::array<int, 4> expected = {0, 0, 50, 100};
+	require(ranks.isVector() && ranks.Vector().size() == expected.size(),
+		"Consecrated Arms requires four captured rank Faith bonuses");
+	for(size_t index = 0; index < expected.size(); ++index)
+		require(ranks.Vector()[index].getType() == JsonNode::JsonType::DATA_INTEGER
+			&& ranks.Vector()[index].Integer() == expected[index],
+			"Consecrated Arms has an unsupported rank Faith bonus");
+	require(policy["ferventInvocationAdditionalFaith"].getType() == JsonNode::JsonType::DATA_INTEGER
+		&& policy["ferventInvocationAdditionalFaith"].Integer() == 100,
+		"Consecrated Arms requires its captured Fervent Invocation bonus");
 }
 }
 
@@ -39,11 +40,20 @@ void validatePassiveFactionPolicies(const JsonNode & rules)
 		if(found == rules.Struct().end())
 			continue;
 		const auto & policy = found->second;
+		require(policy.isStruct(), std::string(key) + " must be an object");
 		const bool metamagic = std::string_view(key) == "metamagicPolicy";
 		if(metamagic && policy["version"].getType() == JsonNode::JsonType::DATA_INTEGER
-			&& policy["version"].Integer() == 4)
+			&& (policy["version"].Integer() >= 4 && policy["version"].Integer() <= 6))
 		{
-			validateMetamagicV4(policy);
+			require(newHorizonsMetamagic::resolutionPolicy(rules).has_value(),
+				"Metamagic requires its complete supported captured profile");
+			continue;
+		}
+		if(std::string_view(key) == "divineMandatePolicy"
+			&& policy["version"].getType() == JsonNode::JsonType::DATA_INTEGER
+			&& policy["version"].Integer() == 3)
+		{
+			validateConsecratedArms(policy);
 			continue;
 		}
 		if(metamagic && policy["version"].getType() == JsonNode::JsonType::DATA_INTEGER

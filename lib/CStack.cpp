@@ -11,6 +11,7 @@
 #include "bonuses/NativeBonusGraphAccess.h"
 #include "CStack.h"
 #include "battle/PassiveDivineMandate.h"
+#include "battle/ConsecratedArms.h"
 #include "battle/AttackAbilityQueries.h"
 #include "battle/BattleBonusAcceptance.h"
 #include "battle/StackInitializationReceipts.h"
@@ -98,6 +99,7 @@ void CStack::afterNewRound(bool isFirstRound, bool deferBattleFormRestoration)
 			guardianSpiritHitPoints = markerHitPoints;
 		guardianSpiritRoundsRemaining = roundsRemaining;
 	}
+	synchronizeRedemptionShield();
 	removeBonusesRecursive(CSelector([](const Bonus * bonus)
 	{
 		return newHorizonsOffense::isNoQuarterRetaliationBonus(bonus);
@@ -198,7 +200,8 @@ void CStack::prepareAttacked(BattleStackAttacked & bsa, vstd::RNG & rand, bool d
 
 void CStack::prepareAttacked(BattleStackAttacked & bsa, vstd::RNG & rand,
 	const std::shared_ptr<battle::CUnitState> & customState, bool destroyRemains,
-	const bool bypassTemporaryHitPoints, battle::DamageProvenance provenance, int64_t * postShieldBeforeCasualties)
+	const bool bypassTemporaryHitPoints, battle::DamageProvenance provenance, int64_t * postShieldBeforeCasualties,
+	const battle::DamageContext * context)
 {
 	if(postShieldBeforeCasualties)
 		*postShieldBeforeCasualties = 0;
@@ -206,10 +209,14 @@ void CStack::prepareAttacked(BattleStackAttacked & bsa, vstd::RNG & rand,
 	const auto guardianSpiritBefore = customState->guardianSpiritHitPoints;
 
 	// compute damage and update bsa.damageAmount
-	if(bypassTemporaryHitPoints)
+	if(context)
+		customState->damageWithContext(bsa.damageAmount, destroyRemains, provenance, *context,
+			postShieldBeforeCasualties, bypassTemporaryHitPoints);
+	else if(bypassTemporaryHitPoints)
 		customState->damageShadowGiftSacrifice(bsa.damageAmount);
 	else
 		customState->damage(bsa.damageAmount, destroyRemains, provenance, postShieldBeforeCasualties);
+
 	if(guardianSpiritBefore > 0 && customState->guardianSpiritHitPoints == 0)
 		bsa.flags |= BattleStackAttacked::GUARDIAN_SPIRIT_EXHAUSTED;
 
@@ -416,10 +423,10 @@ void CStack::initializeRebirthOriginalAggregateHP(const int64_t originalHP)
 void CStack::captureBattleStartMaximumAggregateHP()
 {
 	const auto * combatHero = battle ? battle->battleGetFightingHero(unitSide()) : getMyHero();
-	if(battleStartMaximumAggregateHP > 0
-		|| !newHorizonsElementalRebirth::isEligibleSource(*this)
+	const bool consecrated = consecratedArms::capturePolicy(combatHero).rank > 0;
+	if(battleStartMaximumAggregateHP > 0 || !newHorizonsElementalRebirth::isEligibleSource(*this)
 		|| (!newHorizonsElementalRebirth::activeProfile(combatHero)
-			&& !newHorizonsDiscipline::hasVeteranCohesion(combatHero)))
+			&& !newHorizonsDiscipline::hasVeteranCohesion(combatHero) && !consecrated))
 		return;
 
 	const auto maximumPerCreature = getMaxHealth();

@@ -69,9 +69,16 @@ SpellScoutDomain spellScoutDomain(const spells::Mechanics & mechanics, const spe
 		++count;
 		if(effect.indirect || effect.optional) return false;
 		if(typeid(effect) == typeid(spells::effects::native::Damage))
-			kind = SpellScoutDomain::Damage;
+		{
+			const auto & damage = static_cast<const spells::effects::native::Damage &>(effect);
+			if(damage.supportsFiniteForecast() && damage.supportsFiniteForecastTargeting(mechanics))
+				kind = SpellScoutDomain::Damage;
+		}
 		else if(const auto * timed = dynamic_cast<const spells::effects::native::Timed *>(&effect))
 		{
+			if(typeid(effect) != typeid(spells::effects::native::Timed)
+				|| !timed->supportsFiniteForecastPayload()
+				|| !timed->supportsFiniteForecastTargeting(mechanics)) return false;
 			kind = SpellScoutDomain::NumericTimed;
 			const auto recipients = mechanics.getAffectedStacks(target);
 			if(recipients.empty()) kind = SpellScoutDomain::Unknown;
@@ -93,7 +100,8 @@ bool spellScoutCandidate(const PossibleSpellcast & candidate)
 		&& !candidate.divineMandateFollowup && !candidate.spellRunicEstimatePartial
 		&& !candidate.spellHandOfFateExpectedValue && !candidate.spellBattleFormExpectedValue
 		&& !candidate.spellPuppetMasterExpectedValue && !candidate.spellConfusionExpectedValue
-		&& !candidate.spellInspirationExpectedValue && candidate.spellPlacementHeuristicValue == 0
+		&& !candidate.spellInspirationExpectedValue && !candidate.spellOverflowExpectedValue
+		&& candidate.spellPlacementHeuristicValue == 0
 		&& candidate.spellNaturePoisonValue == 0 && candidate.spellSoulChainDelayedValue == 0
 		&& candidate.spellShadowGiftHeuristicValue == 0 && candidate.spellPurifyHeuristicValue == 0
 		&& candidate.spell->counteredSpells.empty();
@@ -102,12 +110,20 @@ bool spellScoutCandidate(const PossibleSpellcast & candidate)
 std::optional<float> spellScoutUtility(const Environment * environment,
 	const std::shared_ptr<CBattleInfoCallback> & source, BattleSide side,
 	const PossibleSpellcast & candidate, const DamageCache & originalDamage,
-	const BattleExchangeEvaluator & utility, Baseline * pressure)
+	const BattleExchangeEvaluator & utility, Baseline * pressure,
+	const std::shared_ptr<battleSearch::SearchBudget> & budget)
 {
 	if(!environment || !source || !spellScoutCandidate(candidate)) return {};
 	const auto * hero = source->battleGetFightingHero(side);
 	if(!hero || newHorizonsDivineMandate::needsRecipientCapture(hero)) return {};
-	auto state = std::make_shared<HypotheticBattle>(environment, source);
+	// Validate effect/target descriptors before admission cleanup or target
+	// enumeration can invoke unsupported native conversion/shape handlers.
+	spells::BattleCast probe(source.get(), hero, spells::Mode::HERO, candidate.spell);
+	probe.setOvercharge(candidate.spellOvercharge);
+	auto probeMechanics = candidate.spell->battleMechanics(&probe);
+	if(spellScoutDomain(*probeMechanics, candidate.dest) == SpellScoutDomain::Unknown) return {};
+	auto state = std::make_shared<HypotheticBattle>(environment, source,
+		std::shared_ptr<const battle::OwnedBattleFrameBatch>(), budget);
 	const auto admission = heroActionProjection::admitCandidate(*state, side, candidate);
 	if(!admission.admitted || !admission.spellAllowance) return {};
 	const auto & receipt = admission.spellAllowance->action.receipt;

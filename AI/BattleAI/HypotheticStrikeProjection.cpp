@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "ForecastNativeAdapter.h"
 #include "PhysicalStrikeProjection.h"
 #include "HypotheticBattle.h"
 #include "NewHorizonsHexOfPain.h"
@@ -123,7 +124,8 @@ void HypotheticBattle::projectFrozenShatter(const BattleAttackInfo & attack,
 		auto target = getForUpdate(id);
 		auto hit = attack;
 		hit.defender = target.get();
-		if(newHorizonsFrozen::qualifiesForShatter(hit, getMagicRules()))
+		if(newHorizonsFrozen::qualifiesForShatter(hit, getMagicRules())
+			&& !forecast::NativeAdapter::effectRemoval(*this, id, forecastEffects::Removal::FrozenShatter, true))
 			target->removeUnitBonus(newHorizonsFrozen::removalPlan(*target));
 	}
 }

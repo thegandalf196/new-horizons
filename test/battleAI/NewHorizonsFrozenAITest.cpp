@@ -134,6 +134,15 @@ TEST_F(NewHorizonsFrozenAITest, FreezingTouchHasExpectedControlWithoutInventingG
 	const auto repeated = AttackPossibility::evaluate(BattleAttackInfo(model->getForUpdate(ice->unitId()).get(),
 		model->getForUpdate(target->unitId()).get(), 0, false), ice->getPosition(), cache, model);
 	EXPECT_FLOAT_EQ(prediction.frozenControlValue, repeated.frozenControlValue);
+	consecratedArms::Policy prayer;
+	prayer.rank = 1; prayer.perks = static_cast<uint16_t>(consecratedArms::Perk::UNSHAKABLE_FAITH);
+	model->getForUpdate(target->unitId())->addUnitBonus(consecratedArms::prayerBonuses(
+		consecratedArms::Prayer::STEADFAST_SOUL, 200, prayer, 3, 1));
+	const auto guarded = AttackPossibility::evaluate(BattleAttackInfo(model->getForUpdate(ice->unitId()).get(),
+		model->getForUpdate(target->unitId()).get(), 0, false), ice->getPosition(), cache, model);
+	EXPECT_NEAR(guarded.frozenControlValue, prediction.frozenControlValue * 0.8f, 0.001f);
+	EXPECT_FALSE(newHorizonsFrozen::isFrozen(*guarded.effectPreview->getForUpdate(target->unitId())));
+	EXPECT_EQ(guarded.effectPreview->getForUpdate(target->unitId())->frozenLastAppliedRound(), -1);
 }
 
 TEST_F(NewHorizonsFrozenAITest, ExtrasDoNotThawButNormalSlotForfeitsAndRetainsRoundReceipt)

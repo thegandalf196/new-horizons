@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "SearchBudget.h"
 #include "ExchangeInitiativeQueue.h"
 #include "HypotheticBattle.h"
 #include "StackWithBonuses.h"
@@ -42,6 +43,7 @@ ExchangeInitiativeQueue::Snapshot ExchangeInitiativeQueue::snapshot() const
 	Snapshot result;
 	for(const auto * unit : battle->battleGetAllUnits(true))
 	{
+		battleSearch::require(battle->searchBudget().get(), battleSearch::WorkKind::Node);
 		const auto effects = unit->getBonuses(Selector::type()(BonusType::STACKS_INITIATIVE));
 		const bool wingbeat = std::any_of(effects->begin(), effects->end(), [](const auto & bonus)
 		{
@@ -56,6 +58,7 @@ bool ExchangeInitiativeQueue::changed(const Snapshot & current) const
 {
 	for(const auto & [id, before] : previous)
 	{
+		battleSearch::require(battle->searchBudget().get(), battleSearch::WorkKind::Node);
 		const auto now = current.find(id);
 		if(now != current.end() && (before.wingbeat || now->second.wingbeat)
 			&& before.value != now->second.value)
@@ -66,6 +69,7 @@ bool ExchangeInitiativeQueue::changed(const Snapshot & current) const
 
 void ExchangeInitiativeQueue::beginRound(const battle::Units & all, const battle::Units & participants)
 {
+	battleSearch::require(battle->searchBudget().get(), battleSearch::WorkKind::Node);
 	original = &participants;
 	originalIndex = 0;
 	if(!watch)
@@ -75,12 +79,21 @@ void ExchangeInitiativeQueue::beginRound(const battle::Units & all, const battle
 	members.clear();
 	remaining = participants;
 	for(const auto * unit : all)
-		global.push_back(unit->unitId());
+		{
+			battleSearch::require(battle->searchBudget().get(), battleSearch::WorkKind::Node);
+			global.push_back(unit->unitId());
+		}
 	for(const auto * unit : participants)
-		members.emplace(unit->unitId(), unit);
+		{
+			battleSearch::require(battle->searchBudget().get(), battleSearch::WorkKind::Node);
+			members.emplace(unit->unitId(), unit);
+		}
 	const auto current = snapshot();
 	for(const auto & [id, value] : current)
-		sawWingbeat |= value.wingbeat;
+		{
+			battleSearch::require(battle->searchBudget().get(), battleSearch::WorkKind::Node);
+			sawWingbeat |= value.wingbeat;
+		}
 	roundFinished = false;
 	// Cached future queues retain next-activation effects. Re-query after the actual
 	// projected round boundary, including any expiry at a previous activation.
@@ -101,6 +114,7 @@ void ExchangeInitiativeQueue::rebuild()
 		return;
 	for(const auto * unit : order.front())
 	{
+		battleSearch::require(battle->searchBudget().get(), battleSearch::WorkKind::Node);
 		global.push_back(unit->unitId());
 		if(const auto found = members.find(unit->unitId()); found != members.end())
 			remaining.push_back(found->second); // Preserve the original pointer semantics.
@@ -114,21 +128,28 @@ void ExchangeInitiativeQueue::finishRound()
 	// Nonparticipants after the final exchanging actor still determine the
 	// next round's equal-Initiative side preference, without simulating attacks.
 	for(auto it = global.rbegin(); it != global.rend(); ++it)
-		if(const auto * unit = battle->battleGetUnitByID(*it); unit && unit->alive())
+		{
+			battleSearch::require(battle->searchBudget().get(), battleSearch::WorkKind::Node);
+			if(const auto * unit = battle->battleGetUnitByID(*it); unit && unit->alive())
 		{
 			lastSide = unit->unitSide();
 			break;
+		}
 		}
 	roundFinished = true;
 }
 
 const battle::Unit * ExchangeInitiativeQueue::next()
 {
+	battleSearch::require(battle->searchBudget().get(), battleSearch::WorkKind::Node);
 	if(!watch)
 		return originalIndex < original->size() ? (*original)[originalIndex++] : nullptr;
 	const auto current = snapshot();
 	for(const auto & [id, value] : current)
-		sawWingbeat |= value.wingbeat;
+		{
+			battleSearch::require(battle->searchBudget().get(), battleSearch::WorkKind::Node);
+			sawWingbeat |= value.wingbeat;
+		}
 	if(changed(current))
 		rebuild();
 	previous = current;
@@ -150,6 +171,7 @@ const battle::Unit * ExchangeInitiativeQueue::next()
 
 const battle::Unit * ExchangeInitiativeQueue::nextIn(battle::Units & queue, size_t index)
 {
+	battleSearch::require(battle->searchBudget().get(), battleSearch::WorkKind::Node);
 	if(!watch)
 		return index < queue.size() ? queue[index] : nullptr;
 	if(index != 0)
@@ -161,6 +183,7 @@ const battle::Unit * ExchangeInitiativeQueue::nextIn(battle::Units & queue, size
 		members.clear();
 		for(const auto * unit : remaining)
 		{
+			battleSearch::require(battle->searchBudget().get(), battleSearch::WorkKind::Node);
 			global.push_back(unit->unitId());
 			members.emplace(unit->unitId(), unit);
 		}
@@ -179,8 +202,10 @@ void ExchangeInitiativeQueue::appendParticipantArmies(HypotheticBattle & battle,
 {
 	for(int exchangeTurn = 0; exchangeTurn < rounds.size(); exchangeTurn++)
 	{
+		battleSearch::require(battle.searchBudget().get(), battleSearch::WorkKind::Node);
 		for(auto unit : rounds.at(exchangeTurn))
 		{
+			battleSearch::require(battle.searchBudget().get(), battleSearch::WorkKind::Node);
 			if(unit->isTurret())
 				continue;
 

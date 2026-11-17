@@ -10,6 +10,7 @@
 #pragma once
 #include "../../lib/battle/NewHorizonsOrdinaryStrike.h"
 #include "../../lib/battle/NewHorizonsAttackControllers.h"
+#include "../../lib/battle/ConsecratedArms.h"
 #include <algorithm>
 #include <set>
 #include <utility>
@@ -27,6 +28,7 @@
 #define BATTLE_TRACE_LEVEL 0
 
 class DamageCacheAdmission;
+namespace forecast { class State; class AcceptedSnapshotSeal; }
 
 /// Match BattleActionProcessor's physical-creature provenance rule for a
 /// projected attack. Physical hits from turrets and siege/war-machine stacks
@@ -52,11 +54,31 @@ struct BattleAIDamageProjection
 };
 
 inline BattleAIDamageProjection battleAIProjectDamage(const battle::Unit * target,
-	int64_t incomingDamage, battle::DamageProvenance provenance)
+	int64_t incomingDamage, battle::DamageProvenance provenance, const battle::DamageContext * context = nullptr)
 {
 	if(!target || incomingDamage <= 0)
 		return {};
+	std::optional<battle::VowCasualtyQuota> quota;
+	battle::DamageContext current;
+	if(!context && provenance != battle::DamageProvenance::OTHER && target->mayHaveBonusType(BonusType::NONE)
+		&& consecratedArms::activePrayer(*target, consecratedArms::Prayer::UNBROKEN_VOW))
+	{
+		quota = battle::VowCasualtyQuota::capture(target->unitId(), target->getCount(),
+			consecratedArms::prayerValues(*target, consecratedArms::Prayer::UNBROKEN_VOW).casualtyCeilingBP);
+		current = {provenance == battle::DamageProvenance::SPELL || provenance == battle::DamageProvenance::MAGICAL_CREATURE
+			? battle::DamageClass::MAGICAL : battle::DamageClass::PHYSICAL,
+			battle::DamageOrigin::CREATURE_STRIKE, &*quota};
+		context = &current;
+	}
+	// Native units expose their exact cohorts to the shared pure shield/quota
+	// preview. No detached body, mutation or RNG is needed for attack pricing.
+	if(const auto preview = battle::previewShieldDamage(*target, incomingDamage, provenance, context))
+		return {preview->appliedDamage, preview->healthLoss};
+	if(context)
+		throw std::logic_error("Unsupported unit cannot certify its logical damage quota");
 
+	// Preserve the pre-existing custom-unit route when it supplies no exact
+	// cohort query. It cannot claim support for a new shared casualty quota.
 	if(provenance == battle::DamageProvenance::PHYSICAL_CREATURE
 		&& target->getGuardianSpiritRoundsRemaining() > 0)
 		incomingDamage -= std::min(incomingDamage, target->getGuardianSpiritHitPoints());
@@ -270,12 +292,19 @@ public:
 	bool perfectMoment = false;
 	/// Actual generation-source owner; no hidden policy or complete-horizon claim.
 	std::shared_ptr<const VisibleCandidateWorld> queryWorld;
+	/// Exact immutable compact source at candidate generation, not a mutable callback stamp.
+	std::shared_ptr<const forecast::State> forecastSource;
+	/// Exact identities emitted by the actual visible producer, not immutable contents.
+	std::shared_ptr<const forecast::AcceptedSnapshotSeal> snapshotSeal;
 
 	// Detached unit states borrow their bonus bearer. Keep a per-candidate
 	// mark projection alive for as long as its returned states can be read.
 	std::shared_ptr<HypotheticBattle> effectPreview;
 	/// Internal exchange metadata for a proven consumed activation, never a selectable action.
 	bool noActionAnchor = false;
+	/// Legal nominal reference state under conditional direct-affliction
+	/// prevention; its complete continuation is not an exact expectation.
+	bool uncertainAfflictionProjection = false;
 	/// Local receipt distinguishes a newly completed return from a pre-existing target mark.
 	std::optional<uint32_t> completedReturnMarkTarget;
 	/// Native return entitlement is captured before landing; publication follows Blood.

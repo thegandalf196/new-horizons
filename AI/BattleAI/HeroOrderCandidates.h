@@ -15,6 +15,7 @@
 #include <memory>
 
 namespace battleAIDiagnostic { class Admission; }
+namespace battleSearch { class SearchBudget; }
 class CBattleCallback;
 class CPlayerBattleCallback;
 
@@ -43,5 +44,5 @@ public:
 void appendOrders(std::vector<PossibleSpellcast> & possibleCasts,
 	CBattleCallback & callback, BattleID battleID, BattleSide side,
 	bool mandatoryOrder, const Valuation & valuation,
-	const battleAIDiagnostic::Admission * admission = nullptr);
+	const battleAIDiagnostic::Admission * admission = nullptr, battleSearch::SearchBudget * budget = nullptr);
 }

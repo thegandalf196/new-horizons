@@ -8,10 +8,12 @@
 #include "../spells/CSpell.h"
 #include "../spells/CSpellHandler.h"
 #include "../spells/NewHorizonsMagic.h"
+#include "../spells/NewHorizonsMetamagicCompletion.h"
 #include "../spells/NewHorizonsSpellAvailability.h"
 #include "../battle/IBattleState.h"
 #include "../mapObjects/CGHeroInstance.h"
 #include <stdexcept>
+#include <cmath>
 
 namespace nativeRules
 {
@@ -19,7 +21,52 @@ namespace
 {
 constexpr std::array<const char *, static_cast<size_t>(MetamagicPerk::Count)> names{
 	"conservedFormula", "manaRecycling", "disruptiveCasting", "purgingFormula",
-	"spellSculpting", "hexWeaving", "widenSpell", "matterbreaker", "magicalMemory", "arcaneRupture"};
+	"spellSculpting", "hexWeaving", "widenSpell", "matterbreaker", "magicalMemory", "arcaneRupture",
+	"unravelingMagic", "reconstitutingMagic", "widenSpells", "levitation", "arcaneBallistics", "arcaneCascade", "empoweredSpells"};
+
+MetamagicTargetShape cardinality(const JsonNode & node)
+{
+	MetamagicTargetShape result = MetamagicTargetShape::Single;
+	if(node.isStruct())
+		for(const auto & [key, child] : node.Struct())
+		{
+			if(key == "chainLength" && !child.isNull())
+			{
+				if(!child.isNumber() || !std::isfinite(child.Float()) || child.Float() < 0
+					|| child.Float() > std::numeric_limits<int32_t>::max() || std::floor(child.Float()) != child.Float())
+					return MetamagicTargetShape::Unsupported;
+				if(child.Float() > 1) result = MetamagicTargetShape::Multiple;
+			}
+			if(key == "handOfFate" && !child.isNull())
+			{
+				if(!child.isBool()) return MetamagicTargetShape::Unsupported;
+				if(child.Bool()) result = MetamagicTargetShape::Multiple;
+			}
+			const auto nested = cardinality(child);
+			if(nested == MetamagicTargetShape::Unsupported) return nested;
+			if(nested == MetamagicTargetShape::Multiple) result = nested;
+		}
+	if(node.isVector())
+		for(const auto & child : node.Vector())
+		{
+			const auto nested = cardinality(child);
+			if(nested == MetamagicTargetShape::Unsupported) return nested;
+			if(nested == MetamagicTargetShape::Multiple) result = nested;
+		}
+	return result;
+}
+bool debuffPayload(const JsonNode & node)
+{
+	if(node.isStruct())
+	{
+		const auto & type = node["type"];
+		if(type.isString() && (type.String() == "core:timed" || type.String() == "timed"
+			|| type.String() == "newHorizonsConfusion" || type.String() == "newHorizonsPuppetMaster")) return true;
+		for(const auto & [key, child] : node.Struct()) if(debuffPayload(child)) return true;
+	}
+	if(node.isVector()) for(const auto & child : node.Vector()) if(debuffPayload(child)) return true;
+	return false;
+}
 
 size_t index(MetamagicPerk key)
 {
@@ -59,6 +106,21 @@ int CompiledMetamagicRules::removalChance(int liveRank, HeroTypeID casterType) c
 {
 	return capturedPolicy ? newHorizonsMetamagic::removalChancePercent(*capturedPolicy, liveRank,
 		isHalon(casterType)) : 0;
+}
+
+int CompiledMetamagicRules::overflowPercent(int metamagicRank) const
+{
+	return capturedPolicy ? capturedPolicy->overflowPercentByRank[std::clamp(metamagicRank, 0, 3)] : 0;
+}
+
+int CompiledMetamagicRules::friendlyReductionPercent(int rank) const
+{
+	return capturedPolicy && rank >= 1 && rank <= 3 ? capturedPolicy->friendlyDamageReductionPercentByRank[rank] : 0;
+}
+
+int CompiledMetamagicRules::debuffRetryPercent(int rank) const
+{
+	return capturedPolicy && rank >= 1 && rank <= 3 ? capturedPolicy->debuffRetryChancePercentByRank[rank] : 0;
 }
 
 const newHorizonsHeroes::PerkId & CompiledMetamagicRules::perk(MetamagicPerk key) const
@@ -122,6 +184,16 @@ CompiledMetamagicEnergy::CompiledMetamagicEnergy(const JsonNode & admittedMagic)
 		catch(const std::exception &) { /* Unknown identities cannot admit an enchantment marker. */ }
 		if(!identities[entry])
 			continue;
+		const auto & actualSpell = *LIBRARY->spellh->objects[entry];
+		for(int level = 0; level < 4; ++level)
+		{
+			identities[entry]->effectCardinalityByLevel[level] = cardinality(actualSpell.getLevelInfo(level).battleEffects);
+			identities[entry]->singleTargetByLevel[level] = actualSpell.getTargetType() == spells::AimType::CREATURE
+				&& actualSpell.getLevelInfo(level).range == std::vector<int>{0}
+				&& identities[entry]->effectCardinalityByLevel[level] == MetamagicTargetShape::Single;
+			identities[entry]->debuffByLevel[level] = actualSpell.isNegative() && !actualSpell.isDamage()
+				&& debuffPayload(actualSpell.getLevelInfo(level).battleEffects);
+		}
 		const auto family = identities[entry]->family;
 		const auto & definition = LIBRARY->spellh->objects[family.getNum()];
 		const auto & costs = admittedMagic["spells"][definition->getJsonKey()]["costs"];

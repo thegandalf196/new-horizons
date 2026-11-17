@@ -237,7 +237,8 @@ void BattleSpellMechanics::applyRunicReflections(ServerCallback * server)
 				nativeEvents::clearFrozen(context, *recipient);
 				continue;
 			}
-			const auto [damage, killed] = nativeEvents::damage(context, *recipient, amount, getUnitCaster(), true);
+			const auto damageContext = spellDamageContext(*recipient);
+			const auto [damage, killed] = nativeEvents::damage(context, *recipient, amount, getUnitCaster(), true, nullptr, false, false, nullptr, &damageContext);
 			const auto * current = battle()->battleGetUnitByID(share.unitId);
 			if(current) nativeEvents::clearFrozen(context, *current);
 			if(damage > 0 && server->describeChanges())

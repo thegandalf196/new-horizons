@@ -96,7 +96,8 @@ class RevisedOrderEstimate
 public:
 	RevisedOrderEstimate(std::shared_ptr<CBattleInfoCallback> source,
 		std::shared_ptr<HypotheticBattle> projected, BattleSide side)
-		: before(std::make_shared<HypotheticBattle>(projected->env, source)), after(std::move(projected)), side(side)
+		: before(std::make_shared<HypotheticBattle>(projected->env, source,
+			std::shared_ptr<const battle::OwnedBattleFrameBatch>(), projected->searchBudget())), after(std::move(projected)), side(side)
 	{
 		materializeUnits(*this->before);
 		materializeUnits(*this->after);

@@ -89,9 +89,18 @@ int64_t PhysicalStrikeProjection::applyExpectedReactionDamage(HypotheticBattle &
 	auto amount = battle.battleExpectedLuckDamage(attack);
 	arcaneInspirationAI::StrikeProjection inspiration(&battle);
 	const auto reprisal = inspiration.prepare(attack, amount);
+	consecratedArmsAI::StrikeProjection prayers(&battle);
+	auto prayerHit = prayers.prepare(battle, attack, target, amount,
+		attack.physicalDamage ? battle::DamageProvenance::PHYSICAL_CREATURE : battle::DamageProvenance::SPELL);
+	auto prayerContext = prayerHit.context();
 	int64_t postShieldDamage = 0;
-	target.damage(amount, false, attack.physicalDamage ? battle::DamageProvenance::PHYSICAL_CREATURE
+	if(prayerHit.tracked)
+		target.damageWithContext(amount, false, attack.physicalDamage ? battle::DamageProvenance::PHYSICAL_CREATURE
+			: battle::DamageProvenance::SPELL, prayerContext, &postShieldDamage);
+	else target.damage(amount, false, attack.physicalDamage ? battle::DamageProvenance::PHYSICAL_CREATURE
 		: battle::DamageProvenance::SPELL, &postShieldDamage);
+	prayers.record(attack, target, std::move(prayerHit));
+	if(attack.attacker) prayers.finish(attack.attacker->unitId());
 	inspiration.record(reprisal, postShieldDamage);
 	if(candidate) completeDamagePacket(battle, std::span(&*candidate, 1));
 	if(attack.attacker) inspiration.finish(attack.attacker->unitId());
@@ -103,6 +112,7 @@ bool PhysicalStrikeProjection::needsProjection(const CBattleInfoCallback & battl
 {
 	using namespace newHorizonsReactiveDefense;
 	return newHorizonsSpecialtyEvents::needsStrikeEvents(battle, actor, target)
+		|| consecratedArmsAI::needsStrikeProjection(battle, actor, target)
 		|| newHorizonsSpecialtyEvents::needsStrikeEvents(battle, target, actor)
 		|| solidarityConfiguredPercent(battle, BattleSide::ATTACKER) > 0
 		|| solidarityConfiguredPercent(battle, BattleSide::DEFENDER) > 0
@@ -130,8 +140,12 @@ void PhysicalStrikeProjection::damage(const CBattleInfoCallback & world, const B
 		for(auto & plan : newHorizonsSpecialtyEvents::acceptedStrike(*branch, hit))
 			specialtyEvents.emplace_back(attack.attacker->unitId(), std::move(plan));
 	const auto reprisal = inspiration.prepare(hit, amount);
+	auto prayerHit = consecrated.prepare(world, attack, target, amount, provenance);
+	auto prayerContext = prayerHit.context();
 	int64_t postShieldDamage = 0;
-	sylvan.damage(world, attack, target, amount, provenance, &postShieldDamage);
+	sylvan.damage(world, attack, target, amount, provenance, &postShieldDamage,
+		prayerHit.tracked ? &prayerContext : nullptr);
+	consecrated.record(hit, target, std::move(prayerHit));
 	inspiration.record(reprisal, postShieldDamage);
 	if(!branch)
 		return;
@@ -147,6 +161,7 @@ void PhysicalStrikeProjection::damage(const CBattleInfoCallback & world, const B
 
 void PhysicalStrikeProjection::finish(uint32_t attackerId)
 {
+	consecrated.finish(attackerId); // Native Judgment then deferred Redemption precede proc aftermath.
 	sylvan.finish(attackerId); // Preserve the existing Sylvan completion order.
 	if(!branch) return;
 
@@ -182,9 +197,20 @@ void PhysicalStrikeProjection::finish(uint32_t attackerId)
 	inspiration.finish(attackerId); // Native Reprisal follows primary strike aftermath.
 }
 
+std::pair<float, float> PhysicalStrikeProjection::reprisalValue(DamageCache & cache,
+	const std::shared_ptr<CBattleInfoCallback> & source, PlayerColor reference) const
+{
+	auto result = inspiration.value(cache, source, reference);
+	const auto prayer = consecrated.value(cache, source, reference);
+	result.first += prayer.first;
+	result.second += prayer.second;
+	return result;
+}
+
 void PhysicalStrikeProjection::restoreEffects(HypotheticBattle & destination,
 	const HypotheticBattle & captured)
 {
+	consecratedArmsAI::restoreShieldState(destination, captured);
 	const CSelector effects([](const Bonus * bonus)
 	{
 		return newHorizonsSpecialtyEvents::isReceipt(bonus)

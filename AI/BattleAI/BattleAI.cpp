@@ -8,6 +8,8 @@
  *
  */
 #include "StdInc.h"
+#include "SearchBudget.h"
+#include "SearchIncumbent.h"
 #include "../../lib/battle/NewHorizonsDemonicGating.h"
 #include "DreadCavalryProjection.h"
 #include "BattleAI.h"
@@ -343,7 +345,9 @@ void CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )
 		timing.submitUnitAction(cb, battleID, dreadCavalryAI::chooseContinuation(env.get(), battleCallback, stack));
 		return;
 	}
-	BattleAction result = BattleAction::makeDefend(stack);
+	BattleAction result = battleSearch::visibleIncumbent(env.get(), battleCallback, stack);
+	try
+	{
 
 	auto start = std::chrono::high_resolution_clock::now();
 
@@ -355,7 +359,11 @@ void CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )
 		{
 			auto evaluator = timing.measure(&TimingSummary::evaluatorConstruction, [&]
 			{
-				return makeEvaluator(battleID, stack);
+				return makeEvaluator(battleID, stack
+#ifdef NH_PERF_EXPERIMENTS
+				, &timing
+#endif
+			);
 			});
 			if(evaluator.canCastSpell() && timing.measure(&TimingSummary::heroAction, [&]
 			{
@@ -390,7 +398,11 @@ void CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )
 
 	auto evaluator = timing.measure(&TimingSummary::evaluatorConstruction, [&]
 	{
-		return makeEvaluator(battleID, stack);
+		return makeEvaluator(battleID, stack
+#ifdef NH_PERF_EXPERIMENTS
+				, &timing
+#endif
+			);
 	});
 
 	result = timing.measure(&TimingSummary::stackActionSelection, [&]
@@ -487,6 +499,12 @@ void CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )
 	logAi->trace("BattleAI decision made in %lld", timeElapsed(start));
 
 	timing.submitUnitAction(cb, battleID, result);
+
+	}
+	catch(const battleSearch::BudgetExhausted &)
+	{
+		timing.submitUnitAction(cb, battleID, result);
+	}
 }
 
 bool CBattleAI::shouldUseCreatureCatapult(CBattleInfoCallback & battle,

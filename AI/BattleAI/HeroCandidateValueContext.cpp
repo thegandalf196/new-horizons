@@ -27,7 +27,7 @@ auto options(const PossibleSpellcast & c)
 		std::bit_cast<uint32_t>(c.spellPurifyHeuristicValue), c.spellMassSlow,
 		c.spellShadowGiftSacrificePercent, c.spellStormOfDaggers, c.divineMandateFollowup,
 		std::bit_cast<uint32_t>(c.spellPlacementHeuristicValue),
-		bits(c.spellHandOfFateExpectedValue), bits(c.spellBattleFormExpectedValue),
+		bits(c.spellOverflowExpectedValue), bits(c.spellHandOfFateExpectedValue), bits(c.spellBattleFormExpectedValue),
 		bits(c.spellPuppetMasterExpectedValue), bits(c.spellConfusionExpectedValue),
 		std::bit_cast<uint32_t>(c.spellRunicExpectedValue), c.spellRunicEstimatePartial,
 		std::bit_cast<uint32_t>(c.spellNaturePoisonValue),

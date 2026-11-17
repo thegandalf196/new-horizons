@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../../SpellDamageContext.h"
 #include "LifeDrain.h"
 #include "../../ISpellMechanics.h"
 #include "../../NewHorizonsShadowMagnitudes.h"
@@ -81,7 +82,9 @@ SpellEffectValue LifeDrain::getHealthChange(const Mechanics * mechanics, const T
 	const auto health = copy->getAvailableHealth();
 	const auto count = copy->getCount();
 	auto amount = mechanics->adjustEffectValue(unit);
-	copy->damage(amount);
+	std::optional<battle::VowCasualtyQuota> quota;
+	const auto damageContext = previewSpellDamageContext(*mechanics, *unit, quota);
+	copy->damageWithContext(amount, false, battle::DamageProvenance::SPELL, damageContext);
 	result.hpDelta = -(health - copy->getAvailableHealth());
 	result.unitsDelta = -(count - copy->getCount());
 	return result;
@@ -96,7 +99,8 @@ void LifeDrain::apply(ServerCallback * server, const Mechanics * mechanics, cons
 	server->recordResolvedSpellRecipient(enemyId);
 	server->recordResolvedSpellRecipient(friendlyUnit->unitId());
 	const nativeEvents::Context context{*server, *mechanics->battle(), nullptr, nullptr, parameters, {}};
-	const auto [damage, killed] = nativeEvents::damage(context, *enemyUnit, mechanics->adjustEffectValue(enemyUnit), mechanics->getUnitCaster(), true);
+	const auto damageContext = mechanics->spellDamageContext(*enemyUnit);
+	const auto [damage, killed] = nativeEvents::damage(context, *enemyUnit, mechanics->adjustEffectValue(enemyUnit), mechanics->getUnitCaster(), true, nullptr, false, false, nullptr, &damageContext);
 	if(const auto * current = mechanics->battle()->battleGetUnitByID(enemyId)) nativeEvents::clearFrozen(context, *current);
 	const auto rawHealing = static_cast<int64_t>(std::floor(static_cast<double>(damage)
 		* newHorizonsMagic::lifeDrainHealingPercent(mechanics->getHeroCaster()) / 100));

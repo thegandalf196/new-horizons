@@ -1,6 +1,7 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
 #include "HypotheticBattle.h"
+#include "ForecastNativeAdapter.h"
 #include "../../lib/battle/TimedEffectValueTransitions.h"
 #include "ActivationForfeit.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
@@ -23,10 +24,13 @@ void HypotheticBattle::nextTurnPreservingForfeit(uint32_t unitId, BattleUnitTurn
 	const auto * unit = battleGetUnitByID(unitId);
 	if(!unit || !activationForfeit::pending(*this, *unit, reason))
 		throw std::invalid_argument("Deferred forfeiture requires an actual incapacitated activation");
+	if(forecast::NativeAdapter::lifecycle(*this, unitId, reason, forecast::LifecyclePhase::BeginDeferred, timing)) return;
 	nextTurnImpl(unitId, reason, true, timing);
 }
 void HypotheticBattle::completeForfeitedActivation(uint32_t unitId)
 {
+	if(forecast::NativeAdapter::lifecycle(*this, unitId, BattleUnitTurnReason::TURN_QUEUE,
+		forecast::LifecyclePhase::CompleteForfeit)) return;
 	if(!wasCurrentActivationForfeited(unitId) || currentForfeitCompleted(unitId)) return;
 	forfeitedActivations.at(unitId).completed = true;
 	auto unit = getForUpdate(unitId);
@@ -60,6 +64,8 @@ void HypotheticBattle::completeForfeitedActivation(uint32_t unitId)
 
 void HypotheticBattle::finishProjectedActivation(uint32_t unitId)
 {
+	if(forecast::NativeAdapter::lifecycle(*this, unitId, BattleUnitTurnReason::TURN_QUEUE,
+		forecast::LifecyclePhase::Finish)) return;
 	if(currentForfeitCompleted(unitId)) return;
 	endFortuneActivation();
 	completeNormalActivation(unitId);

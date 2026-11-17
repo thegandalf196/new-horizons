@@ -5,6 +5,7 @@
  */
 #include "StdInc.h"
 #include "ProjectedMeleeExpiry.h"
+#include "ForecastNativeAdapter.h"
 #include "HypotheticBattle.h"
 #include "InitialExportBattleSubject.h"
 #include "../../lib/CStack.h"
@@ -54,6 +55,13 @@ bool boundedStorage(const std::map<uint32_t, MeleeBonusSource> & sources)
 
 bool ProjectedMeleeExpiry::capture(HypotheticBattle & battle)
 {
+	if(battle.forecastState() && battle.forecastState()->supports(forecast::Event::Effect))
+	{
+		// The owning compact root already proved complete source clocks. Do not
+		// rebuild a native exported-bonus graph for every admitted melee sequence.
+		branch = &battle;
+		return true;
+	}
 	if(auto subject = battle.initialExportSubject())
 	{
 		if(subject->world().hasUnresolvedRecipientOverlays())
@@ -130,6 +138,13 @@ void ProjectedMeleeExpiry::publishRemoved(const std::map<uint32_t, TConstBonusLi
 
 void ProjectedMeleeExpiry::expire(uint32_t actorId, const CSelector & selector)
 {
+	if(branch && branch->forecastState()
+		&& branch->forecastState()->supports(forecast::Event::Effect))
+	{
+		if(!forecast::NativeAdapter::expireEffectSelector(*branch, actorId, selector))
+			throw std::logic_error("Admitted compact expiry lost its exact clock owner");
+		return;
+	}
 	if(ownedSubject)
 	{
 		ownedSubject->remove(*branch, actorId, selector);

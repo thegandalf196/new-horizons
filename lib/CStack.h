@@ -109,7 +109,8 @@ public:
 								bool destroyRemains = false,
 								bool bypassTemporaryHitPoints = false,
 								battle::DamageProvenance provenance = battle::DamageProvenance::OTHER,
-								int64_t * postShieldBeforeCasualties = nullptr); //requires bsa.damageAmount filled
+								int64_t * postShieldBeforeCasualties = nullptr,
+								const battle::DamageContext * context = nullptr); //requires bsa.damageAmount filled
 
 	const CCreature * unitType() const override;
 	int32_t unitBaseAmount() const override;
@@ -306,6 +307,14 @@ public:
 		if(h.saving) validatePlagueSerialization(h);
 		if(h.saving)
 			validateRapidResponseSerialization(h);
+		if(h.saving && physicalPoisonDescriptor
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_CONSECRATED_ARMS))
+			throw std::runtime_error("Cannot discard physical Poison ability provenance");
+		if(h.saving && !redemptionShield.empty())
+			throw std::runtime_error("Binary stack descriptors cannot preserve an active Redemption shield");
+		if(h.saving && completedActionThisRound
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_CONSECRATED_ARMS))
+			throw std::runtime_error("Cannot discard completed creature action history");
 		//this assumes that stack objects is newly created
 		//CUnitState is not serialized here except for explicit battle-long fields.
 		if(h.saving) validateTimedSummonSerialization();
@@ -364,6 +373,10 @@ public:
 		h & slot;
 		h & side;
 		h & initialPosition;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_CONSECRATED_ARMS))
+			h & completedActionThisRound;
+		else if(!h.saving) completedActionThisRound = false;
+
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_RAPID_RESPONSE))
 		{
 			h & waiting;
@@ -489,6 +502,9 @@ public:
 			physicalPoisonSourceStackId = -1;
 			physicalPoisonSpellSide = BattleSide::NONE;
 		}
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_CONSECRATED_ARMS))
+			h & physicalPoisonDescriptor;
+		else if(!h.saving) physicalPoisonDescriptor.reset();
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN))
 			h & ordinarySpecialtyLastRound;
 		else if(!h.saving) ordinarySpecialtyLastRound = -1;

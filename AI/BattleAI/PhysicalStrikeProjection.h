@@ -2,6 +2,7 @@
 #pragma once
 #include "SylvanTacticsProjection.h"
 #include "ArcaneInspirationProjection.h"
+#include "ConsecratedStrikeProjection.h"
 #include "../../lib/battle/NewHorizonsFactionSpellDamage.h"
 #include "../../lib/battle/NewHorizonsReactiveDefense.h"
 
@@ -23,6 +24,7 @@ private:
 	HypotheticBattle * branch;
 	sylvanTacticsAI::StrikeProjection sylvan;
 	arcaneInspirationAI::StrikeProjection inspiration;
+	consecratedArmsAI::StrikeProjection consecrated;
 	struct Death
 	{
 		uint32_t actor;
@@ -32,7 +34,7 @@ private:
 	std::vector<std::pair<uint32_t, newHorizonsOrdinaryStrike::EffectPlan>> exposures;
 	std::vector<std::pair<uint32_t, newHorizonsOrdinaryStrike::EffectPlan>> specialtyEvents;
 public:
-	explicit PhysicalStrikeProjection(HypotheticBattle * value) : branch(value), sylvan(value), inspiration(value) {}
+	explicit PhysicalStrikeProjection(HypotheticBattle * value) : branch(value), sylvan(value), inspiration(value), consecrated(value) {}
 	/// Probe consumers which read the actor after committing its strike resources.
 	static bool needsPostAttackState(const CBattleInfoCallback &, const battle::Unit &, bool shooting);
 	static bool needsExposureProjection(const CBattleInfoCallback &);
@@ -47,11 +49,11 @@ public:
 	static void completeDamagePacket(HypotheticBattle &,
 		std::span<const Destruction>);
 	static int64_t applyExpectedReactionDamage(HypotheticBattle &, const BattleAttackInfo &, battle::CUnitState &);
-	void damage(const CBattleInfoCallback &, const BattleAttackInfo &, battle::CUnitState &,
+	DLL_LINKAGE void damage(const CBattleInfoCallback &, const BattleAttackInfo &, battle::CUnitState &,
 		int64_t &, battle::DamageProvenance);
-	void finish(uint32_t attackerId);
-	std::pair<float, float> reprisalValue(DamageCache & cache, const std::shared_ptr<CBattleInfoCallback> & source, PlayerColor reference) const
-	{ return inspiration.value(cache, source, reference); }
+	DLL_LINKAGE void finish(uint32_t attackerId);
+	bool uncertainAfflictions() const { return consecrated.uncertainAfflictions(); }
+	std::pair<float, float> reprisalValue(DamageCache & cache, const std::shared_ptr<CBattleInfoCallback> & source, PlayerColor reference) const;
 	/// Final-snapshot replay includes unharmed Demon recipients outside the
 	/// selected attack's affectedUnits. Only these two strict overlays transfer.
 	static void restoreEffects(HypotheticBattle & destination, const HypotheticBattle & captured);

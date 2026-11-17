@@ -44,6 +44,7 @@ protected:
 class DLL_LINKAGE CShots : public CAmmo
 {
 public:
+	static constexpr const char * DISRUPTED_SUPPLY = "new-horizons:metamagic.disruptedAmmunition";
 	explicit CShots(const battle::Unit * Owner);
 	CShots & operator=(const CShots & other);
 
@@ -55,6 +56,7 @@ private:
 	const IUnitEnvironment * env;
 
 	BonusValueCache shooter;
+	BonusValueCache disruptedSupply;
 };
 
 class DLL_LINKAGE CCasts : public CAmmo
@@ -63,12 +65,19 @@ public:
 	explicit CCasts(const battle::Unit * Owner);
 };
 
+struct RetaliationObservation
+{
+	int32_t available, total;
+	bool limited;
+};
 class DLL_LINKAGE CRetaliations : public CAmmo
 {
 	friend class UnitStateValueFields;
 public:
 	explicit CRetaliations(const battle::Unit * Owner);
 	CRetaliations & operator=(const CRetaliations & other);
+	/// Query exact native facts without latching this receiver's round history.
+	RetaliationObservation observeWithoutLatch() const;
 
 	bool isLimited() const override;
 	int32_t total() const override;

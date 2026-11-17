@@ -28,6 +28,7 @@ struct Attempt
 	bool specialty = false;
 	int duration = 0;
 	std::optional<StatusKey> condition;
+	int resistanceBasisPoints = 0;
 };
 struct Query
 {
@@ -41,6 +42,7 @@ struct Query
 	double stunSuccess = 0;
 	int stunChancePercent = 0;
 	std::optional<StatusKey> stunCondition;
+	int stunResistanceBasisPoints = 0;
 };
 /// Read-only native selection/range/target query; never casts, rolls, imports bias or changes a resource.
 Query query(const CBattleInfoCallback & battle, const battle::Unit & source, const battle::Unit & target, bool ranged, bool specialtyStrike = true);

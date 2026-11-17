@@ -18,6 +18,8 @@
 #include "CHealth.h"
 #include "NewHorizonsConfusionState.h"
 #include "DreadCavalryState.h"
+#include "UnitShieldState.h"
+#include "CreatureAbility.h"
 #include "Unit.h"
 #include "../bonuses/BonusCache.h"
 
@@ -178,8 +180,11 @@ public:
 	int32_t physicalPoisonActivationsRemaining;
 	int32_t physicalPoisonSourceStackId;
 	BattleSide physicalPoisonSpellSide = BattleSide::NONE;
+	creatureAbility::Descriptor physicalPoisonDescriptor;
 	BattleSide physicalPoisonSpellOrigin() const override { return physicalPoisonSpellSide; }
 	/// Separate Guardian Spirit buffer; only physical creature damage can consume it.
+	RedemptionShieldState redemptionShield;
+	bool completedActionThisRound = false;
 	int64_t guardianSpiritHitPoints = 0;
 	int32_t guardianSpiritRoundsRemaining = 0;
 
@@ -263,6 +268,7 @@ public:
 	int32_t getCount() const override;
 	int32_t getCurrentOriginalCreatureCount() const override;
 	int32_t getFirstHPleft() const override;
+	std::optional<int64_t> maximumBodyDamageForCasualties(int32_t casualties) const override;
 	int32_t getUnusableRemains() const override;
 	int32_t getPersonalBloodrageIncrement() const override { return personalBloodrageIncrement; }
 	int64_t getAvailableHealth() const override;
@@ -275,6 +281,14 @@ public:
 	int64_t getPhantomInitialIntegrity() const override;
 	int32_t getPhantomRoundsRemaining() const { return phantomRoundsRemaining; }
 	int64_t getGuardianSpiritHitPoints() const override;
+	int64_t getRedemptionShieldHitPoints() const override;
+	int64_t getRedemptionShieldCapacity() const override;
+	bool hasCompletedActionThisRound() const override { return completedActionThisRound; }
+	void synchronizeRedemptionShield();
+	int64_t gainRedemptionShield(int64_t lostMaximumHP, int conversionBasisPoints, bool alliedHalfRate);
+	void damageWithContext(int64_t & amount, bool destroyRemains, DamageProvenance provenance,
+		DamageContext context, int64_t * postShieldBeforeCasualties = nullptr,
+		bool bypassTemporaryHitPoints = false);
 	int32_t getGuardianSpiritRoundsRemaining() const override;
 	int32_t magicResistance() const override;
 	int32_t intrinsicMagicalDamageReductionPercent() const override;
@@ -407,9 +421,12 @@ private:
 	void clearDeadUnitTransientState();
 	int64_t rawHealingCapacity(int64_t requested, EHealLevel level, EHealPower power) const;
 	HealInfo applyHealing(int64_t & amount, EHealLevel level, EHealPower power, bool receivedBenefit);
-	void absorbGuardianSpiritDamage(int64_t & amount, DamageProvenance provenance, bool bypassTemporaryHitPoints);
+	void constrainVowDamage(int64_t & amount, const DamageContext * context, bool bypassTemporaryHitPoints) const;
+	void absorbShields(int64_t & amount, DamageProvenance provenance, bool bypassTemporaryHitPoints,
+		const DamageContext * context);
 	void damageInternal(int64_t & amount, bool destroyRemains, bool bypassTemporaryHitPoints,
-		DamageProvenance provenance = DamageProvenance::OTHER, int64_t * postShieldBeforeCasualties = nullptr);
+		DamageProvenance provenance = DamageProvenance::OTHER, int64_t * postShieldBeforeCasualties = nullptr,
+		const DamageContext * context = nullptr);
 	std::pair<int32_t, int32_t> getMoraleLimits() const override;
 	std::pair<int32_t, int32_t> getLuckLimits() const override;
 protected:

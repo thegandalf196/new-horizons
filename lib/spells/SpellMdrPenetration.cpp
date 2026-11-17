@@ -9,6 +9,7 @@
 #include "NewHorizonsNaturesWrath.h"
 #include "NewHorizonsMetamagicEffects.h"
 #include "NewHorizonsMetamagicResolution.h"
+#include "NewHorizonsMetamagicCore.h"
 #include "../mapObjects/CGHeroInstance.h"
 #include "../battle/CBattleInfoCallback.h"
 #include "../battle/IBattleState.h"
@@ -25,6 +26,8 @@ JsonNode BaseMechanics::getCapturedMdrPenetration() const
 	if(mode != Mode::HERO || !hero || !newHorizonsMagic::rulesActive(hero->getMagicRules()))
 		return result;
 	result["sourceHeroCasterId"].Integer() = hero->id.getNum();
+	const auto friendly = newHorizonsMetamagic::friendlyDamagePercent(*this);
+	if(friendly != 100) result["metamagicFriendlyDamagePercent"].Integer() = friendly;
 	if(nativeRules::hasMetamagicPerk(hero, nativeRules::MetamagicPerk::SpellSculpting))
 		result["spellSculpting"].Bool() = true;
 	// Capture offensive faction output for delayed statuses as well as obstacles.

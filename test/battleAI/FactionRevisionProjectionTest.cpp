@@ -1,5 +1,8 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../../AI/BattleAI/CandidateCompletion.h"
+#include "../../AI/BattleAI/MetamagicCompletionValue.h"
+#include "../../lib/ScopeGuard.h"
 #include "../server/battles/HeroCommandFixture.h"
 #include "../../AI/BattleAI/HypotheticBattle.h"
 #include "../../AI/BattleAI/InitialExportBattleSubject.h"
@@ -317,4 +320,47 @@ TEST_F(FactionRevisionProjectionTest, PassiveMetamagicEntryKeepsBothCreationPath
 	EXPECT_EQ(battle()->getHeroActionAllowances(BattleSide::ATTACKER), allowances);
 	EXPECT_EQ(sibling->getHeroActionAllowances(BattleSide::ATTACKER), allowances);
 	EXPECT_EQ(sibling->battleGetUnitByID(info.id), nullptr);
+}
+
+TEST_F(FactionRevisionProjectionTest, TerminalMetamagicCompletionExhaustionDiscardsScoreWithoutEscapingScopeGuard)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare("new-horizons:metamagic", nullptr));
+	auto projected = branch();
+	Bonus slow(BonusDuration::N_TURNS, BonusType::STACKS_SPEED, BonusSource::SPELL_EFFECT,
+		-1, BonusSourceID(SpellID(SpellID::SLOW)));
+	slow.turnsRemain = 3;
+	projected->addUnitBonus(actor->unitId(), {slow});
+	const auto sanctuary = SpellID(SpellID::decode("new-horizons:sanctuary"));
+	ASSERT_GE(sanctuary.getNum(), 0);
+	spells::BattleCast cast(projected.get(), attackerSideHero, spells::Mode::HERO, sanctuary.toSpell());
+	auto mechanics = sanctuary.toSpell()->battleMechanics(&cast);
+	const spells::Target target{spells::Destination(projected->battleGetUnitByID(actor->unitId()))};
+	ASSERT_TRUE(mechanics->canBeCastAt(target));
+	auto observation = metamagicAI::observeBefore(*projected, *mechanics);
+	ASSERT_FALSE(observation.before.empty());
+	mechanics->castEval(projected->getServerCallback(), target);
+	metamagicAI::observeAfter(observation, *mechanics);
+	ASSERT_FALSE(observation.resolved.empty());
+	projected->setSearchBudget(std::make_shared<battleSearch::SearchBudget>(battleSearch::WorkAmounts{}));
+	DamageCache damage;
+	const auto live = gameState()->saveToMemory();
+	const auto random = rng();
+	const auto completion = [&]
+	{
+		return metamagicAI::completionValue(environment.get(), projected, attackerSideHero,
+			sanctuary.toSpell(), observation, damage, 1.0f, 1.0f);
+	};
+	ASSERT_THROW(completion(), battleSearch::BudgetExhausted) << "Must exercise a real eligible Metamagic removal";
+	float score = 42;
+	bool complete = true;
+	{
+		const auto finish = vstd::makeScopeGuard([&]
+		{
+			complete = battleSearch::completeCandidate(score, [&] { score += completion().value_or(0); });
+		});
+	}
+	EXPECT_FALSE(complete);
+	EXPECT_EQ(score, std::numeric_limits<float>::lowest());
+	EXPECT_EQ(gameState()->saveToMemory(), live);
+	EXPECT_EQ(rng(), random);
 }

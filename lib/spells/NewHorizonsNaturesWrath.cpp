@@ -6,6 +6,7 @@
  * Full text of license available in license.txt file, in main folder
  */
 #include "StdInc.h"
+#include "NewHorizonsMetamagicCore.h"
 #include "NewHorizonsMetamagicEffects.h"
 #include "NewHorizonsNaturesWrath.h"
 #include "NewHorizonsSpellAvailability.h"
@@ -148,7 +149,8 @@ int64_t damage(const spells::Mechanics & mechanics, const battle::Unit * recipie
 		recipient->unitId(), callback->getBattle());
 	const bool independent = mechanics.usesNewHorizonsMultiplicativeMDR();
 	const int legacyPenetration = penetrations.empty() ? 0 : *std::max_element(penetrations.begin(), penetrations.end());
-	const auto ordinary = spell->adjustRawDamage(mechanics.caster, recipient, hopPower(mechanics, hopIndex),
+	const auto ordinary = spell->adjustRawDamage(mechanics.caster, recipient, newHorizonsMetamagic::retainedFriendlyDamage(
+		hopPower(mechanics, hopIndex), newHorizonsMetamagic::recipientDamagePercent(mechanics, recipient)),
 		independent ? 0 : legacyPenetration,
 		callback->battleGetHoldTheLineMagicalReductionBasisPoints(recipient), 100,
 		independent, mechanics.usesNewHorizonsMagicV3(), true,

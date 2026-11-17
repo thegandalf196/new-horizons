@@ -95,7 +95,7 @@ public:
 	BattleExchangeVariant()
 		: dpsScore() {}
 
-	float trackAttack(
+	DLL_LINKAGE float trackAttack(
 		const AttackPossibility & ap,
 		std::shared_ptr<HypotheticBattle> hb,
 		DamageCache & damageCache);
@@ -200,11 +200,14 @@ class ReachabilityMapCache
 		std::array<battle::Units, GameConstants::BFIELD_SIZE> hexes;
 	};
 
+	std::shared_ptr<battleSearch::SearchBudget> workBudget;
 	std::map<uint32_t, ReachabilityInfo> unitReachabilityMap; // unit ID -> reachability
 	std::map<uint32_t, PerTurnData> hexReachabilityPerTurn;
 
 	battle::Units computeOneTurnReachableUnits(std::shared_ptr<CBattleInfoCallback> cb, std::shared_ptr<Environment> env, const std::vector<battle::Units> & turnOrder, uint8_t turn, const BattleHex & hex);
 public:
+	const auto & searchBudget() const { return workBudget; }
+	void setSearchBudget(std::shared_ptr<battleSearch::SearchBudget> budget) { workBudget = std::move(budget); }
 	bool canReachByTurn(const battle::Unit &, const battle::Unit &, int turn, bool shooting,
 		const CBattleInfoCallback &) const;
 	const battle::Units & getOneTurnReachableUnits(std::shared_ptr<CBattleInfoCallback> cb, std::shared_ptr<Environment> env, const std::vector<battle::Units> & turnOrder, uint8_t turn, const BattleHex & hex);
@@ -222,6 +225,7 @@ struct DLL_LINKAGE BattleMovementTiming
 	/// Disjoint regions within one calculateExchange body, not additional movement time.
 	struct DLL_LINKAGE ExchangeTiming
 	{
+		forecast::Counters forecast; // Opt-in compact work, not clock or gameplay policy.
 		StageTiming body;
 		StageTiming membership;
 		StageTiming projectionSetup;

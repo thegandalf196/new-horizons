@@ -41,10 +41,7 @@ std::shared_ptr<Bonus> GrowsWithLevelUpdater::createUpdatedBonus(const std::shar
 {
 	if(const auto capturedLevel = context.heroLevel())
 	{
-		int level = *capturedLevel;
-		int steps = stepSize ? level / stepSize : level;
-		//rounding follows format for HMM3 creature specialty bonus
-		int newVal = vstd::divideAndCeil(valPer20 * steps, 20);
+		int newVal = valueForLevel(b->val, capturedLevel);
 		//return copy of bonus with updated val
 		auto newBonus = std::make_shared<Bonus>(*b);
 		newBonus->val = newVal;
@@ -74,9 +71,8 @@ std::shared_ptr<Bonus> TimesHeroLevelUpdater::createUpdatedBonus(const std::shar
 {
 	if(const auto capturedLevel = context.heroLevel())
 	{
-		int level = *capturedLevel;
 		auto newBonus = std::make_shared<Bonus>(*b);
-		newBonus->val *= level / stepSize;
+		newBonus->val = valueForLevel(b->val, capturedLevel);
 		return newBonus;
 	}
 	return b;
@@ -121,7 +117,7 @@ JsonNode TimesHeroLevelDivideStackLevelUpdater::toJsonNode() const
 std::shared_ptr<Bonus> TimesStackSizeUpdater::apply(const std::shared_ptr<Bonus> & b, int count) const
 {
 	auto newBonus = std::make_shared<Bonus>(*b);
-	newBonus->val = stepValue * std::clamp(count / stepSize, minimum, maximum);
+	newBonus->val = valueForCount(count);
 	return newBonus;
 }
 
@@ -169,7 +165,7 @@ JsonNode TimesArmySizeUpdater::toJsonNode() const
 std::shared_ptr<Bonus> TimesStackLevelUpdater::apply(const std::shared_ptr<Bonus> & b, int level) const
 {
 	auto newBonus = std::make_shared<Bonus>(*b);
-	newBonus->val *= level;
+	newBonus->val = valueForLevel(b->val, level);
 	newBonus->updater = nullptr; // prevent double-apply
 	return newBonus;
 }
@@ -197,7 +193,7 @@ std::shared_ptr<Bonus> DivideStackLevelUpdater::apply(const std::shared_ptr<Bonu
 	{
 		// hero specialty: val * floor(heroLevel / stackLevel), matching H3 rounding
 		auto newBonus = std::make_shared<Bonus>(*b);
-		newBonus->val *= heroLevel / std::max(1, level);
+		newBonus->val = valueForLevel(b->val, level);
 		newBonus->updater = nullptr; // prevent double-apply
 		return newBonus;
 	}
@@ -206,8 +202,7 @@ std::shared_ptr<Bonus> DivideStackLevelUpdater::apply(const std::shared_ptr<Bonu
 		return b; // e.g. war machines & other special units
 
 	auto newBonus = std::make_shared<Bonus>(*b);
-	level = std::max(1, level);
-	newBonus->val /= level;
+	newBonus->val = valueForLevel(b->val, level);
 	newBonus->updater = nullptr; // prevent double-apply
 	return newBonus;
 }
@@ -241,10 +236,7 @@ JsonNode OwnerUpdater::toJsonNode() const
 
 std::shared_ptr<Bonus> OwnerUpdater::createUpdatedBonus(const std::shared_ptr<Bonus> & b, const BonusEvaluationContext & context) const
 {
-	PlayerColor owner = context.getOwner();
-	
-	if(owner == PlayerColor::UNFLAGGABLE)
-		owner = PlayerColor::NEUTRAL;
+	PlayerColor owner = ownerFor(context.getOwner());
 
 	std::shared_ptr<Bonus> updated =
 		std::make_shared<Bonus>(*b);
@@ -269,4 +261,46 @@ std::shared_ptr<Bonus> CompositeUpdater::createUpdatedBonus(const std::shared_pt
 		result = updater->createUpdatedBonus(result, context);
 
 	return result;
+}
+
+int GrowsWithLevelUpdater::valueForLevel(int value, std::optional<int> level) const
+{
+	if(!level) return value;
+	const int steps = stepSize ? *level / stepSize : *level;
+	return vstd::divideAndCeil(valPer20 * steps, 20);
+}
+
+int TimesHeroLevelUpdater::valueForLevel(int value, std::optional<int> level) const
+{
+	if(stepSize <= 0) throw std::invalid_argument("Invalid hero-level updater step");
+	return level ? value * (*level / stepSize) : value;
+}
+
+int TimesStackSizeUpdater::valueForCount(int count) const
+{
+	if(stepSize <= 0 || minimum > maximum)
+		throw std::invalid_argument("Invalid stack-size updater operands");
+	return stepValue * std::clamp(count / stepSize, minimum, maximum);
+}
+
+int TimesStackLevelUpdater::valueForLevel(int value, std::optional<int> level) const
+{
+	return level ? value * *level : value;
+}
+
+int DivideStackLevelUpdater::valueForLevel(int value, std::optional<int> level) const
+{
+	if(!level) return value;
+	if(heroLevel > 0) return value * (heroLevel / std::max(1, *level));
+	return *level == 0 ? value : value / std::max(1, *level);
+}
+
+PlayerColor OwnerUpdater::ownerFor(PlayerColor owner) const
+{
+	return owner == PlayerColor::UNFLAGGABLE ? PlayerColor::NEUTRAL : owner;
+}
+
+bool TimesHeroLevelDivideStackLevelUpdater::hasScalarDivider() const
+{
+	return divideStackLevel && typeid(*divideStackLevel) == typeid(DivideStackLevelUpdater);
 }

@@ -18,7 +18,8 @@ int32_t CUnitState::getMagicalCasualties() const
 	const auto & provenanceHealth = battleFormOriginalHealth.isBattleFormProvenance()
 		? battleFormOriginalHealth
 		: health;
-	return provenanceHealth.getCasualtyCount(DamageProvenance::SPELL);
+	return provenanceHealth.getCasualtyCount(DamageProvenance::SPELL)
+		+ provenanceHealth.getCasualtyCount(DamageProvenance::MAGICAL_CREATURE);
 }
 
 bool CUnitState::hasCasualtyProvenanceState() const

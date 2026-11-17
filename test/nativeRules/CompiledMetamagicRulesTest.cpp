@@ -2,6 +2,7 @@
 #include "StdInc.h"
 #include "../../lib/nativeRules/CompiledMetamagicRules.h"
 #include "../../lib/nativeRules/CapturedPerkRules.h"
+#include "../../lib/entities/hero/NewHorizonsPerkRules.h"
 #include "../../lib/nativeRules/CapturedRuleSet.h"
 #include "../../lib/nativeRules/CapturedRuleExecutionAudit.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
@@ -19,6 +20,19 @@ namespace
 using namespace nativeRules;
 JsonNode perks() { return JsonNode(JsonPath::builtin("config/newHorizonsPerks")); }
 JsonNode magic() { return JsonNode(JsonPath::builtin("config/newHorizonsMagic")); }
+
+JsonNode metamagicProfile(int version)
+{
+	auto source = perks();
+	auto & policy = source["metamagicPolicy"];
+	policy["version"].Integer() = version;
+	policy.Struct().erase("arcaneOverflowPercentByRank");
+	policy.Struct().erase("friendlyDamageReductionPercentByRank");
+	policy.Struct().erase("debuffRetryChancePercentByRank");
+	if(version == 5)
+		policy["arcaneOverflowPercentByRank"].Vector() = {JsonNode(0), JsonNode(25), JsonNode(50), JsonNode(75)};
+	return source;
+}
 
 class MagicSource : public BattleStateMock
 {
@@ -72,12 +86,136 @@ TEST(CompiledMetamagicRules, CapturedRankHalonPayoutAndRefundPoliciesMatchRawAri
 				for(const int room : {0, 1, 100})
 				{
 					EXPECT_EQ(typed.recyclingRefund(true, mana, paid, prior, room),
-						newHorizonsMetamagic::recyclingRefund(mana, paid, prior, room));
+						typed.supports(MetamagicPerk::ManaRecycling) ? newHorizonsMetamagic::recyclingRefund(mana, paid, prior, room) : 0);
 					EXPECT_EQ(typed.recyclingRefund(false, mana, paid, prior, room), 0);
 					EXPECT_EQ(typed.conservedRefund(true, paid, prior, room, true, true),
 						newHorizonsMetamagic::conservedFormulaRefund(paid, prior, room, true, true));
 					EXPECT_EQ(typed.conservedRefund(true, paid, prior, room, false, true), 0);
 				}
+	}
+}
+
+TEST(CompiledMetamagicRules, PolicyFourRemainsDistinctAndPolicyFiveAddsOnlyOverflow)
+{
+	const auto historical = CapturedPerkRules::compile(metamagicProfile(4));
+	const auto current = CapturedPerkRules::compile(metamagicProfile(5));
+	const auto inactive = CapturedPerkRules::compile(JsonNode());
+	EXPECT_NE(historical->document(), current->document());
+	constexpr std::array expected{0, 25, 50, 75};
+	const HeroTypeID halon(HeroTypeID::decode("core:halon"));
+	for(int rank = -1; rank <= 4; ++rank)
+	{
+		EXPECT_EQ(historical->metamagic().overflowPercent(rank), 0);
+		EXPECT_EQ(inactive->metamagic().overflowPercent(rank), 0);
+		EXPECT_EQ(current->metamagic().overflowPercent(rank), expected[std::clamp(rank, 0, 3)]);
+		for(const auto hero : {HeroTypeID::NONE, halon})
+			EXPECT_EQ(historical->metamagic().removalChance(rank, hero), current->metamagic().removalChance(rank, hero));
+	}
+	EXPECT_EQ(current->metamagic().discharge(4), historical->metamagic().discharge(4));
+	EXPECT_EQ(current->metamagic().restoration(4), historical->metamagic().restoration(4));
+	for(size_t key = 0; key < static_cast<size_t>(MetamagicPerk::Count); ++key)
+		EXPECT_EQ(current->metamagic().supports(static_cast<MetamagicPerk>(key)),
+			historical->metamagic().supports(static_cast<MetamagicPerk>(key)));
+}
+
+TEST(CompiledMetamagicRules, BothCompleteProfilesMatchReaderAndDetachFromChangedDefaults)
+{
+	for(const int version : {4, 5})
+	{
+		auto source = metamagicProfile(version);
+		const auto owner = CapturedPerkRules::compile(source);
+		const auto raw = newHorizonsMetamagic::resolutionPolicy(owner->document());
+		ASSERT_TRUE(raw);
+		source["metamagicPolicy"].Struct().clear();
+		for(int rank = -1; rank <= 4; ++rank)
+			EXPECT_EQ(owner->metamagic().overflowPercent(rank), raw->overflowPercentByRank[std::clamp(rank, 0, 3)]);
+		EXPECT_EQ(owner->metamagic().policy()->chance, raw->chance);
+		EXPECT_EQ(owner->metamagic().policy()->damagePerMana, raw->damagePerMana);
+		EXPECT_EQ(owner->metamagic().policy()->restorationPerMana, raw->restorationPerMana);
+		EXPECT_EQ(owner->metamagic().policy()->halonChanceBonus, raw->halonChanceBonus);
+	}
+}
+
+TEST(CompiledMetamagicRules, InvalidProfilesRejectBeforeReplacingAnExistingOwner)
+{
+	std::vector<JsonNode> invalid;
+	const auto changed = [&](int version, const std::function<void(JsonNode &)> & mutate)
+	{
+		auto source = metamagicProfile(version);
+		mutate(source["metamagicPolicy"]);
+		invalid.push_back(std::move(source));
+	};
+	for(const int version : {4, 5})
+	{
+		for(const auto * field : {"version", "removalChancePercent", "damagePerMana", "restorationPerMana", "halonRemovalChanceBonusPercent"})
+			changed(version, [&](JsonNode & p) { p.Struct().erase(field); });
+		for(const auto * field : {"damagePerMana", "restorationPerMana", "halonRemovalChanceBonusPercent"})
+			changed(version, [&](JsonNode & p) { p[field].Integer() += 1; });
+		changed(version, [](JsonNode & p) { p["removalChancePercent"].Vector()[0].Integer() = 1; });
+		changed(version, [](JsonNode & p) { p["removalChancePercent"].Vector()[1].Integer() = 21; });
+		changed(version, [](JsonNode & p) { p["unknown"].Integer() = 1; });
+		changed(version, [](JsonNode & p) { p["version"].Integer() = 6; });
+	}
+	changed(4, [](JsonNode & p) { p["arcaneOverflowPercentByRank"].Vector() = {JsonNode(0), JsonNode(25), JsonNode(50), JsonNode(75)}; });
+	changed(5, [](JsonNode & p) { p.Struct().erase("arcaneOverflowPercentByRank"); });
+	changed(5, [](JsonNode & p) { p["arcaneOverflowPercentByRank"].Vector().pop_back(); });
+	changed(5, [](JsonNode & p) { p["arcaneOverflowPercentByRank"].Vector().push_back(JsonNode(100)); });
+	for(size_t rank = 0; rank < 4; ++rank)
+	{
+		changed(5, [&](JsonNode & p) { p["arcaneOverflowPercentByRank"].Vector()[rank].Integer() += 1; });
+		changed(5, [&](JsonNode & p) { p["arcaneOverflowPercentByRank"].Vector()[rank] = JsonNode("25"); });
+	}
+	changed(5, [](JsonNode & p) { p["arcaneOverflowPercentByRank"].Vector()[1].Integer() = -1; });
+	changed(5, [](JsonNode & p) { p["arcaneOverflowPercentByRank"].Vector()[3].Integer() = 101; });
+	auto published = CapturedPerkRules::compile(metamagicProfile(4));
+	const auto original = published;
+	const auto before = original->document();
+	for(const auto & source : invalid)
+	{
+		EXPECT_FALSE(newHorizonsMetamagic::resolutionPolicy(source));
+		EXPECT_THROW(published = CapturedPerkRules::compile(source), std::runtime_error);
+		EXPECT_EQ(published.get(), original.get());
+		EXPECT_EQ(published->document(), before);
+		EXPECT_EQ(published->metamagic().overflowPercent(3), 0);
+		EXPECT_EQ(published->metamagic().removalChance(3, HeroTypeID::NONE), 40);
+	}
+}
+
+TEST(CompiledMetamagicRules, NonObjectPolicyNodesRejectWithoutReplacingAnExistingOwner)
+{
+	JsonNode emptyArray;
+	emptyArray.Vector();
+	JsonNode populatedArray;
+	populatedArray.Vector() = {JsonNode(5)};
+	const std::vector<JsonNode> malformed{
+		JsonNode(), JsonNode("invalid"), JsonNode(true), JsonNode(5), JsonNode(5.0),
+		emptyArray, populatedArray};
+	auto published = CapturedPerkRules::compile(metamagicProfile(4));
+	const auto original = published;
+	const auto before = original->document();
+	for(const auto * key : {"metamagicPolicy", "divineMandatePolicy", "demonicGatingPolicy", "bloodragePolicy"})
+		for(const auto & value : malformed)
+		{
+			auto source = metamagicProfile(5);
+			source[key] = value;
+			EXPECT_THROW(newHorizonsHeroes::validatePassiveFactionPolicies(source), std::runtime_error);
+			if(std::string_view(key) == "metamagicPolicy")
+				EXPECT_FALSE(newHorizonsMetamagic::resolutionPolicy(source));
+			EXPECT_THROW(published = CapturedPerkRules::compile(source), std::runtime_error);
+			EXPECT_EQ(published.get(), original.get());
+			EXPECT_EQ(published->document(), before);
+			EXPECT_EQ(published->metamagic().overflowPercent(3), 0);
+			EXPECT_EQ(published->metamagic().removalChance(3, HeroTypeID::NONE), 40);
+		}
+}
+
+TEST(CompiledMetamagicRules, RetiredPoliciesCannotAcquireOverflowExecution)
+{
+	for(const int version : {1, 2, 3})
+	{
+		JsonNode source;
+		source["metamagicPolicy"]["version"].Integer() = version;
+		EXPECT_FALSE(newHorizonsMetamagic::resolutionPolicy(source));
 	}
 }
 
@@ -214,6 +352,7 @@ TEST(CompiledMetamagicRules, RepeatedSealedQueriesPerformNoAdmissionOrIdentifier
 	{
 		EXPECT_EQ(policy.removalChance(3, HeroTypeID::NONE), 40);
 		EXPECT_TRUE(policy.supports(MetamagicPerk::ManaRecycling));
+		EXPECT_EQ(policy.overflowPercent(3), policy.policy()->overflowPercentByRank[3]);
 		EXPECT_EQ(policy.recyclingRefund(true, 20, 12, 0, 100),
 			newHorizonsMetamagic::recyclingRefund(20, 12, 0, 100));
 		EXPECT_NE(table->fuelDefinition(SpellID::HASTE), nullptr);
@@ -269,4 +408,48 @@ TEST(CompiledMetamagicEnergy, TypedMemoryPreservesPolarityForFreeNonFuelAndFamil
 	EXPECT_EQ(table->identity(massBless)->family, SpellID::BLESS);
 	EXPECT_TRUE(newHorizonsMetamagic::blocksEnchantment(recipient, source, massBless, true, false));
 	EXPECT_FALSE(newHorizonsMetamagic::blocksEnchantment(recipient, source, massBless, false, true));
+}
+
+TEST(CompiledMetamagicRules, PolicySixCapturesIndependentCoreProcessesAndOptionalRemoval)
+{
+	auto source = perks();
+	const auto owner = CapturedPerkRules::compile(source);
+	const auto & rules = owner->metamagic();
+	ASSERT_NE(rules.policy(), nullptr);
+	ASSERT_TRUE(rules.policy()->optionalRemoval);
+	for(int rank = 1; rank <= 3; ++rank)
+	{
+		const int percent = 15 + 15 * rank;
+		EXPECT_EQ(rules.overflowPercent(rank), percent);
+		EXPECT_EQ(rules.friendlyReductionPercent(rank), percent);
+		EXPECT_EQ(rules.debuffRetryPercent(rank), percent);
+	}
+	for(int rank : {-1, 0, 4})
+	{
+		EXPECT_EQ(rules.friendlyReductionPercent(rank), 0);
+		EXPECT_EQ(rules.debuffRetryPercent(rank), 0);
+	}
+	source["metamagicPolicy"]["debuffRetryChancePercentByRank"].Vector()[3].Integer() = 61;
+	EXPECT_FALSE(newHorizonsMetamagic::resolutionPolicy(source));
+	EXPECT_THROW(CapturedPerkRules::compile(source), std::exception);
+	EXPECT_EQ(rules.debuffRetryPercent(3), 60); // Captured owner never follows changed defaults.
+}
+TEST(CompiledMetamagicRules, ColdSpellClassificationSeparatesDamageDebuffsAndDisplacement)
+{
+	const auto owner = CapturedRuleDocument::compile(CapturedRuleKind::WorldMagic, magic());
+	const auto energy = owner->metamagicEnergy();
+	ASSERT_NE(energy, nullptr);
+	const auto * arrow = energy->identity(SpellID::MAGIC_ARROW);
+	const auto * slow = energy->identity(SpellID::SLOW);
+	const auto * recall = energy->identity(SpellID(SpellID::decode("new-horizons:forcedRecall")));
+	ASSERT_NE(arrow, nullptr); ASSERT_NE(slow, nullptr); ASSERT_NE(recall, nullptr);
+	EXPECT_TRUE(arrow->singleTargetByLevel[0]);
+	EXPECT_FALSE(arrow->debuffByLevel[0]);
+	EXPECT_TRUE(slow->singleTargetByLevel[0]);
+	EXPECT_TRUE(slow->debuffByLevel[0]);
+	EXPECT_TRUE(recall->singleTargetByLevel[0]);
+	EXPECT_FALSE(recall->debuffByLevel[0]);
+	const auto count = energy->sourceResolutionCount();
+	for(int query = 0; query < 100; ++query) EXPECT_EQ(energy->identity(SpellID::SLOW), slow);
+	EXPECT_EQ(energy->sourceResolutionCount(), count);
 }

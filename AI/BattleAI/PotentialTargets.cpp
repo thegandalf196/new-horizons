@@ -8,10 +8,14 @@
  *
  */
 #include "StdInc.h"
+#include "SearchBudget.h"
+#include "../../lib/ScopeGuard.h"
+#include <limits>
 #include "../../lib/battle/NewHorizonsDreadCavalry.h"
 #include "../../lib/battle/NewHorizonsForestAmbush.h"
 #include "PotentialTargets.h"
 #include "VisibleCandidateWorld.h"
+#include "ForecastNativeAdapter.h"
 #include "SpellTargetsEvaluator.h"
 #include "../../lib/CStack.h"//todo: remove
 #include "../../lib/battle/ReachabilityInfo.h"
@@ -21,42 +25,10 @@
 #include "../../lib/mapObjects/CGTownInstance.h"
 #include "HypotheticBattle.h"
 
-PotentialTargets::PotentialTargets(
-	const battle::Unit * attacker,
-	DamageCache & damageCache,
-	std::shared_ptr<HypotheticBattle> state)
+void PotentialTargets::enumerateCandidates(const battle::Unit * attackerInfo,
+	DamageCache & actionDamageCache, const std::shared_ptr<HypotheticBattle> & evaluationState,
+	const ReachabilityInfo & reachability, const BattleHexArray & avHexes)
 {
-	auto evaluationState = state;
-	auto attackerInfo = evaluationState->battleGetUnitByID(attacker->unitId());
-	if(evaluationState->wasCurrentActivationForfeited(attacker->unitId())) return;
-
-	//FIXME: this should part of battleGetAvailableHexes
-	const bool puppetControlled = newHorizonsPuppetMaster::hasValidControlMarker(*evaluationState, attackerInfo);
-	berserk = attackerInfo->hasBonusOfType(BonusType::ATTACKS_NEAREST_CREATURE) && !puppetControlled;
-	const auto forcedActivationBonus = berserk
-		? newHorizonsBerserk::forcedActivationSpeedBonus(*evaluationState, attackerInfo)
-		: std::optional<Bonus>{};
-	if(forcedActivationBonus)
-	{
-		// Berserk candidate pointers outlive this constructor, so model the
-		// forced activation in its own child branch instead of temporarily
-		// changing the caller's shared forecast.
-		forcedBerserkState = std::make_shared<HypotheticBattle>(evaluationState->env, evaluationState);
-		forcedBerserkState->addUnitBonus(attackerInfo->unitId(), {*forcedActivationBonus});
-		evaluationState = forcedBerserkState;
-		attackerInfo = evaluationState->battleGetUnitByID(attacker->unitId());
-	}
-	auto reachability = evaluationState->getReachability(attackerInfo);
-	auto avHexes = evaluationState->battleGetAvailableHexes(reachability, attackerInfo, false);
-	DamageCache forcedDamageCache;
-	DamageCache & actionDamageCache = forcedActivationBonus ? forcedDamageCache : damageCache;
-	if(berserk)
-	{
-		forcedBerserkActions = evaluationState->getBerserkForcedActions(attackerInfo);
-		if(forcedBerserkActions.empty())
-			forcedBerserkActions.push_back({EActionType::NO_ACTION, attackerInfo->getPosition(), nullptr});
-	}
-
 	const auto candidateWorld = std::make_shared<const VisibleCandidateWorld>(evaluationState);
 	auto aliveUnits = evaluationState->battleGetUnitsIf([=](const battle::Unit * unit)
 	{
@@ -65,6 +37,7 @@ PotentialTargets::PotentialTargets(
 
 	for(auto defender : aliveUnits)
 	{
+		battleSearch::require(evaluationState->searchBudget().get(), battleSearch::WorkKind::Node);
 		if(!newHorizonsDreadCavalry::permitsTarget(*evaluationState, attackerInfo, defender)) continue;
 		// Canonical action admission rejects protected primaries before AP scoring.
 		// Native forced-action selection remains its own authoritative route.
@@ -83,6 +56,7 @@ PotentialTargets::PotentialTargets(
 
 		auto GenerateAttackInfo = [&](bool shooting, const BattleHex & hex) -> AttackPossibility
 		{
+			battleSearch::require(evaluationState->searchBudget().get(), battleSearch::WorkKind::Generation);
 			const int distance = hex.isValid()
 				? std::max(0, SpellTargetEvaluator::physicalTravelDistance(reachability, hex))
 				: 0;
@@ -121,6 +95,7 @@ PotentialTargets::PotentialTargets(
 			{
 				// Score every legal destination so the AI can trade movement, firing line,
 				// range, and Counterfire exposure instead of always choosing one nearest hex.
+				battleSearch::require(evaluationState->searchBudget().get(), battleSearch::WorkKind::Movement);
 				for(const BattleHex & hex : evaluationState->battleGetSkirmisherAttackFromHexes(attackerInfo,
 					defender->getPosition()))
 					possibleAttacks.push_back(GenerateAttackInfo(true, hex));
@@ -130,6 +105,7 @@ PotentialTargets::PotentialTargets(
 			{
 				for(const BattleHex & hex : avHexes)
 				{
+					battleSearch::require(evaluationState->searchBudget().get(), battleSearch::WorkKind::Movement);
 					if(!evaluationState->isMeleeAttackPossibleWithLongReach(attackerInfo, defender, hex))
 						continue;
 
@@ -143,7 +119,68 @@ PotentialTargets::PotentialTargets(
 				unreachableEnemies.push_back(defender);
 		}
 	}
+}
 
+PotentialTargets::PotentialTargets(
+	const battle::Unit * attacker,
+	DamageCache & damageCache,
+	std::shared_ptr<HypotheticBattle> state)
+{
+	auto evaluationState = state;
+	auto attackerInfo = evaluationState->battleGetUnitByID(attacker->unitId());
+	if(evaluationState->wasCurrentActivationForfeited(attacker->unitId())) return;
+
+	//FIXME: this should part of battleGetAvailableHexes
+	const bool puppetControlled = newHorizonsPuppetMaster::hasValidControlMarker(*evaluationState, attackerInfo);
+	berserk = attackerInfo->hasBonusOfType(BonusType::ATTACKS_NEAREST_CREATURE) && !puppetControlled;
+	const auto forcedActivationBonus = berserk
+		? newHorizonsBerserk::forcedActivationSpeedBonus(*evaluationState, attackerInfo)
+		: std::optional<Bonus>{};
+	if(forcedActivationBonus)
+	{
+		// Berserk candidate pointers outlive this constructor, so model the
+		// forced activation in its own child branch instead of temporarily
+		// changing the caller's shared forecast.
+		forcedBerserkState = std::make_shared<HypotheticBattle>(evaluationState->env, evaluationState);
+		forcedBerserkState->addUnitBonus(attackerInfo->unitId(), {*forcedActivationBonus});
+		evaluationState = forcedBerserkState;
+		attackerInfo = evaluationState->battleGetUnitByID(attacker->unitId());
+	}
+	// Explicit source admission once, before candidate generation, never per probe.
+	forecast::NativeAdapter::prepareExchange(*evaluationState);
+	attackerInfo = evaluationState->battleGetUnitByID(attacker->unitId());
+	auto reachability = evaluationState->getReachability(attackerInfo);
+	auto avHexes = evaluationState->battleGetAvailableHexes(reachability, attackerInfo, false);
+	DamageCache forcedDamageCache;
+	DamageCache & actionDamageCache = forcedActivationBonus ? forcedDamageCache : damageCache;
+	if(berserk)
+	{
+		forcedBerserkActions = evaluationState->getBerserkForcedActions(attackerInfo);
+		if(forcedBerserkActions.empty())
+			forcedBerserkActions.push_back({EActionType::NO_ACTION, attackerInfo->getPosition(), nullptr});
+	}
+
+
+	std::shared_ptr<battleSearch::SearchBudget> cleanupWork;
+	if(forcedActivationBonus && evaluationState->searchBudget())
+	{
+		const auto count = forcedBerserkActions.size();
+		if(count >= std::numeric_limits<uint32_t>::max() / 2) throw battleSearch::BudgetExhausted(battleSearch::WorkKind::Node);
+		battleSearch::WorkAmounts quota{};
+		quota[3] = 2 * (static_cast<uint32_t>(count) + 1);
+		auto reserved = evaluationState->searchBudget()->reserve(quota);
+		if(!reserved) throw battleSearch::BudgetExhausted(battleSearch::WorkKind::Node);
+		cleanupWork = std::make_shared<battleSearch::SearchBudget>(std::move(*reserved));
+	}
+
+	try
+	{
+	enumerateCandidates(attackerInfo, actionDamageCache, evaluationState, reachability, avHexes);
+}
+	catch(const battleSearch::BudgetExhausted &)
+	{
+		// Retain completed APs and the already accepted forced-action roster.
+	}
 	std::ranges::sort(possibleAttacks, [](const AttackPossibility & lhs, const AttackPossibility & rhs) -> bool
 	{
 		return lhs.damageDiff() > rhs.damageDiff();
@@ -154,11 +191,20 @@ PotentialTargets::PotentialTargets(
 		// The scoped Speed has done its job: it selected reachable forced actions
 		// and informed their attack projections. Remove it before callers replay
 		// any chosen AttackPossibility into their longer-lived forecast.
+		const auto removeScopedSpeed = [&](const std::shared_ptr<HypotheticBattle> & state)
+		{
+			battleSearch::require(cleanupWork.get(), battleSearch::WorkKind::Node);
+			const auto previous = state->searchBudget();
+			state->setSearchBudget(cleanupWork);
+			const auto restore = vstd::makeScopeGuard([&] { state->setSearchBudget(previous); });
+			state->removeUnitBonus(attackerInfo->unitId(), {*forcedActivationBonus});
+		};
 		for(auto & attack : possibleAttacks)
-			if(attack.effectPreview)
-				attack.effectPreview->removeUnitBonus(attackerInfo->unitId(), {*forcedActivationBonus});
-		forcedBerserkState->removeUnitBonus(attackerInfo->unitId(), {*forcedActivationBonus});
+			if(attack.effectPreview) removeScopedSpeed(attack.effectPreview);
+		removeScopedSpeed(forcedBerserkState);
 	}
+
+
 }
 
 int64_t PotentialTargets::bestActionValue() const

@@ -60,6 +60,7 @@ void BattleActionProcessor::attackCasting(const CBattleInfoCallback & battle, bo
 			target.emplace_back(defender);
 
 			spells::BattleCast parameters(&battle, &caster, spells::Mode::PASSIVE, spell);
+			parameters.setCreatureAbilityDescriptor(creatureAbility::onHitSpell(*spell, battle.battleGetOwner(attacker)));
 
 			auto m = spell->battleMechanics(&parameters);
 

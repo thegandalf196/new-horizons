@@ -1,6 +1,7 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
 #include "NativeDamageFacts.h"
+#include "NativePreparedBonuses.h"
 #include "IDamageCalculatorScript.h"
 #include "../battle/CBattleInfoCallback.h"
 #include "../battle/Unit.h"
@@ -38,9 +39,7 @@ const Query & rangedQuery(BonusType type, bool shooting)
 			for(size_t range = 0; range < 2; ++range)
 			{
 				auto [selector, key] = typeQuery(types[i]);
-				const auto limited = range ? BonusLimitEffect::ONLY_DISTANCE_FIGHT : BonusLimitEffect::ONLY_MELEE_FIGHT;
-				result[i * 2 + range] = {selector.And(Selector::effectRange()(BonusLimitEffect::NO_LIMIT)
-					.Or(Selector::effectRange()(limited))), key + (range ? "_ranged" : "_melee")};
+				result[i * 2 + range] = {preparedRangeSelector(types[i], range != 0), key + (range ? "_ranged" : "_melee")};
 			}
 		return result;
 	}();
@@ -207,21 +206,11 @@ void captureAdditionalFactors(const CBattleInfoCallback & battle, const DamageAt
 
 std::optional<PreparedUnit> prepareUnit(const battle::Unit & unit, bool shooting)
 {
-	PreparedUnit result;
+	const auto effective = unit.getAllBonuses(Selector::all, "all");
+	auto prepared = prepareOwnedBonuses(*effective, PreparedUnit{}, 0, shooting);
+	if(!prepared) return {};
+	auto result = std::move(*prepared);
 	auto & facts = result.unit;
-	presence(unit, facts);
-	// These families have pair-sensitive, source-identity or uncommon role
-	// semantics outside the initial flat projection. Keep the complete path.
-	for(const auto type : {BonusType::SIEGE_WEAPON, BonusType::HATE, BonusType::HATES_TRAIT,
-		BonusType::SLAYER, BonusType::REVENGE, BonusType::BONUS_DAMAGE_PERCENTAGE})
-		if(facts.has(type)) return {};
-	result.shooting = shooting;
-	for(const auto type : {BonusType::ALWAYS_MAXIMUM_DAMAGE, BonusType::ALWAYS_MINIMUM_DAMAGE,
-		BonusType::IN_FRENZY, BonusType::KING, BonusType::GENERAL_DAMAGE_PREMY,
-		BonusType::JOUSTING, BonusType::FORGETFULL, BonusType::LEVEL_SPELL_IMMUNITY,
-		BonusType::VULNERABLE_FROM_BACK, BonusType::DAMAGE_RECEIVED_CAP,
-		BonusType::LUCKY_STRIKE_DAMAGE_PERCENTAGE})
-		value(unit, facts, type);
 	facts.minDamage = unit.getMinDamage(shooting);
 	facts.maxDamage = unit.getMaxDamage(shooting);
 	if(facts.minDamage > facts.maxDamage) return {};
@@ -233,19 +222,6 @@ std::optional<PreparedUnit> prepareUnit(const battle::Unit & unit, bool shooting
 	facts.phantomIntegrity = static_cast<double>(unit.getPhantomIntegrity());
 	facts.shooter = unit.isShooter();
 	facts.creatureKey = creatureKey(unit);
-	result.physicalDefense = unit.valOfBonuses(BonusType::PHYSICAL_DEFENSE);
-	result.enemyDefenseReduction = rangedValue(unit, facts, BonusType::ENEMY_DEFENCE_REDUCTION, shooting);
-	result.enemyAttackReduction = rangedValue(unit, facts, BonusType::ENEMY_ATTACK_REDUCTION, shooting);
-	result.attackReduction = rangedValue(unit, facts, BonusType::GENERAL_ATTACK_REDUCTION, shooting);
-	if(facts.has(BonusType::PERCENTAGE_DAMAGE_BOOST))
-		result.damageBoost = unit.valOfBonuses(BonusType::PERCENTAGE_DAMAGE_BOOST,
-			shooting ? BonusCustomSubtype::damageTypeRanged : BonusCustomSubtype::damageTypeMelee);
-	if(facts.has(BonusType::GENERAL_DAMAGE_REDUCTION))
-	{
-		static const auto petrified = subtypeSourceQuery(BonusType::GENERAL_DAMAGE_REDUCTION,
-			BonusCustomSubtype::damageTypeAll, BonusSource::SPELL_EFFECT);
-		result.petrification = unit.valOfBonuses(petrified.first, petrified.second);
-	}
 	return result;
 }
 

@@ -125,6 +125,16 @@ std::optional<Bonus> numericBonus(const JsonNode & descriptor, SpellID spell)
 }
 }
 
+bool Timed::supportsFiniteForecastPayload() const
+{
+	if(!parameters.isNull() && !parameters.isStruct()) return false;
+	if(!parameters["cumulative"].isNull() && !parameters["cumulative"].isBool()) return false;
+	if(!parameters["bonus"].isNull() && !parameters["bonus"].isStruct()) return false;
+	for(const auto & [name, descriptor] : parameters["bonus"].Struct())
+		if(!descriptorShape(descriptor)) return false;
+	return true;
+}
+
 std::optional<std::vector<Bonus>> Timed::preparedRecipientBonuses(const Mechanics * mechanics, const battle::Unit * unit) const
 {
 	if(!mechanics || !unit) return std::nullopt;

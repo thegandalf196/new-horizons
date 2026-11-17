@@ -9,6 +9,8 @@
  */
 #include "StdInc.h"
 #include "HypotheticBattle.h"
+#include "PossibleSpellcast.h"
+#include "ForecastSpellPayment.h"
 #include "OwnedStackQuerySource.h"
 #include "../../lib/battle/OwnedFrameBranchQueries.h"
 #include "../../lib/battle/OrderActionTransition.h"
@@ -33,7 +35,10 @@ bool isDivineMandateLightSpell(const CBattleInfoCallback & battle, SpellID spell
 std::optional<HypotheticBattle::ProjectedSpellAllowance> HypotheticBattle::prepareHeroSpellAllowance(
 	BattleSide side, SpellID spell) const
 {
-	const auto & ledger = heroActionAllowances.at(side);
+	const auto & state = forecastSide(side);
+	if(!state->hasVisibleHero() || !state->ledger || !state->mana) return {};
+	const auto & ledger = state->ledger->allowances;
+	if(!state->knowsSpell(spell)) return {};
 	if(ledger.currentRound < 0)
 	{
 		// Legacy battles have no typed ledger. Preserve their historical distinction:
@@ -100,7 +105,9 @@ std::optional<HypotheticBattle::ProjectedOrderAllowance> HypotheticBattle::prepa
 	const bool finite = newHorizonsCommand::usesFiniteResources(getHeroCommandRules());
 	if(finite && !hasCommandResourceObservation(side)) return {};
 	const auto resources = finite ? getCommandResources(side) : newHorizonsCommand::ResourceState{};
-	const auto & ledger = heroActionAllowances.at(side);
+	const auto & state = forecastSide(side);
+	if(!state->hasVisibleHero() || !state->ledger || !state->mana) return {};
+	const auto & ledger = state->ledger->allowances;
 	if(ledger.currentRound < 0)
 	{
 		ProjectedActionReceipt action;
@@ -174,6 +181,9 @@ bool HypotheticBattle::beginProjectedHeroAction(BattleSide side, const Projected
 	if(!isCurrentPreparedSpellAction(side, prepared, false))
 		return false;
 	begunProjectedSpellAllowances.at(side) = prepared;
+	evaluatedSpellPayments.at(side).reset();
+	nativeSpellAttemptEpochs.at(side).reset();
+	rejectedSpellPaymentEpochs.at(side).reset();
 	recordedWisdomActionEpochs.at(side).reset();
 	arcaneInspirationEffects.clear();
 	beginProjectedHeroAction(side, prepared.action);
@@ -206,6 +216,7 @@ void HypotheticBattle::finishProjectedHeroAction(BattleSide side, const Projecte
 		&& *begunProjectedSpellAllowances.at(side) == prepared)
 	{
 		begunProjectedSpellAllowances.at(side).reset();
+		evaluatedSpellPayments.at(side).reset();
 		recordedWisdomActionEpochs.at(side).reset();
 		++projectedActionEpochs.at(side);
 	}
@@ -234,19 +245,21 @@ bool HypotheticBattle::projectAcceptedHeroSpell(BattleSide side, SpellID spell, 
 	const bool lightSpell = isDivineMandateLightSpell(*this, spell);
 	const auto mandateStatus = battleGetDivineMandateStatus(side);
 
-	if(action.typedLedger)
-	{
-		auto nextLedger = prepared.allowancesAfter;
-		const auto recipients = lightSpell
-			&& newHorizonsDivineMandate::needsRecipientCapture(getSideHero(side))
-			? newHorizonsDivineMandate::sharedPurposeFriendlyRecipients(*this, side, affectedRecipients)
-			: std::vector<uint32_t>{};
-		const auto overlap = DivineMandateTransition::applyAcceptedAction(nextLedger, action.receipt,
-			projectedRound, lightSpell, mandateStatus.maximumPairs, recipients);
-		heroActionAllowances.at(side) = std::move(nextLedger);
-		newHorizonsDivineMandate::applySharedPurpose(*this, *this, side, overlap);
-	}
-
+	const auto recipients = lightSpell
+		&& newHorizonsDivineMandate::needsRecipientCapture(getSideHero(side))
+		? newHorizonsDivineMandate::sharedPurposeFriendlyRecipients(*this, side, affectedRecipients)
+		: std::vector<uint32_t>{};
+	const auto & payment = evaluatedSpellPayments.at(side);
+	if(!spellPaymentScopes.healthy() || !payment || payment->side != side || payment->spell != spell
+		|| payment->actionEpoch != prepared.action.epoch
+		|| rejectedSpellPaymentEpochs.at(side) == prepared.action.epoch
+		|| (nativeSpellAttemptEpochs.at(side) == prepared.action.epoch && !payment->evaluated)) return false;
+	const auto receipt = forecast::SideTransitions::acceptedAction(forecastSide(side), action.receipt,
+		prepared.allowancesAfter, lightSpell, mandateStatus.maximumPairs, recipients,
+		forecast::CastCost{spell, payment->exactCost, false}, searchBudget().get(), payment->refunds);
+	if(!receipt || !commitForecastSide(side, *receipt)) return false;
+	evaluatedSpellPayments.at(side).reset();
+	newHorizonsDivineMandate::applySharedPurpose(*this, *this, side, receipt->sharedPurposeRecipients());
 
 	// castEval already records ordinary casts before effects. The
 	// precomputed-value paths skip it, but accept the same manual receipt here.
@@ -268,8 +281,10 @@ bool HypotheticBattle::projectHeroSpellAllowance(BattleSide side, SpellID spell,
 	const auto prepared = prepareHeroSpellAllowance(side, spell);
 	if(!prepared)
 		return false;
-	if(!beginProjectedHeroAction(side, *prepared))
-		return false;
+	PossibleSpellcast candidate; candidate.command = HeroCommand::NONE; candidate.spell = spell.toSpell();
+	if(const auto * unit = battleGetUnitByID(target)) candidate.dest.emplace_back(unit);
+	const auto cost = forecast::candidateSpellPaymentCost(*this, side, candidate);
+	if(!cost || !beginProjectedHeroAction(side, *prepared) || !stageProjectedSpellPayment(side, spell, *cost)) return false;
 	return projectAcceptedHeroSpell(side, spell, target,
 		*prepared);
 }

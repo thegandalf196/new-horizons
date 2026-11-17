@@ -91,21 +91,17 @@ bool HypotheticBattle::commitProjectedHeroOrder(BattleSide side,
 	if(command != HeroCommand::NONE && !heroCommands::isActive(command))
 		return false;
 	const auto mandateStatus = battleGetDivineMandateStatus(side);
+	const auto * enchantedOrder = effects ? &effects->order : nullptr;
+	const auto recipients = enchantedOrder
+		&& newHorizonsDivineMandate::needsRecipientCapture(getSideHero(side))
+		? newHorizonsDivineMandate::sharedPurposeOrderRecipients(*this, side, *enchantedOrder)
+		: std::vector<uint32_t>{};
+	const auto receipt = forecast::SideTransitions::acceptedAction(forecastSide(side), action.receipt,
+		prepared.allowancesAfter, false, mandateStatus.maximumPairs, recipients, {}, searchBudget().get());
+	if(!receipt || !commitForecastSide(side, *receipt)) return false;
+	const auto & sharedPurposeOverlap = receipt->sharedPurposeRecipients();
 	if(legacyCommand != HeroCommand::NONE)
 		applyProjectedLegacyHeroOrder(side);
-	const auto * enchantedOrder = effects ? &effects->order : nullptr;
-	std::vector<uint32_t> sharedPurposeOverlap;
-	if(action.typedLedger)
-	{
-		auto nextLedger = prepared.allowancesAfter;
-		const auto recipients = enchantedOrder
-			&& newHorizonsDivineMandate::needsRecipientCapture(getSideHero(side))
-			? newHorizonsDivineMandate::sharedPurposeOrderRecipients(*this, side, *enchantedOrder)
-			: std::vector<uint32_t>{};
-		sharedPurposeOverlap = DivineMandateTransition::applyAcceptedAction(nextLedger, action.receipt,
-			projectedRound, false, mandateStatus.maximumPairs, recipients);
-		heroActionAllowances.at(side) = std::move(nextLedger);
-	}
 
 	if(effects)
 	{

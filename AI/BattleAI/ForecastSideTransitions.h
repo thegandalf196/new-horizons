@@ -2,6 +2,7 @@
 #pragma once
 #include "ForecastSideState.h"
 #include <functional>
+#include <span>
 namespace battleSearch { class SearchBudget; }
 namespace forecast
 {
@@ -39,27 +40,28 @@ public:
 	static std::optional<SideReceipt> acceptedAction(const std::shared_ptr<const SideState> &,
 		const HeroActionAllowanceState::Receipt &, const HeroActionAllowanceState & consumed,
 		bool lightSpell, uint8_t maximumPairs, const std::vector<uint32_t> & recipients,
-		std::optional<CastCost> cost = {}, battleSearch::SearchBudget * = nullptr);
+		std::optional<CastCost> cost = {}, battleSearch::SearchBudget * budget = nullptr,
+		std::span<const battle::spellPoints::Payment> refunds = {});
 	static std::optional<SideReceipt> payCast(const std::shared_ptr<const SideState> &, CastCost,
-		battleSearch::SearchBudget * = nullptr);
+		battleSearch::SearchBudget * budget = nullptr);
 	static std::optional<SideReceipt> refundCast(const std::shared_ptr<const SideState> &, uint64_t token,
-		battle::spellPoints::Payment, battleSearch::SearchBudget * = nullptr);
+		battle::spellPoints::Payment, battleSearch::SearchBudget * budget = nullptr);
 	static std::optional<SideReceipt> restoreNormal(const std::shared_ptr<const SideState> &, int32_t amount,
-		battleSearch::SearchBudget * = nullptr);
+		battleSearch::SearchBudget * budget = nullptr);
 	static std::optional<SideReceipt> replaceMana(const std::shared_ptr<const SideState> &,
 		const battle::spellPoints::State & expected, battle::spellPoints::State after,
-		battleSearch::SearchBudget * = nullptr);
+		battleSearch::SearchBudget * budget = nullptr);
 	static std::optional<SideReceipt> recordWisdom(const std::shared_ptr<const SideState> &, SpellID, int32_t round,
-		battleSearch::SearchBudget * = nullptr);
+		battleSearch::SearchBudget * budget = nullptr);
 	static std::optional<SideReceipt> recordCompletion(const std::shared_ptr<const SideState> &, int32_t level,
-		battleSearch::SearchBudget * = nullptr, std::optional<SpellID> automaticSpell = {});
+		battleSearch::SearchBudget * budget = nullptr, std::optional<SpellID> automaticSpell = {});
 	static std::optional<SideReceipt> setResponse(const std::shared_ptr<const SideState> &, SpellResponseState,
-		battleSearch::SearchBudget * = nullptr);
+		battleSearch::SearchBudget * budget = nullptr);
 	static std::optional<SideReceipt> setOverwhelming(const std::shared_ptr<const SideState> &, OverwhelmingFormulaState,
-		battleSearch::SearchBudget * = nullptr);
+		battleSearch::SearchBudget * budget = nullptr);
 	static std::optional<SideReceipt> setAttunement(const std::shared_ptr<const SideState> &, uint8_t mask,
-		battleSearch::SearchBudget * = nullptr);
+		battleSearch::SearchBudget * budget = nullptr);
 	static std::optional<SideReceipt> advanceRound(const std::shared_ptr<const SideState> &, int32_t round,
-		battleSearch::SearchBudget * = nullptr);
+		battleSearch::SearchBudget * budget = nullptr);
 };
 }

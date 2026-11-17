@@ -65,6 +65,8 @@ public:
 	HealInfo heal(int64_t & amount, EHealLevel level, EHealPower power, bool trackCasualtyProvenance = true);
 
 	int32_t getCount() const;
+	/// Largest body damage that kills at most this many current creatures, including wounded cohorts.
+	int64_t maximumDamageForCasualties(int32_t casualties) const;
 	int32_t getFirstHPleft() const;
 	int32_t getResurrected() const;
 	/// Number of casualties whose remains cannot be restored or harvested.

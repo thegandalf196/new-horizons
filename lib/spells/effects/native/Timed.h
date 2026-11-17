@@ -13,6 +13,8 @@ public:
 	explicit Timed(bool bindPatch = true, bool shieldPatch = true) : bindPatch(bindPatch), shieldPatch(shieldPatch) {}
 	ResistanceShareKind resistanceShareKind() const override { return ResistanceShareKind::Timed; }
 	void apply(ServerCallback *, const Mechanics *, const Target &) const override;
+	/// Raw descriptor safety before recipient enumeration, including empty aims.
+	bool supportsFiniteForecastPayload() const;
 	/// Current numeric records only; unsupported descriptors have no read-only plan.
 	std::optional<std::vector<Bonus>> preparedRecipientBonuses(const Mechanics *, const battle::Unit *) const;
 	ForecastImplementation forecastImplementation(const Mechanics *) const override { return ForecastImplementation::CANONICAL_TIMED; }

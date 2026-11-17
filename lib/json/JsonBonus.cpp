@@ -999,6 +999,8 @@ bool JsonUtils::parseBonus(const JsonNode &ability, Bonus *b, const TextIdentifi
 	}
 	if(!b->hasValidStatusMetadata())
 		throw std::runtime_error("Invalid bonus status metadata");
+	if(ability.Struct().contains("abilityProvenance"))
+		b->abilityDescriptor = CreatureAbilityDescriptor::fromJson(ability["abilityProvenance"]);
 
 	value = &ability["limiters"];
 	if (!value->isNull())

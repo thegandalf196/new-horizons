@@ -6,11 +6,14 @@
 #include "../../lib/battle/CUnitState.h"
 #include "../../lib/battle/IBattleState.h"
 #include "../../lib/battle/NewHorizonsArmorer.h"
+#include "../../lib/battle/UnitShieldState.h"
 #include "../../lib/networkPacks/PacksForClientBattle.h"
+#include <stdexcept>
 namespace battleLastStandDamage
 {
 bool prepare(const CBattleInfoCallback & battle, const BattleAttackInfo & attack, BattleAttack & packet,
-	BattleStackAttacked & hit, battle::CUnitState & state, std::array<bool, 2> & usedThisAttack, bool retaliation)
+	BattleStackAttacked & hit, battle::CUnitState & state, std::array<bool, 2> & usedThisAttack, bool retaliation,
+	const battle::DamageContext & context)
 {
 	const auto * target = attack.defender;
 	const auto side = battle.playerToSide(battle.battleGetOwner(target));
@@ -21,8 +24,17 @@ bool prepare(const CBattleInfoCallback & battle, const BattleAttackInfo & attack
 		&& newHorizonsArmorer::isEligiblePhysicalAttack(attack.attacker, attack.physicalDamage, packet.spellLike())
 		&& newHorizonsArmorer::canTriggerLastStand(hero, target);
 	const bool used = valid && (battle.getBattle()->armorerLastStandUsed(side) || usedThisAttack[index]);
+	if(!eligible || used)
+		return false;
+	const auto preview = battle::previewShieldDamage(state, hit.damageAmount,
+		battle::DamageProvenance::PHYSICAL_CREATURE, &context);
+	if(!preview)
+		throw std::runtime_error("Last Stand requires an exact shield and casualty preview");
+	if(preview->healthLoss < target->getAvailableHealth())
+		return false;
+	const int64_t shieldAbsorption = hit.damageAmount - preview->postShield;
 	const auto result = newHorizonsArmorer::resolveLastStandDamage(hit.damageAmount,
-		state.guardianSpiritHitPoints, state.guardianSpiritRoundsRemaining, target->getAvailableHealth(), eligible, used);
+		shieldAbsorption, 1, target->getAvailableHealth(), eligible, used);
 	if(!result.triggered)
 		return false;
 	hit.damageAmount = result.damageToApply;

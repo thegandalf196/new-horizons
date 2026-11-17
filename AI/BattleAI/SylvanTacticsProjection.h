@@ -44,7 +44,8 @@ class StrikeProjection
 public:
 	explicit StrikeProjection(HypotheticBattle * value) : branch(value) {}
 	void damage(const CBattleInfoCallback & world, const BattleAttackInfo & attack,
-		battle::CUnitState & target, int64_t & amount, battle::DamageProvenance provenance, int64_t * postShieldDamage = nullptr);
+		battle::CUnitState & target, int64_t & amount, battle::DamageProvenance provenance,
+		int64_t * postShieldDamage = nullptr, battle::DamageContext * context = nullptr);
 	/// Called at the existing physical strike boundary, before another strike.
 	void finish(uint32_t attackerId);
 };

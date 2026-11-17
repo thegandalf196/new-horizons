@@ -2,6 +2,7 @@
 #include "StdInc.h"
 #include "Damage.h"
 #include "../../ISpellMechanics.h"
+#include "../../SpellDamageContext.h"
 #include "../../../battle/CUnitState.h"
 #include "../../../bonuses/BonusList.h"
 #include "../../../mapObjects/CGHeroInstance.h"
@@ -25,6 +26,17 @@ std::optional<int> conductor(const Mechanics & mechanics, size_t index)
 	constexpr std::array percent{100, 75, 55, 40, 30};
 	return percent[index];
 }
+}
+
+bool Damage::supportsFiniteForecast() const
+{
+	if(typeid(*this) != typeid(Damage)) return false;
+	for(const auto * key : {"killByPercentage", "killByCount", "destroyRemains", "handOfFate"})
+		if(!parameters[key].isNull() && (!parameters[key].isBool() || parameters[key].Bool())) return false;
+	const auto & chain = parameters["chainLength"];
+	if(!chain.isNull() && (!chain.isNumber() || !std::isfinite(chain.Float()) || chain.Float() < 0 || chain.Float() > 1))
+		return false;
+	return true;
 }
 
 ResistanceShareKind Damage::resistanceShareKind() const
@@ -100,7 +112,9 @@ SpellEffectValue Damage::getHealthChange(const Mechanics * mechanics, const Targ
 		auto copy = unit->acquireState();
 		const auto before = copy->getAvailableHealth();
 		const auto count = copy->getCount();
-		copy->damage(amount);
+		std::optional<battle::VowCasualtyQuota> quota;
+		const auto damageContext = previewSpellDamageContext(*mechanics, *unit, quota);
+		copy->damageWithContext(amount, false, battle::DamageProvenance::SPELL, damageContext);
 		result.hpDelta -= before - copy->getAvailableHealth();
 		result.unitsDelta -= count - copy->getCount();
 	}

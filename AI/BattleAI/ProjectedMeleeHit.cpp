@@ -9,6 +9,7 @@
 #include "ProjectedMeleeHit.h"
 #include "../../lib/battle/NewHorizonsSoulHarvest.h"
 #include "ProjectedMeleeExpiry.h"
+#include "ForecastNativeAdapter.h"
 #include "ProjectedTargetHit.h"
 #include "HypotheticBattle.h"
 #include "InitialExportBattleSubject.h"
@@ -77,7 +78,8 @@ std::optional<heroOrderValue::MeleeHitReceipt> apply(HypotheticBattle & battle, 
 			*victim, victimCountBefore, victimMayRebirth));
 	battle.projectFortuneStrike(strike, {{victim->unitId(), damage}}, actor.get(), !victim->alive(),
 		outcome, true, perfect, side, side, newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(actor.get(), true));
-	actor->afterAttack(false, retaliation, true); // Brace is reactive but never ordinary retaliation consumption.
+	if(!forecast::NativeAdapter::afterAttack(battle, *actor, false, retaliation, true))
+		actor->afterAttack(false, retaliation, true); // Brace never consumes ordinary retaliation.
 	// The supported original melee loop owns its exact post-injury resource
 	// receipt before the ordinary primary rider, matching the native packet phase.
 	if(newHorizonsHeroes::ordinaryCreatureSpecialtyValue(battle, *actor, "core:nymus") > 0)

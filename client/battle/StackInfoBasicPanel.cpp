@@ -12,6 +12,7 @@
 #include "../../lib/entities/hero/NewHorizonsGenieSage.h"
 #include "../windows/SylvanFactionStatusPresentation.h"
 #include "StackInfoBasicPanel.h"
+#include "ShieldPresentation.h"
 #include "StackTemporaryStatusPresenter.h"
 #include "SummonLifetimePresentation.h"
 #include "FrozenStatusPresentation.h"
@@ -519,8 +520,9 @@ std::string soulChainStatusSignature(const CStack * stack, const CPlayerBattleCa
 }
 
 StackInfoBasicPanel::StackInfoBasicPanel(
-	const CStack * stack, std::shared_ptr<CPlayerBattleCallback> battleCallback, bool initializeBackground)
-	: BattleSidePanel(0), battleCallback(std::move(battleCallback))
+	const CStack * stack, std::shared_ptr<CPlayerBattleCallback> battleCallback, bool initializeBackground,
+	std::optional<battle::ShieldSnapshot> shields)
+	: BattleSidePanel(0), battleCallback(std::move(battleCallback)), shieldPresentationOverride(std::move(shields))
 {
 	OBJECT_CONSTRUCTION;
 
@@ -634,11 +636,6 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 		morale = stack->moraleVal();
 	const int luck = luckReadback.active() ? luckReadback.ordinaryAttackLuck : stack->luckVal();
 
-	auto killed = stack->getKilled();
-	auto healthRemaining = TextOperations::formatMetric(stack->getFirstHPleft(), 4);
-	if(stack->health.getTemporaryHitPoints() > 0)
-		healthRemaining += "+" + TextOperations::formatMetric(stack->health.getTemporaryHitPoints(), 4);
-
 	//primary stats*/
 	labels.push_back(std::make_shared<CLabel>(9, 75, EFonts::FONT_TINY, ETextAlignment::TOPLEFT, Colors::WHITE, LIBRARY->generaltexth->allTexts[380] + ":"));
 	labels.push_back(std::make_shared<CLabel>(9, 87, EFonts::FONT_TINY, ETextAlignment::TOPLEFT, Colors::WHITE, LIBRARY->generaltexth->allTexts[381] + ":"));
@@ -705,12 +702,7 @@ void StackInfoBasicPanel::initializeData(const CStack * stack)
 		statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(46, 153, 28, 13), tooltip, tooltip));
 	}
 
-	//extra information
-	labels.push_back(std::make_shared<CLabel>(9, 168, EFonts::FONT_TINY, ETextAlignment::TOPLEFT, Colors::WHITE, LIBRARY->generaltexth->translate("vcmi.battleWindow.killed") + ":"));
-	labels.push_back(std::make_shared<CLabel>(9, 180, EFonts::FONT_TINY, ETextAlignment::TOPLEFT, Colors::WHITE, LIBRARY->generaltexth->allTexts[389] + ":"));
-
-	labels.push_back(std::make_shared<CLabel>(69, 180, EFonts::FONT_TINY, ETextAlignment::BOTTOMRIGHT, Colors::WHITE, std::to_string(killed)));
-	labels.push_back(std::make_shared<CLabel>(69, 192, EFonts::FONT_TINY, ETextAlignment::BOTTOMRIGHT, Colors::WHITE, healthRemaining));
+	appendVitalStatus(stack);
 
 	//spells
 	static const Point firstPos(15, 206); // position of 1st spell box
@@ -939,11 +931,14 @@ void StackInfoBasicPanel::update(const CStack * updatedInfo)
 	redraw();
 }
 
-void StackInfoBasicPanel::refreshDefendStatus(const CStack * updatedInfo)
+void StackInfoBasicPanel::refreshDefendStatus(const CStack * updatedInfo,
+	std::optional<battle::ShieldSnapshot> shields)
 {
 	if(!updatedInfo)
 		return;
 
+	shieldPresentationOverride = std::move(shields);
+	const auto currentShields = shieldPresentationOverride ? *shieldPresentationOverride : battle::shieldSnapshot(*updatedInfo);
 	refreshBonusDescriptionCache(updatedInfo);
 	const auto currentLuckReadback = currentBattleLuckReadback(
 		updatedInfo, battleCallback.get(), cachedLuckBonusDescriptions);
@@ -958,7 +953,8 @@ void StackInfoBasicPanel::refreshDefendStatus(const CStack * updatedInfo)
 		currentMorale = battleCallback->battleGetMorale(updatedInfo);
 	else
 		currentMorale = updatedInfo->moraleVal();
-	if(current == displayedStatus && currentLuckReadback == displayedLuckReadback
+	if(shieldPresentation::equal(currentShields, displayedShields)
+		&& current == displayedStatus && currentLuckReadback == displayedLuckReadback
 		&& newHorizonsFocusMagic::charges(*updatedInfo) == displayedFocusCharges
 		&& displayedSummonRounds == (updatedInfo->alive() ? updatedInfo->summonRoundsRemaining : 0)
 		&& soulChainSignature == displayedSoulChainSignature

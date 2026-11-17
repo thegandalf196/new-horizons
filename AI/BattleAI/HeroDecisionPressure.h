@@ -8,6 +8,7 @@
 #include <memory>
 #include <optional>
 #include <vector>
+namespace battleSearch { class SearchBudget; struct SearchLimits; }
 class CBattleInfoCallback;
 class Environment;
 class HypotheticBattle;
@@ -61,7 +62,9 @@ struct DLL_LINKAGE Experiment
 DLL_LINKAGE void prepareShortlist(Experiment & result, const Environment * environment,
 	const std::shared_ptr<CBattleInfoCallback> & source, BattleSide side,
 	const std::vector<PossibleSpellcast> & candidates, const DamageCache & originalDamage,
-	const BattleExchangeEvaluator & utility);
+	const BattleExchangeEvaluator & utility,
+	const std::shared_ptr<battleSearch::SearchBudget> & budget = std::shared_ptr<battleSearch::SearchBudget>(), const battleSearch::SearchLimits * limits = nullptr,
+	const std::shared_ptr<CBattleInfoCallback> & ownedDecisionSource = {});
 
 
 /// One visible, detached reference per Hero decision. No authoritative mutation,
@@ -75,7 +78,8 @@ public:
 		const std::shared_ptr<CBattleInfoCallback> & source, BattleSide side,
 		const std::optional<std::vector<Approach>> & completeExistingApproaches = std::nullopt,
 		bool directOnly = false, const DamageCache * originalDamage = nullptr,
-		const BattleExchangeEvaluator * utility = nullptr);
+		const BattleExchangeEvaluator * utility = nullptr,
+		std::shared_ptr<battleSearch::SearchBudget> budget = std::shared_ptr<battleSearch::SearchBudget>());
 	~Baseline();
 	/// Caller MUST have completed normal HeroAction admission AND accepted native
 	/// projection. Marginal damage-reduction utility, never raw HP or absolute
@@ -95,7 +99,7 @@ private:
 	};
 	Baseline(const Environment * environment,
 		std::shared_ptr<CBattleInfoCallback> source, BattleSide side, const DamageCache * originalDamage,
-		const BattleExchangeEvaluator * utility);
+		const BattleExchangeEvaluator * utility, std::shared_ptr<battleSearch::SearchBudget> budget);
 	bool prepare(const std::vector<Approach> & existingApproaches, bool directOnly, bool buildOriginal);
 	float pairValue(const CBattleInfoCallback & view, const Pair & pair,
 		bool grantedActivation = false);

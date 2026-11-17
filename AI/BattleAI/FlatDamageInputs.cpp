@@ -1,11 +1,25 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt and AUTHORS. */
 #include "StdInc.h"
 #include "FlatDamageInputs.h"
+#include "SearchBudget.h"
 #include "HypotheticBattle.h"
 #include "HeroActionAdmission.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/combatScripts/IDamageCalculatorScript.h"
 #include "../../lib/scripting/ScriptService.h"
+#include <limits>
+
+namespace
+{
+void requireFactWork(const HypotheticBattle & source, size_t count, uint32_t modes)
+{
+	if(!source.searchBudget()) return;
+	const auto maximum = std::numeric_limits<uint32_t>::max();
+	if(count > (maximum - 1) / modes) throw battleSearch::BudgetExhausted(battleSearch::WorkKind::Node);
+	source.searchBudget()->require(battleSearch::WorkKind::Node, static_cast<uint32_t>(count) * modes + 1);
+}
+}
+
 
 FlatDamageInputs::FlatDamageInputs(const HypotheticBattle & battle, bool shooting)
 	: source(battle), shooting(shooting)
@@ -17,6 +31,7 @@ bool FlatDamageInputs::prepare(const battle::Unit & actor, std::span<const battl
 	rangedUnits.clear();
 	try
 	{
+		requireFactWork(source, targets.size(), 1);
 		const auto * calculator = LIBRARY->scriptTypes()->getDamageCalculator();
 		if(!calculator || calculator->forecastImplementation(source) != DamageForecastImplementation::CANONICAL)
 			return false;
@@ -38,6 +53,7 @@ bool FlatDamageInputs::prepare(const battle::Unit & actor, std::span<const battl
 		units = std::move(prepared);
 		return true;
 	}
+	catch(const battleSearch::BudgetExhausted &) { throw; }
 	catch(const std::exception &)
 	{
 		return false; // Optional preparation never changes reference rejection.
@@ -51,11 +67,13 @@ bool FlatDamageInputs::prepareRoster(HypotheticBattle & branch)
 	if(&branch != &source) return false;
 	try
 	{
+		const auto inputs = source.battleGetAllUnits(false);
+		requireFactWork(source, inputs.size(), 2);
 		const auto * calculator = LIBRARY->scriptTypes()->getDamageCalculator();
 		if(!calculator || calculator->forecastImplementation(source) != DamageForecastImplementation::CANONICAL)
 			return false;
 		battle::Units roster;
-		for(const auto * unit : source.battleGetAllUnits(false))
+		for(const auto * unit : inputs)
 			if(unit->alive()) roster.push_back(branch.getForUpdate(unit->unitId()).get());
 		if(roster.size() < 2) return false;
 		heroActionProjection::CanonicalSourceAdmission admission(*roster.front(), source);
@@ -72,6 +90,7 @@ bool FlatDamageInputs::prepareRoster(HypotheticBattle & branch)
 		rangedUnits = std::move(secondary);
 		return !units.empty() || !rangedUnits.empty();
 	}
+	catch(const battleSearch::BudgetExhausted &) { throw; }
 	catch(const std::exception &) { return false; }
 }
 
@@ -94,5 +113,10 @@ FlatDamageInputs::Scope::~Scope() { battle.flatDamageInputs = previous; }
 
 const nativeDamage::PreparedUnit * HypotheticBattle::preparedUnitDamageFacts(const battle::Unit & unit, bool shooting) const
 {
+	if(const auto * frozen = dynamic_cast<const StackWithBonuses *>(&unit))
+		if(frozen->damageScoringBonuses || frozen->damageScoringUnstackedBonuses) return nullptr;
+
+	if(compactForecast && battleGetUnitByID(unit.unitId()) == &unit)
+		if(const auto * facts = compactForecast->prepared(unit.unitId(), shooting)) return facts;
 	return flatDamageInputs ? flatDamageInputs->find(unit, shooting) : nullptr;
 }

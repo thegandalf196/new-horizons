@@ -12,6 +12,8 @@ namespace battle
 {
 bool matchesStackEffectRemoval(const Bonus & selected, const Bonus & candidate)
 {
+	if(!creatureAbility::sameDescriptor(selected.abilityDescriptor, candidate.abilityDescriptor))
+		return false;
 	if(arcaneInspiration::isEffect(&selected) || arcaneInspiration::isEffect(&candidate))
 		return arcaneInspiration::isEffect(&selected) && arcaneInspiration::isEffect(&candidate)
 			&& selected.stacking == candidate.stacking && selected.spellCasterOwner == candidate.spellCasterOwner

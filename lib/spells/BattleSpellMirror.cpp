@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "BattleSpellMechanics.h"
 #include "NewHorizonsMetamagicEffects.h"
+#include "NewHorizonsMetamagicCore.h"
 #include "CSpell.h"
 #include "NewHorizonsBlink.h"
 #include "NewHorizonsMagic.h"
@@ -31,6 +32,47 @@ namespace spells
 bool BattleSpellMechanics::wouldResist(const battle::Unit * unit) const
 {
 	if(getSpell()->getJsonKey() == "new-horizons:forceLance") return false;
+	if(newHorizonsMetamagic::empoweredDamage(*this) || newHorizonsMetamagic::explicitlyIrresistible(*this)) return false;
+	const bool ordinary = wouldResistOrdinary(unit);
+	if(!unit || !activeResistanceRng || !activeResistanceServer) return ordinary;
+	auto cached = std::ranges::find(resistanceRolls, unit->unitId(), &ResistanceRoll::unitId);
+	if(cached == resistanceRolls.end() || cached->metamagicRetried) return ordinary;
+	cached->metamagicRetried = true;
+	const int chance = newHorizonsMetamagic::debuffRetryChance(*this);
+	if(!ordinary || chance <= 0 || !isReceptive(unit)
+		|| battle()->battleGetOwner(unit) == getCasterColor()) return ordinary;
+	cached->resisted = newHorizonsMetamagic::retryResistanceBasisPoints(ordinary, chance,
+		cached->probabilityBasisPoints >= 0 ? cached->probabilityBasisPoints : cached->probability * 100,
+		[&](int maximum) { return activeResistanceRng->nextInt(0, maximum); });
+	if(cached->resisted) resistantUnitIds.insert(unit->unitId());
+	else resistantUnitIds.erase(unit->unitId());
+	return cached->resisted;
+}
+
+bool BattleSpellMechanics::wouldResistOverflow(const battle::Unit * unit) const
+{
+	if(!unit || !activeResistanceServer || !activeResistanceRng) return false; // Projection never rolls.
+	const auto probability = std::clamp(battle()->battleGetMagicResistance(unit), 0, 100);
+	if(probability <= 0) return false;
+	if(probability >= 100) return true;
+	const auto cached = std::ranges::find(resistanceRolls, unit->unitId(), &ResistanceRoll::unitId);
+	if(cached == resistanceRolls.end())
+	{
+		const auto sample = activeResistanceRng->nextInt(0, 99);
+		resistanceRolls.push_back({unit->unitId(), probability, sample < probability, false, sample});
+	}
+	else if(!cached->resolved && cached->probability != probability)
+	{
+		// The primary may have supplied a resistance aura. Keep the existing
+		// eager sample, but defend the one chosen spill in its CURRENT context.
+		cached->probability = probability;
+		cached->resisted = cached->sample < probability;
+	}
+	return wouldResistOrdinary(unit);
+}
+
+bool BattleSpellMechanics::wouldResistOrdinary(const battle::Unit * unit) const
+{
 	if(!unit)
 		return false;
 
@@ -45,29 +87,32 @@ bool BattleSpellMechanics::wouldResist(const battle::Unit * unit) const
 	const BattleSide spellCasterSide = effectiveCasterSide();
 	const bool validSides = (recipientControllerSide == BattleSide::ATTACKER || recipientControllerSide == BattleSide::DEFENDER)
 		&& (spellCasterSide == BattleSide::ATTACKER || spellCasterSide == BattleSide::DEFENDER);
-	if((!isNegativeSpell() && !newHorizonsNaturesWrath::enabled(*this)) || !isMagicalEffect() || !validSides
+	const int probability = resistance->probabilityBasisPoints >= 0 ? resistance->probabilityBasisPoints : resistance->probability;
+	const int maximum = resistance->probabilityBasisPoints >= 0 ? 10000 : 100;
+	const bool affliction = newHorizonsMetamagic::hasResistibleCreatureAffliction(*this);
+	if(((!isNegativeSpell() && !newHorizonsNaturesWrath::enabled(*this)) || !isMagicalEffect()) && !affliction) return resistance->resisted;
+	if(!validSides
 		|| recipientControllerSide == spellCasterSide
 		|| !unit->isValidTarget(false) || !isReceptive(unit)
-		|| resistance->probability <= 0 || resistance->probability >= 100)
+		|| probability <= 0 || probability >= maximum)
 		return resistance->resisted;
 
 	// Chain Lightning and scripted collateral call this method at their actual
 	// resistance-consumer point. Cache the result before entering the server
 	// resolver so repeated queries (including the normal target filter below)
 	// cannot spend the side's one-use reroll twice.
-	const int probability = resistance->probability;
 	const bool firstResult = resistance->resisted;
 	resistance->resolved = true;
 	auto * const server = activeResistanceServer;
 	auto * const rng = activeResistanceRng;
-	const auto draw = [rng, firstResult, probability, resistance, firstDraw = true]() mutable
+	const auto draw = [rng, firstResult, probability, maximum, resistance, firstDraw = true]() mutable
 	{
 		if(firstDraw)
 		{
 			firstDraw = false;
 			return firstResult;
 		}
-		resistance->sample = rng->nextInt(0, 99);
+		resistance->sample = rng->nextInt(0, maximum - 1);
 		return resistance->sample < probability;
 	};
 	const bool finalResult = server->resolveAdverseCombatRoll(battle()->getBattle()->getBattleID(),
@@ -85,7 +130,9 @@ void BattleSpellMechanics::prepareResistanceRolls(vstd::RNG & rng, const Target 
 {
 	resistanceRolls.clear();
 	resistantUnitIds.clear();
-	if((isNegativeSpell() || naturesWrath || realityWarp) && isMagicalEffect())
+	if(newHorizonsMetamagic::explicitlyIrresistible(*this)) return;
+	const bool ordinaryRolls = (isNegativeSpell() || naturesWrath || realityWarp) && isMagicalEffect();
+	if(ordinaryRolls || newHorizonsMetamagic::hasResistibleCreatureAffliction(*this))
 	{
 		//magic resistance
 		const auto resistanceCandidates = naturesWrath ? wrathConductors : battle()->battleGetAllUnits(false);
@@ -112,10 +159,15 @@ void BattleSpellMechanics::prepareResistanceRolls(vstd::RNG & rng, const Target 
 			// an ally is not resisting a hostile magical effect.
 			if(owner->getJsonKey() == newHorizonsBlink::SPELL_ID && unit->unitSide() == casterSide)
 				continue;
-			const int prob = std::min(unit->magicResistance(), 100); // probability of resistance in %
-			const int sample = rng.nextInt(0, 99);
-			const bool didResist = sample < prob;
-			resistanceRolls.push_back({unit->unitId(), prob, didResist, false, sample});
+			if(!ordinaryRolls && (std::ranges::none_of(spellTarget, [unit](const Destination & destination)
+				{ return destination.unitValue == unit || (destination.hexValue.isValid() && unit->coversPos(destination.hexValue)); })
+				|| !unit->isValidTarget(false) || !isReceptive(unit))) continue;
+			const int bp = newHorizonsMetamagic::normalResistanceBasisPoints(*this, unit);
+			if(!ordinaryRolls && bp <= 0) continue; // An absent prayer cannot add draws to native nonmagical abilities.
+			const bool fractional = bp % 100 != 0;
+			const int sample = rng.nextInt(0, fractional ? 9999 : 99);
+			const bool didResist = sample < (fractional ? bp : bp / 100);
+			resistanceRolls.push_back({unit->unitId(), bp / 100, didResist, false, sample, false, fractional ? bp : -1});
 			if(didResist)
 				resistantUnitIds.insert(unit->unitId());
 		}

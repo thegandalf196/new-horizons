@@ -57,6 +57,14 @@ int32_t CRetaliations::total() const
 		static_cast<int64_t>(totalCache) + additionalRetaliations));
 }
 
+RetaliationObservation CRetaliations::observeWithoutLatch() const
+{
+	CRetaliations observed(owner);
+	observed.setEnv(env);
+	observed = *this; // SAME native used/cache copy; receiving proxies retain their owner.
+	return {observed.available(), observed.total(), observed.isLimited()};
+}
+
 CRetaliations & CRetaliations::operator=(const CRetaliations & other)
 {
 	CAmmo::operator=(other);

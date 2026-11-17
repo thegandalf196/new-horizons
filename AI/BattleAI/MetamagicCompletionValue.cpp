@@ -82,10 +82,14 @@ std::optional<float> completionValue(const Environment * environment, const std:
 		const auto originalOwner = prior->second.originalOwner;
 		if(originalOwner == PlayerColor::CANNOT_DETERMINE || player == PlayerColor::CANNOT_DETERMINE) continue;
 		const bool friendly = originalOwner == player;
-		const bool restoration = friendly && spell->isPositive();
+		const bool restoration = friendly && spell->isPositive()
+			&& (!policy->optionalRemoval || has(nativeRules::MetamagicPerk::ReconstitutingMagic));
 		const bool hit = std::any_of(observation.injuries.begin(), observation.injuries.end(),
 			[id](const BattleStackAttacked & injury) { return injury.stackAttacked == id; });
-		if(!restoration && (friendly || !(spell->isDamage() ? hit : spell->isNegative() && has(nativeRules::MetamagicPerk::HexWeaving)))) continue;
+		const bool offense = !friendly && (spell->isDamage() ? hit
+			: spell->isNegative() && has(nativeRules::MetamagicPerk::HexWeaving))
+			&& (!policy->optionalRemoval || has(nativeRules::MetamagicPerk::UnravelingMagic));
+		if(!restoration && !offense) continue;
 		const auto kind = restoration ? newHorizonsMetamagic::ResolutionKind::RESTORATION : newHorizonsMetamagic::ResolutionKind::OFFENSE;
 		auto effects = newHorizonsMetamagic::collectRemovalCandidates(id, originalOwner, prior->second.effects, kind, resolver);
 		const auto current = state->captureBattleEffects(id);

@@ -29,7 +29,10 @@ void resolveStun(CGameHandler & game, BattleProcessor & processor, const CBattle
 		chance > 0 && chance < 100, true, draw)) return;
 	SetStackEffect applied;
 	applied.battleID = battle.getBattle()->getBattleID();
-	applied.toAdd.emplace_back(target, std::vector<Bonus>{newHorizonsStun::marker()});
+	auto marker = newHorizonsStun::marker();
+	marker.abilityDescriptor = creatureAbility::nativeAffliction(creatureAbility::Native::CONCUSSIVE_STUN,
+		creatureAbility::Family::CREATURE_ABILITY, battle.battleGetOwner(actor));
+	applied.toAdd.emplace_back(target, std::vector<Bonus>{marker});
 	game.sendAndApply(applied);
 }
 }

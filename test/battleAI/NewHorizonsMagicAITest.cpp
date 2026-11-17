@@ -8,6 +8,10 @@
  *
  */
 #include "StdInc.h"
+#include "../../AI/BattleAI/SearchBudget.h"
+#include "../../lib/spells/CSpellHandler.h"
+#include "../../lib/serializer/CMemorySerializer.h"
+#include "../../lib/CRandomGenerator.h"
 #include "../PerkTestSetup.h"
 #include "PurifyRuleFixtures.h"
 #include "../server/battles/HeroCommandFixture.h"
@@ -6473,3 +6477,141 @@ INSTANTIATE_TEST_SUITE_P(SavedProfiles, NewHorizonsLegacySorrowAITest,
 INSTANTIATE_TEST_SUITE_P(SavedProfiles, NewHorizonsLegacyDoomAITest,
 	::testing::Values(newHorizonsMagic::RULESET_VERSION,
 		newHorizonsMagic::DIRECT_DAMAGE_RULESET_VERSION));
+
+TEST_F(NewHorizonsMagicAITest, BudgetedMultiHexDiscoveryPublishesOnlyCompleteLegalAimsAndPreservesBothRngStreams)
+{
+	neutralizeCommandEffects = true;
+	useCurrentMagicRules = true;
+	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
+	auto * actor = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(3, 5), 10);
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(12, 5), 10);
+	BattleUnitsChanged remove;
+	remove.battleID = BattleID(0);
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		if(unit != actor && unit != enemy) remove.changedStacks.emplace_back(unit->unitId(), UnitChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(remove);
+	const auto snapshot = [](auto & random)
+	{
+		CMemorySerializer serializer;
+		serializer.oser & random;
+		return serializer.extractBuffer();
+	};
+	const auto serverRandom = snapshot(*gameHandler->randomizer);
+	const auto defaultRandom = snapshot(CRandomGenerator::getDefault());
+	const auto mana = attackerSideHero->getManaAvailable();
+	const auto obstacles = battle()->obstacles.size();
+	for(const auto id : {SpellID::LAND_MINE, SpellID::QUICKSAND})
+	{
+		const auto * spell = SpellID(id).toSpell();
+		spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, spell);
+		cast.setEffectPower(100);
+		const auto mechanics = spell->battleMechanics(&cast);
+		for(const uint32_t cap : {0u, 16u, 64u, 128u})
+		{
+			battleSearch::SearchBudget budget({cap, 0, 0, 0, 0});
+			const auto aims = SpellTargetEvaluator::getViableTargets(mechanics.get(), &budget);
+			if(cap == 128) ASSERT_FALSE(aims.empty());
+			for(const auto & aim : aims)
+			{
+				const auto required = id == SpellID::LAND_MINE ? mechanics->getNewHorizonsLandMinePatchCount()
+					: mechanics->getNewHorizonsQuicksandPatchCount();
+				EXPECT_EQ(aim.size(), static_cast<size_t>(required));
+				EXPECT_TRUE(mechanics->canBeCastAt(aim));
+			}
+			EXPECT_LE(budget.spent()[0], cap);
+		}
+	}
+	EXPECT_EQ(snapshot(*gameHandler->randomizer), serverRandom);
+	EXPECT_EQ(snapshot(CRandomGenerator::getDefault()), defaultRandom);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
+	EXPECT_EQ(battle()->obstacles.size(), obstacles);
+}
+
+TEST_F(NewHorizonsMagicAITest, AreaDiscoveryExhaustionRetainsCompleteNativeValidPrefix)
+{
+	neutralizeCommandEffects = true;
+	useCurrentMagicRules = true;
+	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
+	const auto * spell = SpellID(SpellID::FIREBALL).toSpell();
+	spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	const auto mechanics = spell->battleMechanics(&cast);
+	battleSearch::SearchBudget budget({128, 0, 0, 0, 0});
+	const auto aims = SpellTargetEvaluator::getViableTargets(mechanics.get(), &budget);
+	ASSERT_FALSE(aims.empty());
+	for(const auto & aim : aims) EXPECT_TRUE(mechanics->canBeCastAt(aim));
+	EXPECT_LE(budget.spent()[0], 128u);
+}
+
+TEST_F(NewHorizonsMagicAITest, NativeSpellGenerationExhaustionKeepsCompleteAimsWithoutStateOrRngMutation)
+{
+	neutralizeCommandEffects = true;
+	useCurrentMagicRules = true;
+	ASSERT_NO_FATAL_FAILURE(prepareCommands(true));
+	giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 1000, ChangeValueMode::ABSOLUTE);
+	setTestSpellPointTotal(attackerSideHero, 10000);
+	auto * ally = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(4, 5), 10);
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:ogre"), BattleHex(12, 5), 20);
+	ASSERT_NE(ally, nullptr);
+	ASSERT_NE(enemy, nullptr);
+	Bonus slow(BonusDuration::N_TURNS, BonusType::STACKS_SPEED, BonusSource::SPELL_EFFECT,
+		-2, BonusSourceID(SpellID(SpellID::SLOW)));
+	slow.turnsRemain = 3;
+	ally->addNewBonus(std::make_shared<Bonus>(slow));
+	const auto snapshot = [](auto & value)
+	{
+		CMemorySerializer serializer;
+		serializer.oser & value;
+		return serializer.extractBuffer();
+	};
+	const auto serverRng = snapshot(*gameHandler->randomizer);
+	const auto aiRng = snapshot(CRandomGenerator::getDefault());
+	const auto live = gameState()->saveToMemory();
+	unsigned usefulSpellFamilies = 0;
+	for(const auto & spell : LIBRARY->spellh->objects)
+	{
+		if(!spell || !spell->isCombat() || spell->isCreatureAbility()
+			|| !newHorizonsMagic::spellAllowedBySavedRoster(battle()->getMagicRules(), spell->getId())) continue;
+		SCOPED_TRACE(spell->getJsonKey());
+		spells::BattleCast cast(battle(), attackerSideHero, spells::Mode::HERO, spell.get());
+		const auto mechanics = spell->battleMechanics(&cast);
+		battleSearch::SearchBudget reference({65536, 0, 0, 0, 0});
+		const auto complete = SpellTargetEvaluator::getViableTargets(mechanics.get(), &reference);
+		if(spell->getJsonKey() == "new-horizons:purify" || spell->getJsonKey() == "new-horizons:naturesWrath")
+			ASSERT_FALSE(complete.empty()) << "Required native regression reference must be exercised";
+		if(complete.empty()) continue;
+		++usefulSpellFamilies;
+		for(const uint32_t cap : {0u, 1u, 128u})
+		{
+			battleSearch::SearchBudget first({cap, 0, 0, 0, 0}), second({cap, 0, 0, 0, 0});
+			const auto a = SpellTargetEvaluator::getViableTargets(mechanics.get(), &first);
+			const auto c = SpellTargetEvaluator::getViableTargets(mechanics.get(), &second);
+			ASSERT_EQ(a.size(), c.size());
+			for(size_t i = 0; i != a.size(); ++i)
+			{
+				if(mechanics->isNewHorizonsStormOfDaggers())
+					ASSERT_TRUE(mechanics->setStormOfDaggersTargetCount(static_cast<int32_t>(a[i].size())));
+				EXPECT_TRUE(mechanics->canBeCastAt(a[i]));
+				ASSERT_EQ(a[i].size(), c[i].size());
+				for(size_t j = 0; j != a[i].size(); ++j)
+				{
+					EXPECT_EQ(a[i][j].hexValue, c[i][j].hexValue);
+					ASSERT_EQ(a[i][j].unitValue != nullptr, c[i][j].unitValue != nullptr);
+					if(a[i][j].unitValue) EXPECT_EQ(a[i][j].unitValue->unitId(), c[i][j].unitValue->unitId());
+				}
+			}
+			EXPECT_LE(first.spent()[0], cap);
+		}
+		if(spell->getJsonKey() == "new-horizons:purify" || spell->getJsonKey() == "new-horizons:naturesWrath")
+		{
+			battleSearch::SearchBudget quick({128, 0, 0, 0, 0});
+			EXPECT_FALSE(SpellTargetEvaluator::getViableTargets(mechanics.get(), &quick).empty());
+		}
+	}
+	EXPECT_GE(usefulSpellFamilies, 10u);
+	EXPECT_EQ(gameState()->saveToMemory(), live);
+	EXPECT_EQ(snapshot(*gameHandler->randomizer), serverRng);
+	EXPECT_EQ(snapshot(CRandomGenerator::getDefault()), aiRng);
+}

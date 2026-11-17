@@ -125,6 +125,8 @@ Strike captureStrike(const CBattleInfoCallback & battle, const BattleAttackInfo 
 			effect.turnsRemain = value(battle, source, "core:gerwulf", "cripplingBoltDuration");
 			effect.stacking = CRIPPLE; effect.statusIdentity = "cripple";
 			effect.statusTags = {BonusStatusTag::DEBUFF, BonusStatusTag::NON_TRANSFERABLE};
+			effect.abilityDescriptor = creatureAbility::nativeAffliction(creatureAbility::Native::CRIPPLE,
+				creatureAbility::Family::CREATURE_ABILITY, battle.battleGetOwner(&source));
 			effect.description.appendRawString("Cripple: -3 Speed for 3 rounds.");
 			result.cripple.add.push_back(effect);
 			effect.type = BonusType::PHYSICAL_AFFLICTION; effect.val = 0; effect.valType = BonusValueType::BASE_NUMBER;

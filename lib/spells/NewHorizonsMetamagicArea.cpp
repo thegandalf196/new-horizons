@@ -40,7 +40,8 @@ bool conventionalArea(const CSpell & spell, int32_t mastery)
 std::vector<int> widenedRings(const spells::Mechanics & mechanics, std::vector<int> rings)
 {
 	const auto * spell = dynamic_cast<const CSpell *>(mechanics.getSpell());
-	if(active(mechanics, nativeRules::MetamagicPerk::WidenSpell) && spell && !mechanics.isMassive()
+	if((active(mechanics, nativeRules::MetamagicPerk::WidenSpell)
+		|| active(mechanics, nativeRules::MetamagicPerk::WidenSpells)) && spell && !mechanics.isMassive()
 		&& conventionalArea(*spell, mechanics.getRangeLevel()) && !rings.empty())
 		rings.push_back(rings.back() + 1);
 	return rings;

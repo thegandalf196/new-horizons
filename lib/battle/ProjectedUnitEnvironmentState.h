@@ -51,6 +51,8 @@ public:
 	/// Source is the authoritative, full-info battle, not a hidden player view.
 	/// Capture may allocate/throw before any live or projected unit is mutated.
 	static ProjectedUnitEnvironmentState capture(const IBattleInfo & source);
+	static SideInputs captureInputs(const IBattleInfo & source, BattleSide side);
+	static SideState captureState(const IBattleInfo & source, BattleSide side);
 	const SideInputs & inputs(BattleSide side) const;
 	const SideState & state(BattleSide side) const;
 	SideState & state(BattleSide side);

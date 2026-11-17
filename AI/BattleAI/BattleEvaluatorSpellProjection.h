@@ -29,7 +29,7 @@ struct SpellProjection
 };
 /// Runs the ordinary generic spell projection and accepted-action bookkeeping.
 /// Failure leaves only the disposable branch mutated; callers discard it.
-SpellProjection projectSpell(HypotheticBattle & state, const CBattleInfoCallback & live,
+DLL_LINKAGE SpellProjection projectSpell(HypotheticBattle & state, const CBattleInfoCallback & live,
 	const CGHeroInstance * hero, BattleSide side, const PossibleSpellcast & candidate,
 	const heroActionProjection::Admission & admission, uint32_t & targetId,
 	const std::vector<uint32_t> & sharedPurposeRecipients);

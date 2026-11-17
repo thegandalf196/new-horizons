@@ -896,6 +896,7 @@ void CCreatureHandler::loadCreatureJson(CCreature * creature, const JsonNode & c
 			b->source = BonusSource::CREATURE_ABILITY;
 			b->sid = BonusSourceID(creature->getId());
 			b->duration = BonusDuration::PERMANENT;
+			if(!b->abilityDescriptor) b->abilityDescriptor = creatureAbility::fromInnateBonus(*b);
 			creature->addNewBonus(b);
 		}
 	}

@@ -72,6 +72,14 @@ public:
 		if(!valid || injuries != 1 || completed != 1 || marks > 1 || wisdomCasts != 1) return std::nullopt;
 		return Outcome{target, position, injuryBytes, markBytes, wisdomBytes};
 	}
+	uint64_t beginSpellEvaluation(SpellEvaluationKind kind, BattleSide side, const SpellID & spell) override
+	{ return delegate.beginSpellEvaluation(kind, side, spell); }
+	void admitSpellEvaluation(uint64_t token, int32_t cost, bool admitted) override
+	{ delegate.admitSpellEvaluation(token, cost, admitted); }
+	void allowSpellEvaluationDelegation(uint64_t token) override
+	{ delegate.allowSpellEvaluationDelegation(token); }
+	void endSpellEvaluation(uint64_t token, bool completed) noexcept override
+	{ delegate.endSpellEvaluation(token, completed); }
 	void complain(const std::string & problem) override { valid = false; delegate.complain(problem); }
 	bool describeChanges() const override { return delegate.describeChanges(); }
 	vstd::RNG * getRNG() override { return delegate.getRNG(); }

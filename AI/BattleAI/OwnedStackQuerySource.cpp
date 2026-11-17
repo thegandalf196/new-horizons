@@ -127,7 +127,7 @@ newHorizonsElementalAttunement::UnitPassives OwnedStackQuerySource::unitElementa
 	const auto & basis = current(unit);
 	const auto side = unit->unitSide();
 	if((side == BattleSide::ATTACKER || side == BattleSide::DEFENDER)
-		&& owner.elementalAttunementProfileKnown.at(side))
+		&& owner.forecastSide(side)->attunementKnown)
 		return owner.unitElementalAttunement(unit);
 	return battle::OwnedFrameBranchQueries::environment(basis).unitElementalAttunement(&basis.unit());
 }

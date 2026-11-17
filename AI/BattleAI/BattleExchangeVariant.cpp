@@ -8,7 +8,12 @@
  *
  */
 #include "StdInc.h"
+#include "SearchBudget.h"
+#include "../../lib/ScopeGuard.h"
+#include "MovementExchangeTiming.h"
+using battleSearchTiming::MovementExchangeScope;
 #include "FocusMagicProjection.h"
+#include "ForecastNativeAdapter.h"
 #include "AttackControllerProjection.h"
 #include "ActivationForfeit.h"
 #include "PhysicalStrikeProjection.h"
@@ -66,30 +71,7 @@ using battleExchangeAftermath::projectRelentlessAssaultAttack;
 
 namespace
 {
-class MovementExchangeScope
-{
-	using Clock = std::chrono::steady_clock;
-	BattleMovementTiming::StageTiming * timing;
-	Clock::time_point started;
-public:
-	explicit MovementExchangeScope(BattleMovementTiming::StageTiming * timing)
-		: timing(timing), started(timing ? Clock::now() : Clock::time_point{})
-	{}
-	~MovementExchangeScope()
-	{
-		finish();
-	}
-	void finish()
-	{
-		if(timing)
-		{
-			++timing->calls;
-			timing->totalMicroseconds += std::chrono::duration_cast<std::chrono::microseconds>(
-				Clock::now() - started).count();
-			timing = nullptr;
-		}
-	}
-};
+
 
 class ExchangeTimingScope
 {
@@ -116,6 +98,7 @@ public:
 	uint64_t * selectedProbeOffers() { return timing ? &local.selectedProbeDamageOffers : nullptr; }
 	uint64_t * selectedProbeUses() { return timing ? &local.selectedProbeDamageUses : nullptr; }
 	uint64_t * selectedProbeScoreUses() { return timing ? &local.selectedProbeScoreUses : nullptr; }
+	forecast::Counters * forecastWork() { return timing ? &local.forecast : nullptr; }
 	HypotheticLifecycleTiming * lifecycleSubsets()
 	{
 		return timing ? &local.lifecycleSubsets : nullptr;
@@ -144,6 +127,7 @@ public:
 			aggregate.totalMicroseconds += sample.totalMicroseconds;
 			classified += sample.totalMicroseconds;
 		}
+		timing->forecast.accumulate(local.forecast);
 		timing->body.calls += local.body.calls;
 		timing->selectedProbeDamageOffers += local.selectedProbeDamageOffers;
 		timing->selectedProbeDamageUses += local.selectedProbeDamageUses;
@@ -445,7 +429,9 @@ float BattleExchangeVariant::trackAttack(
 			battleExchangeAftermath::replayPrimaryStatuses(*hb, projectedAttack, strike,
 				actualHits, serpentBinding, gazeAdmitted, primaryBodyHealthLoss);
 			attackControllerAI::applyCripple(*hb, strike.attackController);
+			const auto beforeStrikeAftermath = attacker->getAvailableHealth();
 			tactics.finish(projectedAttack.attacker->unitId());
+			projectedAttackerDamage += std::max<int64_t>(0, beforeStrikeAftermath - attacker->getAvailableHealth());
 			hb->projectFortuneStrike(projectedAttack, actualHits, projectedAttacker.get(), enemyStackKilled,
 				strike.resolvedLuck, true, strike.perfectFortune, strike.perfectFortuneSide,
 				strike.luckSerendipitySide, strike.luckSerendipityOrdinaryAttack);
@@ -735,7 +721,7 @@ float BattleExchangeVariant::trackAttackWithSelectedDamage(
 			projectRelentlessAssaultAttack(*hb, requestedAttack, relentlessAssaultTargetUnitId);
 	}
 	if(projectedAttacker)
-		focusMagicAI::afterAttack(*projectedAttacker, shooting, false, projectedAttack.physicalDamage, !evaluateOnly);
+		focusMagicAI::afterAttack(*projectedAttacker, shooting, false, projectedAttack.physicalDamage, !evaluateOnly, evaluateOnly ? nullptr : hb.get());
 	if(actionResult && !evaluateOnly && hostilePrimaryMelee)
 		actionResult->primaryMeleePerformed = true;
 	if(!evaluateOnly && shooting && projectedAttack.physicalDamage
@@ -862,7 +848,7 @@ float BattleExchangeVariant::trackAttackWithSelectedDamage(
 					cleaveResolvedLuck, true, cleavePerfectFortune, cleavePerfectFortuneSide,
 					cleavePerfectFortuneSide, cleaveSerendipityOrdinaryAttack);
 			}
-				focusMagicAI::afterAttack(*projectedAttacker, false, false, cleaveAttack.physicalDamage);
+				focusMagicAI::afterAttack(*projectedAttacker, false, false, cleaveAttack.physicalDamage, true, hb.get());
 				if(newHorizonsHexOfPainAI::hasEffect(projectedAttacker.get()))
 				{
 					const auto cleaveHexScoringActor = projectedAttacker->acquireState();
@@ -969,7 +955,7 @@ float BattleExchangeVariant::trackAttackWithSelectedDamage(
 			attackerWasAlive && !attacker->alive() && hb->battleMatchOwner(defender.get(), attacker.get()),
 			retaliationResolvedLuck, true, retaliationPerfectFortune, retaliationPerfectFortuneSide,
 			retaliationPerfectFortuneSide, retaliationSerendipityOrdinaryAttack);
-		focusMagicAI::afterAttack(*defender, false, true, retaliationAttack.physicalDamage);
+		focusMagicAI::afterAttack(*defender, false, true, retaliationAttack.physicalDamage, true, hb.get());
 		if(newHorizonsHexOfPainAI::hasEffect(defender.get()))
 		{
 			const auto retaliationHexScoringActor = defender->acquireState();
@@ -1028,6 +1014,7 @@ MoveTarget BattleExchangeEvaluator::findMoveTowardsUnreachable(
 
 	updateReachabilityMap(hb);
 
+	battleSearch::require(hb->searchBudget().get(), battleSearch::WorkKind::Movement);
 	auto dists = getReachabilityWithEnemyBypass(activeStack, damageCache, hb);
 	auto flying = activeStack->hasBonusOfType(BonusType::FLYING);
 	const bool beamMovement = creatureCandidateScreening::supportsForecastBeam(activeStack, *hb, targets.berserk, false);
@@ -1035,6 +1022,7 @@ MoveTarget BattleExchangeEvaluator::findMoveTowardsUnreachable(
 
 	for(const battle::Unit * enemy : targets.unreachableEnemies)
 	{
+		battleSearch::require(hb->searchBudget().get(), battleSearch::WorkKind::Movement);
 		logAi->trace(
 			"Checking movement towards %d of %s",
 			enemy->getCount(),
@@ -1053,6 +1041,7 @@ MoveTarget BattleExchangeEvaluator::findMoveTowardsUnreachable(
 
 		for (const battle::Unit* ally : hb->battleAliveUnits())
 		{
+			battleSearch::require(hb->searchBudget().get(), battleSearch::WorkKind::Movement);
 			if (ally == activeStack || !controlledBySamePlayer(*hb, activeStack, ally))
 				continue;
 
@@ -1076,15 +1065,19 @@ MoveTarget BattleExchangeEvaluator::findMoveTowardsUnreachable(
 		std::optional<BattleHex> beamHex;
 		if(beamMovement)
 			for(const auto hex : hexes)
-				if(dists.isReachable(hex) && (!beamHex
+				{
+					battleSearch::require(hb->searchBudget().get(), battleSearch::WorkKind::Movement);
+					if(dists.isReachable(hex) && (!beamHex
 					|| dists.distances[hex.toInt()] < dists.distances[beamHex->toInt()]))
 					beamHex = hex;
+				}
 		auto enemySpeed = enemy->getMovementRange();
 		auto speedRatio = speed / static_cast<float>(enemySpeed);
 		auto multiplier = (speedRatio > 1 ? 1 : speedRatio) * penaltyMultiplier;
 
 		for(auto & hex : hexes)
 		{
+			battleSearch::require(hb->searchBudget().get(), battleSearch::WorkKind::Movement);
 			if (!dists.isReachable(hex))
 				continue;
 			if(beamHex && hex != *beamHex)
@@ -1122,6 +1115,7 @@ MoveTarget BattleExchangeEvaluator::findMoveTowardsUnreachable(
 						&& (dists.distances[enemyHex.toInt()] > speed || !dists.isReachable(enemyHex))
 						&& dists.predecessors.at(enemyHex.toInt()).isValid())
 					{
+						battleSearch::require(hb->searchBudget().get(), battleSearch::WorkKind::Movement);
 						enemyHex = dists.predecessors.at(enemyHex.toInt());
 
 						if(dists.accessibility[enemyHex.toInt()] == EAccessibility::ALIVE_STACK)
@@ -1214,6 +1208,9 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 	const battle::Units & additionalUnits,
 	BattleMovementTiming::ExchangeTiming * timing) const
 {
+	const auto previousWork = reachabilityMap.searchBudget();
+	reachabilityMap.setSearchBudget(hb->searchBudget());
+	const auto restoreWork = vstd::makeScopeGuard([&] { reachabilityMap.setSearchBudget(previousWork); });
 	ExchangeTimingScope measurement(timing);
 #if BATTLE_TRACE_LEVEL>=1
 	logAi->trace("Battle exchange at %d", ap.attack.shooting ? ap.dest.toInt() : ap.from.toInt());
@@ -1245,7 +1242,8 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 	}
 
 	MovementExchangeScope setupMeasurement(measurement.stage(&BattleMovementTiming::ExchangeTiming::projectionSetup));
-	auto exchangeBattle = std::make_shared<HypotheticBattle>(env.get(), hb);
+	auto exchangeBattle = forecast::NativeAdapter::prepareExchangeBranch(env.get(), hb, measurement.forecastWork());
+	forecast::WorkScope compactWork(*exchangeBattle, measurement.forecastWork());
 	BattleExchangeVariant v;
 
 	ExchangeInitiativeQueue::appendParticipantArmies(*exchangeBattle, ap.attack.attacker,
@@ -1459,6 +1457,7 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 				std::vector<petrifyingBloodAI::Pending> bloodSequence;
 				for(int i = 0; i < totalAttacks; i++)
 				{
+					battleSearch::require(hb->searchBudget().get(), battleSearch::WorkKind::Node);
 					BattleExchangeAttackResult actionResult;
 					measurement.measure(&BattleMovementTiming::ExchangeTiming::appliedAttacks, [&]()
 					{
@@ -1484,10 +1483,8 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 				&& !exchangeBattle->battleHasPendingRangedFollowUp(attacker.get()))
 			{
 				MovementExchangeScope activationMeasurement(measurement.stage(&BattleMovementTiming::ExchangeTiming::activationEnd));
-				attacker->removeUnitBonus(CSelector([](const Bonus * bonus)
-				{
-					return Bonus::UntilActivationEnds(bonus) && !newHorizonsOffense::isNoQuarterMoralePenalty(bonus);
-				}));
+				consecratedArmsAI::completeObservedAction(*exchangeBattle, attacker->unitId());
+				forecast::NativeAdapter::expireActivationEffects(*exchangeBattle, *attacker);
 				v.completePlagueActivation(attacker->unitId(), exchangeBattle->battleGetOwner(attacker.get()),
 					isOur, damageCache, exchangeBattle);
 			}
@@ -1545,7 +1542,9 @@ bool BattleExchangeEvaluator::checkPositionBlocksOurStacks(const HypotheticBattl
 	for(int turn = 0; turn < turnOrder.size(); turn++)
 	{
 		auto & turnQueue = turnOrder[turn];
-		HypotheticBattle turnBattle(env.get(), cb);
+		battleSearch::require(hb.searchBudget().get(), battleSearch::WorkKind::Movement);
+		HypotheticBattle turnBattle(env.get(), cb,
+			std::shared_ptr<const battle::OwnedBattleFrameBatch>(), hb.searchBudget());
 
 		auto unitToUpdate = turnBattle.getForUpdate(activeUnit->unitId());
 		unitToUpdate->setPosition(position);

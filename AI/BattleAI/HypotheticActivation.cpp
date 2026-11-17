@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "ForecastNativeAdapter.h"
 #include "../../lib/battle/TimedEffectValueTransitions.h"
 #include "ActivationForfeit.h"
 #include "../../lib/battle/NewHorizonsSpecialtyProcs.h"
@@ -20,6 +21,7 @@
 #include "DreadCavalryProjection.h"
 #include "../../lib/battle/NewHorizonsForestAmbush.h"
 #include "HypotheticBattle.h"
+#include "../../lib/battle/CUnitState.h"
 #include "../../lib/battle/ArcaneInspiration.h"
 #include "../../lib/battle/NewHorizonsMaintenanceSpecialties.h"
 #include "../../lib/entities/hero/NewHorizonsOrdinaryCreatureSpecialties.h"
@@ -35,6 +37,7 @@
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/battle/NewHorizonsCrisisCommand.h"
 #include "../../lib/battle/NewHorizonsDivineMandate.h"
+#include "../../lib/battle/ConsecratedArmsOrder.h"
 #include "../../lib/battle/NewHorizonsFrozen.h"
 #include "../../lib/battle/NewHorizonsHeroicSpirit.h"
 #include "../../lib/battle/NewHorizonsOffense.h"
@@ -52,15 +55,31 @@ void HypotheticBattle::nextRound(HypotheticLifecycleTiming * timing)
 	if(usesOwnedFrameQueries()) throw std::logic_error("Owned lifecycle needs its captured context/raw-duration transaction");
 	if(deploymentState.independent && deploymentState.activeSide() != BattleSide::NONE)
 		throw std::runtime_error("Cannot advance a battle round with unresolved deployment phase");
+	if(projectedRound == std::numeric_limits<int32_t>::max()) throw std::overflow_error("Forecast round exhausted");
+	BattleSideArray<std::optional<forecast::SideReceipt>> sideRoundReceipts;
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
-		if(projectedCastSpells[side]) projectedCastSpells[side] = 0;
-		fortuneStates[side].nextRound();
-		luckSerendipityStates[side].nextRound(projectedRound + 1);
-		moraleSuppressionStates[side].nextRound();
-		rapidResponseStates[side].clearPending();
-		std::erase_if(heroOrderStates[side], [this](const HeroOrderState & order)
-			{ return !order.hasScheduledRecipients(projectedRound + 1); });
+		sideRoundReceipts.at(side) = forecast::SideTransitions::advanceRound(forecastSide(side), projectedRound + 1, searchBudget().get());
+		if(!sideRoundReceipts.at(side)) throw std::invalid_argument("Unsupported forecast side round");
+	}
+	auto compactRound = forecast::NativeAdapter::prepareRound(*this, sideRoundReceipts);
+	if(compactRound)
+	{
+		forecast::NativeAdapter::commitRound(*this, std::move(compactRound));
+		return;
+	}
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+	{
+		advanceRoundSideFacts(side, projectedRound + 1);
+		const auto & orders = localHeroOrderStates(side);
+		if(std::any_of(orders.begin(), orders.end(), [this](const HeroOrderState & order)
+			{ return !order.hasScheduledRecipients(projectedRound + 1); }))
+		{
+			auto remaining = orders;
+			std::erase_if(remaining, [this](const HeroOrderState & order)
+				{ return !order.hasScheduledRecipients(projectedRound + 1); });
+			setHeroOrderStates(side, remaining);
+		}
 	}
 	for(auto & [side, state] : focusFireStates)
 		if(!getHeroOrderState(side, HeroCommand::FOCUS_FIRE))
@@ -74,11 +93,8 @@ void HypotheticBattle::nextRound(HypotheticLifecycleTiming * timing)
 	seizeInitiative.nextRound(projectedRound);
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
-		auto & spellResponse = spellResponseStates.at(side);
-		if(spellResponse.hasState() && !spellResponse.isReadyAt(projectedRound))
-			spellResponse = {};
-		if(heroActionAllowances[side].currentRound >= 0)
-			heroActionAllowances[side].resetForRound(projectedRound);
+		const auto committed = commitForecastSide(side, *sideRoundReceipts.at(side));
+		if(!committed) throw std::logic_error("Stale synchronous side round receipt");
 	}
 	std::vector<uint32_t> pendingRemoval;
 	std::vector<uint32_t> pendingFormRestoration;
@@ -101,6 +117,7 @@ void HypotheticBattle::nextRound(HypotheticLifecycleTiming * timing)
 				forUpdate->advanceTimedRound(timing ? &timing->roundTimedWork : nullptr);
 		}
 		forUpdate->afterNewRound(firstRound, true);
+		consecratedArms::refreshDivinePurpose(*this, *forUpdate);
 		if(forUpdate->ghostPending)
 			pendingRemoval.push_back(unit->unitId());
 	}
@@ -126,24 +143,7 @@ void HypotheticBattle::nextRound(HypotheticLifecycleTiming * timing)
 		if(newHorizonsSpecialtyEvents::needsRoundEffects(*this, *unit, projectedRound))
 			newHorizonsSpecialtyEvents::applyRound(*this, *getForUpdate(unit->unitId()), projectedRound);
 	}
-	// Unlike opening unit enchantments, obstacle timers tick on every round
-	// transition. Authoritative BattleFlowProcessor then removes zero timers.
-	for(auto & obstacle : projectedObstacles)
-	{
-		if(const auto spell = std::dynamic_pointer_cast<const SpellCreatedObstacle>(obstacle))
-		{
-			auto aged = std::make_shared<SpellCreatedObstacle>(*spell);
-			aged->battleTurnPassed();
-			obstacle = aged;
-		}
-	}
-	const auto previousSize = projectedObstacles.size();
-	vstd::erase_if(projectedObstacles, [](const auto & obstacle)
-	{
-		const auto spell = std::dynamic_pointer_cast<const SpellCreatedObstacle>(obstacle);
-		return spell && spell->turnsRemaining == 0;
-	});
-	obstacleChanges |= previousSize != projectedObstacles.size();
+	advanceRoundObstacles();
 	if(owned)
 		owned->captureBranchValues(*this);
 }
@@ -151,9 +151,11 @@ void HypotheticBattle::nextRound(HypotheticLifecycleTiming * timing)
 bool HypotheticBattle::projectEarnedMoraleActivation(uint32_t unitId)
 {
 	if(usesOwnedFrameQueries()) throw std::logic_error("Owned lifecycle needs its captured context/raw-duration transaction");
-	auto unit = getForUpdate(unitId);
+	// Native CStack, SWB and owning detached readers expose these exact native
+	// activation flags. An unknown Unit cannot prove an earned Morale grant.
+	const auto * unit = dynamic_cast<const battle::CUnitState *>(battleGetUnitByID(unitId));
 	if(!unit || !unit->alive() || !unit->canMove() || unit->hadMorale || unit->defending
-		|| unit->waited() || unit->fear || battleGetMorale(unit.get()) <= 0)
+		|| unit->waited() || unit->fear || battleGetMorale(unit) <= 0)
 		return false;
 	const bool forfeits = activationForfeit::pending(*this, *unit, BattleUnitTurnReason::MORALE);
 	nextTurn(unitId, BattleUnitTurnReason::MORALE);
@@ -167,8 +169,11 @@ void HypotheticBattle::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)
 
 void HypotheticBattle::nextTurn(uint32_t unitId, BattleUnitTurnReason reason, HypotheticLifecycleTiming * timing)
 {
+	if(forecast::NativeAdapter::lifecycle(*this, unitId, reason, forecast::LifecyclePhase::Begin, timing)) return;
+	forecast::NativeAdapter::reserveReceipt(*this);
 	if(usesOwnedFrameQueries()) throw std::logic_error("Owned lifecycle needs its captured context/raw-duration transaction");
 	nextTurnImpl(unitId, reason, false, timing);
+	forecast::NativeAdapter::importReceipt(*this, *getForUpdate(unitId));
 }
 
 void HypotheticBattle::nextTurnPreservingFrozenForfeit(uint32_t unitId, BattleUnitTurnReason reason,
@@ -412,9 +417,10 @@ void HypotheticBattle::nextTurnImpl(uint32_t unitId, BattleUnitTurnReason reason
 
 void HypotheticBattle::makeWait(const battle::Unit * activeStack)
 {
+	if(forecast::NativeAdapter::lifecycle(*this, activeStack->unitId(), BattleUnitTurnReason::TURN_QUEUE,
+		forecast::LifecyclePhase::Wait)) return;
+	forecast::NativeAdapter::reserveReceipt(*this);
 	auto unit = getForUpdate(activeStack->unitId());
-
-
 	resetActiveUnit();
 	newHorizonsForestAmbush::acceptWait(*this, *unit);
 	unit->afterWait();
@@ -431,12 +437,16 @@ void HypotheticBattle::makeWait(const battle::Unit * activeStack)
 		awardBattlecraftMastery(side, unit->unitId(), round, BattlecraftMasteryAction::WAIT);
 	unit->setActivationMovementBonus(newHorizonsBattlecraft::delayedActivationMovementBonus(
 		battleGetOwnerHero(unit.get()), unit.get(), BattleUnitTurnReason::TURN_QUEUE));
+	forecast::NativeAdapter::importReceipt(*this, *unit);
 	if(const auto owned = initialExportSubject())
 		owned->captureBranchValues(*this);
 }
 
 void HypotheticBattle::completeNormalActivation(uint32_t unitId)
 {
+	if(forecast::NativeAdapter::lifecycle(*this, unitId, BattleUnitTurnReason::TURN_QUEUE,
+		forecast::LifecyclePhase::CompleteNormal)) return;
+	forecast::NativeAdapter::completeActivation(*this, unitId);
 	// Forecast consumers call this only at a completed activation boundary,
 	// never for Wait/continuations; stasis passes use the separate nextTurn path.
 	newHorizonsDivineMandate::completeDisciplineActivation(*this, unitId);

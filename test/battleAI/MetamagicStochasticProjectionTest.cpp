@@ -3,6 +3,8 @@
 #include "HeroQueueSelectorFixture.h"
 #include "../../AI/BattleAI/HeroActionSelection.h"
 #include "../../AI/BattleAI/HeroSpellOutcomeValue.h"
+#include "../../AI/BattleAI/SpellTargetsEvaluator.h"
+#include "../../lib/spells/NewHorizonsMetamagicCore.h"
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/spells/BattleSpellMechanics.h"
 #include "../../lib/gameState/CGameState.h"
@@ -90,10 +92,14 @@ TEST_F(MetamagicStochasticProjectionTest, HandOfFateEligibleEnemyEnchantmentChan
 	blessing.spellCasterOwner = PlayerColor(1);
 	effect(enemy, blessing);
 	const auto health = enemy->getAvailableHealth();
-	std::vector<float> ordinary, expert;
+	std::vector<float> ordinary, unselected, expert;
 	ASSERT_NO_FATAL_FAILURE(score(0, ordinary));
+	ASSERT_NO_FATAL_FAILURE(score(3, unselected));
+	ASSERT_NO_FATAL_FAILURE(selectPerk(attackerSideHero, "new-horizons:metamagic",
+		"new-horizons:metamagic.unravelingMagic", MasteryLevel::BASIC));
 	ASSERT_NO_FATAL_FAILURE(score(3, expert));
 	ASSERT_EQ(ordinary.size(), expert.size());
+	EXPECT_EQ(ordinary, unselected) << "Metamagic core grants no free Unraveling Magic";
 	EXPECT_GT(*std::max_element(expert.begin(), expert.end()), *std::max_element(ordinary.begin(), ordinary.end()));
 	EXPECT_EQ(enemy->getAvailableHealth(), health);
 	EXPECT_EQ(enemy->getBonuses(Selector::source(BonusSource::SPELL_EFFECT,
@@ -118,5 +124,53 @@ TEST(MetamagicStochasticProjectionContractTest, LocalReceiptCannotLaunchCandidat
 	const auto result = heroSpellProjection::evaluateLocalOutcome(value, {}, {}, false, {ids}, unused);
 	EXPECT_TRUE(std::isnan(result));
 	EXPECT_EQ(calls, 1);
+}
+
+TEST_F(MetamagicStochasticProjectionTest, DebuffRetryUsesCurrentProjectedResistanceWithoutLiveDraws)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_NO_FATAL_FAILURE(book(attackerSideHero, SpellID::SLOW, "new-horizons:sorceryMagic"));
+	const auto metamagic = SecondarySkill(SecondarySkill::decode("new-horizons:metamagic"));
+	attackerSideHero->setSecSkillLevel(metamagic, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	effect(enemy, Bonus(BonusDuration::ONE_BATTLE, BonusType::MAGIC_RESISTANCE, BonusSource::OTHER, 50, BonusSourceID()));
+	const auto worldBefore = gameState()->saveToMemory();
+	const auto random = wire(*gameHandler->randomizer);
+	auto state = std::make_shared<HypotheticBattle>(environment.get(), live);
+	auto sibling = std::make_shared<HypotheticBattle>(environment.get(), state);
+	state->addUnitBonus(enemy->unitId(), {Bonus(BonusDuration::ONE_BATTLE, BonusType::MAGIC_RESISTANCE,
+		BonusSource::OTHER, 20, BonusSourceID())});
+	const auto chance = [&](const auto & board)
+	{
+		spells::BattleCast cast(board.get(), attackerSideHero, spells::Mode::HERO, SpellID(SpellID::SLOW).toSpell());
+		const auto mechanics = SpellID(SpellID::SLOW).toSpell()->battleMechanics(&cast);
+		const auto * target = board->battleGetUnitByID(enemy->unitId());
+		EXPECT_TRUE(mechanics->canBeCastAt({spells::Destination(target)}));
+		return SpellTargetEvaluator::applicationChance(mechanics.get(), target);
+	};
+	EXPECT_NEAR(chance(sibling), 0.65, 0.00001);
+	EXPECT_NEAR(chance(state), 0.426, 0.00001);
+	EXPECT_EQ(gameState()->saveToMemory(), worldBefore);
+	EXPECT_EQ(wire(*gameHandler->randomizer), random);
+}
+
+TEST_F(MetamagicStochasticProjectionTest, AdverseFirstCheckPrecedesOneNormalMetamagicRetry)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_NO_FATAL_FAILURE(book(attackerSideHero, SpellID::SLOW, "new-horizons:sorceryMagic"));
+	attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:metamagic")),
+		MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	effect(enemy, Bonus(BonusDuration::ONE_BATTLE, BonusType::MAGIC_RESISTANCE, BonusSource::OTHER, 50, BonusSourceID()));
+	battle()->setAdverseCombatRerollState(BattleSide::DEFENDER, {true, false});
+	const auto worldBefore = gameState()->saveToMemory();
+	const auto random = wire(*gameHandler->randomizer);
+	auto state = std::make_shared<HypotheticBattle>(environment.get(), live);
+	spells::BattleCast cast(state.get(), attackerSideHero, spells::Mode::HERO, SpellID(SpellID::SLOW).toSpell());
+	const auto mechanics = SpellID(SpellID::SLOW).toSpell()->battleMechanics(&cast);
+	// First success .5*.5; failure .75 can earn one .6*.5 normal retry.
+	EXPECT_NEAR(SpellTargetEvaluator::applicationChance(mechanics.get(), state->battleGetUnitByID(enemy->unitId())),
+		0.475, 0.00001);
+	EXPECT_TRUE(state->getBattle()->getAdverseCombatRerollState(BattleSide::DEFENDER).available());
+	EXPECT_EQ(gameState()->saveToMemory(), worldBefore);
+	EXPECT_EQ(wire(*gameHandler->randomizer), random);
 }
 }

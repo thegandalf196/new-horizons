@@ -9,6 +9,7 @@
  */
 #pragma once
 #include "../../lib/Rect.h"
+#include "../../lib/battle/UnitShieldState.h"
 
 #include "BattleStackColorPresentation.h"
 #include "StackInfoPanelHoverState.h"
@@ -83,6 +84,7 @@ class BattleStacksController
 		int32_t count;
 		int64_t availableHealth;
 		std::shared_ptr<IImage> amountBox;
+		battle::ShieldSnapshot shields;
 	};
 	std::map<uint32_t, DisplayedStackSnapshot> displayedStackSnapshot;
 	std::map<uint32_t, leadershipPresentation::ReadoutCache> leadershipReadouts;
@@ -178,6 +180,8 @@ public:
 	void setStackColorFilter(const ColorRGBA & effect, uint8_t transparency, const CStack * target, const CSpell *source, bool persistent);
 	void addNewAnim(BattleAnimation *anim); //adds new anim to pendingAnims
 
+	/// Uses the same pre-hit snapshot as count and HP while an animation is staged.
+	battle::ShieldSnapshot getDisplayedStackShields(const CStack * stack) const;
 	const CStack* getActiveStack() const;
 	const std::vector<uint32_t> getHoveredStacksUnitIds() const;
 

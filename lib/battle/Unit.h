@@ -51,6 +51,7 @@ enum class DamageProvenance : uint8_t
 	OTHER,
 	PHYSICAL_CREATURE,
 	SPELL,
+	MAGICAL_CREATURE,
 };
 
 // Healed HP (also drained life) and resurrected units info
@@ -142,6 +143,7 @@ public:
 
 	/// returns remaining health of first unit
 	virtual int32_t getFirstHPleft() const = 0;
+	virtual std::optional<int64_t> maximumBodyDamageForCasualties(int32_t) const { return std::nullopt; }
 
 	/// returns total amount of killed in this unit
 	virtual int32_t getKilled() const = 0;
@@ -178,6 +180,9 @@ public:
 	virtual int64_t getPhantomInitialIntegrity() const { return 0; }
 	/// Remaining separate Guardian Spirit pool for a protected stack.
 	virtual int64_t getGuardianSpiritHitPoints() const { return 0; }
+	virtual int64_t getRedemptionShieldHitPoints() const { return 0; }
+	virtual int64_t getRedemptionShieldCapacity() const { return 0; }
+	virtual bool hasCompletedActionThisRound() const { return false; }
 	/// Remaining rounds on the active Guardian Spirit marker, or zero when inactive.
 	virtual int32_t getGuardianSpiritRoundsRemaining() const { return 0; }
 	/// Frozen battle-start maximum aggregate HP used by Elemental Rebirth; zero when not captured.

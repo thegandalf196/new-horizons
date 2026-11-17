@@ -304,6 +304,7 @@ public:
 	int getArcanePreparationPercent() const;
 	int32_t getArcanePreparationBufferBonus() const;
 	const JsonNode & getCapabilityRules() const { return capabilityRules; }
+	std::shared_ptr<const nativeRules::CapturedRuleDocument> getCapturedCapabilityRules() const { return capabilityRules.owner(); }
 	const nativeRules::CompiledCapabilityRules * compiledCapabilities() const
 	{
 		return capabilityRules.owner() ? capabilityRules.owner()->capabilities().get() : nullptr;

@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "ForecastNativeAdapter.h"
 #include "FocusMagicProjection.h"
 #include "StackWithBonuses.h"
 #include "HypotheticBattle.h"
@@ -32,8 +33,9 @@ std::optional<AttackPossibility> evaluateDirect(const Environment * environment,
 	result.queryWorld = std::make_shared<VisibleCandidateWorld>(world);
 	return result;
 }
-void afterAttack(battle::CUnitState & unit, bool ranged, bool counter, bool physical, bool accepted)
+void afterAttack(battle::CUnitState & unit, bool ranged, bool counter, bool physical, bool accepted, HypotheticBattle * branch)
 {
+	if(branch && forecast::NativeAdapter::afterAttack(*branch, unit, ranged, counter, physical, accepted)) return;
 	unit.afterAttack(ranged, counter, physical);
 	if(!accepted || !ranged || !newHorizonsFocusMagic::active(unit)) return;
 	auto * isolated = dynamic_cast<StackWithBonuses *>(&unit);

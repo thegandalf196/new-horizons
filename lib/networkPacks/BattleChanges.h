@@ -212,8 +212,16 @@ public:
 			throw std::runtime_error("Cannot discard temporary summon lifetime in an older format");
 	}
 
+	template <typename Handler> void validateConsecratedSerialization(Handler & h) const
+	{
+		if(battle::hasConsecratedUnitState(data)
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_CONSECRATED_ARMS))
+			throw std::runtime_error("Cannot discard Consecrated unit state in an older update");
+	}
+
 	template <typename Handler> void validateSerializationPrefix(Handler & h) const
 	{
+		if(h.saving) validateConsecratedSerialization(h);
 		if(h.saving) validatePetrifyingBloodSerialization(h);
 		if(h.saving) validateTimedSummonSerialization(h);
 		if(h.saving) validateMoraleActivationSerialization(h);
@@ -270,6 +278,7 @@ public:
 		h & id;
 		h & healthDelta;
 		h & data;
+		if(!h.saving) validateConsecratedSerialization(h);
 		if(!h.saving) validatePetrifyingBloodSerialization(h);
 		if(!h.saving) validateMoraleActivationSerialization(h);
 		if(!h.saving) validatePlagueSerialization(h);

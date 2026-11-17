@@ -17,7 +17,8 @@ void BonusList::validateAdjacencyCapabilitySerialization(BonusSerializationConte
 {
 	if(context.adjacencyFiltersSupported && context.ordinaryRangedSpecialtiesSupported
 		&& context.ordinaryMaintenanceSpecialtiesSupported && context.ordinaryCombatSpecialtiesSupported
-		&& context.extendedOrdinarySpecialtiesSupported && context.passiveFactionSkillsSupported && context.nativeRulesRedesignSupported && context.commandAuthoritySupported) return;
+		&& context.extendedOrdinarySpecialtiesSupported && context.passiveFactionSkillsSupported && context.nativeRulesRedesignSupported
+		&& context.commandAuthoritySupported && context.creatureAbilityProvenanceSupported) return;
 	for(const auto & bonus : bonuses)
 		if(bonus) bonus->validateAdjacencyCapabilitySerialization(context);
 }

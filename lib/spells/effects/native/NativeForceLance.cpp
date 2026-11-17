@@ -1,5 +1,7 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../../SpellDamageContext.h"
+#include "../../../battle/RedemptionEvent.h"
 #include "UnitEffect.h"
 #include "StatusHelpers.h"
 #include "../../NewHorizonsSorcerySpells.h"
@@ -8,6 +10,8 @@
 #include "../../../battle/CUnitState.h"
 #include "../../../networkPacks/PacksForClientBattle.h"
 #include "../../../networkPacks/SetStackEffect.h"
+#include "../../NewHorizonsMetamagicOverflow.h"
+#include <typeinfo>
 
 namespace spells::effects::native
 {
@@ -41,7 +45,10 @@ public:
 		const auto before = copy->getAvailableHealth();
 		const auto count = copy->getCount();
 		auto damage = newHorizonsSorcerySpells::forceLanceDamage(*mechanics);
-		copy->damageShadowGiftSacrifice(damage);
+		std::optional<battle::VowCasualtyQuota> quota;
+		auto damageContext = previewSpellDamageContext(*mechanics, unit, quota);
+		damageContext.bypassMagicalAbsorption = true;
+		copy->damageWithContext(damage, false, battle::DamageProvenance::SPELL, damageContext, nullptr, true);
 		result.hpDelta = copy->getAvailableHealth() - before;
 		result.unitsDelta = copy->getCount() - count;
 		return result;
@@ -53,17 +60,24 @@ public:
 		const auto id = unit.unitId();
 		BattleStackAttacked hit;
 		hit.damageAmount = newHorizonsSorcerySpells::forceLanceDamage(*mechanics);
+		int64_t postShield = hit.damageAmount;
+		const auto healthBefore = unit.getShadowGiftCurrentHealth();
 		hit.stackAttacked = unit.unitId();
 		hit.attackerID = -1;
 		hit.flags |= BattleStackAttacked::SPELL_EFFECT;
 		hit.spellID = mechanics->getSpellId();
 		auto state = unit.acquireState();
-		// Bypass magical absorption/temporary shields while preserving ordinary remains.
-		CStack::prepareAttacked(hit, *server->getRNG(), state, false, true, battle::DamageProvenance::SPELL);
+		// Preserve Force Lance's temporary-HP bypass and ordinary remains. The
+		// typed shared shield stage owns any explicit current defensive eligibility.
+		auto damageContext = mechanics->spellDamageContext(unit);
+		damageContext.bypassMagicalAbsorption = true;
+		CStack::prepareAttacked(hit, *server->getRNG(), state, false, true, battle::DamageProvenance::SPELL, &postShield, &damageContext);
 		StacksInjured injury;
 		injury.battleID = mechanics->getBattleID();
 		injury.stacks.push_back(hit);
+		if(damageContext.redemption) damageContext.redemption->record(*mechanics->battle(), injury.stacks);
 		server->apply(injury);
+		server->recordMetamagicOverflowPrimary({id, healthBefore, postShield, hit.damageAmount, !state->alive()});
 		server->recordResolvedSpellRecipient(unit.unitId());
 		const nativeEvents::Context context{*server, *mechanics->battle(), nullptr, nullptr, parameters, {}};
 		if(const auto * current = mechanics->battle()->battleGetUnitByID(id))
@@ -72,7 +86,14 @@ public:
 		{
 			SetStackEffect pin;
 			pin.battleID = mechanics->getBattleID();
-			pin.toUpdate.emplace_back(unit.unitId(), std::vector<Bonus>{newHorizonsSorcerySpells::forceLancePin(mechanics->getSpellId())});
+			auto effect = newHorizonsSorcerySpells::forceLancePin(mechanics->getSpellId());
+			const auto origin = mechanics->getCreatureAbilityDescriptor();
+			const auto family = origin ? origin->family : mechanics->getHeroCaster()
+				? creatureAbility::Family::HERO_SPELL : creatureAbility::Family::CREATURE_SPELL;
+			effect.abilityDescriptor = creatureAbility::spellEffect(mechanics->getSpellId(), family,
+				creatureAbility::HOSTILE_AFFLICTION, creatureAbility::IRRESISTIBLE | creatureAbility::REMOVABLE | creatureAbility::DISPELLABLE,
+				mechanics->battle()->sideToPlayer(mechanics->getEffectCasterSide()));
+			pin.toUpdate.emplace_back(unit.unitId(), std::vector<Bonus>{std::move(effect)});
 			server->apply(pin);
 		}
 		if(server->describeChanges())
@@ -86,6 +107,11 @@ public:
 
 namespace nativeSpells
 {
+bool isForceLanceEffect(const spells::effects::Effect & effect)
+{
+	return typeid(effect) == typeid(spells::effects::native::ForceLance);
+}
+
 std::shared_ptr<spells::effects::Effect> createForceLanceEffect(const std::string & path)
 {
 	return path == "spells/forceLance" ? std::make_shared<spells::effects::native::ForceLance>() : nullptr;

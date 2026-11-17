@@ -177,3 +177,26 @@ TEST(FocusMagicValueStateTest, AbsentIsValidButMalformedOrBorrowedPayloadRequire
 	inconsistent.charges = 1;
 	EXPECT_THROW(prepareStrike(inconsistent, true, true), std::invalid_argument);
 }
+
+TEST(FocusMagicValueStateTest, MetamagicCapabilitiesExpireWithTheFinalFocusCharge)
+{
+	auto records = enchantment(false, focus());
+	for(const auto type : {BonusType::FLYING, BonusType::FREE_SHOOTING})
+	{
+		auto capability = records.front();
+		capability.type = type;
+		capability.val = 1;
+		records.push_back(std::move(capability));
+	}
+	auto state = valueState(records);
+	ASSERT_EQ(state.records.size(), 4u);
+	for(int shot = 0; shot < 2; ++shot)
+	{
+		state = prepareStrike(state, true, true).after;
+		EXPECT_EQ(state.records.size(), 4u);
+	}
+	const auto last = prepareStrike(state, true, true);
+	EXPECT_EQ(last.effects.remove.size(), 4u);
+	EXPECT_TRUE(last.after.records.empty());
+	EXPECT_EQ(last.after.charges, 0);
+}

@@ -10,6 +10,7 @@
 #pragma once
 
 #include "BonusSerializationContext.h"
+#include "../battle/CreatureAbility.h"
 
 #include "BonusEnum.h"
 #include "BonusCustomTypes.h"
@@ -102,6 +103,7 @@ struct DLL_LINKAGE Bonus : public std::enable_shared_from_this<Bonus>, public Se
 	// status; callers must use statusIdentity to group components when provided.
 	std::vector<BonusStatusTag> statusTags;
 	std::string statusIdentity;
+	creatureAbility::Descriptor abilityDescriptor;
 	static constexpr size_t MAX_STATUS_IDENTITY_LENGTH = 256;
 	static bool isValidStatusTag(BonusStatusTag tag)
 	{
@@ -363,6 +365,12 @@ struct DLL_LINKAGE Bonus : public std::enable_shared_from_this<Bonus>, public Se
 			statusTags.clear();
 			statusIdentity.clear();
 		}
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_CONSECRATED_ARMS))
+		{
+			h & abilityDescriptor;
+			if(!h.saving && abilityDescriptor) abilityDescriptor->validate();
+		}
+		else if(!h.saving) abilityDescriptor.reset();
 
 		//old saves stored BATTLE_NO_FLEEING in the slot now used by BATTLE_CAN_FLEE, it blocked retreating unconditionally
 		if(!h.saving && !h.hasFeature(Handler::Version::RETREAT_PERMISSION_BONUSES) && type == BonusType::BATTLE_CAN_FLEE)

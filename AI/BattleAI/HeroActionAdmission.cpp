@@ -5,7 +5,10 @@
  */
 #include "StdInc.h"
 #include "HeroActionAdmission.h"
+#include "ForecastNativeAdapter.h"
+#include "SearchBudget.h"
 #include "PossibleSpellcast.h"
+#include "ForecastSpellPayment.h"
 #include "../../lib/battle/BattleInfo.h"
 #include "../../lib/CCreatureHandler.h"
 #include "../../lib/CPlayerState.h"
@@ -24,16 +27,20 @@
 
 namespace heroActionProjection
 {
-Admission admitCandidate(HypotheticBattle & state, BattleSide side, const PossibleSpellcast & candidate)
+Admission admitCandidate(HypotheticBattle & state, BattleSide side, const PossibleSpellcast & candidate,
+	std::optional<int32_t> originalMechanicsCost)
 {
 	Admission result;
 	if(candidate.command == HeroCommand::NONE)
 	{
 		result.spellAllowance = state.prepareHeroSpellAllowance(side, candidate.spell->getId());
-		if(!result.spellAllowance)
-			return result;
-		if(!state.beginProjectedHeroAction(side, *result.spellAllowance))
-			return result;
+		if(!result.spellAllowance) return result;
+		const auto exactCost = originalMechanicsCost ? originalMechanicsCost
+			: forecast::candidateSpellPaymentCost(state, side, candidate);
+		const auto available = state.getProjectedManaAvailable(side);
+		if(!exactCost || *exactCost < 0 || !available || *exactCost > *available) return result;
+		if(!state.beginProjectedHeroAction(side, *result.spellAllowance)
+			|| !state.stageProjectedSpellPayment(side, candidate.spell->getId(), *exactCost)) return result;
 	}
 	else
 	{
@@ -224,6 +231,12 @@ bool admitNativeDamageSources(const HypotheticBattle & branch, const BattleInfo 
 bool heroActionProjection::CanonicalSourceAdmission::admits(const battle::Unit & target)
 {
 	const auto * branch = dynamic_cast<const HypotheticBattle *>(&battle);
+	if(branch)
+	{
+		try { if(forecast::NativeAdapter::admitsOwnedPair(*branch, actor, target)) return true; }
+		catch(const battleSearch::BudgetExhausted &) { throw; }
+		catch(const std::exception &) { return false; }
+	}
 	if((typeid(actor) != typeid(CStack) && typeid(actor) != typeid(StackWithBonuses))
 		|| (typeid(target) != typeid(CStack) && typeid(target) != typeid(StackWithBonuses)))
 		return false;

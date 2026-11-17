@@ -23,7 +23,7 @@ float BattleEvaluator::inspirationOutcome(const PossibleSpellcast & candidate, c
 {
 	if(!completed)
 	{
-		const auto admission = heroActionProjection::admitCandidate(*board, side, candidate);
+		const auto admission = heroActionProjection::admitCandidate(*board, side, candidate, mechanics.getTargetAwareManaCost(candidate.dest));
 		if(!admission.admitted) return 0.0f;
 		uint32_t primary = candidate.dest.empty() || !candidate.dest.front().unitValue
 			? std::numeric_limits<uint32_t>::max() : candidate.dest.front().unitValue->unitId();
@@ -150,7 +150,7 @@ bool BattleEvaluator::prepareExpectedOutcomes(PossibleSpellcast & candidate, spe
 {
 	auto & ps = candidate; auto * spell = candidate.spell;
 	const auto outcome = inspirationOutcomeEvaluator(candidate, mechanics, actorId);
-	const auto view = cb->getBattle(battleID);
+	const std::shared_ptr<CBattleInfoCallback> view = hb;
 	const auto store = [&](float value) { if(outcome && !ps.spellInspirationExpectedValue) ps.spellInspirationExpectedValue = value; };
 	if(spell->getJsonKey() == "new-horizons:handOfFate" && newHorizonsMagic::rulesActive(view->getBattle()->getMagicRules())
 		&& newHorizonsMagic::spellAllowedBySavedRoster(view->getBattle()->getMagicRules(), spell->getId()))
@@ -196,7 +196,7 @@ bool BattleEvaluator::prepareExpectedOutcomes(PossibleSpellcast & candidate, spe
 	ps.spellRunicExpectedValue = runic.value;
 	ps.spellRunicEstimatePartial = runic.partial;
 	// Unsupported reflected control cannot enter the ordinary zero-risk queue.
-	return !runic.partial;
+	return !runic.partial && prepareOverflowOutcome(ps, mechanics, actorId);
 }
 
 bool BattleEvaluator::prepareBlinkOutcome(PossibleSpellcast & ps, spells::Mechanics & mechanics, uint32_t actorId)
@@ -204,7 +204,7 @@ bool BattleEvaluator::prepareBlinkOutcome(PossibleSpellcast & ps, spells::Mechan
 	if(ps.dest.size() != 1 || !ps.dest.front().unitValue) return false;
 	const auto preview = newHorizonsBlink::preview(mechanics, ps.dest.front().unitValue);
 	if(!preview) return false;
-	const auto view = cb->getBattle(battleID);
+	const std::shared_ptr<CBattleInfoCallback> view = hb;
 	const auto outcome = inspirationOutcomeEvaluator(ps, mechanics, actorId); float marginal = 0;
 	ps.spellPlacementHeuristicValue = blinkPositionValue::expected(ps.dest.front().unitValue, *preview, playerID,
   *view, view, damageCache, env.get(), &marginal, outcome) * scoreEvaluator.getPositiveEffectMultiplier();

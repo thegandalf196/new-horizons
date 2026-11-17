@@ -1,6 +1,7 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #pragma once
 #include "OwnedUnitBonusFrame.h"
+namespace bonusDependencies { class CapturedModifiers; }
 namespace battle
 {
 /// Bounded current-recipient bridge. This is NOT a native capture/import grant.
@@ -30,6 +31,8 @@ public:
 	/// roster. No callback, library, serialization codec or native node is used.
 	static void synchronize(OwnedUnitBonusFrame & recipient, const std::vector<CurrentUnit> & ordered);
 	static const IUnitEnvironment & environment(const OwnedUnitBonusFrame & recipient);
+	/// Pure owned cold compilation; no source capture/admission/publication right.
+	static bonusDependencies::CapturedModifiers captureModifiers(const OwnedUnitBonusFrame & recipient);
 	static std::shared_ptr<CUnitState> acquireState(const std::shared_ptr<const OwnedUnitBonusFrame> & recipient);
 	static CUnitState & effectQueryState(OwnedUnitBonusFrame & recipient);
 	/// Exact source-export role ONLY; query/updater aliases never become exports.

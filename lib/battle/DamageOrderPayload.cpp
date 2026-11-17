@@ -40,8 +40,15 @@ void CBattleInfoCallback::prepareDamageOrders(const BattleAttackInfo & info,
 		const auto defend = p.readDefenderHero(*this, info);
 		const auto attackerSide = playerToSide(p.readAttackerOwner(*this, info));
 		const auto defenderSide = playerToSide(p.readDefenderOwner(*this, info));
-		const auto attackerStates = battleGetHeroOrderStates(attackerSide);
-		const auto defenderStates = battleGetHeroOrderStates(defenderSide);
+		const auto attackerLease = preparedHeroOrderStates(attackerSide);
+		const auto defenderLease = preparedHeroOrderStates(defenderSide);
+		// Keep fallback storage distinct: a conditional value expression would
+		// copy even the prepared vector on every damage probe.
+		std::vector<HeroOrderState> attackerFallback, defenderFallback;
+		if(!attackerLease) attackerFallback = battleGetHeroOrderStates(attackerSide);
+		if(!defenderLease) defenderFallback = battleGetHeroOrderStates(defenderSide);
+		const auto & attackerStates = attackerLease ? *attackerLease : attackerFallback;
+		const auto & defenderStates = defenderLease ? *defenderLease : defenderFallback;
 		if(p.readAttackerOwner(*this, info) != p.readDefenderOwner(*this, info))
 		{
 			const auto attackerRiders = newHorizonsPassiveDivineMandate::activeOrderRiders(*this, info.attacker, attackerStates);

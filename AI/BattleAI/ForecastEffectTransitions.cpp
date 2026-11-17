@@ -24,6 +24,7 @@ Result Transitions::prepare(const std::shared_ptr<const State> & source, battleS
 }
 Dirty Transitions::dirty(const Record & record)
 {
+	if(record.kind == Kind::FocusManaged && record.value->type == BonusType::NONE) return Dirty::None;
 	if(record.kind == Kind::Frozen || record.kind == Kind::Bind || record.kind == Kind::ForceLance)
 		return Dirty::Control | Dirty::Queue;
 	switch(record.value->type)

@@ -46,8 +46,8 @@ ValueState valueState(std::vector<Bonus> records)
 {
 	ValueState result;
 	if(records.empty()) return result;
-	if(records.size() > 3) throw std::invalid_argument("Unsupported Focus record count");
-	int markers = 0, shooters = 0, damage = 0, damagePercent = 0;
+	if(records.size() > 5) throw std::invalid_argument("Unsupported Focus record count");
+	int markers = 0, shooters = 0, damage = 0, damagePercent = 0, flying = 0, freeShooting = 0;
 	for(const auto & record : records)
 	{
 		if(!isEnchantmentRecord(record) || record.stacking != SPELL
@@ -71,9 +71,13 @@ ValueState valueState(std::vector<Bonus> records)
 			++damage;
 			damagePercent = record.val;
 		}
+		else if(record.type == BonusType::FLYING && record.val == 1 && record.subtype == BonusSubtypeID())
+			++flying;
+		else if(record.type == BonusType::FREE_SHOOTING && record.val == 1 && record.subtype == BonusSubtypeID())
+			++freeShooting;
 		else throw std::invalid_argument("Unsupported Focus effect component");
 	}
-	if(markers != 1 || shooters > 1 || damage > 1
+	if(markers != 1 || shooters > 1 || damage > 1 || flying > 1 || freeShooting > 1
 		|| (shooters == 0 && (damage != 1 || damagePercent < 20))
 		|| (shooters != 0 && damagePercent > 100))
 		throw std::invalid_argument("Incomplete Focus enchantment");

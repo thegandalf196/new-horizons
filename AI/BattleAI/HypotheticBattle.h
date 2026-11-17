@@ -8,6 +8,10 @@
  *
  */
 #pragma once
+#include "ForecastSideTransitions.h"
+#include "ForecastSpellPayment.h"
+#include "ForecastState.h"
+#include "ForecastNativePreparation.h"
 #include "../../lib/battle/PassiveDivineMandate.h"
 #include "../../lib/battle/WisdomCombatState.h"
 #include "../../lib/battle/NewHorizonsFactionSpellDamage.h"
@@ -15,6 +19,7 @@
 #include "../../lib/battle/NewHorizonsElementalAttunement.h"
 
 #include <cstdint>
+#include <cassert>
 #include <map>
 #include <memory>
 #include <optional>
@@ -47,7 +52,9 @@ class InitialExportBattleSubject;
 class OwnedStackQuerySource;
 class OwnedFrameEffectQueries;
 class MovementQueryCache;
+namespace battleSearch { class SearchBudget; }
 class FlatDamageInputs;
+namespace forecast { class NativeAdapter; struct NativeReadWork; }
 namespace specialtyProcAI { class Opportunities; }
 class ProjectedBonusRoster;
 class BonusList;
@@ -59,6 +66,15 @@ class DLL_LINKAGE HypotheticBattle final : public BattleProxy, public battle::IU
 {
 	friend class InitialExportBattleSubject;
 	friend class FlatDamageInputs;
+	friend class forecast::NativeAdapter;
+	friend class forecast::NativePreparation;
+	std::optional<forecast::State> compactForecast;
+	// Ownership capability survives native prospective replay with routing off.
+	std::optional<forecast::State> compactReadSession;
+	static bool forecastReadSource(const Subject &);
+	friend class HypotheticUnitEnvironment;
+	bool compactAdmissionAttempted = false;
+	bool forecastReferenceOnly = false;
 	const FlatDamageInputs * flatDamageInputs = nullptr;
 	friend class ProjectedAdjacencyBonuses;
 	friend class specialtyProcAI::Opportunities;
@@ -86,6 +102,8 @@ class DLL_LINKAGE HypotheticBattle final : public BattleProxy, public battle::IU
 	void captureHeroActionState(const CBattleInfoCallback & source, BattleSide side);
 	void captureSideCombatState(const CBattleInfoCallback & source, BattleSide side);
 	void captureWarfareStats(const CBattleInfoCallback & source);
+	void advanceRoundSideFacts(BattleSide side, int32_t nextRound);
+	void advanceRoundObstacles();
 	void captureUnitSnapshots(const CBattleInfoCallback & source, bool hasParent);
 	BattleSideArray<int> orderBenefitStatValues{};
 	HypotheticUnitEnvironment projectedUnitEnvironment{*this};
@@ -94,21 +112,20 @@ class DLL_LINKAGE HypotheticBattle final : public BattleProxy, public battle::IU
 	void applyOwnedEffectChanges(const SetStackEffect & packet);
 	HypotheticSourceBinding sourceBinding;
 	SeizeInitiativeState seizeInitiative;
-	struct ProjectedMana
-	{
-		newHorizonsHeroes::SpellPointState pools;
-		int32_t temporaryBufferRemaining = 0;
-	};
-	BattleSideArray<std::optional<ProjectedMana>> projectedMana;
+	using ProjectedMana = battle::spellPoints::State;
 	BattleSideArray<std::optional<ProjectedMana>> manaLeechStartingPools;
+	BattleSideArray<std::shared_ptr<const forecast::SideState>> sideStates;
+	forecast::SpellPaymentScopes spellPaymentScopes;
+	BattleSideArray<std::optional<forecast::SpellPaymentTicket>> evaluatedSpellPayments;
+	BattleSideArray<std::optional<uint64_t>> nativeSpellAttemptEpochs, rejectedSpellPaymentEpochs;
+	void rejectProjectedSpellEvaluation(BattleSide side) noexcept;
+	void captureForecastSides(const CBattleInfoCallback & source);
+	bool commitForecastSide(BattleSide side, const forecast::SideReceipt & receipt);
 	bool manaLeechApplied = false;
 	// Conservative, nonserialized admission metadata; source markers own expiry.
 	mutable bool mayContainSerpentBindings = false;
 	BattleSideArray<newHorizonsNecromancy::CombatPassives> necromancyPassives;
 	void captureNecromancyPassives(const CBattleInfoCallback & source);
-	BattleSideArray<newHorizonsElementalAttunement::Profile> elementalAttunementProfiles;
-	BattleSideArray<uint8_t> elementalAttunementMasks;
-	BattleSideArray<bool> elementalAttunementProfileKnown;
 	struct CommittedElementalFacts
 	{
 		std::shared_ptr<const battle::Unit> source;
@@ -140,7 +157,26 @@ class DLL_LINKAGE HypotheticBattle final : public BattleProxy, public battle::IU
 		int divineMandateEfficiencyBonusPercent) const override;
 	TConstBonusListPtr visibleHeroBonuses(BattleSide side, const CSelector & selector, bool unstacked) const override;
 	int visibleHeroMorale(BattleSide side) const override;
+	std::shared_ptr<battleSearch::SearchBudget> workBudget;
+	std::shared_ptr<forecast::NativeReadWork> readWorkSink;
 public:
+	const auto & searchBudget() const { return workBudget; }
+	const auto & forecastWorkSink() const noexcept { return readWorkSink; }
+	void setForecastWorkSink(std::shared_ptr<forecast::NativeReadWork> sink)
+	{
+		if(compactForecast || compactReadSession) throw std::logic_error("Cannot retarget owned forecast diagnostics");
+		readWorkSink = std::move(sink);
+	}
+	std::optional<size_t> ownedForecastSize() const noexcept
+	{
+		const auto * values = compactForecast ? &*compactForecast : compactReadSession ? &*compactReadSession : nullptr;
+		return values ? std::optional<size_t>(values->ids().size()) : std::nullopt;
+	}
+	void setSearchBudget(std::shared_ptr<battleSearch::SearchBudget> budget)
+	{
+		assert(!workBudget || budget); // A finite decision cannot silently become an exact unbounded adapter.
+		workBudget = std::move(budget);
+	}
 	const nativeDamage::PreparedUnit * preparedUnitDamageFacts(const battle::Unit & unit, bool shooting) const override;
 	const newHorizonsHeroes::LeadershipComposition & getLeadershipComposition(BattleSide side) const override
 	{
@@ -158,6 +194,8 @@ public:
 	void releaseSerpentBindings(uint32_t sourceId);
 	void releaseSerpentBindingsForDeath(const battle::CUnitState & source);
 	void projectSerpentBinding(uint32_t sourceId, uint32_t targetId, int64_t primaryDamage, bool admitted);
+	bool stageProjectedSpellPayment(BattleSide side, SpellID spell, int32_t exactCost);
+	const std::shared_ptr<const forecast::SideState> & forecastSide(BattleSide side) const { return sideStates.at(side); }
 	/// Visible detached pools; unknown sides stay unknown instead of inventing Mana.
 	std::optional<int64_t> getProjectedManaAvailable(BattleSide side) const;
 	std::optional<newHorizonsHeroes::SpellPointState> getProjectedMana(BattleSide side) const;
@@ -165,7 +203,7 @@ public:
 	class ManaLeechReplay
 	{
 		friend class HypotheticBattle;
-		BattleSideArray<std::optional<ProjectedMana>> pools;
+		BattleSideArray<std::optional<forecast::SideReceipt>> sides;
 		bool changed = false;
 	};
 	bool hasProjectedManaLeech() const noexcept { return manaLeechApplied; }
@@ -203,10 +241,21 @@ public:
 	/// controller/activation freshness; historical Batch is data, not authority.
 	HypotheticBattle(const Environment * ENV, Subject realBattle,
 		std::shared_ptr<const battle::OwnedBattleFrameBatch> batch);
+	HypotheticBattle(const Environment * ENV, Subject realBattle,
+		std::shared_ptr<const battle::OwnedBattleFrameBatch> batch,
+		std::shared_ptr<battleSearch::SearchBudget> budget);
 	const IBattleInfo * getBattle() const override { requireOwnedFrameSource(); return this; }
 	std::optional<PlayerColor> getPlayerID() const override { requireOwnedFrameSource(); return BattleProxy::getPlayerID(); }
 	int32_t getActivationSerial() const override;
 	DamageEstimation calculateDmgRange(const BattleAttackInfo & info) const override;
+	bool referenceForecastOnly() const noexcept { return forecastReferenceOnly; }
+	void useReferenceForecast()
+	{
+		if(compactForecast || compactReadSession) throw std::logic_error("Reference route must precede compact mutation");
+		forecastReferenceOnly = true;
+		compactAdmissionAttempted = true;
+	}
+	const forecast::State * forecastState() const { return compactForecast ? &*compactForecast : nullptr; }
 	bool battleCanTargetEmptyHex(const battle::Unit * attacker) const override;
 	void configurePassingLines(const battle::Unit * mover, ReachabilityInfo::Parameters & params) const override;
 	std::vector<SpellID> getAvailableBeneficialSpells(const battle::Unit * caster, const battle::Unit * target) const override;
@@ -233,8 +282,8 @@ public:
 	newHorizonsNecromancy::CombatPassives unitNecromancyPassives(const battle::Unit * unit) const override;
 	newHorizonsElementalAttunement::UnitPassives unitElementalAttunement(const battle::Unit * unit) const override;
 	const newHorizonsElementalAttunement::Profile & getElementalAttunementProfile(BattleSide side) const override
-	{ return elementalAttunementProfiles.at(side); }
-	uint8_t getElementalAttunementMask(BattleSide side) const override { return elementalAttunementMasks.at(side); }
+	{ return forecastSide(side)->attunement; }
+	uint8_t getElementalAttunementMask(BattleSide side) const override { return forecastSide(side)->attunementMask; }
 	void setElementalAttunementMask(BattleSide side, uint8_t mask) override;
 	int unitBloodragePainIncrement(const battle::Unit * unit) const override;
 	bool unitHasVeteranCohesion(const battle::Unit * unit) const override;
@@ -276,6 +325,8 @@ public:
 	const OverwhelmingFormulaState & getOverwhelmingFormulaState(BattleSide side) const override;
 	void setOverwhelmingFormulaState(BattleSide side, const OverwhelmingFormulaState & state) override;
 	std::vector<HeroOrderState> getHeroOrderStates(BattleSide side) const override;
+	std::shared_ptr<const std::vector<HeroOrderState>> preparedHeroOrderStates(BattleSide side) const override;
+	const std::vector<HeroOrderState> & localHeroOrderStates(BattleSide side) const;
 	std::optional<HeroOrderState> getHeroOrderState(BattleSide side, HeroCommand command) const override;
 	std::optional<HeroOrderState> getHeroOrderState(BattleSide side) const override;
 	std::vector<HeroOrderState> battleGetHeroOrderStates(BattleSide side) const override;
@@ -320,10 +371,12 @@ public:
 		return preCombatOrderStates.at(side);
 	}
 	void setPreCombatOrderState(BattleSide side, const PreCombatOrderState & state) override;
-	bool hasCompletedHeroSpellCast(BattleSide side) const override { return heroSpellCastCompletedStates.at(side); }
+	bool hasCompletedHeroSpellCast(BattleSide side) const override
+	{ const auto & state = forecastSide(side); return state->ledger && state->ledger->completedHeroCast; }
 	bool hasCompletedHeroSpellLevel(BattleSide side, int32_t level) const override;
 	int32_t getCastSpells(BattleSide side) const override
-	{ const auto & value = projectedCastSpells.at(side); return value ? *value : BattleProxy::getCastSpells(side); }
+	{ const auto & state = forecastSide(side); return state->ledger && state->ledger->completedCastCount
+		? *state->ledger->completedCastCount : 0; }
 	bool getChainGateArmed(BattleSide side) const override { return chainGateArmedStates.at(side); }
 	bool getMasterGateUsed(BattleSide side) const override { return masterGateUsedStates.at(side); }
 	uint8_t getPassiveDivineMandateUses(BattleSide side) const override { return passiveDivineMandateUses.at(side); }
@@ -578,24 +631,19 @@ private:
 	BattleSideArray<RapidResponseState> rapidResponseStates;
 	BattleSideArray<ReducedExtraActivationState> reducedExtraActivationStates;
 	/// Newest Order is last; updates by command preserve this issuance order.
-	BattleSideArray<std::vector<HeroOrderState>> heroOrderStates;
-	BattleSideArray<HeroActionAllowanceState> heroActionAllowances;
+	BattleSideArray<std::shared_ptr<const std::vector<HeroOrderState>>> heroOrderStates;
 	BattleSideArray<std::optional<newHorizonsCommand::ResourceState>> commandResources;
 	BattleSideArray<newHorizonsHeroes::LeadershipComposition> leadershipCompositions;
 	BattleSideArray<DoubleCommandState> doubleCommandStates;
 	BattleSideArray<PreCombatOrderState> preCombatOrderStates;
-	BattleSideArray<bool> heroSpellCastCompletedStates;
 	/// Branch-local per-side round stamp for Battlefield Mastery's first Wait/Defend award.
 	BattleSideArray<int32_t> battlecraftMasteryAwardRounds;
 	/// Branch-local once-per-combat consumption for Armorer's first qualifying Last Stand.
 	BattleSideArray<bool> armorerLastStandUsedStates;
 	BattleSideArray<ArmorerDefiantState> armorerDefiantStates;
-	BattleSideArray<std::uint8_t> completedHeroSpellLevelMasks;
-	BattleSideArray<std::optional<int32_t>> projectedCastSpells;
 	BattleSideArray<bool> chainGateArmedStates;
 	BattleSideArray<bool> masterGateUsedStates;
 	BattleSideArray<uint8_t> passiveDivineMandateUses;
-	BattleSideArray<WisdomCombatState> wisdomCombatStates;
 	void restoreProjectedNormalMana(const SetMana & packet);
 	BattleSideArray<uint64_t> projectedActionEpochs{};
 	BattleSideArray<std::optional<ProjectedSpellAllowance>> begunProjectedSpellAllowances{};
@@ -629,9 +677,7 @@ private:
 	std::map<BattleSide, std::optional<FocusFireState>> focusFireStates;
 	BattleSideArray<RelentlessAssaultState> relentlessAssaultStates;
 	BattleSideArray<newHorizonsCrossSchoolFormula::State> crossSchoolFormulaStates;
-	BattleSideArray<SpellResponseState> spellResponseStates;
 	BattleSideArray<int32_t> extendSpellRounds;
-	BattleSideArray<OverwhelmingFormulaState> overwhelmingFormulaStates;
 	BattleSideArray<int32_t> bloodrageRanks;
 	BattleSideArray<int32_t> bloodrageDamagePercents;
 	BattleSideArray<int32_t> bloodrageCaps;
@@ -653,6 +699,10 @@ private:
 	public:
 		HypotheticServerCallback(HypotheticBattle * owner_);
 
+		uint64_t beginSpellEvaluation(SpellEvaluationKind, BattleSide, const SpellID &) override;
+		void admitSpellEvaluation(uint64_t, int32_t, bool) override;
+		void allowSpellEvaluationDelegation(uint64_t) override;
+		void endSpellEvaluation(uint64_t, bool) noexcept override;
 		void complain(const std::string & problem) override;
 		bool describeChanges() const override;
 		void recordCrossSchoolFormulaCast(BattleSide side, const newHorizonsCrossSchoolFormula::Receipt & receipt) override;

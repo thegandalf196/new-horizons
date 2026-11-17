@@ -1829,10 +1829,18 @@ struct DLL_LINKAGE EndAction : public CPackForClient
 
 	BattleID battleID = BattleID::NONE;
 	bool endsFortuneActivation = false;
+	int32_t completedUnitAction = -1;
 
 	template <typename Handler> void serialize(Handler & h)
 	{
+		if(completedUnitAction < -1 || (h.saving && completedUnitAction != -1
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_CONSECRATED_ARMS)))
+			throw std::runtime_error("Cannot encode completed creature action receipt");
 		h & battleID;
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_CONSECRATED_ARMS))
+			h & completedUnitAction;
+		else if(!h.saving) completedUnitAction = -1;
+		if(completedUnitAction < -1) throw std::runtime_error("Invalid completed creature action receipt");
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_FORTUNE_EFFECTS))
 			h & endsFortuneActivation;
 		else if(!h.saving)

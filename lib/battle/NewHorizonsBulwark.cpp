@@ -185,6 +185,7 @@ bool applyPhysicalPoison(battle::CUnitState * target, int64_t baseDamage, int32_
 	target->physicalPoisonActivationsRemaining = 3;
 	target->physicalPoisonSourceStackId = sourceStackId;
 	target->physicalPoisonSpellSide = BattleSide::NONE;
+	target->physicalPoisonDescriptor.reset();
 	return true;
 }
 
@@ -221,5 +222,6 @@ void clearPhysicalPoison(battle::CUnitState * target)
 	target->physicalPoisonActivationsRemaining = 0;
 	target->physicalPoisonSourceStackId = -1;
 	target->physicalPoisonSpellSide = BattleSide::NONE;
+	target->physicalPoisonDescriptor.reset();
 }
 }

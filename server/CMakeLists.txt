@@ -7,6 +7,8 @@ set(vcmiservercommon_SRCS
 		battles/BattleActionProcessor.cpp
 		battles/BattleOrderIssuance.cpp
 		battles/BattlePassiveDivineMandate.cpp
+		battles/BattleConsecratedArms.cpp
+		battles/CreatureAbilityApplication.cpp
 		battles/BattleDemonicGatingAction.cpp
 		battles/BattleDemonicGatingArrival.cpp
 	battles/BattleCreatureBurn.cpp
@@ -130,6 +132,8 @@ set(vcmiservercommon_HEADERS
 		battles/NewHorizonsManaLeeches.h
 		battles/NewHorizonsSerpentsEmbrace.h
 	battles/BattleLastStandDamage.h
+	battles/BattleConsecratedArms.h
+	battles/CreatureAbilityApplication.h
 	battles/BattlePrimaryStrikeAftermath.h
 	battles/BattlePurifyAction.h
 	battles/BattleMeleeSpecialtyCompletion.h

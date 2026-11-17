@@ -2,6 +2,7 @@
 #include "StdInc.h"
 #include "CUnitState.h"
 #include "CBattleInfoCallback.h"
+#include "../combatScripts/NativePreparedBonuses.h"
 #include <algorithm>
 #include <limits>
 
@@ -27,16 +28,14 @@ int CUnitState::getAttack(bool ranged) const
 {
 	const int ordinary = bonusCache.getBonusValue(ranged
 		? UnitBonusValuesProxy::ATTACK_RANGED : UnitBonusValuesProxy::ATTACK_MELEE);
-	return static_cast<int>(std::clamp<int64_t>(static_cast<int64_t>(ordinary) + warfareStatBonus(),
-		0, std::numeric_limits<int>::max()));
+	return nativeDamage::ordinaryStatWithWarfare(ordinary, warfareStatBonus());
 }
 
 int CUnitState::getDefense(bool ranged) const
 {
 	const int ordinary = bonusCache.getBonusValue(ranged
 		? UnitBonusValuesProxy::DEFENCE_RANGED : UnitBonusValuesProxy::DEFENCE_MELEE);
-	return static_cast<int>(std::clamp<int64_t>(static_cast<int64_t>(ordinary) + warfareStatBonus(),
-		0, std::numeric_limits<int>::max()));
+	return nativeDamage::ordinaryStatWithWarfare(ordinary, warfareStatBonus());
 }
 
 int CUnitState::getDefenseIgnoringDefensiveStance(bool ranged) const

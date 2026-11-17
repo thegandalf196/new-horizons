@@ -59,14 +59,19 @@ public:
 
 namespace selectedAttackReceipt
 {
+/// Shared existing native replay bodies; compact transactions call them only
+/// on registered future peers. No compact import/publication occurs here.
+DLL_LINKAGE BattleHex replayMovementNative(const AttackPossibility &, battle::CUnitState &, HypotheticBattle &);
+DLL_LINKAGE void replayResourcesNative(const AttackPossibility &, const battle::CUnitState &,
+	const std::shared_ptr<StackWithBonuses> &, const std::shared_ptr<StackWithBonuses> &, HypotheticBattle &);
 /// Existing Night Prowler, movement-reaction and endpoint prefix, in original order.
-BattleHex commitMovement(const AttackPossibility & preview, battle::CUnitState & actor, HypotheticBattle & branch);
+DLL_LINKAGE BattleHex commitMovement(const AttackPossibility & preview, battle::CUnitState & actor, HypotheticBattle & branch);
 /// Reconstruct the same native damage context at authoritative source/target origins.
 BattleAttackInfo attackForStrike(const FortuneStrikeProjection & strike,
 	const battle::Unit * actor, const battle::Unit * target);
 /// Revalue this same selected geometry only when its actor's Forest Ambush
 /// lifecycle differs from the branch. No target/path enumeration or new RNG.
-std::unique_ptr<AttackPossibility> refreshForestAmbush(const AttackPossibility & preview,
+DLL_LINKAGE std::unique_ptr<AttackPossibility> refreshForestAmbush(const AttackPossibility & preview,
 	const std::shared_ptr<HypotheticBattle> & branch, DamageCache & damageCache);
 /// Return actual growth repeated by selected replay, for gross-loss accounting.
 int64_t grantSoulHarvest(battle::CUnitState & actor, int64_t killedCreatures);
@@ -79,7 +84,7 @@ void restorePosition(const AttackPossibility & preview, battle::CUnitState & act
 	const HypotheticBattle & branch);
 /// Copy only the existing selected-preview resource/control fields. Physical
 /// damage, Fortune, expiry and continuation remain in their ordered owners.
-void restoreResources(const AttackPossibility & preview, const battle::CUnitState & captured,
+DLL_LINKAGE void restoreResources(const AttackPossibility & preview, const battle::CUnitState & captured,
 	const std::shared_ptr<StackWithBonuses> & recipient,
 	const std::shared_ptr<StackWithBonuses> & originalActor, HypotheticBattle & branch);
 }

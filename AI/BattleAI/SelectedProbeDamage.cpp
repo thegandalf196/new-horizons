@@ -172,7 +172,7 @@ const battle::Unit * BattleExchangeVariant::selectExchangeTarget(const battle::U
 	std::optional<bool> readyOverwatch;
 	DamageCacheAdmission admission(*attacker, *battle);
 	FlatDamageInputs flat(*battle, shooting);
-	if(battleSearch::forecastBeamOne())
+	if(battleSearch::forecastBeamOne() && !battle->forecastState())
 	{
 		// Materialize the same native participants once before the immutable
 		// selector batch. Reference/unsupported sources keep ordinary capture.
@@ -212,7 +212,7 @@ const battle::Unit * BattleExchangeVariant::selectExchangeTarget(const battle::U
 	selected.calculator = admitted;
 	// The numeric frame already proved the same immutable roster/getter sources.
 	// Unknown preparation retains the original selected-probe admission.
-	selected.reuseScore = reuseScore && (admission.flatInputs || selected.admitScore());
+	selected.reuseScore = reuseScore && (battle->forecastState() || admission.flatInputs || selected.admitScore());
 	if(offers && selected.value && admitted)
 		++*offers;
 	return best;

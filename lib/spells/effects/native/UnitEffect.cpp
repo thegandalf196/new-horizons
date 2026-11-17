@@ -5,9 +5,23 @@
 #include "../../NewHorizonsMagic.h"
 #include "../../../battle/CBattleInfoCallback.h"
 #include "../../../battle/Unit.h"
+#include <cmath>
 
 namespace spells::effects::native
 {
+bool UnitEffect::supportsFiniteForecastTargeting(const Mechanics & mechanics) const
+{
+	if(!parameters.isNull() && !parameters.isStruct()) return false;
+	if(!parameters["ignoreImmunity"].isNull() && !parameters["ignoreImmunity"].isBool()) return false;
+	const auto & chain = parameters["chainLength"];
+	if(!chain.isNull() && (!chain.isNumber() || !std::isfinite(chain.Float())
+		|| (chain.Float() != 0 && chain.Float() != 1))) return false;
+	// The native transformation applies the captured spell policy AFTER reading
+	// its descriptor. Even a configured zero can become a multi-target chain.
+	const auto effective = mechanics.getEffectiveChainLength(chain.isNull() ? 0 : static_cast<int32_t>(chain.Float()));
+	return effective >= 0 && effective <= 1;
+}
+
 bool UnitEffect::isValidTarget(const Mechanics *, const battle::Unit * unit) const
 {
 	return unit->isValidTarget(false);

@@ -6,6 +6,7 @@
 #include "../../AI/BattleAI/SpecialtyProcValue.h"
 #include "../../AI/BattleAI/CreatureActivationValue.h"
 #include "../../AI/BattleAI/StackWithBonuses.h"
+#include "../../lib/battle/ConsecratedArms.h"
 using namespace heroQueueTest;
 class NativeSpecialtyProcAITest : public NewHorizonsSpecialtyProcFixture
 {
@@ -25,6 +26,33 @@ protected:
 		return {child->battleGetUnitByID(actor->unitId()), child->battleGetUnitByID(enemy->unitId()), 0, shooting};
 	}
 };
+TEST_F(NativeSpecialtyProcAITest, UnshakablePreventionWeightsOneYogStunWithoutChangingProcOrNativeRng)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare("core:yog", "core:cyclop"));
+	ASSERT_NO_FATAL_FAILURE(branches());
+	const auto before = gameState()->saveToMemory();
+	const auto rng = randomBytes(*gameHandler->randomizer);
+	consecratedArms::Policy policy;
+	policy.rank = 1; policy.perks = static_cast<uint16_t>(consecratedArms::Perk::UNSHAKABLE_FAITH);
+	child->getForUpdate(enemy->unitId())->addUnitBonus(consecratedArms::prayerBonuses(
+		consecratedArms::Prayer::STEADFAST_SOUL, 200, policy, 3, 1));
+	DamageCache cache;
+	const auto context = hit();
+	const auto info = attackAbilityPrefix::query(*child, *context.attacker, *context.defender, false);
+	ASSERT_EQ(info.stunChancePercent, 25);
+	ASSERT_EQ(info.stunResistanceBasisPoints, 2000);
+	EXPECT_NEAR(info.stunSuccess, 0.2, 1e-12);
+	const auto pressure = creatureActivationValue::expectedTargetActivationValue(context.defender, cache, child, true);
+	ASSERT_GT(pressure, 0);
+	specialtyProcAI::Opportunities opportunities;
+	opportunities.observe(child, context);
+	AttackPossibility preview(context.attacker->getPosition(), context.defender->getPosition(), context);
+	opportunities.complete(preview, child, cache);
+	EXPECT_NEAR(preview.defenderDamageReduce, pressure * 0.2, 0.001);
+	EXPECT_FALSE(newHorizonsStun::isStunned(*child->battleGetUnitByID(enemy->unitId())));
+	EXPECT_EQ(gameState()->saveToMemory(), before);
+	EXPECT_EQ(randomBytes(*gameHandler->randomizer), rng);
+}
 TEST_F(NativeSpecialtyProcAITest, BaseWyvernHasOneNativePoisonAttemptAndMonarchKeepsItsNativeChance)
 {
 	prepare("core:broghild", "core:wyvern");

@@ -3,16 +3,18 @@
 #include "NativeEventCommon.h"
 #include "../../CStack.h"
 #include "../../battle/CUnitState.h"
+#include "../../battle/RedemptionEvent.h"
 #include "../../battle/NewHorizonsFrozen.h"
 #include "../../bonuses/BonusList.h"
 #include "../../networkPacks/PacksForClientBattle.h"
 #include "../../networkPacks/SetStackEffect.h"
 #include "../../spells/CSpell.h"
+#include "../../spells/NewHorizonsMetamagicOverflow.h"
 
 namespace nativeEvents
 {
 std::pair<int64_t, int64_t> damage(const Context & context, const battle::Unit & unit, int64_t amount,
-	const battle::Unit * source, bool magical, const CSpell * spell, bool destroyRemains)
+	const battle::Unit * source, bool magical, const CSpell * spell, bool destroyRemains, bool secondary, newHorizonsMetamagic::OverflowPrimaryDamage * witness, const battle::DamageContext * damageContext)
 {
 	if(spell && context.battle.battleGetUnitByID(unit.unitId()) != &unit)
 		throw std::runtime_error("Damage target must be a unit in the given battle");
@@ -22,9 +24,12 @@ std::pair<int64_t, int64_t> damage(const Context & context, const battle::Unit &
 	hit.damageAmount = amount;
 	hit.stackAttacked = unit.unitId();
 	hit.attackerID = source ? source->unitId() : -1;
+	const auto healthBefore = witness ? unit.getAvailableHealth() : 0;
+	int64_t postShield = 0;
 	auto state = unit.acquireState();
 	CStack::prepareAttacked(hit, *context.server.getRNG(), state, destroyRemains, false,
-		magical || spell ? battle::DamageProvenance::SPELL : battle::DamageProvenance::OTHER);
+		magical || spell ? battle::DamageProvenance::SPELL : battle::DamageProvenance::OTHER, witness ? &postShield : nullptr, damageContext);
+	if(secondary) hit.flags |= BattleStackAttacked::SECONDARY;
 	if(spell)
 	{
 		hit.flags |= BattleStackAttacked::SPELL_EFFECT;
@@ -33,7 +38,9 @@ std::pair<int64_t, int64_t> damage(const Context & context, const battle::Unit &
 	StacksInjured pack;
 	pack.battleID = context.battle.getBattle()->getBattleID();
 	pack.stacks.push_back(hit);
+	if(damageContext && damageContext->redemption) damageContext->redemption->record(context.battle, pack.stacks);
 	context.server.apply(pack);
+	if(witness) *witness = {unit.unitId(), healthBefore, postShield, hit.damageAmount, !state->alive()};
 	return {hit.damageAmount, hit.killedAmount};
 }
 

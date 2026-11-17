@@ -13,6 +13,7 @@
 #include "ISpellMechanics.h"
 
 #include "effects/Effects.h"
+#include "../battle/RedemptionEvent.h"
 #include <span>
 
 struct BattleSpellCast;
@@ -32,6 +33,17 @@ public:
 	BattleSpellMechanics(const IBattleCast * event, std::shared_ptr<effects::Effects> effects_, std::shared_ptr<IReceptiveCheck> targetCondition_);
 	virtual ~BattleSpellMechanics();
 
+	/// Effects-only forecasting must never bypass HERO/automatic completion.
+	bool isFiniteCreatureForecast() const
+	{
+		return mode == Mode::CREATURE_ACTIVE && getUnitCaster() && !getHeroCaster()
+			&& !getAutomaticHeroCast().automatic();
+	}
+
+	bool hasResolvedHeroLuck() const { return heroLuck.has_value(); }
+	std::optional<newHorizonsMetamagic::OverflowPreview> metamagicOverflowReceipt() const override { return evaluatedOverflow; }
+	void setMetamagicOverflowProjectionOutcome(newHorizonsMetamagic::OverflowProjectionOutcome outcome) override
+	{ overflowProjectionOutcome = outcome; }
 	void forEachEffect(const std::function<bool(const spells::effects::Effect &)> & fn) const override final;
 
 	// TODO: ??? (what's the difference compared to cast?)
@@ -85,6 +97,10 @@ public:
 
 	/// Returns true if unit would resist the spell due to magic resistance
 	bool wouldResist(const battle::Unit * unit) const override;
+	battle::DamageContext spellDamageContext(const battle::Unit & recipient) const override;
+	bool wouldResistOverflow(const battle::Unit * unit) const;
+	bool isOverflowRecipientReceptive(const battle::Unit * unit) const;
+	RecipientConditionResult checkOverflowRecipient(const battle::Unit * unit) const;
 	void recordResistanceShare(const effects::Effect * effect, const battle::Unit * unit, size_t index) const override;
 	void recordResistanceDamageShare(const effects::Effect * effect, const battle::Unit * unit, int64_t raw) const override;
 	using BaseMechanics::ownerMatches;
@@ -125,6 +141,8 @@ private:
 		bool resisted;
 		bool resolved = false;
 		int sample = 99;
+		bool metamagicRetried = false;
+		int probabilityBasisPoints = -1;
 	};
 
 	struct RunicShare
@@ -151,10 +169,14 @@ private:
 
 	std::optional<BattleCast> eventSnapshot;
 	mutable bool countingSpellTargets = false;
+	std::optional<newHorizonsMetamagic::OverflowPreview> evaluatedOverflow;
+	newHorizonsMetamagic::OverflowProjectionOutcome overflowProjectionOutcome = newHorizonsMetamagic::OverflowProjectionOutcome::Nominal;
 	std::shared_ptr<effects::Effects> effects;
 	std::shared_ptr<IReceptiveCheck> targetCondition;
 
 	battle::Units affectedUnits;
+	mutable std::map<uint32_t, battle::VowCasualtyQuota> spellCasualtyQuotas;
+	mutable battle::RedemptionEvent spellRedemption;
 	mutable std::set<uint32_t> resistantUnitIds; // ids of units that would resist the spell (used in chain lightning computation)
 	mutable std::vector<ResistanceRoll> resistanceRolls;
 	ServerCallback * activeResistanceServer = nullptr;
@@ -168,7 +190,7 @@ private:
 		std::optional<newHorizonsLifeDrain::ProjectionReceipt> lifeDrain;
 	};
 	PreparedProjectionReceipts prepareProjectedEffects(const Target & target, bool completedHeroProjection);
-	bool delegateConcentratedProjection(ServerCallback * server, const Target & target);
+	bool delegateConcentratedProjection(ServerCallback * server, const Target & target, uint64_t evaluationToken);
 
 	struct CompoundMirrorEffect
 	{
@@ -186,6 +208,7 @@ private:
 	void beforeCast(ServerCallback * server, BattleSpellCast & sc, vstd::RNG & rng, const Target & target,
 		std::vector<CompoundMirrorEffect> * compoundMirrorEffects);
 	bool isReflected(ServerCallback * server, const battle::Unit * unit, vstd::RNG & rng);
+	bool wouldResistOrdinary(const battle::Unit * unit) const;
 	void reflect(ServerCallback * server, BattleSpellCast & sc, vstd::RNG & rng, const battle::Unit * unit);
 	const battle::Unit * getRandomUnit(vstd::RNG & rng, const BattleSide & side);
 	const battle::Unit * getRandomUnitForOwner(vstd::RNG & rng, PlayerColor owner);

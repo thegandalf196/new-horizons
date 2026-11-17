@@ -135,7 +135,7 @@ public:
 		const bool supported = context.adjacencyFiltersSupported && context.ordinaryRangedSpecialtiesSupported
 		&& context.ordinaryMaintenanceSpecialtiesSupported && context.ordinaryCombatSpecialtiesSupported
 		&& context.extendedOrdinarySpecialtiesSupported && context.passiveFactionSkillsSupported
-		&& context.nativeRulesRedesignSupported && context.commandAuthoritySupported;
+		&& context.nativeRulesRedesignSupported && context.commandAuthoritySupported && context.creatureAbilityProvenanceSupported;
 		if(h.saving && !supported)
 			validateAdjacencyCapabilitySerialization(context);
 		h & data_;

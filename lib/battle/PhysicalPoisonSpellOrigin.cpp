@@ -3,6 +3,7 @@
 #include "PhysicalPoisonSpellOrigin.h"
 #include "CUnitState.h"
 #include "../json/JsonNode.h"
+#include "../serializer/JsonSerializeFormat.h"
 namespace battle
 {
 void validatePhysicalPoisonSerialization(const CUnitState & state, bool supported)
@@ -13,6 +14,13 @@ void validatePhysicalPoisonSerialization(const CUnitState & state, bool supporte
 		|| ((state.physicalPoisonBaseDamage == 0) != (state.physicalPoisonActivationsRemaining == 0))
 		|| (state.physicalPoisonSpellSide != BattleSide::NONE && state.physicalPoisonBaseDamage == 0))
 		throw std::runtime_error("Invalid physical Poison payload or spell origin");
+	if(state.physicalPoisonDescriptor)
+	{
+		state.physicalPoisonDescriptor->validate();
+		if(state.physicalPoisonBaseDamage <= 0 || state.physicalPoisonActivationsRemaining <= 0
+			|| (state.physicalPoisonDescriptor->categories & creatureAbility::HOSTILE_AFFLICTION) == 0)
+			throw std::runtime_error("Physical Poison descriptor requires an active payload");
+	}
 	if(!supported && (state.physicalPoisonBaseDamage != 0 || state.physicalPoisonActivationsRemaining != 0
 		|| state.physicalPoisonSourceStackId != -1 || state.physicalPoisonSpellSide != BattleSide::NONE))
 		throw std::runtime_error("Cannot discard physical Poison payload or spell origin in an older binary descriptor");
@@ -41,4 +49,30 @@ BattleSide physicalPoisonSpellOriginFromJson(const JsonNode & unit)
 	}
 	return side;
 }
+creatureAbility::Descriptor physicalPoisonDescriptorFromJson(const JsonNode & unit)
+{
+	const auto & state = unit["state"];
+	const auto & encoded = state["physicalPoisonDescriptor"];
+	if(encoded.isNull()) return {};
+	auto result = CreatureAbilityDescriptor::fromJson(encoded);
+	if(!result || (result->categories & creatureAbility::HOSTILE_AFFLICTION) == 0)
+		throw std::runtime_error("Physical Poison descriptor must identify a hostile affliction");
+	const auto & base = state["physicalPoisonBaseDamage"];
+	const auto & ticks = state["physicalPoisonActivationsRemaining"];
+	if(base.getType() != JsonNode::JsonType::DATA_INTEGER || base.Integer() <= 0
+		|| ticks.getType() != JsonNode::JsonType::DATA_INTEGER || ticks.Integer() < 1 || ticks.Integer() > 3)
+		throw std::runtime_error("Physical Poison descriptor requires an active payload");
+	return result;
+}
+void serializePhysicalPoisonDescriptor(JsonSerializeFormat & handler, CUnitState & state)
+{
+	JsonNode descriptor;
+	if(handler.saving && state.physicalPoisonDescriptor)
+		descriptor = state.physicalPoisonDescriptor->toJson();
+	handler.serializeRaw("physicalPoisonDescriptor", descriptor, std::nullopt);
+	if(!handler.saving) state.physicalPoisonDescriptor = descriptor.isNull()
+		? creatureAbility::Descriptor{} : CreatureAbilityDescriptor::fromJson(descriptor);
+	validatePhysicalPoisonSerialization(state, true);
+}
+
 }

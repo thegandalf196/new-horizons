@@ -3,8 +3,10 @@
 #include "../../Global.h"
 #include <cstdint>
 #include "BattleSide.h"
+#include "CreatureAbility.h"
 #include <stdexcept>
 class JsonNode;
+class JsonSerializeFormat;
 namespace battle
 {
 class CUnitState;
@@ -12,6 +14,8 @@ DLL_LINKAGE void validatePhysicalPoisonSerialization(const CUnitState & state, b
 /// This receipt records the original spell caster side, never a current owner
 /// or an inferred other side. NONE preserves unknown historical/creature origin.
 DLL_LINKAGE BattleSide physicalPoisonSpellOriginFromJson(const JsonNode & unit);
+DLL_LINKAGE creatureAbility::Descriptor physicalPoisonDescriptorFromJson(const JsonNode & unit);
+DLL_LINKAGE void serializePhysicalPoisonDescriptor(JsonSerializeFormat & handler, CUnitState & state);
 inline bool validPhysicalPoisonSpellOrigin(BattleSide side)
 {
 	return side == BattleSide::NONE || side == BattleSide::ATTACKER || side == BattleSide::DEFENDER;
