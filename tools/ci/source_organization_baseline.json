@@ -17104,9 +17104,9 @@
       "functions": []
     },
     "AI/BattleAI/ForecastState.h": {
-      "sha256": "5c149b1773c672874e22a7e310201b4efb226fb3d8b312fe163bb23b3d6f4076",
-      "review": "IR-NH0921-COMPOSED4-CODEORG-20261117",
-      "rationale": "Complete exact-content callable inventory independently checked, including definitions, inline bodies, templates, lambdas and function-like macros across both NH_PERF_EXPERIMENTS branches. Original physical spans are retained; parser recovery remains explicit and does not imply empty coverage. Known recovery contexts were inspected; declaration/default-initializer syntax contributes no executable body.",
+      "sha256": "78a2525288155425ad55ad434b227553619d380355871046ac03ce1db8f34c16",
+      "review": "IR-NH0921-V11-FORECASTSTATE-MANUAL-20261117",
+      "rationale": "Complete exact189-line header inventory independently reviewed against the previous188-line row. All seven handwritten callable bodies remain byte-identical: eventBit30-34, UnitDelta108, Counters::add124-134, accumulate135-147, State::sameSnapshot172-175, currentRound185 and work187. Both NH_PERF_EXPERIMENTS branches are retained. The COW comment expansion shifts the last three spans by one; the Layer owner and constructor parameter become mutable shared_ptr types without introducing a body. Defaulted equality is not handwritten, and all other declarations, aggregate/default member initializers and includes contain no omitted callable, lambda or function-like macro. Existing parser missing-type recovery remains confined to the bodyless fork default argument at171. Exact-content coverage only, with no numeric-growth allowance, future-content approval or native/rendered/performance acceptance.",
       "functions": [
         {
           "symbol": "forecast::constexpr EventMask eventBit(Event event)#1",
@@ -17130,18 +17130,18 @@
         },
         {
           "symbol": "forecast::State::bool sameSnapshot(const State & other) const noexcept#1",
-          "start": 171,
-          "end": 174
+          "start": 172,
+          "end": 175
         },
         {
           "symbol": "forecast::State::int32_t currentRound() const#1",
-          "start": 184,
-          "end": 184
+          "start": 185,
+          "end": 185
         },
         {
           "symbol": "forecast::State::const Counters & work() const#1",
-          "start": 186,
-          "end": 186
+          "start": 187,
+          "end": 187
         }
       ]
     },
