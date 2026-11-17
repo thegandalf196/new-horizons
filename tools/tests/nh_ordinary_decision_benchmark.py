@@ -13,6 +13,7 @@ import math
 import os
 from pathlib import Path
 import resource
+import re
 import statistics
 import subprocess
 import time
@@ -134,14 +135,73 @@ def invoke(candidate, argv, output, plan, diagnostics):
         raise RuntimeError('Native child failed: ' + str(child.returncode))
 
 
-def properties(path):
+def listed_tests(text):
+    """Parse a full GoogleTest listing; keep disabled and parameter names literal."""
+    names, suite = [], None
+    for line in text.splitlines():
+        clean = line.split('#', 1)[0].rstrip()
+        if clean and not clean[0].isspace() and clean.endswith('.'):
+            suite = clean[:-1]
+            if not re.fullmatch(r'[A-Za-z0-9_/]+', suite):
+                raise ValueError('Malformed discovery suite')
+        elif clean.startswith('  ') and suite:
+            case = clean.strip()
+            if not re.fullmatch(r'[A-Za-z0-9_/]+', case):
+                raise ValueError('Malformed discovery case')
+            names.append(suite + '.' + case)
+    if not names or len(names) != len(set(names)):
+        raise ValueError('Empty or duplicate native discovery')
+    return names
+
+
+def expected_discovery_cases(candidate, wanted, required):
+    """The reviewed candidate manifest supplies its source-first full inventory."""
+    expected = candidate.get('expectedDiscoveryCases')
+    if expected is None:
+        if required:
+            raise ValueError('Timing gate requires source-first expectedDiscoveryCases per candidate')
+        return None
+    if (not isinstance(expected, list) or not expected
+            or any(not isinstance(name, str) or not re.fullmatch(r'[A-Za-z0-9_/]+\.[A-Za-z0-9_/]+', name)
+                   for name in expected)
+            or len(expected) != len(set(expected)) or wanted not in expected):
+        raise ValueError('Invalid expectedDiscoveryCases or requested case missing')
+    return expected
+
+
+def discovery_membership(text, candidate, wanted, required):
+    actual = listed_tests(text)
+    expected = expected_discovery_cases(candidate, wanted, required)
+    if wanted not in actual:
+        raise ValueError('Requested native case was not discovered')
+    if expected is not None and set(actual) != set(expected):
+        raise ValueError('Full native discovery has missing or extra cases')
+    return {'verified': expected is not None, 'discoveredCount': len(actual),
+            'scope': 'Exact source-first membership' if expected is not None else 'Membership unverified'}
+
+
+def executed_properties(path, expected):
+    """Accept one completed successful execution, with unambiguous witnesses."""
     root = ET.parse(path).getroot()
     cases = list(root.iter('testcase'))
-    if len(cases) != 1 or list(root.iter('failure')) or list(root.iter('skipped')) or list(root.iter('error')):
+    if len(cases) != 1 or any(list(root.iter(tag)) for tag in ('failure', 'error', 'skipped')):
         raise ValueError('Expected exactly one executed successful case')
-    if cases[0].get('classname') + '.' + cases[0].get('name') != FILTER:
+    case = cases[0]
+    if case.get('status') != 'run' or case.get('result') != 'completed':
+        raise ValueError('Native case was not run and completed')
+    if case.get('classname', '') + '.' + case.get('name', '') != expected:
         raise ValueError('Wrong native case')
-    result = {row.attrib['name']: row.attrib['value'] for row in cases[0].iter('property')}
+    result = {}
+    for row in case.iter('property'):
+        name, value = row.get('name'), row.get('value')
+        if not name or value is None or name in result:
+            raise ValueError('Missing or duplicate native property')
+        result[name] = value
+    return result
+
+
+def properties(path):
+    result = executed_properties(path, FILTER)
     if any(key not in result for key in (*PARITY, 'firstCallbackUs', 'diagnostics')):
         raise ValueError('Missing semantic witnesses')
     if int(result['firstCallbackUs']) <= 0:
@@ -152,6 +212,13 @@ def properties(path):
     if result['nativeStateBefore'] != result['nativeStateAfter']:
         raise ValueError('Callback mutated native state')
     return result
+
+
+def relative_regression_gate(baseline, candidate, margin):
+    return {'maxRegressionPercent': margin,
+            'observedPercent': 100 * (candidate / baseline - 1),
+            'passed': candidate <= baseline * (1 + margin / 100),
+            'basis': 'Matched medians after exact semantic parity; hardware/noise qualification is external'}
 
 
 def main():
@@ -177,6 +244,8 @@ def main():
 
     if not 1 <= plan['pairs'] <= 5 or set(plan['candidates']) != {'baseline', 'candidate'}:
         raise ValueError('Expected two candidates and one to five pairs')
+    for candidate in plan['candidates'].values():
+        expected_discovery_cases(candidate, FILTER, args.gate)
     if not args.output.is_absolute() or args.output.exists():
         raise ValueError('Output must be a fresh absolute private directory')
     args.output.mkdir(mode=0o700)
@@ -198,17 +267,8 @@ def main():
                     '--gtest_random_seed=1', '--gtest_output=xml:' + str(output / 'native.xml')]
             listing = output / 'listing'
             listing.mkdir(mode=0o700)
-            invoke(candidate, ['--gtest_filter=' + FILTER, '--gtest_list_tests'],
-                   listing, plan, args.diagnostics)
-            names, suite = [], None
-            for line in (listing / 'child.log').read_text().splitlines():
-                clean = line.split('#', 1)[0].rstrip()
-                if clean and not clean[0].isspace() and clean.endswith('.'):
-                    suite = clean[:-1]
-                elif clean.startswith('  ') and suite:
-                    names.append(suite + '.' + clean.strip())
-            if names != [FILTER]:
-                raise ValueError('Exact nonempty discovery failed')
+            invoke(candidate, ['--gtest_list_tests'], listing, plan, args.diagnostics)
+            membership = discovery_membership((listing / 'child.log').read_text(), candidate, FILTER, args.gate)
             invoke(candidate, argv, output, plan, args.diagnostics)
             row = properties(output / 'native.xml')
             if row['diagnostics'] != ('1' if args.diagnostics else '0'):
@@ -217,25 +277,22 @@ def main():
             if reference is None:
                 reference = witness
             differences = [key for key in PARITY if witness[key] != reference[key]]
-            sample = {'pair': pair, 'arm': arm, 'properties': row, 'differences': differences}
+            sample = {'pair': pair, 'arm': arm, 'properties': row, 'differences': differences, 'discovery': membership}
             samples.append(sample)
             (args.output / 'samples.json').write_text(json.dumps(samples, indent=2) + '\n')
             if differences:
                 raise ValueError('Functional parity failed: ' + ', '.join(differences))
     summary = {'functionalParity': True, 'diagnostics': args.diagnostics,
                'quietTimingSamples': not args.diagnostics, 'samplesPerArm': plan['pairs'],
+               'discoveryMembershipVerified': all(row['discovery']['verified'] for row in samples),
+               'candidateGameplayAccepted': False,
                'scope': 'One no-hero ordinary callback; not whole-battle/rendered acceptance'}
     for arm in ('baseline', 'candidate'):
         times = [int(row['properties']['firstCallbackUs']) for row in samples if row['arm'] == arm]
         summary[arm] = {'medianUs': statistics.median(times), 'minUs': min(times), 'maxUs': max(times)}
     if args.gate:
-        baseline = summary['baseline']['medianUs']
-        candidate = summary['candidate']['medianUs']
-        summary['regressionGate'] = {
-            'maxRegressionPercent': margin,
-            'observedPercent': 100 * (candidate / baseline - 1),
-            'passed': candidate <= baseline * (1 + margin / 100),
-            'basis': 'Matched medians after exact semantic parity; hardware/noise qualification is external'}
+        summary['regressionGate'] = relative_regression_gate(
+            summary['baseline']['medianUs'], summary['candidate']['medianUs'], margin)
     (args.output / 'summary.json').write_text(json.dumps(summary, indent=2) + '\n')
     if args.gate and not summary['regressionGate']['passed']:
         raise SystemExit(2)

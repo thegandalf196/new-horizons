@@ -11,7 +11,6 @@ import math
 import os
 from pathlib import Path
 import statistics
-import xml.etree.ElementTree as ET
 import nh_ordinary_decision_benchmark as guard
 
 ENCOUNTER = 'DISABLED_NativeEncounterBenchmarkTest.'
@@ -35,13 +34,7 @@ COUNTER_SUFFIXES = ('Exchanges', 'TargetProbes')
 
 
 def read_result(path, expected):
-    root = ET.parse(path).getroot()
-    cases = list(root.iter('testcase'))
-    if len(cases) != 1 or any(list(root.iter(tag)) for tag in ('failure', 'error', 'skipped')):
-        raise ValueError('Expected exactly one executed successful workload')
-    if cases[0].get('classname') + '.' + cases[0].get('name') != expected:
-        raise ValueError('Unexpected case')
-    return {row.attrib['name']: row.attrib['value'] for row in cases[0].iter('property')}
+    return guard.executed_properties(path, expected)
 
 
 def read_diagnostics(log, world, volume):
@@ -66,6 +59,39 @@ def read_diagnostics(log, world, volume):
         raise ValueError('Hero attempt record budget exhausted')
     return {'initializationRows': rows, 'heroActionAggregateRows': aggregates, 'heroCandidateTypeRows': hero,
             'heroTypeRowsPresent': bool(hero)}
+
+
+def workload_sample(plan, prepared, output, selector, clock, args):
+    """Own one isolated listing/body sample; parity and aggregation stay in main."""
+    candidate = dict(prepared)
+    candidate['environment'] = dict(candidate['environment'])
+    output.mkdir(mode=0o700)
+    for key, name in (('HOME', 'home'), ('XDG_DATA_HOME', 'data'), ('XDG_CONFIG_HOME', 'config'),
+                      ('XDG_CACHE_HOME', 'cache'), ('XDG_RUNTIME_DIR', 'runtime'), ('TMPDIR', 'tmp')):
+        target = output / name
+        target.mkdir(mode=0o700)
+        candidate['environment'][key] = str(target)
+    candidate['environment']['NH_BENCHMARK_POLICY'] = args.policy
+    candidate['environment']['NH_MAPLOAD_PROFILE'] = '1' if args.diagnostics else '0'
+    candidate['environment']['NH_MAPLOAD_PROFILE_BYTES'] = '1' if args.volume else '0'
+    listing = output / 'listing'
+    listing.mkdir(mode=0o700)
+    base = ['--gtest_also_run_disabled_tests', '--gtest_filter=' + selector,
+            '--gtest_shuffle=0', '--gtest_repeat=1', '--gtest_random_seed=1']
+    guard.invoke(candidate, ['--gtest_list_tests'], listing, plan, args.diagnostics)
+    membership = guard.discovery_membership((listing / 'child.log').read_text(), candidate, selector, args.gate)
+    guard.invoke(candidate, base + ['--gtest_output=xml:' + str(output / 'native.xml')],
+                 output, plan, args.diagnostics)
+    props = read_result(output / 'native.xml', selector)
+    if clock not in props or int(props[clock]) <= 0:
+        raise ValueError('Missing positive elapsed interval')
+    row = {'properties': props, 'discovery': membership}
+    if args.diagnostics:
+        native_log = output / 'cache' / 'vcmi' / 'VCMI_Test_log.txt'
+        if not native_log.is_file() or native_log.is_symlink():
+            raise ValueError('Ordinary native file logger evidence missing')
+        row['diagnostics'] = read_diagnostics(native_log.read_text(), selector.startswith(WORLD), args.volume)
+    return row
 
 
 def main():
@@ -97,53 +123,27 @@ def main():
 
     if not 1 <= plan['pairs'] <= 5 or set(plan['candidates']) != {'baseline', 'candidate'}:
         raise ValueError('Expected two candidates and one to five pairs')
+    selector, clock = WORKLOADS[args.workload]
+    for candidate in plan['candidates'].values():
+        guard.expected_discovery_cases(candidate, selector, args.gate)
     if not args.output.is_absolute() or args.output.exists():
         raise ValueError('Fresh absolute private output required')
     args.output.mkdir(mode=0o700)
-    selector, clock = WORKLOADS[args.workload]
     if args.compare_choices and (args.gate or not selector.startswith(ENCOUNTER) or args.policy != 'Fast'):
         raise ValueError('Choice reports require an explicit Fast encounter without an exact-parity timing gate')
     samples, reference = [], None
     for pair in range(plan['pairs']):
         for arm in (('baseline', 'candidate') if pair % 2 == 0 else ('candidate', 'baseline')):
-            candidate = dict(plan['candidates'][arm])
-            candidate['environment'] = dict(candidate['environment'])
-            output = args.output / (str(pair) + '-' + arm)
-            output.mkdir(mode=0o700)
-            for key, name in (('HOME', 'home'), ('XDG_DATA_HOME', 'data'), ('XDG_CONFIG_HOME', 'config'),
-                              ('XDG_CACHE_HOME', 'cache'), ('XDG_RUNTIME_DIR', 'runtime'), ('TMPDIR', 'tmp')):
-                target = output / name
-                target.mkdir(mode=0o700)
-                candidate['environment'][key] = str(target)
-            candidate['environment']['NH_BENCHMARK_POLICY'] = args.policy
-            candidate['environment']['NH_MAPLOAD_PROFILE'] = '1' if args.diagnostics else '0'
-            candidate['environment']['NH_MAPLOAD_PROFILE_BYTES'] = '1' if args.volume else '0'
-            listing = output / 'listing'
-            listing.mkdir(mode=0o700)
-            base = ['--gtest_also_run_disabled_tests', '--gtest_filter=' + selector,
-                    '--gtest_shuffle=0', '--gtest_repeat=1', '--gtest_random_seed=1']
-            guard.invoke(candidate, base + ['--gtest_list_tests'], listing, plan, args.diagnostics)
-            listing_text = (listing / 'child.log').read_text()
-            suite, case = selector.rsplit('.', 1)
-            if suite + '.' not in listing_text or '  ' + case not in listing_text:
-                raise ValueError('Expected workload was not discovered')
-            guard.invoke(candidate, base + ['--gtest_output=xml:' + str(output / 'native.xml')],
-                         output, plan, args.diagnostics)
-            props = read_result(output / 'native.xml', selector)
-            if clock not in props or int(props[clock]) <= 0:
-                raise ValueError('Missing positive elapsed interval')
+            row = workload_sample(plan, plan['candidates'][arm],
+                                  args.output / (str(pair) + '-' + arm), selector, clock, args)
+            props = row['properties']
             witness = {key: value for key, value in props.items()
                        if key not in CLOCKS and not key.endswith(COUNTER_SUFFIXES)
                        and key != 'snapshotBytes'}
             if reference is None:
                 reference = witness
             differences = [key for key in reference.keys() | witness.keys() if witness.get(key) != reference.get(key)]
-            row = {'pair': pair, 'arm': arm, 'properties': props, 'semanticDifferences': differences}
-            if args.diagnostics:
-                native_log = output / 'cache' / 'vcmi' / 'VCMI_Test_log.txt'
-                if not native_log.is_file() or native_log.is_symlink():
-                    raise ValueError('Ordinary native file logger evidence missing')
-                row['diagnostics'] = read_diagnostics(native_log.read_text(), selector.startswith(WORLD), args.volume)
+            row.update(pair=pair, arm=arm, semanticDifferences=differences)
             samples.append(row)
             (args.output / 'samples.json').write_text(json.dumps(samples, indent=2) + '\n')
             input_keys = ('initialEvidence', 'seed', 'policy', 'scope')
@@ -152,6 +152,8 @@ def main():
     summary = {'exactSemanticParity': all(not row['semanticDifferences'] for row in samples), 'workload': args.workload, 'diagnostics': args.diagnostics,
                'volumeInspection': args.volume, 'policy': args.policy,
                'choiceReportOnly': args.compare_choices, 'decisionQualityAccepted': False, 'quietTimingSamples': not args.diagnostics,
+               'discoveryMembershipVerified': all(row['discovery']['verified'] for row in samples),
+               'candidateGameplayAccepted': False,
                'scope': 'Native fixture only; no rendered, disk-save, lobby or playable-delivery acceptance'}
     if args.compare_choices:
         summary['choiceComparison'] = [
@@ -166,13 +168,8 @@ def main():
         summary[arm] = {'samples': len(values), 'metric': clock, 'medianUs': statistics.median(values),
                         'minUs': min(values), 'maxUs': max(values)}
     if args.gate:
-        baseline = summary['baseline']['medianUs']
-        candidate = summary['candidate']['medianUs']
-        summary['regressionGate'] = {
-            'maxRegressionPercent': margin,
-            'observedPercent': 100 * (candidate / baseline - 1),
-            'passed': candidate <= baseline * (1 + margin / 100),
-            'basis': 'Matched medians after exact semantic parity; hardware/noise qualification is external'}
+        summary['regressionGate'] = guard.relative_regression_gate(
+            summary['baseline']['medianUs'], summary['candidate']['medianUs'], margin)
     (args.output / 'summary.json').write_text(json.dumps(summary, indent=2) + '\n')
     if args.gate and not summary['regressionGate']['passed']:
         raise SystemExit(2)

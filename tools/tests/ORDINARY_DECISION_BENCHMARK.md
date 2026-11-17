@@ -48,6 +48,20 @@ Neither a Git commit alone nor an executable checksum establishes that binding.
 }
 ```
 
+For `--gate`, each candidate also requires `expectedDiscoveryCases`: the complete
+source-reviewed list of literal `Suite.Case` names compiled into its binary,
+including the requested ordinary case. Keep parameter suffixes and `DISABLED_`
+prefixes. Derive this inventory from the reviewed source and build configuration;
+the listing being checked cannot establish its own expected membership.
+
+Discovery is unfiltered and must match the supplied inventory exactly, without
+missing, extra or duplicate cases. The body still runs only the requested case.
+Outside `--gate`, an omitted inventory is explicitly reported as unverified;
+supplying an inventory always enforces it. A successful XML result must contain
+exactly the requested case with `status="run"` and `result="completed"`, no
+failure, error or skip, and unique property names. These checks establish a
+matched metric fixture; `candidateGameplayAccepted` remains false.
+
 The coordinator-issued lease contains `state: "QUIET_EXCLUSIVE"`, an unexpired
 `expiresUnix` timestamp, `buildsAllowed: false` and
 `otherMeasurementsAllowed: false`. Its hash binds it to the manifest. It records

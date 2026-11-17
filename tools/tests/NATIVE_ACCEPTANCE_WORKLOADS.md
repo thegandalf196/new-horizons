@@ -49,6 +49,16 @@ runner, using a verified absolute interpreter:
   --output /private/fresh-results --workload castle --execute
 ```
 
+Each candidate's `expectedDiscoveryCases` supplies its complete source-reviewed
+binary inventory, including the requested workload. `--gate` requires this field.
+Discovery lists the entire binary without a filter and rejects missing, extra
+or duplicate cases. Preserve literal disabled-suite/case names and parameter
+suffixes; the body retains `--gtest_also_run_disabled_tests`. A non-gate run
+without an inventory reports unverified membership. XML must show exactly the
+requested case as run and completed, without failures, errors, skips or duplicate
+properties. Neither verified membership nor a timing pass accepts complete
+candidate gameplay; that summary field remains false.
+
 `--diagnostics` enables optional DEBUG records and initialization profiling.
 This requires an `ENABLE_NH_PERF_EXPERIMENTS=ON` build for world profiling. The
 runner reads the actual `VCMI_Test_log.txt` under the disposable profile, rejects
@@ -83,7 +93,8 @@ The portable CI entrypoint runs only explicitly selected, nonempty workloads:
 ```
 
 The CI manifest additionally requires `harnessPins`: absolute paths and SHA-256
-values for the entrypoint, both runners and the actual interpreter. Candidate
+values for the entrypoint, both runners and the actual interpreter, together with
+each candidate's complete `expectedDiscoveryCases`. Candidate
 inventories must cover source/test supplements, facade/providers, current config,
 `test/testdata/`, and read-only external Data/Mp3 mounts. Missing reviewed inputs
 produce `NOT_RUN` with a nonzero exit; a native/parity/regression failure is
