@@ -7,7 +7,8 @@ import unittest
 ROOT = Path(__file__).resolve().parents[2]
 HELP = (ROOT / "client/windows/NewHorizonsCreatureAbilityHelp.h").read_text()
 BINDINGS = (ROOT / "client/windows/NewHorizonsCreatureAbilityHelp.cpp").read_text()
-WINDOW = (ROOT / "client/windows/CCreatureWindow.cpp").read_text()
+WINDOW = "\n".join((ROOT / "client/windows" / name).read_text()
+                   for name in ("CCreatureWindow.cpp", "StackAbilityCards.cpp"))
 WIKI = (ROOT / "client/windows/wiki/WikiCreatureContent.cpp").read_text()
 HEADER = (ROOT / "client/windows/CCreatureWindow.h").read_text()
 STATUS_ROWS = (ROOT / "client/windows/CreatureBonusStatusPresentation.h").read_text()
@@ -48,7 +49,7 @@ class FreezingTouchHelpBindingTest(unittest.TestCase):
 
     def test_world_and_battle_contexts_without_global_defaults(self):
         self.assertIn('abilityRules = &battleContext->getMagicRules()', WINDOW)
-        self.assertIn('abilityRules = &info->stackNode->cb->getMagicRules()', WINDOW)
+        self.assertIn('abilityRules = &strategic->cb->getMagicRules()', WINDOW)
         self.assertIn('if(CPlayerInterface::battleInt)', WIKI)
         self.assertIn('abilityRules = &battleCallback->getBattle()->getMagicRules()', WIKI)
         self.assertIn('else if(callback)', WIKI)

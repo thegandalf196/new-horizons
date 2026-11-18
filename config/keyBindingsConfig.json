@@ -256,6 +256,7 @@
 		"townOpenHero":             "H",
 		"townOpenHeroExchange":     "E",
 		"townOpenMageGuild":        "G",
+		"townOpenAdministration":    "S",
 		"townOpenMarket":           "M",
 		"townOpenRecruitment":      "R",
 		"townOpenShipyard":         "Y",

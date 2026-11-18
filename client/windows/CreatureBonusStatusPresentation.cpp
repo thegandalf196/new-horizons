@@ -15,6 +15,7 @@
 #include "../../lib/callback/CCallback.h"
 #include <boost/algorithm/string/replace.hpp>
 #include <algorithm>
+#include <array>
 
 namespace creatureBonusStatusPresentation
 {
@@ -105,11 +106,22 @@ std::vector<Row> supplementalRows(const CStack * battleStack, const CStackInstan
 			rows.push_back(std::move(status));
 		}
 	}
-	for(const auto & prayer : passiveFactionSkillPresentation::prayerTexts(consecratedArms::activePrayers(*battleStack)))
+	constexpr std::array<const char *, 6> prayerImages = {
+		"NH_prayer_divine_purpose.png", "NH_prayer_dauntless_assault.png",
+		"NH_prayer_steadfast_soul.png", "NH_prayer_vicarious_redemption.png",
+		"NH_prayer_unbroken_vow.png", "NH_prayer_heavens_judgment.png"};
+	const auto prayers = consecratedArms::activePrayers(*battleStack);
+	const auto prayerTexts = passiveFactionSkillPresentation::prayerTexts(prayers);
+	size_t textIndex = 0;
+	for(const auto & prayer : prayers)
 	{
+		if(!prayer)
+			continue;
+		const auto & text = prayerTexts.at(textIndex++);
 		Row status;
-		status.description = prayer.value;
-		status.tooltip = prayer.details;
+		status.description = text.value;
+		status.tooltip = text.details;
+		status.imagePath = ImagePath::builtin(prayerImages.at(static_cast<size_t>(prayer->prayer)));
 		status.bonusSource = BonusSource::SECONDARY_SKILL;
 		rows.push_back(std::move(status));
 	}

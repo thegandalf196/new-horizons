@@ -2006,25 +2006,6 @@ void CCastleBuildings::enterBank(BuildingID building)
 	}
 }
 
-void CCastleBuildings::enterAnyMarket()
-{
-	if(town->hasBuilt(BuildingID::MARKETPLACE))
-	{
-		ENGINE->windows().createAndPushWindow<CMarketWindow>(town, nullptr, nullptr, EMarketMode::RESOURCE_RESOURCE);
-		return;
-	}
-
-	std::vector<const CGTownInstance*> towns = GAME->interface()->cb->getTownsInfo(true);
-	for(auto & town : towns)
-	{
-		if(town->hasBuilt(BuildingID::MARKETPLACE))
-		{
-			ENGINE->windows().createAndPushWindow<CMarketWindow>(town, nullptr, nullptr, EMarketMode::RESOURCE_RESOURCE);
-			return;
-		}
-	}
-	GAME->interface()->showInfoDialog(LIBRARY->generaltexth->translate("vcmi.adventureMap.noTownWithMarket"));
-}
 
 CCreaInfo::CCreaInfo(Point position, const CGTownInstance * Town, int Level, bool compact, bool _showAvailable):
 	town(Town),
@@ -2291,8 +2272,7 @@ void CCastleInterface::updateGarrisons()
 	garr->setArmy(town->getVisitingHero(), EGarrisonType::LOWER);
 	garr->recreateSlots();
 	heroes->update();
-	if(income)
-		income->setText(std::to_string(town->dailyIncome()[EGameResID::GOLD]));
+	refreshIncome();
 
 	redraw();
 }
@@ -2523,7 +2503,7 @@ void CCastleInterface::recreateIcons()
 	fastArmyPurchase = std::make_shared<CButton>(Point(122, 413), AnimationPath::builtin("castleInterfaceQuickAccess"), CButton::tooltip(), [this](){ builds->enterToTheQuickRecruitmentWindow(); }, EShortcut::TOWN_OPEN_RECRUITMENT);
 	fastArmyPurchase->setOverlay(std::make_shared<CAnimImage>(AnimationPath::builtin("itmcl"), imageIndex));
 
-	fastMarket = std::make_shared<LRClickableArea>(Rect(163, 410, 64, 42), [this]() { builds->enterAnyMarket(); }, [this]()
+	fastMarket = std::make_shared<LRClickableArea>(Rect(163, 410, 64, 42), [this]() { townEstateUI::showIncomeMenu(*town, [buildings = builds] { buildings->enterAnyMarket(); }); }, [this]()
 	{
 		CRClickPopup::createAndPush(townEstateUI::incomeHelp(*town));
 	});
@@ -2586,6 +2566,9 @@ void CCastleInterface::keyPressed(EShortcut key)
 	case EShortcut::TOWN_OPEN_FORT:
 		if(town->fortLevel() > CGTownInstance::NONE)
 			ENGINE->windows().createAndPushWindow<CFortScreen>(town);
+		break;
+	case EShortcut::TOWN_OPEN_ADMINISTRATION:
+		townEstateUI::showAdministration(*town);
 		break;
 	case EShortcut::TOWN_OPEN_MARKET:
 		builds->enterAnyMarket();
@@ -2762,7 +2745,6 @@ CHallInterface::CHallInterface(const CGTownInstance * Town):
 	statusbar = CGStatusBar::create(statusbarBackground);
 
 	title = std::make_shared<CLabel>(399, 12, FONT_MEDIUM, ETextAlignment::CENTER, Colors::WHITE, town->getTown()->buildings.at(BuildingID(town->hallLevel()+BuildingID::VILLAGE_HALL))->getNameTranslated());
-	stewardButton = townEstateUI::createStewardButton(*town);
 	exit = std::make_shared<CButton>(Point(748, 556), AnimationPath::builtin("TPMAGE1.DEF"), CButton::tooltip(LIBRARY->generaltexth->translate("core.hallinfo.8")), [&](){close();}, EShortcut::GLOBAL_RETURN);
 
 	auto & boxList = town->getTown()->clientInfo.hallSlots;

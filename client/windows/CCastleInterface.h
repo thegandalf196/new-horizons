@@ -272,6 +272,7 @@ public:
 
 	void updateArtifacts() override;
 	void updateGarrisons() override;
+	void refreshIncome();
 	bool holdsGarrison(const CArmedInstance * army) override;
 
 	void castleTeleport(int where);
@@ -314,7 +315,6 @@ class CHallInterface : public CStatusbarWindow
 	std::vector<std::vector<std::shared_ptr<CBuildingBox>>> boxes;
 	std::shared_ptr<CPicture> layoutBackground;
 	std::shared_ptr<CLabel> title;
-	std::shared_ptr<CButton> stewardButton;
 	std::shared_ptr<CMinorResDataBar> resdatabar;
 	std::shared_ptr<CButton> exit;
 

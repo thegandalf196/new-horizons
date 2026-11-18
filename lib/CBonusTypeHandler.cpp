@@ -175,21 +175,52 @@ std::string CBonusTypeHandler::bonusToString(const std::shared_ptr<Bonus> & bonu
 
 ImagePath CBonusTypeHandler::bonusToGraphics(const std::shared_ptr<Bonus> & bonus) const
 {
+	if(!bonus->customIconPath.empty())
+		return bonus->customIconPath;
 	const CBonusType & bt = *bonusTypes.at(vstd::to_underlying(bonus->type));
 
 	if (bonus->type == BonusType::SPELL_IMMUNITY && bonus->subtype.as<SpellID>().hasValue())
-	{
-		const CSpell * sp = bonus->subtype.as<SpellID>().toSpell();
-		return sp->getIconImmune();
-	}
+		return bonus->subtype.as<SpellID>().toSpell()->getIconImmune();
 
 	if (bt.subtypeIcons.count(bonus->subtype.getNum()))
 		return bt.subtypeIcons.at(bonus->subtype.getNum());
-
 	if (bt.valueIcons.count(bonus->val))
 		return bt.valueIcons.at(bonus->val);
+	if(!bt.icon.empty())
+		return bt.icon;
 
-	return bt.icon;
+	// Only a spell-typed subtype can select a spell's own artwork. Explicit
+	// instance and type metadata above remain authoritative for mod authors.
+	switch(bonus->type)
+	{
+	case BonusType::SPELLCASTER:
+	case BonusType::SPELL_AFTER_ATTACK:
+	case BonusType::SPELL_LIKE_ATTACK:
+	case BonusType::ENCHANTER:
+		if(const auto spell = bonus->subtype.as<SpellID>(); spell.hasValue())
+		{
+			const auto * definition = spell.toSpell();
+			if(!definition->getIconBook().empty())
+				return ImagePath::builtin(definition->getIconBook());
+			if(!definition->getIconEffect().empty())
+				return ImagePath::builtin(definition->getIconEffect());
+			// The original book ends before creature abilities. The status
+			// sheet includes the native effects from Stone Gaze to Thunderbolt.
+			if(spell < SpellID::FIRST_NON_SPELL)
+				return ImagePath::builtin("SPELLS.DEF:0:" + std::to_string(spell.getNum()));
+			if(spell <= SpellID::THUNDERBOLT)
+				return ImagePath::builtin("SPELLINT.DEF:0:" + std::to_string(spell.getNum() + 1));
+		}
+		break;
+	case BonusType::HATE:
+	case BonusType::SKELETON_TRANSFORMER_TARGET:
+		if(const auto creature = bonus->subtype.as<CreatureID>(); creature.hasValue())
+			return ImagePath::builtin("CPRSMALL.DEF:0:" + std::to_string(creature.toCreature()->getIconIndex()));
+		break;
+	default:
+		break;
+	}
+	return {};
 }
 
 std::vector<JsonNode> CBonusTypeHandler::loadLegacyData()

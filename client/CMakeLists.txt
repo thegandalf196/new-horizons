@@ -38,6 +38,8 @@ set(vcmiclientcommon_SRCS
 	battle/BattleHeroActionWindow.cpp
 	battle/BattleHeroStatus.cpp
 	battle/BattleSpellPresentation.cpp
+	battle/OverflowSpellPresentation.cpp
+	battle/LivingArmorSpawnPresentation.cpp
 	battle/BattleFocusMagicProjectile.cpp
 	battle/BattleRangedAnimation.cpp
 	battle/ThunarRangedPresentation.cpp
@@ -97,6 +99,7 @@ set(vcmiclientcommon_SRCS
 	lobby/TurnOptionsTab.cpp
 	lobby/ExtraOptionsTab.cpp
 	lobby/OptionsTab.cpp
+	lobby/OptionsTabTooltip.cpp
 	lobby/OptionsTabBase.cpp
 	lobby/RandomMapTab.cpp
 	lobby/RandomMapTabTemplates.cpp
@@ -269,6 +272,7 @@ set(vcmiclientcommon_SRCS
 	windows/CreaturePurchaseCard.cpp
 	windows/NewHorizonsCreatureAbilityHelp.cpp
 	windows/CreatureBonusStatusPresentation.cpp
+	windows/CreatureOrderStatusPresentation.cpp
 	windows/GUIClasses.cpp
 	windows/CRecruitmentWindow.cpp
 	windows/CLevelWindow.cpp

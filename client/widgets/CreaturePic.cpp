@@ -35,10 +35,13 @@ CCreaturePic::CCreaturePic(int x, int y, const CCreature * cre, bool Big, bool A
 		return;
 	}
 
-	if(Big)
-		bg = std::make_shared<CPicture>((*LIBRARY->townh)[faction]->creatureBg130);
-	else
-		bg = std::make_shared<CPicture>((*LIBRARY->townh)[faction]->creatureBg120);
+	const auto creatureKey = cre->getJsonKey();
+	const auto * factionInfo = (*LIBRARY->townh)[faction];
+	auto background = Big ? factionInfo->creatureBg130 : factionInfo->creatureBg120;
+	if(creatureKey == "new-horizons:livingArmor")
+		background = ImagePath::builtin(Big ? "NH_living_armor_aetheric_background_130.png"
+			: "NH_living_armor_aetheric_background_120.png");
+	bg = std::make_shared<CPicture>(background);
 	anim = std::make_shared<CCreatureAnim>(0, 0, cre->animDefName, CShowableAnim::CREATURE_PREVIEW_MODE);
 	if(previewViewport.x > 0 && previewViewport.y > 0)
 	{
@@ -47,7 +50,7 @@ CCreaturePic::CCreaturePic(int x, int y, const CCreature * cre, bool Big, bool A
 	}
 	else
 		anim->clipRect(cre->isDoubleWide()?170:150, 155, bg->pos.w, bg->pos.h);
-	anim->setEffectColor(battleStackColorPresentation::appearance(nullptr, cre->getJsonKey(), false, {}).color);
+	anim->setEffectColor(battleStackColorPresentation::appearance(nullptr, creatureKey, false, {}).color);
 	anim->startPreview(cre->hasBonusOfType(BonusType::SIEGE_WEAPON));
 
 	amount = std::make_shared<CLabel>(bg->pos.w, bg->pos.h, FONT_MEDIUM, ETextAlignment::BOTTOMRIGHT, Colors::WHITE);

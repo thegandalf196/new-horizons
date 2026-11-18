@@ -371,18 +371,7 @@ void BattleStacksController::stackAdded(const CStack * stack, bool instant)
 	stackAnimation[stack->unitId()]->pos.y = coords.y;
 	stackAnimation[stack->unitId()]->setType(ECreatureAnimType::HOLDING);
 
-	if (!instant)
-	{
-		// immediately make stack transparent, giving correct shifter time to start
-		setStackColorFilter(Colors::TRANSPARENCY, 0, stack, nullptr, true);
-
-		owner.addToAnimationStage(EAnimationEvents::HIT, [this, stack]()
-		{
-			addNewAnim(new ColorTransformAnimation(owner, stack, "summonFadeIn", nullptr));
-			if (stack->isClone())
-				addNewAnim(new ColorTransformAnimation(owner, stack, "cloning", SpellID(SpellID::CLONE).toSpell() ));
-		});
-	}
+	stageAddedStackAppearance(stack, instant);
 }
 
 void BattleStacksController::setActiveStack(const CStack *stack)
@@ -616,32 +605,8 @@ void BattleStacksController::stacksAreAttacked(std::vector<StackAttackedInfo> at
 		}
 	}
 
-	for(auto & attackedInfo : attackedInfos)
-	{
-		bool useDeathAnim   = attackedInfo.killed;
-		bool useDefenceAnim = attackedInfo.defender->defending && !attackedInfo.indirectAttack && !attackedInfo.killed;
-
-		EAnimationEvents usedEvent = useDefenceAnim ? EAnimationEvents::ATTACK : EAnimationEvents::HIT;
-
-		owner.addToAnimationStage(usedEvent, [this, attackedInfo, useDeathAnim, useDefenceAnim]()
-		{
-			unlockStackAmountBox(attackedInfo.defender->unitId());
-			if(attackedInfo.shattered)
-				frozenShatterFeedback[attackedInfo.defender->unitId()] = {
-					stackAnimation.at(attackedInfo.defender->unitId())->currentFrameContentRect(facingRight(attackedInfo.defender)), 0};
-
-			if (useDeathAnim)
-				addNewAnim(new DeathAnimation(owner, attackedInfo.defender, attackedInfo.indirectAttack));
-			else if(useDefenceAnim)
-				addNewAnim(new DefenceAnimation(owner, attackedInfo.defender));
-			else
-				addNewAnim(new HittedAnimation(owner, attackedInfo.defender));
-
-			if (attackedInfo.spellEffect != SpellID::NONE)
-				owner.displaySpellInjury(attackedInfo.spellEffect.toSpell(),
-					attackedInfo.defender->getPosition(), attackedInfo.replaySpellHit);
-		});
-	}
+	for(const auto & attackedInfo : attackedInfos)
+		queueInjuryAnimation(attackedInfo);
 
 	for (auto & attackedInfo : attackedInfos)
 	{

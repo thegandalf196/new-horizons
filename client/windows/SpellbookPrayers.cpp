@@ -63,7 +63,7 @@ public:
 		image->removeUsedEvents(LCLICK | SHOW_POPUP);
 		elements.push_back(std::move(image));
 		elements.push_back(std::make_shared<CMultiLineLabel>(Rect(48, 0, bounds.w - 48, 32),
-			FONT_SMALL, ETextAlignment::TOPLEFT, Colors::BLACK, title));
+			FONT_TINY, ETextAlignment::TOPLEFT, Colors::BLACK, title));
 		elements.push_back(std::make_shared<CMultiLineLabel>(Rect(48, 34, bounds.w - 48, bounds.h - 34),
 			FONT_TINY, ETextAlignment::TOPLEFT, Colors::BLACK, prayerSummaries[index]));
 	}
@@ -94,8 +94,10 @@ std::string prayerDetails(Prayer prayer, const consecratedArms::Policy & policy,
 	const auto rounds = consecratedArms::duration(faith, policy);
 	const consecratedArms::ActivePrayer snapshot{prayer, potency, rounds, policy};
 	std::string result = passiveFactionSkillPresentation::prayerEffect(snapshot, 1)
-		+ "\n\nFaith " + std::to_string(faith) + ". Potency Faith " + std::to_string(potency)
-		+ ". Duration " + std::to_string(rounds) + " rounds.\n\n" + automatic;
+		+ "\n\nDuration: " + std::to_string(rounds) + " rounds.";
+	if(const int strengthBonus = potency - std::max(0, faith); strengthBonus > 0)
+		result += "\nRank and perks add " + std::to_string(strengthBonus) + " to prayer strength.";
+	result += "\n\n" + automatic;
 	if(policy.has(consecratedArms::Perk::SACRED_ACCORD))
 		result += "\n\nSacred Accord strengthens prayers when the recipient has several distinct prayers. "
 			"The values above show one active prayer.";
@@ -122,22 +124,23 @@ SpellbookPrayers::SpellbookPrayers(Rect bounds, int rightColumn, bool large,
 	OBJECT_CONSTRUCTION;
 	const auto policy = consecratedArms::capturePolicy(&hero);
 	const auto faith = consecratedArms::actualFaith(hero);
-	elements.push_back(std::make_shared<CLabel>(bounds.w / 2, 8, FONT_BIG,
+	const int entryWidth = large ? 270 : 184;
+	// Each heading stays on its own parchment page, clear of the book's gutter.
+	elements.push_back(std::make_shared<CLabel>(8 + entryWidth / 2, 22, FONT_TINY,
 		ETextAlignment::CENTER, Colors::BLACK, "Prayers"));
-	elements.push_back(std::make_shared<CLabel>(bounds.w / 2, 32, FONT_SMALL,
-		ETextAlignment::CENTER, Colors::BLACK, "Granted automatically by Orders"));
-	const auto strength = policy.rank ? "Faith " + std::to_string(faith) + "  |  Potency Faith "
-		+ std::to_string(consecratedArms::potencyFaith(faith, policy))
-		: "Learn Consecrated Arms to grant prayers";
-	elements.push_back(std::make_shared<CLabel>(bounds.w / 2, 50, FONT_TINY,
-		ETextAlignment::CENTER, Colors::BLACK, strength));
+	elements.push_back(std::make_shared<CLabel>(8 + entryWidth / 2, 42, FONT_TINY,
+		ETextAlignment::CENTER, Colors::BLACK, "Faith " + std::to_string(faith)));
+	const std::string hint = policy.rank ? "Granted automatically by Orders"
+		: "Learn Consecrated Arms to grant prayers through Orders";
+	elements.push_back(std::make_shared<CMultiLineLabel>(Rect(rightColumn, 16, entryWidth, 46),
+		FONT_TINY, ETextAlignment::CENTER, Colors::BLACK, hint));
 	const int rowHeight = large ? 115 : 86;
 	for(size_t index = 0; index < prayerImages.size(); ++index)
 	{
 		const auto prayer = static_cast<Prayer>(index);
 		const int column = static_cast<int>(index) / 3;
 		const int x = column ? rightColumn : 8;
-		const int width = large ? 270 : 184;
+		const int width = entryWidth;
 		auto entry = std::make_shared<PrayerEntry>(
 			Rect(x, 72 + (index % 3) * rowHeight, width, rowHeight - 6),
 			prayer, prayerDetails(prayer, policy, faith), status, hero.getOwner());

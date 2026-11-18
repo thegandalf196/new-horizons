@@ -27,7 +27,7 @@
   "requiredFamilyCounts": {
     "academy-town-and-portrait-ui": 353,
     "bug-report-interface-icon": 1,
-    "builtin-skills-perks-orders-and-ui": 3772,
+    "builtin-skills-perks-orders-and-ui": 3808,
     "cabir-and-master": 218,
     "casting-glows": 864,
     "conflux-hero-portraits": 10,
@@ -65648,6 +65648,366 @@
       "origin": "Original built-in generated Prayer symbol or bookmark; transparent native export",
       "selection": "Owner-authorized current artwork revision",
       "approval": "Selected provisional runtime; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_living_armor_aetheric_background_130.png",
+      "source": "Mods/new-horizons/Images/NH_living_armor_aetheric_background_130.png",
+      "size": 17283,
+      "sha256": "58e5dd340c41e65500a3e15c14a265c530b3fe07d50e14abb1a1664ba925f72b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in imagegen empty sorcery chamber backdrop, no existing game pixels copied",
+      "selection": "User requested Living Armor aetheric creature portrait background",
+      "approval": "User-directed provisional selection; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_living_armor_aetheric_background_120.png",
+      "source": "Mods/new-horizons/Images/NH_living_armor_aetheric_background_120.png",
+      "size": 16137,
+      "sha256": "667e78243abf7175ea2e4c49dc396ce94e62d2b02d19f7d9a9f66a5b6298a96b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in imagegen empty sorcery chamber backdrop, no existing game pixels copied",
+      "selection": "User requested Living Armor aetheric creature portrait background",
+      "approval": "User-directed provisional selection; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_ability_jousting_immunity.png",
+      "source": "Mods/new-horizons/Images/NH_ability_jousting_immunity.png",
+      "size": 3556,
+      "sha256": "c7bb38c3ef7c9c7431111224fae9bf06378d21b1e6d24ea832490b6d8c4b083e",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in imagegen foreground",
+      "selection": "User requested missing Jousting Immunity creature ability icon",
+      "approval": "User-directed provisional selection; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_ability_additional_retaliation.png",
+      "source": "Mods/new-horizons/Images/NH_ability_additional_retaliation.png",
+      "size": 3774,
+      "sha256": "af4e145253ee86297d2765635297412ee47634d840ea6d48dcc9ad919313219c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in image generation; technical native export only",
+      "selection": "User-directed original creature ability artwork for current definitions",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_ability_automatic_control.png",
+      "source": "Mods/new-horizons/Images/NH_ability_automatic_control.png",
+      "size": 4409,
+      "sha256": "8a3260ad0bdec8330a94cd661f99e5556fa16dd061720ea23caa81a1260eb9f7",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation",
+      "selection": "User-directed original creature ability artwork for current definitions",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_ability_blocks_ranged_retaliation.png",
+      "source": "Mods/new-horizons/Images/NH_ability_blocks_ranged_retaliation.png",
+      "size": 3416,
+      "sha256": "bedd39787fbde40241e41052502c72992a1bb0735dd81acf6a875f230fc1069b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in OpenAI imagegen foregrounds. No copied game art, external art pixels or runtime UI templates used.",
+      "selection": "User-directed original creature ability artwork for current definitions",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_ability_death_blow.png",
+      "source": "Mods/new-horizons/Images/NH_ability_death_blow.png",
+      "size": 4073,
+      "sha256": "d8c89fbe660c11b2d454e56c9fe7f42361417b8f9b3028a4f8616444a7468faf",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in OpenAI imagegen foregrounds. No copied game art, external art pixels or runtime UI templates used.",
+      "selection": "User-directed original creature ability artwork for current definitions",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_ability_death_stare.png",
+      "source": "Mods/new-horizons/Images/NH_ability_death_stare.png",
+      "size": 3250,
+      "sha256": "74aadeea294265dde67ec9766a3f04f86b987ea9c4452013e57dca78b5f75e90",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation",
+      "selection": "User-directed original creature ability artwork for current definitions",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_ability_dragon_nature.png",
+      "source": "Mods/new-horizons/Images/NH_ability_dragon_nature.png",
+      "size": 4136,
+      "sha256": "7df63cc0259b78dfa3ca9cea53aa5fdff01af6a5b7e725222ce14666f592e8c9",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation",
+      "selection": "User-directed original creature ability artwork for current definitions",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_ability_elemental_affinity.png",
+      "source": "Mods/new-horizons/Images/NH_ability_elemental_affinity.png",
+      "size": 3929,
+      "sha256": "2d0e2a1ca55504a5be06b719937d4d5958108e6661329852fe8a07b597625ca9",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation",
+      "selection": "User-directed original creature ability artwork for current definitions",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_ability_extra_attack.png",
+      "source": "Mods/new-horizons/Images/NH_ability_extra_attack.png",
+      "size": 3572,
+      "sha256": "3c8897ba6017ad531709790bce60dcd2ea0da0041484fae5264d597678d34256",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in image generation; technical native export only",
+      "selection": "User-directed original creature ability artwork for current definitions",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_ability_fear_aura.png",
+      "source": "Mods/new-horizons/Images/NH_ability_fear_aura.png",
+      "size": 4028,
+      "sha256": "97257d135a63b4ac5199d35770ec12611a3a222a05d4bc03de1b33a605281d23",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Byte-identical alias of previously authored core-traits draft",
+      "selection": "User-directed original creature ability artwork for current definitions",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_ability_fire_shield.png",
+      "source": "Mods/new-horizons/Images/NH_ability_fire_shield.png",
+      "size": 4136,
+      "sha256": "dbf397af5867dfef070d4f668f99f1257c91c0371159c91b299eb31bba4b1557",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation",
+      "selection": "User-directed original creature ability artwork for current definitions",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_ability_freezing_touch.png",
+      "source": "Mods/new-horizons/Images/NH_ability_freezing_touch.png",
+      "size": 4576,
+      "sha256": "9f60ee79019b61be9939d606fe075be519bd84854743e7436e36dd3460439b5f",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation",
+      "selection": "User-directed original creature ability artwork for current definitions",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_ability_gargoyle_construct.png",
+      "source": "Mods/new-horizons/Images/NH_ability_gargoyle_construct.png",
+      "size": 4599,
+      "sha256": "6eec9c6dc021426f0acb5072c68f8371263e30135837cc5fde4b8752f9774245",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation",
+      "selection": "User-directed original creature ability artwork for current definitions",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_ability_long_reach.png",
+      "source": "Mods/new-horizons/Images/NH_ability_long_reach.png",
+      "size": 2430,
+      "sha256": "5bd744ad8caa2fd121ec7a6be4c99bec2a99c9c24c3d497cb5b3f76a34c3f1e6",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated creature ability symbol",
+      "selection": "User-directed original creature ability artwork for current definitions",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_ability_magic_damper.png",
+      "source": "Mods/new-horizons/Images/NH_ability_magic_damper.png",
+      "size": 4184,
+      "sha256": "229797d5ae5ad0c2bfed2c34b8e8425814c223e66c60c38911fb12c33272c5ae",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in OpenAI imagegen foregrounds. No copied game art, external art pixels or runtime UI templates used.",
+      "selection": "User-directed original creature ability artwork for current definitions",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_ability_magic_mirror.png",
+      "source": "Mods/new-horizons/Images/NH_ability_magic_mirror.png",
+      "size": 3362,
+      "sha256": "a9341474b42b7ec4fbfb4f292bab5039c2975745fbfa232706a725289d7cdf5d",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation",
+      "selection": "User-directed original creature ability artwork for current definitions",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_ability_magical_protection.png",
+      "source": "Mods/new-horizons/Images/NH_ability_magical_protection.png",
+      "size": 3516,
+      "sha256": "eeb7012e416f76c01955d588ea3e57e87acce589e094257a55d0348a67e40cef",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated creature ability symbol",
+      "selection": "User-directed original creature ability artwork for current definitions",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_ability_mana_channeling.png",
+      "source": "Mods/new-horizons/Images/NH_ability_mana_channeling.png",
+      "size": 3136,
+      "sha256": "16c821c70a23a4f576ef35b06e8df5a4806e325568a2b4572237b0f122b45692",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in OpenAI imagegen foregrounds. No copied game art, external art pixels or runtime UI templates used.",
+      "selection": "User-directed original creature ability artwork for current definitions",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_ability_mana_drain.png",
+      "source": "Mods/new-horizons/Images/NH_ability_mana_drain.png",
+      "size": 3878,
+      "sha256": "f33a41a0c11d4c5daa006eac981d6608d084ea66ff37ff553612a7d4963dbb49",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in OpenAI imagegen foregrounds. No copied game art, external art pixels or runtime UI templates used.",
+      "selection": "User-directed original creature ability artwork for current definitions",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_ability_mind_immunity.png",
+      "source": "Mods/new-horizons/Images/NH_ability_mind_immunity.png",
+      "size": 4438,
+      "sha256": "1f88890787ff1f1aad6878f0b2908a60590dceab825ed4adb5a2e9d6ff48fa8c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Byte-identical alias of previously authored core-traits draft",
+      "selection": "User-directed original creature ability artwork for current definitions",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_ability_no_barrier_penalty.png",
+      "source": "Mods/new-horizons/Images/NH_ability_no_barrier_penalty.png",
+      "size": 2836,
+      "sha256": "46e185b50505ad61770976e929364b245c31d59b373bb08d9c7632e7630b6a67",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in image generation; technical native export only",
+      "selection": "User-directed original creature ability artwork for current definitions",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_ability_no_melee_penalty.png",
+      "source": "Mods/new-horizons/Images/NH_ability_no_melee_penalty.png",
+      "size": 3107,
+      "sha256": "6ee336883356edd4b856ea27e4028c17afd0148339041f5f1d56789ebf232183",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in image generation; technical native export only",
+      "selection": "User-directed original creature ability artwork for current definitions",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_ability_non_living.png",
+      "source": "Mods/new-horizons/Images/NH_ability_non_living.png",
+      "size": 3723,
+      "sha256": "b47c305d2ec8c4b5664bd3c0d19b3bbad4dbcdcf984b701769aa447d148cbdb4",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation",
+      "selection": "User-directed original creature ability artwork for current definitions",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_ability_pass_through.png",
+      "source": "Mods/new-horizons/Images/NH_ability_pass_through.png",
+      "size": 3375,
+      "sha256": "3cf0704f14f5ba72ade63d59dc9093b096e744e01bfafce1b78c2b5f6315778c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated creature ability symbol",
+      "selection": "User-directed original creature ability artwork for current definitions",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_ability_random_beneficial_spell.png",
+      "source": "Mods/new-horizons/Images/NH_ability_random_beneficial_spell.png",
+      "size": 3545,
+      "sha256": "f2bd5bc6fecb3aef800cbde3ce9da3864171e3ce2b7ce3e0d37710dca3195a01",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation",
+      "selection": "User-directed original creature ability artwork for current definitions",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_ability_slayer_vulnerability.png",
+      "source": "Mods/new-horizons/Images/NH_ability_slayer_vulnerability.png",
+      "size": 3779,
+      "sha256": "04a88f040ca24df5665646f668e2581c2000549f8dbfebeb9791fa68c048c4a8",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation",
+      "selection": "User-directed original creature ability artwork for current definitions",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_ability_spell_immunity.png",
+      "source": "Mods/new-horizons/Images/NH_ability_spell_immunity.png",
+      "size": 3981,
+      "sha256": "64fcbd2e27ba92703648dccb3df9f33ae999aaf6ec6e35a77a279dd30f9acf13",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation",
+      "selection": "User-directed original creature ability artwork for current definitions",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_ability_spell_level_immunity.png",
+      "source": "Mods/new-horizons/Images/NH_ability_spell_level_immunity.png",
+      "size": 3886,
+      "sha256": "68614dfbaeec1334aa86610939302ffc83944d56436b2093f1d7370d94fe0d7a",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation",
+      "selection": "User-directed original creature ability artwork for current definitions",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_ability_spell_resistance_aura.png",
+      "source": "Mods/new-horizons/Images/NH_ability_spell_resistance_aura.png",
+      "size": 3896,
+      "sha256": "126e67df69126204835e96433135b64fe55b9598c9835e0870e1d849291225e2",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in OpenAI imagegen foregrounds. No copied game art, external art pixels or runtime UI templates used.",
+      "selection": "User-directed original creature ability artwork for current definitions",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_ability_spell_vulnerability.png",
+      "source": "Mods/new-horizons/Images/NH_ability_spell_vulnerability.png",
+      "size": 3465,
+      "sha256": "0d5c69c282e0a2a21e44936efe04029b3e20190195c981b92c921451b1e7c1fc",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation",
+      "selection": "User-directed original creature ability artwork for current definitions",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_ability_strike_and_return.png",
+      "source": "Mods/new-horizons/Images/NH_ability_strike_and_return.png",
+      "size": 3501,
+      "sha256": "6e2cc5281321ec89e79442bab9b357b6958dd4cd843b58c6f7d27e19d73212a7",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in image generation; technical native export only",
+      "selection": "User-directed original creature ability artwork for current definitions",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_ability_three_headed_attack.png",
+      "source": "Mods/new-horizons/Images/NH_ability_three_headed_attack.png",
+      "size": 4101,
+      "sha256": "507f206087a0b43af1a9da33dbcf9d7dff27d2dd0b4bc8ba47d6eeb1304aa622",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in image generation; technical native export only",
+      "selection": "User-directed original creature ability artwork for current definitions",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_ability_acid_breath.png",
+      "source": "Mods/new-horizons/Images/NH_ability_acid_breath.png",
+      "size": 3396,
+      "sha256": "a613a40457ab08434e092f236272163612a326e965e630680e1b58c75d320df0",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation",
+      "selection": "User-directed original creature ability artwork for current definitions",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_ability_raise_demons.png",
+      "source": "Mods/new-horizons/Images/NH_ability_raise_demons.png",
+      "size": 3965,
+      "sha256": "1085a64966184e2b4894c5d800735997450e566c2976ccdd8fcb5182c2e7793b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "independently-authored-built-in-generation",
+      "selection": "User-directed original creature ability artwork for current definitions",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
     }
   ]
 }

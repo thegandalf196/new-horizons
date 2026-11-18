@@ -18417,6 +18417,129 @@
         }
       ],
       "approval": "Selected provisional runtime; rendered acceptance pending"
+    },
+    {
+      "baselineArchiveSha256": "5bf0dbdeffa3bc56e681d0641ae4370360087e1261e9d155a2dc48aa7b7df712",
+      "baselineManifestSha256": "2be9fd97001ed2b9773c5e8ce2f142601ad544e0b9da42b06ce3f61d5799fb59",
+      "baselineEntriesSha256": "2dbb618e052b20ecc9c200db6515c3fa1317efa0602b711becf4f2738d84f2b3",
+      "baselineCount": 6560,
+      "entryCount": 6563,
+      "newArchiveSha256": "1de1e5f3fd8ce89be692c7c875e70332b2c8561db79b40d9801acf92e4868ff1",
+      "resources": [
+        "SPRITES/NH_ability_jousting_immunity.png",
+        "SPRITES/NH_living_armor_aetheric_background_120.png",
+        "SPRITES/NH_living_armor_aetheric_background_130.png"
+      ],
+      "perks": [],
+      "statuses": [],
+      "reusedBindings": [],
+      "creatureBackdrops": [
+        {
+          "id": "new-horizons:livingArmor",
+          "resources": [
+            "SPRITES/NH_living_armor_aetheric_background_120.png",
+            "SPRITES/NH_living_armor_aetheric_background_130.png"
+          ],
+          "selectionRecordSha256": "aeff9db8a6e236b70b771acc0b2c666264a1fcebf8cd8294f7184b8241d2d7cf"
+        }
+      ],
+      "approval": "Not Final; rendered acceptance pending",
+      "abilityIcons": [
+        {
+          "id": "CHARGE_IMMUNITY",
+          "resources": [
+            "SPRITES/NH_ability_jousting_immunity.png"
+          ],
+          "selectionRecordSha256": "aeff9db8a6e236b70b771acc0b2c666264a1fcebf8cd8294f7184b8241d2d7cf"
+        }
+      ]
+    },
+    {
+      "baselineArchiveSha256": "1de1e5f3fd8ce89be692c7c875e70332b2c8561db79b40d9801acf92e4868ff1",
+      "baselineManifestSha256": "6873c1ec4ac14ee3c39db9439734ce1807c1b891a590d35861378647b696e034",
+      "baselineEntriesSha256": "ca7357e424dff21e8c82e231d16abe07d615906e4b674ff3247607d03da4e948",
+      "baselineCount": 6563,
+      "entryCount": 6596,
+      "newArchiveSha256": "599d6825b4d38c0ca0f413196e07a9ed288df33f8c7a0974dc0bba02347e5263",
+      "resources": [
+        "SPRITES/NH_ability_acid_breath.png",
+        "SPRITES/NH_ability_additional_retaliation.png",
+        "SPRITES/NH_ability_automatic_control.png",
+        "SPRITES/NH_ability_blocks_ranged_retaliation.png",
+        "SPRITES/NH_ability_death_blow.png",
+        "SPRITES/NH_ability_death_stare.png",
+        "SPRITES/NH_ability_dragon_nature.png",
+        "SPRITES/NH_ability_elemental_affinity.png",
+        "SPRITES/NH_ability_extra_attack.png",
+        "SPRITES/NH_ability_fear_aura.png",
+        "SPRITES/NH_ability_fire_shield.png",
+        "SPRITES/NH_ability_freezing_touch.png",
+        "SPRITES/NH_ability_gargoyle_construct.png",
+        "SPRITES/NH_ability_long_reach.png",
+        "SPRITES/NH_ability_magic_damper.png",
+        "SPRITES/NH_ability_magic_mirror.png",
+        "SPRITES/NH_ability_magical_protection.png",
+        "SPRITES/NH_ability_mana_channeling.png",
+        "SPRITES/NH_ability_mana_drain.png",
+        "SPRITES/NH_ability_mind_immunity.png",
+        "SPRITES/NH_ability_no_barrier_penalty.png",
+        "SPRITES/NH_ability_no_melee_penalty.png",
+        "SPRITES/NH_ability_non_living.png",
+        "SPRITES/NH_ability_pass_through.png",
+        "SPRITES/NH_ability_raise_demons.png",
+        "SPRITES/NH_ability_random_beneficial_spell.png",
+        "SPRITES/NH_ability_slayer_vulnerability.png",
+        "SPRITES/NH_ability_spell_immunity.png",
+        "SPRITES/NH_ability_spell_level_immunity.png",
+        "SPRITES/NH_ability_spell_resistance_aura.png",
+        "SPRITES/NH_ability_spell_vulnerability.png",
+        "SPRITES/NH_ability_strike_and_return.png",
+        "SPRITES/NH_ability_three_headed_attack.png"
+      ],
+      "perks": [],
+      "statuses": [],
+      "reusedBindings": [],
+      "creatureAbilityArtwork": [
+        {
+          "resources": [
+            "SPRITES/NH_ability_acid_breath.png",
+            "SPRITES/NH_ability_additional_retaliation.png",
+            "SPRITES/NH_ability_automatic_control.png",
+            "SPRITES/NH_ability_blocks_ranged_retaliation.png",
+            "SPRITES/NH_ability_death_blow.png",
+            "SPRITES/NH_ability_death_stare.png",
+            "SPRITES/NH_ability_dragon_nature.png",
+            "SPRITES/NH_ability_elemental_affinity.png",
+            "SPRITES/NH_ability_extra_attack.png",
+            "SPRITES/NH_ability_fear_aura.png",
+            "SPRITES/NH_ability_fire_shield.png",
+            "SPRITES/NH_ability_freezing_touch.png",
+            "SPRITES/NH_ability_gargoyle_construct.png",
+            "SPRITES/NH_ability_long_reach.png",
+            "SPRITES/NH_ability_magic_damper.png",
+            "SPRITES/NH_ability_magic_mirror.png",
+            "SPRITES/NH_ability_magical_protection.png",
+            "SPRITES/NH_ability_mana_channeling.png",
+            "SPRITES/NH_ability_mana_drain.png",
+            "SPRITES/NH_ability_mind_immunity.png",
+            "SPRITES/NH_ability_no_barrier_penalty.png",
+            "SPRITES/NH_ability_no_melee_penalty.png",
+            "SPRITES/NH_ability_non_living.png",
+            "SPRITES/NH_ability_pass_through.png",
+            "SPRITES/NH_ability_raise_demons.png",
+            "SPRITES/NH_ability_random_beneficial_spell.png",
+            "SPRITES/NH_ability_slayer_vulnerability.png",
+            "SPRITES/NH_ability_spell_immunity.png",
+            "SPRITES/NH_ability_spell_level_immunity.png",
+            "SPRITES/NH_ability_spell_resistance_aura.png",
+            "SPRITES/NH_ability_spell_vulnerability.png",
+            "SPRITES/NH_ability_strike_and_return.png",
+            "SPRITES/NH_ability_three_headed_attack.png"
+          ],
+          "selectionRecordSha256": "c714cead8e74d55ade77e679f1fff239fd8ea8a25dcd86e36142276ad3061517"
+        }
+      ],
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
     }
   ]
 }

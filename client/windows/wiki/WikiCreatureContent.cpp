@@ -354,7 +354,7 @@ std::vector<std::shared_ptr<CIntObject>> buildCreatureContent( // NOSONAR (compl
 		else if(callback)
 			abilityRules = &callback->getMagicRules();
 		const auto innateAbilities = newHorizonsCreatureAbilityHelp::translatedInnateAbilities(
-			creature->getJsonKey(), abilityRules, 0);
+			creature->getJsonKey(), abilityRules, 0, callback && callback->getHeroCapabilityRules()["armyCommand"].isStruct());
 		for(const auto & help : innateAbilities)
 			abilityRows.push_back(AbilityRow{help.details, help.iconPath.empty() ? ImagePath{} : ImagePath::builtin(help.iconPath)});
 

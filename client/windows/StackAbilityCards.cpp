@@ -5,6 +5,7 @@
 #include "../CPlayerInterface.h"
 #include "../GameInstance.h"
 #include "../../lib/CStack.h"
+#include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/mapObjects/army/CStackInstance.h"
 #include "../../lib/battle/BattleInfo.h"
 #include "../../lib/callback/CCallback.h"
@@ -25,9 +26,13 @@ void CStackWindow::appendInnateAbilityCards(const CStack * stack,
 		abilityRules = &strategic->cb->getMagicRules();
 	else if(GAME->interface() && GAME->interface()->cb)
 		abilityRules = &GAME->interface()->cb->getMagicRules();
+	const auto * hero = !stack && strategic ? dynamic_cast<const CGHeroInstance *>(strategic->getArmy()) : nullptr;
+	if(stack)
+		if(const auto * battle = stack->getBattle())
+			hero = battle->battleGetOwnerHero(stack);
 	auto innateAbilities = newHorizonsCreatureAbilityHelp::translatedInnateAbilities(
 		creature->getJsonKey(), abilityRules,
-		stack && stack->alive() ? stack->summonRoundsRemaining : 0);
+		stack && stack->alive() ? stack->summonRoundsRemaining : 0, hero && hero->getArmyCommandRules().has_value());
 	if(stack)
 		if(const auto * battle = stack->getBattle())
 			if(auto help = newHorizonsCreatureAbilityHelp::demonicGateReinforcement(

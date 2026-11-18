@@ -362,7 +362,7 @@
 			"core:josephine": [{"skill": "new-horizons:armorer", "perk": "new-horizons:armorer.ironDiscipline"}],
 			"core:neela": [{"skill": "new-horizons:armorer", "perk": "new-horizons:armorer.shieldMaster"}],
 			"core:fafner": [{"skill": "new-horizons:warcasting", "perk": "new-horizons:warcasting.spellward"}],
-			"core:halon": [{"skill": "new-horizons:warcasting", "perk": "new-horizons:warcasting.arcaneValor"}],
+			"core:halon": [{"skill": "new-horizons:metamagic", "perk": "new-horizons:metamagic.unravelingMagic"}],
 			"core:rissa": [{"skill": "new-horizons:estates", "perk": "new-horizons:estates.supervisor"}],
 			"core:theodorus": [{"skill": "new-horizons:learning", "perk": "new-horizons:learning.scholar"}],
 			"core:solmyr": [{"skill": "new-horizons:havocMagic", "perk": "new-horizons:havocMagic.stormcaller"}],

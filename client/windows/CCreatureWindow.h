@@ -89,11 +89,11 @@ class CStackWindow : public CWindowObject
 	/// Orders have no duration counters and cannot be dispelled.
 	class OrderIndicatorsSection : public CWindowSection
 	{
-		std::vector<std::shared_ptr<CPicture>> orderIcons;
+		std::vector<std::shared_ptr<CAnimImage>> orderIcons;
 		std::vector<std::shared_ptr<LRClickableAreaWText>> clickableAreas;
 		std::vector<std::shared_ptr<CLabel>> labels;
 	public:
-		OrderIndicatorsSection(CStackWindow * owner, int yOffset);
+		OrderIndicatorsSection(CStackWindow * owner, int yOffset, const CStack * stack);
 	};
 
 	class TrainingSection : public CWindowSection

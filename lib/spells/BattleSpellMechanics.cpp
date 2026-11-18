@@ -989,7 +989,7 @@ void BattleSpellMechanics::forEachEffect(const std::function<bool (const spells:
 	if (!effects)
 		return;
 
-	effects->forEachEffect(getEffectLevel(), [&](const spells::effects::Effect * eff, bool & stop)
+	effects->forEachActiveEffect(this, [&](const spells::effects::Effect * eff, bool & stop)
 	{
 		if(!eff)
 			return;

@@ -99,6 +99,18 @@ class SorceryRevisionDataTest(unittest.TestCase):
                 'type': 'SPECIAL_SPELL_LEV', 'subtype': 'new-horizons:focusMagic',
                 'val': 10, 'valueType': 'BASE_NUMBER'})
 
+    def test_halon_fresh_start_matches_his_unraveler_specialty(self):
+        starts = load('config/newHorizonsHeroes.json')['startingSkills']
+        self.assertEqual(starts['startingDevelopmentProfiles']['core:halon']['skills'], [
+            {'skill': 'new-horizons:metamagic', 'rank': 1},
+            {'skill': 'new-horizons:warcasting', 'rank': 1}])
+        self.assertEqual(starts['startingPerkProfiles']['core:halon'], [{
+            'skill': 'new-horizons:metamagic',
+            'perk': 'new-horizons:metamagic.unravelingMagic'}])
+        halon = load('Mods/new-horizons/Content/config/heroes/halon.json')['core:halon']
+        self.assertEqual(halon['spellbook'], ['core:dispel'])
+        self.assertEqual(halon['texts']['specialty']['name'], 'Unraveler')
+
 
 if __name__ == '__main__':
     unittest.main()

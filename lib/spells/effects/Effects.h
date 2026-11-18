@@ -34,6 +34,8 @@ public:
 	bool applicable(Problem & problem, const Mechanics * m, const Target & aimPoint, const Target & spellTarget) const;
 
 	void forEachEffect(const int level, const std::function<void(const Effect *, bool &)> & callback) const;
+	/// Enumerate only effects enabled by the captured mechanics profile.
+	void forEachActiveEffect(const Mechanics * mechanics, const std::function<void(const Effect *, bool &)> & callback) const;
 
 	EffectsToApply prepare(const Mechanics * m, const Target & aimPoint, const Target & spellTarget) const;
 

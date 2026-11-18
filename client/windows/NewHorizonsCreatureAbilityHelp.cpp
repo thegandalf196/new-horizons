@@ -11,7 +11,7 @@
 namespace newHorizonsCreatureAbilityHelp
 {
 std::vector<InnateAbilityHelp> translatedInnateAbilities(std::string_view creatureKey,
-	const JsonNode * capturedRules, int32_t summonRounds)
+	const JsonNode * capturedRules, int32_t summonRounds, bool usesCommandSlots)
 {
 	auto result = innateAbilities(creatureKey, capturedRules,
 		LIBRARY->generaltexth->translate("new-horizons.creature.freezingTouch.compact"),
@@ -19,7 +19,7 @@ std::vector<InnateAbilityHelp> translatedInnateAbilities(std::string_view creatu
 		LIBRARY->generaltexth->translate("new-horizons.creature.soulHarvest.compact"),
 		LIBRARY->generaltexth->translate("new-horizons.creature.soulHarvest.help"));
 	const CreatureID creature(CreatureID::decode(std::string(creatureKey)));
-	if(creature.hasValue() && newHorizonsCreatures::hasIntrinsicAssimilation(creature))
+	if(usesCommandSlots && creature.hasValue() && newHorizonsCreatures::hasIntrinsicAssimilation(creature))
 		result.push_back({LIBRARY->generaltexth->translate("new-horizons.command.assimilation.name"),
 			LIBRARY->generaltexth->translate("new-horizons.command.assimilation.description"), {}});
 	return result;

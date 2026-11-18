@@ -1,6 +1,11 @@
 {
 	"COMBAT_EVENT_TRIGGER":
 	{
+		"graphics": {"subtypeIcons": {
+			"script.lifeDrain": "NH_spell_life_drain_44.png",
+			"script.deathStare": "NH_ability_death_stare.png",
+			"script.fireShield": "NH_ability_fire_shield.png"
+		}},
 		"hidden": true
 	},
 
@@ -16,10 +21,12 @@
 	
 	"ADDITIONAL_ATTACK":
 	{
+		"graphics": {"icon": "NH_ability_extra_attack.png"}
 	},
 
 	"ADDITIONAL_RETALIATION":
 	{
+		"graphics": {"icon": "NH_ability_additional_retaliation.png"}
 	},
 
 	"ADJACENT_SPELLCASTER":
@@ -66,6 +73,7 @@
 
 	"BLOCKS_RANGED_RETALIATION":
 	{
+		"graphics": {"icon": "NH_ability_blocks_ranged_retaliation.png"}
 	},
 
 	"BLOCKS_RETALIATION":
@@ -74,6 +82,7 @@
 
 	"CATAPULT":
 	{
+		"graphics": {"icon": "NH_status_siege_50.png"}
 	},
 	
 	"CATAPULT_EXTRA_SHOTS":
@@ -83,14 +92,19 @@
 
 	"CHANGES_SPELL_COST_FOR_ALLY":
 	{
+		"graphics": {"icon": "NH_perk_mana_conservation.png"}
 	},
 
 	"CHANGES_SPELL_COST_FOR_ENEMY":
 	{
+		"graphics": {"icon": "NH_ability_magic_damper.png"}
 	},
 
 	"CHARGE_IMMUNITY":
 	{
+		"graphics": {
+			"icon": "NH_ability_jousting_immunity.png"
+		}
 	},
 	
 	"COMBAT_MANA_BONUS":
@@ -100,7 +114,7 @@
 
 	"CPU_CONTROLLED":
 	{
-
+		"graphics": {"icon": "NH_ability_automatic_control.png"}
 	},
 
 	"CREATURE_GROWTH":
@@ -130,10 +144,12 @@
 
 	"DOUBLE_DAMAGE_CHANCE":
 	{
+		"graphics": {"icon": "NH_ability_death_blow.png"}
 	},
 
 	"DRAGON_NATURE":
 	{
+		"graphics": {"icon": "NH_ability_dragon_nature.png"}
 	},
 
 	"ENCHANTER":
@@ -146,10 +162,12 @@
 
 	"ENEMY_DEFENCE_REDUCTION":
 	{
+		"graphics": {"icon": "NH_perk_armor_piercing_shot.png"}
 	},
 	
 	"FEARFUL":
 	{
+		"graphics": {"icon": "NH_ability_fear_aura.png"}
 	},
 
 	"FIRST_STRIKE":
@@ -201,6 +219,7 @@
 
 	"GARGOYLE":
 	{
+		"graphics": {"icon": "NH_ability_gargoyle_construct.png"},
 		"creatureNature" : true,
 	},
 
@@ -227,6 +246,7 @@
 
 	"HEALER":
 	{
+		"graphics": {"icon": "NH_perk_healer.png"}
 	},
 
 	"HP_REGENERATION":
@@ -250,10 +270,12 @@
 	
 	"JOUSTING":
 	{
+		"graphics": {"icon": "NH_charge_icon.png"}
 	},
 
 	"KING":
 	{
+		"graphics": {"icon": "NH_ability_slayer_vulnerability.png"},
 		"valueDescriptions" : {
 			"2" : null,
 			"3" : null
@@ -291,6 +313,7 @@
 
 	"LEVEL_SPELL_IMMUNITY":
 	{
+		"graphics": {"icon": "NH_ability_spell_level_immunity.png"}
 	},
 
 	"LIMITED_SHOOTING_RANGE":
@@ -309,14 +332,17 @@
 
 	"MANA_CHANNELING":
 	{
+		"graphics": {"icon": "NH_ability_mana_channeling.png"}
 	},
 	
 	"MANA_DRAIN":
 	{
+		"graphics": {"icon": "NH_ability_mana_drain.png"}
 	},
 
 	"MAGIC_MIRROR":
 	{
+		"graphics": {"icon": "NH_ability_magic_mirror.png"}
 	},
 
 	"MAGIC_RESISTANCE":
@@ -350,6 +376,7 @@
 
 	"MIND_IMMUNITY":
 	{
+		"graphics": {"icon": "NH_ability_mind_immunity.png"}
 	},
 	
 	"MORALE":
@@ -359,6 +386,7 @@
 
 	"MORE_DAMAGE_FROM_SPELL":
 	{
+		"graphics": {"icon": "NH_ability_spell_vulnerability.png"}
 	},
 
 	"MOVEMENT":
@@ -377,10 +405,12 @@
 
 	"NO_DISTANCE_PENALTY":
 	{
+		"graphics": {"icon": "NH_perk_deadeye.png"}
 	},
 	
 	"NO_MELEE_PENALTY":
 	{
+		"graphics": {"icon": "NH_ability_no_melee_penalty.png"}
 	},
 
 	"NO_MORALE":
@@ -389,6 +419,7 @@
 	
 	"NO_WALL_PENALTY":
 	{
+		"graphics": {"icon": "NH_ability_no_barrier_penalty.png"}
 	},
 
 	"NO_TERRAIN_PENALTY":
@@ -399,6 +430,7 @@
 
 	"NON_LIVING":
 	{
+		"graphics": {"icon": "NH_ability_non_living.png"},
 		"creatureNature" : true
 	},
 
@@ -408,6 +440,7 @@
 
 	"RANDOM_SPELLCASTER":
 	{
+		"graphics": {"icon": "NH_ability_random_beneficial_spell.png"}
 	},
 
 	"PERCENTAGE_DAMAGE_BOOST":
@@ -430,6 +463,7 @@
 	
 	"REBIRTH":
 	{
+		"graphics": {"icon": "NH_perk_phoenix_spark.png"}
 	},
 	
 	"RESOURCES_CONSTANT_BOOST":
@@ -444,6 +478,7 @@
 
 	"RETURN_AFTER_STRIKE":
 	{
+		"graphics": {"icon": "NH_ability_strike_and_return.png"}
 	},
 
 	"REVENGE":
@@ -479,10 +514,18 @@
 
 	"SPELLCASTER":
 	{
+		"graphics": {"subtypeIcons": {
+			"spell.summonDemons": "NH_ability_raise_demons.png"
+		}}
 	},
 
 	"SPELL_AFTER_ATTACK":
 	{
+		"graphics": {"subtypeIcons": {
+			"spell.acidBreath": "NH_ability_acid_breath.png",
+			"spell.acidBreathDamage": "NH_ability_acid_breath.png",
+			"spell.dispelHelpful": "SPELLS.def:0:35"
+		}}
 	},
 
 	"SPELL_BEFORE_ATTACK":
@@ -491,6 +534,7 @@
 
 	"SPELL_DAMAGE_REDUCTION":
 	{
+		"graphics": {"icon": "newHorizons/heroSpecialties/ThorgrimMasterSpellward/icon-44.png"},
 		"subtypeDescriptions" : {
 			"spellSchool.air" : null,
 			"spellSchool.earth" : null,
@@ -505,10 +549,14 @@
 
 	"SPELL_LIKE_ATTACK":
 	{
+		"graphics": {"subtypeIcons": {
+			"spell.fireballAbility": "SPELLS.def:0:21"
+		}}
 	},
 
 	"SPELL_SCHOOL_IMMUNITY":
 	{
+		"graphics": {"icon": "NH_ability_spell_immunity.png"},
 		"subtypeDescriptions" : {
 			"spellSchool.air" : null,
 			"spellSchool.earth" : null,
@@ -519,6 +567,7 @@
 
 	"SPELL_RESISTANCE_AURA":
 	{
+		"graphics": {"icon": "NH_ability_spell_resistance_aura.png"}
 	},
 
 	"SURRENDER_DISCOUNT":
@@ -535,10 +584,12 @@
 	},
 	"PASS_THROUGH":
 	{
+		"graphics": {"icon": "NH_ability_pass_through.png"},
 		"description": "Pass-through: crosses stacks, solid obstacles and siege walls; movement must end on a legal unoccupied hex. Hazards still apply."
 	},
 	"LONG_REACH":
 	{
+		"graphics": {"icon": "NH_ability_long_reach.png"},
 		"description": "Reach ${reach}: Can attack in melee up to ${reach} hexes away along a clear straight corridor."
 	},
 
@@ -548,6 +599,7 @@
 
 	"THREE_HEADED_ATTACK":
 	{
+		"graphics": {"icon": "NH_ability_three_headed_attack.png"}
 	},
 
 	"TRANSMUTATION_IMMUNITY":
@@ -707,6 +759,7 @@
 		"description" : "Increases final magical damage for explicitly tagged spell elements, independently of Magic Schools"
 	},
 	"ELEMENTAL_SPELL_DAMAGE_RECEIVED" : {
+		"graphics": {"icon": "NH_ability_elemental_affinity.png"},
 		"description" : "Modifies incoming magical damage for an explicitly tagged spell element, independently of Magic Schools",
 		"subtypeDescriptions" : {
 			"bonusSubtype.spellElementFire" : "Incoming Fire spell damage modifier: ${val}%.",
@@ -729,7 +782,8 @@
 	"WHIRLPOOL_PROTECTION" : {},
 	"MINIMUM_MORALE" : {},
 	"SPELL_DAMAGE_REDUCTION_BASIS_POINTS" : {
-		"description" : "Magical resistance: ${val.basisPoints} less magical damage."
+		"graphics": {"icon": "NH_ability_magical_protection.png"},
+		"description" : "Magical Protection: ${val.basisPoints} less magical damage."
 	},
 	"PHYSICAL_DAMAGE_REDUCTION_BASIS_POINTS" : {
 		"description" : "Physical resistance: ${val.basisPoints} less physical damage."

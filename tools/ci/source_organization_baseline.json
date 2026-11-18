@@ -19745,18 +19745,18 @@
       "hybrid_predecessor_review": "IR-0911-BOUNDED-DIRECT-MAP-COMPOSITION-V3",
       "inherited_deferral": "Owner: ui_developer / gameplay_engineer. Bounded exception for Major System Rework: Leadership attribute restoration, square-root damage scaling, and hero UI panel integration. Hotspots remain subject to ongoing shrinking and modularization policy.\nExact source-list bound only. Before substantive build logic, extract a cohesive target configuration section. Verify source/link membership once and retain no duplicate translation units. Prior stricter obligations remain in inherited_deferral, where present.\n\nBefore introducing conditional build logic, extract a cohesive target helper; retain exact source/link membership, one registration per translation unit and existing inherited obligations.",
       "kind": "exception",
-      "lines": 768,
+      "lines": 772,
       "owner": "ui_developer",
       "previous_exact_review": "IR-QUICK-STUDY-CURRENT2-PRESERVING-METADATA-SOURCE-20261101",
       "previous_proposal_review": "PROPOSED-EXACT-REGISTRY-SIX-SOURCE-20261103",
       "previous_review": "PROPOSED-0920-EXACT-SOURCE-ORGANIZATION",
       "prior_deferral": "Before substantive build-control growth, extract a cohesive target helper; retain all inherited deferrals and one registration per translation unit.",
       "proposal_predecessor_review": "PROPOSED-CLIENT225-BOUNDED-20261103",
-      "rationale": "Exact763 to768-line mechanical registry scope: four focused presentation translation units and one header registered once in existing common-client lists. No conditional build logic, link policy or runtime rules changed. All inherited target-helper obligations and no-future-growth limits remain binding.",
-      "review": "IR-NH0922-STARTING-BOOK-PRAYER-PRESENTATION-20261118",
-      "review_scope": "Exact source organization and bounded correctness review only; no compilation, rendered acceptance or future growth approval.",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_REVIEW_NATIVE_UNRUN",
-      "sha256": "2184f57afb7f3016dfaddbec8585ecd14960b5a6e23ef94ee85a50dbc93b7498"
+      "rationale": "Exact771 to772-line successor adds only lobby/OptionsTabTooltip.cpp once to the common-client source registry. Preserve the prior three presentation registrations and all inherited target-helper/no-future-growth obligations. No conditional build or link policy changes.",
+      "review": "IR-NH0923-FOLLOWUP-TOOLTIPS-ABILITY-20261118",
+      "review_scope": "Exact bounded source organization and failure-path review only; native/rendered acceptance and future growth unapproved.",
+      "review_status": "INDEPENDENT_SOURCE_REVIEW_NATIVE_RENDERED_UNRUN",
+      "sha256": "9bfa68386d58384e5c499cfb43145f82342e86d1266dd18948c00a2557a11683"
     },
     "client/CPlayerInterface.cpp": {
       "completed_p_predecessor": {
@@ -20259,7 +20259,7 @@
     "client/battle/BattleInterface.cpp": {
       "deferral": "UI owner must extract complete full-stack active-effect row construction, priority and slot admission before further expansion, preserving captured battle context, physical-first eight-slot limit, ordinary spell order, help and current status; lower file/function baselines and verify right-click, reopen, Cure and expiry. BattleInterface owner must retain focused presentation routing before substantive expansion; no teardown/restart/state mutation enlargement. Retain the Cure weak canonical-session admission and command-validation/same-thread teardown contract; remaining independent modal factories still require bounded decomposition before expansion. Order cue follow-up: retain presentation-specific handle cleanup before controller destruction, normal barrier completion and public accepted-receipt routing. General teardown/restart/state-authority enlargement remains forbidden; before further presentation growth keep typed receipt admission, resource selection and transient cue lifetime focused, with reject/duplicate/hidden-side/frozen/restart characterization. Preserve ALL inherited deferrals and exact prior shrinking baselines. Further growth must extract a cohesive domain owner before expansion; no future growth credit or limit increase. Optional UI includes a pure ordered selection extraction into the existing picker/model; actual session/stale-choice/native-resolution journeys remain required, no gameplay mutation or new layout acceptance. Exact bounded API/readback migration only: no new rule decisions in this hotspot. UI owner must extract the next touched ShadowGift chooser, temporary-status widget renderer, or hero-status assembly into a cohesive owner before further substantive growth, preserving callback lifetime, current query/ownership, cached-before-redraw ordering and guarded native rendering. Existing obligations remain binding.\n\nNext bounded extraction (ui_developer; engine_engineer retains thread/scene teardown ownership, spans [[325, 465]]): Extract the Purify picker context/session adapter into a focused presentation owner before additional modal behavior; retain the existing distinct ShadowGift/Cure/Temporal obligations. Interface: Install a typed picker receiving pending BattleAction and center; synchronously build PurifyContext values and use identity-bound confirm/cancel callbacks through the current command gateway. No unrestricted event bus or generic context owner. Invariants: Hero/battle/side/session and current eligible choices are rechecked; No UI mutation of canonical effects, Mana or allowances; Owned gesture is released before borrowed animation/controller targets; Ordered stages drain presentation-only work and release interface mutex while waiting; Restart detaches/stops waiters/clears GUI/releases battle in the documented ownership order; GUI thread owns deferred layer clearing. Acceptance: Characterize modal stale-choice/cancel/reopen/teardown and unchanged emitted actions; preserve animation/result ordering. Any later thread/lifetime change requires its own bounded design and restart source/native/rendered evidence; this review supplies none of that runtime acceptance.\n\nBefore further affected growth, extract the accepted active-stack presentation refresh adapter (typed current battle/active stack and existing redraw/mouse refresh, no authoritative mutations) into an existing focused controller. Characterize stationary bonus add/remove, inactive stacks, blocked/normal/Reach cursor transitions and resize/DND; preserve all prior modal/teardown extraction obligations.",
       "kind": "exception",
-      "lines": 1703,
+      "lines": 1705,
       "next_bounded_extraction": {
         "acceptance": "Characterize modal stale-choice/cancel/reopen/teardown and unchanged emitted actions; preserve animation/result ordering. Any later thread/lifetime change requires its own bounded design and restart source/native/rendered evidence; this review supplies none of that runtime acceptance.",
         "interface": "Install a typed picker receiving pending BattleAction and center; synchronously build PurifyContext values and use identity-bound confirm/cancel callbacks through the current command gateway. No unrestricted event bus or generic context owner.",
@@ -20281,8 +20281,8 @@
       },
       "owner": "ui_developer",
       "previous_review": "PROPOSED-0920-EXACT-SOURCE-ORGANIZATION",
-      "rationale": "Exact 1710 to 1703-line scope. Client presentation/input routing integrates current spell/action receipts and validated captured views. Preserve command submission, session/teardown ownership, native layout and ordinary input behavior; no direct gameplay mutation is introduced.",
-      "review": "IR-NH092-ORG-3E82D142-20261116",
+      "rationale": "Exact1703 to1705-line two-call routing exception: begin manual Overflow receipt at existing StartAction and clear it only after EndAction drains animation stages. All receipt matching, flight construction and callback ownership live in the focused132-line OverflowSpellPresentation owner, maximum28-line function. No new rule/action decisions or altered teardown order in this hotspot. Preserve all existing extraction obligations, including next active-stack refresh/Purify adapters; no future growth credit.",
+      "review": "IR-NH0923-OVERFLOW-LIFETIME-ESTATE-SOURCE-20261118",
       "review_history": [
         {
           "kind": "exception",
@@ -20293,9 +20293,9 @@
           "sha256": "7f4ff3cf25ba19fdc3feac90f5d513292f72ff12343e49926ff0ba8e2c90b1ce"
         }
       ],
-      "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
-      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "7d96a1e2bf94b9c80e596b977432b444529ee592cf932de9392fea223fa224a1"
+      "review_scope": "Exact source organization and bounded state/lifetime review only. No compile, rendered acceptance, publication or future growth allowance.",
+      "review_status": "INDEPENDENT_SOURCE_REVIEW_NATIVE_RENDERED_UNRUN",
+      "sha256": "a942f79405403354c1234aa6590397c07da4735f4c4daff6001b58bb69594bfe"
     },
     "client/battle/BattleInterface.cpp::BattleInterface::installPurifyUI()::[this](const BattleAction & pending, const BattleHex & center)#1": {
       "deferral": "Preserve ALL inherited deferrals and exact prior shrinking baselines. Further growth must extract a cohesive domain owner before expansion; no future growth credit or limit increase. Optional UI includes a pure ordered selection extraction into the existing picker/model; actual session/stale-choice/native-resolution journeys remain required, no gameplay mutation or new layout acceptance.\n\nNext bounded extraction (ui_developer, spans [[347, 388]]): Extract pure eligible-stack to PurifyStackChoices/context-value mapping within the focused picker adapter before adding another effect choice. Interface: Ordered shared eligible records plus visible names and maximum-choice/automatic-clear facts return owned display rows; no retained CStack pointer, callback or widget in the mapping result. Invariants: Automatic poison/grave-dust/stun/cripple clearing stays distinct from selected spell groups; Shared eligibleStacks and validatedPurifyChoices remain authoritative query helpers; Confirm rechecks session, hero, side, live eligibility and mechanics before one submission; Cancel performs no resource/effect mutation. Acceptance: Compare row order/names/counts and empty/automatic-only cases; stale session or choices must preserve current rejection/submission behavior. Reduce this lambda and C07 without duplicating the nested callback inventory.",
@@ -20562,14 +20562,14 @@
       "deferral": "Future Leadership rendering belongs in those owners. Before controller growth, extract another count/readout presentation group, preserving hit-animation timing, repaint ownership and restart transitions. Prior stricter obligations remain in inherited_deferral, where present.",
       "inherited_deferral": " Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
       "kind": "exception",
-      "lines": 1125,
+      "lines": 1090,
       "owner": "ui_developer",
       "previous_review": "IR-LEADERSHIP-1159-INDEPENDENT-20261113-V1-UNITS",
-      "rationale": "Exact shrinking1131->1125-line controller successor. The existing cast-sound/affected-spell presentation body moves to focused BattleSpellPresentation::displaySpellInjury; flagged overflow optionally adds its authored hit queue before the same affected queue. Normal unflagged injury behavior, hit/death/rebirth stages, amount-box snapshots and final batching remain unchanged. New mapping/helper owner stays165 lines; no oversized relocation. Retain1125 ratchet, inherited count/readout/attack-stage extraction obligations and native/rendered restart characterization; no future growth or ceiling increase.",
-      "review": "IR-NH0921-PRAYER-OVERFLOW-PRESENTATION-20261118",
-      "review_scope": "Exact bounded Prayer/overflow presentation source and organization change only. All inherited responsibilities/deferrals remain binding; no compiler/native, rendered/placement, save-load, performance or publication acceptance.",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN",
-      "sha256": "93f6e16111362089d665f1effb8a39b61e63c53aaa83875e6b3de3938bf23dff"
+      "rationale": "Exact1125 to1090-line shrinking extraction. Ordinary per-injury stage preparation moves to the focused132-line OverflowSpellPresentation owner; summon appearance moves to44-line LivingArmorSpawnPresentation. stacksAreAttacked96 to72 retains recipient ordering, count snapshots, facing, rebirth/removal and final wait. New overflow stage is after original HIT and before AFTER_HIT; common projectile lifetime/render protection reused. Existing readout/attack-stage deferrals remain; actual queued-flight/restart rendering is separate.",
+      "review": "IR-NH0923-OVERFLOW-LIFETIME-ESTATE-SOURCE-20261118",
+      "review_scope": "Exact source organization and bounded state/lifetime review only. No compile, rendered acceptance, publication or future growth allowance.",
+      "review_status": "INDEPENDENT_SOURCE_REVIEW_NATIVE_RENDERED_UNRUN",
+      "sha256": "5d03daa37a56061c2f81fcb9f4632dc78d1088adec2539f1effee46d21e571d5"
     },
     "client/battle/BattleStacksController.cpp::void BattleStacksController::stackAttacking( const StackAttackInfo & info )#1": {
       "deferral": "Owner: ui_developer. Extract cohesive stack attack stage planning with explicit immutable receipt and visual-origin inputs. Preserve ordered flight-out, facing, hit/death and return stages, normal attacks, both facings/widths, unchanged authoritative placement and callback teardown. Require zero/nonzero and lethal-reflection characterization plus rendered restart/new-scenario/quit evidence before further substantive growth.",
@@ -20582,16 +20582,6 @@
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
       "sha256": "441f88287aaf2ea08332c240d2bf1b7df3c58059b7a70ed6a6c573139cac1dae"
-    },
-    "client/battle/BattleStacksController.cpp::void BattleStacksController::stacksAreAttacked(std::vector<StackAttackedInfo> attackedInfos)#1": {
-      "kind": "legacy",
-      "lines": 96,
-      "owner": "ui_developer",
-      "rationale": "Exact102->96-line reduction: existing per-injury sound/affected-spell emission moves to the focused8-line displaySpellInjury helper, which gates additional authored hit visuals only on the explicit replay bit. Preserve original recipient iteration, facing, defense/death/rebirth handling, queued event order, amount-box snapshots and synchronous batching. Complete mapping lives in the17-line fromPacket helper under the same165-line presentation owner. Retain96-line ratchet and characterize ordinary/overflow/Cascade/Force Lance plus queued restart/teardown before future substantive stage growth; no numeric waiver or rendered/runtime acceptance.",
-      "review": "IR-NH0921-OVERFLOW-INJURY-EXTRACTION-20261118",
-      "review_scope": "Exact96-line stage routing and focused helper extraction only; no future growth, compiler/native, rendered, performance or publication acceptance.",
-      "sha256": "64bd690409e763f2ba4d6f43787ad7ba37a984955193aa14ffeb3e1291f20cd7",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN"
     },
     "client/battle/BattleWindow.cpp": {
       "completed_p_predecessor": {
@@ -20835,13 +20825,15 @@
       "sha256": "31df485e4b61410d6d5d904cb4fa82fea928addbc9a077eea0ea12459d0c67fb"
     },
     "client/gui/ShortcutHandler.cpp::EShortcut ShortcutHandler::findShortcut(const std::string & identifier ) const#1": {
-      "kind": "legacy",
-      "lines": 302,
+      "kind": "exception",
+      "lines": 303,
       "owner": "ui_developer",
-      "rationale": "Existing function owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 302 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "8b1bc2cdda353e17b053e85fa9a5bf69057a662542bcf9f699225a45755b55ac"
+      "rationale": "Exact302 to303-line mechanical map-entry exception: one stable townOpenAdministration identifier maps to the new shortcut enum. Existing map construction and lookup/error behavior unchanged. This method is a cohesive registry rather than new decision logic; no future growth allowance or unrelated shortcut behavior change.",
+      "review": "IR-NH0923-OVERFLOW-LIFETIME-ESTATE-SOURCE-20261118",
+      "review_scope": "Exact source organization and bounded state/lifetime review only. No compile, rendered acceptance, publication or future growth allowance.",
+      "sha256": "3f70a4f81bbb49ddc79dbb3f6d7028f19925c97b1b56361f66e6690dac28a2eb",
+      "review_status": "INDEPENDENT_SOURCE_REVIEW_NATIVE_RENDERED_UNRUN",
+      "deferral": "UI developer: before any substantive shortcut resolution behavior, extract the immutable shortcut mapping into a focused registry owner with existing exact key/value and unknown-key characterization. This exception allows only the recorded one-row addition, not new branches or another ceiling increase."
     },
     "client/lobby/BattleOnlyModeTab.cpp": {
       "kind": "legacy",
@@ -20927,12 +20919,13 @@
     "client/lobby/OptionsTab.cpp": {
       "deferral": "UI developer owns a separate bounded extraction of CPlayerSettingsHelper presentation methods into a focused lobby presenter with explicit PlayerSettings/SelType and ITranslator inputs before future expansion in this area. Preserve name/portrait/title/description and NONE/RANDOM/static-override behavior; characterize these branches, lower the OptionsTab file baseline after extraction, and verify native-resolution lobby transitions. No extraction is included in this urgent correctness patch.",
       "kind": "exception",
-      "lines": 1212,
+      "lines": 1135,
       "owner": "ui_developer",
-      "rationale": "Bounded urgent correctness fix: replace only the custom starting hero-name global text lookup with the existing client composite translator so map-local names resolve through installed map overlays. No file/function growth (1212 file lines, getName 38 lines); no localization data, simulation, network, save, ownership or severity changes. Coupling a presentation extraction to this one-line regression fix would increase review and delivery risk.",
-      "review": "phase2-lobby-map-custom-hero-name-no-growth-20261021",
-      "review_scope": "one-line-map-local-hero-name-consumer-correctness-no-growth-exception",
-      "sha256": "aa89c134448e116673e08b0759ef288ea6e6a6405f389b9d62cb3da20a37fca1"
+      "rationale": "Exact1212 to1135-line cohesive extraction:77-line tooltip construction moves into focused124-line OptionsTabTooltip.cpp (maximum21-line function). The helper derives Castle creature display order from loaded hallSlots, deduplicates valid nonempty producer levels and appends missing existing levels; underlying recruitment/dwelling identities remain unchanged. Preserve the separate settings presentation extraction obligation and map-local-name/RANDOM/NONE behavior; rendered lobby acceptance remains separate.",
+      "review": "IR-NH0923-FOLLOWUP-TOOLTIPS-ABILITY-20261118",
+      "review_scope": "Exact bounded source organization and failure-path review only; native/rendered acceptance and future growth unapproved.",
+      "sha256": "57762e6190201cafc7d2ca64cb596d61b73d10e4351797d41d6867d5772f1681",
+      "review_status": "INDEPENDENT_SOURCE_REVIEW_NATIVE_RENDERED_UNRUN"
     },
     "client/lobby/OptionsTab.cpp::OptionsTab::HandicapWindow::HandicapWindow() : CWindowObject(BORDERED)#1": {
       "kind": "legacy",
@@ -21644,14 +21637,14 @@
       },
       "deferral": "UI owner: before further substantive expansion of this affected purchase panel, extract CMageGuildAdventureSpellWindow and its exclusive price/help presentation into a focused town-purchase component, preserving public callback interface, authoritative refresh/ownership/turn/affordability ordering and native geometry. Verify owner-visiting/no-visitor/garrison-only price agreement with shared authority and guarded rendered transitions; no general file/function growth credit. Before further substantive expansion, owning engine/gameplay/UI specialist must extract the next coherent touched policy, ordered stage, codec family or widget responsibility into a focused owner, preserving callback visibility, rejection atomicity, serialized field order, payment and RNG/packet order. This exact bounded migration/registry/validation routing gives no future growth credit. Exact bounded declaration/include/UI removal only; no new rule responsibilities. Preserve prior UI extraction duties before future substantive affected growth.",
       "kind": "legacy",
-      "lines": 3558,
+      "lines": 3540,
       "owner": "ui_developer",
       "previous_review": "IR-REACH-CURSOR-FORT-ENTRY-EDGE-INDEPENDENT-20261113-V1",
-      "rationale": "Blacksmith dialog construction moves to CBlacksmithDialog.cpp and town estate controls to TownEstateUI.cpp; the castle presentation owner shrinks187 lines instead of accumulating the economic rules. Exact measured unit only; no future growth credit.",
-      "review": "PROPOSED-0920-EXACT-SOURCE-ORGANIZATION",
-      "review_scope": "Proposed source organization and exact bound only; native/rendered/runtime acceptance remains separate.",
-      "review_status": "PROPOSED_AWAITING_INDEPENDENT_REVIEW",
-      "sha256": "947b9b130556595d3b425af182ffefc55a7347151b6392a090df72502a30d7cd"
+      "rationale": "Exact3541 to3540-line successor removes only the redundant Town Hall steward-button construction; existing Gold-menu and S-key administration paths remain. Prior marketplace extraction, accepted income refresh and other purchase/visibility obligations remain binding. No economic state, payment or assignment mutation in this change.",
+      "review": "IR-NH0923-FOLLOWUP-TOOLTIPS-ABILITY-20261118",
+      "review_scope": "Exact bounded source organization and failure-path review only; native/rendered acceptance and future growth unapproved.",
+      "review_status": "INDEPENDENT_SOURCE_REVIEW_NATIVE_RENDERED_UNRUN",
+      "sha256": "36467c35ef5959bd9fad03a81cf6c78a493052f65e3a0a6e89151b61d6690113"
     },
     "client/windows/CCastleInterface.cpp::CFortScreen::CFortScreen(const CGTownInstance * town): CWindowObject(PLAYER_COLORED | BORDERED, {})#1": {
       "kind": "legacy",
@@ -21681,13 +21674,15 @@
       "sha256": "5d056e5fea11b742cc8d427c42680a3660b07fdf5fd486162cb9456ddc64534f"
     },
     "client/windows/CCastleInterface.cpp::void CCastleInterface::keyPressed(EShortcut key)#1": {
-      "kind": "legacy",
-      "lines": 86,
+      "kind": "exception",
+      "lines": 89,
       "owner": "ui_developer",
-      "rationale": "Existing function owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 86 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "79b1a16ebf84a9481c9ad35c39b7654a8af3a1b57fe4591f4e669b393faddb1c"
+      "rationale": "Exact86 to89-line bounded shortcut-router exception: one3-line case opens the existing focused TownEstateUI administration owner. All prior shortcut cases and actions retain order and behavior; no eligibility, economy or state mutation implemented here.",
+      "review": "IR-NH0923-OVERFLOW-LIFETIME-ESTATE-SOURCE-20261118",
+      "review_scope": "Exact source organization and bounded state/lifetime review only. No compile, rendered acceptance, publication or future growth allowance.",
+      "sha256": "8268e939629682d1500b91ed813f0486c1b888607c9327ae8469309fef4a8004",
+      "review_status": "INDEPENDENT_SOURCE_REVIEW_NATIVE_RENDERED_UNRUN",
+      "deferral": "UI developer: before further substantive town-key dispatch growth, extract the town-economy shortcut cases into the existing focused TownEstateUI presentation owner, accepting current town and shortcut and returning handled status. Preserve ownership/turn checks, existing marketplace semantics, input mappings and current-window lifetime; characterize ordinary keys and stale/closed-town input. Exact89-line recorded scope only."
     },
     "client/windows/CCastleInterface.cpp::void CMageGuildAdventureSpellWindow::updateSpells(ObjectInstanceID tID)#1": {
       "deferral": "UI owner: before further substantive expansion of this affected purchase panel, extract CMageGuildAdventureSpellWindow and its exclusive price/help presentation into a focused town-purchase component, preserving public callback interface, authoritative refresh/ownership/turn/affordability ordering and native geometry. Verify owner-visiting/no-visitor/garrison-only price agreement with shared authority and guarded rendered transitions; no general file/function growth credit.",
@@ -21707,11 +21702,11 @@
       "lines": 507,
       "owner": "ui_developer",
       "previous_review": "IR-REACH-CURSOR-FORT-ENTRY-EDGE-INDEPENDENT-20261113-V1",
-      "rationale": "Only one steward-button ownership field is added to the existing Town Hall widget declaration. Economic state and validated requests remain outside this header; no inline gameplay implementation is added. Exact measured unit only; no future growth credit.",
-      "review": "PROPOSED-0920-EXACT-SOURCE-ORGANIZATION",
-      "review_scope": "Proposed source organization and exact bound only; native/rendered/runtime acceptance remains separate.",
-      "review_status": "PROPOSED_AWAITING_INDEPENDENT_REVIEW",
-      "sha256": "53e1afc127cb71d1168fbc4567394b13c6c6200487e17c39c97f7a908ed6e8fc"
+      "rationale": "Exact508 to507-line shrinking declaration successor removes the unused Town Hall stewardButton member; accepted-state refreshIncome declaration remains. No new inline implementation or state ownership; prior Fort/purchase declaration extraction obligations remain.",
+      "review": "IR-NH0923-FOLLOWUP-TOOLTIPS-ABILITY-20261118",
+      "review_scope": "Exact bounded source organization and failure-path review only; native/rendered acceptance and future growth unapproved.",
+      "review_status": "INDEPENDENT_SOURCE_REVIEW_NATIVE_RENDERED_UNRUN",
+      "sha256": "d343bdf90a5a771d92cfeb6772a262cb30f3695e4c9a363426cd1a3f6e3d64db"
     },
     "client/windows/CCreatureWindow.cpp": {
       "completed_p_predecessor": {
@@ -21724,14 +21719,14 @@
       "deferral": "Before more MainSection stat construction, extract the next stat-row group with explicit owner/readout inputs. Preserve layout order, single efficiency calculation, callbacks and portrait lifetime; exact263 only. Prior stricter obligations remain in inherited_deferral, where present.",
       "inherited_deferral": " Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split. Current UI boundary: before further substantive bonus-list growth, ui_developer must move the next coherent remaining bonus-status row assembly into the existing CreatureBonusStatusPresentation value owner, consuming a synchronous read-only stack/status view and returning ordered text/icon rows without retaining callbacks or widgets. Preserve icon indexing, deduplication, row order, current/legacy status and native/rendered refresh parity; the current182-to146 method and1683-to1647 file reductions are ratchets, not regrowth credit. Before further substantive bonus-list growth, extract the next coherent remaining bonus-group/status selection into its existing focused owner, preserving effective source selection, grouping, sorting, deduplication, row/icon order, current/legacy policy and native/rendered refresh parity.\n\nOwner: UI developer. Interface/acceptance: retain focused section composition and extracted read-only Order indicators; any later section-builder extraction must preserve unit lifetime, tooltip, native layout and rendered refresh behavior.\nBefore substantive initSections growth, extract one optional section-factory stage taking current read-only UnitView and callback availability and returning owned section/height. Preserve section order, commander versus battle branches, parent capture and bounds; characterize pregame, battle, commander and ordinary windows. This83-line whitespace-only exception grants no growth credit.",
       "kind": "exception",
-      "lines": 1438,
+      "lines": 1411,
       "owner": "ui_developer",
       "previous_review": "FINAL-STAT-PRESENTATION-BOUNDED-SOURCE-20261114",
-      "rationale": "Exact 1457 to 1438-line scope. Client presentation/input routing integrates current spell/action receipts and validated captured views. Preserve command submission, session/teardown ownership, native layout and ordinary input behavior; no direct gameplay mutation is introduced.",
-      "review": "IR-NH092-ORG-3E82D142-20261116",
-      "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
-      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "98364ea15c3e0a4298fed6d064022d296566fea003364e8dc8de9d31483458ad"
+      "rationale": "Exact1438 to1411-line shrinking scope:29-line Order icon composition moves into the37-line CreatureOrderStatusPresentation owner; current active Orders occupy the existing spare portrait column rather than adding a footer. Live status eligibility still comes from the existing shared indicator presenter. Prior status grouping/deduplication and optional-section factory obligations remain binding; rendered bounds/refresh acceptance remains separate.",
+      "review": "IR-NH0923-OVERFLOW-LIFETIME-ESTATE-SOURCE-20261118",
+      "review_scope": "Exact source organization and bounded state/lifetime review only. No compile, rendered acceptance, publication or future growth allowance.",
+      "review_status": "INDEPENDENT_SOURCE_REVIEW_NATIVE_RENDERED_UNRUN",
+      "sha256": "38362c7bd370d3b5c1f0d0973b3fa0eedb07c1a50b4b1f42bcc95e96a8fe1521"
     },
     "client/windows/CCreatureWindow.cpp::CStackWindow::ActiveSpellsSection::ActiveSpellsSection(CStackWindow * owner, int yOffset) : CWindowSection(owner, ImagePath::builtin(\"stackWindow/spell-effects\"), yOffset)#1": {
       "deferral": "UI owner must extract complete full-stack active-effect row construction, priority and slot admission before further expansion, preserving captured battle context, physical-first eight-slot limit, ordinary spell order, help and current status; lower file/function baselines and verify right-click, reopen, Cure and expiry. BattleInterface owner must retain focused presentation routing before substantive expansion; no teardown/restart/state mutation enlargement.",
@@ -22377,13 +22372,15 @@
         "review": "IR-GHOST-SOUL-HARVEST-SHARED-HELP-20261028-V1",
         "sha256": "2c6077afd3bbb5801c676649312aa2f6cb91dcf62c2b1d4db090353b9b5c943e"
       },
-      "kind": "legacy",
+      "kind": "exception",
       "lines": 521,
       "owner": "ui_developer",
-      "rationale": "Reviewed shrinking exact-source ratchet in this affected owner. Current responsibility removals/delegation and moved-to units are measured together; no allowance regrowth or blanket legacy design approval.",
-      "review": "IR-COMMAND-AUTHORITY-SCOPED-ORGANIZATION-20261109-UNITS",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "ca4cddb2d90ab94ce06d7747814cd738ed4ebdb3e976ae768be24abe420fffc9"
+      "rationale": "Exact no-growth 521-line call-routing exception: one additional boolean gates the retired Assimilation help on the already validated captured world armyCommand struct. No strict resolved-hero decoder receives world data; the shared presenter only consumes eligibility, while creature card context independently uses its actual owning hero. Existing row order, text and icon assembly unchanged. No claim of decomposing the inherited large builder; exact current hash only, no future growth credit.",
+      "review": "IR-NH0923-FOLLOWUP-TOOLTIPS-ABILITY-20261118",
+      "review_scope": "Exact one-argument historical-help correctness routing only. No native/rendered, future growth or publication approval.",
+      "sha256": "4209a507d923510465696e55496728ddc5c017329985927a2d127fbec6079311",
+      "deferral": "UI developer: before substantive ability-row growth, extract the innate-ability row assembly from buildCreatureContent into the existing shared creature ability presentation owner. Interface takes const creature identity, current magic context and explicit historical Command eligibility, returning owned text/icon rows without callbacks or world mutation. Preserve ordinary bonus grouping/deduplication, scroll geometry, RANDOM/NONE/bare-preview behavior and current/historical identity; characterize both contexts and rendered wiki open/close. Other inherited wiki responsibilities remain bounded; no general ceiling waiver.",
+      "review_status": "INDEPENDENT_SOURCE_REVIEW_NATIVE_RENDERED_UNRUN"
     },
     "client/windows/wiki/WikiCreatureContent.cpp::std::vector<std::shared_ptr<CIntObject>> buildCreatureContent( // NOSONAR (complex by nature \u2013 many creature attributes) CViewport & viewport, const CCreature * creature, int viewportWidth, bool blueStyle, WikiCreatureNavigateCallback navigateCallback)#1": {
       "completed_p_predecessor": {
@@ -22392,13 +22389,15 @@
         "review": "IR-GHOST-SOUL-HARVEST-SHARED-HELP-20261028-V1",
         "sha256": "5cd64f15cf5577d9df5a32dd2ba8503c96ea1ed1d898d71bf216921bd5cdea5f"
       },
-      "kind": "legacy",
+      "kind": "exception",
       "lines": 461,
       "owner": "ui_developer",
-      "rationale": "Reviewed shrinking exact-source ratchet in this affected owner. Current responsibility removals/delegation and moved-to units are measured together; no allowance regrowth or blanket legacy design approval.",
-      "review": "IR-COMMAND-AUTHORITY-SCOPED-ORGANIZATION-20261109-UNITS",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "5b9cf0b82c244bee0f1ddd0a6267ce7380fa3638d0e603a90d2404fb35e93631"
+      "rationale": "Exact no-growth 461-line call-routing exception: one additional boolean gates the retired Assimilation help on the already validated captured world armyCommand struct. No strict resolved-hero decoder receives world data; the shared presenter only consumes eligibility, while creature card context independently uses its actual owning hero. Existing row order, text and icon assembly unchanged. No claim of decomposing the inherited large builder; exact current hash only, no future growth credit.",
+      "review": "IR-NH0923-FOLLOWUP-TOOLTIPS-ABILITY-20261118",
+      "review_scope": "Exact one-argument historical-help correctness routing only. No native/rendered, future growth or publication approval.",
+      "sha256": "065d693ae94e25231adfb8156a173bdfc52b92c061a7864f34964338e1de0379",
+      "deferral": "UI developer: before substantive ability-row growth, extract the innate-ability row assembly from buildCreatureContent into the existing shared creature ability presentation owner. Interface takes const creature identity, current magic context and explicit historical Command eligibility, returning owned text/icon rows without callbacks or world mutation. Preserve ordinary bonus grouping/deduplication, scroll geometry, RANDOM/NONE/bare-preview behavior and current/historical identity; characterize both contexts and rendered wiki open/close. Other inherited wiki responsibilities remain bounded; no general ceiling waiver.",
+      "review_status": "INDEPENDENT_SOURCE_REVIEW_NATIVE_RENDERED_UNRUN"
     },
     "client/windows/wiki/WikiHeroContent.cpp": {
       "deferral": "This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. UI developer: before further affected growth, extract coherent secondary-Skill slot refresh consuming owned descriptions and actual hero context; preserve saved/current text, original rank and event ownership with native and rendered parity.",
@@ -26632,11 +26631,11 @@
         "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
         "sha256": "6968fdebcb529086a26a2f47f6a8a9cf3f61744918663ebea9b0aabb260ac9fc"
       },
-      "rationale": "Native owner wires one original-cast Overflow completion and explicit evaluation ticket begin/admit/end/concentration delegation to focused shared rules. New Overflow mechanics reside in bounded340-line native helper; no new cast/planner.\n\nIndependently reviewed C14 scope (2678 to 2632 physical lines): Substantive receptivity/provenance work moves to focused owners. Existing cast boundaries reset one shared per-cast quota/event and complete Redemption after native post-cast work; the file shrinks and completion routing remains ordered. This bounds only the recorded hash and measured span; all inherited deferrals, ratchets and runtime holds remain binding, with no future growth allowance.",
-      "review": "IR-NH0921-C14-1164-CODEORG-20261117",
-      "review_scope": "Exact recorded C14 source hash, physical span and organization delta only. No future growth, whole-mechanic, compiler, native, rendered, performance, save-resume, publication or promotion acceptance.",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN",
-      "sha256": "f7b4c9e353c4cd7c6308b11884d03cd7c3c0a844d66f1ddfac4ad6a46abc27a7",
+      "rationale": "Exact2632 to2632-line bounded correctness call-substitution exception: existing forEachEffect routes through Effects::forEachActiveEffect, matching the captured-profile suppression already used by applicability/preparation. No extra iteration, cast callback, action/payment/RNG or outcome lifetime added. All existing recorder, cast-completion and Cure extraction obligations remain binding; native spell/forecast parity still requires execution evidence.",
+      "review": "IR-NH0923-OVERFLOW-LIFETIME-ESTATE-SOURCE-20261118",
+      "review_scope": "Exact source organization and bounded state/lifetime review only. No compile, rendered acceptance, publication or future growth allowance.",
+      "review_status": "INDEPENDENT_SOURCE_REVIEW_NATIVE_RENDERED_UNRUN",
+      "sha256": "f6e95aee2597964fffd0f6e3afd5fe03660bfc1d1edf56d59fde4fc6901bd762",
       "inherited_exact_source_review": {
         "review": "IR-NH092-ORG-E8CD1819-20261116",
         "sha256": "73d7bd0d10820a15e4dc23747dac42909864ddb1c4e6362c4fb36a52f237bc2e",
@@ -27046,7 +27045,7 @@
     "lib/spells/effects/Effects.cpp": {
       "deferral": "Gameplay owner: before further substantive growth, extract NewHorizonsPhysicalPoisonEffect into a focused adapter/factory owner receiving Mechanics, ServerCallback and ordered Target, retaining the existing legacy Effect fallback and metadata. Minimum checks: actual target order, immunity/invalid target filtering, stronger-poison rejection, HERO versus creature origin, post-shield delayed damage, target-aware magnitude, unchanged emitted state/log packets and RNG.",
       "kind": "exception",
-      "lines": 918,
+      "lines": 927,
       "organization_acceptance": "Exact legacy/current/creature adapter routing, packet/log/recipient values for eligible and stronger Poison, source-side provenance and delayed damage, plus optional/required effect ordering and script metadata/lifetime checks. Prior native/rendered gaps remain.",
       "organization_interface": "Owned shared_ptr legacy Effect and existing Effect virtual interface receiving const Mechanics*, ServerCallback* and ordered Target; preserve name/scope/identifier/optional/indirect metadata.",
       "organization_invariants": [
@@ -27065,11 +27064,11 @@
       "pre_legacy_freeze_review_status": "INDEPENDENT_ORGANIZATION_ONLY_NATIVE_RENDERED_UNRUN",
       "pre_legacy_freeze_sha256": "896652312826e113af95ebc28066f47dd3046e7265895420cd99215bc2c3684d",
       "previous_review": "IR-WARCASTING-SCALAR-REMOVAL-EXACT-ORGANIZATION-20261103",
-      "rationale": "All 916 lines were read: Confusion/Puppet Master adapters, legacy Ice Bolt gating, physical Poison/Curse/Sorrow wrappers, ordered effect applicability/preparation and script/native loading. The collection is not just a mechanical registry. Exact unchanged legacy freezing retains compatibility wrappers while refusing a growing catch-all for spell mechanics.\n\nIndependently reviewed C14 scope (916 to 918 physical lines): The existing physical-Poison effect captures a typed spell-origin descriptor before preparing its unit packet. Identity and codec rules remain in the shared domain owner. This bounds only the recorded hash and measured span; all inherited deferrals, ratchets and runtime holds remain binding, with no future growth allowance.",
-      "review": "IR-NH0921-C14-1164-CODEORG-20261117",
-      "review_scope": "Exact recorded C14 source hash, physical span and organization delta only. No future growth, whole-mechanic, compiler, native, rendered, performance, save-resume, publication or promotion acceptance.",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN",
-      "sha256": "02e7fe715ce0a7deaa6ec7a95ec4e3d05ad1d57899fdbeabbc4e170de46ebc24"
+      "rationale": "Exact918 to927-line bounded correctness API exception:9-line forEachActiveEffect reuses ordered iteration and existing disabledForV3 filter so introspection agrees with applicability/preparation. No new adapter, mutable cache or rule decoding added. This generic iteration responsibility belongs with the existing collection, not an alternate spell registry. Preserve physical-Poison adapter extraction obligations before its next expansion and all current/legacy/script ordering invariants; exact hash only, no future growth.",
+      "review": "IR-NH0923-OVERFLOW-LIFETIME-ESTATE-SOURCE-20261118",
+      "review_scope": "Exact source organization and bounded state/lifetime review only. No compile, rendered acceptance, publication or future growth allowance.",
+      "review_status": "INDEPENDENT_SOURCE_REVIEW_NATIVE_RENDERED_UNRUN",
+      "sha256": "4b22c5e49157bb85eb459b4200f77322ff79072168651d621eda6dea8c8026d4"
     },
     "lib/texts/CGeneralTextHandler.cpp::CGeneralTextHandler::CGeneralTextHandler(): allTexts (*this, \"core.genrltxt\" ), zelp (*this, \"core.help\" ), roeMapping()#1": {
       "kind": "legacy",

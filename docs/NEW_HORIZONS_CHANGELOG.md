@@ -7,6 +7,22 @@ and revisions as the game develops.
 For individual perk effects, spell formulas, creature statistics and Order rules,
 read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 
+## 0.92.3 Early Access
+
+- Arcane Overflow recognizes ordinary hex-targeted spells, including Ice
+  Bolt. Spells with projectiles launch their spill from the defeated stack.
+- Town income opens Marketplace or Town Administration. Press S for
+  administration. Accepted steward changes refresh projected daily Gold.
+  The Town Hall's separate Steward button is retired.
+- The Castle faction preview lists Swordsmen before Griffins, matching
+  the town's construction order.
+- Halon starts with Unraveling Magic and Dispel.
+- Living Armor rises from blue bones and uses an aetheric portrait backdrop.
+- Prayer and Order status cards show their own icons. Active Orders sit
+  beneath the creature portrait. The Prayers page shows Faith once.
+- Creature ability cards have new icons and use matching spell artwork
+  for innate casts and spell effects triggered by attacks.
+
 ## 0.92.2 Early Access
 
 - Fresh default heroes start with a spellbook, two Basic Skills and one

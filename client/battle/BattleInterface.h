@@ -11,6 +11,7 @@
 
 #include "../../lib/battle/NewHorizonsAerialSupremacy.h"
 #include "BattleConstants.h"
+#include "OverflowSpellPresentation.h"
 
 #include "../gui/CIntObject.h"
 
@@ -181,6 +182,7 @@ public:
 
 	ui32 round;
 
+	OverflowSpellPresentation overflowSpellPresentation;
 	std::unique_ptr<BattleProjectileController> projectilesController;
 	std::unique_ptr<BattleSiegeController> siegeController;
 	std::unique_ptr<BattleObstacleController> obstacleController;

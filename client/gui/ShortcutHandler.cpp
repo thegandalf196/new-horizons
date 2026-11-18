@@ -379,6 +379,7 @@ EShortcut ShortcutHandler::findShortcut(const std::string & identifier ) const
 		{"marketArtifactExperience", EShortcut::MARKET_ARTIFACT_EXPERIENCE },
 		{"townOpenHall",             EShortcut::TOWN_OPEN_HALL            },
 		{"townOpenFort",             EShortcut::TOWN_OPEN_FORT            },
+		{"townOpenAdministration", EShortcut::TOWN_OPEN_ADMINISTRATION },
 		{"townOpenMarket",           EShortcut::TOWN_OPEN_MARKET          },
 		{"townOpenMageGuild",        EShortcut::TOWN_OPEN_MAGE_GUILD      },
 		{"townOpenThievesGuild",     EShortcut::TOWN_OPEN_THIEVES_GUILD   },

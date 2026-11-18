@@ -74,6 +74,17 @@ const CSpell * ordinarySpell(const spells::Mechanics & mechanics)
 		|| mechanics.getEffectiveChainLength(1) > 1) return nullptr;
 	return spell;
 }
+const battle::Unit * primaryTarget(const spells::Mechanics & mechanics, const spells::Target & aim)
+{
+	const auto * callback = mechanics.battle();
+	if(!callback || aim.size() != 1) return nullptr;
+	if(aim.front().unitValue)
+		return callback->battleGetUnitByID(aim.front().unitValue->unitId());
+	// Ordinary GUI creature targeting sends a hex; explicit selectors and AI
+	// may send a unit. Resolve both through the same current native battlefield.
+	return aim.front().hexValue.isValid() ? callback->battleGetUnitByPos(aim.front().hexValue, true) : nullptr;
+}
+
 int percent(const spells::Mechanics & mechanics)
 {
 	const auto * hero = mechanics.getHeroCaster();
@@ -216,7 +227,9 @@ OverflowSupport overflowSupport(const spells::Mechanics & mechanics, const spell
 	if(!spell->isDamage()) return OverflowSupport::Inapplicable;
 	const auto shape = singleRecipientEffectPayload(mechanics);
 	if(!shape) return OverflowSupport::Unsupported;
-	if(!ordinarySpell(mechanics) || target.size() != 1 || !target.front().unitValue) return OverflowSupport::Inapplicable;
+	if(!ordinarySpell(mechanics)) return OverflowSupport::Inapplicable;
+	const auto * primary = primaryTarget(mechanics, target);
+	if(!primary) return OverflowSupport::Inapplicable;
 	unsigned damageCount = 0;
 	bool supported = true;
 	mechanics.forEachEffect([&](const spells::effects::Effect & effect)
@@ -242,8 +255,7 @@ OverflowSupport overflowSupport(const spells::Mechanics & mechanics, const spell
 	const auto * callback = mechanics.battle();
 	if(!postKillProjection && newHorizonsImplosion::rulesFor(callback->getBattle()->getMagicRules(), spell->getId()))
 		return OverflowSupport::Unsupported;
-	const auto * primary = callback->battleGetUnitByID(target.front().unitValue->unitId());
-	if(!primary || callback->battleGetOwner(primary) == mechanics.getCasterColor()) return OverflowSupport::Inapplicable;
+	if(callback->battleGetOwner(primary) == mechanics.getCasterColor()) return OverflowSupport::Inapplicable;
 	if(!forceLance(mechanics) && mechanics.isNegativeSpell() && primary->valOfBonuses(BonusType::MAGIC_MIRROR) > 0)
 		return OverflowSupport::Unsupported;
 	if(unrepresentedDeathContext(*primary) || readyRebirth(primary) || uncertainResistanceReroll(*callback, *primary)
@@ -271,9 +283,8 @@ OverflowState prepareOverflow(const spells::Mechanics & mechanics, const spells:
 	const spells::effects::Effects::EffectsToApply & effects, bool acceptedOriginal)
 {
 	OverflowState state;
-	if(!acceptedOriginal || percent(mechanics) <= 0 || !ordinarySpell(mechanics)
-		|| aim.size() != 1 || !aim.front().unitValue) return state;
-	const auto * primary = mechanics.battle()->battleGetUnitByID(aim.front().unitValue->unitId());
+	if(!acceptedOriginal || percent(mechanics) <= 0 || !ordinarySpell(mechanics)) return state;
+	const auto * primary = primaryTarget(mechanics, aim);
 	if(!primary || !primary->alive() || mechanics.battle()->battleGetOwner(primary) == mechanics.getCasterColor()) return state;
 	state.primary = primary->unitId(); state.footprint = primary->getHexes(); state.percent = percent(mechanics);
 	state.cascade = nativeRules::hasMetamagicPerk(mechanics.getHeroCaster(), nativeRules::MetamagicPerk::ArcaneCascade);
@@ -288,7 +299,7 @@ std::optional<OverflowPreview> previewOverflow(const spells::Mechanics & mechani
 	if(overflowSupport(mechanics, aim) != OverflowSupport::Supported) return {};
 	const auto * native = dynamic_cast<const spells::BattleSpellMechanics *>(&mechanics);
 	if(!native || (newHorizonsHeroLuck::hasDruidicLuck(mechanics.getHeroCaster()) && !native->hasResolvedHeroLuck())) return {};
-	const auto * primary = mechanics.battle()->battleGetUnitByID(aim.front().unitValue->unitId());
+	const auto * primary = primaryTarget(mechanics, aim);
 	if(!primary || !primary->alive()) return {};
 	const auto * damage = mechanics.findEffect<spells::effects::native::Damage>();
 	const bool bypass = forceLance(mechanics);

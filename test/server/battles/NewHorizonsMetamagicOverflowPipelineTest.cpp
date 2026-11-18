@@ -18,6 +18,10 @@
 #include "../../../lib/combatScripts/nativeEvents/NativeEventCommon.h"
 #include "../../mock/mock_ServerCallback.h"
 #include "../../mock/mock_vstd_RNG.h"
+#include "../../../lib/mapObjects/CGCreature.h"
+#include "../../../lib/mapObjects/ObjectTemplate.h"
+#include "../../../lib/mapObjectConstructors/AObjectTypeHandler.h"
+#include "../../../lib/battle/BattleLayout.h"
 namespace
 {
 using namespace newHorizonsMetamagic;
@@ -34,6 +38,7 @@ protected:
 	testing::NiceMock<vstd::RNGMock> random;
 	CStack * primary = nullptr;
 	CStack * secondary = nullptr;
+	bool currentPolicy = false;
 	void SetUp() override
 	{
 		useRevisedOrders = true;
@@ -51,10 +56,13 @@ protected:
 		auto perks = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
 		// Characterize the retained policy-five contract, independently of the
 		// current policy-six catalogue. The strict decoder rejects mixed profiles.
-		perks["metamagicPolicy"]["version"].Integer() = 5;
-		perks["metamagicPolicy"]["arcaneOverflowPercentByRank"].Vector() = {JsonNode(0), JsonNode(25), JsonNode(50), JsonNode(75)};
-		perks["metamagicPolicy"].Struct().erase("friendlyDamageReductionPercentByRank");
-		perks["metamagicPolicy"].Struct().erase("debuffRetryChancePercentByRank");
+		if(!currentPolicy)
+		{
+			perks["metamagicPolicy"]["version"].Integer() = 5;
+			perks["metamagicPolicy"]["arcaneOverflowPercentByRank"].Vector() = {JsonNode(0), JsonNode(25), JsonNode(50), JsonNode(75)};
+			perks["metamagicPolicy"].Struct().erase("friendlyDamageReductionPercentByRank");
+			perks["metamagicPolicy"].Struct().erase("debuffRetryChancePercentByRank");
+		}
 		perks.setOverrideFlag(true);
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
 		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
@@ -497,3 +505,157 @@ TEST_F(MetamagicOverflowPipeline, NoRankNoOverkillAndNonOriginalSpellShapesAreIn
 	}
 }
 }
+
+class MetamagicShippedNeutralOverflow : public MetamagicOverflowPipeline,
+	public testing::WithParamInterface<std::pair<SpellID, int>>
+{
+protected:
+	void prepareShipped(int rawPower = 5)
+	{
+		currentPolicy = GetParam().second == 6;
+		startGame();
+		attackerSideHero->setHeroType(HeroTypeID(HeroTypeID::decode("core:theodorus")));
+		attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:metamagic")),
+			MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, rawPower, ChangeValueMode::ABSOLUTE);
+		attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
+		giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+		attackerSideHero->addSpellToSpellbook(GetParam().first);
+		setTestSpellPointTotal(attackerSideHero, 100);
+		const CreatureID peasant(CreatureID::decode("core:peasant"));
+		auto neutral = std::make_shared<CGCreature>(gameState().get());
+		neutral->ID = Obj::MONSTER;
+		neutral->subID = MapObjectSubID(peasant.getNum());
+		neutral->tempOwner = PlayerColor::NEUTRAL;
+		neutral->pos = int3(4, 4, 0);
+		const auto templates = neutral->getObjectHandler()->getTemplates();
+		ASSERT_FALSE(templates.empty());
+		neutral->appearance = templates.front();
+		neutral->instanceName = "overflowNeutralPeasants";
+		neutral->setCreature(SlotID(0), peasant, 8);
+		neutral->setCreature(SlotID(1), peasant, 8);
+		neutral->setCreature(SlotID(2), peasant, 8);
+		map()->addNewObject(neutral);
+		neutral->attachToBonusSystem(*gameState());
+		BattleLayout layout;
+		layout.units[BattleSide::ATTACKER][0] = BattleHex(5, 5);
+		layout.units[BattleSide::DEFENDER][0] = BattleHex(10, 5);
+		layout.units[BattleSide::DEFENDER][1] = BattleHex(11, 5);
+		layout.units[BattleSide::DEFENDER][2] = BattleHex(13, 5);
+		layout.obstaclesAllowed = false;
+		layout.tacticsAllowed = false;
+		gameHandler->battles->startBattle(attackerSideHero, neutral.get(), int3(4, 4, 0),
+			attackerSideHero, nullptr, layout, nullptr);
+		primary = const_cast<CStack *>(battle()->battleGetStackByPos(BattleHex(10, 5)));
+		secondary = const_cast<CStack *>(battle()->battleGetStackByPos(BattleHex(11, 5)));
+		ASSERT_NE(primary, nullptr);
+		ASSERT_NE(secondary, nullptr);
+	}
+	void exercisePlayerAction(bool unitAim)
+	{
+		ASSERT_NO_FATAL_FAILURE(prepareShipped(45));
+		ASSERT_EQ(attackerSideHero->getRawBasePrimarySkillValue(PrimarySkill::SPELL_POWER), 45);
+		ASSERT_EQ(battle()->battleGetOwner(battle()->battleActiveUnit()), PlayerColor(0));
+		ASSERT_GE(battle()->getRound(), 0);
+		const auto spell = GetParam().first;
+		BattleAction action;
+		action.actionType = EActionType::HERO_SPELL;
+		action.side = BattleSide::ATTACKER;
+		action.stackNumber = -1;
+		action.spell = spell;
+		if(unitAim) action.aimToUnit(primary);
+		else action.aimToHex(primary->getPosition()); // Ordinary client spell route.
+		const auto aim = action.getTarget(battle());
+		ASSERT_EQ(aim.size(), 1);
+		EXPECT_EQ(aim.front().unitValue != nullptr, unitAim);
+		spells::BattleCast event(battle(), attackerSideHero, spells::Mode::HERO, spell.toSpell());
+		const auto mechanics = event.mechanicsForTarget(aim);
+		const auto * damage = mechanics->findEffect<spells::effects::native::Damage>();
+		ASSERT_NE(damage, nullptr);
+		const auto nominal = damage->damageForTarget(0, mechanics.get(), primary);
+		const auto expectedSpill = overflowDamage(nominal, 8, currentPolicy ? 30 : 25);
+		const auto preview = previewOverflow(*mechanics, aim);
+		EXPECT_TRUE(preview);
+		if(preview)
+		{
+			EXPECT_EQ(preview->primary, primary->unitId());
+			EXPECT_EQ(preview->recipient, secondary->unitId());
+			EXPECT_EQ(preview->rawSpill, expectedSpill);
+		}
+		const auto cost = mechanics->getTargetAwareManaCost(aim);
+		const auto mana = attackerSideHero->getManaAvailable();
+		const auto round = battle()->getRound();
+		const auto allowances = battle()->getHeroActionAllowances(BattleSide::ATTACKER).remainingCounts(round);
+		const auto casts = server.casts.size();
+		const auto injuries = server.injuries.size();
+		ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(battle()->getBattleID(), PlayerColor(0), action));
+		EXPECT_FALSE(primary->alive());
+		EXPECT_EQ(8 - secondary->getAvailableHealth(), std::min<int64_t>(8, expectedSpill));
+		EXPECT_EQ(mana - attackerSideHero->getManaAvailable(), cost);
+		EXPECT_EQ(server.casts.size(), casts + 1);
+		const auto remaining = battle()->getHeroActionAllowances(BattleSide::ATTACKER).remainingCounts(round);
+		EXPECT_EQ(allowances.heroActions, remaining.heroActions + 1);
+		unsigned spills = 0;
+		for(size_t index = injuries; index < server.injuries.size(); ++index)
+			for(const auto & hit : server.injuries[index].stacks)
+				if(hit.stackAttacked == secondary->unitId() && (hit.flags & BattleStackAttacked::SECONDARY))
+				{
+					++spills;
+					EXPECT_EQ(hit.spellID, spell);
+					EXPECT_TRUE(hit.flags & BattleStackAttacked::SPELL_HIT_EFFECT);
+				}
+		EXPECT_EQ(spills, 1u);
+	}
+
+};
+
+TEST_P(MetamagicShippedNeutralOverflow, RealIceBoltAndArrowSpillAgainstHeroLessNeutralPeasants)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareShipped());
+	ASSERT_EQ(battle()->getSideHero(BattleSide::DEFENDER), nullptr);
+	ASSERT_EQ(battle()->battleGetOwner(primary), PlayerColor::NEUTRAL);
+	ASSERT_EQ(primary->getAvailableHealth(), 8);
+	ASSERT_EQ(secondary->getAvailableHealth(), 8);
+	ASSERT_EQ(battle()->battleGetMagicResistance(secondary), 0);
+	const auto spell = GetParam().first.toSpell();
+	spells::BattleCast event(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	const spells::Target aim{spells::Destination(primary)};
+	const auto mechanics = event.mechanicsForTarget(aim);
+	const auto damage = mechanics->findEffect<spells::effects::native::Damage>();
+	ASSERT_NE(damage, nullptr);
+	const auto nominal = damage->damageForTarget(0, mechanics.get(), primary);
+	ASSERT_GT(nominal, 8);
+	const auto expected = overflowDamage(nominal, 8, currentPolicy ? 30 : 25);
+	const auto support = overflowSupport(*mechanics, aim);
+	EXPECT_EQ(support, OverflowSupport::Supported);
+	const auto preview = previewOverflow(*mechanics, aim);
+	EXPECT_TRUE(preview);
+	if(preview)
+	{
+		EXPECT_EQ(preview->recipient, secondary->unitId());
+		EXPECT_EQ(preview->rawSpill, expected);
+	}
+	const auto before = server.injuries.size();
+	mechanics->cast(&authority, aim);
+	EXPECT_FALSE(primary->alive());
+	EXPECT_EQ(8 - secondary->getAvailableHealth(), std::min<int64_t>(8, expected));
+	EXPECT_TRUE(mechanics->metamagicOverflowReceipt());
+	unsigned secondaryHits = 0;
+	for(size_t index = before; index < server.injuries.size(); ++index)
+		for(const auto & hit : server.injuries[index].stacks)
+			if(hit.stackAttacked == secondary->unitId() && (hit.flags & BattleStackAttacked::SECONDARY))
+				++secondaryHits;
+	EXPECT_EQ(secondaryHits, 1u);
+}
+TEST_P(MetamagicShippedNeutralOverflow, PlayerHexAimAtRawPower45SpillsAndPaysExactlyOnce)
+{
+	ASSERT_NO_FATAL_FAILURE(exercisePlayerAction(false));
+}
+TEST_P(MetamagicShippedNeutralOverflow, PlayerUnitAimAtRawPower45RetainsIdenticalOverflowRules)
+{
+	ASSERT_NO_FATAL_FAILURE(exercisePlayerAction(true));
+}
+
+INSTANTIATE_TEST_SUITE_P(ShippedSingleTargets, MetamagicShippedNeutralOverflow,
+	testing::Values(std::pair{SpellID(SpellID::ICE_BOLT), 5}, std::pair{SpellID(SpellID::ICE_BOLT), 6},
+		std::pair{SpellID(SpellID::MAGIC_ARROW), 5}, std::pair{SpellID(SpellID::MAGIC_ARROW), 6}));

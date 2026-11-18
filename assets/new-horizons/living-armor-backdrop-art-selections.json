@@ -1,0 +1,66 @@
+{
+  "format": 1,
+  "entity": "new-horizons:livingArmor",
+  "selection": "User-directed provisional aetheric creature backdrop",
+  "approval": "Not Final; rendered acceptance pending",
+  "exports": [
+    {
+      "role": "130px",
+      "resource": "SPRITES/NH_living_armor_aetheric_background_130.png",
+      "dimensions": [
+        100,
+        130
+      ],
+      "sha256": "58e5dd340c41e65500a3e15c14a265c530b3fe07d50e14abb1a1664ba925f72b",
+      "masterSha256": "821f6e3335fa74e512d3c32c501016d6516853ae38009f07a9a44f547431be59",
+      "masterCrop": [
+        0,
+        0,
+        1099,
+        1429
+      ],
+      "nativeCrop": null,
+      "origin": "Original built-in imagegen empty sorcery chamber backdrop, no existing game pixels copied"
+    },
+    {
+      "role": "120px",
+      "resource": "SPRITES/NH_living_armor_aetheric_background_120.png",
+      "dimensions": [
+        100,
+        120
+      ],
+      "sha256": "667e78243abf7175ea2e4c49dc396ce94e62d2b02d19f7d9a9f66a5b6298a96b",
+      "masterSha256": "821f6e3335fa74e512d3c32c501016d6516853ae38009f07a9a44f547431be59",
+      "masterCrop": [
+        0,
+        0,
+        1099,
+        1429
+      ],
+      "nativeCrop": [
+        0,
+        0,
+        100,
+        120
+      ],
+      "origin": "Original built-in imagegen empty sorcery chamber backdrop, no existing game pixels copied"
+    }
+  ],
+  "artistHandoffSha256": "10664c23aa8f178f1f6e173ef39dfab4249e1ec1b5646890a9316cccdd03b8ea",
+  "nativeManifestSha256": "ef89fbf01dffd4feb11356e997e1cf449c70794b1d23c1bf2a210c4e976753bc",
+  "consumer": "client/widgets/CreaturePic.cpp; Living Armor only;100x130and100x120 canvases",
+  "abilityIcons": [
+    {
+      "resource": "SPRITES/NH_ability_jousting_immunity.png",
+      "dimensions": [
+        44,
+        44
+      ],
+      "sha256": "c7bb38c3ef7c9c7431111224fae9bf06378d21b1e6d24ea832490b6d8c4b083e",
+      "masterSha256": "8f2d77ffe6801e5f2f9ca09bc22f17fb2a35b75c288d2cefbc4a443b76c4076e",
+      "origin": "Original built-in imagegen foreground",
+      "ability": "CHARGE_IMMUNITY",
+      "artistHandoffSha256": "0bf044302e461bf16ceb0d87d666d5f2561a2a9ce68dd6832ee8831076793efb"
+    }
+  ]
+}

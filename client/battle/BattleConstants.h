@@ -42,6 +42,7 @@ enum class EAnimationEvents
 	BEFORE_HIT,  // attack and defence effects play, e.g. luck/death blow
 	ATTACK,      // attack and defence animations are playing
 	HIT,         // hit & death animations are playing
+	SPELL_OVERFLOW, // original hit finished; secondary spell missiles and impacts
 	AFTER_HIT,   // post-attack effect, e.g. phoenix rebirth
 
 	AERIAL_RETURN_START,

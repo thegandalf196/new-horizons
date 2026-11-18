@@ -139,6 +139,8 @@ class BattleStacksController
 	void applyStackCreatureFormRefresh(const CStack * stack);
 
 	void stageAerialExcursion(const StackAttackInfo & info);
+	void queueInjuryAnimation(const StackAttackedInfo & attackedInfo);
+	void stageAddedStackAppearance(const CStack * stack, bool instant);
 
 public:
 	BattleStacksController(BattleInterface & owner);

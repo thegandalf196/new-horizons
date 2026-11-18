@@ -1,5 +1,6 @@
 {
 	"core:halon": {
+		"spellbook": ["core:dispel"],
 		"skills": [
 			{
 				"skill": "new-horizons:metamagic",

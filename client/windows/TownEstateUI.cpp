@@ -1,6 +1,11 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
 #include "TownEstateUI.h"
+#include "CCastleInterface.h"
+#include "CMarketWindow.h"
+#include "../../lib/GameLibrary.h"
+#include "../../lib/texts/CGeneralTextHandler.h"
+#include "../widgets/TextControls.h"
 #include "GUIClasses.h"
 #include "InfoWindows.h"
 #include "../CPlayerInterface.h"
@@ -20,6 +25,31 @@
 
 namespace
 {
+class TownIncomeMenu final : public CInfoWindow
+{
+public:
+	TownIncomeMenu(PlayerColor player, std::function<void()> market, std::function<void()> administration)
+		: CInfoWindow("{Town Economy}\n\nChoose a destination.", player, TCompsInfo{},
+			TButtonsInfo{{AnimationPath::builtin("settingsWindow/button190"), market},
+				{AnimationPath::builtin("settingsWindow/button190"), administration}})
+	{
+		buttons[0]->setTextOverlay("Marketplace", FONT_SMALL, Colors::YELLOW);
+		buttons[1]->setTextOverlay("Town Administration", FONT_SMALL, Colors::YELLOW);
+		// Escape dismisses this local menu; it must not choose Administration.
+		buttons[1]->assignedKey = EShortcut::TOWN_OPEN_ADMINISTRATION;
+		addUsedEvents(KEYBOARD);
+	}
+	void keyPressed(EShortcut key) override
+	{
+		if(key == EShortcut::GLOBAL_CANCEL)
+			close();
+	}
+	void close() override
+	{
+		WindowBase::close();
+	}
+};
+
 std::vector<const CGHeroInstance *> eligibleStewards()
 {
 	std::vector<const CGHeroInstance *> result;
@@ -68,7 +98,10 @@ void showStewards(ObjectInstanceID townID)
 		labels.push_back(std::move(name));
 	}
 	if(candidates.empty())
+	{
+		GAME->interface()->showInfoDialog("No active hero has Stewardship. Learn Stewardship to appoint a town steward.");
 		return;
+	}
 	auto select = [callback, townID, candidates](int index) {
 		if(index >= 0 && static_cast<size_t>(index) < candidates.size())
 			callback->assignTownSteward(townID, candidates[index]);
@@ -95,17 +128,21 @@ void showStewards(ObjectInstanceID townID)
 
 namespace townEstateUI
 {
-std::shared_ptr<CButton> createStewardButton(const CGTownInstance & town)
+void showAdministration(const CGTownInstance & town)
 {
-	if(town.getOwner() != GAME->interface()->playerID
-		|| (eligibleStewards().empty() && !newHorizonsEstates::townSteward(town)))
-		return {};
-	auto button = std::make_shared<CButton>(Point(660, 1), AnimationPath::builtin("settingsWindow/button80"),
-		CButton::tooltip("Stewardship", "Appoint, replace or dismiss a town steward. A steward adds 1,000 Gold daily and may work remotely."),
-		[townID = town.id] { showStewards(townID); });
-	button->setTextOverlay("Steward", FONT_SMALL, Colors::YELLOW);
-	button->block(!GAME->interface()->makingTurn);
-	return button;
+	showStewards(town.id);
+}
+
+void showIncomeMenu(const CGTownInstance & town, std::function<void()> marketplace)
+{
+	if(town.getOwner() != GAME->interface()->playerID || !GAME->interface()->makingTurn)
+		return;
+	auto administration = [townID = town.id] {
+		if(const auto * currentTown = GAME->interface()->cb->getTown(townID))
+			showAdministration(*currentTown);
+	};
+	ENGINE->windows().pushWindow(std::make_shared<TownIncomeMenu>(
+		GAME->interface()->playerID, std::move(marketplace), std::move(administration)));
 }
 
 std::string incomeHelp(const CGTownInstance & town)
@@ -124,9 +161,9 @@ std::string incomeHelp(const CGTownInstance & town)
 		help = GAME->translator().translate("new-horizons.economy.stewardship.help");
 	else if(const auto * hero = newHorizonsEstates::townSteward(town))
 		help = "Steward: " + GAME->translator().translate(hero->getNameTextID())
-			+ ". This hero adds 1,000 Gold daily from any location. Manage the appointment in the Town Hall.";
+			+ ". This hero adds 1,000 Gold daily from any location. Manage the appointment through the Gold display or press S.";
 	else
-		help = "Appoint a hero with Stewardship in the Town Hall to add 1,000 Gold daily. The hero need not remain in town.";
+		help = "Appoint a hero with Stewardship through the Gold display or press S to add 1,000 Gold daily. The hero need not remain in town.";
 	return CInfoWindow::genText(total.toString(&GAME->translator()),
 		contribution.toString(&GAME->translator()) + "\n\n" + help);
 }
@@ -153,4 +190,31 @@ std::string constructionHelp(const CGTownInstance & town)
 	return {};
 }
 
+}
+
+void CCastleBuildings::enterAnyMarket()
+{
+	if(town->hasBuilt(BuildingID::MARKETPLACE))
+	{
+		ENGINE->windows().createAndPushWindow<CMarketWindow>(town, nullptr, nullptr, EMarketMode::RESOURCE_RESOURCE);
+		return;
+	}
+
+	std::vector<const CGTownInstance*> towns = GAME->interface()->cb->getTownsInfo(true);
+	for(auto & town : towns)
+	{
+		if(town->hasBuilt(BuildingID::MARKETPLACE))
+		{
+			ENGINE->windows().createAndPushWindow<CMarketWindow>(town, nullptr, nullptr, EMarketMode::RESOURCE_RESOURCE);
+			return;
+		}
+	}
+	GAME->interface()->showInfoDialog(LIBRARY->generaltexth->translate("vcmi.adventureMap.noTownWithMarket"));
+}
+
+void CCastleInterface::refreshIncome()
+{
+	if(income)
+		income->setText(std::to_string(town->dailyIncome()[EGameResID::GOLD]));
+	redraw();
 }

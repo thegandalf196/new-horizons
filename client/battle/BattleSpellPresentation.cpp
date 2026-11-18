@@ -43,6 +43,7 @@ void BattleInterface::displaySpellInjury(const CSpell * spell, const BattleHex &
 
 void BattleInterface::queueSpellAffectedAnimations(const BattleSpellCast & receipt, const CSpell * spell)
 {
+	overflowSpellPresentation.remember(*this, receipt);
 	const auto resourceOverride = poisonPresentation::acceptedCastOverride(receipt.spellID, receipt.strongWyvernPoison);
 	const bool usesChainRay = !spell->animationInfo.ray.empty() && !receipt.affectedCres.empty();
 

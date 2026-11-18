@@ -60,7 +60,7 @@ inline std::optional<InnateAbilityHelp> freezingTouch(std::string_view creatureK
 	{
 		return replace(replace(std::move(text), "%chance%", chance), "%bonus%", shatter);
 	};
-	return InnateAbilityHelp{format(std::move(compactText)), format(std::move(detailsText)), {}};
+	return InnateAbilityHelp{format(std::move(compactText)), format(std::move(detailsText)), "NH_ability_freezing_touch.png"};
 }
 
 /// Describes intrinsic identity, not whether this stack may currently harvest.
@@ -91,6 +91,6 @@ inline std::vector<InnateAbilityHelp> innateAbilities(std::string_view creatureK
 
 /// Bind shared localized text for the creature window and encyclopedia.
 std::vector<InnateAbilityHelp> translatedInnateAbilities(std::string_view creatureKey,
-	const JsonNode * capturedRules, int32_t summonRounds);
+	const JsonNode * capturedRules, int32_t summonRounds, bool usesCommandSlots = false);
 
 }

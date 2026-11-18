@@ -818,6 +818,15 @@ void Effects::forEachEffect(const int level, const std::function<void(const Effe
 	}
 }
 
+void Effects::forEachActiveEffect(const Mechanics * mechanics, const std::function<void(const Effect *, bool &)> & callback) const
+{
+	forEachEffect(mechanics->getEffectLevel(), [&](const Effect * effect, bool & stop)
+	{
+		if(!disabledForV3(effect, mechanics))
+			callback(effect, stop);
+	});
+}
+
 Effects::EffectsToApply Effects::prepare(const Mechanics * m, const Target & aimPoint, const Target & spellTarget) const
 {
 	EffectsToApply effectsToApply;

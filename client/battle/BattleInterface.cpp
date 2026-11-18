@@ -1298,6 +1298,7 @@ void BattleInterface::endAction(const BattleAction &action)
 	// it is possible that tactics mode ended while opening music is still playing
 	waitForAnimations();
 	markWait(1);
+	overflowSpellPresentation.reset();
 	if(action.actionType == EActionType::END_TACTIC_PHASE)
 		return; // the authoritative phase snapshot selects the next controller
 
@@ -1415,6 +1416,7 @@ void BattleInterface::appendBattleLog(const std::string & newEntry)
 
 void BattleInterface::startAction(const BattleAction & action)
 {
+	overflowSpellPresentation.begin(action);
 	// This callback precedes authoritative StartAction application. Merely
 	// clicking an Order, or receiving a rejected request, never reaches this
 	// transition. Capture the selected receipt, including typed follow-ups.

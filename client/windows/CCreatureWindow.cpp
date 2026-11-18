@@ -336,30 +336,6 @@ CStackWindow::ActiveSpellsSection::ActiveSpellsSection(CStackWindow * owner, int
 }
 
 
-CStackWindow::OrderIndicatorsSection::OrderIndicatorsSection(CStackWindow * owner, int yOffset)
-	: CWindowSection(owner, {}, yOffset)
-{
-	OBJECT_CONSTRUCTION;
-	const auto indicators = newHorizonsOrderIndicators::activeOrderIndicators(owner->info->stack);
-	if(indicators.empty())
-		return;
-
-	pos.w = owner->pos.w;
-	const size_t columns = std::max<size_t>(1, static_cast<size_t>(std::max(0, pos.w - 12)) / 58);
-	pos.h = static_cast<int>((indicators.size() + columns - 1) / columns) * 53;
-	for(size_t index = 0; index < indicators.size(); ++index)
-	{
-		const int x = 6 + static_cast<int>(index % columns) * 58;
-		const int y = static_cast<int>(index / columns) * 53;
-		const auto & indicator = indicators[index];
-		orderIcons.push_back(std::make_shared<CPicture>(ImagePath::builtin("NH_orders_command_normal.png"), x, y));
-		clickableAreas.push_back(std::make_shared<LRClickableAreaWText>(Rect(x, y, 48, 36),
-			indicator.description, indicator.description));
-		labels.push_back(std::make_shared<CLabel>(x + 24, y + 47, FONT_TINY, ETextAlignment::BOTTOMCENTER,
-			Colors::YELLOW, indicator.label));
-	}
-}
-
 CStackWindow::TrainingSection::TrainingSection(CStackWindow * owner, int yOffset)
 	: CWindowSection(owner, {}, yOffset)
 {
@@ -1256,10 +1232,7 @@ void CStackWindow::initSections()
 		activeSpellsSection = std::make_shared<ActiveSpellsSection>(this, pos.h);
 		pos.h += activeSpellsSection->pos.h;
 		if(!newHorizonsOrderIndicators::activeOrderIndicators(info->stack).empty())
-		{
-			orderIndicatorsSection = std::make_shared<OrderIndicatorsSection>(this, pos.h);
-			pos.h += orderIndicatorsSection->pos.h;
-		}
+			orderIndicatorsSection = std::make_shared<OrderIndicatorsSection>(this, 177, info->stack);
 	}
 
 

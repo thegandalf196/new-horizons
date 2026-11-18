@@ -271,7 +271,8 @@ std::string UIHelper::armySlotPreview(const CArmedInstance * army, SlotID slot, 
 			boost::replace_all(tier, "%TIER%", GAME->translator().translate(category->nameTextId));
 			text += "\n" + tier;
 		}
-	if(newHorizonsCreatures::hasIntrinsicAssimilation(creature))
+	if(const auto * hero = dynamic_cast<const CGHeroInstance *>(army);
+		hero && hero->getArmyCommandRules() && newHorizonsCreatures::hasIntrinsicAssimilation(creature))
 		text += "\n" + GAME->translator().translate("new-horizons.command.assimilation.preview");
 	if(const auto * hero = dynamic_cast<const CGHeroInstance *>(army);
 		hero && newHorizonsCreatures::isCommandSpecialistCreature(*hero, creature))
