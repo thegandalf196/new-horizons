@@ -327,6 +327,10 @@
 	
 	"LUCK":
 	{
+		"graphics": {
+			"icon": "NH_hero_luck_32.png",
+			"valueIcons": {"-1": "ILCK22.def:0:2"}
+		},
 		"blockDescriptionPropagation": true
 	},
 
@@ -381,6 +385,10 @@
 	
 	"MORALE":
 	{
+		"graphics": {
+			"icon": "NH_hero_morale_32.png",
+			"valueIcons": {"-1": "IMRL22.def:0:2"}
+		},
 		"blockDescriptionPropagation": true
 	},
 
@@ -424,6 +432,7 @@
 
 	"NO_TERRAIN_PENALTY":
 	{
+		"graphics": {"icon": "NH_perk_pathfinding_normal.png"},
 		"hidden": true,
 		"blockDescriptionPropagation": true
 	},
@@ -647,6 +656,7 @@
 
 	"VISIONS":
 	{
+		"graphics": {"icon": "SPELLS.def:0:2"},
 		"hidden": true,
 		"blockDescriptionPropagation": true
 	},

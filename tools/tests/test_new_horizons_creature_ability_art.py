@@ -63,6 +63,16 @@ class CreatureAbilityArtTest(unittest.TestCase):
                            "SPELL_DAMAGE_REDUCTION_BASIS_POINTS": "magical_protection"}.items():
             self.assertEqual(self.bonuses[kind]["graphics"]["icon"], "NH_ability_" + stem + ".png")
 
+    def test_explicit_creature_traits_have_stat_and_adventure_icons(self):
+        for kind, icon, negative in (
+                ("MORALE", "NH_hero_morale_32.png", "IMRL22.def:0:2"),
+                ("LUCK", "NH_hero_luck_32.png", "ILCK22.def:0:2")):
+            graphics = self.bonuses[kind]["graphics"]
+            self.assertEqual(graphics["icon"], icon)
+            self.assertEqual(graphics["valueIcons"]["-1"], negative)
+        self.assertEqual(self.bonuses["NO_TERRAIN_PENALTY"]["graphics"]["icon"], "NH_perk_pathfinding_normal.png")
+        self.assertEqual(self.bonuses["VISIONS"]["graphics"]["icon"], "SPELLS.def:0:2")
+
     def test_current_assimilation_row_requires_actual_historical_capability(self):
         source = (ROOT / "client/windows/NewHorizonsCreatureAbilityHelp.cpp").read_text()
         self.assertIn("usesCommandSlots && creature.hasValue()", source)
