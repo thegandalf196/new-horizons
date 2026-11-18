@@ -24,9 +24,10 @@ class WindowsBuildClientTest(unittest.TestCase):
         step = next(step for job in workflow['jobs'].values() for step in job['steps']
                     if step.get('name') == 'Compile Windows x64 client')
         self.assertEqual(step['if'], "${{ !inputs.preflight_only && inputs.repack_run_id == '' }}")
-        invocation = shlex.split(step['run'])
+        invocation = shlex.split(step['run'].replace('\\\n', ''))
         self.assertEqual(invocation[:2], ['python', 'tools/ci/build_windows_client.py'])
-        with patch.object(build.subprocess, 'run', return_value=SimpleNamespace(returncode=0)) as run:
+        with patch('windows_build_diagnostics.BuildDiagnostics', return_value=None), \
+                patch.object(build.subprocess, 'run', return_value=SimpleNamespace(returncode=0)) as run:
             self.assertEqual(build.main(invocation[2:]), 0)
         guard_targets = [
             'AI/BattleAI/CMakeFiles/BattleAI.dir/' + source + '.obj'

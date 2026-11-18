@@ -148,12 +148,15 @@ class DependencyPreflightTest(unittest.TestCase):
         workflow = workflow_path.read_text(encoding='utf-8')
         step_name = '      - name: Seed verified Conan source cache fallback for GNU libiconv'
         section = workflow.split(step_name, 1)[1].split('\n      - ', 1)[0]
+        seed_script = (workflow_path.parents[2] / 'tools/ci/seed_windows_conan_sources.sh').read_text(encoding='utf-8')
+        seed = seed_script.split('seed_libiconv() {', 1)[1].split('\n}', 1)[0]
 
         self.assertIn('LIBICONV_SOURCE_SHA256: 8f74213b56238c85a50a5329f77e06198771e70dd9a739779f4c02f65d971313', section)
-        self.assertIn('https://mirrors.ocf.berkeley.edu/gnu/libiconv/libiconv-1.17.tar.gz', section)
-        self.assertIn('https://mirror.csclub.uwaterloo.ca/gnu/libiconv/libiconv-1.17.tar.gz', section)
-        self.assertIn('if actual != expected:', section)
-        self.assertIn('seed_source_cache', section)
+        self.assertIn('run: bash tools/ci/seed_windows_conan_sources.sh libiconv', section)
+        self.assertIn('https://mirrors.ocf.berkeley.edu/gnu/libiconv/libiconv-1.17.tar.gz', seed)
+        self.assertIn('https://mirror.csclub.uwaterloo.ca/gnu/libiconv/libiconv-1.17.tar.gz', seed)
+        self.assertIn('if actual != expected:', seed)
+        self.assertIn('seed_source_cache', seed)
         self.assertLess(workflow.index(step_name),
                         workflow.index('- name: Preflight complete dependency graph and source archives'))
 

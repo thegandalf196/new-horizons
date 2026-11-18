@@ -265,8 +265,8 @@ python tools/ci/build_windows_client.py build --build-root build/new-horizons-wi
 `configure` uses the existing `new-horizons-windows-x64` preset and the sccache,
 regression-target and compile-database flags used by the
 [Windows workflow](../../.github/workflows/new-horizons-windows.yml). `build` compiles
-`vcmiclient` and the five runtime-regression targets in one fail-fast CMake invocation,
-using four jobs by default. `--jobs` accepts 1 through 10. Ninja response files are
+the BattleAI guard objects first, then builds the client and its companion targets.
+Both stages use four jobs by default. `--jobs` accepts 1 through 10. Ninja response files are
 retained with `-d keeprsp`. Dependency preparation, installation, packaging and
 runtime checks remain separate steps.
 
@@ -276,6 +276,20 @@ ordinary MSVC object compilations without PCH. A cold build may be slower; this
 option provides no full-build speed guarantee. The shared `configure` command also
 defaults to PCH on; select `--use-precompiled-headers OFF` explicitly to use that route.
 The `build` command retains the tree's configured PCH setting.
+
+To measure a cold and warm compiler cache pair, dispatch a full Windows build with
+`preflight_only=false`, `use_precompiled_headers=false`, and
+`pch_off_cache_seed=cold`. After it passes packaging and saves the compiler
+cache, dispatch the same commit with `pch_off_cache_seed` set to the successful
+cold run's numeric ID. The warm build requires the exact cache key for that
+commit and run ID. Each run uses a fresh build directory.
+
+The `Windows-compile-diagnostics` artifact records the build wall time, cache
+keys and sccache counters before and after compilation. It retains
+`.ninja_log` when Ninja produced it, even on a failed build. Use individual
+Ninja action durations for slow-action analysis. Each Ninja invocation has its
+own clock, so action timestamps across the guard and client stages cannot be
+used as one timeline.
 
 For a Wine host, configure the licensed MSVC/SDK tools and wrappers externally,
 then use `build --build-root` for that configured tree and select the host's CMake

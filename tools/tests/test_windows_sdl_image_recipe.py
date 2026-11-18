@@ -85,7 +85,9 @@ class WindowsDecoderRecipeTest(unittest.TestCase):
         self.assertLess(steps.index(seed), steps.index(resolution))
         self.assertEqual(seed['env']['SDL_IMAGE_SOURCE_SHA256'], expected)
         self.assertEqual(seed['env']['SDL_IMAGE_SOURCE_BYTES'], 11123077)
-        script = seed['run']
+        self.assertEqual(seed['run'], 'bash tools/ci/seed_windows_conan_sources.sh sdl_image')
+        seed_script = (ROOT/'tools/ci/seed_windows_conan_sources.sh').read_text(encoding='utf-8')
+        script = seed_script.split('seed_sdl_image() {', 1)[1].split('\n}', 1)[0]
         self.assertIn('https://github.com/libsdl-org/SDL_image/releases/download/release-3.4.4/SDL3_image-3.4.4.tar.gz', script)
         self.assertIn('curl --fail --location', script)
         self.assertIn("--proto '=https' --proto-redir '=https'", script)

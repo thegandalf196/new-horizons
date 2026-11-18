@@ -48,9 +48,9 @@
     },
     ".github/workflows/new-horizons-windows.yml": {
       "functions": [],
-      "rationale": "Complete exact555-line workflow callable inventory independently inspected across all literal/folded Bash, PowerShell and Python run blocks and inline here-documents. All content is top-level command, assignment, import, loop/control, context management, expression or external function/action invocation; no local named function, lambda, executable callback, function-like macro or hidden generated callable definition occurs. The final PowerShell here-string is summary data. Complete callable inventory remains empty. Exact delta from558-line reviewed source removes only obsolete two-line registration-history comments and their blank line, and changes job timeout180->240; every other byte is unchanged. Exact-content coverage only; no growth waiver, future-content or hosted/native/rendered acceptance.",
-      "review": "IR-NH0921-WINDOWS-BOUNDED-TIMEOUT-20261118",
-      "sha256": "3bc6459fadaa8460442f8176d36777a1b7f50bbe0d4abc2bd17080263493cfca"
+      "rationale": "Complete exact533-line workflow manual callable inventory remains empty. All retained/new run bodies are top-level Bash, PowerShell and Python assignments, imports, control/loop blocks and external invocations; no new local named function, lambda or generated callable is introduced. Removed inline dependency seed bodies now live as exactly inventoried42/41/22-line named Bash functions in the119-line dedicated source. Existing run blocks retain their earlier reviewed callable shape. Exact hash coverage only; no growth waiver or hosted/native/rendered acceptance.",
+      "review": "IR-WINDOWS-PCH-OFF-COLD-WARM-EXPERIMENT-20261118",
+      "sha256": "4c55451e656520cd802b5b31572429a2c4d07a9565036ed1ae7c586c13dcebd0"
     },
     ".github/workflows/qt_translation_update.yml": {
       "functions": [],
@@ -17173,14 +17173,14 @@
     ".github/workflows/new-horizons-windows.yml": {
       "deferral": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.",
       "kind": "exception",
-      "lines": 555,
+      "lines": 533,
       "owner": "engine_engineer",
       "prior_deferral": "Existing engine engineer ownership remains. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral. This exception covers only the exact542-line official source URL/comment correction with all transport, size, digest and cache admission controls unchanged. No future growth, numerical ceiling change or coverage exclusion is authorized. This separate review permits only the exact547-line explicit-interpreter successor. Before further expansion, engine_engineer must extract the affected dependency/preflight/package stage into a focused script or shared action, preserving source/cache, CRT/notices, dispatch and artifact contract checks and lowering the orchestration baseline. No future growth, default ceiling increase or exclusion is granted. This separate urgent-correctness review covers only the exact556-line early-bootstrap-smoke ordering successor. Existing extraction obligations and all ceilings remain unchanged; no future growth is authorized.",
-      "rationale": "Exact555-line successor shrinks prior558-line workflow by removing obsolete registration-history comments. The sole functional change raises the bounded Windows job timeout180->240 minutes for the same compile/install/package sequence. Independently verified that reversing just those two edits reproduces the reviewed prior source byte-for-byte: dispatch inputs, permissions, concurrency, runner, toolchain, all gates, dependency identity/notices, CRT/source/package checks, report retention and outputs remain unchanged. Existing dependency/preflight/package extraction obligations and555-line ratchet remain binding; no future/unrelated growth or default ceiling increase.",
-      "review": "IR-NH0921-WINDOWS-BOUNDED-TIMEOUT-20261118",
-      "review_scope": "Exact Windows workflow source/inventory and bounded job timeout only. All inherited owner/deferrals remain binding; no compiler/native, Windows graphical/gameplay, performance, package publication or release acceptance.",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
-      "sha256": "3bc6459fadaa8460442f8176d36777a1b7f50bbe0d4abc2bd17080263493cfca"
+      "rationale": "Exact555 to533-line shrinking workflow scope: the three preexisting verified dependency-source seeds move into a focused119-line Bash owner (largest42-line function), with shell indentation normalized and heredoc bytes exactly preserved. New opt-in PCH-off cold/warm trial uses one explicit commit/run-ID cache key, an initially empty isolated directory, no broad restore fallback, exact warm matched-key admission and success-only cold save. Existing configure flags, target order, guard fail-fast behavior, four jobs, toolchain/CRT/notices/package gates unchanged. Diagnostics upload runs on failure and includes the raw build-root Ninja log even before the helper starts; compiler terminal output stays in Actions logs. All inherited stage-extraction obligations and no-future-growth limits remain binding.",
+      "review": "IR-WINDOWS-PCH-OFF-COLD-WARM-EXPERIMENT-20261118",
+      "review_scope": "Exact source-only workflow/cache/diagnostic integration review and metadata; no remote dispatch, compilation, measured speedup, native or package/publication acceptance.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_REVIEW_HOSTED_UNRUN",
+      "sha256": "4c55451e656520cd802b5b31572429a2c4d07a9565036ed1ae7c586c13dcebd0"
     },
     "AI/BattleAI/AttackDamageValue.cpp::float AttackPossibility::calculateDamageReduce( const battle::Unit * attacker, const battle::Unit * defender, uint64_t damageDealt, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, DamageCacheProbeTiming * timing)#1": {
       "deferral": "Extract the capacity-health valuation branch into a typed detached-state scoring helper before extending this estimator. Characterize Phantom threshold, survivor cohorts, capped damage, fallback reference attacker and original-damage cache observations.",

@@ -4,6 +4,7 @@
 
 import argparse
 import subprocess
+import sys
 
 
 TARGETS = (
@@ -53,6 +54,22 @@ def configure(args):
 
 
 def build(args):
+    if args.diagnostics_dir:
+        from windows_build_diagnostics import BuildDiagnostics
+        diagnostics = BuildDiagnostics(args)
+    else:
+        diagnostics = None
+    try:
+        return build_targets(args, diagnostics)
+    finally:
+        if diagnostics:
+            try:
+                diagnostics.finish()
+            except (OSError, ValueError, TypeError) as error:
+                print(f'Could not finish Windows build diagnostics: {error}', file=sys.stderr)
+
+
+def build_targets(args, diagnostics=None):
     for targets, failure_options in (
         (GUARD_OBJECT_TARGETS, ('-k', '0')),
         (TARGETS, ()),
@@ -61,7 +78,8 @@ def build(args):
             args.cmake, '--build', args.build_root, '--target', *targets,
             '--parallel', str(args.jobs), '--', '-d', 'keeprsp', *failure_options,
         ]
-        status = subprocess.run(command, check=False).returncode
+        status = (diagnostics.run(command) if diagnostics else
+                  subprocess.run(command, check=False).returncode)
         if status:
             return status
     return 0
@@ -77,6 +95,10 @@ def main(argv=None):
     build_parser.add_argument('--build-root', required=True, help='Configured Windows Ninja build directory')
     build_parser.add_argument('--jobs', type=int, choices=range(1, 11), default=4,
                               help='Maximum concurrent build jobs (default: 4)')
+    build_parser.add_argument('--diagnostics-dir', help='Retain timings, cache statistics and Ninja log here')
+    build_parser.add_argument('--sccache', default='sccache', help='Compiler cache executable for diagnostics')
+    build_parser.add_argument('--cache-key-requested', default='', help='Requested compiler-cache archive key')
+    build_parser.add_argument('--cache-key-matched', default='', help='Restored compiler-cache archive key')
     build_parser.set_defaults(operation=build)
     for command in (configure_parser, build_parser):
         command.add_argument('--cmake', default='cmake', help='CMake executable for the configured toolchain')
