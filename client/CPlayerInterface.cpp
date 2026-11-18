@@ -904,6 +904,14 @@ void CPlayerInterface::battleStacksAttacked(const BattleID & battleID, const std
 {
 	EVENT_HANDLER_CALLED_BY_CLIENT;
 	BATTLE_EVENT_POSSIBLE_RETURN;
+	const auto interface = battleInt;
+	if(std::ranges::any_of(bsa, [](const auto & hit)
+		{ return hit.spellID.hasValue() && (hit.flags & BattleStackAttacked::SPELL_HIT_EFFECT); }))
+	{
+		interface->waitForAnimations();
+		if(interface != battleInt)
+			return;
+	}
 
 	std::vector<StackAttackedInfo> arg;
 	for(auto & elem : bsa)
@@ -913,24 +921,9 @@ void CPlayerInterface::battleStacksAttacked(const BattleID & battleID, const std
 
 		assert(defender);
 
-		StackAttackedInfo     info;
-		info.defender       = defender;
-		info.attacker       = attacker;
-		info.damageDealt    = elem.damageAmount;
-		info.amountKilled   = elem.killedAmount;
-		info.spellEffect    = SpellID::NONE;
-		info.indirectAttack = ranged;
-		info.killed         = elem.killed();
-		info.rebirth        = elem.willRebirth();
-		info.cloneKilled    = elem.cloneKilled();
-		info.shattered      = elem.shattered();
-
-		if (elem.isSpell())
-			info.spellEffect = elem.spellID;
-
-		arg.push_back(info);
+		arg.push_back(StackAttackedInfo::fromPacket(elem, defender, attacker, ranged));
 	}
-	battleInt->stacksAreAttacked(arg);
+	interface->stacksAreAttacked(arg);
 }
 void CPlayerInterface::battleAttackPresentationComplete(const BattleID & battleID)
 {

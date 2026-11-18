@@ -1,6 +1,7 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
 #include "PerkInitializationReference.h"
+#include "../../lib/entities/hero/NewHorizonsStartingPerks.h"
 #include "../../lib/entities/hero/NewHorizonsRuleValidation.h"
 #include <algorithm>
 #include <map>
@@ -123,6 +124,34 @@ void initialize(PerkState & state, const JsonNode & development, HeroTypeID hero
 	const std::vector<PerkSelection> & profile, const std::vector<PerkSelection> & prototype,
 	const std::function<int(const std::string &)> & rank)
 {
+	if(usesSkillsOnlyStartingProfiles(development["startingSkills"]))
+	{
+		validateStartingPerkProfiles(development["startingSkills"]);
+		return;
+	}
+	if(usesSingleStartingPerkProfiles(development["startingSkills"]))
+	{
+		validateStartingPerkProfiles(development["startingSkills"]);
+		if(!state.getSelected().empty()) return;
+		const auto defaults = defaultsFor(development, hero);
+		if(!defaults.empty())
+		{
+			const auto & choice = defaults.front();
+			require(selectedTier(state, choice) == 1, "Basic reference starting choice");
+			if(state.canAcquirePerk(choice.skillId, choice.perkId, rank(choice.skillId)))
+			{
+				state.select(choice.skillId, choice.perkId, rank(choice.skillId));
+				return;
+			}
+		}
+		const auto candidates = referenceNext(state, rank);
+		if(!candidates.empty())
+		{
+			const auto & choice = candidates.front().selection;
+			state.select(choice.skillId, choice.perkId, rank(choice.skillId));
+		}
+		return;
+	}
 	if(!usesAuthoredStartingPerks(development))
 	{
 		selectStartingHeroPerks(state, profile, prototype, rank);

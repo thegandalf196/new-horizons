@@ -958,15 +958,61 @@
 							}
 						}
 					}
+				},
+				{
+					"required": [
+						"startingPerksPolicyVersion",
+						"startingDevelopmentProfiles",
+						"startingPerkProfiles"
+					],
+					"properties": {
+						"startingPerksPolicyVersion": {
+							"enum": [
+								4
+							]
+						},
+						"startingDevelopmentProfiles": {
+							"minProperties": 163,
+							"maxProperties": 163,
+							"additionalProperties": {
+								"not": {
+									"required": [
+										"startingPerks"
+									]
+								},
+								"properties": {
+									"skills": {
+										"items": {
+											"properties": {
+												"rank": {
+													"enum": [
+														1
+													]
+												}
+											}
+										}
+									}
+								}
+							}
+						},
+						"startingPerkProfiles": {
+							"minProperties": 163,
+							"maxProperties": 163,
+							"additionalProperties": {
+								"minItems": 1,
+								"maxItems": 1
+							}
+						}
+					}
 				}
 			],
 			"type": "object",
 			"additionalProperties": false,
 			"required": ["factionSkills", "legacyAliases", "magic", "might"],
 			"properties": {
-				"startingPerksPolicyVersion": {"type": "integer", "enum": [1, 2, 3], "description": "Versions 1 and 2 retain historical authored perk defaults. Version 3 requires exactly two distinct Basic Skills and zero starting perks for every fresh hero; runtime validates roster and faction membership."},
+				"startingPerksPolicyVersion": {"type": "integer", "enum": [1, 2, 3, 4], "description": "Versions 1 and 2 retain historical authored perk defaults. Version 3 starts with two Basic Skills and no perks. Version 4 starts with two Basic Skills, one authored Basic perk and a spellbook; existing captured heroes retain their policy."},
 				"startingPerkProfiles": {
-					"description": "Authored initial perks for final normalized default hero Skills; runtime validates ownership, tier uniqueness and eligibility. Existing valid profile/prototype choices take precedence. This table never grants later level-up perks.",
+					"description": "Authored initial perks for normalized default hero Skills. Version 4 selects exactly one Basic perk from either starting Skill; versions 1 and 2 retain their historical completion rules. Existing acquired choices are preserved. This table never grants later level-up perks.",
 					"type": "object", "minProperties": 1,
 					"additionalProperties": {
 						"type": "array", "minItems": 1, "maxItems": 24, "uniqueItems": true,

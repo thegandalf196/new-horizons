@@ -44,13 +44,22 @@ class RetiredSorceryStatusUiSourceTest(unittest.TestCase):
         dispatch = (ROOT / "client/CPlayerInterface.cpp").read_text()
         animation = (ROOT / "client/battle/BattleRangedAnimation.cpp").read_text()
         projectile = (ROOT / "client/battle/BattleProjectileController.cpp").read_text()
+        orb = (ROOT / "client/battle/BattleFocusMagicProjectile.cpp").read_text()
         for field in ("focusMagicRanged", "focusMagicConverted"):
             self.assertIn("info." + field + " = ba->" + field, dispatch)
         self.assertIn('AudioPath::builtin("ZELTSHOT.wav")', animation)
         self.assertIn("if(focusMagicConverted)", animation)
         self.assertNotIn("newHorizonsFocusMagic::active", animation + projectile)
         self.assertIn("if(focusMagicRanged)", projectile)
-        self.assertIn("rayProjectile->rayConfig", projectile)
+        focus = projectile.split("if(focusMagicRanged)", 1)[1].split("else if", 1)[0]
+        self.assertIn("createFocusMagicProjectile(from, dest)", focus)
+        for token in ('AnimationPath::builtin("NH_focus_magic_orb")',
+                      'std::make_shared<ProjectileMissile>()',
+                      'orb->visibility.protectFirstRender()',
+                      'AnimationControls::getProjectileSpeed()'):
+            self.assertIn(token, orb)
+        self.assertNotIn("ProjectileRay", focus)
+        self.assertIn('rayProjectile->rayConfig = shooterInfo.animation.projectileRay', projectile)
 
     def test_recall_preview_uses_shared_actual_landing_footprint(self):
         preview = (ROOT / "client/battle/BattleSpellManaPreview.cpp").read_text()

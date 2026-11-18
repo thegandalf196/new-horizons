@@ -8,10 +8,38 @@
 #include "ForceLancePresentation.h"
 #include "../../lib/spells/NewHorizonsSorcerySpells.h"
 #include "../GameEngine.h"
+#include "media/ISoundPlayer.h"
 #include "../../lib/CStack.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/networkPacks/PacksForClientBattle.h"
 #include "../../lib/spells/CSpell.h"
+
+StackAttackedInfo StackAttackedInfo::fromPacket(const BattleStackAttacked & hit,
+	const CStack * defender, const CStack * attacker, bool ranged)
+{
+	StackAttackedInfo info;
+	info.defender = defender;
+	info.attacker = attacker;
+	info.damageDealt = hit.damageAmount;
+	info.amountKilled = hit.killedAmount;
+	info.replaySpellHit = hit.spellID.hasValue() && (hit.flags & BattleStackAttacked::SPELL_HIT_EFFECT);
+	info.spellEffect = (hit.isSpell() || info.replaySpellHit) ? hit.spellID : SpellID(SpellID::NONE);
+	info.indirectAttack = ranged;
+	info.killed = hit.killed();
+	info.rebirth = hit.willRebirth();
+	info.cloneKilled = hit.cloneKilled();
+	info.shattered = hit.shattered();
+	return info;
+}
+
+void BattleInterface::displaySpellInjury(const CSpell * spell, const BattleHex & destinationTile, bool replayHit)
+{
+	if(!spell->getCastSound().empty())
+		ENGINE->sound().playSound(spell->getCastSound());
+	if(replayHit)
+		displaySpellHit(spell, destinationTile);
+	displaySpellEffect(spell, destinationTile);
+}
 
 void BattleInterface::queueSpellAffectedAnimations(const BattleSpellCast & receipt, const CSpell * spell)
 {

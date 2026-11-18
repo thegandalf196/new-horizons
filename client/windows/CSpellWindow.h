@@ -31,6 +31,7 @@ class CToggleButton;
 class CButton;
 class VideoWidgetOnce;
 class LRClickableAreaWText;
+class SpellbookPrayers;
 
 /// The spell window
 class CSpellWindow : public CWindowObject, public IVideoHolder
@@ -76,6 +77,8 @@ class CSpellWindow : public CWindowObject, public IVideoHolder
 
 		InteractiveArea(const Rect &myRect, const std::function<void()> & funcL, int helpTextId, CSpellWindow * _owner);
 		InteractiveArea(const Rect &myRect, const std::function<void()> & funcL, std::string textId, CSpellWindow * _owner);
+		InteractiveArea(const Rect &myRect, const std::function<void()> & funcL,
+			std::string hover, std::string help, CSpellWindow * owner);
 	};
 
 	std::shared_ptr<CPicture> leftCorner;
@@ -93,6 +96,9 @@ class CSpellWindow : public CWindowObject, public IVideoHolder
 	std::shared_ptr<CPicture> schoolTabAnyDisabled;
 	std::shared_ptr<CAnimImage> schoolPicture;
 	std::shared_ptr<CPicture> schoolPictureCustom;
+	std::shared_ptr<CAnimImage> prayerTab;
+	std::shared_ptr<SpellbookPrayers> prayerCatalogue;
+	bool prayerCatalogueSelected = false;
 
 	std::array<std::shared_ptr<SpellArea>, 24> spellAreas;
 	std::shared_ptr<CLabel> mana;
@@ -130,6 +136,13 @@ class CSpellWindow : public CWindowObject, public IVideoHolder
 	bool usesLegacyTabs = true;
 
 	void readSchoolContext();
+	void prepareSchoolNavigation();
+	void createSchoolBookmarks();
+	void createSchoolBookmarkAreas();
+	void createPrayerCatalogue();
+	bool showPrayerCatalogue();
+	void selectPrayers();
+	void navigateSpellbookTabs(bool down);
 
 	std::map<SpellSchool, int> sitesPerTabAdv;
 	std::map<SpellSchool, int> sitesPerTabBattle;

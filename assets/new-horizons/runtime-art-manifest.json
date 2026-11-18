@@ -8,6 +8,7 @@
     "casting-glows",
     "conflux-hero-portraits",
     "conflux-water-ice-runtime",
+    "force-lance-provisional-effects",
     "ghost-creature-animation",
     "ghost-creature-portraits",
     "guild-room-composites-and-bindings",
@@ -21,17 +22,17 @@
     "royal-mummy-runtime",
     "seth-portrait-runtime",
     "sylvan-alliance-perk-icons",
-    "wisps-and-projectiles",
-    "force-lance-provisional-effects"
+    "wisps-and-projectiles"
   ],
   "requiredFamilyCounts": {
     "academy-town-and-portrait-ui": 353,
     "bug-report-interface-icon": 1,
-    "builtin-skills-perks-orders-and-ui": 3603,
+    "builtin-skills-perks-orders-and-ui": 3772,
     "cabir-and-master": 218,
     "casting-glows": 864,
     "conflux-hero-portraits": 10,
     "conflux-water-ice-runtime": 247,
+    "force-lance-provisional-effects": 7,
     "ghost-creature-animation": 1,
     "ghost-creature-portraits": 2,
     "guild-room-composites-and-bindings": 10,
@@ -45,8 +46,7 @@
     "royal-mummy-runtime": 39,
     "seth-portrait-runtime": 2,
     "sylvan-alliance-perk-icons": 42,
-    "wisps-and-projectiles": 208,
-    "force-lance-provisional-effects": 7
+    "wisps-and-projectiles": 208
   },
   "entries": [
     {
@@ -63958,6 +63958,1696 @@
       "origin": "ImageGen original foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
       "selection": "Selected for New Horizons skill rank presentation.",
       "approval": "Owner pre-approved thematic and game-consistent artwork with three distinct ranks. Native-size visual review completed."
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_antiphonal_prayer.json",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "7ec298d73c07f4f19a6931c7e08bb13d0b2752bc8764a4ea1e21891a79f411b5",
+      "size": 505,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_antiphonal_prayer.json"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_antiphonal_prayer.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "775f064021f8506c096e2f48703056a18f567dd0fda11500926bdfc19107b1e5",
+      "size": 3800,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_antiphonal_prayer.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_antiphonal_prayer_32.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "de822e5b2c91db708a91f1847486b5fe1c5ebd6ca0d1ceb82fab63ed1b15fe90",
+      "size": 2182,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_antiphonal_prayer_32.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_antiphonal_prayer_disabled.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "9dd4e7cefd0c130b5379ab00a223cdf8ab7d51f5b1d86075f6eaf367b11028c2",
+      "size": 3904,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_antiphonal_prayer_disabled.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_antiphonal_prayer_highlighted.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "b8814af34d7a89f8e6fc0ee83d23af7b9cb27bf75a0a44f0e82826acd55ae31a",
+      "size": 3740,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_antiphonal_prayer_highlighted.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_antiphonal_prayer_normal.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "775f064021f8506c096e2f48703056a18f567dd0fda11500926bdfc19107b1e5",
+      "size": 3800,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_antiphonal_prayer_normal.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_antiphonal_prayer_pressed.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "3836bef4342961217c056841f9ececb44fae99164dde95eb06884fb57105d1fc",
+      "size": 3790,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_antiphonal_prayer_pressed.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_communion_of_saints.json",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "e911e48468379117631ed80f4a85c55c367cde71ba9c2645e8cf8e29bbc792a1",
+      "size": 513,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_communion_of_saints.json"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_communion_of_saints.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "fa6e9b52bbdafb5bf06b8f1161eeb2c33882c7472db344083d7b9b5fa9ab53c8",
+      "size": 4264,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_communion_of_saints.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_communion_of_saints_32.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "22b505a72e86bd0edbaf88525e8ef3e1c385405efd7a903882c43cd420af1b6b",
+      "size": 2363,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_communion_of_saints_32.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_communion_of_saints_disabled.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "e22ec4097e2ddc2f20206b7df37ca756c28b47a8409166f92f489ac13e940658",
+      "size": 4164,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_communion_of_saints_disabled.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_communion_of_saints_highlighted.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "ac767102ed031a66fdcee6c89ca3878fdfba17223591432e303e8e4dd18f3cce",
+      "size": 4310,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_communion_of_saints_highlighted.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_communion_of_saints_normal.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "fa6e9b52bbdafb5bf06b8f1161eeb2c33882c7472db344083d7b9b5fa9ab53c8",
+      "size": 4264,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_communion_of_saints_normal.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_communion_of_saints_pressed.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "1981364142d1aeb6037874d214043350b04981f0a8d3b52d5460b00de70eef00",
+      "size": 4191,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_communion_of_saints_pressed.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_enduring_prayer.json",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "c2cabd82a0daa27f10049461b7cac5059e7df0dbd0fb67f444192e3cba20a2f0",
+      "size": 497,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_enduring_prayer.json"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_enduring_prayer.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "dba3694e73f944d178db682b88972d67f47408f5de39f0ff08fd28caf00d4444",
+      "size": 2354,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_enduring_prayer.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_enduring_prayer_32.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "3b4470acb5460fac10f6d1b4fe800810a0726c32e47ec1ad97e8177b747750aa",
+      "size": 1423,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_enduring_prayer_32.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_enduring_prayer_disabled.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "0ae569d34d279222160c26a724693cb637e4bd1cbc6b2dfdd46807fb3eb0e1d6",
+      "size": 2397,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_enduring_prayer_disabled.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_enduring_prayer_highlighted.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "3eca0c2fb93fe6b04bad1f9f87f6071d74f5c9c4a3247fe06c7aeff05278b566",
+      "size": 2317,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_enduring_prayer_highlighted.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_enduring_prayer_normal.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "dba3694e73f944d178db682b88972d67f47408f5de39f0ff08fd28caf00d4444",
+      "size": 2354,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_enduring_prayer_normal.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_enduring_prayer_pressed.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "d3ccd42fca8234d6545a422f5f1ddad867a745a67ac7dbd2f929b4e5284e35c2",
+      "size": 2322,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_enduring_prayer_pressed.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_fearless_advance.json",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "8bba2d6190d0b9dfff2356cbd7ab59a460ab2180d57d7fa69831495587e2bbd6",
+      "size": 501,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_fearless_advance.json"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_fearless_advance.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "231da59a9015b64d09a6c577e0d04318ff45236d17e9e776d7603c421079f7e4",
+      "size": 3759,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_fearless_advance.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_fearless_advance_32.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "1a0687ead068cdc51caa3e7e9d80bdae1a0e8cebecb74e7049e5f034a55dce87",
+      "size": 2131,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_fearless_advance_32.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_fearless_advance_disabled.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "67b0a360b27a7e57d924a5b218422adeb3e5d36307bb77f786764801bfc94d50",
+      "size": 3688,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_fearless_advance_disabled.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_fearless_advance_highlighted.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "94c1223f3a1a00c60c5783a93240de209292f95353fa8a4b89b1fee14ad1ebfe",
+      "size": 3794,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_fearless_advance_highlighted.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_fearless_advance_normal.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "231da59a9015b64d09a6c577e0d04318ff45236d17e9e776d7603c421079f7e4",
+      "size": 3759,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_fearless_advance_normal.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_fearless_advance_pressed.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "a6a1513d6d88335255ba97d1801f13276da009df7de94004d85471231d3c7c0d",
+      "size": 3682,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_fearless_advance_pressed.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_fervent_invocation.json",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "1081f0565703f1c92243f48f9e66d21a964ffe0e2d6ea5bd70641200e686f244",
+      "size": 509,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_fervent_invocation.json"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_fervent_invocation.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "7974d024dee0edbece121fd9ada846e4e15af1a289c95501c1e2b6ac67df073c",
+      "size": 3738,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_fervent_invocation.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_fervent_invocation_32.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "16955a7a6ba49ac77ff18777b338b83ee119cf958198083891e825d8e5d772b5",
+      "size": 2100,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_fervent_invocation_32.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_fervent_invocation_disabled.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "9ddd61fc6f50eef4566578f161ec64226705e180a60af9a7786a14afe73b6613",
+      "size": 3746,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_fervent_invocation_disabled.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_fervent_invocation_highlighted.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "93668391cb2ae9ee27bb34e959332ca89b83e5c55484b593386e86b728fba86e",
+      "size": 3738,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_fervent_invocation_highlighted.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_fervent_invocation_normal.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "7974d024dee0edbece121fd9ada846e4e15af1a289c95501c1e2b6ac67df073c",
+      "size": 3738,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_fervent_invocation_normal.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_fervent_invocation_pressed.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "3262bf1e6e52db9208d6b4bb8a56337eda53364921ee972e4f98e44194f4c0aa",
+      "size": 3701,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_fervent_invocation_pressed.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_joyful_devotion.json",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "fdbe6ca3e7cbc1f65dfc8b15af13e84aa1ba51ddc2d537db1b26bb526a30cc9c",
+      "size": 497,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_joyful_devotion.json"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_joyful_devotion.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "efa06f3008b73b4a2e85733a25b706ec1558f166f3142ae13f680fc3d14a4f92",
+      "size": 4628,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_joyful_devotion.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_joyful_devotion_32.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "e636627cb29b90524854f23bcbcf6acc1d5cdf009ea2824857d46fe2cc9bed2b",
+      "size": 2561,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_joyful_devotion_32.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_joyful_devotion_disabled.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "5703a6ed0f4bd863002586814d5484490c72f750c144fee8bfa021ff9eb3454c",
+      "size": 4600,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_joyful_devotion_disabled.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_joyful_devotion_highlighted.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "abe31760e09030ded229c86fff6dc86b2c6313ad56d7390521c403d2a5b71829",
+      "size": 4566,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_joyful_devotion_highlighted.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_joyful_devotion_normal.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "efa06f3008b73b4a2e85733a25b706ec1558f166f3142ae13f680fc3d14a4f92",
+      "size": 4628,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_joyful_devotion_normal.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_joyful_devotion_pressed.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "ac207ed341f638d997522dd41a04d67930ca4f5c31b5c20a6a321dceef0f0a31",
+      "size": 4576,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_joyful_devotion_pressed.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_living_liturgy.json",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "4da5c0e7462ddc270d89c40fc79d68f287e4cdf157bf255d71a2a32aad265d2a",
+      "size": 493,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_living_liturgy.json"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_living_liturgy.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "4c097eb57cf1904f036fa07ff35416d1586fde2af5c21e3375093dfa49e4b35e",
+      "size": 4269,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_living_liturgy.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_living_liturgy_32.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "fe2b6cbf15183fe2c2ea5871bcd29c75d9978004740b8ecbaf866f4062de97d1",
+      "size": 2344,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_living_liturgy_32.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_living_liturgy_disabled.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "d07c45773ead441e94367e6867045474eca014dc5a847db191f18127ab78c227",
+      "size": 4136,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_living_liturgy_disabled.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_living_liturgy_highlighted.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "9cbcee7e7541e80465946894060408606e3cdd866cc5d2640fe82f3d5a7e1df8",
+      "size": 4243,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_living_liturgy_highlighted.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_living_liturgy_normal.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "4c097eb57cf1904f036fa07ff35416d1586fde2af5c21e3375093dfa49e4b35e",
+      "size": 4269,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_living_liturgy_normal.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_living_liturgy_pressed.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "dc09838f01ed0435548a7b25574ca4e3474b578161c256216d4431fe5d6aa2d7",
+      "size": 4181,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_living_liturgy_pressed.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_righteous_sentence.json",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "b29c5f24929e5dce6108d326e82d4ac080cd493b5826fa4b47061c3e2188784d",
+      "size": 509,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_righteous_sentence.json"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_righteous_sentence.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "389498ebce1ead1205f8d3d7e3605d500b2ad3e3a28dd06893fde6e3a956ad88",
+      "size": 3824,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_righteous_sentence.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_righteous_sentence_32.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "2bdfcde3a2db45bb21159b50884409b6d6ad422de15711ab805121a26093ceef",
+      "size": 2209,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_righteous_sentence_32.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_righteous_sentence_disabled.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "33a93ecc626ee317b32758af660ecd8a1a1453103785c25446eb66587281306b",
+      "size": 3834,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_righteous_sentence_disabled.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_righteous_sentence_highlighted.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "5c1e711ec252eefa2371c4ee1bdd21c4b77f10e36ef3fd0af6b6952ac3d52b7a",
+      "size": 3847,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_righteous_sentence_highlighted.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_righteous_sentence_normal.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "389498ebce1ead1205f8d3d7e3605d500b2ad3e3a28dd06893fde6e3a956ad88",
+      "size": 3824,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_righteous_sentence_normal.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_righteous_sentence_pressed.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "7eaab83a51ba8bf207059683188ca283eab64700759558b748f34a11fb36eb85",
+      "size": 3770,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_righteous_sentence_pressed.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_sacred_accord.json",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "94d5e6b522d8f22e74e04c86c1fceb88536476808308ff7cdc30d0955c3cda57",
+      "size": 489,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_sacred_accord.json"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_sacred_accord.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "82c24af0e8a0fb4f8f486580cfb681b5b32b5d1ffdfd9e10b5fe29fbf3090edc",
+      "size": 3574,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_sacred_accord.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_sacred_accord_32.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "c866e43d3da291ad40acc686cc607ac6f6be97f7d8ac4dfb842bfbb55f47f111",
+      "size": 2059,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_sacred_accord_32.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_sacred_accord_disabled.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "b7d19dd2af9eca383e67035dd63b51149b6da46598a5bf892cbfa3f7203e7912",
+      "size": 3607,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_sacred_accord_disabled.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_sacred_accord_highlighted.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "1174a71101700449142ec0b6021a05015b367ab3ec37865204e1150819934e1f",
+      "size": 3566,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_sacred_accord_highlighted.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_sacred_accord_normal.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "82c24af0e8a0fb4f8f486580cfb681b5b32b5d1ffdfd9e10b5fe29fbf3090edc",
+      "size": 3574,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_sacred_accord_normal.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_sacred_accord_pressed.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "bc57c544f88bc1b0989269e50e890878ebcce010fd4ccbf42927966b517c636b",
+      "size": 3542,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_sacred_accord_pressed.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_unshakable_faith.json",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "7399a263de1458436446ae43aacffea6eb668deb4e1cd2ace26523fb6b8b2bca",
+      "size": 501,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_unshakable_faith.json"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_unshakable_faith.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "6aa98cbed26bd9f4a8002f0d33965399eef04638464f005c716c93f18d4ec64f",
+      "size": 3891,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_unshakable_faith.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_unshakable_faith_32.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "860f6167275bd4d6e116471c9d3d8a2b4b448c501b0ef2357ae6138e62638049",
+      "size": 2185,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_unshakable_faith_32.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_unshakable_faith_disabled.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "854a33a577c6919fe0eb26f21a4c6779b75eceb1519c995806d040c88c993754",
+      "size": 3753,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_unshakable_faith_disabled.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_unshakable_faith_highlighted.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "dd9f0892110ced11fe63803120f5e0ed77e6e60548239c93de20680465c2a824",
+      "size": 3906,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_unshakable_faith_highlighted.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_unshakable_faith_normal.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "6aa98cbed26bd9f4a8002f0d33965399eef04638464f005c716c93f18d4ec64f",
+      "size": 3891,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_unshakable_faith_normal.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_consecrated_arms_unshakable_faith_pressed.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "4647c18c999d34aecb1c1dad2197f69863a9e568e6dd57746a816ae37e5f7f1b",
+      "size": 3809,
+      "source": "Mods/new-horizons/Images/NH_perk_consecrated_arms_unshakable_faith_pressed.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_arcane_ballistics.json",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "4a0db0ce8911866b04a07caf7e7ada9223a63ad764db4f71b7150709ac3690ad",
+      "size": 477,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_arcane_ballistics.json"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_arcane_ballistics.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "7fb1c8ecdaa2f1ad9b8c3869b15f452159504b680c0cf73ea1105ca052be18ae",
+      "size": 4302,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_arcane_ballistics.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_arcane_ballistics_32.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "745e17a3f4493b066e845cbb5c63c2b5940cf19d7d63f8edf3cfec498b0c5f46",
+      "size": 2387,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_arcane_ballistics_32.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_arcane_ballistics_disabled.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "da67fa4759dd64a73e88cea36295857f92fea0d8609e96c3f26863a8916e4067",
+      "size": 4158,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_arcane_ballistics_disabled.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_arcane_ballistics_highlighted.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "452700601aef53af81e313b1db85b9db8c4ad6b6e61d140eb737b2def0de7466",
+      "size": 4343,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_arcane_ballistics_highlighted.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_arcane_ballistics_normal.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "7fb1c8ecdaa2f1ad9b8c3869b15f452159504b680c0cf73ea1105ca052be18ae",
+      "size": 4302,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_arcane_ballistics_normal.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_arcane_ballistics_pressed.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "4679da0b0f36a458e88d8fed2af9b0bd708bac6020a9e0ed893bd608ab3ee247",
+      "size": 4223,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_arcane_ballistics_pressed.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_arcane_cascade.json",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "4f0fd9a9349af104f759739dbfdd2a54585702dfa884f241e174955fa4051c97",
+      "size": 465,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_arcane_cascade.json"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_arcane_cascade.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "1643c975ca8ed6d1d419d23fb9abec972661c8404fe0524f83b8d3a03de25092",
+      "size": 3385,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_arcane_cascade.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_arcane_cascade_32.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "d433e9e8f1aefca804625d958527d60c5b0f123bfd05f4c8ff9c9a762151f698",
+      "size": 1964,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_arcane_cascade_32.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_arcane_cascade_disabled.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "0adeb767e1f61845a4c7b01d2413e3c45167e28a1c9a618f825e1d7d91922905",
+      "size": 3402,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_arcane_cascade_disabled.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_arcane_cascade_highlighted.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "e4ffa41561123fbbf75785489ee4ef78868c8f66d641d66dde01d29903082ec3",
+      "size": 3326,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_arcane_cascade_highlighted.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_arcane_cascade_normal.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "1643c975ca8ed6d1d419d23fb9abec972661c8404fe0524f83b8d3a03de25092",
+      "size": 3385,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_arcane_cascade_normal.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_arcane_cascade_pressed.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "0a8acc0b6b5dbbdbb130ade1e13098100f74a80e7bc4211f25215822165af3b2",
+      "size": 3354,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_arcane_cascade_pressed.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_conserved_formula.json",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "90d5a22ae4591091f3133ad2632103ffbec23990bebe44029a213d1d0e7321e0",
+      "size": 477,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_conserved_formula.json"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_conserved_formula.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "a314a502901ef2a1389bccbfba0cb7625181acdf8c303d084c323dfecfa3b633",
+      "size": 4131,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_conserved_formula.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_conserved_formula_32.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "d7de3dbc7ee265f771db787b96020fa3b4974ed348bf1d2615b8da19b553bbf4",
+      "size": 2362,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_conserved_formula_32.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_conserved_formula_disabled.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "2b8863518f114ee1b0ca95fa038bbaad61877d2ca684fcbca83adf086515084a",
+      "size": 4073,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_conserved_formula_disabled.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_conserved_formula_highlighted.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "3364b3eb3622d2377208fb8b88344de73e7a4519efe6ed989f2cecdcca38673b",
+      "size": 4106,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_conserved_formula_highlighted.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_conserved_formula_normal.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "a314a502901ef2a1389bccbfba0cb7625181acdf8c303d084c323dfecfa3b633",
+      "size": 4131,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_conserved_formula_normal.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_conserved_formula_pressed.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "e066457ba14905b77d355440e037623233cefa9527f82edfd36f52edfd606eca",
+      "size": 4064,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_conserved_formula_pressed.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_disruptive_casting.json",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "252f94ecc061aa520a4bbd22e800fc6f23c32ee7183052ad639a75d26cabaa31",
+      "size": 481,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_disruptive_casting.json"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_disruptive_casting.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "7ad9608d10b2c5afdf81b44e9d354423ad7c2756ea1a9240543bf99fd9b92a40",
+      "size": 4388,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_disruptive_casting.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_disruptive_casting_32.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "0558718f774d1d1d8690229d2a896cecc29156ded38e73565e0e771f1cbd2189",
+      "size": 2454,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_disruptive_casting_32.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_disruptive_casting_disabled.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "5cb2905f87ff2dcf0a48a12910c32551f5437750c3cefd5f332077a2947c0b72",
+      "size": 4308,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_disruptive_casting_disabled.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_disruptive_casting_highlighted.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "bccc44d85211b6fd01bb6055c718e07d901ddcb0138865a658c89d2173115d36",
+      "size": 4428,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_disruptive_casting_highlighted.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_disruptive_casting_normal.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "7ad9608d10b2c5afdf81b44e9d354423ad7c2756ea1a9240543bf99fd9b92a40",
+      "size": 4388,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_disruptive_casting_normal.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_disruptive_casting_pressed.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "8ddbb81eb1063ef3a0937b6b34a7f8dc291dee485d6ddd26311e6c180ca4cb3e",
+      "size": 4325,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_disruptive_casting_pressed.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_empowered_spells.json",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "067bf150aefa4c55210a6d4b41274f8076afef1a344ce35186175559b54b7f10",
+      "size": 473,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_empowered_spells.json"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_empowered_spells.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "be17e043ae32f7c2055e2b6e96745245792181ee484434d073c0b1d3f2e0c9a4",
+      "size": 3626,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_empowered_spells.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_empowered_spells_32.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "9c83c52a8b82277680a00f415f9b1f8b66e858c5812f42e7b6279b0a114e9439",
+      "size": 2132,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_empowered_spells_32.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_empowered_spells_disabled.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "9f9ca974dc289f7fdeb2b365572701b2cfdb14216c9efb93e827c1cea781d8e7",
+      "size": 3627,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_empowered_spells_disabled.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_empowered_spells_highlighted.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "d01881af6989463ba326201748e03ec6e49877576340a74ce841ffb051cbbfcb",
+      "size": 3521,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_empowered_spells_highlighted.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_empowered_spells_normal.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "be17e043ae32f7c2055e2b6e96745245792181ee484434d073c0b1d3f2e0c9a4",
+      "size": 3626,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_empowered_spells_normal.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_empowered_spells_pressed.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "84d826edd0a83ec5d0318bfbaf18d6bcb8e078b8377285261b817059c399caea",
+      "size": 3641,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_empowered_spells_pressed.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_levitation.json",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "467f2f2afd8639160a2b78d3b37e18ce7c7678ca09035a11f2b10bac8e80a5bc",
+      "size": 449,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_levitation.json"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_levitation.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "40d6a9130abcf3561d90172bb4f218ffea0f216a5f9e34b3cedacd122de9f80e",
+      "size": 3993,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_levitation.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_levitation_32.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "13b8e0d118c1aa306e48c72675987fd7b92782dc80b3aabae73d60c975e07552",
+      "size": 2223,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_levitation_32.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_levitation_disabled.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "4143ac3167c59ef12ab1a44e44fb5f21ecafd39ad720f3b320b9a840a9168768",
+      "size": 3912,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_levitation_disabled.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_levitation_highlighted.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "d80d97df62ed4dd4c283add7f80f1802e9e4c75b37d3d6133ea49fa0a0d1bf99",
+      "size": 3916,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_levitation_highlighted.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_levitation_normal.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "40d6a9130abcf3561d90172bb4f218ffea0f216a5f9e34b3cedacd122de9f80e",
+      "size": 3993,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_levitation_normal.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_levitation_pressed.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "8d2511b1d445ef5316b5fa2b457eec53d30d9e2b07c099585f0c6e0ac5591ee2",
+      "size": 3964,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_levitation_pressed.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_reconstituting_magic.json",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "0c3de47b65042a57a09a48547f4c5693e2dc668048a650487e855881dab0b924",
+      "size": 489,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_reconstituting_magic.json"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_reconstituting_magic.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "2f6337a27d7e469e468848af13397068e96d695b501be5f039a7756e7b7f9dfa",
+      "size": 3182,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_reconstituting_magic.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_reconstituting_magic_32.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "ca54d9b7b3dbeeb6fddd0b45fb25fc8eca7a94f24a38237fdc26cd00a596f569",
+      "size": 1883,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_reconstituting_magic_32.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_reconstituting_magic_disabled.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "2e11396c3494f3ad2fb2043b6a4f10fad03c6555a4157729d3501b416a4d09a6",
+      "size": 3140,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_reconstituting_magic_disabled.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_reconstituting_magic_highlighted.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "a141e4f02eeac7d1a1cc5839ca3f3fb57ccb72561a67aeb97c64bc2d7bd5bf3c",
+      "size": 3168,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_reconstituting_magic_highlighted.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_reconstituting_magic_normal.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "2f6337a27d7e469e468848af13397068e96d695b501be5f039a7756e7b7f9dfa",
+      "size": 3182,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_reconstituting_magic_normal.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_reconstituting_magic_pressed.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "60aa5ce115b3e1b759a6c11e843d06aa822d203d53ef9c794e061bbcf8e8f597",
+      "size": 3149,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_reconstituting_magic_pressed.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_spell_sculpting.json",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "0029731cf3607f1fd94f10d7dc4c81b07c4958a56ad7c4bcd9155e77942817d9",
+      "size": 469,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_spell_sculpting.json"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_spell_sculpting.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "7e4bf2af569d51e6bbf24a670feba8005afa5e33141616645c36d03196d8cba1",
+      "size": 3839,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_spell_sculpting.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_spell_sculpting_32.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "bfcf83885d77468cf36538dba5e7434428ee010ca41f80c93d36839c67b20892",
+      "size": 2147,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_spell_sculpting_32.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_spell_sculpting_disabled.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "bb421d9e50d9f74ccdd33c0257932022bb510d43d986f949b62953dd1f070223",
+      "size": 3846,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_spell_sculpting_disabled.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_spell_sculpting_highlighted.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "dc4ceb802fed7a9805879869cb3c3cfc61130639af42bd5e76c6dcc90f3deff0",
+      "size": 3856,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_spell_sculpting_highlighted.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_spell_sculpting_normal.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "7e4bf2af569d51e6bbf24a670feba8005afa5e33141616645c36d03196d8cba1",
+      "size": 3839,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_spell_sculpting_normal.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_spell_sculpting_pressed.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "5727a4dafe5fe912de3c4489f58cd44255fe17a59d464e5cd3c62c6c53563cc1",
+      "size": 3787,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_spell_sculpting_pressed.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_unraveling_magic.json",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "204ee50e5d9f5156d9709c2838fdeacffa928f578d4ca8286a615759c0e0c69d",
+      "size": 473,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_unraveling_magic.json"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_unraveling_magic.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "a2cce7e1fd3edded96d413bf13c4341ea66fe636f8baa43b0ac427c200ecf196",
+      "size": 3890,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_unraveling_magic.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_unraveling_magic_32.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "f8189ac5eeeb93a1018fc65f8d6f5106eabaf7b5a1d4da3fba1aa2f65a4458f5",
+      "size": 2310,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_unraveling_magic_32.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_unraveling_magic_disabled.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "dd0aaf2c20ce4191b2e969a8660f9e70f82f214a2347ab10482abd7df45e0a6f",
+      "size": 3888,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_unraveling_magic_disabled.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_unraveling_magic_highlighted.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "f3ced74c41e3712acd3b561b7e16c68cc3b5ff6d9290e06caba385c4b501b450",
+      "size": 3931,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_unraveling_magic_highlighted.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_unraveling_magic_normal.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "a2cce7e1fd3edded96d413bf13c4341ea66fe636f8baa43b0ac427c200ecf196",
+      "size": 3890,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_unraveling_magic_normal.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_unraveling_magic_pressed.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "d0726d4ef949e57c6ba0ec0d0911b1de0d233b832eab4e3f5f319ef96df67702",
+      "size": 3861,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_unraveling_magic_pressed.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_widen_spells.json",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "ff1dc72de6581986ae233f70d37852388f18b8b8e718f2d239e7c1deda198bc9",
+      "size": 457,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_widen_spells.json"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_widen_spells.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "9d8d6125155209c12148b6aecd0865f207f6b7b41e90e233dd74ee4fd58fbbae",
+      "size": 3087,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_widen_spells.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_widen_spells_32.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "83fc5c07b8e4999f01e8106a1660a73d611fb4d64d1ce17ad25730f6d3ba4896",
+      "size": 1817,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_widen_spells_32.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_widen_spells_disabled.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "120ec9fab5e53ce34f705346859a82b4a949950ae631ca964421c5ab14b25541",
+      "size": 3290,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_widen_spells_disabled.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_widen_spells_highlighted.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "27d69eef54d21043a9e127dfeb4333ccc08d91722421a0e18522bbd6e4cb0632",
+      "size": 3057,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_widen_spells_highlighted.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_widen_spells_normal.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "9d8d6125155209c12148b6aecd0865f207f6b7b41e90e233dd74ee4fd58fbbae",
+      "size": 3087,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_widen_spells_normal.png"
+    },
+    {
+      "approval": "Selected provisional runtime; rendered acceptance pending",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated perk foreground; transparent native export",
+      "resource": "SPRITES/NH_perk_metamagic_widen_spells_pressed.png",
+      "selection": "Owner-authorized current artwork revision",
+      "sha256": "00fb64de5046fed8313cc3830982e7ee958dd0c0b1bc9fbe9a81ff8b8794319d",
+      "size": 3118,
+      "source": "Mods/new-horizons/Images/NH_perk_metamagic_widen_spells_pressed.png"
+    },
+    {
+      "resource": "SPRITES/NH_metamagic_handcasting_basic_small.png",
+      "source": "Mods/new-horizons/Images/NH_metamagic_handcasting_basic_small.png",
+      "size": 2982,
+      "sha256": "4e0fee1a809622a4037e7359cb10ac58e0a6d52ae873c9cfe92499369fc5d040",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Built-in ImageGen original transparent foreground composed on pinned native modder-tools-pack template; template attribution and inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Owner-authorized current artwork revision",
+      "approval": "Selected provisional runtime; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_metamagic_handcasting_basic_medium.png",
+      "source": "Mods/new-horizons/Images/NH_metamagic_handcasting_basic_medium.png",
+      "size": 5382,
+      "sha256": "bf0a57e3e988349268dffb1fa848194dc4bda4fda2753e6726597a2e37bde248",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Built-in ImageGen original transparent foreground composed on pinned native modder-tools-pack template; template attribution and inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Owner-authorized current artwork revision",
+      "approval": "Selected provisional runtime; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_metamagic_handcasting_basic_large.png",
+      "source": "Mods/new-horizons/Images/NH_metamagic_handcasting_basic_large.png",
+      "size": 16032,
+      "sha256": "a90dcfa4684bc18a07e17c97696ff06c39a580bda710c4e39b039d9d39a2fa65",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Built-in ImageGen original transparent foreground composed on pinned native modder-tools-pack template; template attribution and inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Owner-authorized current artwork revision",
+      "approval": "Selected provisional runtime; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_metamagic_handcasting_basic_scenarioBonus.png",
+      "source": "Mods/new-horizons/Images/NH_metamagic_handcasting_basic_scenarioBonus.png",
+      "size": 9948,
+      "sha256": "e4c6fc6e8caa0fa102f9a03b4bb3379a9a5fcfa0ce3da683aae4d2ef7b522a2f",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Built-in ImageGen original transparent foreground composed on pinned native modder-tools-pack template; template attribution and inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Owner-authorized current artwork revision",
+      "approval": "Selected provisional runtime; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_metamagic_handcasting_advanced_small.png",
+      "source": "Mods/new-horizons/Images/NH_metamagic_handcasting_advanced_small.png",
+      "size": 3105,
+      "sha256": "8ca988cf311e42523971d1c1da90a3820e9dc0e2f7e87ffc2bc3bfe42bc728a7",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Built-in ImageGen original transparent foreground composed on pinned native modder-tools-pack template; template attribution and inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Owner-authorized current artwork revision",
+      "approval": "Selected provisional runtime; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_metamagic_handcasting_advanced_medium.png",
+      "source": "Mods/new-horizons/Images/NH_metamagic_handcasting_advanced_medium.png",
+      "size": 5620,
+      "sha256": "79306e247686967079dbfc57ebdfd47fe12c5c42f52d8020ca6c0c8f54527384",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Built-in ImageGen original transparent foreground composed on pinned native modder-tools-pack template; template attribution and inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Owner-authorized current artwork revision",
+      "approval": "Selected provisional runtime; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_metamagic_handcasting_advanced_large.png",
+      "source": "Mods/new-horizons/Images/NH_metamagic_handcasting_advanced_large.png",
+      "size": 17519,
+      "sha256": "35949da7206fd9a9217ae711df8152dec82d303c3b29fc02066689c82c84117c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Built-in ImageGen original transparent foreground composed on pinned native modder-tools-pack template; template attribution and inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Owner-authorized current artwork revision",
+      "approval": "Selected provisional runtime; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_metamagic_handcasting_advanced_scenarioBonus.png",
+      "source": "Mods/new-horizons/Images/NH_metamagic_handcasting_advanced_scenarioBonus.png",
+      "size": 10380,
+      "sha256": "6d519d234a46ffe62ea926435ba93a3a2040bf9fbfe090665b2f7d0d333fe8bc",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Built-in ImageGen original transparent foreground composed on pinned native modder-tools-pack template; template attribution and inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Owner-authorized current artwork revision",
+      "approval": "Selected provisional runtime; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_metamagic_handcasting_expert_small.png",
+      "source": "Mods/new-horizons/Images/NH_metamagic_handcasting_expert_small.png",
+      "size": 3102,
+      "sha256": "6399ecf3b05c5530f970742401e4aaff2e02b4ca366a99569daf4a3c1d7444be",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Built-in ImageGen original transparent foreground composed on pinned native modder-tools-pack template; template attribution and inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Owner-authorized current artwork revision",
+      "approval": "Selected provisional runtime; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_metamagic_handcasting_expert_medium.png",
+      "source": "Mods/new-horizons/Images/NH_metamagic_handcasting_expert_medium.png",
+      "size": 5627,
+      "sha256": "7304e1625d6a750ee96279e2d8b3ad7ed5cb5fa76d2f60c15db7e27b4abaab28",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Built-in ImageGen original transparent foreground composed on pinned native modder-tools-pack template; template attribution and inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Owner-authorized current artwork revision",
+      "approval": "Selected provisional runtime; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_metamagic_handcasting_expert_large.png",
+      "source": "Mods/new-horizons/Images/NH_metamagic_handcasting_expert_large.png",
+      "size": 17793,
+      "sha256": "92f2c2082a87106fc69c7554eea9d64e82b6b885bec972918aa10f5b9c636621",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Built-in ImageGen original transparent foreground composed on pinned native modder-tools-pack template; template attribution and inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Owner-authorized current artwork revision",
+      "approval": "Selected provisional runtime; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_metamagic_handcasting_expert_scenarioBonus.png",
+      "source": "Mods/new-horizons/Images/NH_metamagic_handcasting_expert_scenarioBonus.png",
+      "size": 10379,
+      "sha256": "3e4953bdc33146a144bf202593cd90f062f1877bd79bef529b84b93b399e8e99",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Built-in ImageGen original transparent foreground composed on pinned native modder-tools-pack template; template attribution and inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Owner-authorized current artwork revision",
+      "approval": "Selected provisional runtime; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_force_lance-44.png",
+      "source": "Mods/new-horizons/Images/NH_spell_force_lance-44.png",
+      "size": 2036,
+      "sha256": "fa1ed207b9650f3325043d16dfad627882188b75a22751a91ddbc5cf6754ef97",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Built-in imagegen blue-color edit of prior original design; alpha-preserving native export.",
+      "selection": "Owner-authorized current artwork revision",
+      "approval": "Selected provisional runtime; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_force_lance-32.png",
+      "source": "Mods/new-horizons/Images/NH_spell_force_lance-32.png",
+      "size": 1228,
+      "sha256": "f397732e4d17a8d31088e040bfeec19913b3580f504ff8c7a0134c67b7d29fd7",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Built-in imagegen blue-color edit of prior original design; alpha-preserving native export.",
+      "selection": "Owner-authorized current artwork revision",
+      "approval": "Selected provisional runtime; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_force_lance-30.png",
+      "source": "Mods/new-horizons/Images/NH_spell_force_lance-30.png",
+      "size": 1118,
+      "sha256": "8df3888d16f1cabde50201fa6c7a667fb9aed1ef6cb217cf1547d2086d2039db",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Built-in imagegen blue-color edit of prior original design; alpha-preserving native export.",
+      "selection": "Owner-authorized current artwork revision",
+      "approval": "Selected provisional runtime; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_focus_magic_orb.png",
+      "source": "Mods/new-horizons/Images/NH_focus_magic_orb.png",
+      "size": 2463,
+      "sha256": "55600b2fa94e3b40260a34bb2914b1f313eb5a7bb56ed89d86f1576e63c3c77e",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Built-in imagegen blue-color edit of prior original design; alpha-preserving native export.",
+      "selection": "Owner-authorized current artwork revision",
+      "approval": "Selected provisional runtime; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_focus_magic_orb.json",
+      "source": "Mods/new-horizons/Images/NH_focus_magic_orb.json",
+      "size": 109,
+      "sha256": "0f98253f86d878e0afdb66bd05b7ba9615ebaf1ae5b579a81e8ab006592ffc38",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Built-in imagegen blue-color edit of prior original design; alpha-preserving native export.",
+      "selection": "Owner-authorized current artwork revision",
+      "approval": "Selected provisional runtime; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_forced_recall-44.png",
+      "source": "Mods/new-horizons/Images/NH_spell_forced_recall-44.png",
+      "size": 3592,
+      "sha256": "3b45cf20e3b417f5d80b3928dd96abdac6c87713857101b7646dbf67e8e62b70",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in imagegen spell symbol; alpha-preserving native export",
+      "selection": "Owner-authorized current artwork revision",
+      "approval": "Selected provisional runtime; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_forced_recall-32.png",
+      "source": "Mods/new-horizons/Images/NH_spell_forced_recall-32.png",
+      "size": 2136,
+      "sha256": "f03059a9d250c835c16d83f8895d9ce341c4db53fc127489c85da3c5afd5bee1",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in imagegen spell symbol; alpha-preserving native export",
+      "selection": "Owner-authorized current artwork revision",
+      "approval": "Selected provisional runtime; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_spell_forced_recall-30.png",
+      "source": "Mods/new-horizons/Images/NH_spell_forced_recall-30.png",
+      "size": 1883,
+      "sha256": "064ab731173cab9ec2ce24a134d9c48b10e25576cbf29826cc4dc1ce45e2c6d5",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in imagegen spell symbol; alpha-preserving native export",
+      "selection": "Owner-authorized current artwork revision",
+      "approval": "Selected provisional runtime; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_prayers_bookmark_selected.png",
+      "source": "Mods/new-horizons/Images/NH_prayers_bookmark_selected.png",
+      "size": 5350,
+      "sha256": "a227f867e18b57fc6eeb6809e09b8bc20618700275229d8a046140c735150400",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated Prayer symbol or bookmark; transparent native export",
+      "selection": "Owner-authorized current artwork revision",
+      "approval": "Selected provisional runtime; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_prayers_bookmark_inactive.png",
+      "source": "Mods/new-horizons/Images/NH_prayers_bookmark_inactive.png",
+      "size": 5218,
+      "sha256": "7d4f3b504a40c88227b0143da311d22bb1fee9ef944d75ee7154ac8498247816",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated Prayer symbol or bookmark; transparent native export",
+      "selection": "Owner-authorized current artwork revision",
+      "approval": "Selected provisional runtime; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_prayers_bookmark.json",
+      "source": "Mods/new-horizons/Images/NH_prayers_bookmark.json",
+      "size": 217,
+      "sha256": "9970f86fb039349ae69c51faf4c9ad46f3ccdc88341bc3bef5674d522c071e94",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated Prayer symbol or bookmark; transparent native export",
+      "selection": "Owner-authorized current artwork revision",
+      "approval": "Selected provisional runtime; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_prayer_divine_purpose.png",
+      "source": "Mods/new-horizons/Images/NH_prayer_divine_purpose.png",
+      "size": 3595,
+      "sha256": "cf80421848c7f796e98814c18c5ff73624d0d3101eae33252a2aeba5d0790769",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated Prayer symbol or bookmark; transparent native export",
+      "selection": "Owner-authorized current artwork revision",
+      "approval": "Selected provisional runtime; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_prayer_dauntless_assault.png",
+      "source": "Mods/new-horizons/Images/NH_prayer_dauntless_assault.png",
+      "size": 3598,
+      "sha256": "d53444c2334b22df28bf4daf52fec66becb389a8000666df238dbc1967551078",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated Prayer symbol or bookmark; transparent native export",
+      "selection": "Owner-authorized current artwork revision",
+      "approval": "Selected provisional runtime; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_prayer_steadfast_soul.png",
+      "source": "Mods/new-horizons/Images/NH_prayer_steadfast_soul.png",
+      "size": 4154,
+      "sha256": "ec9026e3af7691f0696c79157091ca5589d9212c35d49c941308d492ad3c5da1",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated Prayer symbol or bookmark; transparent native export",
+      "selection": "Owner-authorized current artwork revision",
+      "approval": "Selected provisional runtime; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_prayer_vicarious_redemption.png",
+      "source": "Mods/new-horizons/Images/NH_prayer_vicarious_redemption.png",
+      "size": 3852,
+      "sha256": "05c34f511ac6f9338ea4583c7f9326887a553491f378ef257e710603199fcc3a",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated Prayer symbol or bookmark; transparent native export",
+      "selection": "Owner-authorized current artwork revision",
+      "approval": "Selected provisional runtime; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_prayer_unbroken_vow.png",
+      "source": "Mods/new-horizons/Images/NH_prayer_unbroken_vow.png",
+      "size": 3569,
+      "sha256": "79d34b5b5b111fcc9365041565e0d490ef9683e97640a55f42e6608c8ef3e26b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated Prayer symbol or bookmark; transparent native export",
+      "selection": "Owner-authorized current artwork revision",
+      "approval": "Selected provisional runtime; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_prayer_heavens_judgment.png",
+      "source": "Mods/new-horizons/Images/NH_prayer_heavens_judgment.png",
+      "size": 2607,
+      "sha256": "d3aedde1277b2cb16da6d7e5f4262e23f9d49001f401c3b2dc73f926d594fb0f",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original built-in generated Prayer symbol or bookmark; transparent native export",
+      "selection": "Owner-authorized current artwork revision",
+      "approval": "Selected provisional runtime; rendered acceptance pending"
     }
   ]
 }

@@ -9,6 +9,7 @@ import hashlib
 from .nhart_test_resources import entries_before_wave
 from .nhart_force_lance import force_lance_wave
 from .nhart_skill_rank_art import skill_rank_wave
+from .nhart_release_presentation import presentation_wave
 
 AUTHORITY_CURRENT = (
     ('massedRanks', 'offensive_drills'), ('veteranCadre', 'defensive_drills'),
@@ -77,6 +78,7 @@ def released_predecessor_entries(entries, waves, digest):
     # into the released bridge's existing fingerprints or approval records.
     force_lance_wave(waves)
     skill_rank_wave(waves)
+    presentation_wave(waves)
     matches = [i for i, wave in enumerate(waves) if wave['baselineArchiveSha256'] == BRIDGE_NEXT_ARCHIVE]
     if len(matches) != 1 or matches[0] == 0:
         raise ValueError('Missing exact released-art bridge boundary')

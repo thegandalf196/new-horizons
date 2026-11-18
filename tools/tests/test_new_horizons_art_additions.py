@@ -8,6 +8,7 @@ import re
 import sys
 import unittest
 from .nhart_source_transitions import read_historical_source
+from .nhart_current_faction_perk_art import current_faction_perk_wave
 from .nhart_sorcery_config_transition import before_sorcery
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'tools'))
@@ -21,6 +22,7 @@ from .nhart_sylvan_alliance_presentations import (validate_alliance_family,
 from .nhart_water_ice_restoration import restoration_wave
 from .nhart_force_lance import validate_force_lance
 from .nhart_skill_rank_art import validate_skill_rank_art
+from .nhart_release_presentation import validate_presentation_art
 from .nhart_released_history import (authority_before_leadership_rework,
     released_predecessor_entries, baseline_payload_proof)
 from .nhart_config_revisions import config_at_revision, wave_config_revision
@@ -351,7 +353,7 @@ class ArtAdditionsTest(unittest.TestCase):
         historical = dict(re.findall(r'\{"(new-horizons:[^"]+)", "([^"]+)"\}',
                                      header_before_faction_rebindings(header_before_reworked_perks(self.header))))
         for wave in self.waves:
-            declared = {name for row in wave['perks'] + wave['statuses'] + wave.get('spells', []) + wave.get('specialties', []) + wave.get('creatures', []) + wave.get('perkPresentations', []) + wave.get('artRoles', []) + wave.get('heroInterfaceButtons', []) + wave.get('orderEntryButtons', []) + wave.get('nativeEffectAliases', []) + wave.get('suppliedAuthority', []) + wave.get('forceLanceEffects', []) + wave.get('skillRankArtwork', []) + ([wave['waterIceRestoration']] if 'waterIceRestoration' in wave else []) for name in row['resources']}
+            declared = {name for row in wave['perks'] + wave['statuses'] + wave.get('spells', []) + wave.get('specialties', []) + wave.get('creatures', []) + wave.get('perkPresentations', []) + wave.get('artRoles', []) + wave.get('heroInterfaceButtons', []) + wave.get('orderEntryButtons', []) + wave.get('nativeEffectAliases', []) + wave.get('suppliedAuthority', []) + wave.get('forceLanceEffects', []) + wave.get('skillRankArtwork', []) + wave.get('releaseArtwork', []) + ([wave['waterIceRestoration']] if 'waterIceRestoration' in wave else []) for name in row['resources']}
             alliance = [row for row in wave.get('perkPresentations', []) if row.get('schemaVersion') == 3]
             if alliance:
                 validate_alliance_resource_reuse(wave, declared, self.manifest['entries'],
@@ -365,7 +367,10 @@ class ArtAdditionsTest(unittest.TestCase):
                 else:
                     self.assertIn(current_id, current_ids)
                 self.assertEqual(lookup[current_id], row['icon44'])
-                self.assertEqual(historical[row['id']], row['icon44'])
+                if current_faction_perk_wave(wave):
+                    self.assertNotIn(row['id'], historical)
+                else:
+                    self.assertEqual(historical[row['id']], row['icon44'])
                 if row['id'] == 'new-horizons:command.seizeInitiative':
                     successor = next(perk for perk in roster['skills']['new-horizons:command']['perks']
                                      if perk['id'] == current_id)
@@ -493,6 +498,13 @@ class ArtAdditionsTest(unittest.TestCase):
 
     def test_header_baseline_and_status_only_graphics(self):
         for index, wave in enumerate(self.waves):
+            if current_faction_perk_wave(wave):
+                self.assertEqual(wave['baselineHeaderSha256'],
+                                 '824fbc555e13220abb7f9e8b3db648fc3fa35ea0411234bba6c17953a6f73bbf')
+                continue
+            if 'releaseArtwork' in wave:
+                validate_presentation_art(wave, self.manifest['entries'], read_resource)
+                continue
             if 'skillRankArtwork' in wave:
                 validate_skill_rank_art(wave, self.manifest['entries'], read_resource,
                     (ROOT / 'assets/new-horizons/skill-rank-art-selections.json').read_bytes())
@@ -513,6 +525,8 @@ class ArtAdditionsTest(unittest.TestCase):
             if not wave.get('heroInterfaceButtons') and not current_header:
                 header = header_before_faction_rebindings(header)
             for later in self.waves[index:]:
+                if current_faction_perk_wave(later):
+                    continue
                 for row in later['perks']:
                     line = '\t\t{"' + row['id'] + '", "' + row['icon44'] + '"},\n'
                     self.assertEqual(header.count(line), 1); header = header.replace(line, '')

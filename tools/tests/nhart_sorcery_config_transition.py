@@ -3,6 +3,7 @@ import copy
 import hashlib
 import json
 from pathlib import Path
+from .nhart_release_presentation import before_presentation
 
 ROOT = Path(__file__).resolve().parents[2]
 CONFIG = 'Mods/new-horizons/Content/config/spells/newHorizons.json'
@@ -33,6 +34,7 @@ def before_sorcery(config, path=CONFIG):
     """Restore exact retired definitions for tests, never for runtime loading."""
     if path != CONFIG:
         return copy.deepcopy(config)
+    config = before_presentation(config)
     record = transition_record()
     excluded = record['excludedGraphics']
     retired = [row['key'] for row in record['changes'] if 'after' not in row]

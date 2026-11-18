@@ -3,6 +3,7 @@
 #include <algorithm>
 #include "BattleActionProcessor.h"
 #include "../CGameHandler.h"
+#include "../../lib/GameLibrary.h"
 #include "../../lib/battle/CBattleInfoCallback.h"
 #include "../../lib/battle/IBattleState.h"
 #include "../../lib/battle/ConsecratedArmsOrder.h"
@@ -15,6 +16,59 @@
 #include "../../lib/CRandomGenerator.h"
 #include "../../lib/networkPacks/SetStackEffect.h"
 #include "../../lib/networkPacks/PacksForClientBattle.h"
+
+namespace
+{
+void presentPrayerGrant(CGameHandler & handler, const CBattleInfoCallback & battle,
+	const SetStackEffect & effects, const std::vector<consecratedArms::Prayer> & prayers,
+	const consecratedArms::Policy & policy, int faith)
+{
+	MetaString recipients;
+	BattleAnimationPlayed animation;
+	animation.battleID = battle.getBattle()->getBattleID();
+	for(const auto & [id, bonuses] : effects.toAdd)
+	{
+		const auto * unit = battle.battleGetUnitByID(id);
+		if(!unit || !unit->alive() || unit->isGhost() || bonuses.empty())
+			continue;
+		recipients.appendRawString("%d %s");
+		recipients.replaceNumber(unit->getCount());
+		recipients.replaceName(unit->creatureId(), unit->getCount());
+		animation.targets.push_back({static_cast<int32_t>(id), unit->getPosition()});
+	}
+	if(animation.targets.empty())
+		return;
+
+	BattleLogMessage message;
+	message.battleID = animation.battleID;
+	const auto names = recipients.buildList(LIBRARY->staticTexts());
+	for(const auto prayer : prayers)
+	{
+		auto line = MetaString::createFromTextID("new-horizons.logs.consecratedArmsGranted");
+		line.replaceTextID(consecratedArms::textID(prayer));
+		line.replaceNumber(consecratedArms::potencyFaith(faith, policy));
+		line.replaceNumber(consecratedArms::duration(faith, policy));
+		line.replaceRawString(names);
+		message.lines.push_back(std::move(line));
+	}
+	handler.sendAndApply(message);
+
+	// Reuse Prayer's visual metadata without casting a spell or adding its effects.
+	const auto * prayer = SpellID(SpellID::PRAYER).toSpell();
+	if(!prayer)
+		return;
+	animation.sound = prayer->getCastSound();
+	for(const auto & visual : prayer->animationInfo.affect)
+	{
+		if(visual.resourceName.empty())
+			continue;
+		animation.animation = visual.resourceName;
+		animation.transparency = visual.transparency;
+		handler.sendAndApply(animation);
+		animation.sound = AudioPath();
+	}
+}
+}
 
 void BattleActionProcessor::castPassiveDivineMandate(const CBattleInfoCallback & battle,
 	BattleSide side, const HeroOrderState & order)
@@ -31,25 +85,7 @@ void BattleActionProcessor::castPassiveDivineMandate(const CBattleInfoCallback &
 		auto effects = consecratedArms::orderEffects(battle, side,
 			heroCommands::recipientIds(battle, side, order), prayers, prayerPolicy, faith);
 		gameHandler->sendAndApply(effects);
-		BattleLogMessage message;
-		message.battleID = battle.getBattle()->getBattleID();
-		for(const auto prayer : prayers)
-		{
-			auto line = MetaString::createFromTextID("new-horizons.logs.consecratedArmsGranted");
-			line.replaceTextID(consecratedArms::textID(prayer));
-			line.replaceNumber(consecratedArms::potencyFaith(faith, prayerPolicy));
-			line.replaceNumber(consecratedArms::duration(faith, prayerPolicy));
-			std::string recipientIds;
-			for(const auto & recipient : effects.toAdd)
-			{
-				if(!recipientIds.empty())
-					recipientIds += ", ";
-				recipientIds += std::to_string(recipient.first);
-			}
-			line.replaceRawString(recipientIds);
-			message.lines.push_back(std::move(line));
-		}
-		gameHandler->sendAndApply(message);
+		presentPrayerGrant(*gameHandler, battle, effects, prayers, prayerPolicy, faith);
 		return;
 	}
 	if(!order.passiveDivineMandate)

@@ -236,8 +236,9 @@ class HeroDataTest(unittest.TestCase):
         self.assertEqual(generated['arcanePreparationSpecialty'], policy)
         self.assertEqual(generated['startingSkills']['startingDevelopmentProfiles']['core:serena'], {
             'skills': [{'skill': 'new-horizons:wisdom', 'rank': 1},
-                       {'skill': 'new-horizons:metamagic', 'rank': 1}],
-            'startingPerks': [{'skill': 'new-horizons:wisdom', 'perk': 'new-horizons:wisdom.intelligence'}]})
+                       {'skill': 'new-horizons:metamagic', 'rank': 1}]})
+        self.assertEqual(generated['startingSkills']['startingPerkProfiles']['core:serena'],
+                         [{'skill': 'new-horizons:wisdom', 'perk': 'new-horizons:wisdom.spellFamiliarity'}])
 
     def test_fortune_child_policy_and_generated_capture_keep_native_prototype(self):
         policy = self.rules['fortuneChildSpecialty']
@@ -250,13 +251,14 @@ class HeroDataTest(unittest.TestCase):
         self.assertEqual(prototype['spellbook'], ['fortune'])
         self.assertEqual(self.rules['startingSkills']['startingDevelopmentProfiles']['core:daremyth'], {
             'skills': [{'skill': 'new-horizons:luck', 'rank': 1},
-                {'skill': 'new-horizons:metamagic', 'rank': 1}],
-            'startingPerks': [{'skill': 'new-horizons:luck', 'perk': 'new-horizons:luck.secondChance'}]})
+                {'skill': 'new-horizons:metamagic', 'rank': 1}]})
+        self.assertEqual(self.rules['startingSkills']['startingPerkProfiles']['core:daremyth'],
+                         [{'skill': 'new-horizons:luck', 'perk': 'new-horizons:luck.fortuneSFavor'}])
 
     def setUp(self):
         self.rules = json.loads((ROOT / 'config/newHorizonsHeroes.json').read_text())
 
-    def test_all_144_starting_packages_are_exact_and_class_legal(self):
+    def test_all_144_starting_skill_pairs_are_exact_and_the_single_perk_is_legal(self):
         profiles = self.rules['startingSkills']['startingDevelopmentProfiles']
         registry = json.loads((ROOT / 'config/newHorizonsPerks.json').read_text())['skills']
         faction_skills = self.rules['startingSkills']['factionSkills']
@@ -280,17 +282,19 @@ class HeroDataTest(unittest.TestCase):
                         perk, generic_rank, settled_faction, faction_rank = ACCEPTED_STARTS[hero]
                         expected_faction = 'new-horizons:' + settled_faction
                     parent = 'new-horizons:' + perk.split('.')[0]
-                    expected_perk = 'new-horizons:' + perk
                     self.assertEqual({row['skill']: row['rank'] for row in profile['skills']},
                                      {parent: generic_rank, expected_faction: faction_rank})
                     self.assertEqual(expected_faction, own)
                     self.assertEqual(len(profile['skills']), 2)
-                    self.assertEqual(profile['startingPerks'],
-                                     [{'skill': parent, 'perk': expected_perk}])
+                    self.assertEqual(set(profile), {'skills'})
+                    choices = self.rules['startingSkills']['startingPerkProfiles'][hero]
+                    self.assertEqual(len(choices), 1)
+                    choice, = choices
+                    self.assertIn(choice['skill'], (parent, expected_faction))
                     class_swaps = json.loads((ROOT / 'Mods/new-horizons/Content/config/heroes/classSwaps.json').read_text())
                     effective_class = class_swaps.get(hero, {}).get('class', 'core:' + definition['class'])
                     self.assertGreater(self.rules['skillOfferWeights'][effective_class][parent], 0)
-                    authored = next(row for row in registry[parent]['perks'] if row['id'] == expected_perk)
+                    authored = next(row for row in registry[choice['skill']]['perks'] if row['id'] == choice['perk'])
                     self.assertEqual(authored['requires'], 'basic')
                     self.assertEqual(authored['effect']['status'], 'active')
 
@@ -302,9 +306,9 @@ class HeroDataTest(unittest.TestCase):
         self.assertEqual(self.rules['startingSkills']['startingDevelopmentProfiles']['core:zubin'], {
             'skills': [{'skill': 'new-horizons:bloodrage', 'rank': 1},
                        {'skill': 'new-horizons:havocMagic', 'rank': 1}],
-            'startingPerks': [{'skill': 'new-horizons:havocMagic',
-                              'perk': 'new-horizons:havocMagic.pyromancer'}],
         })
+        self.assertEqual(self.rules['startingSkills']['startingPerkProfiles']['core:zubin'],
+                         [{'skill': 'new-horizons:havocMagic', 'perk': 'new-horizons:havocMagic.stormcaller'}])
         self.assertEqual(self.rules['damageSpellSpecialties']['componentPercent'], 15)
 
     def test_generated_module_captures_all_163_packages_exactly(self):

@@ -11,6 +11,7 @@
 #include "../entities/hero/CHero.h"
 #include "../entities/hero/HeroStartingProjection.h"
 #include "../entities/hero/NewHorizonsHeroRules.h"
+#include "../entities/hero/NewHorizonsStartingPerks.h"
 #include "../entities/hero/NewHorizonsCommandArmy.h"
 #include "../gameState/CGameState.h"
 #include "../IGameSettings.h"
@@ -47,7 +48,16 @@ bool CGHeroInstance::usesGuaranteedDefaultTent() const
 
 void CGHeroInstance::initializeDefaultStartingEquipment(bool creationInitialization)
 {
-	if(!creationInitialization || !usesGuaranteedDefaultTent())
+	if(!creationInitialization)
+		return;
+	if(newHorizonsHeroes::usesRules(primaryGrowthRules)
+		&& newHorizonsHeroes::usesSingleStartingPerkProfiles(primaryGrowthRules["startingSkills"])
+		&& !getArt(ArtifactPosition::SPELLBOOK))
+	{
+		auto * book = cb->gameState().createArtifact(ArtifactID::SPELLBOOK);
+		putArtifact(ArtifactPosition::SPELLBOOK, book);
+	}
+	if(!usesGuaranteedDefaultTent())
 		return;
 	const bool useDefault = std::exchange(defaultStartingEquipmentRequested, false);
 	if(!useDefault)

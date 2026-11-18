@@ -7,6 +7,19 @@ and revisions as the game develops.
 For individual perk effects, spell formulas, creature statistics and Order rules,
 read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 
+## 0.92.2 Early Access
+
+- Fresh default heroes start with a spellbook, two Basic Skills and one
+  authored Basic perk. Existing saves retain their captured starting rules.
+- Castle spellbooks include a Prayers bookmark with the six automatic
+  Consecrated Arms effects. Order feedback identifies the recipient and
+  plays the prayer animation. The bookmark serves as a reference.
+- Metamagic Overflow shows the follow-up spell impact. Focus Magic has a
+  casting animation and a blue projectile. Force Lance has a blue icon and
+  a new impact sound.
+- Adds unique icons for all Consecrated Arms and Metamagic perks, new artwork
+  for the three Metamagic ranks, and a new Forced Recall icon.
+
 ## 0.92.1 Early Access
 
 - Corrects perk progression to one Basic, one Advanced and one Expert perk per

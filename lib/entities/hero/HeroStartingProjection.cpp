@@ -5,6 +5,7 @@
 #include "StdInc.h"
 #include "HeroStartingProjection.h"
 #include "NewHorizonsChosenSpecialties.h"
+#include "NewHorizonsStartingPerks.h"
 #include "CHeroClass.h"
 #include "CHeroHandler.h"
 #include "../../IGameSettings.h"
@@ -316,6 +317,30 @@ void selectStartingHeroPerks(PerkState & state,
 	state = std::move(proposed);
 }
 
+namespace
+{
+void projectStartingMagic(StartingHeroProjection & result, const CHero & hero,
+	const StartingHeroContext & context, const StartingHeroOverrides & overrides, const JsonNode & development)
+{
+	result.spellBook = overrides.spellBook.value_or(hero.haveSpellBook)
+		|| (context.freshEquipmentDefaults && usesRules(development)
+			&& usesSingleStartingPerkProfiles(development["startingSkills"]));
+	if(overrides.spells)
+		result.spells = *overrides.spells;
+	else
+		for(const auto spell : hero.spells)
+		{
+			if(const auto target = startingHeroSpellReplacement(hero, development, context.magic, spell))
+				result.spells.insert(*target);
+			else if(!(newHorizonsMagic::isAdventureSpell(context.magic, spell)
+				&& !newHorizonsMagic::spellAvailableForOrdinaryAcquisition(context.magic, spell))
+				&& (!newHorizonsMagic::rulesActive(context.magic)
+					|| newHorizonsMagic::spellAllowedByHeroRoster(context.magic, spell)))
+				result.spells.insert(spell);
+		}
+}
+}
+
 StartingHeroProjection projectStartingHero(const CHero & hero,
 	const StartingHeroContext & context, const StartingHeroOverrides & overrides)
 {
@@ -394,20 +419,7 @@ StartingHeroProjection projectStartingHero(const CHero & hero,
 			profile ? profile->perks : std::vector<PerkSelection>{}, hero.startingPerks, rank);
 	}
 	result.perks = selections.getSelected();
-	result.spellBook = overrides.spellBook.value_or(hero.haveSpellBook);
-	if(overrides.spells)
-		result.spells = *overrides.spells;
-	else
-		for(const auto spell : hero.spells)
-		{
-			if(const auto target = startingHeroSpellReplacement(hero, development, context.magic, spell))
-				result.spells.insert(*target);
-			else if(!(newHorizonsMagic::isAdventureSpell(context.magic, spell)
-				&& !newHorizonsMagic::spellAvailableForOrdinaryAcquisition(context.magic, spell))
-				&& (!newHorizonsMagic::rulesActive(context.magic)
-					|| newHorizonsMagic::spellAllowedByHeroRoster(context.magic, spell)))
-				result.spells.insert(spell);
-		}
+	projectStartingMagic(result, hero, context, overrides, development);
 	result.army = overrides.army.value_or(hero.initialArmy);
 	if(!overrides.army)
 	{

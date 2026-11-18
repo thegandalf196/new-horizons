@@ -28,6 +28,7 @@ class CGHeroInstance;
 class CStack;
 struct BattleResult;
 struct BattleSpellCast;
+struct BattleStackAttacked;
 struct CObstacleInstance;
 struct SetStackEffect;
 class BattleAction;
@@ -64,6 +65,8 @@ class CureAfflictionPresenter;
 /// Small struct which contains information about the id of the attacked stack, the damage dealt,...
 struct StackAttackedInfo
 {
+	static StackAttackedInfo fromPacket(const BattleStackAttacked & hit,
+		const CStack * defender, const CStack * attacker, bool ranged);
 	const CStack *defender;
 	const CStack *attacker;
 
@@ -78,6 +81,7 @@ struct StackAttackedInfo
 	bool rebirth; //if true, play rebirth animation after all
 	bool cloneKilled;
 	bool shattered = false; // authoritative physical-hit provenance, not marker loss
+	bool replaySpellHit = false;
 };
 
 struct StackAttackInfo
@@ -269,6 +273,7 @@ public:
 	void displaySpellEffect(const CSpell * spell, const BattleHex & destinationTile,
 		const AnimationPath & resourceOverride = AnimationPath()); //displays spell`s affected animation
 	void displaySpellHit(const CSpell * spell, const BattleHex & destinationTile); //displays spell`s affected animation
+	void displaySpellInjury(const CSpell * spell, const BattleHex & destinationTile, bool replayHit);
 
 	void endAction(const BattleAction & action);
 

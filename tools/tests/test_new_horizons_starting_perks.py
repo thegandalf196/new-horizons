@@ -31,9 +31,10 @@ class StartingPerkContentTest(unittest.TestCase):
         self.assertEqual(len(roster), 163)
         self.assertEqual(set(self.profiles), roster)
 
-    def test_every_default_has_two_distinct_basic_skills_and_zero_perks(self):
+    def test_every_default_has_two_distinct_basic_skills_and_one_authored_perk(self):
         factions = set(self.start['factionSkills'].values())
-        self.assertNotIn('startingPerkProfiles', self.start)
+        self.assertEqual(set(self.start['startingPerkProfiles']), set(self.profiles))
+        perk_rules = load(ROOT / 'config/newHorizonsPerks.json')['skills']
         for hero, profile in self.profiles.items():
             with self.subTest(hero=hero):
                 self.assertEqual(set(profile), {'skills'})
@@ -43,6 +44,15 @@ class StartingPerkContentTest(unittest.TestCase):
                 self.assertEqual(len(owned), 2)
                 self.assertEqual({row['rank'] for row in ranks}, {1})
                 self.assertEqual(len(owned & factions), 1)
+                choices = self.start['startingPerkProfiles'][hero]
+                self.assertEqual(len(choices), 1)
+                choice, = choices
+                self.assertIn(choice['skill'], owned)
+                matching = [p for p in perk_rules[choice['skill']]['perks']
+                            if p['id'] == choice['perk']]
+                self.assertEqual(len(matching), 1)
+                self.assertEqual(matching[0]['requires'], 'basic')
+                self.assertEqual(matching[0]['effect']['status'], 'active')
 
     def test_defaults_match_class_faction_and_eligible_generic_skill(self):
         classes = {}
@@ -70,7 +80,7 @@ class StartingPerkContentTest(unittest.TestCase):
 
     def test_captured_markers_and_generated_rules_agree(self):
         self.assertEqual(self.rules['skillOfferLayoutVersion'], 1)
-        self.assertEqual(self.start['startingPerksPolicyVersion'], 3)
+        self.assertEqual(self.start['startingPerksPolicyVersion'], 4)
         generated = load(ROOT / 'Mods/new-horizons/mod.json')['settings']['heroes']['newHorizons']
         self.assertEqual(generated, self.rules)
 
@@ -88,7 +98,7 @@ class StartingPerkContentTest(unittest.TestCase):
             bad = copy.deepcopy(self.rules)
             bad['startingSkills']['startingPerkProfiles'] = value
             bad_cases.append(bad)
-        for mutation in ('perk', 'advanced', 'single', 'missing'):
+        for mutation in ('perk', 'advanced', 'single', 'missing', 'two-perks', 'no-perks'):
             bad = copy.deepcopy(self.rules)
             profile = bad['startingSkills']['startingDevelopmentProfiles']['core:nimbus']
             if mutation == 'perk':
@@ -98,6 +108,11 @@ class StartingPerkContentTest(unittest.TestCase):
                 profile['skills'][0]['rank'] = 2
             elif mutation == 'single':
                 profile['skills'].pop()
+            elif mutation == 'two-perks':
+                choices = bad['startingSkills']['startingPerkProfiles']['core:nimbus']
+                choices.append(copy.deepcopy(choices[0]))
+            elif mutation == 'no-perks':
+                del bad['startingSkills']['startingPerkProfiles']['core:nimbus']
             else:
                 del bad['startingSkills']['startingDevelopmentProfiles']['core:nimbus']
             bad_cases.append(bad)

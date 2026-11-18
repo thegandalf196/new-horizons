@@ -97,7 +97,7 @@ void validateStartingSkillsImpl(const JsonNode & startingSkills, bool requireMig
 		{
 			const auto id = resolve(HeroTypeID::entityType(), hero);
 			require(HeroTypeID::encode(id) == hero && heroes.insert(id).second, "canonical unique starting hero");
-			if(usesSkillsOnlyStartingProfiles(startingSkills)) fields(profile, {"skills"});
+			if(usesSkillsOnlyStartingProfiles(startingSkills) || usesSingleStartingPerkProfiles(startingSkills)) fields(profile, {"skills"});
 			else fields(profile, {"skills", "startingPerks"});
 			require(profile["skills"].isVector() && profile["skills"].Vector().size() == 2,
 				"exactly two explicit starting skills");
@@ -114,7 +114,7 @@ void validateStartingSkillsImpl(const JsonNode & startingSkills, bool requireMig
 				if(usesBasicStartingProfiles(startingSkills))
 					require(skill["rank"].Integer() == MasteryLevel::BASIC, "fresh default Basic starting skill");
 			}
-			if(usesSkillsOnlyStartingProfiles(startingSkills)) continue;
+			if(usesSkillsOnlyStartingProfiles(startingSkills) || usesSingleStartingPerkProfiles(startingSkills)) continue;
 			require(profile["startingPerks"].isVector() && profile["startingPerks"].Vector().size() == 1,
 				"one explicit starting Basic perk");
 			const auto & perk = profile["startingPerks"].Vector().front();
@@ -317,7 +317,7 @@ std::optional<StartingDevelopmentProfile> startingDevelopmentProfile(
 		result.skills.emplace_back(skill, rank);
 	}
 	require(hasFaction, "own starting faction skill");
-	if(usesSkillsOnlyStartingProfiles(starts)) return result;
+	if(usesSkillsOnlyStartingProfiles(starts) || usesSingleStartingPerkProfiles(starts)) return result;
 	// The generic starting perk already requires catalog admission. Reuse that
 	// operation-local validation for both v2 parents rather than rescanning the
 	// complete captured registry for each definition.

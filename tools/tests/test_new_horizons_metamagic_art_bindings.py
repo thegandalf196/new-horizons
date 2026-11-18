@@ -20,7 +20,7 @@ HERO_PATCH = ROOT / "Mods/new-horizons/Content/config/heroes/halon.json"
 
 def expected_images(rank):
     return {
-        slot: f"NH_metamagic_prism_{rank}_{slot}.png"
+        slot: f"NH_metamagic_handcasting_{rank}_{slot}.png"
         for slot in SLOTS
     }
 
@@ -36,7 +36,7 @@ class MetamagicArtBindingsTest(unittest.TestCase):
         )
         cls.hero_patches = json.loads(HERO_PATCH.read_text(encoding="utf-8"))
 
-    def test_metamagic_uses_the_rank_specific_prism_family(self):
+    def test_metamagic_uses_the_selected_handcasting_family(self):
         all_names = []
         for rank in RANKS:
             with self.subTest(rank=rank):

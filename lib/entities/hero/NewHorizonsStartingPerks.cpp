@@ -57,9 +57,10 @@ std::vector<PerkSelection> defaultsFor(const JsonNode & development, HeroTypeID 
 	return result;
 }
 
-void validateSkillsOnlyProfiles(const JsonNode & starts)
+void validateBasicSkillProfiles(const JsonNode & starts, bool singlePerk)
 {
-	require(!starts.Struct().contains("startingPerkProfiles"), "skills-only starts cannot contain a perk table");
+	if(!singlePerk)
+		require(!starts.Struct().contains("startingPerkProfiles"), "skills-only starts cannot contain a perk table");
 	const auto & profiles = starts["startingDevelopmentProfiles"];
 	require(profiles.isStruct() && starts["factionSkills"].isStruct(), "skills-only development and faction maps");
 	for(const auto & hero : LIBRARY->heroh->objects)
@@ -91,36 +92,30 @@ void validateSkillsOnlyProfiles(const JsonNode & starts)
 		require(own.isString() && parents.contains(own.String()), "own Basic skills-only starting faction Skill");
 	}
 }
-}
 
-bool usesAuthoredStartingPerks(const JsonNode & development)
+void validateSinglePerkProfiles(const JsonNode & starts)
 {
-	const auto & starts = development["startingSkills"];
-	return usesRules(development) && starts["startingPerksPolicyVersion"].getType() == JsonNode::JsonType::DATA_INTEGER
-		&& integer(starts["startingPerksPolicyVersion"], 1, 2);
-}
-
-bool usesBasicStartingProfiles(const JsonNode & starts)
-{
-	return starts["startingPerksPolicyVersion"].getType() == JsonNode::JsonType::DATA_INTEGER
-		&& integer(starts["startingPerksPolicyVersion"], 2, 3);
-}
-
-bool usesSkillsOnlyStartingProfiles(const JsonNode & starts)
-{
-	return starts["startingPerksPolicyVersion"].getType() == JsonNode::JsonType::DATA_INTEGER
-		&& starts["startingPerksPolicyVersion"].Integer() == 3;
-}
-
-void validateStartingPerkProfiles(const JsonNode & starts)
-{
-	nhLoadProfile::Scope measured(nhLoadProfile::Metric::ProfileValidation);
-	require(starts.isStruct(), "starting Skill policy object");
-	if(usesSkillsOnlyStartingProfiles(starts))
+	validateBasicSkillProfiles(starts, true);
+	const auto & profiles = starts["startingDevelopmentProfiles"].Struct();
+	const auto & choices = starts["startingPerkProfiles"];
+	require(choices.isStruct() && choices.Struct().size() == profiles.size(), "complete single starting perk table");
+	for(const auto & [hero, profile] : profiles)
 	{
-		validateSkillsOnlyProfiles(starts);
-		return;
+		const auto found = choices.Struct().find(hero);
+		require(found != choices.Struct().end() && found->second.isVector()
+			&& found->second.Vector().size() == 1, "exactly one authored starting perk per hero");
+		const auto & choice = found->second.Vector().front();
+		fields(choice, {"skill", "perk"});
+		require(choice["skill"].isString() && choice["perk"].isString(), "single starting perk identifiers");
+		const auto & parent = choice["skill"].String();
+		require(choice["perk"].String().starts_with(parent + ".")
+			&& std::ranges::any_of(profile["skills"].Vector(), [&](const auto & skill)
+				{ return skill["skill"].String() == parent; }), "single starting perk belongs to a starting Skill");
 	}
+}
+
+void validateHistoricalStartingPerkProfiles(const JsonNode & starts)
+{
 	const bool marker = starts.Struct().contains("startingPerksPolicyVersion");
 	const bool table = starts.Struct().contains("startingPerkProfiles");
 	if(!marker && !table) return;
@@ -200,6 +195,85 @@ void validateStartingPerkProfiles(const JsonNode & starts)
 	}
 }
 
+void initializeSingleStartingPerk(PerkState & state, const JsonNode & development, HeroTypeID hero,
+	const std::function<int(const std::string &)> & rank)
+{
+	// Existing authored or earned choices are never completed or replaced.
+	if(!state.getSelected().empty()) return;
+	auto proposed = state;
+	{
+		PerkSelectionOperation operation(proposed);
+		const auto preferred = defaultsFor(development, hero);
+		if(!preferred.empty())
+		{
+			const auto & choice = preferred.front();
+			require(selectedTier(operation.definitions(), choice) == 1, "single starting perk must be Basic");
+			if(operation.canAcquire(choice.skillId, choice.perkId, rank(choice.skillId)))
+			{
+				operation.select(choice.skillId, choice.perkId, rank(choice.skillId));
+			}
+		}
+		if(operation.selections().empty())
+		{
+			// Explicit scenario Skill rosters can omit the default perk's parent.
+			// Resolve one legal Basic choice deterministically; never invent a Skill.
+			const auto offer = operation.next(rank);
+			if(!offer.empty())
+			{
+				const auto & choice = offer.front();
+				require(choice.requiredRank == 1, "fresh fallback starting perk must be Basic");
+				operation.select(choice.selection.skillId, choice.selection.perkId, rank(choice.selection.skillId));
+			}
+		}
+		operation.commit(proposed);
+	}
+	state = std::move(proposed);
+}
+
+}
+
+bool usesAuthoredStartingPerks(const JsonNode & development)
+{
+	const auto & starts = development["startingSkills"];
+	return usesRules(development) && starts["startingPerksPolicyVersion"].getType() == JsonNode::JsonType::DATA_INTEGER
+		&& (integer(starts["startingPerksPolicyVersion"], 1, 2) || usesSingleStartingPerkProfiles(starts));
+}
+
+bool usesBasicStartingProfiles(const JsonNode & starts)
+{
+	return starts["startingPerksPolicyVersion"].getType() == JsonNode::JsonType::DATA_INTEGER
+		&& integer(starts["startingPerksPolicyVersion"], 2, 4);
+}
+
+bool usesSkillsOnlyStartingProfiles(const JsonNode & starts)
+{
+	return starts["startingPerksPolicyVersion"].getType() == JsonNode::JsonType::DATA_INTEGER
+		&& starts["startingPerksPolicyVersion"].Integer() == 3;
+}
+
+bool usesSingleStartingPerkProfiles(const JsonNode & starts)
+{
+	return starts["startingPerksPolicyVersion"].getType() == JsonNode::JsonType::DATA_INTEGER
+		&& starts["startingPerksPolicyVersion"].Integer() == 4;
+}
+
+void validateStartingPerkProfiles(const JsonNode & starts)
+{
+	nhLoadProfile::Scope measured(nhLoadProfile::Metric::ProfileValidation);
+	require(starts.isStruct(), "starting Skill policy object");
+	if(usesSkillsOnlyStartingProfiles(starts))
+	{
+		validateBasicSkillProfiles(starts, false);
+		return;
+	}
+	if(usesSingleStartingPerkProfiles(starts))
+	{
+		validateSinglePerkProfiles(starts);
+		return;
+	}
+	validateHistoricalStartingPerkProfiles(starts);
+}
+
 void initializeStartingHeroPerks(PerkState & state, const JsonNode & development, HeroTypeID hero,
 	const std::vector<PerkSelection> & profile, const std::vector<PerkSelection> & prototype,
 	const std::function<int(const std::string &)> & rank)
@@ -217,6 +291,11 @@ void initializeStartingHeroPerks(PerkState & state, const JsonNode & development
 	}
 	validateStartingPerkProfiles(development["startingSkills"]);
 	require(usesPersistentHeroProgression(state.getRules()), "starting defaults require captured Skill progression");
+	if(usesSingleStartingPerkProfiles(development["startingSkills"]))
+	{
+		initializeSingleStartingPerk(state, development, hero, rank);
+		return;
+	}
 	auto proposed = state;
 	// End every borrowed rules view before moving the completed candidate.
 	[&]

@@ -12,6 +12,8 @@ class SpellbookTexts(unittest.TestCase):
         files = [
             "client/windows/SpellbookEntryPresentation.cpp",
             "client/windows/CSpellWindow.cpp",
+            "client/windows/CSpellWindowSpellArea.cpp",
+            "client/windows/CSpellWindowBookmarks.cpp",
             "lib/spells/SpellEffectPreview.cpp",
             "lib/spells/TimedSpellEffectPreview.cpp",
             "lib/spells/TimedMagnitudeSpellEffectPreview.cpp",
@@ -29,7 +31,7 @@ class SpellbookTexts(unittest.TestCase):
         sources = "\n".join((ROOT / name).read_text() for name in files)
         keys = set(re.findall(r'"(new-horizons\.spellbook\.[^"\n]+)"', sources))
         keys = {key for key in keys if not key.endswith(".")}
-        for family in set(re.findall(r'(?:quantity|value)\("([a-zA-Z]+)"', sources)) | {"berserk", "realityWarp", "confusion", "puppetMaster", "teleport", "spellLock", "theChosen", "purify", "polymorph", "slow", "slowDual", "haste", "fortune", "implosion", "shadowGift", "naturesWrath", "pandemonium", "holyWrath", "handOfFate", "soulReaper"}:
+        for family in set(re.findall(r'(?:quantity|value)\("([a-zA-Z]+)"', sources)) | {"berserk", "realityWarp", "confusion", "puppetMaster", "teleport", "theChosen", "purify", "polymorph", "slow", "slowDual", "haste", "fortune", "implosion", "shadowGift", "naturesWrath", "pandemonium", "holyWrath", "handOfFate", "soulReaper"}:
             keys.update({"new-horizons.spellbook.effect." + family,
                          "new-horizons.spellbook.effect." + family + ".short"})
         canonical = json.loads((ROOT / "config/newHorizonsCombatTexts.json").read_text())

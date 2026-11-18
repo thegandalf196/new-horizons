@@ -2369,6 +2369,12 @@
 	"focusMagic" : {
 		"name": "Focus Magic",
 		"type": "combat",
+		"animation": {
+			"affect": ["C12SPA0"]
+		},
+		"sounds": {
+			"cast": "PRECISON"
+		},
 		"school": {
 			"new-horizons:sorcery": true
 		},
@@ -3110,11 +3116,11 @@
 		"gainChance": {},
 		"targetType": "CREATURE",
 		"graphics": {
-			"iconBook": "SPELLS.def:0:61",
-			"iconScroll": "SPELLSCR.def:0:61",
-			"iconEffect": "SPELLINT.def:0:62",
-			"iconImmune": "SPELLINT.def:0:62",
-			"iconScenarioBonus": "SPELLBON.def:0:61"
+			"iconBook": "NH_spell_forced_recall-44.png",
+			"iconScroll": "NH_spell_forced_recall-32.png",
+			"iconEffect": "NH_spell_forced_recall-30.png",
+			"iconImmune": "NH_spell_forced_recall-30.png",
+			"iconScenarioBonus": "NH_spell_forced_recall-32.png"
 		},
 		"levels": {
 			"none": {
@@ -3195,11 +3201,11 @@
 		"gainChance": {},
 		"targetType": "CREATURE",
 		"graphics": {
-			"iconBook": "SPELLS.def:0:50",
-			"iconScroll": "SPELLSCR.def:0:50",
-			"iconEffect": "SPELLINT.def:0:51",
-			"iconImmune": "SPELLINT.def:0:51",
-			"iconScenarioBonus": "SPELLBON.def:0:50"
+			"iconBook": "NH_spell_force_lance-44.png",
+			"iconScroll": "NH_spell_force_lance-32.png",
+			"iconEffect": "NH_spell_force_lance-30.png",
+			"iconImmune": "NH_spell_force_lance-30.png",
+			"iconScenarioBonus": "NH_spell_force_lance-32.png"
 		},
 		"levels": {
 			"none": {

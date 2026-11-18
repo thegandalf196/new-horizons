@@ -19745,18 +19745,18 @@
       "hybrid_predecessor_review": "IR-0911-BOUNDED-DIRECT-MAP-COMPOSITION-V3",
       "inherited_deferral": "Owner: ui_developer / gameplay_engineer. Bounded exception for Major System Rework: Leadership attribute restoration, square-root damage scaling, and hero UI panel integration. Hotspots remain subject to ongoing shrinking and modularization policy.\nExact source-list bound only. Before substantive build logic, extract a cohesive target configuration section. Verify source/link membership once and retain no duplicate translation units. Prior stricter obligations remain in inherited_deferral, where present.\n\nBefore introducing conditional build logic, extract a cohesive target helper; retain exact source/link membership, one registration per translation unit and existing inherited obligations.",
       "kind": "exception",
-      "lines": 763,
+      "lines": 768,
       "owner": "ui_developer",
       "previous_exact_review": "IR-QUICK-STUDY-CURRENT2-PRESERVING-METADATA-SOURCE-20261101",
       "previous_proposal_review": "PROPOSED-EXACT-REGISTRY-SIX-SOURCE-20261103",
       "previous_review": "PROPOSED-0920-EXACT-SOURCE-ORGANIZATION",
       "prior_deferral": "Before substantive build-control growth, extract a cohesive target helper; retain all inherited deferrals and one registration per translation unit.",
       "proposal_predecessor_review": "PROPOSED-CLIENT225-BOUNDED-20261103",
-      "rationale": "Exact 760 to 759-line scope. Client presentation/input routing integrates current spell/action receipts and validated captured views. Preserve command submission, session/teardown ownership, native layout and ordinary input behavior; no direct gameplay mutation is introduced.\n\nIndependently reviewed C14 scope (759 to 762 physical lines): Exactly three mechanical presentation source/header registrations; no conditional build or renderer policy logic is added. This bounds only the recorded hash and measured span; all inherited deferrals, ratchets and runtime holds remain binding, with no future growth allowance.\n\nIndependently reviewed C16 exact scope: client registry762 to763 adds only CurrentFactionSkillPresentation.h. Source/header membership remains explicit, with no conditional build policy, runtime rules or new authority. The focused140-line presentation header and its34-line maximum function receive no inherited size allowance. All previous owner/extraction obligations and unrelated records remain unchanged.",
-      "review": "IR-NH0921-C16-CURRENT-FACTION-UI-CODEORG-20261117",
-      "review_scope": "Only the recorded763-line client source/header registry and exact one-header registration. All previous deferrals and no-future-growth limits remain binding; no build/native/rendered acceptance.",
-      "review_status": "INDEPENDENT_EXACT_MECHANICAL_REGISTRATION_REVIEWED_NATIVE_UNRUN",
-      "sha256": "c8e7017bda555444936aa26908c7cd5e442192525ebd62db1a828049f158064d"
+      "rationale": "Exact763 to768-line mechanical registry scope: four focused presentation translation units and one header registered once in existing common-client lists. No conditional build logic, link policy or runtime rules changed. All inherited target-helper obligations and no-future-growth limits remain binding.",
+      "review": "IR-NH0922-STARTING-BOOK-PRAYER-PRESENTATION-20261118",
+      "review_scope": "Exact source organization and bounded correctness review only; no compilation, rendered acceptance or future growth approval.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_REVIEW_NATIVE_UNRUN",
+      "sha256": "2184f57afb7f3016dfaddbec8585ecd14960b5a6e23ef94ee85a50dbc93b7498"
     },
     "client/CPlayerInterface.cpp": {
       "completed_p_predecessor": {
@@ -19769,15 +19769,15 @@
       "deferral": "Before the next substantive attack presentation change, extract native attack receipt-to-display descriptor construction into a focused presentation helper; preserve order and all current animation flags. Cap this renewal to the recorded exact size and hash; independent review and relevant runtime validation remain required.",
       "inherited_deferral": "Owner: engine_engineer with ui_developer. Extract a focused read-only BattleAttack-to-StackAttackInfo receipt-forwarding adapter, preserving absent optional defaults, exact actor/target/flag values and client-before-apply lifecycle. Require ordinary/null and typed receipt characterization plus actual attack/restart cleanup transitions before further substantive expansion. Additionally owner: engine_engineer with ui_developer. Before substantive activation growth, characterize and extract focused activation dispatch with explicit registered battle callback, allied AI handoff and human-window ownership. Preserve synchronous/detached initiation and teardown ordering; require exactly one fallback submission with no subsequent UI access for missing-window integration, ordinary/AI/finished branches, and guarded restart/menu/new-scenario cleanup transitions. All inherited deferrals remain in force; this +1 is not a reduction. Preserve all inherited receipt/activation dispatch deferrals. Before substantive dialog-flow expansion, extract cohesive info-dialog construction/queue routing with exact pending-dialog and nested-window closure characterization; this two-line substitution grants no further growth. Exact bounded declaration/include/UI removal only; no new rule responsibilities. Preserve prior UI extraction duties before future substantive affected growth. Engine engineer with UI developer: before further substantive attack-presentation growth, extract cohesive physical packet-to-receipt/completion delivery with explicit admitted receiver and BattleID inputs. Preserve primary/additional/spectator routing, both pre-state callbacks, retained battle owner, existing wait unlock/relock, spell per-recipient batching and restart/shutdown. Characterize lucky/unlucky/death-blow melee/ranged then retaliation and multi-recipient projectile/chain before growth.",
       "kind": "exception",
-      "lines": 2214,
+      "lines": 2207,
       "owner": "ui_developer",
       "previous_review": "PROPOSED-0920-EXACT-SOURCE-ORGANIZATION",
       "proposal_predecessor_review": "PROPOSED-CLIENT225-BOUNDED-20261103",
-      "rationale": "Exact 2212 to 2214 physical lines: Only two Focus Magic attack-presentation receipt fields are forwarded to the existing visual attack descriptor. This proposed exception covers only the recorded hash/span, not future growth.",
-      "review": "IR-NH092-ORG-3E82D142-20261116",
-      "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
-      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "c0b6f1bc8b3bf7759beae9c72d545e9decbbfb0528bbdae4f3a10d9955bb325d"
+      "rationale": "Exact shrinking2214->2207-line interface routing successor. Injury packet-to-StackAttackedInfo construction moves intact to the focused BattleSpellPresentation owner. Only the dedicated SPELL_HIT_EFFECT bit with a nonempty existing spellID drains pending original spell stages before resolving display pointers; retain the shared interface and recheck identity after the unlocked wait. Ordinary SPELL_EFFECT visuals remain distinct, and authoritative isSpell classification is not changed by overflow. StacksInjured invokes this route before injury state application, preserving primary/secondary display order and merged-recipient batching. Retain2207 ratchet and every inherited activation/dialog/physical-packet extraction and restart/teardown obligation; no future/unrelated growth or ceiling relaxation.",
+      "review": "IR-NH0921-OVERFLOW-PRESENTATION-ONLY-FLAG-20261118",
+      "review_scope": "Exact dedicated presentation-bit successor and inherited bounded source organization only. No compiler/native, rendered, save-load, performance or publication acceptance; all inherited obligations remain.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN",
+      "sha256": "e564ba903b622b189bffcd3181d1f787fd0fc207108567b1baac5b6bb95b0fd9"
     },
     "client/CPlayerInterfaceLevelUp.cpp::void CPlayerInterface::heroGotLevelWithReroll(const CGHeroInstance *hero, PrimarySkill pskill, std::vector<SecondarySkill>& skills, const std::vector<newHorizonsHeroes::PerkOfferCandidate> & perks, QueryID queryID, bool optionalRerollAvailable, QueryID replacesQueryID, int reachedLevel)#1": {
       "completed_p_predecessor": {
@@ -20512,7 +20512,7 @@
       "deferral": "Retain existing ray geometry extraction obligation and its endpoints/gradient/hop/lifecycle acceptance. Before further substantive missile-factory growth, extract immutable angle/phase preparation; keep live emit/removal and ownership here.",
       "inherited_deferral": "\nNext bounded extraction (ui_developer with engine_engineer for rendering lifecycle review, spans [[440, 487]]): Before ray-generation growth, extract midpoint-displaced geometry and symmetric gradient expansion into a focused ray presentation value builder. Interface: Input target points, jaggedness/depth and color keys/width; return owned path/colors. Keep emit/play/removal and shooter cache in the controller; visual randomness stays separate from simulation RNG. Invariants: AnimationPhaseStart defers at most one update independently of rendering; ProjectileFlightLifecycle removal remains protected until render attempt for protected flights; Missing artwork render attempts still release removal protection; Ray hop/linger order and null-shooter spell ownership remain unchanged; No unit/gameplay state or authoritative RNG mutation. Acceptance: Characterize path endpoints/hop segment counts, gradient symmetry, short/missing-art flights, emit/removal and phase-start cases; retain existing lifecycle tests and obtain later rendered flight/restart evidence.",
       "kind": "exception",
-      "lines": 536,
+      "lines": 525,
       "next_bounded_extraction": {
         "acceptance": "Characterize path endpoints/hop segment counts, gradient symmetry, short/missing-art flights, emit/removal and phase-start cases; retain existing lifecycle tests and obtain later rendered flight/restart evidence.",
         "interface": "Input target points, jaggedness/depth and color keys/width; return owned path/colors. Keep emit/play/removal and shooter cache in the controller; visual randomness stays separate from simulation RNG.",
@@ -20534,11 +20534,11 @@
       },
       "owner": "ui_developer",
       "previous_review": "IR-SETH-UI-AI-EXACT-SOURCE-20261114-V1",
-      "rationale": "Exact 523 to 536-line scope. Client presentation/input routing integrates current spell/action receipts and validated captured views. Preserve command submission, session/teardown ownership, native layout and ordinary input behavior; no direct gameplay mutation is introduced.",
-      "review": "IR-NH092-ORG-3E82D142-20261116",
-      "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
-      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "fe86ffc8f06d4f3483febfb4d1943f9dcf4b0bfa145369bbdc68bfa19ef7a168"
+      "rationale": "Exact536 to525-line shrinking scope: Focus Magic orb factory moves into a19-line dedicated translation unit. Controller retains common shooter/trajectory initialization, playback, visibility protection and cache ownership; ordinary missile and ray branches retain ordering. Existing ray geometry deferrals remain binding; rendered flight acceptance is separate.",
+      "review": "IR-NH0922-STARTING-BOOK-PRAYER-PRESENTATION-20261118",
+      "review_scope": "Exact source organization and bounded correctness review only; no compilation, rendered acceptance or future growth approval.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_REVIEW_NATIVE_UNRUN",
+      "sha256": "8fedf31daf035cfb173790f3e3bcf2926f30f1e358f48a12eb280618436a85f3"
     },
     "client/battle/BattleResultWindow.cpp::BattleResultResources BattleResultWindow::getResources(const BattleResult & br)#1": {
       "kind": "legacy",
@@ -20562,14 +20562,14 @@
       "deferral": "Future Leadership rendering belongs in those owners. Before controller growth, extract another count/readout presentation group, preserving hit-animation timing, repaint ownership and restart transitions. Prior stricter obligations remain in inherited_deferral, where present.",
       "inherited_deferral": " Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
       "kind": "exception",
-      "lines": 1131,
+      "lines": 1125,
       "owner": "ui_developer",
       "previous_review": "IR-LEADERSHIP-1159-INDEPENDENT-20261113-V1-UNITS",
-      "rationale": "Exact 1220 to 1220-line scope. Client presentation/input routing integrates current spell/action receipts and validated captured views. Preserve command submission, session/teardown ownership, native layout and ordinary input behavior; no direct gameplay mutation is introduced.\n\nIndependently reviewed C14 scope (1220 to 1131 physical lines): Amount-box presentation and frozen display snapshots move together into a focused presentation unit. The controller shrinks; animation snapshot lifetime and GUI-thread ownership remain protected. This bounds only the recorded hash and measured span; all inherited deferrals, ratchets and runtime holds remain binding, with no future growth allowance.",
-      "review": "IR-NH0921-C14-1164-CODEORG-20261117",
-      "review_scope": "Exact recorded C14 source hash, physical span and organization delta only. No future growth, whole-mechanic, compiler, native, rendered, performance, save-resume, publication or promotion acceptance.",
+      "rationale": "Exact shrinking1131->1125-line controller successor. The existing cast-sound/affected-spell presentation body moves to focused BattleSpellPresentation::displaySpellInjury; flagged overflow optionally adds its authored hit queue before the same affected queue. Normal unflagged injury behavior, hit/death/rebirth stages, amount-box snapshots and final batching remain unchanged. New mapping/helper owner stays165 lines; no oversized relocation. Retain1125 ratchet, inherited count/readout/attack-stage extraction obligations and native/rendered restart characterization; no future growth or ceiling increase.",
+      "review": "IR-NH0921-PRAYER-OVERFLOW-PRESENTATION-20261118",
+      "review_scope": "Exact bounded Prayer/overflow presentation source and organization change only. All inherited responsibilities/deferrals remain binding; no compiler/native, rendered/placement, save-load, performance or publication acceptance.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN",
-      "sha256": "0dee60b1e4bb54ea5dcbbaca26e91408ffa28456e41ac918f51a56e1f0ab04b8"
+      "sha256": "93f6e16111362089d665f1effb8a39b61e63c53aaa83875e6b3de3938bf23dff"
     },
     "client/battle/BattleStacksController.cpp::void BattleStacksController::stackAttacking( const StackAttackInfo & info )#1": {
       "deferral": "Owner: ui_developer. Extract cohesive stack attack stage planning with explicit immutable receipt and visual-origin inputs. Preserve ordered flight-out, facing, hit/death and return stages, normal attacks, both facings/widths, unchanged authoritative placement and callback teardown. Require zero/nonzero and lethal-reflection characterization plus rendered restart/new-scenario/quit evidence before further substantive growth.",
@@ -20585,12 +20585,13 @@
     },
     "client/battle/BattleStacksController.cpp::void BattleStacksController::stacksAreAttacked(std::vector<StackAttackedInfo> attackedInfos)#1": {
       "kind": "legacy",
-      "lines": 102,
+      "lines": 96,
       "owner": "ui_developer",
-      "rationale": "Existing function owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 102 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "9a190b9adc272fbe7a1033540c0456907ee7e4ba756d95b92a1f0f749054977e"
+      "rationale": "Exact102->96-line reduction: existing per-injury sound/affected-spell emission moves to the focused8-line displaySpellInjury helper, which gates additional authored hit visuals only on the explicit replay bit. Preserve original recipient iteration, facing, defense/death/rebirth handling, queued event order, amount-box snapshots and synchronous batching. Complete mapping lives in the17-line fromPacket helper under the same165-line presentation owner. Retain96-line ratchet and characterize ordinary/overflow/Cascade/Force Lance plus queued restart/teardown before future substantive stage growth; no numeric waiver or rendered/runtime acceptance.",
+      "review": "IR-NH0921-OVERFLOW-INJURY-EXTRACTION-20261118",
+      "review_scope": "Exact96-line stage routing and focused helper extraction only; no future growth, compiler/native, rendered, performance or publication acceptance.",
+      "sha256": "64bd690409e763f2ba4d6f43787ad7ba37a984955193aa14ffeb3e1291f20cd7",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN"
     },
     "client/battle/BattleWindow.cpp": {
       "completed_p_predecessor": {
@@ -22009,38 +22010,26 @@
     "client/windows/CSpellWindow.cpp": {
       "deferral": "Owner: UI developer. Interface/acceptance: Extract cost-stage label formatting to a focused formatter; test every existing stage and exact breakdown ordering/text, with native spellbook rendering before acceptance. Preserve inherited spellbook state/casting/help/resize requirements. Next substantive selection change extracts context/admission stages with current-only cost/target/action tests; actual current-policy spellbook click/render evidence remains separately recorded.",
       "kind": "exception",
-      "lines": 1241,
+      "lines": 942,
       "owner": "ui_developer",
       "previous_exact_review": "IR-SPELLBOOK-FULL75-V21-EXACT-SOURCE-20261030",
       "previous_review": "IR-CURRENT225-CLIENT-EXACT-SOURCEORG-20261103",
       "proposal_predecessor_review": "PROPOSED-CLIENT225-BOUNDED-20261103",
-      "rationale": "Exact 1266 to 1241-line scope. Client presentation/input routing integrates current spell/action receipts and validated captured views. Preserve command submission, session/teardown ownership, native layout and ordinary input behavior; no direct gameplay mutation is introduced.",
-      "review": "IR-NH092-ORG-3E82D142-20261116",
-      "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
-      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "c51997d2a7c84697b9ab9a2b36f5cdf6f61ad69ba182c81bac3c112a6bc97e78"
+      "rationale": "Exact1241 to942-line shrinking scope: bookmark creation/navigation and informational Prayer catalogue route through focused208-line owner; unchanged spell-area interaction moves into258-line owner. Constructor227 to133; moved spell click remains117 lines with existing admission/query-lifetime deferral preserved. No new magic school or prayer cast callback; rendered navigation and selection acceptance remain separate.",
+      "review": "IR-NH0922-STARTING-BOOK-PRAYER-PRESENTATION-20261118",
+      "review_scope": "Exact source organization and bounded correctness review only; no compilation, rendered acceptance or future growth approval.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_REVIEW_NATIVE_UNRUN",
+      "sha256": "6072ccec3c3340dee9b71a7b0fe1da610f6f40c4f82414b8b10e8f0b4e83dd49"
     },
     "client/windows/CSpellWindow.cpp::CSpellWindow::CSpellWindow(const CGHeroInstance * _myHero, CPlayerInterface * _myInt, bool openOnBattleSpells, const std::function<void(SpellID)> & onSpellSelect): CWindowObject(PLAYER_COLORED | (settings[\"gameTweaks\"][\"enableLargeSpellbook\"].Bool() ? BORDERED : 0)), battleSpellsOnly(openOnBattleSpells), selectedTab(SpellSchool::ANY), currentPage(0), myHero(_myHero), myInt(_myInt), openOnBattleSpells(openOnBattleSpells), onSpellSelect(onSpellSelect), isBigSpellbook(settings[\"gameTweaks\"][\"enableLargeSpellbook\"].Bool()), spellsPerPage(24), offL(-11), offR(195), offRM(110), offT(-37), offB(56)#1": {
       "kind": "legacy",
-      "lines": 227,
+      "lines": 133,
       "owner": "ui_developer",
-      "rationale": "Existing function owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 227 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "64fe3807fa65fad6e330d6d9447cd76bb72aca73ea1d4c0aec079741cadf615f"
-    },
-    "client/windows/CSpellWindow.cpp::void CSpellWindow::SpellArea::clickPressed(const Point & cursorPosition)#1": {
-      "deferral": "Before further selection-flow growth extract context/admission and informational-help branches into cohesive spellbook owners, preserving current Singularity affordability, shared Hero Action, callback/query lifetime and targeting. Keep actual spellbook click/render acceptance separately recorded; this structural exception does not claim runtime verification.",
-      "kind": "exception",
-      "lines": 117,
-      "owner": "ui_developer",
-      "previous_review": "IR-CURRENT225-CLIENT-EXACT-SOURCEORG-20261103",
-      "proposal_predecessor_review": "PROPOSED-CLIENT225-BOUNDED-20261103",
-      "rationale": "Exact 119 to 117-line scope. Client presentation/input routing integrates current spell/action receipts and validated captured views. Preserve command submission, session/teardown ownership, native layout and ordinary input behavior; no direct gameplay mutation is introduced.",
-      "review": "IR-NH092-ORG-3E82D142-20261116",
-      "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
-      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "5ac14d88d343305ac74f5aa3f27292b64ad4321938feb11648bbdd28a2c319c1"
+      "rationale": "Exact227 to133-line cohesive constructor extraction: bookmark/navigation/catalogue construction has a dedicated208-line owner with longest59-line function. Main constructor retains normal spell preparation and delegates presentation construction. No oversized replacement helper; all inherited spellbook cost, query/session and casting acceptance obligations remain.",
+      "review": "IR-NH0922-STARTING-BOOK-PRAYER-PRESENTATION-20261118",
+      "review_scope": "Exact source organization and bounded correctness review only; no compilation, rendered acceptance or future growth approval.",
+      "sha256": "beb9b2f3646bd4f3f3ba6ecdbcb69172f4074e831b13bcc9b83be54fc50ff147",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_REVIEW_NATIVE_UNRUN"
     },
     "client/windows/CSpellWindow.cpp::void CSpellWindow::processSpells()#1": {
       "kind": "legacy",
@@ -22050,6 +22039,19 @@
       "review": "source-size-legacy-freeze-cf2e62f9-v1",
       "review_scope": "numeric-legacy-debt-freeze-only",
       "sha256": "1689e92e01669f61fafa92147143374e43926c272ee9f18cc2cb10f62ab70562"
+    },
+    "client/windows/CSpellWindowSpellArea.cpp::void CSpellWindow::SpellArea::clickPressed(const Point & cursorPosition)#1": {
+      "deferral": "Before further selection-flow growth extract context/admission and informational-help branches into cohesive spellbook owners, preserving current Singularity affordability, shared Hero Action, callback/query lifetime and targeting. Keep actual spellbook click/render acceptance separately recorded; this structural exception does not claim runtime verification.",
+      "kind": "exception",
+      "lines": 117,
+      "owner": "ui_developer",
+      "previous_review": "IR-CURRENT225-CLIENT-EXACT-SOURCEORG-20261103",
+      "proposal_predecessor_review": "PROPOSED-CLIENT225-BOUNDED-20261103",
+      "rationale": "Exact byte-identical117-line SpellArea click moves from the1241-line spellbook implementation into the258-line focused spell-area owner. This is file-responsibility extraction, not function decomposition: existing context/admission/help deferral remains binding. Same SHA256 preserves cost checks, Singularity interaction, callback/query closure and cast/target dispatch order; rendered current-policy selection not claimed.",
+      "review": "IR-NH0922-STARTING-BOOK-PRAYER-PRESENTATION-20261118",
+      "review_scope": "Exact source organization and bounded correctness review only; no compilation, rendered acceptance or future growth approval.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_REVIEW_NATIVE_UNRUN",
+      "sha256": "5ac14d88d343305ac74f5aa3f27292b64ad4321938feb11648bbdd28a2c319c1"
     },
     "client/windows/CStackExperienceDetailsWindow.cpp": {
       "kind": "legacy",
@@ -24367,15 +24369,15 @@
       },
       "deferral": "Owner: ui_developer / gameplay_engineer. Bounded exception for Major System Rework: Leadership attribute restoration, square-root damage scaling, and hero UI panel integration. Hotspots remain subject to ongoing shrinking and modularization policy.",
       "kind": "exception",
-      "lines": 122,
+      "lines": 109,
       "owner": "gameplay_engineer",
       "previous_review": "IR-0911-INTEGRATION-SOURCE-ORGANIZATION",
-      "rationale": "Exact 122 to 122-line scope. Existing state/content/serialization responsibility integrates current captured rules and explicit native routing. Preserve independent captures, validation boundaries, deterministic order, existing ownership and saved absence.",
-      "review": "IR-NH092-ORG-3E82D142-20261116",
+      "rationale": "Exact122 to109-line shrinking scope: starting spellbook/spell projection extracts into a23-line helper beside the shared pure projection. Spell replacement/filter ordering stays unchanged; policy4 adds a fresh-equipment-only book projection matching authoritative creation, without live state mutation or retroactive save changes. All inherited obligations remain.",
+      "review": "IR-NH0922-STARTING-BOOK-PRAYER-PRESENTATION-20261118",
       "review_category": "ordinary-function-review",
-      "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
-      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "d417e0738c5a7de4d50e12fa4d819e8fb2f33d39168f4bc8b274fc4b2d9dbc4a"
+      "review_scope": "Exact source organization and bounded correctness review only; no compilation, rendered acceptance or future growth approval.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_REVIEW_NATIVE_UNRUN",
+      "sha256": "c407a0518c24394bb233610138742b2b7c03cbe7ab582869d1f20833338d7854"
     },
     "lib/entities/hero/NewHorizonsHeroRules.cpp": {
       "completed_p_predecessor": {
@@ -24527,35 +24529,23 @@
       "lines": 82,
       "owner": "engine_engineer",
       "previous_review": "IR-OPERATION-LOCAL-PERK-ADMISSION-20261115",
-      "rationale": "Exact 81 to 82 physical lines: One early skills-only return preserves the accepted zero-start-perk policy; historical explicit perk profiles retain their captured branch. This proposed exception covers only the recorded hash/span, not future growth.",
-      "review": "IR-NH092-ORG-3E82D142-20261116",
-      "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
-      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "5582f0ef1fc544adb7ce8711a85035cb9f19a533742645cf82cb7c4dbab0cafc"
+      "rationale": "Exact82 to82-line bounded condition-only exception: policy4 follows the existing skills-only profile return, while its separately authored single perk is admitted in NewHorizonsStartingPerks. Historical explicit-perk validation/order remain unchanged. No extra branch body or duplicate policy implementation; existing historical-resolution extraction remains required before further variants.",
+      "review": "IR-NH0922-STARTING-BOOK-PRAYER-PRESENTATION-20261118",
+      "review_scope": "Exact source organization and bounded correctness review only; no compilation, rendered acceptance or future growth approval.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_REVIEW_NATIVE_UNRUN",
+      "sha256": "17dd5169d8b2ed522a32321872719e2fb9529e7a28f32b6f8435c8baba15a6c0"
     },
     "lib/entities/hero/NewHorizonsStartingDevelopment.cpp::newHorizonsHeroes::void validateStartingSkillsImpl(const JsonNode & startingSkills, bool requireMigrationTable)#1": {
-      "deferral": "Before further starting-Skill policy growth, extract captured profile/table validation into a focused pure helper; preserve canonical unique identities, rank/type checks, historical absence/version/migration handling and two-Basic own-faction coverage. Exact128-line bound, no later growth allowance. Current scope: 128 physical lines, SHA256 b3f131c0191ac75bb1d5d21b58558287b03cb670d842259252f897ea502ff2b4; this renewal grants no future growth.",
+      "deferral": "Before further starting-Skill policy growth, extract captured profile/table validation into a focused pure helper; preserve canonical unique identities, rank/type checks, historical absence/version/migration handling and two-Basic own-faction coverage. Exact128-line bound at the recorded SHA256 only; no later growth allowance.",
       "inherited_deferral": "Historical predecessor deferral (numeric cap superseded by the current exact size/hash; extraction and invariants remain binding): Before further starting-Skill policy growth, extract captured profile/table validation into a focused pure helper; preserve canonical unique identities, rank/type checks, historical absence/version/migration handling and two-Basic own-faction coverage. Exact126-line bound, no later growth allowance.",
       "kind": "exception",
       "lines": 128,
       "previous_review": "IR-OPERATION-LOCAL-PERK-ADMISSION-20261115",
-      "rationale": "Exact 126 to 128-line scope. Existing state/content/serialization responsibility integrates current captured rules and explicit native routing. Preserve independent captures, validation boundaries, deterministic order, existing ownership and saved absence.",
-      "review": "IR-NH092-ORG-3E82D142-20261116",
-      "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
-      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "b3f131c0191ac75bb1d5d21b58558287b03cb670d842259252f897ea502ff2b4"
-    },
-    "lib/entities/hero/NewHorizonsStartingPerks.cpp::newHorizonsHeroes::void validateStartingPerkProfiles(const JsonNode & starts)#1": {
-      "deferral": "Before further starting policies, separate policy dispatch from complete roster/profile-table admission into focused helpers; retain all registered hero/faction identities and rejection atomicity. Cap this renewal to the recorded exact size and hash; independent review and relevant runtime validation remain required.",
-      "kind": "exception",
-      "lines": 87,
-      "owner": "engine_engineer",
-      "previous_review": "IR-OPERATION-LOCAL-PERK-ADMISSION-20261115",
-      "rationale": "Exact 82 to 87 physical lines: Five-line policy dispatch admits the authored skills-only profile while historical perk-profile validation remains intact. This proposed exception covers only the recorded hash/span, not future growth.",
-      "review": "IR-NH092-ORG-3E82D142-20261116",
-      "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
-      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "c8c47bfb023d02b49fca770b56444a60d68aeb417ad67dc7a5ce9da9e76d0631"
+      "rationale": "Exact128 to128-line bounded condition-only exception: two existing skills-only tests also recognize policy4, whose single perk is validated by a focused20-line helper. Historical captured-profile, identity, rank and migration checks remain intact. No new loop or runtime state mutation; complete roster/table validation extraction remains required before further policy growth.",
+      "review": "IR-NH0922-STARTING-BOOK-PRAYER-PRESENTATION-20261118",
+      "review_scope": "Exact source organization and bounded correctness review only; no compilation, rendered acceptance or future growth approval.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_REVIEW_NATIVE_UNRUN",
+      "sha256": "628ea300dc87139c962db6b33fe6a0dd510038324cea3a9342bb3f847dc3a1c4"
     },
     "lib/entities/hero/NewHorizonsStartingSkillMigration.cpp::newHorizonsHeroes::std::vector<std::pair<SecondarySkill, ui8>> applyStartingFactionSkill( const JsonNode & resolvedRules, bool magicHero, FactionID faction, const std::vector<std::pair<SecondarySkill, ui8>> & initialSkills)#1": {
       "kind": "review",
@@ -25864,7 +25854,7 @@
       "legacy_freeze_predecessor_review_scope": "Exact frozen production patch only. Conditional on root serialized engine/AI/UI/content/test composition; no future growth, old-save matrix, native/render/runtime proof or adoption authorization.",
       "legacy_freeze_predecessor_review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_RENDERED_UNRUN",
       "legacy_freeze_predecessor_sha256": "f4adc9018fab192fecf65b73ee57a9ff3d19c296963a3f75418ffa6e1c3bb6ff",
-      "lines": 2318,
+      "lines": 2319,
       "next_bounded_extraction": "Engine: before further substantive packet growth, extract one cohesive nonwriting BattleStart admission family into its existing BattleInfo/domain validator with explicit feature support; retain outer guard location and Handler layout. For packet-family header decomposition, move only a bounded family with all declarations/consumers/includes/type IDs checked, never another huge helper. Require exact current bytes, direct/enclosing unsupported prefixes, historical reused defaults, malformed receipt and descriptor refusal controls. Reserved type304 remains reserved.",
       "owner": "engine_engineer",
       "previous_review": "IR-F86-ENGINE-COMPLETE-LEGACY-FREEZE-20261110",
@@ -25874,7 +25864,7 @@
         "Target vector order, primary/SECONDARY and casualty provenance, Last Stand activation markers and attacker/target preflight traversal",
         "No codec reinstatement of retired mechanics or midcombat resume; deferred animation is presentation, not gameplay authority"
       ],
-      "rationale": "Exact 2335 to 2310-line scope. Existing state/content/serialization responsibility integrates current captured rules and explicit native routing. Preserve independent captures, validation boundaries, deterministic order, existing ownership and saved absence.\n\nIndependently reviewed C14 scope (2310 to 2318 physical lines): EndAction adds a typed completed-unit receipt with before-prefix writer rejection and post-decode range validation. No general command authority or packet execution branch is added. This bounds only the recorded hash and measured span; all inherited deferrals, ratchets and runtime holds remain binding, with no future growth allowance.",
+      "rationale": "Narrow exact2318->2319-line exception: add only unused value128 SPELL_HIT_EFFECT to existing ui32 flags and clarify that the already-unconditional spellID also carries this presentation-only identity. No data member, method, codec/validation branch, field/type layout or saved protocol version changes; all122 callable bodies remain byte-identical. Accepted overflow retains original SECONDARY/isSpell()==false gameplay classification; only the dedicated presentation flag plus original spellID requests authored impact replay. This one-line mechanical enum addition is safer than unrelated packet-family extraction during visual stabilization. Preserve every inherited packet preflight/codec extraction, prefix and historical-default obligation; limit exception to this exact2319-line hash with no future/unrelated growth or relaxed ceiling.",
       "responsibility_spans": [
         "52-242 BattleStart descriptor/preflight",
         "244-781 round/deployment/side and activation receipts",
@@ -25884,10 +25874,10 @@
         "1823-2021 spell casts",
         "2023-2335 injury/results/obstacles/repair/triggers/presentation"
       ],
-      "review": "IR-NH0921-C14-1164-CODEORG-20261117",
-      "review_scope": "Exact recorded C14 source hash, physical span and organization delta only. No future growth, whole-mechanic, compiler, native, rendered, performance, save-resume, publication or promotion acceptance.",
+      "review": "IR-NH0921-OVERFLOW-PRESENTATION-ONLY-FLAG-20261118",
+      "review_scope": "Exact dedicated presentation-bit successor and inherited bounded source organization only. No compiler/native, rendered, save-load, performance or publication acceptance; all inherited obligations remain.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN",
-      "sha256": "264aed4880c5fca8a066f9a6d26e13918758e761b7f4a0d54dc4a00f0e6123f8"
+      "sha256": "b08934301658e56bee112a8fbef7803d0ba6a16619c3de72b26268da5b013a52"
     },
     "lib/networkPacks/PacksForClientBattle.h::BattleAttack::void serialize(Handler & h)#1": {
       "deferral": "Before another attack receipt family, extract typed nonwriting attack preflight and its bounded receipt codec group; retain exact wire order, zero-prefix unsupported rejection and malformed-read validation. Cap this renewal to the recorded exact size and hash; independent review and relevant runtime validation remain required.",

@@ -638,14 +638,8 @@ void BattleStacksController::stacksAreAttacked(std::vector<StackAttackedInfo> at
 				addNewAnim(new HittedAnimation(owner, attackedInfo.defender));
 
 			if (attackedInfo.spellEffect != SpellID::NONE)
-			{
-				auto spell = attackedInfo.spellEffect.toSpell();
-				if (!spell->getCastSound().empty())
-					ENGINE->sound().playSound(spell->getCastSound());
-
-
-				owner.displaySpellEffect(spell, attackedInfo.defender->getPosition());
-			}
+				owner.displaySpellInjury(attackedInfo.spellEffect.toSpell(),
+					attackedInfo.defender->getPosition(), attackedInfo.replaySpellHit);
 		});
 	}
 

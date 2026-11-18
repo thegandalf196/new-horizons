@@ -8,7 +8,11 @@ ROOT = Path(__file__).resolve().parents[2]
 class ScrollCastingUI(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.source = (ROOT / "client/windows/CSpellWindow.cpp").read_text()
+        cls.source = "\n".join((ROOT / path).read_text() for path in (
+            "client/windows/CSpellWindow.cpp",
+            "client/windows/CSpellWindowSpellArea.cpp",
+            "client/windows/SpellbookReadout.cpp",
+        ))
         cls.presentation = (ROOT / "client/windows/SpellbookEntryPresentation.cpp").read_text()
 
     def test_school_lock_does_not_reject_authoritatively_castable_scroll(self):

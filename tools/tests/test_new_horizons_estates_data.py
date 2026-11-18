@@ -88,13 +88,12 @@ class EstatesDataTest(unittest.TestCase):
                        'cannot be collected, transferred or sold', 'Capture removes', 'no Rogues'):
             self.assertIn(phrase, guards['details'])
 
-    def test_all_registered_default_references_resolve_including_eight_supervisors(self):
+    def test_all_registered_default_references_resolve_including_three_supervisors(self):
         for identity in ('landSurveyor', 'prosperity', 'banking'):
             self.assertNotIn(identity, self.perks)
         starts = self.heroes['startingSkills']
         self.assertEqual(len(starts['startingPerkProfiles']), 163)
-        expected = {'core:jenova', 'core:rissa', 'core:calid', 'core:sephinroth',
-                    'core:saurug', 'core:grindan', 'core:mutare', 'core:mutareDrake'}
+        expected = {'core:rissa', 'core:calid', 'core:saurug'}
         actual = set()
         for hero, references in starts['startingPerkProfiles'].items():
             for ref in references:
@@ -105,7 +104,7 @@ class EstatesDataTest(unittest.TestCase):
         self.assertEqual(actual, expected)
         for hero in expected:
             self.assertIn({'skill': 'new-horizons:estates', 'perk': PREFIX + 'supervisor'},
-                          starts['startingDevelopmentProfiles'][hero]['startingPerks'])
+                          starts['startingPerkProfiles'][hero])
 
     def test_current_icons_and_inventory_resolve_while_legacy_aliases_remain(self):
         header = (ROOT / 'client/windows/NewHorizonsPerkIcons.h').read_text()

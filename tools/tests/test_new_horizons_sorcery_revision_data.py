@@ -51,6 +51,9 @@ class SorceryRevisionDataTest(unittest.TestCase):
             self.assertEqual(scripts[effect]['script'], 'spells/' + effect)
         self.assertEqual(load('config/newHorizonsMagic.json')['spells']
                          ['new-horizons:focusMagic']['focusMagic'], {'version': 2})
+        precision = load('config/spells/timed.json')['precision']
+        self.assertEqual(content['focusMagic']['animation'], precision['animation'])
+        self.assertEqual(content['focusMagic']['sounds'], precision['sounds'])
 
     def test_retired_identities_have_no_executable_content(self):
         content = load('Mods/new-horizons/Content/config/spells/newHorizons.json')

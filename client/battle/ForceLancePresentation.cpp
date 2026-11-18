@@ -7,6 +7,7 @@
 #include "BattleRenderer.h"
 #include "BattleStacksController.h"
 #include "../GameEngine.h"
+#include "media/ISoundPlayer.h"
 #include "render/CAnimation.h"
 #include "render/Canvas.h"
 #include "render/IRenderHandler.h"
@@ -49,6 +50,7 @@ std::shared_ptr<CAnimation> load(const char * key)
 
 void ForceLancePresentation::strike(BattleInterface & owner, const CStack & target)
 {
+	ENGINE->sound().playSound(AudioPath::builtin("nh_force_lance_strike.wav"));
 	owner.stacksController->addNewAnim(new EffectAnimation(owner,
 		AnimationPath::builtin("newHorizons/forceLance/strikeImpact"), origin(owner, target),
 		target.getPosition()));

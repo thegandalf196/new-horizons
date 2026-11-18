@@ -1,0 +1,359 @@
+{
+  "format": 1,
+  "selection": "Owner-authorized current artwork revision",
+  "approval": "Selected provisional runtime; rendered acceptance pending",
+  "entries": [
+    {
+      "resource": "SPRITES/NH_metamagic_handcasting_basic_small.png",
+      "sha256": "4e0fee1a809622a4037e7359cb10ac58e0a6d52ae873c9cfe92499369fc5d040",
+      "dimensions": [
+        32,
+        32
+      ],
+      "origin": "Built-in ImageGen original transparent foreground composed on pinned native modder-tools-pack template; template attribution and inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "sourceMasterSha256": "c6d33deb7ee051b157a181822fefcf2db64e287108a702c9acc2012e38eb3e87"
+    },
+    {
+      "resource": "SPRITES/NH_metamagic_handcasting_basic_medium.png",
+      "sha256": "bf0a57e3e988349268dffb1fa848194dc4bda4fda2753e6726597a2e37bde248",
+      "dimensions": [
+        44,
+        44
+      ],
+      "origin": "Built-in ImageGen original transparent foreground composed on pinned native modder-tools-pack template; template attribution and inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "sourceMasterSha256": "c6d33deb7ee051b157a181822fefcf2db64e287108a702c9acc2012e38eb3e87"
+    },
+    {
+      "resource": "SPRITES/NH_metamagic_handcasting_basic_large.png",
+      "sha256": "a90dcfa4684bc18a07e17c97696ff06c39a580bda710c4e39b039d9d39a2fa65",
+      "dimensions": [
+        82,
+        93
+      ],
+      "origin": "Built-in ImageGen original transparent foreground composed on pinned native modder-tools-pack template; template attribution and inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "sourceMasterSha256": "c6d33deb7ee051b157a181822fefcf2db64e287108a702c9acc2012e38eb3e87"
+    },
+    {
+      "resource": "SPRITES/NH_metamagic_handcasting_basic_scenarioBonus.png",
+      "sha256": "e4c6fc6e8caa0fa102f9a03b4bb3379a9a5fcfa0ce3da683aae4d2ef7b522a2f",
+      "dimensions": [
+        58,
+        64
+      ],
+      "origin": "Built-in ImageGen original transparent foreground composed on pinned native modder-tools-pack template; template attribution and inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "sourceMasterSha256": "c6d33deb7ee051b157a181822fefcf2db64e287108a702c9acc2012e38eb3e87"
+    },
+    {
+      "resource": "SPRITES/NH_metamagic_handcasting_advanced_small.png",
+      "sha256": "8ca988cf311e42523971d1c1da90a3820e9dc0e2f7e87ffc2bc3bfe42bc728a7",
+      "dimensions": [
+        32,
+        32
+      ],
+      "origin": "Built-in ImageGen original transparent foreground composed on pinned native modder-tools-pack template; template attribution and inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "sourceMasterSha256": "75e1bc582136dba41767ea67ba2562e6c221f78754f262041d9bf1822cea62fe"
+    },
+    {
+      "resource": "SPRITES/NH_metamagic_handcasting_advanced_medium.png",
+      "sha256": "79306e247686967079dbfc57ebdfd47fe12c5c42f52d8020ca6c0c8f54527384",
+      "dimensions": [
+        44,
+        44
+      ],
+      "origin": "Built-in ImageGen original transparent foreground composed on pinned native modder-tools-pack template; template attribution and inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "sourceMasterSha256": "75e1bc582136dba41767ea67ba2562e6c221f78754f262041d9bf1822cea62fe"
+    },
+    {
+      "resource": "SPRITES/NH_metamagic_handcasting_advanced_large.png",
+      "sha256": "35949da7206fd9a9217ae711df8152dec82d303c3b29fc02066689c82c84117c",
+      "dimensions": [
+        82,
+        93
+      ],
+      "origin": "Built-in ImageGen original transparent foreground composed on pinned native modder-tools-pack template; template attribution and inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "sourceMasterSha256": "75e1bc582136dba41767ea67ba2562e6c221f78754f262041d9bf1822cea62fe"
+    },
+    {
+      "resource": "SPRITES/NH_metamagic_handcasting_advanced_scenarioBonus.png",
+      "sha256": "6d519d234a46ffe62ea926435ba93a3a2040bf9fbfe090665b2f7d0d333fe8bc",
+      "dimensions": [
+        58,
+        64
+      ],
+      "origin": "Built-in ImageGen original transparent foreground composed on pinned native modder-tools-pack template; template attribution and inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "sourceMasterSha256": "75e1bc582136dba41767ea67ba2562e6c221f78754f262041d9bf1822cea62fe"
+    },
+    {
+      "resource": "SPRITES/NH_metamagic_handcasting_expert_small.png",
+      "sha256": "6399ecf3b05c5530f970742401e4aaff2e02b4ca366a99569daf4a3c1d7444be",
+      "dimensions": [
+        32,
+        32
+      ],
+      "origin": "Built-in ImageGen original transparent foreground composed on pinned native modder-tools-pack template; template attribution and inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "sourceMasterSha256": "2443538d462365e4750fa94da48ef6fb79b4b6bd5a6b618f41c32852458b4e5f"
+    },
+    {
+      "resource": "SPRITES/NH_metamagic_handcasting_expert_medium.png",
+      "sha256": "7304e1625d6a750ee96279e2d8b3ad7ed5cb5fa76d2f60c15db7e27b4abaab28",
+      "dimensions": [
+        44,
+        44
+      ],
+      "origin": "Built-in ImageGen original transparent foreground composed on pinned native modder-tools-pack template; template attribution and inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "sourceMasterSha256": "2443538d462365e4750fa94da48ef6fb79b4b6bd5a6b618f41c32852458b4e5f"
+    },
+    {
+      "resource": "SPRITES/NH_metamagic_handcasting_expert_large.png",
+      "sha256": "92f2c2082a87106fc69c7554eea9d64e82b6b885bec972918aa10f5b9c636621",
+      "dimensions": [
+        82,
+        93
+      ],
+      "origin": "Built-in ImageGen original transparent foreground composed on pinned native modder-tools-pack template; template attribution and inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "sourceMasterSha256": "2443538d462365e4750fa94da48ef6fb79b4b6bd5a6b618f41c32852458b4e5f"
+    },
+    {
+      "resource": "SPRITES/NH_metamagic_handcasting_expert_scenarioBonus.png",
+      "sha256": "3e4953bdc33146a144bf202593cd90f062f1877bd79bef529b84b93b399e8e99",
+      "dimensions": [
+        58,
+        64
+      ],
+      "origin": "Built-in ImageGen original transparent foreground composed on pinned native modder-tools-pack template; template attribution and inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "sourceMasterSha256": "2443538d462365e4750fa94da48ef6fb79b4b6bd5a6b618f41c32852458b4e5f"
+    },
+    {
+      "resource": "SPRITES/NH_spell_force_lance-44.png",
+      "sha256": "fa1ed207b9650f3325043d16dfad627882188b75a22751a91ddbc5cf6754ef97",
+      "dimensions": [
+        44,
+        44
+      ],
+      "origin": "Built-in imagegen blue-color edit of prior original design; alpha-preserving native export.",
+      "sourceMasterSha256": "71e44e249077e2bdc3219afa3e2cc7ddff4fb723d3f3c2950159f3184fc5b830"
+    },
+    {
+      "resource": "SPRITES/NH_spell_force_lance-32.png",
+      "sha256": "f397732e4d17a8d31088e040bfeec19913b3580f504ff8c7a0134c67b7d29fd7",
+      "dimensions": [
+        32,
+        32
+      ],
+      "origin": "Built-in imagegen blue-color edit of prior original design; alpha-preserving native export.",
+      "sourceMasterSha256": "71e44e249077e2bdc3219afa3e2cc7ddff4fb723d3f3c2950159f3184fc5b830"
+    },
+    {
+      "resource": "SPRITES/NH_spell_force_lance-30.png",
+      "sha256": "8df3888d16f1cabde50201fa6c7a667fb9aed1ef6cb217cf1547d2086d2039db",
+      "dimensions": [
+        30,
+        30
+      ],
+      "origin": "Built-in imagegen blue-color edit of prior original design; alpha-preserving native export.",
+      "sourceMasterSha256": "71e44e249077e2bdc3219afa3e2cc7ddff4fb723d3f3c2950159f3184fc5b830"
+    },
+    {
+      "resource": "SPRITES/NH_focus_magic_orb.png",
+      "sha256": "55600b2fa94e3b40260a34bb2914b1f313eb5a7bb56ed89d86f1576e63c3c77e",
+      "dimensions": [
+        32,
+        32
+      ],
+      "origin": "Built-in imagegen blue-color edit of prior original design; alpha-preserving native export.",
+      "sourceMasterSha256": "9291968ec467bef549d2233d9c877613e6e4d7c0dc7a088d1b830d33b25c97c2"
+    },
+    {
+      "resource": "SPRITES/NH_focus_magic_orb.json",
+      "sha256": "0f98253f86d878e0afdb66bd05b7ba9615ebaf1ae5b579a81e8ab006592ffc38",
+      "dimensions": null,
+      "origin": "Built-in imagegen blue-color edit of prior original design; alpha-preserving native export.",
+      "sourceMasterSha256": null
+    },
+    {
+      "resource": "SPRITES/NH_spell_forced_recall-44.png",
+      "sha256": "3b45cf20e3b417f5d80b3928dd96abdac6c87713857101b7646dbf67e8e62b70",
+      "dimensions": [
+        44,
+        44
+      ],
+      "origin": "Original built-in imagegen spell symbol; alpha-preserving native export",
+      "sourceMasterSha256": "f5f73418d60c17f3b6c1ba063706fa6874f4733a1ff82a2e26fde5ee84217b3c"
+    },
+    {
+      "resource": "SPRITES/NH_spell_forced_recall-32.png",
+      "sha256": "f03059a9d250c835c16d83f8895d9ce341c4db53fc127489c85da3c5afd5bee1",
+      "dimensions": [
+        32,
+        32
+      ],
+      "origin": "Original built-in imagegen spell symbol; alpha-preserving native export",
+      "sourceMasterSha256": "f5f73418d60c17f3b6c1ba063706fa6874f4733a1ff82a2e26fde5ee84217b3c"
+    },
+    {
+      "resource": "SPRITES/NH_spell_forced_recall-30.png",
+      "sha256": "064ab731173cab9ec2ce24a134d9c48b10e25576cbf29826cc4dc1ce45e2c6d5",
+      "dimensions": [
+        30,
+        30
+      ],
+      "origin": "Original built-in imagegen spell symbol; alpha-preserving native export",
+      "sourceMasterSha256": "f5f73418d60c17f3b6c1ba063706fa6874f4733a1ff82a2e26fde5ee84217b3c"
+    },
+    {
+      "resource": "SPRITES/NH_prayers_bookmark_selected.png",
+      "sha256": "a227f867e18b57fc6eeb6809e09b8bc20618700275229d8a046140c735150400",
+      "dimensions": [
+        80,
+        60
+      ],
+      "origin": "Original built-in generated Prayer symbol or bookmark; transparent native export",
+      "sourceMasterSha256": null
+    },
+    {
+      "resource": "SPRITES/NH_prayers_bookmark_inactive.png",
+      "sha256": "7d4f3b504a40c88227b0143da311d22bb1fee9ef944d75ee7154ac8498247816",
+      "dimensions": [
+        80,
+        60
+      ],
+      "origin": "Original built-in generated Prayer symbol or bookmark; transparent native export",
+      "sourceMasterSha256": null
+    },
+    {
+      "resource": "SPRITES/NH_prayers_bookmark.json",
+      "sha256": "9970f86fb039349ae69c51faf4c9ad46f3ccdc88341bc3bef5674d522c071e94",
+      "dimensions": 217,
+      "origin": "Original built-in generated Prayer symbol or bookmark; transparent native export",
+      "sourceMasterSha256": null
+    },
+    {
+      "resource": "SPRITES/NH_prayer_divine_purpose.png",
+      "sha256": "cf80421848c7f796e98814c18c5ff73624d0d3101eae33252a2aeba5d0790769",
+      "dimensions": [
+        44,
+        44
+      ],
+      "origin": "Original built-in generated Prayer symbol or bookmark; transparent native export",
+      "sourceMasterSha256": "20c87b9c6eecbc68e8763fc63074bd0fb852ecc42d4582d0ddaa03831f3f084d"
+    },
+    {
+      "resource": "SPRITES/NH_prayer_dauntless_assault.png",
+      "sha256": "d53444c2334b22df28bf4daf52fec66becb389a8000666df238dbc1967551078",
+      "dimensions": [
+        44,
+        44
+      ],
+      "origin": "Original built-in generated Prayer symbol or bookmark; transparent native export",
+      "sourceMasterSha256": "e1adcb71443298c9068991aca66ba797c7fa9f445b988e9751c951d84ef9ecfd"
+    },
+    {
+      "resource": "SPRITES/NH_prayer_steadfast_soul.png",
+      "sha256": "ec9026e3af7691f0696c79157091ca5589d9212c35d49c941308d492ad3c5da1",
+      "dimensions": [
+        44,
+        44
+      ],
+      "origin": "Original built-in generated Prayer symbol or bookmark; transparent native export",
+      "sourceMasterSha256": "3c5732312c0f1d92de6eaf6f1d8046eb645c745051dbb96456c34ceff6c6316f"
+    },
+    {
+      "resource": "SPRITES/NH_prayer_vicarious_redemption.png",
+      "sha256": "05c34f511ac6f9338ea4583c7f9326887a553491f378ef257e710603199fcc3a",
+      "dimensions": [
+        44,
+        44
+      ],
+      "origin": "Original built-in generated Prayer symbol or bookmark; transparent native export",
+      "sourceMasterSha256": "9eb76211f5e86f04ce19c4e1c510099b26afad809ffc2fe5d7d281d69e9452ba"
+    },
+    {
+      "resource": "SPRITES/NH_prayer_unbroken_vow.png",
+      "sha256": "79d34b5b5b111fcc9365041565e0d490ef9683e97640a55f42e6608c8ef3e26b",
+      "dimensions": [
+        44,
+        44
+      ],
+      "origin": "Original built-in generated Prayer symbol or bookmark; transparent native export",
+      "sourceMasterSha256": "0fc1539f30e66115926c64c074bd8c9cc74e14cfd7bf2dc294efd34935c79968"
+    },
+    {
+      "resource": "SPRITES/NH_prayer_heavens_judgment.png",
+      "sha256": "d3aedde1277b2cb16da6d7e5f4262e23f9d49001f401c3b2dc73f926d594fb0f",
+      "dimensions": [
+        44,
+        44
+      ],
+      "origin": "Original built-in generated Prayer symbol or bookmark; transparent native export",
+      "sourceMasterSha256": "d5cbf83dd45fb89ab28d051b6c42bfce8b2324bbf3c39f9d9dde6cf01be805c5"
+    }
+  ],
+  "skills": {
+    "metamagic": {
+      "basic": {
+        "small": "NH_metamagic_handcasting_basic_small.png",
+        "medium": "NH_metamagic_handcasting_basic_medium.png",
+        "large": "NH_metamagic_handcasting_basic_large.png",
+        "scenarioBonus": "NH_metamagic_handcasting_basic_scenarioBonus.png"
+      },
+      "advanced": {
+        "small": "NH_metamagic_handcasting_advanced_small.png",
+        "medium": "NH_metamagic_handcasting_advanced_medium.png",
+        "large": "NH_metamagic_handcasting_advanced_large.png",
+        "scenarioBonus": "NH_metamagic_handcasting_advanced_scenarioBonus.png"
+      },
+      "expert": {
+        "small": "NH_metamagic_handcasting_expert_small.png",
+        "medium": "NH_metamagic_handcasting_expert_medium.png",
+        "large": "NH_metamagic_handcasting_expert_large.png",
+        "scenarioBonus": "NH_metamagic_handcasting_expert_scenarioBonus.png"
+      }
+    }
+  },
+  "spells": [
+    {
+      "id": "new-horizons:forceLance",
+      "config": "Mods/new-horizons/Content/config/spells/newHorizons.json",
+      "previousBindings": {
+        "iconBook": "SPELLS.def:0:50",
+        "iconScroll": "SPELLSCR.def:0:50",
+        "iconEffect": "SPELLINT.def:0:51",
+        "iconImmune": "SPELLINT.def:0:51",
+        "iconScenarioBonus": "SPELLBON.def:0:50"
+      },
+      "bindings": {
+        "iconBook": "NH_spell_force_lance-44.png",
+        "iconScroll": "NH_spell_force_lance-32.png",
+        "iconEffect": "NH_spell_force_lance-30.png",
+        "iconImmune": "NH_spell_force_lance-30.png",
+        "iconScenarioBonus": "NH_spell_force_lance-32.png"
+      }
+    },
+    {
+      "id": "new-horizons:forcedRecall",
+      "config": "Mods/new-horizons/Content/config/spells/newHorizons.json",
+      "previousBindings": {
+        "iconBook": "SPELLS.def:0:61",
+        "iconScroll": "SPELLSCR.def:0:61",
+        "iconEffect": "SPELLINT.def:0:62",
+        "iconImmune": "SPELLINT.def:0:62",
+        "iconScenarioBonus": "SPELLBON.def:0:61"
+      },
+      "bindings": {
+        "iconBook": "NH_spell_forced_recall-44.png",
+        "iconScroll": "NH_spell_forced_recall-32.png",
+        "iconEffect": "NH_spell_forced_recall-30.png",
+        "iconImmune": "NH_spell_forced_recall-30.png",
+        "iconScenarioBonus": "NH_spell_forced_recall-32.png"
+      }
+    }
+  ],
+  "prayerBookmark": "NH_prayers_bookmark",
+  "focusProjectile": "NH_focus_magic_orb",
+  "artistManifestSha256": [
+    "edbf32a30e87a0758cc8031ccbaac0192d3c9aad741e319da843d699fd1a8480",
+    "cb3d0580c2f8cb2b74b728e3bbdcbaad3b433662c58c9642d3ec4a46c98b568b",
+    "0209efdf6a50c3763b4fb495fddf3e403283c7e25a702648314ee159d1107e0a",
+    "a29c54ffaecd5e3bc9044545dd38c05d5cf710317298fa1de68f29853f72b2ff"
+  ]
+}

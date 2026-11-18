@@ -145,6 +145,12 @@ TEST_F(MetamagicV2, CascadeDuplicatesFullSpillAndPublishesTwoDistinctInjuriesTog
 			{ return hit.flags & BattleStackAttacked::SECONDARY; });
 	});
 	ASSERT_NE(packet, server.injuries.end());
+	for(const auto & hit : packet->stacks)
+	{
+		EXPECT_FALSE(hit.isSpell());
+		EXPECT_TRUE(hit.flags & BattleStackAttacked::SPELL_HIT_EFFECT);
+		EXPECT_EQ(hit.spellID, event.getSpell()->getId());
+	}
 	EXPECT_EQ(server.casts.size(), 1u);
 }
 TEST_F(MetamagicV2, EmpoweredArrowBypassesResistanceButRetainsMagicalImmunityAndRecallRules)

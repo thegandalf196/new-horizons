@@ -1110,9 +1110,10 @@ struct BattleStackAttacked
 		SPELL_EFFECT = 16,
 		GUARDIAN_SPIRIT_EXHAUSTED = 32,
 		SHATTER = 64,
+		SPELL_HIT_EFFECT = 128, // Replay the authored impact on this spell's overflow injury.
 	};
 	ui32 flags = 0; //uses EFlags (above)
-	SpellID spellID = SpellID::NONE; //only if flag SPELL_EFFECT is set
+	SpellID spellID = SpellID::NONE; // Used by SPELL_EFFECT and presentation-only SPELL_HIT_EFFECT.
 	BattleSide armorerLastStandSide = BattleSide::NONE;
 	bool armorerLastStandEndsActivation = false;
 

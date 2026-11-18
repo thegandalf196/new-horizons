@@ -349,7 +349,10 @@ std::optional<OverflowPreview> completeOverflow(ServerCallback & server, const C
 		auto copy = target->acquireState();
 		const auto damageContext = mechanics.spellDamageContext(*target);
 		CStack::prepareAttacked(hit, *server.getRNG(), copy, false, false, battle::DamageProvenance::SPELL, nullptr, &damageContext);
-		hit.flags |= BattleStackAttacked::SECONDARY;
+		// Existing injury presentation replays this spell's impact, including
+		// custom Force Lance visuals, without publishing another spell cast.
+		hit.flags |= BattleStackAttacked::SECONDARY | BattleStackAttacked::SPELL_HIT_EFFECT;
+		hit.spellID = mechanics.getSpell()->getId();
 		if(damageContext.redemption) damageContext.redemption->record(callback, std::span<const BattleStackAttacked>(&hit, 1));
 		packet.stacks.push_back(std::move(hit));
 	}

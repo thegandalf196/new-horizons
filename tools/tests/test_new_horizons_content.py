@@ -1117,8 +1117,8 @@ class NewHorizonsContentTest(unittest.TestCase):
             {'skill': 'new-horizons:metamagic', 'level': 'basic'},
             {'skill': 'new-horizons:spellcraft', 'level': 'basic'},
         ])
-        self.assertEqual(patch['images']['specialtySmall'], 'NH_metamagic_prism_basic_small.png')
-        self.assertEqual(patch['images']['specialtyLarge'], 'NH_metamagic_prism_basic_medium.png')
+        self.assertEqual(patch['images']['specialtySmall'], 'NH_metamagic_handcasting_basic_small.png')
+        self.assertEqual(patch['images']['specialtyLarge'], 'NH_metamagic_handcasting_basic_medium.png')
         self.assertEqual(patch['images']['small'], 'HPS041WZ.bmp')
         self.assertEqual(patch['images']['large'], 'HPL041WZ.bmp')
         self.assertIsNone(patch['specialty']['secondary'])
@@ -1490,8 +1490,8 @@ class NewHorizonsContentTest(unittest.TestCase):
                 if icon_stem == 'necromancy':
                     expected_small, expected_large = 'SECSK32:0:39', 'SECSKILL:0:39'
                 elif icon_stem == 'metamagic':
-                    expected_small = 'NH_metamagic_prism_basic_small.png'
-                    expected_large = 'NH_metamagic_prism_basic_medium.png'
+                    expected_small = 'NH_metamagic_handcasting_basic_small.png'
+                    expected_large = 'NH_metamagic_handcasting_basic_medium.png'
                     self.assertTrue((ART /
                                      expected_small).is_file())
                     self.assertTrue((ART /

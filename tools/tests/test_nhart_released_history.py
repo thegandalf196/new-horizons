@@ -16,6 +16,8 @@ from .nhart_released_history import (authority_before_leadership_rework,
 from .nhart_sylvan_alliance_presentations import validate_alliance_resource_reuse
 from .nhart_test_resources import read_resource
 from .nhart_skill_rank_art import skill_rank_wave
+from .nhart_release_presentation import presentation_wave
+from .nhart_current_faction_perk_art import current_faction_perk_wave_from
 
 
 class ReleasedArtHistoryTest(unittest.TestCase):
@@ -44,7 +46,10 @@ class ReleasedArtHistoryTest(unittest.TestCase):
         previous, index = released_predecessor_entries(self.entries, self.waves, entries_digest)
         current_rank_wave = skill_rank_wave(self.waves)
         self.assertEqual(len(current_rank_wave['resources']), 132)
-        self.assertEqual((len(previous), index), (5859 + len(current_rank_wave['resources']), 41))
+        current_perk_wave = current_faction_perk_wave_from(self.waves)
+        self.assertEqual((len(previous), index),
+                         (5859 + len(current_rank_wave['resources']) + len(current_perk_wave['resources'])
+                          + len(presentation_wave(self.waves)['resources']), 41))
         for family in ('mummy-runtime', 'conflux-water-ice-runtime', 'wisps-and-projectiles'):
             changed = copy.deepcopy(self.entries)
             next(row for row in changed if row['family'] == family)['origin'] = 'unreviewed'

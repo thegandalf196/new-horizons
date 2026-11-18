@@ -103,6 +103,7 @@ class BattleProjectileController
 
 	std::shared_ptr<CAnimation> getProjectileImage(const CStack * stack);
 	std::shared_ptr<CAnimation> createProjectileImage(const AnimationPath & path );
+	std::shared_ptr<ProjectileBase> createFocusMagicProjectile(Point from, Point dest);
 	void initStackProjectile(const CStack * stack);
 
 	bool stackUsesRayProjectile(const CStack * stack) const;

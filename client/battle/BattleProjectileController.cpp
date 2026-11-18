@@ -387,25 +387,14 @@ void BattleProjectileController::createProjectile(const CStack * shooter, Point 
 		logAnim->error("Mod error: Creature '%s' has both missile and ray projectiles configured. Mod should be fixed. Using ray projectile configuration...", shooterInfo.getNameSingularTranslated());
 	}
 
-	if (focusMagicRanged || stackUsesRayProjectile(shooter))
+	if(focusMagicRanged)
+		projectile = createFocusMagicProjectile(from, dest);
+	else if (stackUsesRayProjectile(shooter))
 	{
 		auto rayProjectile = new ProjectileRay();
 		projectile.reset(rayProjectile);
 
-		if(focusMagicRanged)
-		{
-			// A separate stack-scoped energy ray; creature assets and ordinary shots stay intact.
-			rayProjectile->visibility.protectFirstRender();
-			rayProjectile->rayConfig = {
-				{ColorRGBA(40, 95, 180), ColorRGBA(70, 135, 220)},
-				{ColorRGBA(100, 185, 245), ColorRGBA(155, 215, 255)},
-				{ColorRGBA(215, 240, 255), ColorRGBA(235, 250, 255)},
-				{ColorRGBA(100, 185, 245), ColorRGBA(155, 215, 255)},
-				{ColorRGBA(40, 95, 180), ColorRGBA(70, 135, 220)}};
-			rayProjectile->linger = 0.08f;
-		}
-		else
-			rayProjectile->rayConfig = shooterInfo.animation.projectileRay;
+		rayProjectile->rayConfig = shooterInfo.animation.projectileRay;
 		rayProjectile->speed     = computeProjectileFlightTime(from, dest, AnimationControls::getRayProjectileSpeed());
 	}
 	else if (stackUsesMissileProjectile(shooter))

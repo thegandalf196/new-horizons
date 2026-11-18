@@ -128,19 +128,19 @@ class WarcastingDataTest(unittest.TestCase):
 
     def test_all_default_hero_perks_resolve_and_halon_has_basic_arcane_valor(self):
         heroes = load('config/newHorizonsHeroes.json')
-        profiles = heroes['startingSkills']['startingDevelopmentProfiles']
+        profiles = heroes['startingSkills']['startingPerkProfiles']
         refs = {}
-        for hero, profile in profiles.items():
-            for perk in profile.get('startingPerks', []):
+        for hero, choices in profiles.items():
+            for perk in choices:
                 parent = self.rules['skills'][perk['skill']]
                 found = [p for p in parent['perks'] if p['id'] == perk['perk']]
                 self.assertEqual(len(found), 1, hero)
                 if perk['skill'] == 'new-horizons:warcasting':
                     refs[hero] = perk['perk'].removeprefix(PREFIX)
                     self.assertEqual(found[0]['requires'], 'basic')
-        self.assertEqual(refs, {'core:halon': 'arcaneValor', 'core:straker': 'spellward',
-                               'core:thorgrim': 'spellward', 'core:ufretin': 'spellward',
-                               'core:fafner': 'spellward', 'core:ajit': 'spellward',
+        self.assertEqual(refs, {'core:halon': 'arcaneValor', 'core:straker': 'battleFocus',
+                               'core:thorgrim': 'spellward', 'core:ufretin': 'battleFocus',
+                               'core:fafner': 'spellward', 'core:ajit': 'spellshock',
                                'core:portraitYoungYog': 'arcaneValor'})
 
     def test_shipped_registry_skills_and_hero_profiles_match(self):

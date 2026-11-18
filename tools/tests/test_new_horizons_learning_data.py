@@ -125,18 +125,18 @@ class LearningDataTest(unittest.TestCase):
             for phrase in phrases:
                 self.assertIn(phrase, self.perks[identity]['details'])
 
-    def test_all_thirty_one_affected_starting_profiles_resolve(self):
+    def test_all_twenty_five_affected_starting_perk_choices_resolve(self):
         relevant = {'new-horizons:' + skill for skill in ('wisdom', 'warcasting', 'learning')}
-        profiles = self.heroes['startingSkills']['startingDevelopmentProfiles']
-        affected = {hero: profile for hero, profile in profiles.items()
-                    if any(p['skill'] in relevant for p in profile.get('startingPerks', []))}
-        self.assertEqual(len(affected), 31)
-        for hero, profile in affected.items():
-            for reference in profile['startingPerks']:
+        profiles = self.heroes['startingSkills']['startingPerkProfiles']
+        affected = {hero: choices for hero, choices in profiles.items()
+                    if any(p['skill'] in relevant for p in choices)}
+        self.assertEqual(len(affected), 25)
+        for hero, choices in affected.items():
+            for reference in choices:
                 perk = next(p for p in self.rules['skills'][reference['skill']]['perks']
                             if p['id'] == reference['perk'])
                 self.assertEqual(perk['requires'], 'basic', hero)
-        self.assertEqual(profiles['core:halon']['startingPerks'][0]['perk'],
+        self.assertEqual(profiles['core:halon'][0]['perk'],
                          'new-horizons:warcasting.arcaneValor')
 
     def test_current_icons_inventory_and_pack_resource_references_agree(self):

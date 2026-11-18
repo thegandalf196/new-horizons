@@ -1,0 +1,115 @@
+{
+  "format": 1,
+  "changes": [
+    {
+      "spell": "forceLance",
+      "field": [
+        "graphics",
+        "iconBook"
+      ],
+      "before": "SPELLS.def:0:50",
+      "after": "NH_spell_force_lance-44.png"
+    },
+    {
+      "spell": "forceLance",
+      "field": [
+        "graphics",
+        "iconScroll"
+      ],
+      "before": "SPELLSCR.def:0:50",
+      "after": "NH_spell_force_lance-32.png"
+    },
+    {
+      "spell": "forceLance",
+      "field": [
+        "graphics",
+        "iconEffect"
+      ],
+      "before": "SPELLINT.def:0:51",
+      "after": "NH_spell_force_lance-30.png"
+    },
+    {
+      "spell": "forceLance",
+      "field": [
+        "graphics",
+        "iconImmune"
+      ],
+      "before": "SPELLINT.def:0:51",
+      "after": "NH_spell_force_lance-30.png"
+    },
+    {
+      "spell": "forceLance",
+      "field": [
+        "graphics",
+        "iconScenarioBonus"
+      ],
+      "before": "SPELLBON.def:0:50",
+      "after": "NH_spell_force_lance-32.png"
+    },
+    {
+      "spell": "forcedRecall",
+      "field": [
+        "graphics",
+        "iconBook"
+      ],
+      "before": "SPELLS.def:0:61",
+      "after": "NH_spell_forced_recall-44.png"
+    },
+    {
+      "spell": "forcedRecall",
+      "field": [
+        "graphics",
+        "iconScroll"
+      ],
+      "before": "SPELLSCR.def:0:61",
+      "after": "NH_spell_forced_recall-32.png"
+    },
+    {
+      "spell": "forcedRecall",
+      "field": [
+        "graphics",
+        "iconEffect"
+      ],
+      "before": "SPELLINT.def:0:62",
+      "after": "NH_spell_forced_recall-30.png"
+    },
+    {
+      "spell": "forcedRecall",
+      "field": [
+        "graphics",
+        "iconImmune"
+      ],
+      "before": "SPELLINT.def:0:62",
+      "after": "NH_spell_forced_recall-30.png"
+    },
+    {
+      "spell": "forcedRecall",
+      "field": [
+        "graphics",
+        "iconScenarioBonus"
+      ],
+      "before": "SPELLBON.def:0:61",
+      "after": "NH_spell_forced_recall-32.png"
+    },
+    {
+      "spell": "focusMagic",
+      "field": [
+        "animation"
+      ],
+      "after": {
+        "affect": [
+          "C12SPA0"
+        ]
+      }
+    },
+    {
+      "spell": "focusMagic",
+      "field": [
+        "sounds"
+      ],
+      "after": {
+        "cast": "PRECISON"
+      }
+    }
+  ]
+}

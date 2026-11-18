@@ -112,3 +112,18 @@ TEST(NewHorizonsStartingEquipmentProjection, SaveCampaignAndOngoingWorldDoNotCla
 	EXPECT_FALSE(view.firstAidTentChance);
 	EXPECT_EQ(startingArmyChances(view, {}, {100, 88, 25}), (std::vector<int>{100, 88, 25}));
 }
+
+TEST(NewHorizonsStartingEquipmentProjection, SinglePerkPolicyGuaranteesFreshSpellbookWithAuthoredEmptyEquipment)
+{
+	StartingHeroOverrides authored;
+	authored.defaultEquipment = false;
+	authored.spellBook = false;
+	EXPECT_TRUE(projectStartingHero(prototype("core:christian"), configured(), authored).spellBook);
+	auto loaded = configured();
+	loaded.freshEquipmentDefaults = false;
+	EXPECT_FALSE(projectStartingHero(prototype("core:christian"), loaded, authored).spellBook);
+	auto historical = configured();
+	historical.development["startingSkills"]["startingPerksPolicyVersion"].Integer() = 3;
+	historical.development["startingSkills"].Struct().erase("startingPerkProfiles");
+	EXPECT_FALSE(projectStartingHero(prototype("core:christian"), historical, authored).spellBook);
+}

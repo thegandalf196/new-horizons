@@ -29,6 +29,17 @@ protected:
 	Services * gameServices() override { return LIBRARY; }
 	// Keep random starting artifacts out of these controlled battle rosters.
 	void configurePlayer(PlayerSettings & settings) const override { settings.bonus = PlayerStartingBonus::GOLD; }
+	void mapLoaded(CMap * loaded) override
+	{
+		TinyMapGameTest::mapLoaded(loaded);
+		// Native forecast characterizations author their own perk sets below.
+		// Keep their zero-perk startup capture independent of current defaults.
+		auto development = JsonNode(JsonPath::builtin("config/newHorizonsHeroes"));
+		development["startingSkills"]["startingPerksPolicyVersion"].Integer() = 3;
+		development["startingSkills"].Struct().erase("startingPerkProfiles");
+		development.setOverrideFlag(true);
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, development);
+	}
 	void TearDown() override
 	{
 		parent.reset(); visible.reset(); environment.reset(); handler.reset();

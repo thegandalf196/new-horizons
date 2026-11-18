@@ -35,13 +35,14 @@ loopback transport. UI submits requests; authoritative code validates and change
 state. Ruleset activation and historical saved-rule snapshots must remain explicit.
 
 Current default hero development uses captured
-`startingPerksPolicyVersion: 3`.
+`startingPerksPolicyVersion: 4`.
 Every registered default has exactly two distinct Basic Skills, including its
-faction Skill, and no automatically acquired perks. The source registry
-contains 163 explicit profiles. A Skill permits one Basic, one Advanced and one
-Expert perk, acquired through separate advancement choices. Default profiles apply only during
-fresh initialization; saved development, later rank grants and explicitly
-authored scenario advancement retain their normal precedence.
+faction Skill, plus one authored Basic perk and an equipped spellbook. The
+source registry contains 163 explicit profiles. A Skill permits one Basic,
+one Advanced and one Expert perk. Subsequent Skill ranks and perks are separate
+advancement choices. Default profiles apply during fresh initialization.
+Saved development, later rank grants and explicitly authored scenario Skill
+ranks retain their normal precedence.
 
 Orders and spells compete for the shared Hero Action and cost no finite Command
 resource. Persistent army Command, slot-tier permissions and enhancement awards

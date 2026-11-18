@@ -94,6 +94,7 @@ TEST_P(MetamagicOverflowRankPipeline, ActualNativeLiveAndPurePreviewUseSameExces
 	auto mechanics = event.getSpell()->battleMechanics(&event);
 	const spells::Target target{spells::Destination(primary)};
 	const auto before = projectedHitTest::serialized(*gameHandler->randomizer);
+	const auto injuriesBeforePreview = server.injuries.size();
 	EXPECT_CALL(random, nextInt(testing::_, testing::_)).Times(0);
 	const auto preview = previewOverflow(*mechanics, target);
 	ASSERT_TRUE(preview);
@@ -102,6 +103,7 @@ TEST_P(MetamagicOverflowRankPipeline, ActualNativeLiveAndPurePreviewUseSameExces
 	EXPECT_EQ(preview->rawSpill, 30 * GetParam());
 	EXPECT_EQ(preview->recipient, secondary->unitId());
 	EXPECT_EQ(projectedHitTest::serialized(*gameHandler->randomizer), before);
+	EXPECT_EQ(server.injuries.size(), injuriesBeforePreview);
 	testing::Mock::VerifyAndClearExpectations(&random);
 	const auto health = secondary->getAvailableHealth();
 	const auto firstInjury = server.injuries.size();
@@ -118,7 +120,12 @@ TEST_P(MetamagicOverflowRankPipeline, ActualNativeLiveAndPurePreviewUseSameExces
 				++secondaryInjuries;
 				EXPECT_EQ(injury.stackAttacked, secondary->unitId());
 				EXPECT_EQ(injury.damageAmount, preview->damageIfLands);
+				EXPECT_FALSE(injury.isSpell());
+				EXPECT_TRUE(injury.flags & BattleStackAttacked::SPELL_HIT_EFFECT);
+				EXPECT_EQ(injury.spellID, event.getSpell()->getId());
 			}
+			else
+				EXPECT_FALSE(injury.flags & BattleStackAttacked::SPELL_HIT_EFFECT);
 	EXPECT_EQ(secondaryInjuries, 1u);
 	EXPECT_EQ(authority.primaryWitnesses, 0u); // Spill bypasses original recorder/observer.
 	EXPECT_EQ(server.casts.size(), 1u);
@@ -194,8 +201,12 @@ TEST_F(MetamagicOverflowPipeline, TargetProtectionAndImmunityDoNotRerouteOrMulti
 	EXPECT_EQ(immune->recipient, secondary->unitId());
 	EXPECT_EQ(immune->damageIfLands, 0);
 	const auto health = secondary->getAvailableHealth();
+	const auto firstInjury = server.injuries.size();
 	mechanics->cast(&authority, target);
 	EXPECT_EQ(secondary->getAvailableHealth(), health);
+	for(size_t index = firstInjury; index < server.injuries.size(); ++index)
+		for(const auto & hit : server.injuries[index].stacks)
+			EXPECT_NE(hit.stackAttacked, secondary->unitId());
 }
 TEST_F(MetamagicOverflowPipeline, CurrentNativeResistanceCapRemainsSeventyFiveAndCanLand)
 {

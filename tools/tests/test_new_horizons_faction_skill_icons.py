@@ -62,7 +62,9 @@ class NewHorizonsFactionSkillIconAudit(unittest.TestCase):
             self.assertTrue(source)
             self.assertNotIn("NH_lightMagic", source)
         metamagic_source = self.manifest["skills"]["metamagic"]["source"]
-        self.assertEqual(metamagic_source, "../metamagic-prisms-v2/manifest.json")
+        self.assertEqual(metamagic_source, "../../release-art-selections.json")
+        self.assertEqual(self.manifest["skills"]["metamagic"]["historicalSource"],
+                         "../metamagic-prisms-v2/manifest.json")
         self.assertTrue((PROVENANCE / metamagic_source).resolve().is_file())
 
     def test_config_points_each_rank_to_its_own_family(self):
@@ -80,7 +82,7 @@ class NewHorizonsFactionSkillIconAudit(unittest.TestCase):
                         }
                     elif skill == "metamagic":
                         expected = {
-                            size: f"NH_metamagic_prism_{rank}_{size}.png" for size in SIZES
+                            size: f"NH_metamagic_handcasting_{rank}_{size}.png" for size in SIZES
                         }
                     else:
                         expected = {
@@ -106,8 +108,23 @@ class NewHorizonsFactionSkillIconAudit(unittest.TestCase):
             self.assertEqual(len(rank_hashes), len(RANKS), skill)
         self.assertEqual(len(family_medium_hashes), len(GENERATED_SKILLS) * len(RANKS))
 
-    def test_metamagic_manifest_matches_all_canonical_runtime_slots(self):
+    def test_selected_metamagic_manifest_matches_all_canonical_runtime_slots(self):
         source_path = (PROVENANCE / self.manifest["skills"]["metamagic"]["source"]).resolve()
+        selected = json.loads(source_path.read_text(encoding="utf-8"))
+        exports = {row['resource']: row for row in selected['entries']}
+        for rank in RANKS:
+            images = self.skills['metamagic'][rank]['images']
+            self.assertEqual(images, selected['skills']['metamagic'][rank])
+            for role, dimensions in SIZES.items():
+                path = IMAGES / images[role]
+                facts = exports['SPRITES/' + images[role]]
+                self.assertEqual(facts['dimensions'], list(dimensions))
+                self.assertEqual(digest(path), facts['sha256'])
+                self.assertTrue(facts['sourceMasterSha256'])
+                self.assertIn('template', facts['origin'])
+
+    def test_retired_metamagic_prism_exports_remain_byte_exact(self):
+        source_path = (PROVENANCE / self.manifest["skills"]["metamagic"]["historicalSource"]).resolve()
         source_manifest = json.loads(source_path.read_text(encoding="utf-8"))
         expected_offsets = {
             "small": [0, 0],
@@ -122,7 +139,7 @@ class NewHorizonsFactionSkillIconAudit(unittest.TestCase):
                 self.assertEqual(len(rank_record["sha256"]), 64)
                 for size_name, dimensions in SIZES.items():
                     output = rank_record["outputs"][size_name]
-                    bound_name = self.skills["metamagic"][rank]["images"][size_name]
+                    bound_name = f"NH_metamagic_prism_{rank}_{size_name}.png"
                     self.assertEqual(bound_name, output["file"])
                     self.assertEqual(output["dimensions"], list(dimensions))
                     self.assertEqual(output["offset"], expected_offsets[size_name])

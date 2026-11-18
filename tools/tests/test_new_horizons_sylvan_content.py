@@ -70,10 +70,16 @@ class SylvanContentTest(unittest.TestCase):
 
     def test_selected_stable_starting_perks(self):
         profiles = load(ROOT / 'config/newHorizonsHeroes.json')['startingSkills']['startingPerkProfiles']
-        for hero, suffix in (('ivor', 'serendipity'), ('gelu', 'serendipity'),
-                             ('ufretin', 'forestSFavor'), ('ryland', 'luckyRecovery'),
-                             ('kyrre', 'elvenPrecision')):
-            self.assertIn({'skill': SKILL, 'perk': SKILL + '.' + suffix}, profiles['core:' + hero])
+        expected = {
+            'ivor': ('archery', 'targetCaller'),
+            'gelu': ('archery', 'skirmisher'),
+            'ufretin': ('warcasting', 'battleFocus'),
+            'ryland': ('diplomacy', 'negotiator'),
+            'kyrre': ('logistics', 'pathfinding'),
+        }
+        for hero, (skill, perk) in expected.items():
+            self.assertEqual(profiles['core:' + hero], [
+                {'skill': 'new-horizons:' + skill, 'perk': 'new-horizons:' + skill + '.' + perk}])
 
     def test_current_and_historical_parameters_reject_wrong_types_and_ranges(self):
         schema = self.schema['definitions']['commandAuthorityParameters']

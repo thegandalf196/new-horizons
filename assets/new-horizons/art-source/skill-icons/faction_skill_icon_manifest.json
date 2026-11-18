@@ -12,9 +12,10 @@
       "identity": "silver antler branch, wet leaves, clover and amber berries"
     },
     "metamagic": {
-      "source": "../metamagic-prisms-v2/manifest.json",
-      "method": "three rank-specific HoMM3 Art masters; Pillow LANCZOS square reductions with centered transparent padding for rectangular slots, no stretching",
-      "identity": "rank-specific prism mounts with one, two, and three outgoing rays"
+      "source": "../../release-art-selections.json",
+      "method": "Three distinct original transparent purple-hand illustrations composed on pinned native skill templates; selected runtime exports retain template attribution",
+      "identity": "Hands holding purple magic with distinct Basic, Advanced and Expert compositions",
+      "historicalSource": "../metamagic-prisms-v2/manifest.json"
     },
     "demonicGating": {
       "source": "../NH_demonicGating_master.png",
@@ -48,11 +49,27 @@
     }
   },
   "runtime_prefix": "NH_",
-  "ranks": ["basic", "advanced", "expert"],
+  "ranks": [
+    "basic",
+    "advanced",
+    "expert"
+  ],
   "sizes": {
-    "small": [32, 32],
-    "medium": [44, 44],
-    "large": [82, 93],
-    "scenarioBonus": [58, 64]
+    "small": [
+      32,
+      32
+    ],
+    "medium": [
+      44,
+      44
+    ],
+    "large": [
+      82,
+      93
+    ],
+    "scenarioBonus": [
+      58,
+      64
+    ]
   }
 }

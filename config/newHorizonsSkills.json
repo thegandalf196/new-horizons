@@ -1493,30 +1493,30 @@
 		"basic": {
 			"description": "Arcane Overflow transfers 30% of primary single-target spell overkill to the nearest other enemy. Own area, chain and global spells deal 70% friendly damage. Resisted single-target debuffs have a 30% chance to retry once with normal resistance.",
 			"images": {
-				"small": "NH_metamagic_prism_basic_small.png",
-				"medium": "NH_metamagic_prism_basic_medium.png",
-				"large": "NH_metamagic_prism_basic_large.png",
-				"scenarioBonus": "NH_metamagic_prism_basic_scenarioBonus.png"
+				"small": "NH_metamagic_handcasting_basic_small.png",
+				"medium": "NH_metamagic_handcasting_basic_medium.png",
+				"large": "NH_metamagic_handcasting_basic_large.png",
+				"scenarioBonus": "NH_metamagic_handcasting_basic_scenarioBonus.png"
 			},
 			"effects": {}
 		},
 		"advanced": {
 			"description": "Arcane Overflow transfers 45% of primary single-target spell overkill to the nearest other enemy. Own area, chain and global spells deal 55% friendly damage. Resisted single-target debuffs have a 45% chance to retry once with normal resistance.",
 			"images": {
-				"small": "NH_metamagic_prism_advanced_small.png",
-				"medium": "NH_metamagic_prism_advanced_medium.png",
-				"large": "NH_metamagic_prism_advanced_large.png",
-				"scenarioBonus": "NH_metamagic_prism_advanced_scenarioBonus.png"
+				"small": "NH_metamagic_handcasting_advanced_small.png",
+				"medium": "NH_metamagic_handcasting_advanced_medium.png",
+				"large": "NH_metamagic_handcasting_advanced_large.png",
+				"scenarioBonus": "NH_metamagic_handcasting_advanced_scenarioBonus.png"
 			},
 			"effects": {}
 		},
 		"expert": {
 			"description": "Arcane Overflow transfers 60% of primary single-target spell overkill to the nearest other enemy. Own area, chain and global spells deal 40% friendly damage. Resisted single-target debuffs have a 60% chance to retry once with normal resistance.",
 			"images": {
-				"small": "NH_metamagic_prism_expert_small.png",
-				"medium": "NH_metamagic_prism_expert_medium.png",
-				"large": "NH_metamagic_prism_expert_large.png",
-				"scenarioBonus": "NH_metamagic_prism_expert_scenarioBonus.png"
+				"small": "NH_metamagic_handcasting_expert_small.png",
+				"medium": "NH_metamagic_handcasting_expert_medium.png",
+				"large": "NH_metamagic_handcasting_expert_large.png",
+				"scenarioBonus": "NH_metamagic_handcasting_expert_scenarioBonus.png"
 			},
 			"effects": {}
 		}

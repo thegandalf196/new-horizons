@@ -38,6 +38,7 @@ set(vcmiclientcommon_SRCS
 	battle/BattleHeroActionWindow.cpp
 	battle/BattleHeroStatus.cpp
 	battle/BattleSpellPresentation.cpp
+	battle/BattleFocusMagicProjectile.cpp
 	battle/BattleRangedAnimation.cpp
 	battle/ThunarRangedPresentation.cpp
 	battle/BattleHeroActionAvailability.cpp
@@ -241,6 +242,9 @@ set(vcmiclientcommon_SRCS
 	windows/CScenarioEventJournal.cpp
 	windows/SpellbookEntryPresentation.cpp
 	windows/CSpellWindow.cpp
+	windows/CSpellWindowBookmarks.cpp
+	windows/CSpellWindowSpellArea.cpp
+	windows/SpellbookPrayers.cpp
 	windows/CSpellWindowHelp.cpp
 	windows/SpellbookReadout.cpp
 	windows/CTutorialWindow.cpp
@@ -610,6 +614,7 @@ set(vcmiclientcommon_HEADERS
 	windows/CScenarioEventJournal.h
 	windows/SpellbookEntryPresentation.h
 	windows/CSpellWindow.h
+	windows/SpellbookPrayers.h
 	windows/CTutorialWindow.h
 	windows/wiki/WikiCommon.h
 	windows/wiki/WikiWindow.h

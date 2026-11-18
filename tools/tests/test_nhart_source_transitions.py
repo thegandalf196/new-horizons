@@ -11,6 +11,7 @@ from unittest import mock
 
 from .nhart_source_transitions import source_records, historical_source, read_historical_source
 from .nhart_sorcery_config_transition import CONFIG, before_sorcery, transition_record
+from .nhart_current_faction_perk_art import BINDINGS
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -23,26 +24,35 @@ class ArtSourceTransitionTest(unittest.TestCase):
             self.assertEqual(hashlib.sha256(old.encode()).hexdigest(), record['historicalSha256'])
             self.assertEqual(historical_source(path, source + '\n// unrelated witness\n'),
                              old + '\n// unrelated witness\n')
-            for change in record['changes']:
-                with self.subTest(path=path), self.assertRaises(ValueError):
-                    historical_source(path, source.replace(change['after'], '', 1))
-                with self.assertRaises(ValueError):
-                    historical_source(path, source + change['after'])
+            stage = source
+            for index in reversed(range(len(record['changes']))):
+                change = record['changes'][index]
+                self.assertEqual(stage.count(change['after']), 1)
+                remaining = {**record, 'changes': record['changes'][:index + 1]}
+                with mock.patch('tools.tests.nhart_source_transitions.source_records',
+                                return_value={path: remaining}):
+                    with self.subTest(path=path, stage=index), self.assertRaises(ValueError):
+                        historical_source(path, stage.replace(change['after'], '', 1))
+                    with self.assertRaises(ValueError):
+                        historical_source(path, stage + change['after'])
+                stage = stage.replace(change['after'], change['before'], 1)
+            self.assertEqual(stage, old)
 
-    def test_current_neutral_metamagic_and_estates_bindings_are_separate_from_old_art(self):
+    def test_current_metamagic_and_estates_bindings_preserve_selected_historical_art(self):
         text = (ROOT / 'client/windows/NewHorizonsPerkIcons.h').read_text()
         bindings = dict(re.findall(r'\{"(new-horizons:[^"]+)", "([^"]+)"\}', text))
         roster = json.loads((ROOT / 'config/newHorizonsPerks.json').read_text())
         ids = {row['id'] for row in roster['skills']['new-horizons:metamagic']['perks']}
         self.assertEqual(len(ids), 10)
         self.assertEqual({identity for identity in bindings if identity.startswith('new-horizons:metamagic.')}, ids)
-        self.assertEqual({bindings[identity] for identity in ids}, {'NH_perk_neutral'})
+        self.assertEqual({identity: bindings[identity] for identity in ids},
+                         {identity: BINDINGS[identity] for identity in ids})
         with (ROOT / 'docs/NH_UI_ASSET_INVENTORY.csv').open() as stream:
             inventory = list(csv.DictReader(stream))
         for identity in ids:
             rows = [row for row in inventory if row['Item / ID'].endswith('(' + identity + ')')]
             self.assertEqual(len(rows), 1)
-            self.assertEqual(rows[0]['Art'], 'Not done')
+            self.assertEqual(rows[0]['Art'], 'Provisional')
         for identity, icon in (('alchemist', 'prospector'), ('hoarder', 'financier'),
                                ('decentralization', 'magnate'), ('supervisor', 'land_surveyor')):
             self.assertEqual(bindings['new-horizons:estates.' + identity], 'NH_perk_' + icon)
@@ -51,7 +61,7 @@ class ArtSourceTransitionTest(unittest.TestCase):
         captured = (ROOT / 'client/windows/NewHorizonsCapturedPerkIcons.h').read_text()
         self.assertIn('!newHorizonsEstates::usesRevisedPolicy(capturedRules)', captured)
 
-    def test_consecrated_arms_neutral_roster_preserves_historical_divine_bindings(self):
+    def test_consecrated_arms_roster_preserves_historical_divine_bindings(self):
         path = 'client/windows/NewHorizonsPerkIcons.h'
         current = (ROOT / path).read_text()
         pattern = r'\{"(new-horizons:[^"]+)", "([^"]+)"\}'
@@ -60,22 +70,23 @@ class ArtSourceTransitionTest(unittest.TestCase):
         roster = json.loads((ROOT / 'config/newHorizonsPerks.json').read_text())
         ids = {row['id'] for row in roster['skills']['new-horizons:divineMandate']['perks']}
         self.assertEqual(len(ids), 10)
-        self.assertEqual({bindings[identity] for identity in ids}, {'NH_perk_neutral'})
+        self.assertEqual({identity: bindings[identity] for identity in ids},
+                         {identity: BINDINGS[identity] for identity in ids})
         old = {identity: icon for identity, icon in historical.items()
                if identity.startswith('new-horizons:divineMandate.')}
         self.assertTrue(old)
         self.assertFalse(ids.intersection(old))
         self.assertEqual({identity: icon for identity, icon in bindings.items()
                           if identity.startswith('new-horizons:divineMandate.')},
-                         {**old, **dict.fromkeys(ids, 'NH_perk_neutral')})
+                         {**old, **{identity: BINDINGS[identity] for identity in ids}})
         with (ROOT / 'docs/NH_UI_ASSET_INVENTORY.csv').open() as stream:
             inventory = list(csv.DictReader(stream))
         for identity in ids:
             rows = [row for row in inventory if row['Item / ID'].endswith('(' + identity + ')')]
             self.assertEqual(len(rows), 1)
             self.assertEqual(rows[0]['Area'], 'Active perk')
-            self.assertEqual(rows[0]['Art'], 'Not done')
-            self.assertIn('NH_perk_neutral', rows[0]['Live binding / source'])
+            self.assertEqual(rows[0]['Art'], 'Provisional')
+            self.assertIn(BINDINGS[identity], rows[0]['Live binding / source'])
         for row in inventory:
             if any(row['Item / ID'].endswith('(' + identity + ')') for identity in old):
                 self.assertNotEqual(row['Area'], 'Active perk')

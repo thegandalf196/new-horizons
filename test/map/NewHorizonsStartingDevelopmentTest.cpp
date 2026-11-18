@@ -1754,13 +1754,13 @@ class BasicStartingDefaultsTest : public NewHorizonsStartingDevelopmentTest
 protected:
 	void mapLoaded(CMap * loaded) override
 	{
-		// Use current skills-only defaults, independently of the historical suite above.
+		// Use current single-perk defaults, independently of the historical suite above.
 		TinyMapGameTest::mapLoaded(loaded);
 	}
 };
 }
 
-TEST_F(BasicStartingDefaultsTest, AstralStartsWithTwoBasicSkillsAndZeroAutomaticPerks)
+TEST_F(BasicStartingDefaultsTest, AstralStartsWithTwoBasicSkillsAndOneAuthoredPerk)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare(towerStarts[0]));
 	ASSERT_NE(actor(), nullptr);
@@ -1768,15 +1768,14 @@ TEST_F(BasicStartingDefaultsTest, AstralStartsWithTwoBasicSkillsAndZeroAutomatic
 	EXPECT_EQ(actor()->getPerkSkillRank("new-horizons:spellcraft"), MasteryLevel::BASIC);
 	EXPECT_EQ(actor()->getPerkSkillRank("new-horizons:metamagic"), MasteryLevel::BASIC);
 	const auto & perks = actor()->getPerkState();
-	EXPECT_TRUE(perks.getSelected().empty());
-	EXPECT_FALSE(perks.hasPerkForTier("new-horizons:spellcraft", MasteryLevel::BASIC));
-	EXPECT_FALSE(perks.hasPerkForTier("new-horizons:metamagic", MasteryLevel::BASIC));
+	ASSERT_EQ(perks.getSelected().size(), 1u);
+	EXPECT_TRUE(actor()->hasSpellbook());
 	const auto view = newHorizonsHeroes::projectStartingHero(*actor()->getHeroType(), capturedStartingContext(*actor()));
 	EXPECT_EQ(view.skills, actor()->secSkills);
 	EXPECT_EQ(view.perks, perks.getSelected());
 }
 
-TEST_F(BasicStartingDefaultsTest, All163SkillsOnlyDefaultsAndZeroPerksMatchPreview)
+TEST_F(BasicStartingDefaultsTest, All163BasicDefaultsOnePerkAndSpellbookMatchPreview)
 {
 	const JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
 	const auto & profiles = rules["startingSkills"]["startingDevelopmentProfiles"].Struct();
@@ -1801,9 +1800,8 @@ TEST_F(BasicStartingDefaultsTest, All163SkillsOnlyDefaultsAndZeroPerksMatchPrevi
 		for(const auto & [skill, rank] : hero->secSkills)
 			EXPECT_EQ(rank, MasteryLevel::BASIC);
 		const auto & perks = hero->getPerkState();
-		EXPECT_TRUE(perks.getSelected().empty());
-		for(const auto & [skill, rank] : hero->secSkills)
-			EXPECT_FALSE(perks.hasPerkForTier(SecondarySkill::encode(skill.getNum()), MasteryLevel::BASIC));
+		ASSERT_EQ(perks.getSelected().size(), 1u);
+		EXPECT_TRUE(hero->hasSpellbook());
 		const auto view = newHorizonsHeroes::projectStartingHero(*hero->getHeroType(), capturedStartingContext(*hero));
 		EXPECT_EQ(view.skills, hero->secSkills);
 		EXPECT_EQ(view.perks, perks.getSelected());
@@ -1823,12 +1821,13 @@ TEST_F(BasicStartingDefaultsTest, ExplicitAdvancedMapRanksAndPerksSurviveSaveAnd
 	ASSERT_NE(actor(), nullptr);
 	EXPECT_EQ(actor()->getPerkSkillRank("new-horizons:spellcraft"), MasteryLevel::EXPERT);
 	EXPECT_EQ(actor()->getPerkSkillRank("new-horizons:metamagic"), MasteryLevel::ADVANCED);
-	// Authored ranks grant no automatic perks. Explicitly acquire one legal
-	// choice at every earned tier before testing persistence and re-init.
-	ASSERT_TRUE(actor()->getPerkState().getSelected().empty());
+	// Explicit scenario ranks remain authored; only one Basic default is granted.
+	// Acquire the remaining earned tiers before testing persistence and re-init.
+	ASSERT_EQ(actor()->getPerkState().getSelected().size(), 1u);
 	for(const auto & [identity, rank] : {std::pair{"new-horizons:spellcraft", 3}, std::pair{"new-horizons:metamagic", 2}})
 		for(int tier = 1; tier <= rank; ++tier)
 		{
+			if(actor()->getPerkState().hasPerkForTier(identity, tier)) continue;
 			const auto pool = actor()->getPerkState().candidatesForSkillTier(identity, tier);
 			ASSERT_FALSE(pool.empty());
 			actor()->applyPerkSelection(pool.front().selection);

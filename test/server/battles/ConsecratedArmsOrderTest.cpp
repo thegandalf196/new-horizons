@@ -11,7 +11,10 @@
 #include "../../../lib/battle/RedemptionEvent.h"
 #include "../../../lib/battle/StackEffectRemoval.h"
 #include "../../../lib/battle/NewHorizonsMagicalAbilityDamage.h"
+#include "../../../lib/GameLibrary.h"
+#include "../../../lib/spells/CSpell.h"
 #include "../../../server/battles/BattleConsecratedArms.h"
+#include <set>
 
 namespace
 {
@@ -75,6 +78,67 @@ TEST_F(ConsecratedArmsOrderTest, AcceptedOrderGrantsPrayerWithoutSpellOrAddition
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), 0);
 	EXPECT_FALSE(issue(HeroCommand::HOLD_THE_LINE));
 	EXPECT_EQ(activePrayerCount(*recipient), 1);
+}
+
+TEST_F(ConsecratedArmsOrderTest, GrantNamesRecipientsAndPlaysOnePrayerVisualForBothAntiphonalPrayers)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto skill = SecondarySkill(SecondarySkill::decode(SKILL));
+	attackerSideHero->setSecSkillLevel(skill, MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({SKILL, std::string(SKILL) + ".enduringPrayer"});
+	attackerSideHero->applyPerkSelection({SKILL, std::string(SKILL) + ".sacredAccord"});
+	attackerSideHero->applyPerkSelection({SKILL, std::string(SKILL) + ".antiphonalPrayer"});
+	const auto * pikemen = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(leftHex), 7);
+	const auto * swordsmen = addStack(BattleSide::ATTACKER, creatureByName("core:swordsman"), BattleHex(leftHex + 2), 11);
+	ASSERT_NE(pikemen, nullptr);
+	ASSERT_NE(swordsmen, nullptr);
+	server.battleAnimations.clear();
+	server.battleLogLines.clear();
+
+	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	ASSERT_EQ(server.battleAnimations.size(), 1);
+	const auto & animation = server.battleAnimations.front();
+	const auto * prayer = SpellID(SpellID::PRAYER).toSpell();
+	ASSERT_NE(prayer, nullptr);
+	ASSERT_EQ(prayer->animationInfo.affect.size(), 1);
+	EXPECT_EQ(animation.animation, prayer->animationInfo.affect.front().resourceName);
+	EXPECT_EQ(animation.transparency, prayer->animationInfo.affect.front().transparency);
+	EXPECT_EQ(animation.sound, prayer->getCastSound());
+	EXPECT_FALSE(animation.deferred);
+	std::set<uint32_t> expected;
+	for(const auto * unit : battle()->battleGetAllUnits(false))
+		if(unit && battle()->battleGetOwner(unit) == PlayerColor(0) && activePrayerCount(*unit))
+			expected.insert(unit->unitId());
+	std::set<uint32_t> actual;
+	for(const auto & target : animation.targets)
+	{
+		ASSERT_GE(target.unitID, 0);
+		EXPECT_TRUE(actual.insert(static_cast<uint32_t>(target.unitID)).second);
+		EXPECT_EQ(target.tile, battle()->battleGetUnitByID(target.unitID)->getPosition());
+	}
+	EXPECT_EQ(actual, expected);
+	EXPECT_TRUE(actual.contains(pikemen->unitId()));
+	EXPECT_TRUE(actual.contains(swordsmen->unitId()));
+	std::vector<std::string> grants;
+	for(const auto & line : server.battleLogLines)
+		if(line.starts_with("Consecrated Arms grants "))
+			grants.push_back(line);
+	ASSERT_EQ(grants.size(), 2);
+	for(const auto & line : grants)
+		for(const auto * unit : {pikemen, swordsmen})
+		{
+			MetaString name;
+			name.appendRawString("%d %s");
+			name.replaceNumber(unit->getCount());
+			name.replaceName(unit->creatureId(), unit->getCount());
+			EXPECT_NE(line.find(name.toString(LIBRARY->staticTexts())), std::string::npos);
+		}
+	EXPECT_TRUE(server.casts.empty());
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), 0);
+	const auto logCount = server.battleLogLines.size();
+	EXPECT_FALSE(issue(HeroCommand::HOLD_THE_LINE));
+	EXPECT_EQ(server.battleAnimations.size(), 1);
+	EXPECT_EQ(server.battleLogLines.size(), logCount);
 }
 
 TEST_F(ConsecratedArmsOrderTest, CurrentCatalogueOffersAllBasicChoicesAndOnlyOnePerTier)
