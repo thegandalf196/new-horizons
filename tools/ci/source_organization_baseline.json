@@ -29285,12 +29285,12 @@
     },
     "AI/BattleAI/ForecastActivationIntegration.cpp::forecast::bool NativeAdapter::lifecycle(HypotheticBattle & branch, UnitId actor, BattleUnitTurnReason reason, LifecyclePhase phase, HypotheticLifecycleTiming * timing)#1": {
       "kind": "review",
-      "lines": 97,
-      "sha256": "36373dc5476eb33d50a7cebc4b6e8aeb021b220a6386022eeed2b64e0151c898",
-      "review": "IR-NH0921-V12-LIFECYCLE-EXTRACTION-20261117",
-      "rationale": "Exact lifecycle97-line successor shrinks the inherited101-line transaction. Full work reservation is cohesively extracted to reserveLifecycleWork19 lines and unchanged completion proof/ordinal preparation to private NativeAdapter::consumeUnchangedCompletion21 lines. All mutable native replay, all-peer effect capture, exact read publication, expected-layer validation and storage-only acceptance remain ordered in the transaction owner. Exact local-effect comparison avoids replacement vectors only when every ordered record is equal. File127->182 stays below500; helper ownership is focused, no relocation into an oversized unit. Retain the97-line ratchet and all inherited lifecycle/rollback/observation/RNG and source-bound native test obligations; further substantive transaction growth requires a cohesive stage extraction. This is a bounded below150 review, not a new ceiling exception or future growth allowance.",
+      "lines": 90,
+      "sha256": "903092f2304872ddf34bbef865eac914a8e40dd0454b854e5c394a22bd6f9884",
+      "review": "IR-NH0921-MSVC-FORTUNE-EXTRACTED-20261117",
+      "rationale": "Exact lifecycle90-line successor shrinks the inherited97-line transaction. Immutable ordered effect-value equality moves to the cohesive8-line sameEffectValues helper, preserving size-first short-circuit, existing exactBattleEffectEqual comparison, record order and call position before replacement preparation. Prior reserveLifecycleWork19-line and consumeUnchangedCompletion21-line helpers retain full quota/ordinal preparation. All native replay, all-peer effects/read publication, expected-layer validation and storage-only acceptance stay in the transaction owner. Fortune aggregate swap is replaced by the shared8-line exchangeSylvanLuckSides helper, using complete23-field Luck and19-field Tactics member storage swaps with actual noexcept assertions. File182->184 remains below500; no relocated oversized owner. Retain the90-line ratchet and all inherited lifecycle/rollback/observation/RNG and source-bound native obligations; further substantive transaction growth requires cohesive extraction. Exact below150 source review only, with no future growth allowance or relaxed ceiling.",
       "owner": "ai_engineer",
-      "review_scope": "Exact composed V12 source organization and source semantics only. No compiler, native, rendered, benchmark, save-resume, publication or promotion acceptance.",
+      "review_scope": "Exact observed90-line lifecycle and8-line immutable equality extraction plus reviewed fortune storage exchange. Preserve all inherited obligations. No compiler/MSVC/native/rendered/performance or promotion acceptance.",
       "inherited_exact_source_review": {},
       "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN"
     },

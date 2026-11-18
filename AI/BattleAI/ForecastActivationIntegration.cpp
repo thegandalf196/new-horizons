@@ -41,6 +41,15 @@ std::vector<Bonus> records(const forecastEffects::State & effects)
 	for(const auto & record : effects.values()) result.push_back(*record.value);
 	return result;
 }
+// Identical captured effects can retain their existing owned Bonus values.
+bool sameEffectValues(const forecastEffects::State & before, const forecastEffects::State & after)
+{
+	const auto & previous = before.values();
+	const auto & current = after.values();
+	return previous.size() == current.size()
+		&& std::equal(previous.begin(), previous.end(), current.begin(), [](const auto & left, const auto & right)
+		{ return battle::exactBattleEffectEqual(*left.value, *right.value); });
+}
 std::shared_ptr<battleSearch::SearchBudget> reserveLifecycleWork(const State & draft,
 	const std::shared_ptr<battleSearch::SearchBudget> & budget)
 {
@@ -134,14 +143,7 @@ bool NativeAdapter::lifecycle(HypotheticBattle & branch, UnitId actor,
 		const auto before = draft.unit(id)->effects;
 		const auto after = captureEffects(*staged, branch.battleGetRound());
 		forecastEffects::Receipt receipt{before, before, before->revision()};
-		// Compare the captured immutable records before copying replacement
-		// inputs. Ordinary unchanged peers need no owned Bonus replacements.
-		const auto & previous = before->values();
-		const auto & current = after->values();
-		const bool identical = previous.size() == current.size()
-			&& std::equal(previous.begin(), previous.end(), current.begin(), [](const auto & left, const auto & right)
-			{ return battle::exactBattleEffectEqual(*left.value, *right.value); });
-		if(!identical)
+		if(!sameEffectValues(*before, *after))
 			receipt = prepareEffectApplication(draft, *future, id, records(*before), records(*after),
 				staged->frozenLastAppliedRound());
 		require(stageEffects(draft, branch, id, receipt, *staged, nullptr, true));
@@ -168,7 +170,7 @@ bool NativeAdapter::lifecycle(HypotheticBattle & branch, UnitId actor,
 	NH_SWAP_LIFECYCLE(activeUnitId);
 	NH_SWAP_LIFECYCLE(seizeInitiative);
 	NH_SWAP_LIFECYCLE(forfeitedActivations);
-	NH_SWAP_LIFECYCLE(fortuneStates);
+	exchangeSylvanLuckSides(branch.fortuneStates, future->fortuneStates);
 	NH_SWAP_LIFECYCLE(rapidResponseStates);
 	NH_SWAP_LIFECYCLE(relentlessAssaultStates);
 	NH_SWAP_LIFECYCLE(sideStates);

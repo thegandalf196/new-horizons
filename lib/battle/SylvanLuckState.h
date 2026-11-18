@@ -5,11 +5,14 @@
 #pragma once
 
 #include "SylvanTacticsState.h"
-#include <set>
 #include <algorithm>
+#include <array>
 #include <cstdint>
 #include <optional>
+#include <set>
 #include <stdexcept>
+#include <type_traits>
+#include <utility>
 #include <vector>
 #include "../serializer/ESerializationVersion.h"
 
@@ -75,6 +78,38 @@ struct DLL_LINKAGE SylvanLuckState
 	bool chainOfFortune = false;
 	bool chainTriggeredThisRound = false;
 	std::optional<uint32_t> chainSourceUnitId;
+
+	// Storage exchange: associative-container moves may allocate on MSVC.
+	void swap(SylvanLuckState & other) noexcept
+	{
+#define NH_SWAP_VALUE(field) static_assert(std::is_nothrow_swappable_v<decltype(field)>); std::swap(field, other.field)
+#define NH_SWAP_STORAGE(field) static_assert(noexcept(field.swap(other.field))); field.swap(other.field)
+		NH_SWAP_STORAGE(tactics);
+		NH_SWAP_VALUE(serendipity);
+		NH_SWAP_VALUE(naturesProvidence);
+		NH_SWAP_VALUE(fortunateAim);
+		NH_SWAP_VALUE(negativeLuckIgnored);
+		NH_SWAP_STORAGE(positiveLuckUnits);
+		NH_SWAP_VALUE(forestsFavor);
+		NH_SWAP_VALUE(luckyRecovery);
+		NH_SWAP_VALUE(sharedFortune);
+		NH_SWAP_VALUE(cascadingFortune);
+		NH_SWAP_STORAGE(speedUnits);
+		NH_SWAP_STORAGE(sharedUnits);
+		NH_SWAP_STORAGE(cascadingUnits);
+		NH_SWAP_VALUE(cascadingPending);
+		NH_SWAP_VALUE(perfectMoment);
+		NH_SWAP_VALUE(perfectMomentUsed);
+		NH_SWAP_VALUE(secondChance);
+		NH_SWAP_VALUE(secondChanceUsed);
+		NH_SWAP_VALUE(gambler);
+		NH_SWAP_VALUE(gamblerAttackUsedThisRound);
+		NH_SWAP_VALUE(chainOfFortune);
+		NH_SWAP_VALUE(chainTriggeredThisRound);
+		NH_SWAP_VALUE(chainSourceUnitId);
+#undef NH_SWAP_STORAGE
+#undef NH_SWAP_VALUE
+	}
 
 	SylvanLuckDamageFlags damageFlags() const
 	{
@@ -293,3 +328,12 @@ struct DLL_LINKAGE SylvanLuckState
 			throw std::runtime_error("Invalid Sylvan Luck battle state");
 	}
 };
+
+inline void exchangeSylvanLuckSides(std::array<SylvanLuckState, 2> & target, std::array<SylvanLuckState, 2> & source) noexcept
+{
+	for(std::size_t index = 0; index < target.size(); ++index)
+	{
+		static_assert(noexcept(target[index].swap(source[index])));
+		target[index].swap(source[index]);
+	}
+}

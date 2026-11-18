@@ -6,6 +6,8 @@
 #include <vector>
 #include <cstdint>
 #include <stdexcept>
+#include <type_traits>
+#include <utility>
 
 /// Captured faction policy. Historical Sylvan Luck fields never change meaning.
 struct SylvanTacticsState
@@ -33,6 +35,34 @@ struct SylvanTacticsState
 	std::set<uint32_t> disrupted;
 	std::map<uint32_t, std::set<uint32_t>> shootersByTarget;
 	bool huntTriggered = false;
+
+	// Storage exchange: associative-container moves may allocate on MSVC.
+	void swap(SylvanTacticsState & other) noexcept
+	{
+#define NH_SWAP_VALUE(field) static_assert(std::is_nothrow_swappable_v<decltype(field)>); std::swap(field, other.field)
+#define NH_SWAP_STORAGE(field) static_assert(noexcept(field.swap(other.field))); field.swap(other.field)
+		NH_SWAP_VALUE(enabled);
+		NH_SWAP_VALUE(fleetfoot);
+		NH_SWAP_VALUE(patientHunter);
+		NH_SWAP_VALUE(dappledCover);
+		NH_SWAP_VALUE(measuredAdvance);
+		NH_SWAP_VALUE(coveringFire);
+		NH_SWAP_VALUE(crossfire);
+		NH_SWAP_VALUE(disruptiveStrike);
+		NH_SWAP_VALUE(quickRedeployment);
+		NH_SWAP_VALUE(perfectMoment);
+		NH_SWAP_VALUE(wildHunt);
+		NH_SWAP_STORAGE(activated);
+		NH_SWAP_VALUE(firstActivation);
+		NH_SWAP_VALUE(redeploymentActivation);
+		NH_SWAP_STORAGE(dappledExpired);
+		NH_SWAP_STORAGE(covered);
+		NH_SWAP_STORAGE(disrupted);
+		NH_SWAP_STORAGE(shootersByTarget);
+		NH_SWAP_VALUE(huntTriggered);
+#undef NH_SWAP_STORAGE
+#undef NH_SWAP_VALUE
+	}
 
 	bool operator==(const SylvanTacticsState &) const = default;
 	void validate() const

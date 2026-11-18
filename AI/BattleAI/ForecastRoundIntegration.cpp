@@ -123,7 +123,7 @@ void NativeAdapter::commitRound(HypotheticBattle & branch, std::optional<Prepare
 	NH_SWAP_ROUND(sideStates);
 	NH_SWAP_ROUND(heroOrderStates);
 	NH_SWAP_ROUND(focusFireStates);
-	NH_SWAP_ROUND(fortuneStates);
+	exchangeSylvanLuckSides(branch.fortuneStates, prepared->future->fortuneStates);
 	NH_SWAP_ROUND(luckSerendipityStates);
 	NH_SWAP_ROUND(moraleSuppressionStates);
 	NH_SWAP_ROUND(rapidResponseStates);
