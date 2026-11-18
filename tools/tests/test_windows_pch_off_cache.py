@@ -3,6 +3,7 @@
 
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -17,6 +18,18 @@ class WindowsPchOffCacheTest(unittest.TestCase):
     def setUpClass(cls):
         workflow = yaml.safe_load((ROOT / '.github/workflows/new-horizons-windows.yml').read_text())
         cls.steps = {step.get('name'): step for step in workflow['jobs']['build']['steps']}
+        if os.name == 'nt':
+            git = shutil.which('git.exe')
+            if git is None:
+                raise RuntimeError('Git for Windows is required by the Bash workflow')
+            # Native subprocess lookup can find the System32 WSL stub before
+            # PATH. GitHub Actions uses Git for Windows Bash for this workflow.
+            candidates = [parent / 'bin/bash.exe' for parent in Path(git).resolve().parents]
+            cls.bash = next((str(path) for path in candidates if path.is_file()), None)
+            if cls.bash is None:
+                raise RuntimeError('Could not locate Git for Windows Bash beside git.exe')
+        else:
+            cls.bash = 'bash'
 
     def run_setup(self, seed, full_build='true', populated=False):
         with tempfile.TemporaryDirectory() as directory:
@@ -28,8 +41,8 @@ class WindowsPchOffCacheTest(unittest.TestCase):
             step = self.steps['Select isolated PCH-off cache']
             env = dict(os.environ, CACHE_SEED=seed, FULL_PCH_OFF_BUILD=full_build,
                        GITHUB_RUN_ID='100', GITHUB_SHA='a' * 40, GITHUB_WORKSPACE=root.as_posix(),
-                       GITHUB_ENV=str(root / 'env.txt'), GITHUB_OUTPUT=str(root / 'output.txt'))
-            result = subprocess.run(['bash', '-c', step['run']], cwd=root, env=env,
+                       GITHUB_ENV=(root / 'env.txt').as_posix(), GITHUB_OUTPUT=(root / 'output.txt').as_posix())
+            result = subprocess.run([self.bash, '-c', step['run']], cwd=root, env=env,
                                     text=True, capture_output=True, check=False)
             return result, (root / 'output.txt').read_text() if (root / 'output.txt').exists() else ''
 
