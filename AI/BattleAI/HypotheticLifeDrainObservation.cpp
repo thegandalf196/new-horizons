@@ -67,8 +67,8 @@ bool HypotheticBattle::beginLifeDrainFriendlyObservation(uint32_t id) noexcept
 		const auto snapshot = state->acquireState();
 		if(!snapshot)
 			return false;
-		lifeDrainFriendlyObservation = LifeDrainFriendlyObservation{id,
-			snapshot->save(), state->getBattleFormViewRevision(), bloodrageDestroyedUnits.contains(id)};
+		lifeDrainFriendlyObservation = HypotheticLifeDrainFriendlyObservation{id,
+			std::make_shared<const JsonNode>(snapshot->save()), state->getBattleFormViewRevision(), bloodrageDestroyedUnits.contains(id)};
 		return true;
 	}
 	catch(...)
@@ -94,7 +94,7 @@ bool HypotheticBattle::finishLifeDrainFriendlyObservation() noexcept
 			|| bloodrageDestroyedUnits.contains(observation.id) != observation.destroyedMembership)
 			return false;
 		const auto snapshot = state->acquireState();
-		return snapshot && snapshot->save() == observation.state;
+		return snapshot && observation.state && snapshot->save() == *observation.state;
 	}
 	catch(...)
 	{

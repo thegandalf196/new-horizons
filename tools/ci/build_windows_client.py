@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Configure or build the Windows client and its five CI regression targets with Ninja."""
+"""Configure or build the Windows client and CI regression targets with Ninja."""
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import argparse
@@ -15,6 +15,24 @@ TARGETS = (
     'nhImageOptimizerRuntimeTest',
     'nhCreaturePreviewSurfaceRuntimeTest',
     'nhSdl3OutlineRuntimeTest',
+)
+
+
+# Compile publication-guard users first so MSVC storage errors fail before the
+# rest of the client. The normal Ninja build reuses these exact object outputs.
+GUARD_OBJECT_TARGETS = tuple(
+    'AI/BattleAI/CMakeFiles/BattleAI.dir/' + source + '.obj'
+    for source in (
+        'ForecastRoundIntegration.cpp',
+        'ForecastActivationIntegration.cpp',
+        'ForecastNativePreparation.cpp',
+        'ForecastUnitUpdateIntegration.cpp',
+        'ForecastEffectIntegration.cpp',
+        'ForecastSelectedReceiptIntegration.cpp',
+        'ForecastAcceptedAttackIntegration.cpp',
+        'StackPreparedEffectState.cpp',
+        'OwnedFrameEffectPublication.cpp',
+    )
 )
 
 
@@ -35,11 +53,18 @@ def configure(args):
 
 
 def build(args):
-    command = [
-        args.cmake, '--build', args.build_root, '--target', *TARGETS,
-        '--parallel', str(args.jobs), '--', '-d', 'keeprsp',
-    ]
-    return subprocess.run(command, check=False).returncode
+    for targets, failure_options in (
+        (GUARD_OBJECT_TARGETS, ('-k', '0')),
+        (TARGETS, ()),
+    ):
+        command = [
+            args.cmake, '--build', args.build_root, '--target', *targets,
+            '--parallel', str(args.jobs), '--', '-d', 'keeprsp', *failure_options,
+        ]
+        status = subprocess.run(command, check=False).returncode
+        if status:
+            return status
+    return 0
 
 
 def main(argv=None):

@@ -48,9 +48,9 @@
     },
     ".github/workflows/new-horizons-windows.yml": {
       "functions": [],
-      "rationale": "Complete exact-file callable inventory: top-level workflow/PowerShell commands, assignments and control flow invoke external tools; no local named function, lambda or executable callback body. The synthetic receiver here-string is test data, not a callable defined by this file. Exact content only; no runtime or growth approval.",
-      "review": "IR-0911-SETUP-LOAD-WALKING-OBSERVERS",
-      "sha256": "324230e39daf1585b2f32e6d34161c169a44e4e02422de7cbbf1070b93fc63f1"
+      "rationale": "Complete exact555-line workflow callable inventory independently inspected across all literal/folded Bash, PowerShell and Python run blocks and inline here-documents. All content is top-level command, assignment, import, loop/control, context management, expression or external function/action invocation; no local named function, lambda, executable callback, function-like macro or hidden generated callable definition occurs. The final PowerShell here-string is summary data. Complete callable inventory remains empty. Exact delta from558-line reviewed source removes only obsolete two-line registration-history comments and their blank line, and changes job timeout180->240; every other byte is unchanged. Exact-content coverage only; no growth waiver, future-content or hosted/native/rendered acceptance.",
+      "review": "IR-NH0921-WINDOWS-BOUNDED-TIMEOUT-20261118",
+      "sha256": "3bc6459fadaa8460442f8176d36777a1b7f50bbe0d4abc2bd17080263493cfca"
     },
     ".github/workflows/qt_translation_update.yml": {
       "functions": [],
@@ -271,9 +271,9 @@
       "sha256": "247cdfe27811667c1d5d4e5987d7e1fcf02f8057b6807f8d7636587248d29123"
     },
     "AI/BattleAI/HypotheticBattle.h": {
-      "sha256": "dfb12862dfe48efb3d4933f742058822a0b38c4790f587e87934cd3bebf70bd8",
-      "review": "IR-NH0921-V12-JOURNAL-HB-MANUAL-20261117",
-      "rationale": "Complete exact765-line header independently reviewed against prior767-line inventory. All64 retained handwritten bodies remain byte-identical; the sole removed five-line ownedForecastSize body is cohesively implemented out of line in HypotheticLifeDrainObservation.cpp, retaining its declaration here. Four removed implementation lines shift later spans by-4, and the two-line private transient acquisition-journal declaration shifts the final nested bodies back by+2. Both conditional branches, all inline methods and nested callback/environment bodies remain covered. Added raw pointer has a nullptr default initializer, no handwritten callable body, and is neither copied by constructors nor serialized. No lambda/function-like macro/body omission. Existing bodyless default-argument parser recovery shifts415->411. Exact-content coverage only; no size waiver, future growth, native/rendered/performance or publication acceptance.",
+      "sha256": "de1e337d7721f451e7c5d442ee11c247ec9cb751bd07d5cac2bc791c462b8953",
+      "review": "IR-NH0921-MSVC-OBSERVATION-INVENTORY-20261118",
+      "rationale": "Complete exact756-line header inventory independently checked against the prior765-line source. All64 handwritten callable bodies remain byte-identical; only the nine-line nested data-only observation definition is removed and the optional names its focused shared type. Nested callback/environment bodies after that location shift by-9; earlier spans and both conditional branches remain exact. No constructor body, lambda or function-like macro is omitted. Existing declaration-only empty-default recovery at411 is unchanged. Immutable observation payload ownership is implemented in the focused native observation owner, with no new inline implementation here. Exact-content coverage only; no size waiver, future growth, native/MSVC/rendered/performance or publication acceptance.",
       "functions": [
         {
           "symbol": "HypotheticBattle::const auto & searchBudget() const#1",
@@ -587,84 +587,84 @@
         },
         {
           "symbol": "HypotheticBattle::HypotheticServerCallback::void recordExtendSpellCast(BattleSide side) override#1",
-          "start": 710,
-          "end": 710
+          "start": 701,
+          "end": 701
         },
         {
           "symbol": "HypotheticBattle::HypotheticEnvironment::void closeNativeSource() noexcept#1",
-          "start": 740,
-          "end": 740
+          "start": 731,
+          "end": 731
         }
       ]
     },
     "AI/BattleAI/HypotheticBattleTypes.h": {
       "functions": [
         {
-          "end": 36,
-          "start": 36,
-          "symbol": "HypotheticSourceBinding::bool isCurrentSource(const std::shared_ptr<CBattleInfoCallback> & subject) const#1"
+          "symbol": "HypotheticSourceBinding::bool isCurrentSource(const std::shared_ptr<CBattleInfoCallback> & subject) const#1",
+          "start": 48,
+          "end": 48
         },
         {
-          "end": 44,
-          "start": 40,
-          "symbol": "HypotheticSourceBinding::std::shared_ptr<const ProjectedAdjacencySources> adjacencySources( const std::shared_ptr<CBattleInfoCallback> & subject) const#1"
+          "symbol": "HypotheticSourceBinding::std::shared_ptr<const ProjectedAdjacencySources> adjacencySources( const std::shared_ptr<CBattleInfoCallback> & subject) const#1",
+          "start": 52,
+          "end": 56
         },
         {
-          "end": 60,
-          "start": 55,
-          "symbol": "HypotheticLifecycleTiming::StageTiming::void accumulate(const StageTiming & sample)#1"
+          "symbol": "HypotheticLifecycleTiming::StageTiming::void accumulate(const StageTiming & sample)#1",
+          "start": 67,
+          "end": 72
         },
         {
-          "end": 100,
-          "start": 97,
-          "symbol": "RNGStub::int nextInt() override#1"
+          "symbol": "RNGStub::int nextInt() override#1",
+          "start": 109,
+          "end": 112
         },
         {
-          "end": 105,
-          "start": 102,
-          "symbol": "RNGStub::int nextBinomialInt(int coinsCount, double coinChance) override#1"
+          "symbol": "RNGStub::int nextBinomialInt(int coinsCount, double coinChance) override#1",
+          "start": 114,
+          "end": 117
         },
         {
-          "end": 110,
-          "start": 107,
-          "symbol": "RNGStub::int nextInt(int lower, int upper) override#1"
+          "symbol": "RNGStub::int nextInt(int lower, int upper) override#1",
+          "start": 119,
+          "end": 122
         },
         {
-          "end": 114,
-          "start": 111,
-          "symbol": "RNGStub::int64_t nextInt64(int64_t lower, int64_t upper) override#1"
+          "symbol": "RNGStub::int64_t nextInt64(int64_t lower, int64_t upper) override#1",
+          "start": 123,
+          "end": 126
         },
         {
-          "end": 118,
-          "start": 115,
-          "symbol": "RNGStub::double nextDouble(double lower, double upper) override#1"
+          "symbol": "RNGStub::double nextDouble(double lower, double upper) override#1",
+          "start": 127,
+          "end": 130
         },
         {
-          "end": 123,
-          "start": 120,
-          "symbol": "RNGStub::int nextInt(int upper) override#1"
+          "symbol": "RNGStub::int nextInt(int upper) override#1",
+          "start": 132,
+          "end": 135
         },
         {
-          "end": 127,
-          "start": 124,
-          "symbol": "RNGStub::int64_t nextInt64(int64_t upper) override#1"
+          "symbol": "RNGStub::int64_t nextInt64(int64_t upper) override#1",
+          "start": 136,
+          "end": 139
         },
         {
-          "end": 131,
-          "start": 128,
-          "symbol": "RNGStub::double nextDouble(double upper) override#1"
+          "symbol": "RNGStub::double nextDouble(double upper) override#1",
+          "start": 140,
+          "end": 143
         },
         {
-          "end": 161,
-          "start": 158,
-          "symbol": "HypotheticProjectedActionReceipt::bool isHeroAction() const#1"
+          "symbol": "HypotheticProjectedActionReceipt::bool isHeroAction() const#1",
+          "start": 170,
+          "end": 173
         }
       ],
       "prefix_predecessor_review": "IR-ORDINARY-P0-DUST-CLOCK-R7-SOURCE-20261101",
       "previous_review": "IR-DAMAGE-PREFIX-PAIR-REUSE-R6-SOURCE-20261101",
       "proposed_review": "IR-DAMAGE-PREFIX-PAIR-REUSE-R6-SOURCE-20261101",
-      "rationale": "Twelve bodies: source-identity predicate and conditional adjacency return, timing accumulator, eight deterministic RNGStub overrides and the typed hero-action receipt predicate. Defaulted equality156 has no handwritten implementation body. The remaining structures are fields/declarations; no lambda or function-like macro is defined. Current parser diagnostics are zero; retaining complete manual coverage is an exact-content coverage decision. Exact-content coverage only; no size allowance, future growth, semantic, native or rendered acceptance.",
-      "review": "IR-F86-IMMUTABLE-METADATA-COVERAGE-AND-DEBT-FREEZE-20261109",
+      "rationale": "Complete exact174-line types header inventory independently checked against prior162-line source. All12 original handwritten callable bodies remain byte-identical, with physical spans shifted by12. New JsonNode forward declaration and passive HypotheticLifeDrainFriendlyObservation aggregate add six data fields only, including the const shared snapshot owner; no handwritten constructor, method, lambda or function-like macro is added. All existing nested timing/callback/source-binding bodies remain covered. Exact complete callable coverage only; no numeric waiver, future growth or native/MSVC/rendered/performance acceptance.",
+      "review": "IR-NH0921-MSVC-OBSERVATION-INVENTORY-20261118",
       "review_history": [
         {
           "functions": [
@@ -741,7 +741,7 @@
       ],
       "review_scope": "Complete exact-content callable inventory of unchanged comparison-source bytes; historical review fields are provenance only.",
       "review_status": "INDEPENDENT_COMPLETE_EXACT_SOURCE_COVERAGE_REVIEWED",
-      "sha256": "2ed33e552f5f17f5f42209276062dff5d1570f101a56639d9bd4128cc211d464"
+      "sha256": "03119c2b66f53294367082f1193c47a7daf346215119eae8aaff92d6ffef2e8b"
     },
     "AI/BattleAI/SpellTargetsEvaluator.h": {
       "sha256": "90f9058af637b63449b499a629b388e397c7e003ea7db56e4c4566d6b587016b",
@@ -17173,14 +17173,14 @@
     ".github/workflows/new-horizons-windows.yml": {
       "deferral": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.",
       "kind": "exception",
-      "lines": 558,
+      "lines": 555,
       "owner": "engine_engineer",
       "prior_deferral": "Existing engine engineer ownership remains. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral. This exception covers only the exact542-line official source URL/comment correction with all transport, size, digest and cache admission controls unchanged. No future growth, numerical ceiling change or coverage exclusion is authorized. This separate review permits only the exact547-line explicit-interpreter successor. Before further expansion, engine_engineer must extract the affected dependency/preflight/package stage into a focused script or shared action, preserving source/cache, CRT/notices, dispatch and artifact contract checks and lowering the orchestration baseline. No future growth, default ceiling increase or exclusion is granted. This separate urgent-correctness review covers only the exact556-line early-bootstrap-smoke ordering successor. Existing extraction obligations and all ceilings remain unchanged; no future growth is authorized.",
-      "rationale": "Exact bounded observer/setup integration only. New timing, aggregation and byte-volume work lives in the focused InitializationProfile helper; existing callers gain opt-in routing/guards with no mechanics, field ordering, RNG or ownership change. Windows workflow growth only wires the independent OS-only Setup smoke. Existing pipeline/codec extraction obligations are retained; no blanket future growth allowance.",
-      "review": "IR-0911-SETUP-LOAD-WALKING-OBSERVERS",
-      "review_scope": "Exact bounded0.91.1 integration source organization at the recorded current hash/physical line count: focused helper extractions, routing seams and specified finite configuration/UI/package integration reviewed. All inherited owner, no-future-growth and next-extraction obligations remain binding. No native, rendered, save-load, performance, build or publication acceptance is implied.",
-      "review_status": "INDEPENDENTLY_REVIEWED_SOURCE_ONLY",
-      "sha256": "324230e39daf1585b2f32e6d34161c169a44e4e02422de7cbbf1070b93fc63f1"
+      "rationale": "Exact555-line successor shrinks prior558-line workflow by removing obsolete registration-history comments. The sole functional change raises the bounded Windows job timeout180->240 minutes for the same compile/install/package sequence. Independently verified that reversing just those two edits reproduces the reviewed prior source byte-for-byte: dispatch inputs, permissions, concurrency, runner, toolchain, all gates, dependency identity/notices, CRT/source/package checks, report retention and outputs remain unchanged. Existing dependency/preflight/package extraction obligations and555-line ratchet remain binding; no future/unrelated growth or default ceiling increase.",
+      "review": "IR-NH0921-WINDOWS-BOUNDED-TIMEOUT-20261118",
+      "review_scope": "Exact Windows workflow source/inventory and bounded job timeout only. All inherited owner/deferrals remain binding; no compiler/native, Windows graphical/gameplay, performance, package publication or release acceptance.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
+      "sha256": "3bc6459fadaa8460442f8176d36777a1b7f50bbe0d4abc2bd17080263493cfca"
     },
     "AI/BattleAI/AttackDamageValue.cpp::float AttackPossibility::calculateDamageReduce( const battle::Unit * attacker, const battle::Unit * defender, uint64_t damageDealt, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, DamageCacheProbeTiming * timing)#1": {
       "deferral": "Extract the capacity-health valuation branch into a typed detached-state scoring helper before extending this estimator. Characterize Phantom threshold, survivor cohorts, capped damage, fallback reference attacker and original-damage cache observations.",
@@ -18365,15 +18365,15 @@
       "deferral": "Before further projection constructor/header growth, extract the next side-state capture group. Preserve capture order, historical absence and parent/child/sibling isolation. Prior stricter obligations remain in inherited_deferral, where present. Current exact-scope addendum: AI owner splits owned forecast/side/query capability declarations from legacy HypotheticBattle interface after consumers stabilize; preserve one instance/type identity and facade exports, no textual include fragments.",
       "inherited_deferral": "Only this exact native migration content/hash/size is proposed; no future growth allowance. Owner: ai_engineer. Next substantive edit must extract the affected calculation/query/forecast routing into the existing dedicated component with exact state, packet/RNG, action-choice and lifecycle regressions; preserve any narrower inherited deferral below. Before another projected state family expands the header, extract the cohesive completion observation holder. Preserve exact callback lifetime, immutable packet copies, transaction reset and reverse application order. Minimum checks: failed apply has no receipt, core/shock refresh restores prior status, ordinary candidate effects/HP remain, no source/sibling/RNG change. Expanded exact review: AI engineer: subsequent snapshot-family expansion belongs in the existing HypotheticUnitSnapshots/HypotheticUnitEnvironment owners, using explicit captured side values and branch IUnitEnvironment; characterize parent/child/sibling isolation and owned-frame lifetime before adding more header logic.",
       "kind": "exception",
-      "lines": 765,
+      "lines": 756,
       "owner": "ai_engineer",
       "previous_review": "IR-LEADERSHIP-1159-INDEPENDENT-20261113-V1-UNITS",
-      "rationale": "Declares owned forecast/Side/query capability and private receipt seams in the one existing HB type. No duplicate battle owner, object injection or header implementation relocation. Exact journal successor shrinks767->765 lines: one private transient replay-acquisition pointer and its comment replace the existing ownedForecastSize inline implementation, now out of line. No second state owner, inherited child pointer, persistent field or serialized state is added. All64 remaining inline bodies are unchanged. Preserve every inherited extraction obligation and ratchet765; no future/unrelated header growth or ceiling increase is allowed.",
-      "review": "IR-NH0921-V12-JOURNAL-HB-UNIT-20261117",
+      "rationale": "Exact shrinking756-line successor of the765-line header. The passive observation holder moves to the existing174-line HypotheticBattleTypes owner, while the one optional remains private in HypotheticBattle. Its JSON snapshot is shared immutable storage; IDs, form/death provenance and validity/update flags stay independently copied values. All64 remaining inline bodies are byte-identical; no gameplay, serialization or second battle owner is introduced. Begin creates the immutable payload within its existing exception boundary, finish compares the same exact JSON, and NativePreparation retains an actual optional storage-swap noexcept assertion. This bounded extraction meets the observation-holder boundary while retaining every inherited capture/ownership/side-state extraction and characterization obligation. Ratchet756 only; no unrelated/future growth or relaxed ceiling.",
+      "review": "IR-NH0921-MSVC-OBSERVATION-EXTRACTION-20261118",
       "review_category": "component-interface-review",
-      "review_scope": "Exact765-line source/header organization and unchanged64-body inventory only; preserve inherited obligations. No compiler/native/rendered/performance/promotion acceptance.",
+      "review_scope": "Exact four-file observation storage repair and756-line header organization/manual coverage only. Preserve inherited obligations and76 unchanged retained bodies across both headers. No compiler/MSVC/native/rendered/performance, save-resume or promotion acceptance.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN",
-      "sha256": "dfb12862dfe48efb3d4933f742058822a0b38c4790f587e87934cd3bebf70bd8",
+      "sha256": "de1e337d7721f451e7c5d442ee11c247ec9cb751bd07d5cac2bc791c462b8953",
       "inherited_exact_source_review": {
         "review": "IR-NH092-ORG-3E82D142-20261116",
         "sha256": "632547c06df7e99570e3f14c81748c9d323ad2a3cb9f425e85e3289ebce6081d",

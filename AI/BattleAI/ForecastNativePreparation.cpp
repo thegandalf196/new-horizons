@@ -18,7 +18,7 @@ NativePreparation::~NativePreparation() noexcept
 {
 	if(accepted) return;
 	static_assert(noexcept(branch.stackStates.swap(saved->units)));
-	static_assert(std::is_nothrow_swappable_v<decltype(saved->observation)>);
+	static_assert(noexcept(branch.lifeDrainFriendlyObservation.swap(saved->observation)));
 	branch.stackStates.swap(saved->units);
 	branch.lifeDrainFriendlyObservation.swap(saved->observation);
 }

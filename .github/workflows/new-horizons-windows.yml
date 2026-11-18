@@ -15,9 +15,6 @@ on:
         description: Optional historical upstream-decoder build run for notice-only repair
         type: string
         default: ''
-  # Initially registered by a scoped push. Manual branch dispatch is now
-  # verified; run the notice-first preflight before a full client rebuild.
-
 permissions:
   contents: read
   actions: read
@@ -30,7 +27,7 @@ jobs:
   build:
     if: github.repository == 'thegandalf196/new-horizons' && github.ref == 'refs/heads/main'
     runs-on: windows-2025-vs2026
-    timeout-minutes: 180
+    timeout-minutes: 240
     env:
       VSLANG: '1033'
       PYTHONDONTWRITEBYTECODE: '1'

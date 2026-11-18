@@ -17,10 +17,22 @@
 #include "../../lib/battle/BattleHex.h"
 #include "../../lib/battle/HeroActionAllowanceState.h"
 
+class JsonNode;
 class StackWithBonuses;
 class CBattleInfoCallback;
 class InitialExportBattleSubject;
 struct ProjectedAdjacencySources;
+
+/// Invocation-local no-op witness: mutable flags copy independently of its frozen JSON.
+struct HypotheticLifeDrainFriendlyObservation
+{
+	uint32_t id;
+	std::shared_ptr<const JsonNode> state;
+	int32_t formViewRevision;
+	bool destroyedMembership;
+	bool valid = true;
+	bool updateInProgress = false;
+};
 
 /// Source identity and control-block provenance, not a source ownership lease.
 /// A public proxy-base assignment must never reuse a prior source certificate.

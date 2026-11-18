@@ -608,16 +608,7 @@ private:
 	void applyProjectedActivationStartEffects(uint32_t unitId,
 		const std::shared_ptr<StackWithBonuses> & unit, BattleUnitTurnReason reason,
 		HypotheticLifecycleTiming * timing);
-	struct LifeDrainFriendlyObservation
-	{
-		uint32_t id;
-		JsonNode state;
-		int32_t formViewRevision;
-		bool destroyedMembership;
-		bool valid = true;
-		bool updateInProgress = false;
-	};
-	std::optional<LifeDrainFriendlyObservation> lifeDrainFriendlyObservation;
+	std::optional<HypotheticLifeDrainFriendlyObservation> lifeDrainFriendlyObservation;
 	// Private prospective accepted replay only; never inherited or serialized.
 	std::set<uint32_t> * acceptedReplayAcquisitions = nullptr;
 	std::shared_ptr<StackWithBonuses> getForUpdateImpl(uint32_t id);
