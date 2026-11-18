@@ -76,7 +76,8 @@ def verify_spent_action_spell_feedback(source):
     assert 'castProblem == ESpellCastProblem::OK || castProblem == ESpellCastProblem::CASTS_PER_TURN_LIMIT' in clicked
 
     spell_window = (SOURCE.parents[1] / 'windows/CSpellWindow.cpp').read_text()
-    selection = spell_window.split('void CSpellWindow::SpellArea::clickPressed', 1)[1]
+    spell_area = (SOURCE.parents[1] / 'windows/CSpellWindowSpellArea.cpp').read_text()
+    selection = spell_area.split('void CSpellWindow::SpellArea::clickPressed', 1)[1]
     assert 'mySpell->canBeCast(problem, battleCallback.get(), spells::Mode::HERO' in selection
     assert 'if(schoolLocked)' in selection
     assert 'showInfoDialog(schoolRequirementText)' in selection
@@ -87,6 +88,7 @@ def verify_spent_action_spell_feedback(source):
 def spellbook_access_sources():
     root = SOURCE.parents[2]
     window = (root / 'client/windows/CSpellWindow.cpp').read_text()
+    window += (root / 'client/windows/CSpellWindowSpellArea.cpp').read_text()
     readout = (root / 'client/windows/SpellbookReadout.cpp').read_text()
     window += readout[readout.index('SpellCostBreakdown CSpellWindow::SpellArea::refreshReadout()'):]
     return (window,) + tuple((root / path).read_text() for path in (

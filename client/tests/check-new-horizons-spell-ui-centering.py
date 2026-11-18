@@ -5,7 +5,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
-SPELL_WINDOW = (ROOT / "client/windows/CSpellWindow.cpp").read_text(encoding="utf-8")
+SPELL_AREA = (ROOT / "client/windows/CSpellWindowSpellArea.cpp").read_text(encoding="utf-8")
 TEMPORAL_WINDOW = (ROOT / "client/battle/TemporalFieldWindow.cpp").read_text(encoding="utf-8")
 DISPEL_WINDOW = (ROOT / "client/battle/SelectiveDispelWindow.cpp").read_text(encoding="utf-8")
 
@@ -26,7 +26,7 @@ def check_centered_modal(source: str, class_name: str) -> None:
 
 
 def check() -> None:
-    set_spell = SPELL_WINDOW.split("void CSpellWindow::SpellArea::setSpell(", 1)[1].split(
+    set_spell = SPELL_AREA.split("void CSpellWindow::SpellArea::setSpell(", 1)[1].split(
         "void CSpellWindow::SpellArea::showPopupWindow", 1
     )[0]
     require(set_spell, "image->moveTo(pos.topLeft());", "restore original slot origin before changing spell")

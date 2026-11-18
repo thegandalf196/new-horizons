@@ -4,6 +4,7 @@ from pathlib import Path
 
 root = Path(__file__).resolve().parents[2]
 source = (root / 'client/windows/CSpellWindow.cpp').read_text()
+source += (root / 'client/windows/CSpellWindowBookmarks.cpp').read_text()
 
 def check(text):
     required = [
@@ -13,8 +14,8 @@ def check(text):
         'CPicture>(tabs->getImage(4), allBookmark, 524 + offR, 324)',
         'Rect(534 + offR + pos.x, 318 + pos.y, 64, 64)',
         'std::bind(&CSpellWindow::selectSchool, this, SpellSchool::ANY), 458, this)',
-        'allSchoolsSelected->setEnabled(school == SpellSchool::ANY);',
-        'allSchoolsInactive->setEnabled(school != SpellSchool::ANY);',
+        'allSchoolsSelected->setEnabled(!prayerCatalogueSelected && school == SpellSchool::ANY);',
+        'allSchoolsInactive->setEnabled(prayerCatalogueSelected || school != SpellSchool::ANY);',
         'allSchoolsSelected->setEnabled(selectedTab == SpellSchool::ANY);',
         'allSchoolsInactive->setEnabled(selectedTab != SpellSchool::ANY);',
         'getSchoolBookmarkPath()',
@@ -34,7 +35,8 @@ for old, new in [
     ('tabs->getImage(4)', 'tabs->getImage(0)'),
     ('allBookmark(0, 236, 83, 57)', 'allBookmark(0, 0, 83, 57)'),
     ('318 + pos.y, 64, 64', '318 + pos.y, 45, 35'),
-    ('setEnabled(school != SpellSchool::ANY)', 'setEnabled(school == SpellSchool::ANY)'),
+    ('setEnabled(prayerCatalogueSelected || school != SpellSchool::ANY)',
+     'setEnabled(school != SpellSchool::ANY)'),
 ]:
     assert old in source
     assert not check(source.replace(old, new)), old
