@@ -298,11 +298,10 @@ On native Windows, diagnostics also sample host physical memory and committed
 memory every 0.5 seconds during the compiler stages. The report includes total
 and available physical bytes, sampled peaks, sample failures and missed
 intervals. These host measurements include sccache children and unrelated
-processes. They are sampled lower bounds, not exact process-tree peaks or memory
-attributed solely to compilation. The sampler uses
-[GetPerformanceInfo](https://learn.microsoft.com/en-us/windows/win32/api/psapi/nf-psapi-getperformanceinfo);
-the system's since-boot commit peak is deliberately excluded. Non-Windows hosts
-do not start a sampler.
+processes, so the reported peaks are sampled lower bounds for total host use.
+The sampler reads current commit usage through the Windows memory API and
+excludes the since-boot commit peak. Sampling requires native Windows.
+[GetPerformanceInfo](https://learn.microsoft.com/en-us/windows/win32/api/psapi/nf-psapi-getperformanceinfo).
 
 For a Wine host, configure the licensed MSVC/SDK tools and wrappers externally,
 then use `build --build-root` for that configured tree and select the host's CMake

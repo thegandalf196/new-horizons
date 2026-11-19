@@ -8,14 +8,14 @@ by default and require `--gtest_also_run_disabled_tests`.
 | Selector suffix | Authored scenario | Measurement boundary |
 | --- | --- | --- |
 | `NoHeroFourteenStack` | Original ordinary fourteen-stack rosters, seed 1337, natural initial queue, no heroes | Authoritative encounter to result receipt |
-| `HeroOptionsFourteenStack` | Same rosters; Orrin/Valeska, current one authored Basic-perk starts; Cure/Ice Bolt, 24 Mana, Spell Power 17, Knowledge 24 | Same boundary, with current eligible Orders/spells |
+| `HeroOptionsFourteenStack` | Same rosters with Orrin and Valeska, each with an authored Basic perk. Cure and Ice Bolt, 24 Mana, Spell Power 17 and Knowledge 24 | Same boundary with eligible Orders and spells |
 | `CastleEncounter` | Christian, 14 Pikemen/9 Archers vs map-created 29 Halflings | Same boundary |
 | `NecropolisEncounter` | Straker, 24 Skeletons/12 Walking Dead vs map-created 29 Halflings | Same boundary |
 | `RampartEncounter` | Mephala, 18 Centaurs/9 Wood Elves vs map-created 29 Halflings | Same boundary |
-| `ConfluxAenainGnolls` | Aenain with 14 Wisps/2 Air Elementals/2 Water Elementals vs map-created 24 Gnolls; native hero primary stats, Mana, spells and one authored Basic perk | Same boundary; authored early-fight scenario |
-| `SorceryEncounter` | Neela, 24 Gremlins/12 Stone Gargoyles; external Expert Sorcery rank, one authored Basic perk; Focus Magic/Forced Recall/Force Lance plus Cure/Ice Bolt; 80 Normal Mana/80 Knowledge, zero Buffer | Same boundary; availability does not prove every spell is selected |
-| `MirrorCastle` / `MirrorRampart` / `MirrorNecropolis` | Identical seven-stack faction rosters, no heroes; private quality trials vary the recorded seed | Same encounter boundary; both seats are evaluated |
-| `MirrorCastleHeroOptions` / `MirrorRampartHeroOptions` / `MirrorNecropolisHeroOptions` | Mirrored creature rosters with distinct same-faction heroes on each side; native starting skills, perk, book and spells | Same boundary with current Orders and hero spell eligibility. Quality comparisons keep the hero pair fixed and evaluate each AI variant from both seats. |
+| `ConfluxAenainGnolls` | Aenain with 14 Wisps, 2 Air Elementals and 2 Water Elementals against 24 map-created Gnolls. Native primary stats, Mana, spells and one authored Basic perk | Same boundary for an early-fight scenario |
+| `SorceryEncounter` | Neela with 24 Gremlins, 12 Stone Gargoyles, external Expert Sorcery and one authored Basic perk. Focus Magic, Forced Recall, Force Lance, Cure and Ice Bolt. 80 Normal Mana, 80 Knowledge and zero Buffer | Same boundary with these spells available for selection |
+| `MirrorCastle` / `MirrorRampart` / `MirrorNecropolis` | Identical seven-stack faction rosters without heroes. Quality trials vary the recorded seed. | Same encounter boundary with both seats evaluated |
+| `MirrorCastleHeroOptions` / `MirrorRampartHeroOptions` / `MirrorNecropolisHeroOptions` | Mirrored creature rosters with distinct same-faction heroes on each side. Each hero uses native starting skills, perk, book and spells. | Same boundary with current Orders and hero spell eligibility. Quality comparisons keep the hero pair fixed and evaluate each AI variant from both seats. |
 | `SmallMapInitialization` | Owned sparse 36×36 one-level map, two heroes/towns and one neutral | Generated H3M construction/cache dump, parse and world initialization |
 | `LargeMapInitialization` | Same authored objects on a 108×108 one-level map | Same boundary; tile scale, not a dense realistic large scenario |
 | `DayEightCurrentFormatMemoryRoundTrip` | Small map advanced through authoritative daily boundaries to day 8; current-format world snapshot plus explicit authority RNG envelope; day 9 control/reload continuation | Memory snapshot write/read; excludes disk, lobby and replay-history retention |
@@ -25,9 +25,9 @@ is `DISABLED_NativeWorldBenchmarkTest`. Encounters default to explicit Full poli
 `BeamOneTwoActors`. They use fixed explicit positions, no random obstacle placement and
 default seed 1337. `NH_BENCHMARK_SEED` in each candidate's pinned environment
 selects a nonnegative integer seed through `INT_MAX` for a separate quality run.
-The prototype's `NH_EXP_SEED` alias remains accepted; conflicting controls reject.
-The selected seed initializes world, authority and AI generators and is recorded;
-matched arms must use the same seed. They differ from the Full-policy one-callback fixture and from earlier
+The prototype's `NH_EXP_SEED` alias remains accepted when it agrees with the
+selected seed. The recorded seed initializes the world, authority and AI
+generators. Matched arms use the same seed. These encounters differ from the Full-policy one-callback fixture and from earlier
 historical faction measurements. Faction/Sorcery defenders are actual `CGCreature`
 objects; current neutral-size and creature-line rules apply during initialization,
 and effective armies are recorded rather than normalized back to the authored
@@ -37,9 +37,9 @@ state. A benchmark family comparison always keeps its own complete fixture fixed
 The maintained runner writes an explicit `core`, `vcmi`, `vcmi-test`,
 `new-horizons` test preset in each fresh encounter profile before discovery and
 execution. It does not change the world or ordinary benchmark presets. Encounter
-fixtures reject missing/additional active mods and verify current canonical
-starting policy: two Basic Skills, the exact authored Basic perk and a spellbook
-before any explicit fixture spell/rank grants. The curated preset must therefore
+fixtures reject missing or additional active mods. They verify two Basic
+Skills, the exact authored Basic perk and a spellbook before any explicit
+fixture spell or rank grants. The curated preset must
 be applied to both source-matched benchmark arms. Old fixture binaries asserting
 zero perks require the same fixture repair before comparison.
 
