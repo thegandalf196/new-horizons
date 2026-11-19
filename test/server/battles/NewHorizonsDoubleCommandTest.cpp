@@ -18,6 +18,7 @@
 #include "../../../lib/battle/BattleAction.h"
 #include "../../../lib/battle/CPlayerBattleCallback.h"
 #include "../../../lib/battle/HeroActionAllowanceState.h"
+#include "../../../lib/battle/NewHorizonsWarfare.h"
 #include "../../../lib/battle/SideInBattle.h"
 #include "../../../lib/gameState/CGameState.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
@@ -232,8 +233,21 @@ TEST_F(NewHorizonsDoubleCommandTest, MasterCommanderPaidOrderCannotCreateAnImmed
 	startCommandBattle(active, shooter, enemy);
 	const auto resources = battle()->getCommandResources(BattleSide::ATTACKER);
 	const auto serial = battle()->getActivationSerial();
+	ASSERT_TRUE(newHorizonsWarfare::usesRules(battle()->getHeroCommandRules()));
+	ASSERT_TRUE(newHorizonsWarfare::enabled(attackerSideHero));
+	ASSERT_TRUE(attackerSideHero->hasActivePerk(commandSkill, doubleCommandPerk));
+	ASSERT_FALSE(resources.initialized);
+	const auto selected = battle()->battleGetOrderActionAllowance(BattleSide::ATTACKER);
+	ASSERT_TRUE(selected);
+	EXPECT_EQ(selected->source, HeroActionAllowanceState::GrantSource::ROUND);
+	EXPECT_EQ(selected->allowance, HeroActionAllowanceState::AllowanceKind::HERO);
 	ASSERT_TRUE(issue(BattleSide::ATTACKER, HeroCommand::CHARGE));
-	EXPECT_EQ(battle()->getCommandResources(BattleSide::ATTACKER).remaining, resources.remaining - 1);
+	EXPECT_TRUE(std::ranges::none_of(battle()->getHeroActionAllowances(BattleSide::ATTACKER).grants,
+		[](const auto & grant)
+		{
+			return grant.source == HeroActionAllowanceState::GrantSource::DOUBLE_COMMAND;
+		}));
+	EXPECT_EQ(battle()->getCommandResources(BattleSide::ATTACKER), resources);
 	EXPECT_FALSE(battle()->battleHasPendingDoubleCommand(BattleSide::ATTACKER));
 	EXPECT_EQ(battle()->getDoubleCommandState(BattleSide::ATTACKER).phase, DoubleCommandState::Phase::NONE);
 	EXPECT_EQ(battle()->getHeroActionAllowances(BattleSide::ATTACKER).remainingCounts(1).heroActions, 0u);
@@ -243,7 +257,7 @@ TEST_F(NewHorizonsDoubleCommandTest, MasterCommanderPaidOrderCannotCreateAnImmed
 	const auto orders = battle()->getHeroOrderStates(BattleSide::ATTACKER);
 	EXPECT_FALSE(issue(BattleSide::ATTACKER, HeroCommand::HOLD_THE_LINE));
 	EXPECT_EQ(battle()->getHeroOrderStates(BattleSide::ATTACKER), orders);
-	EXPECT_EQ(battle()->getCommandResources(BattleSide::ATTACKER).remaining, resources.remaining - 1);
+	EXPECT_EQ(battle()->getCommandResources(BattleSide::ATTACKER), resources);
 	EXPECT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), BattleAction::makeDefend(active)));
 	EXPECT_FALSE(battle()->battleHasPendingDoubleCommand(BattleSide::ATTACKER));
 }
@@ -277,7 +291,7 @@ TEST_F(NewHorizonsDoubleCommandTest, IntrinsicSecondWindStartsWithoutAnAdditiona
 		static_cast<uint32_t>(std::numeric_limits<int32_t>::max())));
 	EXPECT_EQ(battle()->getCommandResources(BattleSide::ATTACKER), before);
 	ASSERT_TRUE(issueTargeted(BattleSide::ATTACKER, HeroCommand::SECOND_WIND, target->unitId()));
-	EXPECT_EQ(battle()->getCommandResources(BattleSide::ATTACKER).remaining, before.remaining - 1);
+	EXPECT_EQ(battle()->getCommandResources(BattleSide::ATTACKER), before);
 	EXPECT_FALSE(battle()->battleHasPendingDoubleCommand(BattleSide::ATTACKER));
 	EXPECT_EQ(battle()->battleActiveUnit(), target);
 	const auto order = battle()->battleGetHeroOrderState(BattleSide::ATTACKER, HeroCommand::SECOND_WIND);

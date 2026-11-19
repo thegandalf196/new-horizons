@@ -2,6 +2,7 @@
 #include "StdInc.h"
 #include "HeroCommandFixture.h"
 #include "../../../lib/battle/ConsecratedArmsOrder.h"
+#include "../../../lib/battle/NewHorizonsWarfare.h"
 #include "../../../lib/battle/ConsecratedArmsCombat.h"
 #include "../../../lib/battle/BattleAttackInfo.h"
 #include "../../../lib/bonuses/BonusList.h"
@@ -71,13 +72,77 @@ TEST_F(ConsecratedArmsOrderTest, AcceptedOrderGrantsPrayerWithoutSpellOrAddition
 	const auto * recipient = battle()->battleActiveUnit();
 	ASSERT_NE(recipient, nullptr);
 	ASSERT_EQ(capturePolicy(attackerSideHero).rank, 1);
+	ASSERT_TRUE(newHorizonsWarfare::usesRules(battle()->getHeroCommandRules()));
+	ASSERT_TRUE(newHorizonsWarfare::enabled(attackerSideHero));
+	const auto serial = battle()->getActivationSerial();
 	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	const auto & allowances = battle()->getHeroActionAllowances(BattleSide::ATTACKER);
+	EXPECT_TRUE(std::ranges::none_of(allowances.grants, [](const auto & grant)
+	{
+		return grant.source == HeroActionAllowanceState::GrantSource::DIVINE_MANDATE;
+	}));
+	EXPECT_EQ(allowances.remainingCounts(battle()->getRound()).heroActions, 0u);
+	EXPECT_EQ(allowances.remainingCounts(battle()->getRound()).orderActions, 0u);
+	EXPECT_FALSE(battle()->battleGetDivineMandateStatus(BattleSide::ATTACKER).pendingFollowup);
+	EXPECT_EQ(battle()->battleActiveUnit(), recipient);
+	EXPECT_EQ(battle()->getActivationSerial(), serial);
 	EXPECT_EQ(activePrayerCount(*recipient), 1);
 	EXPECT_TRUE(server.casts.empty());
 	EXPECT_EQ(battle()->getPassiveDivineMandateUses(BattleSide::ATTACKER), 0);
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), 0);
 	EXPECT_FALSE(issue(HeroCommand::HOLD_THE_LINE));
 	EXPECT_EQ(activePrayerCount(*recipient), 1);
+}
+
+TEST_F(ConsecratedArmsOrderTest, PaidLightSpellDoesNotCreateTheRetiredDivineMandateOrder)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto side = BattleSide::ATTACKER;
+	auto * recipient = battle()->battleActiveUnit();
+	ASSERT_NE(recipient, nullptr);
+	ASSERT_TRUE(newHorizonsWarfare::usesRules(battle()->getHeroCommandRules()));
+	ASSERT_TRUE(newHorizonsWarfare::enabled(attackerSideHero));
+	ASSERT_TRUE(enabled(attackerSideHero->getPerkState().getRules()));
+	ASSERT_EQ(capturePolicy(attackerSideHero).rank, 1);
+	if(!attackerSideHero->hasSpellbook())
+		giveArtifact(attackerSideHero, ArtifactID::SPELLBOOK, ArtifactPosition::SPELLBOOK);
+	attackerSideHero->addSpellToSpellbook(SpellID::BLESS);
+	setTestSpellPointTotal(attackerSideHero, 100);
+	const auto * spell = SpellID(SpellID::BLESS).toSpell();
+	ASSERT_NE(spell, nullptr);
+	const auto cost = battle()->battleGetSpellCost(spell, attackerSideHero);
+	ASSERT_GT(cost, 0);
+	const auto mana = attackerSideHero->getManaAvailable();
+	const auto serial = battle()->getActivationSerial();
+	const auto casts = server.casts.size();
+	BattleAction cast;
+	cast.actionType = EActionType::HERO_SPELL;
+	cast.side = side;
+	cast.spell = SpellID::BLESS;
+	cast.aimToUnit(recipient);
+	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), cast));
+	ASSERT_EQ(server.casts.size(), casts + 1);
+	EXPECT_EQ(server.casts.back().announcement.spellID, SpellID::BLESS);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana - cost);
+	EXPECT_EQ(battle()->getSide(side).usedSpellsHistory, (std::vector<SpellID>{SpellID::BLESS}));
+	const auto allowances = battle()->getHeroActionAllowances(side);
+	EXPECT_EQ(allowances.remainingCounts(battle()->getRound()).heroActions, 0u);
+	EXPECT_EQ(allowances.remainingCounts(battle()->getRound()).orderActions, 0u);
+	EXPECT_TRUE(std::ranges::none_of(allowances.grants, [](const auto & grant)
+	{
+		return grant.source == HeroActionAllowanceState::GrantSource::DIVINE_MANDATE;
+	}));
+	EXPECT_FALSE(battle()->battleGetDivineMandateStatus(side).active);
+	EXPECT_FALSE(battle()->battleGetDivineMandateStatus(side).pendingFollowup);
+	EXPECT_FALSE(battle()->battleGetOrderActionAllowance(side));
+	EXPECT_FALSE(issue(HeroCommand::CHARGE));
+	EXPECT_EQ(battle()->getHeroActionAllowances(side), allowances);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana - cost);
+	EXPECT_EQ(server.casts.size(), casts + 1);
+	EXPECT_EQ(battle()->battleActiveUnit(), recipient);
+	EXPECT_EQ(battle()->getActivationSerial(), serial);
+	EXPECT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
+		BattleAction::makeDefend(recipient)));
 }
 
 TEST_F(ConsecratedArmsOrderTest, GrantNamesRecipientsAndPlaysOnePrayerVisualForBothAntiphonalPrayers)

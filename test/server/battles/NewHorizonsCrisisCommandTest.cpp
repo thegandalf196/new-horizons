@@ -9,6 +9,7 @@
 #include "../../../lib/GameSettings.h"
 #include "../../../lib/ScopeGuard.h"
 #include "../../../lib/battle/NewHorizonsCrisisCommand.h"
+#include "../../../lib/battle/NewHorizonsWarfare.h"
 #include "../../../lib/battle/NewHorizonsPuppetMaster.h"
 #include "../../../lib/CRandomGenerator.h"
 #include "../../../lib/battle/CPlayerBattleCallback.h"
@@ -160,7 +161,19 @@ TEST_F(NewHorizonsCrisisCommandTest, EnemyKillCompletesWithoutReactiveOrderOrCom
 	const auto resources = battle()->getCommandResources(recipient);
 	const auto allowances = battle()->getHeroActionAllowances(recipient);
 	const auto serial = battle()->getActivationSerial();
+	const auto * hero = battle()->battleGetFightingHero(recipient);
+	ASSERT_TRUE(hero);
+	ASSERT_TRUE(newHorizonsWarfare::usesRules(battle()->getHeroCommandRules()));
+	ASSERT_TRUE(newHorizonsWarfare::enabled(hero));
+	ASSERT_TRUE(hero->hasActivePerk(newHorizonsCrisisCommand::SKILL, newHorizonsCrisisCommand::PERK));
+	ASSERT_TRUE(victim->alive());
+	ASSERT_EQ(battle()->battleGetOwner(victim), battle()->sideToPlayer(recipient));
 	ASSERT_TRUE(kill());
+	EXPECT_TRUE(std::ranges::none_of(battle()->getHeroActionAllowances(recipient).grants,
+		[](const auto & grant)
+		{
+			return grant.source == HeroActionAllowanceState::GrantSource::CRISIS_COMMAND;
+		}));
 	EXPECT_FALSE(victim->alive());
 	EXPECT_TRUE(actor->movedThisRound);
 	EXPECT_TRUE(std::ranges::none_of(server.stackActivations,
