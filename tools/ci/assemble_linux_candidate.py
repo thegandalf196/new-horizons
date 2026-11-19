@@ -22,6 +22,7 @@ from linux_playable_snapshot import checked_tree_files, REQUIRED_FILES
 from binary_privacy import require_clean
 from stage_linux_client import verify_candidate
 from client_features import client_feature_files, FILENAME as CLIENT_FEATURES
+from linux_snapshot_binaries import SETUP_NAME, SUPPORT, executable_abi, setup_metadata
 
 
 TREES = ('config', 'Mods/vcmi', 'Mods/new-horizons')
@@ -81,7 +82,10 @@ def installed_client_payload(install, source_commit):
         raise RuntimeError('Client is not executable')
     if source_commit.encode() not in library.read_bytes():
         raise RuntimeError('Facade does not contain supplied source revision')
-    files = {'new-horizons': client, 'libvcmi.so': library}
+    setup = install / 'bin' / SETUP_NAME
+    if executable_abi(setup) != executable_abi(client):
+        raise RuntimeError('Setup ELF architecture differs from the client')
+    files = {'new-horizons': client, 'libvcmi.so': library, SETUP_NAME: setup}
     files.update(client_feature_files(client))
     return files
 
@@ -148,10 +152,10 @@ def assemble(install, engine_source, source_commit, source_repository, manifest,
                     and name != 'config/newHorizonsMagicAssets.json'
                     and not name.lower().endswith('.lua')
                     and not re.match(r'Mods/new-horizons/(Images|Content/(sprites|data))(/|$)', name)}
-        if set(files) - {'new-horizons', 'libvcmi.so', CLIENT_FEATURES} != expected | NOTICES.keys() | PLATFORM_FILES.keys():
+        if set(files) - {'new-horizons', 'libvcmi.so', SETUP_NAME, CLIENT_FEATURES} != expected | NOTICES.keys() | PLATFORM_FILES.keys():
             raise RuntimeError('Installed curated inventory differs from source/CMake notice mapping')
         for name, path in files.items():
-            if name in ('new-horizons', 'libvcmi.so', CLIENT_FEATURES):
+            if name in ('new-horizons', 'libvcmi.so', SETUP_NAME, CLIENT_FEATURES):
                 continue
             origin = NOTICES.get(name, PLATFORM_FILES.get(name, name))
             # Current source exporters include NHART_* (not excluded NH_*).
@@ -171,7 +175,7 @@ def assemble(install, engine_source, source_commit, source_repository, manifest,
             if origin.endswith('.png') and platform_outputs.get(origin) != before[name]:
                 raise RuntimeError('Platform icon hash differs from provenance: ' + name)
         additions = {name: source_bytes(origin) for name, origin in {
-            'new-horizons-launch.sh': 'tools/new-horizons-launch.sh',
+            **SUPPORT,
             'license.txt': 'license.txt', 'AUTHORS.h': 'AUTHORS.h'}.items()}
         # All admission checks precede output creation; no source archive extraction.
         require_clean(install / 'bin')
@@ -183,8 +187,9 @@ def assemble(install, engine_source, source_commit, source_repository, manifest,
             shutil.copyfile(path, target)
         for name, data in additions.items():
             (output / name).write_bytes(data)
-    (output / 'new-horizons').chmod(0o755)
-    (output / 'new-horizons-launch.sh').chmod(0o755)
+    executables = {'new-horizons', SETUP_NAME, *(name for name in SUPPORT if name.endswith('.sh'))}
+    for name in executables:
+        (output / name).chmod(0o755)
     if any(digest(output / name) != value or digest(files[name]) != value for name, value in before.items()):
         raise RuntimeError('Installed input changed during assembly')
     if digest(engine_source) != archive_digest or digest(manifest) != manifest_digest:
@@ -193,7 +198,8 @@ def assemble(install, engine_source, source_commit, source_repository, manifest,
     require_clean(output)
     identity = {'source_commit': source_commit, 'client_executable': 'new-horizons',
                 'source_archive_sha256': archive_digest,
-                'binaries': {name: before[name] for name in ('new-horizons', 'libvcmi.so')},
+                'binaries': {name: before[name] for name in ('new-horizons', 'libvcmi.so', SETUP_NAME)},
+                'setup': setup_metadata(output, {p.name: digest(p) for p in output.iterdir() if p.is_file()}),
                 'runtime_art_manifest_sha256': manifest_digest, 'art_verification': art,
                 'platform_icon_files': {name: before[name] for name in PLATFORM_FILES},
                 'platform_icon_provenance_sha256': before[PLATFORM_PROVENANCE],
@@ -203,7 +209,7 @@ def assemble(install, engine_source, source_commit, source_repository, manifest,
     (output / 'SHA256SUMS').write_text(''.join(digest(p) + '  ' + p.relative_to(output).as_posix() + '\n' for p in paths))
     verify_candidate(output)
     for path in output.rglob('*'):
-        path.chmod(0o555 if path.is_dir() or path.name in ('new-horizons', 'new-horizons-launch.sh') else 0o444)
+        path.chmod(0o555 if path.is_dir() or path.name in executables else 0o444)
     output.chmod(0o555)
     return identity
 

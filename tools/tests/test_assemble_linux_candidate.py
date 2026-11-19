@@ -31,7 +31,7 @@ class AssembleLinuxCandidateTest(unittest.TestCase):
         self.manifest = self.root / 'runtime-manifest.json'
         self.output = self.root / 'raw-candidate'
         self.commit = 'a' * 40
-        self.source_data = {'tools/new-horizons-launch.sh': b'#!/bin/sh\nexit 0\n',
+        self.source_data = {**{origin: b'#!/bin/sh\nexit 0\n' for origin in assembler.SUPPORT.values()},
                             'license.txt': b'Synthetic license fixture',
                             'AUTHORS.h': b'Synthetic attribution fixture'}
         for tree in assembler.TREES:
@@ -78,12 +78,17 @@ class AssembleLinuxCandidateTest(unittest.TestCase):
         self.source_data[origin] = self.notice_data[origin] = provenance
         (self.resources / assembler.PLATFORM_PROVENANCE).write_bytes(provenance)
         # Only ELF identity bytes are synthetic; no loader/decode acceptance claimed.
-        header = b'\x7fELF\x02\x01' + b'\x00' * 12 + b'\x3e\x00'
-        for name in ('bin/new-horizons', 'lib/libvcmi.so'):
+        header = bytearray(120)
+        header[:7] = b'\x7fELF\x02\x01\x01'
+        for offset, size, value in ((16, 2, 2), (18, 2, 62), (24, 8, 1),
+                                    (32, 8, 64), (54, 2, 56), (56, 2, 1)):
+            header[offset:offset + size] = value.to_bytes(size, 'little')
+        for name in ('bin/new-horizons', 'bin/new-horizons-setup', 'lib/libvcmi.so'):
             path = self.install / name
             path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_bytes(header + self.commit.encode())
+            path.write_bytes(bytes(header) + self.commit.encode())
         (self.install / 'bin/new-horizons').chmod(0o755)
+        (self.install / 'bin/new-horizons-setup').chmod(0o755)
         self.refresh_source()
         self.before = self.inventory(self.install)
 
@@ -122,6 +127,35 @@ class AssembleLinuxCandidateTest(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, message):
             self.assemble()
         self.assertFalse(self.output.exists())
+
+    def test_setup_elf_and_exact_source_support_are_manifest_and_identity_bound(self):
+        result = self.assemble()
+        setup = self.output / assembler.SETUP_NAME
+        self.assertEqual(result['binaries'][assembler.SETUP_NAME], assembler.digest(setup))
+        self.assertEqual(set(result['setup']), {assembler.SETUP_NAME, *assembler.SUPPORT})
+        for name, origin in assembler.SUPPORT.items():
+            self.assertEqual((self.output / name).read_bytes(), self.source_data[origin])
+            self.assertEqual(result['setup'][name]['sha256'], assembler.digest(self.output / name))
+        self.assertTrue(setup.stat().st_mode & 0o111)
+        self.assertFalse(setup.stat().st_mode & 0o222)
+        self.assertEqual(verify_candidate(self.output), result)
+        self.assertEqual(self.before, self.inventory(self.install))
+
+    def test_missing_nonexecutable_or_wrong_abi_setup_is_rejected_before_output(self):
+        setup = self.install / 'bin' / assembler.SETUP_NAME
+        data = setup.read_bytes()
+        setup.unlink()
+        self.rejected('regular executable ELF')
+        setup.write_bytes(data)
+        self.rejected('regular executable ELF')
+        setup.chmod(0o755)
+        setup.write_bytes(data[:18] + b'\xb7\x00' + data[20:])
+        self.rejected('architecture differs')
+
+    def test_missing_source_setup_support_is_rejected_before_output(self):
+        del self.source_data['tools/linux_assets_setup.py']
+        self.refresh_source()
+        self.rejected('Missing regular source archive member')
 
     def test_binary_derived_feature_marker_is_preserved_without_source_byte_claim(self):
         client = self.install / 'bin/new-horizons'
