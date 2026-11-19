@@ -50,11 +50,11 @@
     },
     ".github/workflows/new-horizons-windows.yml": {
       "functions": [],
-      "sha256": "52baebf71b189f263feb2bdd2a07c5bf7f6080ff3740f542af8000e49f9b226e",
-      "review": "IR-WINDOWS-TEMPORARY-NOTICE-CLEANUP-20261119",
+      "sha256": "ef1af338f377af1066e2960b946048f2cfb80234e49207ff263aa7e93e64f9c1",
+      "review": "IR-WINDOWS-NHART-SCRATCH-PATH-20261119",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_ONLY",
-      "rationale": "Complete exact591-line YAML callable inventory is empty. All28run bodies reviewed;4direct Python blocks and2Python heredocs parse without callable definitions; no Bash or PowerShell callable definitions. Only the Microsoft notice body shrinks18to8 lines while retaining the same unconditional authoritative collector; remaining27run payloads exact unchanged from4e26a21d1a75. Definitions remain in focused modules.",
-      "review_scope": "Exact complete workflow callable inventory and retirement of temporary evidence-only route. Source review only; no runtime, tests, compiler or dispatch."
+      "rationale": "Complete exact591-line workflow callable inventory is empty. All28run bodies reviewed;4directPython blocks and2Pythonheredocs parse with zero callables; no shell callable definitions. Native NHART body has only its output scratch directory shortened; other27bodies exact unchanged. No inline complexity or ownership moved.",
+      "review_scope": "Exact complete callable inventory and NHART scratch-path plus matching artifact-routing change. No native/runtime/compiler/dispatch acceptance."
     },
     ".github/workflows/qt_translation_update.yml": {
       "functions": [],
@@ -17439,11 +17439,11 @@
       "lines": 591,
       "owner": "engine_engineer",
       "prior_deferral": "Existing engine engineer ownership remains. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral. This exception covers only the exact542-line official source URL/comment correction with all transport, size, digest and cache admission controls unchanged. No future growth, numerical ceiling change or coverage exclusion is authorized. This separate review permits only the exact547-line explicit-interpreter successor. Before further expansion, engine_engineer must extract the affected dependency/preflight/package stage into a focused script or shared action, preserving source/cache, CRT/notices, dispatch and artifact contract checks and lowering the orchestration baseline. No future growth, default ceiling increase or exclusion is granted. This separate urgent-correctness review covers only the exact556-line early-bootstrap-smoke ordering successor. Existing extraction obligations and all ceilings remain unchanged; no future growth is authorized.",
-      "rationale": "Retires the completed temporary A5 evidence route: removes failed-audit step identifier and notice-only failure condition, encrypted-evidence subprocess wrapper, two diagnostic artifact paths and one-day branch retention. Deletes250-line temporary collector including embedded public certificate; no relocated complexity. Actual CRT/notice admission stays in unchanged authoritative helpers, and failed audits once again skip all later default-success steps. Complete typed controls, cache/disk/report gates, compile timings/targets/jobs and default behavior are otherwise unchanged. Exact13-line workflow reduction restores a shrinking ratchet; no future growth authorized.",
-      "review": "IR-WINDOWS-TEMPORARY-NOTICE-CLEANUP-20261119",
-      "review_scope": "Exact604to591-line cleanup over4e26a21d1a75469770dc1f0f87cf16d233f43f16; public69f8241c43 baseline533 lines, retaining previously independently reviewed intervening trial/extraction scopes and inherited deferrals. This cleanup grants no generic growth allowance.",
+      "rationale": "Exact same-size591-line urgent CI path correction: shorten only native interrupted-cache scratch root and its two JSON/log artifact globs. No helper/guard/default/target/job/timing changes. Original real Windows path reached250UTF16 stage/263actualpayload; new229stage/242actualpayload (248conservative10digitpayload). Preserve original live staged-byte witness, owned-handle kill/reap and same-child all-resource native recovery. No skipped tests or relaxed failure gate; inherited extraction/shrinking obligations remain.",
+      "review": "IR-WINDOWS-NHART-SCRATCH-PATH-20261119",
+      "review_scope": "Exact591to591-line path-only correction after temporary-evidence cleanup; public69f8241c43 is533lines with earlier separately reviewed scopes retained. No generic growth authorization.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_ONLY",
-      "sha256": "52baebf71b189f263feb2bdd2a07c5bf7f6080ff3740f542af8000e49f9b226e",
+      "sha256": "ef1af338f377af1066e2960b946048f2cfb80234e49207ff263aa7e93e64f9c1",
       "inherited_deferral_step2": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count."
     },
     "AI/BattleAI/AttackPossibility.cpp": {

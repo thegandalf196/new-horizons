@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import json
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 import subprocess
 import sys
 import tempfile
@@ -152,6 +152,24 @@ class WindowsNhartInterruptionTest(unittest.TestCase):
         self.assertIn('--create-owned-cache-child', source)
         self.assertIn('--recover-owned-cache-child', source)
 
+
+    def test_workflow_interruption_cache_fits_classic_windows_paths(self):
+        workflow = yaml.safe_load((ROOT / '.github/workflows/new-horizons-windows.yml').read_text())
+        steps = workflow['jobs']['build']['steps']
+        native = next(row for row in steps if row.get('name') ==
+                      'Verify native NHART preparation and matched-byte reads (CPU only)')
+        output = native['run'].split('--output ', 1)[1].splitlines()[0].strip()
+        workspace = PureWindowsPath('D:/a/new-horizons/new-horizons')
+        cache = workspace / output / 'cache' / 'nhart-runtime-aaaa-bbbb-cccc-dddd'
+        stage = cache / 'new-horizons-art' / 'v1.staging' / (DIGEST + '.stage-aaaa-bbbb-cccc-dddd')
+        # CreateDirectoryW needs room for an 8.3 name. Also check the deepest
+        # stage file, allowing ten digits for the art record index.
+        self.assertLessEqual(len(str(stage).encode('utf-16-le')) // 2, 247)
+        self.assertLessEqual(len(str(stage / 'payload-9999999999').encode('utf-16-le')) // 2, 259)
+        artifact = next(row for row in steps if row.get('name') ==
+                        'Retain native NHART interruption recovery evidence')
+        self.assertEqual(set(artifact['with']['path'].splitlines()),
+                         {output + '/*.json', output + '/*.log'})
 
 if __name__ == '__main__':
     unittest.main()

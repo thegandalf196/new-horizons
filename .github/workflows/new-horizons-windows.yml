@@ -516,7 +516,7 @@ jobs:
             --cache-root build/new-horizons-windows-x64/nhart-regression-cache "${pin_args[@]}"
           python tools/ci/windows_nhart_interruption.py --repo . --probe "$test_exe" \
             --pack build/new-horizons-windows-x64/install/Mods/new-horizons/NewHorizons.nhart \
-            --output build/new-horizons-windows-x64/nhart-interruption-regression
+            --output build/new-horizons-windows-x64/nhart-io
 
       - name: Retain native NHART interruption recovery evidence
         if: ${{ always() && !inputs.preflight_only && inputs.repack_run_id == '' }}
@@ -524,8 +524,8 @@ jobs:
         with:
           name: NHART-interruption-recovery-${{ github.sha }}
           path: |
-            build/new-horizons-windows-x64/nhart-interruption-regression/*.json
-            build/new-horizons-windows-x64/nhart-interruption-regression/*.log
+            build/new-horizons-windows-x64/nhart-io/*.json
+            build/new-horizons-windows-x64/nhart-io/*.log
           if-no-files-found: ignore
           retention-days: 7
 
