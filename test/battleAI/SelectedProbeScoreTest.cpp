@@ -3,6 +3,7 @@
 #include "ProjectedTargetHitFixture.h"
 #include "../../AI/BattleAI/AttackPossibility.h"
 #include "../../AI/BattleAI/BattleExchangeVariant.h"
+#include "../../AI/BattleAI/DamageCacheAdmission.h"
 #include "../../lib/battle/DamageCalculationTiming.h"
 #include "../../lib/battle/NewHorizonsShroud.h"
 #include "../../lib/bonuses/Updaters.h"
@@ -55,7 +56,8 @@ protected:
 		useRevisedOrders = true;
 	}
 
-	void prepare(bool capacity, bool extraHit, bool laterWinner, bool unknownSource = false)
+	void prepare(bool capacity, bool extraHit, bool laterWinner, bool unknownSource = false,
+		bool dynamicDamage = false)
 	{
 		startGame();
 		startBattle();
@@ -83,6 +85,10 @@ protected:
 			unit->addUnitBonus({
 				Bonus(BonusDuration::ONE_BATTLE, BonusType::BLOCKS_RETALIATION, BonusSource::OTHER, 1, BonusSourceID()),
 				Bonus(BonusDuration::ONE_BATTLE, BonusType::NO_LUCK, BonusSource::OTHER, 1, BonusSourceID())});
+			if(dynamicDamage)
+				unit->addUnitBonus({Bonus(BonusDuration::ONE_BATTLE, BonusType::PRIMARY_SKILL,
+					BonusSource::SPELL_EFFECT, 1, BonusSourceID(SpellID(SpellID::BLOODLUST)),
+					BonusSubtypeID(PrimarySkill::ATTACK))});
 		}
 		for(const auto [index, speed] : {std::pair{0, 30}, std::pair{2, 20}, std::pair{1, 10}})
 			model->getForUpdate(ids[index])->addUnitBonus({
@@ -124,9 +130,16 @@ protected:
 	}
 
 	void compare(bool preparedParent = false, bool capacity = false, bool extraHit = false,
-		bool laterWinner = false, bool unknownSource = false)
+		bool laterWinner = false, bool unknownSource = false, bool dynamicDamage = true)
 	{
-		ASSERT_NO_FATAL_FAILURE(prepare(capacity, extraHit, laterWinner, unknownSource));
+		ASSERT_NO_FATAL_FAILURE(prepare(capacity, extraHit, laterWinner, unknownSource, dynamicDamage));
+		ASSERT_FALSE(mayHaveHeroOrderDamageState(*model));
+		DamageCache admissionProbe;
+		DamageCacheProbeTiming admissionTiming;
+		const auto * actor = model->battleGetUnitByID(ids[0]);
+		const auto * victim = model->battleGetUnitByID(ids[3]);
+		admissionProbe.getDamage(actor, victim, model, &admissionTiming);
+		ASSERT_EQ(admissionTiming.dynamicBypasses, dynamicDamage ? 1u : 0u);
 		const auto world = gameState()->saveToMemory();
 		const auto native = projectedHitTest::serialized(*battle());
 		const auto projected = states();
@@ -182,7 +195,7 @@ protected:
 				EXPECT_TRUE(damage.matchesSnapshot(*expectedCache));
 				ASSERT_GE(baselineCalculations, sample.initialCalls);
 				EXPECT_EQ(baselineCalculations - sample.initialCalls,
-					preparedParent ? 0u : timing.selectedProbeScoreUses);
+					preparedParent || !dynamicDamage ? 0u : timing.selectedProbeScoreUses);
 				RecordProperty("BaselineCalculations", std::to_string(baselineCalculations));
 				RecordProperty("ReusedCalculations", std::to_string(sample.initialCalls));
 				RecordProperty("SelectedScoreUses", std::to_string(timing.selectedProbeScoreUses));
@@ -242,6 +255,11 @@ protected:
 TEST_F(SelectedProbeScoreTest, DynamicReverseDamageRemovesExactlyOneCalculationPerSelectedScore)
 {
 	ASSERT_NO_FATAL_FAILURE(compare());
+}
+
+TEST_F(SelectedProbeScoreTest, OrdinaryCachedDamagePreservesScoreWithoutAnotherDamageCalculation)
+{
+	ASSERT_NO_FATAL_FAILURE(compare(false, false, false, false, false, false));
 }
 
 TEST_F(SelectedProbeScoreTest, PreparedOriginalPairsPreserveTheirBaselineAndCacheBookkeeping)
