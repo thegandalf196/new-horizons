@@ -480,7 +480,7 @@ protected:
 					if(definition)
 						parent["selectedTier"].Vector().push_back(JsonNode(static_cast<double>(newHorizonsHeroes::perkRequiredRank(definition->requiredRank))));
 				}
-				perkStateFixture::editRules(state, [&](JsonNode & rules) { parent["perkCapacityFull"].Bool() = selectedCount >= rules["maxPerksPerSkill"].Integer(); });
+				parent["perkCapacityFull"].Bool() = selectedCount >= state.getRules()["maxPerksPerSkill"].Integer();
 			}
 			return result;
 		};
