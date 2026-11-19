@@ -12880,64 +12880,70 @@
     "test/entity/CSkillTest.cpp": {
       "functions": [
         {
-          "end": 58,
+          "symbol": "test::JsonNode skillConfig(const std::string & combatStatusProvider = {})#1",
           "start": 29,
-          "symbol": "test::JsonNode skillConfig(const std::string & combatStatusProvider = {})#1"
+          "end": 58
         },
         {
-          "end": 63,
+          "symbol": "test::bool validSkillSchema(const JsonNode & skill)#1",
           "start": 60,
-          "symbol": "test::bool validSkillSchema(const JsonNode & skill)#1"
+          "end": 63
         },
         {
-          "end": 78,
+          "symbol": "test::CSkillTest::void SetUp() override#1",
           "start": 75,
-          "symbol": "test::CSkillTest::void SetUp() override#1"
+          "end": 78
         },
         {
-          "end": 107,
+          "symbol": "test::TEST_F(CSkillTest, RegistersIcons)#1",
           "start": 81,
-          "symbol": "test::TEST_F(CSkillTest, RegistersIcons)#1"
+          "end": 107
         },
         {
-          "end": 95,
+          "symbol": "test::TEST_F(CSkillTest, RegistersIcons)::[this](auto && PH1, auto && PH2, auto && PH3, auto && PH4)#1",
           "start": 92,
-          "symbol": "test::TEST_F(CSkillTest, RegistersIcons)::[this](auto && PH1, auto && PH2, auto && PH3, auto && PH4)#1"
+          "end": 95
         },
         {
-          "end": 118,
+          "symbol": "test::TEST_F(CSkillTest, MissingCombatStatusDefaultsToNoneAndEmptyTooltip)#1",
           "start": 109,
-          "symbol": "test::TEST_F(CSkillTest, MissingCombatStatusDefaultsToNoneAndEmptyTooltip)#1"
+          "end": 118
         },
         {
-          "end": 126,
+          "symbol": "test::TEST_F(CSkillTest, CombatStatusDescriptionIsRegisteredForTranslation)#1",
           "start": 120,
-          "symbol": "test::TEST_F(CSkillTest, CombatStatusDescriptionIsRegisteredForTranslation)#1"
+          "end": 126
         },
         {
-          "end": 134,
+          "symbol": "test::TEST_F(CSkillTest, BloodrageCombatStatusProviderIsTyped)#1",
           "start": 128,
-          "symbol": "test::TEST_F(CSkillTest, BloodrageCombatStatusProviderIsTyped)#1"
+          "end": 134
         },
         {
-          "end": 142,
+          "symbol": "test::TEST_F(CSkillTest, DivineMandateCombatStatusProviderIsTyped)#1",
           "start": 136,
-          "symbol": "test::TEST_F(CSkillTest, DivineMandateCombatStatusProviderIsTyped)#1"
+          "end": 142
         },
         {
-          "end": 179,
+          "symbol": "test::TEST(CSkillCombatStatusLoaderTest, RetiredMetamagicUsesProviderIsRejected)#1",
           "start": 144,
-          "symbol": "test::TEST(CSkillCombatStatusSchemaTest, OptionalStatusAcceptsCanonicalAndRejectsMalformedShapes)#1"
+          "end": 150
         },
         {
-          "end": 228,
-          "start": 181,
-          "symbol": "test::TEST(CSkillCombatStatusLoaderTest, RejectsMalformedMetadataBeforeLoadingSkillData)#1"
+          "symbol": "test::TEST(CSkillCombatStatusSchemaTest, OptionalStatusAcceptsCanonicalAndRejectsMalformedShapes)#1",
+          "start": 152,
+          "end": 187
+        },
+        {
+          "symbol": "test::TEST(CSkillCombatStatusLoaderTest, RejectsMalformedMetadataBeforeLoadingSkillData)#1",
+          "start": 189,
+          "end": 236
         }
       ],
-      "rationale": "Complete 230-line source review covers skillConfig/validSkillSchema, fixture SetUp, all seven TEST/TEST_F bodies and the registerIcons forwarding lambda. Empty default argument at line 29 is not an omitted body. MOCK_METHOD4 line 70 supplies library-generated implementation without handwritten body and is excluded; no handwritten macro definitions.",
-      "review": "test-function-inventory-complete-32",
-      "sha256": "359888ee4a90082686c11c4c3906f6cafb440768c0a8de1acb635f15a4e18f94"
+      "rationale": "Complete exact 238-line inventory of the skill fixture, two helpers, all eight test bodies and the forwarding lambda. The retired-provider rejection test adds one body. Empty default argument parser recovery at line 29 remains covered by the complete helper span.",
+      "review": "IR-0924-CURRENT-SKILL-COMBAT-STATUS",
+      "review_scope": "Exact independently reviewed source spans and typed test intent.",
+      "sha256": "9422b87460bf549c9a0d1d2a9b3766897c97edd9381529b2aa52a89e928bd65c"
     },
     "test/game/MovementCostTest.cpp": {
       "functions": [
