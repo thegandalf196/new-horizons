@@ -9,6 +9,7 @@
 #include <windows.h>
 #else
 #include <fcntl.h>
+#include <sys/file.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #endif
@@ -113,6 +114,16 @@ namespace nhart
 				check(RemoveDirectoryW((path/name).c_str()));
 #else
 				check(::unlinkat(handle,name.c_str(),AT_REMOVEDIR)==0);
+#endif
+			}
+			/// Removes one directory entry by name. Never follows a link: a linked
+			/// name is removed itself, never its target.
+			void removeFile(const std::string & name)
+			{
+#ifdef _WIN32
+				check(DeleteFileW((path/name).c_str()));
+#else
+				check(::unlinkat(handle,name.c_str(),0)==0);
 #endif
 			}
 			void publish(const std::string & source,const std::string & target)
@@ -278,6 +289,149 @@ namespace nhart
 			check(expected.erase(entry.path().filename().string())==1,"Unexpected file or directory in NHART cache");
 			check(expected.empty(),"Missing NHART cache inventory file");
 		}
+		/// Operating-system lock on a regular file: the kernel releases it when the
+		/// owning process exits for any reason (crash, kill, Ctrl+C), so an
+		/// interrupted preparation can never block a later launch.
+		class PreparationLock
+		{
+#ifdef _WIN32
+			HANDLE handle=INVALID_HANDLE_VALUE;
+			bool tryAcquire(Directory & parent,const std::string & name)
+			{
+				// Exclusive share mode is the lock; delete-on-close removes the file
+				// when the handle is closed, including by process termination.
+				handle=CreateFileW((parent.path/name).c_str(),GENERIC_READ|GENERIC_WRITE|DELETE,0,nullptr,OPEN_ALWAYS,
+				FILE_ATTRIBUTE_NORMAL|FILE_FLAG_DELETE_ON_CLOSE|FILE_FLAG_OPEN_REPARSE_POINT,nullptr);
+				if(handle==INVALID_HANDLE_VALUE)
+				{
+					const auto error=GetLastError();
+					check(error==ERROR_SHARING_VIOLATION || error==ERROR_ACCESS_DENIED,"Cannot open NHART cache preparation lock");
+					return false;
+				}
+				BY_HANDLE_FILE_INFORMATION info
+				{
+				};
+				check(GetFileInformationByHandle(handle,&info) && !(info.dwFileAttributes&(FILE_ATTRIBUTE_DIRECTORY|FILE_ATTRIBUTE_REPARSE_POINT)));
+				return true;
+			}
+#else
+			int handle=-1;
+			bool tryAcquire(Directory & parent,const std::string & name)
+			{
+				if(handle<0)
+				{
+					handle=::openat(parent.handle,name.c_str(),O_RDWR|O_CREAT|O_NOFOLLOW|O_CLOEXEC,0600);
+					check(handle>=0,"Cannot open NHART cache preparation lock (permissions or link)");
+					struct stat info
+					{
+					};
+					check(::fstat(handle,&info)==0 && S_ISREG(info.st_mode) && info.st_nlink==1 && info.st_uid==::geteuid());
+				}
+				if(::flock(handle,LOCK_EX|LOCK_NB)==0)return true;
+				check(errno==EWOULDBLOCK || errno==EINTR,"Cannot lock NHART cache preparation");
+				return false;
+			}
+#endif
+		public:
+			PreparationLock(Directory & parent,const std::string & name)
+			{
+				const auto deadline=std::chrono::steady_clock::now()+std::chrono::seconds(120);
+				try
+				{
+					while(!tryAcquire(parent,name))
+					{
+						check(std::chrono::steady_clock::now()<deadline,
+							"NHART cache preparation is busy: another New Horizons process is preparing artwork for this profile");
+						std::this_thread::sleep_for(std::chrono::milliseconds(50));
+					}
+				}
+				catch(...)
+				{
+					close();
+					throw;
+				}
+			}
+			~PreparationLock()
+			{
+				close();
+			}
+		private:
+			void close() noexcept
+			{
+#ifdef _WIN32
+				if(handle!=INVALID_HANDLE_VALUE)CloseHandle(handle);
+#else
+				if(handle>=0)::close(handle);
+#endif
+			}
+			PreparationLock(const PreparationLock &)=delete;
+			PreparationLock & operator=(const PreparationLock &)=delete;
+		};
+		bool isPayloadName(std::string_view name)
+		{
+			constexpr std::string_view prefix="payload-";
+			return name.starts_with(prefix) && name.size()>prefix.size()
+				&& std::all_of(name.begin()+prefix.size(),name.end(),[](char c){return c>='0' && c<='9';});
+		}
+
+		constexpr std::string_view stageMarker=".prepare-";
+		constexpr std::string_view stagePattern="%%%%-%%%%-%%%%-%%%%";
+
+		bool isPreparationStage(std::string_view name)
+		{
+			constexpr size_t digestLength=64;
+			const auto isHex=[](char c){return (c>='0' && c<='9') || (c>='a' && c<='f');};
+			if(name.size()!=digestLength+stageMarker.size()+stagePattern.size()
+				|| name.substr(digestLength,stageMarker.size())!=stageMarker
+				|| !std::all_of(name.begin(),name.begin()+digestLength,isHex))
+				return false;
+
+			const auto suffix=name.substr(digestLength+stageMarker.size());
+			return std::equal(suffix.begin(),suffix.end(),stagePattern.begin(),
+				[&](char actual,char expected){return expected=='%' ? isHex(actual) : actual==expected;});
+		}
+
+		size_t removeStagePayloads(Directory & root,const std::string & name)
+		{
+			Directory stage(root.path/name,false);
+			std::vector<std::string> payloads;
+			for(const auto & entry:boost::filesystem::directory_iterator(boost::filesystem::path(stage.path.native())))
+			{
+				const auto file=entry.path().filename().string();
+				check(isPayloadName(file) && boost::filesystem::is_regular_file(entry.symlink_status()));
+				payloads.push_back(file);
+			}
+			for(const auto & file:payloads)
+				stage.removeFile(file);
+			return payloads.size();
+		}
+
+		// Legacy clients use different staging names and markers. Leave them
+		// alone: this lock only excludes preparers using the current protocol.
+		void removeAbandonedEntries(Directory & root)
+		{
+			std::vector<std::string> stages;
+			for(const auto & entry:boost::filesystem::directory_iterator(boost::filesystem::path(root.path.native())))
+			{
+				const auto name=entry.path().filename().string();
+				if(isPreparationStage(name) && boost::filesystem::is_directory(entry.symlink_status()))
+					stages.push_back(name);
+			}
+			for(const auto & name:stages)
+			{
+				try
+				{
+					const auto count=removeStagePayloads(root,name);
+					// On Windows the directory handle must close before removal.
+					root.removeEmpty(name);
+					logGlobal->info("Removed partial NHART cache left by an interrupted launch (%zu files)",count);
+				}
+				catch(const std::exception &)
+				{
+					logGlobal->warn("Retaining unexpected NHART cache entry %s",name);
+				}
+			}
+		}
 	}
 	std::string cacheFileName(size_t record)
 	{
@@ -311,21 +465,20 @@ namespace nhart
 		ui8 byte;
 		input.seek(size);
 		check(input.read(&byte,1)==0);
-		Directory root(fs::path(cacheRoot.native())/"new-horizons-art"/"v1",true);
+		Directory artRoot(fs::path(cacheRoot.native())/"new-horizons-art",true);
+		Directory root(artRoot.path/"v1",true);
 #ifndef _WIN32
-		struct stat rootInfo
+		for(const auto * owned:{&artRoot,&root})
 		{
-		};
-		check(::fstat(root.handle,&rootInfo)==0 && rootInfo.st_uid==::geteuid() && !(rootInfo.st_mode&(S_IWGRP|S_IWOTH)));
-#endif
-		const auto lockName=identity+".lock";
-		bool locked=false;
-		for(int attempt=0;attempt<300 && !locked;++attempt)
-		{
-			locked=root.make(lockName);
-			if(!locked)std::this_thread::sleep_for(std::chrono::milliseconds(10));
+			struct stat rootInfo
+			{
+			};
+			check(::fstat(owned->handle,&rootInfo)==0 && rootInfo.st_uid==::geteuid() && !(rootInfo.st_mode&(S_IWGRP|S_IWOTH)));
 		}
-		check(locked,"NHART cache preparation is busy; a crashed preparation may leave a stale hash.lock requiring explicit recovery");
+#endif
+		// Kept beside, not inside, v1 so the version directory holds only caches.
+		PreparationLock lock(artRoot,"v1.prepare.lock");
+		removeAbandonedEntries(root);
 		const auto finish=[&](const fs::path & path)
 		{
 			auto result=std::make_shared<PreparedCache>(PreparedCache
@@ -336,56 +489,46 @@ namespace nhart
 			prepared[key]=result;
 			return result;
 		};
-		try
+		// An interrupted stage remains for the next lock owner to clear.
+		const auto cache=root.path/identity;
+		if(boost::filesystem::exists(boost::filesystem::symlink_status(boost::filesystem::path(cache.native()))))
 		{
-			const auto cache=root.path/identity;
-			if(boost::filesystem::exists(boost::filesystem::symlink_status(boost::filesystem::path(cache.native()))))
-			{
-				Directory existing(cache,false);
-				verifyFiles(existing,records);
-				logGlobal->info("Reusing verified NHART cache (%zu records)",records.size());
-				root.removeEmpty(lockName);
-				return finish(cache);
-			}
-			const auto stage=identity+".stage-"+boost::filesystem::unique_path("%%%%-%%%%-%%%%-%%%%").string();
-			check(root.make(stage));
-			logGlobal->info("Preparing NHART disk cache (%zu records)",records.size());
-			{
-				Directory staging(root.path/stage,false);
-				std::array<ui8,65536> bytes
-				{
-				};
-				for(size_t i=0;i<records.size();++i)
-				{
-					const auto & entry=records[i];
-					check(entry.offset<=size && entry.size<=size-entry.offset);
-					input.seek(entry.offset);
-					File output(staging,cacheFileName(i),true);
-					ui64 remaining=entry.size;
-					while(remaining)
-					{
-						const auto count=input.read(bytes.data(),std::min<ui64>(remaining,bytes.size()));
-						check(count>0);
-						output.write(bytes.data(),count);
-						remaining-=count;
-					}
-					output.flush();
-				}
-				verifyFiles(staging,records);
-			}
-			// A changing input cannot publish mixed payloads under its old hash.
-			input.seek(0);
-			check(hex(digest(input,size))==identity);
-			root.publish(stage,identity);
-			root.removeEmpty(lockName);
-			logGlobal->info("Prepared verified NHART cache (%zu records)",records.size());
+			Directory existing(cache,false);
+			verifyFiles(existing,records);
+			logGlobal->info("Reusing verified NHART cache (%zu records)",records.size());
 			return finish(cache);
 		}
-		catch(...)
+		const auto stage=identity+std::string(stageMarker)+boost::filesystem::unique_path(std::string(stagePattern)).string();
+		check(root.make(stage));
+		logGlobal->info("Preparing NHART disk cache (%zu records)",records.size());
 		{
-			root.removeEmpty(lockName);
-			// Keep exact owned partial stage for diagnosis; no broad cleanup/deletion.
-			throw;
+			Directory staging(root.path/stage,false);
+			std::array<ui8,65536> bytes
+			{
+			};
+			for(size_t i=0;i<records.size();++i)
+			{
+				const auto & entry=records[i];
+				check(entry.offset<=size && entry.size<=size-entry.offset);
+				input.seek(entry.offset);
+				File output(staging,cacheFileName(i),true);
+				ui64 remaining=entry.size;
+				while(remaining)
+				{
+					const auto count=input.read(bytes.data(),std::min<ui64>(remaining,bytes.size()));
+					check(count>0);
+					output.write(bytes.data(),count);
+					remaining-=count;
+				}
+				output.flush();
+			}
+			verifyFiles(staging,records);
 		}
+		// A changing input cannot publish mixed payloads under its old hash.
+		input.seek(0);
+		check(hex(digest(input,size))==identity);
+		root.publish(stage,identity);
+		logGlobal->info("Prepared verified NHART cache (%zu records)",records.size());
+		return finish(cache);
 	}
 }

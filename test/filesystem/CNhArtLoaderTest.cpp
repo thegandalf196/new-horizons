@@ -416,6 +416,41 @@ TEST_F(CNhArtLoaderTest, DeepCachePathPreparesReusesAndRejectsExtraOrCorruptPayl
 		EXPECT_EQ(entry.path(),preparedPath); // No stale stage/lock or broad deletion after rejection.
 }
 
+TEST_F(CNhArtLoaderTest, InterruptedPreparationDoesNotBlockTheNextLaunch)
+{
+	// A killed first launch can leave a partial stage. Legacy markers can also
+	// be present while an older version uses the same profile.
+	const auto archive=makeArchive({{"art.png",{1,2,3}},{"other.png",{4}}});
+	const auto path=write(archive.data);
+	const auto identity=nhart::hex(nhart::sha256(archive.data));
+	const auto version=cacheRoot()/"new-horizons-art"/"v1";
+	ASSERT_TRUE(boost::filesystem::create_directories(version/(identity+".lock")));
+	for(const auto & owned:{cacheRoot(),cacheRoot()/"new-horizons-art",version})
+		boost::filesystem::permissions(owned,boost::filesystem::owner_all);
+	const auto partial=version/(identity+".prepare-dead-0000-0000-0000");
+	ASSERT_TRUE(boost::filesystem::create_directory(partial));
+	std::ofstream((partial/nhart::cacheFileName(0)).string(),std::ios::binary).put(1);
+	const auto unexpected=version/(identity+".prepare-aaaa-0000-0000-0000");
+	ASSERT_TRUE(boost::filesystem::create_directory(unexpected));
+	std::ofstream((unexpected/"notes.txt").string()).put(1);
+	const auto unrelated=version/"notes.prepare-dead-0000-0000-0000";
+	const auto legacyStage=version/(identity+".stage-dead-0000-0000-0000");
+	for(const auto & kept:{unrelated,legacyStage})
+	{
+		ASSERT_TRUE(boost::filesystem::create_directory(kept));
+		std::ofstream((kept/nhart::cacheFileName(0)).string()).put(1);
+	}
+
+	CNhArtLoader loader("",path,cacheRoot());
+	EXPECT_EQ(readAll(*loader.load(ResourcePath("art.png"))),(Bytes{1,2,3}));
+	EXPECT_TRUE(boost::filesystem::exists(version/(identity+".lock")));
+	EXPECT_TRUE(boost::filesystem::exists(legacyStage/nhart::cacheFileName(0)));
+	EXPECT_TRUE(boost::filesystem::exists(unrelated/nhart::cacheFileName(0)));
+	EXPECT_FALSE(boost::filesystem::exists(partial));
+	EXPECT_TRUE(boost::filesystem::exists(unexpected/"notes.txt")); // Unrecognised content is never deleted.
+	EXPECT_TRUE(boost::filesystem::is_directory(version/identity));
+}
+
 TEST_F(CNhArtLoaderTest, BothMountScopesSharePreparedBackingWithoutCollapsingIdentities)
 {
 	const auto path=write(makeArchive({{"DATA/value.json",{1,2}}}).data);

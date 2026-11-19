@@ -210,13 +210,19 @@ Storage preparation and rendering performance are separate concerns. In
 particular, replacing archive reads does not by itself fix SDL texture uploads
 or image decoding; improvements must be measured rather than assumed.
 
-The native startup cache currently admits packages up to 1 GiB. A crashed
-preparation can leave a `<package-digest>.lock` or a digest-prefixed staging
-directory under `new-horizons-art/v1`. With all game processes closed, recover
-only the identified generated cache entries, retaining the shipped package;
-do not delete a whole profile. Failed staging directories are retained rather
-than recursively deleting potentially substituted paths. Cache integrity is
-checked at startup, not continuously against later same-user modifications.
+The native startup cache currently admits packages up to 1 GiB. Preparation
+holds an operating-system lock on `new-horizons-art/v1.prepare.lock`, which the
+kernel releases when the process ends for any reason, so a crashed, killed or
+cancelled first launch can be retried. Under that lock, startup clears stages
+using the current preparation protocol. It removes only recognised generated
+regular payload files and empty stage directories without following links or
+recursively deleting content. Unexpected contents are retained and logged.
+Older clients use a different lock. Their stages and lock directories are
+ignored, so they neither block the current loader nor get removed during a
+concurrent preparation. Verified digest-keyed caches remain reusable.
+`CNhArtLoaderTest.InterruptedPreparationDoesNotBlockTheNextLaunch` protects this.
+Cache integrity is checked at startup, not continuously against later same-user
+modifications.
 
 ## Acceptance boundaries
 
