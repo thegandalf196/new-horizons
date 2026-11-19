@@ -7,6 +7,16 @@ and revisions as the game develops.
 For individual perk effects, spell formulas, creature statistics and Order rules,
 read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 
+## 0.92.4 Early Access
+
+- The Windows and Linux launchers show first-run setup and artwork preparation
+  progress. They can check for and install matching game updates.
+- Quick combat reuses damage estimates when the active battle state permits
+  it and evaluates the three most promising approaches to distant targets.
+- Fixes a crash while the AI evaluates a spell against an affected stack.
+- Interrupted artwork preparation can be retried on the next launch.
+- Supported 1164 saves keep their captured rules.
+
 ## 0.92.3 Early Access
 
 - Arcane Overflow recognizes ordinary hex-targeted spells, including Ice
