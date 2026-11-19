@@ -87,11 +87,12 @@ class WindowsBuildClientTest(unittest.TestCase):
         self.assertEqual(consumers[0]['name'], 'Configure client and internal authority')
         self.assertEqual(consumers[0]['if'], "${{ !inputs.preflight_only && inputs.repack_run_id == '' }}")
         expression = "${{ inputs.use_precompiled_headers && 'ON' || 'OFF' }}"
+        hot_expression = "${{ inputs.use_hot_header_pch && 'ON' || 'OFF' }}"
         unity_expression = "${{ inputs.use_unity_build && 'ON' || 'OFF' }}"
         self.assertIn('--use-precompiled-headers ' + expression, consumers[0]['run'])
         cases = [('ON', ['configure'])]
         for pch in ('ON', 'OFF'):
-            invocation = shlex.split(consumers[0]['run'].replace(expression, pch).replace(unity_expression, 'OFF'))
+            invocation = shlex.split(consumers[0]['run'].replace(expression, pch).replace(unity_expression, 'OFF').replace(hot_expression, 'OFF'))
             self.assertEqual(invocation[:2], ['python', 'tools/ci/build_windows_client.py'])
             cases.append((pch, invocation[2:]))
         for pch, argv in cases:
@@ -100,6 +101,7 @@ class WindowsBuildClientTest(unittest.TestCase):
                     self.assertEqual(build.main(argv), 0)
                 run.assert_called_once_with([
                     'cmake', '--preset', 'new-horizons-windows-x64', '-DENABLE_PCH=' + pch,
+                    '-DENABLE_NH_HOT_HEADER_PCH=OFF',
                     '-DENABLE_NH_UNITY_BUILD=OFF', '-DNH_UNITY_BUILD_BATCH_SIZE=8',
                     '-DENABLE_CCACHE=ON', '-DENABLE_NH_SDL3_MASK_REGRESSION=ON',
                     '-DENABLE_NH_ART_CACHE_REGRESSION=ON', '-DENABLE_NH_PREVIEW_SURFACE_REGRESSION=ON',

@@ -15,6 +15,10 @@ on:
         description: Opt-in C++ Unity compilation experiment (batch size 8)
         type: boolean
         default: false
+      use_hot_header_pch:
+        description: Opt-in target-local hot header PCH experiment (requires precompiled headers)
+        type: boolean
+        default: false
       pch_off_cache_seed:
         description: Leave empty for a normal build, enter cold to seed a trial, or enter the cold run ID to repeat it
         type: string
@@ -108,7 +112,7 @@ jobs:
         if: inputs.pch_off_cache_seed != ''
         env:
           CACHE_SEED: ${{ inputs.pch_off_cache_seed }}
-          FULL_PCH_OFF_BUILD: ${{ !inputs.preflight_only && !inputs.use_precompiled_headers && !inputs.use_unity_build && inputs.repack_run_id == '' }}
+          FULL_PCH_OFF_BUILD: ${{ !inputs.preflight_only && !inputs.use_precompiled_headers && !inputs.use_unity_build && !inputs.use_hot_header_pch && inputs.repack_run_id == '' }}
         run: |
           set -euo pipefail
           if [[ "$FULL_PCH_OFF_BUILD" != true ]]; then
@@ -271,6 +275,7 @@ jobs:
         run: >-
           python tools/ci/build_windows_client.py configure
           --use-precompiled-headers ${{ inputs.use_precompiled_headers && 'ON' || 'OFF' }}
+          --use-hot-header-pch ${{ inputs.use_hot_header_pch && 'ON' || 'OFF' }}
           --use-unity-build ${{ inputs.use_unity_build && 'ON' || 'OFF' }}
 
       - name: Verify CMake-selected CRT bytes before compiling
