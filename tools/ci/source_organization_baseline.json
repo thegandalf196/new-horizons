@@ -17372,34 +17372,34 @@
         {
           "symbol": "function Expand-UpdateArchive#1",
           "start": 186,
-          "end": 238
+          "end": 248
         },
         {
           "symbol": "function Assert-UpdatePayload#1",
-          "start": 240,
-          "end": 287
+          "start": 250,
+          "end": 297
         },
         {
           "symbol": "function Assert-UpdatePayload::<scriptblock>#1",
-          "start": 258,
-          "end": 258
+          "start": 268,
+          "end": 268
         },
         {
           "symbol": "function Assert-UpdateArtHeader#1",
-          "start": 289,
-          "end": 302
+          "start": 299,
+          "end": 312
         },
         {
           "symbol": "function Prepare-NHReleaseUpdate#1",
-          "start": 304,
-          "end": 360
+          "start": 314,
+          "end": 370
         }
       ],
-      "sha256": "101415aae1ab1d4adb9f0d3fac45610848091147aa94244d3ea2f2dd667ff221",
-      "review": "IR-NEXT-BUILD-FROZEN-PLAYER-LAUNCHER-ORG-20261119",
-      "review_scope": "Exact independent source organization and reused prior source review only; no native compilation, GUI, Windows execution, performance, promotion or future growth permission.",
+      "sha256": "12820d5e656f1d284bb514f513ba6ae514e39cf2ed1c458918e68ebbe97f3109",
+      "review": "IR-WINDOWS-UPDATE-STREAM-DISPOSAL-20261119",
+      "review_scope": "Exact source/lifetime review and complete AST inventory only; no duplicate PowerShell fixtures, native/game/build, hosted result or release acceptance.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
-      "rationale": "Complete exact365-line PowerShell callable inventory independently re-parsed with actual PowerShell7.5.4 AST: all14 FunctionDefinitionAst and executable ScriptBlockExpressionAst bodies, including nested callbacks. Inspected command/param/control-flow blocks and quoted script data are not invented callable definitions. Exact bytes match previously independently reviewed IR-PLAYER-LAUNCHER-FINAL-SOURCE-V1. Largest function is below80 lines; no numeric waiver or missing callback. Parser syntax success on Linux does not establish Windows5.1/WinForms/native readiness execution."
+      "rationale": "Complete exact375-line PowerShell callable inventory independently re-parsed with actual PowerShell7 AST: same14 FunctionDefinitionAst/ScriptBlockExpressionAst callables. Only Expand-UpdateArchive grows53to63lines (186to248); subsequent callables shift10lines. Nested try/finally closes opened source/target/archive/stream through constructor, existing-target and disposal failure paths. Largest function63lines; no file/function size exception required. Parsing on Linux is not Windows5.1 runtime acceptance."
     }
   },
   "schema": 1,
