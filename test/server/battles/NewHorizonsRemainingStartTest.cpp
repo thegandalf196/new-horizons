@@ -74,6 +74,10 @@ protected:
 		JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
 		if(historicalLightRoster)
 			rules.Struct().erase("chosenSpecialties");
+		// The later starting-book table requires an active captured magic roster.
+		// This absent-roster characterization predates that independent policy.
+		if(legacyMagic)
+			rules["startingSkills"].Struct().erase("startingBookReplacements");
 		if(absent)
 		{
 			rules["nonDamageSpellSpecialties"].Struct().erase("remainingStartReplacements");
@@ -279,6 +283,9 @@ TEST_P(NewHorizonsRemainingStartTest, CapturedLegacyMagicPreservesAuthoredBookAn
 {
 	legacyMagic = true;
 	ASSERT_NO_FATAL_FAILURE(prepare());
+	EXPECT_TRUE(attackerSideHero->getMagicRules().isNull());
+	EXPECT_FALSE(attackerSideHero->getPrimaryGrowthRules()["startingSkills"].Struct()
+		.contains("startingBookReplacements"));
 	EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(halon() ? SpellID(SpellID::DISPEL) : original()));
 	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(replacement()));
 	expectProducer(false);
