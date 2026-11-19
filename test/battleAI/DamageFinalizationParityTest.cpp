@@ -490,9 +490,19 @@ TEST_F(DamageFinalizationParityTest, RawLuckScalarAndFullGetterFallbackKeepDamag
 	for(bool flag : {false, true})
 		for(int shape : {0, 1, 2})
 		{
-			auto parent = std::make_shared<FullLuckPolicyProxy>(live);
+			const auto authorized = std::shared_ptr<CBattleInfoCallback>(gameState(), battle());
+			auto parent = std::make_shared<FullLuckPolicyProxy>(authorized);
 			parent->rules = rawLuckPolicy(flag, shape);
+			ASSERT_EQ(parent->getBattle(), parent.get());
+			ASSERT_EQ(parent->battleGetMySide(), BattleSide::ALL_KNOWING);
 			child = std::make_shared<HypotheticBattle>(environment.get(), parent);
+			ASSERT_EQ(child->battleGetMySide(), BattleSide::ALL_KNOWING);
+			for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+			{
+				ASSERT_EQ(authorized->battleGetVisibleHeroPolicy(side).kind(), VisibleHeroPolicy::Knowledge::VISIBLE_HERO);
+				ASSERT_EQ(parent->battleGetVisibleHeroPolicy(side).kind(), VisibleHeroPolicy::Knowledge::VISIBLE_HERO);
+				ASSERT_EQ(child->battleGetVisibleHeroPolicy(side).kind(), VisibleHeroPolicy::Knowledge::VISIBLE_HERO);
+			}
 			FullLuckPolicyProxy reference(child);
 			reference.rules = parent->rules;
 			const auto native = nativeSnapshot();
@@ -712,12 +722,40 @@ TEST_F(DamagePrefixReuseParityTest, OrdinaryDamageNeverNeedsUnknownOrThrowingScr
 	EXPECT_EQ(projectedSnapshot(), projected);
 }
 
+TEST_F(DamagePrefixReuseParityTest, PlayerScopedCustomProxyRejectsUnadmittedHiddenElementalFacts)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto native = nativeSnapshot();
+	auto proxy = std::make_shared<FullLuckPolicyProxy>(live);
+	proxy->rules = battle()->luckRollRules;
+	ASSERT_EQ(proxy->getBattle(), proxy.get());
+	ASSERT_EQ(proxy->battleGetMySide(), BattleSide::ATTACKER);
+	ASSERT_EQ(proxy->battleGetVisibleHeroPolicy(BattleSide::DEFENDER).kind(), VisibleHeroPolicy::Knowledge::HIDDEN_UNKNOWN);
+	child = std::make_shared<HypotheticBattle>(environment.get(), proxy);
+	ASSERT_EQ(child->battleGetVisibleHeroPolicy(BattleSide::DEFENDER).kind(), VisibleHeroPolicy::Knowledge::HIDDEN_UNKNOWN);
+	// An arbitrary proxy does not inherit the exact native callback's opaque
+	// occurrence proof. Materialization must reject rather than invent passives.
+	EXPECT_THROW(child->getForUpdate(incoming->unitId())->save(), std::invalid_argument);
+	EXPECT_EQ(child->battleGetVisibleHeroPolicy(BattleSide::DEFENDER).kind(), VisibleHeroPolicy::Knowledge::HIDDEN_UNKNOWN);
+	EXPECT_EQ(nativeSnapshot(), native);
+}
+
 TEST_F(DamagePrefixReuseParityTest, CustomCallbackKeepsOrdinaryThrowingHeroQueries)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
-	auto proxy = std::make_shared<FullLuckPolicyProxy>(live);
+	const auto authorized = std::shared_ptr<CBattleInfoCallback>(gameState(), battle());
+	auto proxy = std::make_shared<FullLuckPolicyProxy>(authorized);
 	proxy->rules = battle()->luckRollRules;
+	ASSERT_EQ(proxy->getBattle(), proxy.get());
+	ASSERT_EQ(proxy->battleGetMySide(), BattleSide::ALL_KNOWING);
 	child = std::make_shared<HypotheticBattle>(environment.get(), proxy);
+	ASSERT_EQ(child->battleGetMySide(), BattleSide::ALL_KNOWING);
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+	{
+		ASSERT_EQ(authorized->battleGetVisibleHeroPolicy(side).kind(), VisibleHeroPolicy::Knowledge::VISIBLE_HERO);
+		ASSERT_EQ(proxy->battleGetVisibleHeroPolicy(side).kind(), VisibleHeroPolicy::Knowledge::VISIBLE_HERO);
+		ASSERT_EQ(child->battleGetVisibleHeroPolicy(side).kind(), VisibleHeroPolicy::Knowledge::VISIBLE_HERO);
+	}
 	const auto attack = luckAttack(1, false, false, false);
 	(void)projectedSnapshot();
 	proxy->fullQueries = 0;
