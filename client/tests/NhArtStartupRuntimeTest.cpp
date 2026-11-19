@@ -131,11 +131,12 @@ void measureWarmReads(CNhArtLoader & prepared, CNhArtLoader & direct)
 
 int main(int argc, char ** argv)
 {
-	if(argc != 9 || std::string(argv[1]) != "--pack" || std::string(argv[3]) != "--cache-root"
+	if((argc != 9 && argc != 11) || std::string(argv[1]) != "--pack" || std::string(argv[3]) != "--cache-root"
 		|| std::string(argv[5]) != "--expected-pack-sha256" || std::string(argv[7]) != "--expected-resources")
 	{
 		std::cerr << "Usage: nhArtStartupRuntimeTest --pack NewHorizons.nhart --cache-root EXISTING-DISPOSABLE-ROOT"
-			<< " --expected-pack-sha256 HEX64 --expected-resources POSITIVE-COUNT\n";
+			<< " --expected-pack-sha256 HEX64 --expected-resources POSITIVE-COUNT"
+			<< " [--create-owned-cache-child NAME | --recover-owned-cache-child NAME]\n";
 		return 2;
 	}
 	std::string phase = "arguments";
@@ -164,9 +165,27 @@ int main(int argc, char ** argv)
 		std::ifstream input(pack.string(), std::ios::binary);
 		require(static_cast<bool>(input), "Pack input unavailable");
 		require(nhart::hex(nhart::sha256(input, boost::filesystem::file_size(pack))) == expected.sha256, "Unexpected committed pack");
-		childName = boost::filesystem::unique_path("nhart-runtime-%%%%-%%%%-%%%%-%%%%").string();
+		bool recover = false;
+		if(argc == 11)
+		{
+			const std::string mode = argv[9];
+			require(mode == "--create-owned-cache-child" || mode == "--recover-owned-cache-child", "Unknown owned cache mode");
+			recover = mode == "--recover-owned-cache-child";
+			childName = argv[10];
+			const std::string pattern = "nhart-runtime-%%%%-%%%%-%%%%-%%%%";
+			require(childName.size() == pattern.size() && std::equal(childName.begin(), childName.end(), pattern.begin(),
+				[](char actual, char expected)
+				{
+					return expected == '%' ? std::string_view("0123456789abcdef").find(actual) != std::string_view::npos : actual == expected;
+				}), "Invalid owned cache child name");
+		}
+		else
+			childName = boost::filesystem::unique_path("nhart-runtime-%%%%-%%%%-%%%%-%%%%").string();
 		const auto owned = root / childName;
-		require(boost::filesystem::create_directory(owned), "Owned child already exists or is unwritable");
+		if(recover)
+			requirePlainRoot(owned);
+		else
+			require(boost::filesystem::create_directory(owned), "Owned child already exists or is unwritable");
 		std::cout << "Owned cache child: " << childName << '\n';
 		ui64 comparedBytes = 0;
 		{
