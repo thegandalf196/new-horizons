@@ -411,7 +411,7 @@ TEST_F(NewHorizonsPurifyAITest, SelectsBestAreaAndProjectsOnlyChosenGroupsWithou
 	gameHandler->sendAndApply(activate);
 
 	ASSERT_TRUE(newHorizonsPurify::enabled(battle()->getMagicRules(), purifySpell()));
-	ASSERT_TRUE(purifySpell().toSpell()->canBeCast(battle(), spells::Mode::HERO, attackerSideHero, false))
+	ASSERT_TRUE(purifySpell().toSpell()->canBeCast(battle(), spells::Mode::HERO, attackerSideHero))
 		<< "Purify must pass BattleEvaluator's initial possible-spell population gate";
 	const auto eligibleAtMidpoint = newHorizonsPurify::eligibleStacks(*battle(), BattleSide::ATTACKER,
 		BattleHex(7, 5), attackerSideHero->getPrimSkillLevel(PrimarySkill::SPELL_POWER), true);

@@ -176,6 +176,8 @@ TEST(VinesCandidateValueReuseTest, MissingProofDisabledAndInvalidValuesFailClose
 	values.remember(cast, prepared, {}, proof);
 	EXPECT_FALSE(values.find(cast, prepared, {}, std::nullopt));
 	EXPECT_FALSE(values.find(cast, prepared, {}, proof)); // Missing proof clears prior entries.
+	VinesCandidateValueReuse::TestControl control{false};
+	VinesCandidateValueReuse disabled(&control);
 	disabled.remember(cast, prepared, {}, proof);
 	EXPECT_FALSE(disabled.find(cast, prepared, {}, proof));
 	EXPECT_EQ(control.hits, 0u);

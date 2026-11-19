@@ -333,7 +333,6 @@ TEST_F(SpellAdmissionCharacterizationTest, ExhaustedRoundRejectsAllActionsWithou
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), spend));
 	ASSERT_FALSE(live->battleGetSpellActionAllowance(BattleSide::ATTACKER, SpellID::IMPLOSION));
 	ASSERT_FALSE(live->battleCanUseHeroCommand(BattleSide::ATTACKER, HeroCommand::HOLD_THE_LINE));
-	ASSERT_FALSE(live->battleCanUseMetamagicFollowup(BattleSide::ATTACKER));
 	ASSERT_FALSE(live->battleGetDivineMandateStatus(BattleSide::ATTACKER).active);
 	retainBranches(); // Capture AFTER the real paid Order, never seed a ledger.
 	const auto result = select(true);

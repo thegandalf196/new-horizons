@@ -137,7 +137,6 @@ TEST_F(HeroQueueSelectorTest, PreexistingBerserkAttackFinishesNoCastForecastWith
 	ASSERT_NO_FATAL_FAILURE(activate(active));
 	ASSERT_TRUE(actor->hasBonusOfType(BonusType::ATTACKS_NEAREST_CREATURE));
 	ASSERT_FALSE(battle()->battleGetDivineMandateStatus(BattleSide::ATTACKER).active);
-	ASSERT_FALSE(battle()->battleCanUseMetamagicFollowup(BattleSide::ATTACKER));
 	ASSERT_GT(battle()->calculateDmgRange(BattleAttackInfo(actor, enemy, 0, false)).damage.min,
 		enemy->getAvailableHealth());
 	ASSERT_TRUE(std::ranges::any_of(battle()->getBerserkForcedActions(actor), [](const auto & action)

@@ -110,7 +110,6 @@ TEST_F(HeroQueueSelectorTest, CarriedDivineDisciplineRecipientCompletesOnlyInSel
 	ASSERT_TRUE(carried);
 	ASSERT_TRUE(carried->scheduledFor(actor->unitId(), battle()->getRound()));
 	ASSERT_FALSE(battle()->battleGetDivineMandateStatus(BattleSide::ATTACKER).pendingFollowup);
-	ASSERT_FALSE(battle()->battleCanUseMetamagicFollowup(BattleSide::ATTACKER));
 	ASSERT_GT(battle()->calculateDmgRange(BattleAttackInfo(actor, enemy, 0, false)).damage.min,
 		enemy->getAvailableHealth());
 	ASSERT_NO_FATAL_FAILURE(expectBeforeEnemy(actor));

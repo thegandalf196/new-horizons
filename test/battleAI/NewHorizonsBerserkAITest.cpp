@@ -530,7 +530,7 @@ TEST_F(NewHorizonsBerserkAITest, FullEvaluatorChoosesBerserkWhenItPreventsAShotA
 	const auto defaultRandomBefore = serializedState(CRandomGenerator::getDefault());
 	const auto * berserkSpell = SpellID(SpellID::BERSERK).toSpell();
 	ASSERT_TRUE(berserkSpell->canBeCast(
-		battle(), spells::Mode::HERO, attackerSideHero, false));
+		battle(), spells::Mode::HERO, attackerSideHero));
 
 	auto callback = std::make_shared<BerserkCallback>();
 	callback->onBattleStarted(battle());
