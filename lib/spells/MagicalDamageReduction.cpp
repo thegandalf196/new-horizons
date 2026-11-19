@@ -310,7 +310,7 @@ std::optional<int> commonMagicalProtectionBasisPoints(const CStackInstance & arm
 		controllerHero, armyStack.getCreatureID()),
 		newHorizonsMagicalAbilityDamage::spellwardReductionBasisPoints(controllerHero));
 	std::vector<int> penetrations;
-	for(const auto & bonus : *armyStack.getBonusesOfType(BonusType::TARGET_MAGICAL_DAMAGE_REDUCTION_PENETRATION))
+	for(const auto bonusList = armyStack.getBonusesOfType(BonusType::TARGET_MAGICAL_DAMAGE_REDUCTION_PENETRATION); const auto & bonus : *bonusList)
 		if(bonus->val > 0)
 			penetrations.push_back(std::clamp(bonus->val, 0, 100));
 	return protectionBasisPoints(calculateMagicalDamageReductionBasisPoints(

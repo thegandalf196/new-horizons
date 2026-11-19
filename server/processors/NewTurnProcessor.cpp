@@ -347,7 +347,7 @@ std::tuple<EWeekType, CreatureID, int> NewTurnProcessor::pickWeekType(bool newMo
 	};
 
 	std::vector<std::tuple<CreatureID, int>> creaturesWithDeityOfFireBonus;
-	for(const auto & bonus : *gameHandler->gameState().globalEffects.getBonusesOfType(BonusType::DEITYOFFIRE))
+	for(const auto bonusList = gameHandler->gameState().globalEffects.getBonusesOfType(BonusType::DEITYOFFIRE); const auto & bonus : *bonusList)
 	{
 		CreatureID creatureID = bonus->subtype.as<CreatureID>();
 		if(canSpawnAsMapObject(creatureID))

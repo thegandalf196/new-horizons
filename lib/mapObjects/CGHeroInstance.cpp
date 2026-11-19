@@ -1294,7 +1294,7 @@ uint64_t CGHeroInstance::getArmyStrengthPerceivedByOthers() const
 	uint64_t armyStrength = getArmyStrength();
 
 	// artifacts such as Diplomat's Cloak make hero army look stronger or weaker than it is
-	for(const auto & bonus : *getBonusesOfType(BonusType::DIPLOMACY_ARMY_STRENGTH_MULTIPLIER))
+	for(const auto bonusList = getBonusesOfType(BonusType::DIPLOMACY_ARMY_STRENGTH_MULTIPLIER); const auto & bonus : *bonusList)
 		armyStrength = armyStrength * bonus->val / 100;
 
 	return armyStrength;
@@ -2290,7 +2290,7 @@ std::vector<BonusSourceID> CGHeroInstance::getSourcesForSpell(const SpellID & sp
 			if(!hasArt(artifact, true, true))
 				return;
 
-			for(const auto & bonus : *getBonusesOfType(type))
+			for(const auto bonusList = getBonusesOfType(type); const auto & bonus : *bonusList)
 			{
 				if(bonus->sid != BonusSourceID(artifact)
 					|| !isNewHorizonsAdventureMovementArtifactBonus(*bonus))
@@ -2309,7 +2309,7 @@ std::vector<BonusSourceID> CGHeroInstance::getSourcesForSpell(const SpellID & sp
 	}
 
 	const BonusSourceID legacyScrollSource{ArtifactID(ArtifactID::SPELL_SCROLL)};
-	for(const auto & bonus : *getBonusesOfType(BonusType::SPELL, spellId))
+	for(const auto bonusList = getBonusesOfType(BonusType::SPELL, spellId); const auto & bonus : *bonusList)
 	{
 		if(bonus->source == BonusSource::ARTIFACT_INSTANCE && bonus->sid == legacyScrollSource)
 		{
@@ -2341,11 +2341,11 @@ std::vector<BonusSourceID> CGHeroInstance::getSourcesForSpell(const SpellID & sp
 		const auto tomeSchools = getSpellSchools(spell);
 		for(const auto & cnf : tomeSchools)
 		{
-			for(const auto & bonus : *getBonusesOfType(BonusType::SPELLS_OF_SCHOOL, cnf))
+			for(const auto bonusList = getBonusesOfType(BonusType::SPELLS_OF_SCHOOL, cnf); const auto & bonus : *bonusList)
 				sources.emplace_back(bonus->sid);
 		}
 
-		for(const auto & bonus : *getBonusesOfType(BonusType::SPELLS_OF_LEVEL, BonusCustomSubtype::spellLevel(getSpellLevel(spell))))
+		for(const auto bonusList = getBonusesOfType(BonusType::SPELLS_OF_LEVEL, BonusCustomSubtype::spellLevel(getSpellLevel(spell))); const auto & bonus : *bonusList)
 		{
 			// In New Horizons the Hat's temporary level-5 grant must not resurrect
 			// map-banned or otherwise unavailable spells, even when legacy tome rules

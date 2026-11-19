@@ -24,7 +24,7 @@ bool pinned(const CStack & stack)
 {
 	if(!stack.alive() || stack.isGhost())
 		return false;
-	for(const auto & bonus : *stack.getBonusesOfType(BonusType::BIND_EFFECT))
+	for(const auto bonusList = stack.getBonusesOfType(BonusType::BIND_EFFECT); const auto & bonus : *bonusList)
 		if(bonus->source == BonusSource::SPELL_EFFECT && bonus->duration == BonusDuration::N_TURNS
 			&& bonus->turnsRemain > 0 && bonus->stacking == newHorizonsSorcerySpells::FORCE_LANCE
 			&& bonus->sid.toString() == newHorizonsSorcerySpells::FORCE_LANCE)

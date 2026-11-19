@@ -450,7 +450,7 @@ int CBattleInfoEssentials::battleGetRetreatPermission(BattleSide side, BonusType
 	int result = 0;
 
 	//blockers such as shackles of war have nobody to enforce them if enemy army has no hero
-	for(const auto & bonus : *myHero->getBonusesOfType(permission))
+	for(const auto bonusList = myHero->getBonusesOfType(permission); const auto & bonus : *bonusList)
 		if(enemyHasHero || bonus->val > 0)
 			result += bonus->val;
 

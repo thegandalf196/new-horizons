@@ -79,7 +79,7 @@ int huntingPackBonus(const CBattleInfoCallback & battle, const battle::Unit * at
 int briarGripReduction(const CBattleInfoCallback & battle, const battle::Unit * attacker)
 {
 	if(!newHorizonsSylvanTactics::ordinary(attacker)) return 0;
-	for(const auto & marker : *attacker->getBonusesOfType(BonusType::BIND_EFFECT))
+	for(const auto markerList = attacker->getBonusesOfType(BonusType::BIND_EFFECT); const auto & marker : *markerList)
 	{
 		if(marker->source != BonusSource::SPELL_EFFECT || marker->sid.toString() != "core:bind" || !marker->parameters) continue;
 		const auto * source = battle.battleGetUnitByID(marker->parameters->toNumber());

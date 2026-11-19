@@ -94,7 +94,7 @@ bool levelImmunityAllows(const spells::Mechanics & cast, const battle::Unit * re
 {
 	if(!cast.isMagicalEffect() || cast.getSpellLevel() <= 0) return true;
 	BonusList remaining;
-	for(const auto & bonus : *recipient->getBonusesOfType(BonusType::LEVEL_SPELL_IMMUNITY))
+	for(const auto bonusList = recipient->getBonusesOfType(BonusType::LEVEL_SPELL_IMMUNITY); const auto & bonus : *bonusList)
 		if(!ignoresNativeLevelImmunity(cast, recipient, *bonus)) remaining.push_back(bonus);
 	if(absolute && std::ranges::none_of(remaining, [](const auto & bonus)
 		{ return bonus->parameters && bonus->parameters->toNumber() == 1; })) return true;

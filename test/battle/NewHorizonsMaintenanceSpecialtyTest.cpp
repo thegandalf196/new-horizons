@@ -168,7 +168,7 @@ TEST_P(NewHorizonsMaintenanceSpecialtyTest, OgreBulwarkDefendDoesNotGrantRetired
 	EXPECT_EQ(actor->counterAttacks.available(), std::max(0, ordinary - 1));
 	SetStackEffect expiry; expiry.battleID = BattleID(0);
 	std::vector<Bonus> stance;
-	for(const auto & bonus : *actor->getBonusesOfType(BonusType::UNIT_DEFENDING)) stance.push_back(*bonus);
+	for(const auto bonuses = actor->getBonusesOfType(BonusType::UNIT_DEFENDING); const auto & bonus : *bonuses) stance.push_back(*bonus);
 	expiry.toRemove.emplace_back(actor->unitId(), stance); gameHandler->sendAndApply(expiry);
 	actor->defending = false; // Fixture mirrors the existing afterGetsTurn action-flag clear.
 	EXPECT_EQ(actor->counterAttacks.total(), ordinary);
