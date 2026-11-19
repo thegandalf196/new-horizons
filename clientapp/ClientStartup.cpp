@@ -62,6 +62,10 @@ void notifyLauncherReady()
 #endif
 	const char * enabled = std::getenv("NH_LAUNCHER_STATUS");
 	if(enabled && std::string_view(enabled) == "1")
-		std::cout << "NH_LAUNCHER_READY_V1\n" << std::flush;
+	{
+		// The console logger can leave an ANSI reset after its last newline.
+		// Start the launcher protocol message on a fresh line.
+		std::cout << "\nNH_LAUNCHER_READY_V1\n" << std::flush;
+	}
 }
 }
