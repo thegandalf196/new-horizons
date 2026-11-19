@@ -85,9 +85,17 @@ def main():
                  'build-provenance', 'engine-source', 'dependency-source', 'packaging-source', 'output'):
         parser.add_argument('--' + name, type=Path, required=True)
     parser.add_argument('--packaging-revision', required=True)
+    parser.add_argument('--portable-updates', action='store_true', default=True,
+                        help='Include the desktop launcher and updater (the player-package default)')
+    parser.add_argument('--legacy-core-only', action='store_false', dest='portable_updates',
+                        help='Explicitly stage a legacy diagnostic package without the desktop launcher')
+    parser.add_argument('--release-archive-dir', type=Path,
+                        help='Write the updater-compatible official Linux archive after staging verification')
     parser.add_argument('--runtime-library', type=Path, action='append', default=[],
                         help='regular ELF provider named by its incoming SONAME; repeat for the complete declared set')
     args = parser.parse_args()
+    if args.release_archive_dir is not None and not args.portable_updates:
+        raise RuntimeError('Official release archives require the desktop launcher')
     if args.output.exists() or args.output.is_symlink():
         raise RuntimeError('Refusing to replace an existing stage')
     sources = source_archives((args.engine_source, args.dependency_source, args.packaging_source))
@@ -114,12 +122,17 @@ def main():
         (package / name).chmod(0o644)
     for name, record in libraries.items():
         (package / name).write_bytes(record['payload'])  # Owned verified bytes; never modify the input provider.
-    for source, name in (('tools/Play-New-Horizons.sh', 'Play-New-Horizons.sh'),
+    player_files = [('tools/Play-New-Horizons.sh', 'Play-New-Horizons.sh'),
                          ('tools/new-horizons-launch.sh', 'new-horizons-launch.sh'),
                          ('tools/linux_assets_setup.py', 'linux_assets_setup.py'),
                          ('tools/linux/README-New-Horizons.txt', 'README-New-Horizons.txt'),
                          ('tools/linux/LEGAL-New-Horizons.txt', 'LEGAL-New-Horizons.txt'),
-                         ('tools/linux/BUILDING-New-Horizons.txt', 'BUILDING-New-Horizons.txt')):
+                         ('tools/linux/BUILDING-New-Horizons.txt', 'BUILDING-New-Horizons.txt')]
+    if args.portable_updates:
+        player_files.extend((f'tools/linux/{name}', name) for name in
+                            ('PortableReleaseLauncher.py', 'PortableReleaseUpdate.py',
+                             'PortableLauncherWindow.py', 'PortableLauncherProcess.py'))
+    for source, name in player_files:
         data = subprocess.check_output(['git', '-C', str(root), 'show', args.packaging_revision + ':' + source])
         if (package / name).exists():
             (package / name).chmod(0o644)
@@ -150,6 +163,10 @@ def main():
     for p in package.rglob('*'):
         p.chmod(p.stat().st_mode & ~0o222)
     package.chmod(0o555)
+    if args.release_archive_dir is not None:
+        from archive_linux_player_release import archive_stage
+        archive, checksum = archive_stage(package, args.release_archive_dir)
+        print(checksum + '  ' + archive.name)
     print('Frozen staged payload:', package)
 
 

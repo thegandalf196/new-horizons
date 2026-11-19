@@ -1,31 +1,32 @@
-# Optional release notification
+# Desktop launcher and updates
 
-On Windows x64 and desktop Linux x64, the ordinary main menu checks the public
-GitHub `thegandalf196/new-horizons` latest-release endpoint once per game session.
-The request is unauthenticated: no profile, save, account token or workstation
-path is sent. GitHub necessarily receives normal connection information, including
-the source IP address. HTTPS certificate verification remains enabled.
+The portable Windows and desktop Linux packages open a New Horizons launcher
+with the installed version, **Play**, **Check for updates** and **Original
+game files**. When an update is available, **Install update** prepares it in
+the launcher. The player can start the new version as soon as installation
+finishes.
 
-The background request has a five-second deadline and a one-MiB response limit.
-Offline operation, rate limits, missing releases and malformed responses are
-silent. There is no startup wait. A prompt appears only at the main menu, never
-over an active game, when a newer stable **product** version has an uploaded,
-nonempty player archive for the current platform. Source-only releases do not
-produce an offer. The engine revision is not used as the product version.
+The launchers check the public GitHub latest-release endpoint for
+`thegandalf196/new-horizons`. Stable product versions and uploaded player
+archives for the current platform determine update eligibility. Update
+preparation verifies the archive size and SHA-256 against current GitHub
+metadata, then verifies every installed file against the package manifest.
+The selected version changes only after the checked client passes its version
+probe. Failed downloads, verification or probes leave the installed version
+available. Original game files, settings and saves use the existing profile.
 
-Accepting opens the official release page in the system browser. It does not
-download, install, overwrite files, restart the game or modify saves. Declining
-dismisses the offer. To disable checks, set `general.updateChecks` to `false`
-in the user's settings JSON; the default is `true`.
+The first updater-capable release is installed by extracting its complete
+package. Windows uses the root `new-horizons.exe`. Linux uses
+`new-horizons-setup` and the GTK 4 desktop libraries from Ubuntu. Direct CLI
+arguments keep their setup and automation behavior.
 
-Windows uses the system WinHTTP library. Linux requires libcurl with asynchronous
-DNS support and the system trust store; providers without bounded DNS support
-silently skip the check. Linux builders need the libcurl development package.
-Linux player-package dependency and notice audits must cover the actual provider
-and its transitive dependencies before publication. Other platforms skip checks.
+After **Play**, the launcher shows startup status while the game checks or
+prepares the NHART cache. The game process owns the artwork work and uses the
+same checked cache during play. See the [artwork cache contract](NHART_DELIVERY.md#installed-artwork-preparation).
 
-The CPU-only `nhReleaseUpdatePolicyTest` target tests version, publication,
-platform-asset, URL and malformed-response decisions without SDL or networking.
-`nhReleaseUpdateTransportProbe` tests pre-cancellation offline; its explicit
-`--live` argument makes one request to the fixed public endpoint and prints only
-status, response length and elapsed time. A zero status is not proof of connectivity.
+The launcher's update requests use HTTPS and send no player profile, save,
+account token or workstation path. GitHub receives normal connection data such
+as the source IP address. Set `general.updateChecks` to `false` in the existing
+profile settings to disable the automatic check. **Check for updates** remains
+available in the launcher. The standalone engine retains its older browser
+notification for direct starts.

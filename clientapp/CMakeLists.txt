@@ -1,6 +1,7 @@
 set(clientapp_SRCS
 		StdInc.cpp
 		EntryPoint.cpp
+		ClientStartup.cpp
 		BugReportBootstrap.cpp
 		BugReportRuntime.cpp
 		CrashReportSession.cpp
@@ -9,6 +10,7 @@ set(clientapp_SRCS
 
 set(clientapp_HEADERS
 		StdInc.h
+		ClientStartup.h
 		BugReportBootstrap.h
 		CrashReportSession.h
 		CrashReportLogTarget.h

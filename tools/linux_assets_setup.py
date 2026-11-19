@@ -199,6 +199,8 @@ def run(args):
         write_selection(args.profile, assets)
     if args.setup_only:
         return 0
+    if os.environ.get('NH_LAUNCHER_STATUS') == '1':
+        print('NH_LAUNCHER_PREPARING_ART_V1', flush=True)
     os.execv(str(args.launcher), command + ['--', *args.client_args])
 
 

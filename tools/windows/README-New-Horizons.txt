@@ -7,25 +7,27 @@ PLAY (no installer, administrator access or build tools)
    or Actions artifact. Choose the Windows package, not GitHub's source ZIP.
    Extract ALL files into an ordinary local folder you can access. Do not run
    inside the ZIP or merge this package into an existing Heroes III/VCMI install.
-2. Double-click new-horizons.exe at the root of the extracted folder.
-3. On first use, select your legitimate, installed Heroes III Complete folder
+2. Double-click new-horizons.exe to open the launcher. Choose Play to start or
+   Check for updates to look for a newer release. Install update applies an
+   available verified release in the launcher and updates the version shown.
+3. On first Play, select your installed Heroes III Complete folder
    containing Data, Maps and Mp3, or its Data subfolder. Selecting Data uses its
    parent; Maps and Mp3 must still be present beside Data. Setup copies only
    those three folders into a private New Horizons profile, then starts the game.
 4. Next time, use the same root new-horizons.exe. A completed import is checked
    and reused; the original installation need not remain at its previous path.
 
-To select or reselect assets without starting the game, double-click Setup.exe
-beside new-horizons.exe. Setup always opens the same folder picker and returns
+To select or reselect assets, use Original game files in the launcher or open
+Setup.exe beside new-horizons.exe. Setup opens the folder picker and returns
 when preparation finishes. It accepts Data or the Complete parent folder as
 above. Cancel leaves existing imported content and saves unchanged. Use
 new-horizons.exe afterwards when you want to play. Setup.exe does not install
 or uninstall the program, register it with Windows or create shortcuts.
 
 The root contains new-horizons.exe, Setup.exe and the runtime folder. Keep them
-together. DLLs, configuration, setup scripts, licenses and build/source notices
-are inside runtime. The root program starts setup; runtime/new-horizons.exe is
-the engine and is not the normal player entry point. Keep the layout intact.
+together. DLLs, configuration, launcher scripts, licenses and build/source
+notices are inside runtime. The root program opens the player launcher. Keep
+the layout intact.
 runtime/SHA256SUMS.txt lists paths relative to the extracted package root.
 
 This is a Windows 10/11 preview. Match the package architecture in its release
@@ -73,12 +75,13 @@ Paste that line into File Explorer's address bar to find:
   cache\                                   generated/extracted resources
   logs\                                    diagnostics
 
-Before gameplay, New Horizons verifies NewHorizons.nhart and prepares its
-artwork in a versioned directory under the profile cache. This needs about
-space comparable to the shipped artwork pack plus filesystem overhead. Later launches verify
-and reuse it; animations do not extract files while playing. Keep the shipped
-NHART package. If preparation fails, check free space and cache permissions;
-do not remove saves or original game files to repair the artwork cache.
+Before the game window opens, the root launcher displays "Preparing game
+artwork and starting New Horizons" while the engine checks NewHorizons.nhart.
+On the first launch it prepares the artwork in a versioned cache directory.
+This needs roughly the size of the shipped pack plus filesystem overhead.
+Later launches verify and reuse the cache. Keep the shipped NHART package.
+If preparation fails, check free space and cache permissions. Keep your
+saves and original game files when repairing the artwork cache.
 
 New saves use a separate New Horizons directory:
   %LOCALAPPDATA%\new-horizons\Saves

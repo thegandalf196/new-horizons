@@ -1,7 +1,7 @@
 # Installing New Horizons on Windows
 
-New Horizons 0.91.2 provides a portable Windows x64 ZIP for Windows 10 and 11.
-Download it from the [New Horizons release page](https://github.com/thegandalf196/new-horizons/releases/tag/v0.91.2).
+New Horizons provides a portable Windows x64 ZIP for Windows 10 and 11.
+Download it from the [latest New Horizons release page](https://github.com/thegandalf196/new-horizons/releases/latest).
 Original Heroes III Complete game assets are required and are not included.
 
 ## Before you start
@@ -21,26 +21,30 @@ Original Heroes III Complete game assets are required and are not included.
 2. Extract the **entire ZIP into a new folder**. Keep `new-horizons.exe`,
    `Setup.exe` and `runtime/` together. Do not run inside the ZIP or merge it
    into an existing Heroes III, VCMI or older New Horizons installation.
-3. Double-click `new-horizons.exe` at the extracted folder's root.
-4. On first launch, select the installed **Heroes III Complete folder containing
+3. Double-click `new-horizons.exe` at the extracted folder's root. The launcher
+   shows the installed version, **Play**, **Check for updates** and
+   **Original game files**.
+4. For the first game, choose **Play** and select the installed **Heroes III Complete folder containing
    `Data`, `Maps` and `Mp3`**, or its **`Data` subfolder**. The `Maps` and `Mp3`
    folders must still exist beside `Data`. Do not select an installer or a
    compressed archive.
-5. Wait for the private copy and verification to finish. The progress window
-   remains visible; the game starts when preparation succeeds.
+5. Wait for the private copy and verification to finish. The launcher then
+   shows **Preparing game artwork and starting New Horizons** while the game
+   checks its artwork cache and opens its window.
 
-Later launches use the same root `new-horizons.exe` and reuse the completed
-import. The original installation is read without being changed. Its executable,
+Later launches use the same root `new-horizons.exe`, reuse the completed import
+and show artwork preparation while the game checks its existing cache. The
+original installation is read without being changed. Its executable,
 mods, settings and saves are not imported. The imported copy remains usable if
 the original installation subsequently moves.
 
-The root executable starts setup and the game. `runtime/new-horizons.exe` is the
-inner engine; use the root executable for ordinary play. Keep the package's
+The root executable opens the launcher for ordinary play. Keep the package's
 `runtime/config/dirs.json` unchanged.
 
 ## Choose the original assets again
 
-Close the game and double-click `Setup.exe` beside `new-horizons.exe`. Select
+Close the game and choose **Original game files** in the launcher. `Setup.exe`
+also opens the folder selection. Select
 the Complete installation or its `Data` subfolder as described above. Setup
 copies and verifies the selected assets, then exits without starting the game.
 Use `new-horizons.exe` for ordinary play afterward.
@@ -66,9 +70,14 @@ portable program folder does not move or remove these files or the original
 Heroes III installation. Back up saves before upgrading; see the
 [changelog](../NEW_HORIZONS_CHANGELOG.md#0912-early-access) for save compatibility.
 
-To update, close New Horizons and extract the new release into another new
-folder. Use its root executable. Do not mix executables, DLLs or support files
-from different releases.
+For a manual update, close New Horizons and extract the new release into a new
+folder. Launch its root executable and keep each release's files together.
+
+In the launcher, choose **Install update** when an update is available. The
+launcher downloads and verifies the official Windows ZIP and checks the new
+client. When the installed version changes, choose **Play**. Saves, settings
+and the selected Heroes III assets stay in their existing locations. Extract
+the first launcher-capable release into a writable folder.
 
 ## Setup problems
 

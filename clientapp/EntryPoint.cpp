@@ -14,6 +14,7 @@
 #include "../Global.h"
 #include "PrivateWineStartupWitness.h"
 #include "BugReportBootstrap.h"
+#include "ClientStartup.h"
 #include "ClientIntegrationDriver.h"
 #include <vstd/DateUtils.h>
 
@@ -308,18 +309,7 @@ int main(int argc, char * argv[])
 
 	try
 	{
-		// Some basic data validation to produce better error messages in cases of incorrect install
-		auto testFile = [](const std::string & filename, const std::string & message)
-		{
-			if (!CResourceHandler::get()->existsResource(ResourcePath(filename)))
-				handleFatalError(message, false);
-		};
-
-		testFile("DATA/HELP.TXT", "VCMI requires Heroes III: Shadow of Death or Heroes III: Complete data files to run!");
-		testFile("MODS/VCMI/MOD.JSON", "VCMI installation is corrupted!\nBuilt-in mod was not found!");
-		testFile("DATA/NOTOSERIF-MEDIUM.TTF", "VCMI installation is corrupted!\nBuilt-in font was not found!\nManually deleting '" + VCMIDirs::get().userDataPath().string() + "/Mods/VCMI' directory (if it exists)\nor clearing app data and reimporting Heroes III files may fix this problem.");
-		testFile("DATA/PLAYERS.PAL", "Heroes III data files (Data/H3Bitmap.lod) are incomplete or corruped!\n Please reinstall them.");
-		testFile("SPRITES/DEFAULT.DEF", "Heroes III data files (Data/H3Sprite.lod) are incomplete or corruped!\n Please reinstall them.");
+		clientStartup::verifyGameResources();
 
 		if(!settings["session"]["headless"].Bool())
 		{
@@ -409,6 +399,7 @@ int main(int argc, char * argv[])
 				GAME->mainmenu()->playIntroVideos();
 			else
 				GAME->mainmenu()->playMusic();
+			clientStartup::notifyLauncherReady();
 		}
 	
 #ifndef VCMI_UNIX

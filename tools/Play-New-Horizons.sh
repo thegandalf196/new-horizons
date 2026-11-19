@@ -5,6 +5,9 @@ set -euo pipefail
 root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
 nh_python=${NH_PYTHON:-$(command -v python3)}
 [[ $nh_python == /* && -x $nh_python ]] || { printf '%s\n' 'New Horizons requires an absolute Python 3 executable.' >&2; exit 1; }
+if [[ -f $root/PortableReleaseLauncher.py && ! -L $root/PortableReleaseLauncher.py ]]; then
+	exec "$nh_python" -B "$root/PortableReleaseLauncher.py" --package "$root" -- "$@"
+fi
 exec "$nh_python" "$root/linux_assets_setup.py" \
 	--launcher "$root/new-horizons-launch.sh" \
 	--client "$root/new-horizons" --resources "$root" \

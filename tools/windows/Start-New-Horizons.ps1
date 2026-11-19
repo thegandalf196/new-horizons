@@ -177,8 +177,32 @@ function Select-CompleteFolder {
 }
 
 try {
+    $argumentEnvelope = $env:NH_WINDOWS_BOOTSTRAP_ARGUMENTS_V1
     $gameArguments = @(Read-BootstrapArguments)
     $packageRoot = [IO.Path]::GetFullPath($PSScriptRoot)
+    $portableChild = $env:NH_WINDOWS_PORTABLE_UPDATE_CHILD -ceq $packageRoot
+    $env:NH_WINDOWS_PORTABLE_UPDATE_CHILD = $null
+    if (-not $portableChild) {
+        $updateLauncher = Join-Path $packageRoot 'Portable-Release-Launcher.ps1'
+        if (Test-Path -LiteralPath $updateLauncher -PathType Leaf) {
+            Assert-PlainPath $updateLauncher
+            . $updateLauncher
+            if ($env:NH_WINDOWS_BOOTSTRAP_UI -eq '1' -and $gameArguments.Count -eq 0 -and
+                -not $SetupOnly -and -not $SelectAssets -and -not $AssetsPath) {
+                $playerLauncher = Join-Path $packageRoot 'Player-Launcher.ps1'
+                Assert-PlainPath $playerLauncher
+                . $playerLauncher
+                exit (Show-NHPlayerLauncher $packageRoot)
+            }
+            $selectedRelease = Select-NHPortableRelease $packageRoot $false
+            if ($selectedRelease.runtime -cne $packageRoot) {
+                $env:NH_WINDOWS_PORTABLE_UPDATE_CHILD = $selectedRelease.runtime
+                $env:NH_WINDOWS_BOOTSTRAP_ARGUMENTS_V1 = $argumentEnvelope
+                & (Join-Path $selectedRelease.runtime 'Start-New-Horizons.ps1') @PSBoundParameters
+                exit $LASTEXITCODE
+            }
+        }
+    }
     $clientName = 'new-horizons.exe'
     $identityPath = Join-Path $packageRoot 'BUILD-IDENTITY.json'
     if (Test-Path -LiteralPath $identityPath -PathType Leaf) {
@@ -334,8 +358,6 @@ try {
             throw "Could not activate the verified copy: $activationError. Existing content was restored; close the game and retry."
         }
         if ($backup) { Write-Host "Previous content retained at: $backup" }
-        Close-AssetImportProgress $importProgress
-        $importProgress = $null
     }
     Assert-ReadyContent $content
     Set-ManagedPreset $packageRoot $profileRoot
@@ -352,6 +374,8 @@ try {
             (Test-Path -LiteralPath (Join-Path $_.FullName 'pending'))
         } | Select-Object -First 1
         if ($retained) {
+            Close-AssetImportProgress $importProgress
+            $importProgress = $null
             try {
                 $null = Invoke-NativeClient $client $packageRoot @('--nointro', '--report-bug', 'pending')
             } catch {
@@ -363,7 +387,9 @@ try {
     $previousCrashSession = $env:NH_CRASH_SESSION_DIR
     $env:NH_CRASH_SESSION_DIR = $crashSession
     try {
-        $launchExitCode = Invoke-NativeClient $client $packageRoot $gameArguments
+        $startupProgress = Show-GameStartupProgress $importProgress $gameArguments
+        $importProgress = $null
+        $launchExitCode = Invoke-NativeClient $client $packageRoot $gameArguments $startupProgress
     } finally {
         $env:NH_CRASH_SESSION_DIR = $previousCrashSession
     }

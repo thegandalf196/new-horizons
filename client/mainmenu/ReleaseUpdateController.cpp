@@ -4,6 +4,8 @@
 #include "ReleaseUpdateTransport.h"
 
 #include <atomic>
+#include <cstdlib>
+#include <string_view>
 
 namespace releaseUpdates
 {
@@ -12,7 +14,8 @@ ReleaseUpdateController::ReleaseUpdateController(std::string installedVersion, b
 {
 	// Menu reconstruction must not issue another request in this process/session.
 	static std::atomic_bool started = false;
-	if(!enabled || started.exchange(true))
+	const char * managed = std::getenv("NH_LAUNCHER_MANAGES_UPDATES");
+	if(!enabled || (managed && std::string_view(managed) == "1") || started.exchange(true))
 		return;
 #if defined(_WIN32)
 	constexpr Platform platform = Platform::WindowsX64;

@@ -35,6 +35,34 @@ class LinuxStageTest(unittest.TestCase):
             self.assertEqual(len(staged['source_archives']), 3)
             self.assertEqual((self.root / 'BUILD-IDENTITY.json').read_bytes(), data)
 
+    def test_default_player_stage_copies_all_four_modules_from_packaging_revision(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            fixture = StageFixture(Path(temporary), self.root, providers=())
+            fixture.run(main, git_payload=lambda command: command[-1].encode())
+            package = fixture.arguments['output'] / 'New-Horizons-Linux-x64'
+            for name in ('PortableReleaseLauncher.py', 'PortableReleaseUpdate.py',
+                         'PortableLauncherWindow.py', 'PortableLauncherProcess.py'):
+                self.assertEqual((package / name).read_bytes(), f'packaging-revision:tools/linux/{name}'.encode())
+            verify_candidate(package)
+
+    def test_legacy_diagnostic_stage_can_explicitly_omit_desktop_modules(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            fixture = StageFixture(Path(temporary), self.root, providers=())
+            fixture.run(main, options=('--legacy-core-only',))
+            package = fixture.arguments['output'] / 'New-Horizons-Linux-x64'
+            self.assertFalse((package / 'PortableReleaseLauncher.py').exists())
+            verify_candidate(package)
+
+    def test_official_archive_option_invokes_verified_linux_archive_producer(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            fixture = StageFixture(Path(temporary), self.root, providers=())
+            destination = Path(temporary) / 'release'
+            destination.mkdir()
+            archive = destination / 'New-Horizons-Linux-x64-aaaaaaaaaaaa.tar.gz'
+            with patch('archive_linux_player_release.archive_stage', return_value=(archive, 'a' * 64)) as make:
+                fixture.run(main, options=('--release-archive-dir', str(destination)))
+            make.assert_called_once_with(fixture.arguments['output'] / 'New-Horizons-Linux-x64', destination)
+
     def test_staging_preserves_exact_binary_bound_optional_feature_marker(self):
         with tempfile.TemporaryDirectory() as temporary:
             fixture = StageFixture(Path(temporary), self.root, providers=())

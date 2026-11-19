@@ -88,9 +88,12 @@ def assert_portable_layout(package, *, require_setup=False):
 
 
 def stage_frontend(root, helpers, package):
-    """Stage only shipping setup helpers and project license notices."""
+    """Stage the launcher, setup helpers and project license notices."""
     for filename in ('Play-New-Horizons.cmd', 'Start-New-Horizons.ps1', 'Launch-Process.ps1',
-                     'Setup-Progress.ps1', 'Complete-Assets.ps1', 'README-New-Horizons.txt', 'dirs.json'):
+                     'Setup-Progress.ps1', 'Complete-Assets.ps1', 'Player-Launcher.ps1',
+                     'Player-Launcher-Operation.ps1',
+                     'Portable-Release-Launcher.ps1', 'Prepare-NHReleaseUpdate.ps1',
+                     'README-New-Horizons.txt', 'dirs.json'):
         source = helpers / filename
         destination = package / (Path('config/dirs.json') if filename == 'dirs.json' else filename)
         if destination.exists() and filename != 'dirs.json':

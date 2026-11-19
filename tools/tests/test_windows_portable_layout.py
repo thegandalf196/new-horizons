@@ -43,6 +43,16 @@ class PortableLayoutTest(unittest.TestCase):
         report = json.loads((runtime / 'BOOTSTRAP-IMPORTS.json').read_text())
         self.assertEqual(set(report), {'KERNEL32.dll', 'USER32.dll'})
 
+    def test_frontend_staging_copies_visible_launcher_and_worker(self):
+        repository = Path(__file__).resolve().parents[2]
+        helpers = repository / 'tools/windows'
+        frontend = self.root / 'frontend'
+        frontend.mkdir()
+        layout.stage_frontend(repository, helpers, frontend)
+        for name in ('Player-Launcher.ps1', 'Player-Launcher-Operation.ps1',
+                     'Portable-Release-Launcher.ps1', 'Prepare-NHReleaseUpdate.ps1'):
+            self.assertEqual((frontend / name).read_bytes(), (helpers / name).read_bytes())
+
     def test_installed_setup_is_audited_independently_before_staging(self):
         setup = self.install / 'bootstrap/Setup.exe'
         setup.write_bytes(b'MANUAL ENTRY')

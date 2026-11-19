@@ -81,7 +81,7 @@ class StageFixture:
         paths = sorted(p for p in self.candidate.iterdir() if p.is_file() and p.name != 'SHA256SUMS')
         (self.candidate / 'SHA256SUMS').write_text(''.join(digest(p.read_bytes()) + '  ' + p.name + '\n' for p in paths))
 
-    def run(self, main, libraries=None, git_payload=None):
+    def run(self, main, libraries=None, git_payload=None, options=()):
         for key, value in (('elf-audit', self.elf), ('inventory', self.inventory), ('build-provenance', self.provenance)):
             path = self.root / (key + '.json')
             path.write_text(json.dumps(value))
@@ -91,6 +91,7 @@ class StageFixture:
             argv.extend(['--' + key, str(value)])
         for path in self.libraries if libraries is None else libraries:
             argv.extend(['--runtime-library', str(path)])
+        argv.extend(options)
         provider = {'side_effect': git_payload} if git_payload else {'return_value': b'Fixture package text\n'}
         with patch.object(sys, 'argv', argv), patch('stage_linux_client.subprocess.check_output', **provider):
             main()

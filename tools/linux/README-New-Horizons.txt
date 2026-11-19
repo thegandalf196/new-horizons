@@ -7,6 +7,12 @@ config, Mods and launcher files
 together. Extract the whole package into a directory you can read and execute;
 do not mix binaries or resources from different releases.
 
+In the launcher, Check for updates looks for a newer Linux release. Install
+update downloads and verifies the official archive and checks the new client.
+Once the installed version changes, choose Play. Keep the extracted directory
+writable for updates. The selected Heroes III data path, settings and saves
+stay in the same managed profile.
+
 The declared SDL3/image/mixer/ttf providers are included beside the executable
 under their incoming SONAME filenames. BUILD-IDENTITY.json records their exact
 bytes and source origins. Other system libraries and optional drivers remain
@@ -18,15 +24,17 @@ Your installation must contain Data, Maps and Mp3 directories. Asset directories
 are mounted read-only by convention; saves/settings go in a separate managed
 profile. Do not select an existing ordinary VCMI profile.
 
-Double-click new-horizons-setup to launch. On the first run, select your Heroes
-III Complete installation folder. This must contain Data, Maps, Mp3 and the four
+Double-click new-horizons-setup to open the launcher. Use Play to start the game
+or Original game files to select your Heroes III Complete folder. On first play
+you will be prompted to select the folder. It must contain Data, Maps, Mp3 and the four
 nonempty Complete LOD archives (h3bitmap, h3sprite, h3ab_bmp, h3ab_spr).
 Your desktop may require marking the extracted executable as executable or
 allowing its execution; a shell script may instead open in a text editor.
 The native entry calls the packaged launcher without initializing the game.
 
-Python 3 and a working desktop folder-dialog provider are required. If the
-chooser is unavailable, run from this extracted directory:
+The desktop launcher uses the system Python 3, python3-gi and GTK 4 bindings
+(gir1.2-gtk-4.0 on Ubuntu). Folder selection requires a working desktop dialog
+provider. You can give the original data location explicitly using:
   ./Play-New-Horizons.sh --assets "/path/to/Heroes III Complete"
 
 The selected location is remembered privately beside the managed profile in
@@ -49,8 +57,9 @@ rules and selected artwork are included; no separate mod download is required.
 Keep Mods/new-horizons/NewHorizons.nhart intact. Original game archives remain
 external; do not extract artwork into the package as a fallback.
 
-Before gameplay, the engine verifies the NHART package and prepares its exact
-resource bytes in a new-horizons-art directory within the managed cache tree.
+Play displays the artwork preparation status until the game is ready. The
+engine verifies the NHART package and prepares its exact resource bytes in a
+new-horizons-art directory within the managed cache tree.
 The current pack needs about 27 MB plus filesystem overhead. Later launches
 verify and reuse the prepared files; no extraction takes place during animation.
 Keep the NHART file. A preparation error means you should check cache space and

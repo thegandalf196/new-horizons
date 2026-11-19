@@ -194,6 +194,30 @@ Without the opt-in bindings this case skips, which is not acceptance. Run
 `NewHorizonsTravelLandingAITest.*` separately for the adjacent landing controls.
 Neither suite establishes rendered travel or native Windows acceptance.
 
+### Archiving the desktop launcher package
+
+Build the release with a system install prefix such as `/usr`. Use `DESTDIR`
+to stage the install into a writable directory. CMake embeds the configured
+installation directories in `libvcmi.so`, so a home-directory install prefix
+cannot pass the public binary privacy check.
+
+Stage the Linux x64 player package with `tools/ci/stage_linux_client.py` using its audited Linux candidate, matching source archives
+and packaging revision. Official player staging includes the desktop launcher
+and updater by default; `--legacy-core-only` is reserved for explicit legacy
+diagnostics. The front end uses the distribution's Python 3 and
+GTK 4 bindings (`python3-gi` and `gir1.2-gtk-4.0` on Ubuntu). Run
+`tools/ci/archive_linux_player_release.py --stage
+STAGE/New-Horizons-Linux-x64 --output-dir OUTPUT` with the verified Python
+interpreter. Alternatively pass `--release-archive-dir OUTPUT` to the stager to run the same
+verified archive producer in the official packaging lane. The stage remains intact.
+The archive name contains the source
+revision prefix, and the command prints its SHA-256.
+
+Attach the Linux archive to the matching public release alongside its
+corresponding source archives. The updater uses GitHub's asset digest and verifies the
+inner inventory before selecting a new runtime. The player updater's
+installation-local state is separate from developer playable snapshots.
+
 For ordinary hero Luck/Morale presentation inputs, select
 `NewHorizonsHeroPositiveCueFixtureExportTest.ExportOrdinaryProgressionAdventureSave`
 alone, with `NH_EXPORT_HERO_POSITIVE_CUE_ORDINARY_BOOTSTRAP=1` and the corresponding
