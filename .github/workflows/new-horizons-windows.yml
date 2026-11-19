@@ -184,28 +184,17 @@ jobs:
           save: ${{ inputs.pch_off_cache_seed == '' && (!inputs.use_precompiled_headers || !inputs.skip_pch_cache_save) }}
 
       - name: Package audit regression tests (no PE execution)
-        id: package-audit
         run: |
           python tools/tests/run_windows_package_regressions.py --report build/new-horizons-windows-x64/PACKAGE-REGRESSIONS.json
 
       - name: Preflight Microsoft notices before compiling
-        if: >-
-          success() || (failure() && steps.package-audit.outcome == 'failure' &&
-          github.ref == 'refs/heads/performance/quick-combat-and-ci')
         shell: python
         run: |
-          import os, pathlib, runpy, subprocess, sys, tempfile
+          import pathlib, runpy, tempfile
           module = runpy.run_path('tools/ci/package_new_horizons_windows.py')
           with tempfile.TemporaryDirectory() as temporary:
               stage = pathlib.Path(temporary)
-              try:
-                  module['collect_microsoft_notices'](stage)
-              except RuntimeError:
-                  if (os.environ.get('GITHUB_REF') == 'refs/heads/performance/quick-combat-and-ci'
-                          and os.environ.get('GITHUB_EVENT_NAME') == 'workflow_dispatch'):
-                      subprocess.run([sys.executable, 'tools/ci/windows_runner_notice_evidence.py',
-                                      '--output', 'build/windows-microsoft-failure-evidence'], check=False)
-                  raise
+              module['collect_microsoft_notices'](stage)
               for path in sorted(stage.rglob('*')):
                   if path.is_file():
                       print(path.relative_to(stage).as_posix())
@@ -277,10 +266,8 @@ jobs:
           path: |
             build/new-horizons-windows-x64/PACKAGE-REGRESSIONS.json
             build/new-horizons-windows-x64/preflight/**/PREFLIGHT-REPORT.json
-            build/windows-microsoft-failure-evidence/comparison.json
-            build/windows-microsoft-failure-evidence/vendor-evidence.cms
           if-no-files-found: ignore
-          retention-days: ${{ github.ref == 'refs/heads/performance/quick-combat-and-ci' && 1 || 30 }}
+          retention-days: 30
 
       - name: Upload source-only preflight evidence (not a playable package)
         if: inputs.preflight_only

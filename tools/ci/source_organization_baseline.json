@@ -50,11 +50,11 @@
     },
     ".github/workflows/new-horizons-windows.yml": {
       "functions": [],
-      "sha256": "44f31053a1e0e1feaffa658e581d9aa206774a44fd6b67d580abecf0a26b4928",
-      "review": "IR-WINDOWS-FAILED-AUDIT-NOTICE-ONLY-20261119",
+      "sha256": "52baebf71b189f263feb2bdd2a07c5bf7f6080ff3740f542af8000e49f9b226e",
+      "review": "IR-WINDOWS-TEMPORARY-NOTICE-CLEANUP-20261119",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_ONLY",
-      "rationale": "Complete exact604-line YAML inventory is empty. All28run bodies unchanged from731c6801f8 and inspected;4directPython and2Pythonheredocs have no callables. Only auditstep id and notice-step condition added. Helper definitions remain in focused existing modules, not inline bodies.",
-      "review_scope": "Exact complete YAML callable inventory and failure-only notice step condition; no runtime/test/build/dispatch acceptance."
+      "rationale": "Complete exact591-line YAML callable inventory is empty. All28run bodies reviewed;4direct Python blocks and2Python heredocs parse without callable definitions; no Bash or PowerShell callable definitions. Only the Microsoft notice body shrinks18to8 lines while retaining the same unconditional authoritative collector; remaining27run payloads exact unchanged from4e26a21d1a75. Definitions remain in focused modules.",
+      "review_scope": "Exact complete workflow callable inventory and retirement of temporary evidence-only route. Source review only; no runtime, tests, compiler or dispatch."
     },
     ".github/workflows/qt_translation_update.yml": {
       "functions": [],
@@ -17436,14 +17436,14 @@
     ".github/workflows/new-horizons-windows.yml": {
       "deferral": "Before further workflow expansion, move the next cohesive inline validation or package-check body into a focused tested CI helper while preserving exact inputs, compile-step timing boundaries, failures and artifacts. No generic workflow growth allowance.",
       "kind": "exception",
-      "lines": 604,
+      "lines": 591,
       "owner": "engine_engineer",
       "prior_deferral": "Existing engine engineer ownership remains. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral. This exception covers only the exact542-line official source URL/comment correction with all transport, size, digest and cache admission controls unchanged. No future growth, numerical ceiling change or coverage exclusion is authorized. This separate review permits only the exact547-line explicit-interpreter successor. Before further expansion, engine_engineer must extract the affected dependency/preflight/package stage into a focused script or shared action, preserving source/cache, CRT/notices, dispatch and artifact contract checks and lowering the orchestration baseline. No future growth, default ceiling increase or exclusion is granted. This separate urgent-correctness review covers only the exact556-line early-bootstrap-smoke ordering successor. Existing extraction obligations and all ceilings remain unchanged; no future growth is authorized.",
-      "rationale": "Four routing lines identify failed packageaudit and allow only subsequent noticepreflight on the already job-fenced manual performancebranch. Originalaudit remains fatal, no continue-on-error or success-state override; later dependency/configure/compile retain defaultsuccess gating. Notice collector itself still rejects unreviewed licensing and reraises failure after encrypted diagnostics. No new inline body or helper complexity. Narrow exacthash growth exception for gathering blocked A5 evidence; preserve inherited stage-extraction obligations and nofuturegrowth rule.",
-      "review": "IR-WINDOWS-FAILED-AUDIT-NOTICE-ONLY-20261119",
-      "review_scope": "Exact600to604-line urgent diagnostic-only successor over731c6801f8. Public69f8241c43 comparison533lines retains earlier separately reviewed trial/extraction scopes; no generic growth authorization.",
+      "rationale": "Retires the completed temporary A5 evidence route: removes failed-audit step identifier and notice-only failure condition, encrypted-evidence subprocess wrapper, two diagnostic artifact paths and one-day branch retention. Deletes250-line temporary collector including embedded public certificate; no relocated complexity. Actual CRT/notice admission stays in unchanged authoritative helpers, and failed audits once again skip all later default-success steps. Complete typed controls, cache/disk/report gates, compile timings/targets/jobs and default behavior are otherwise unchanged. Exact13-line workflow reduction restores a shrinking ratchet; no future growth authorized.",
+      "review": "IR-WINDOWS-TEMPORARY-NOTICE-CLEANUP-20261119",
+      "review_scope": "Exact604to591-line cleanup over4e26a21d1a75469770dc1f0f87cf16d233f43f16; public69f8241c43 baseline533 lines, retaining previously independently reviewed intervening trial/extraction scopes and inherited deferrals. This cleanup grants no generic growth allowance.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_ONLY",
-      "sha256": "44f31053a1e0e1feaffa658e581d9aa206774a44fd6b67d580abecf0a26b4928",
+      "sha256": "52baebf71b189f263feb2bdd2a07c5bf7f6080ff3740f542af8000e49f9b226e",
       "inherited_deferral_step2": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count."
     },
     "AI/BattleAI/AttackPossibility.cpp": {

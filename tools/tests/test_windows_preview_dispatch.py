@@ -157,20 +157,6 @@ class WindowsPreviewDispatchTest(unittest.TestCase):
         for name in ('pch_off_cache_seed', 'repack_run_id'):
             self.assertEqual(inputs[name]['default'], '')
 
-    def test_failed_package_audit_allows_notice_evidence_without_allowing_compile(self):
-        audit = self.steps['Package audit regression tests (no PE execution)']
-        self.assertEqual(audit['id'], 'package-audit')
-        self.assertNotIn('continue-on-error', audit)
-        notice = self.steps['Preflight Microsoft notices before compiling']
-        self.assertEqual(' '.join(notice['if'].split()),
-                         "success() || (failure() && steps.package-audit.outcome == 'failure' && "
-                         "github.ref == '" + BRANCH + "')")
-        self.assertNotIn('continue-on-error', notice)
-        self.assertNotIn('if', self.steps['Resolve upstream dependency profile'])
-        compile_condition = self.steps['Compile Windows x64 client']['if']
-        for status in ('always()', 'failure()', 'cancelled()'):
-            self.assertNotIn(status, compile_condition)
-
     def test_unmatched_controls_fail_before_any_dependency_build(self):
         changes = {'preflight_only': True, 'use_precompiled_headers': False,
                    'build_jobs': 8, 'pch_off_cache_seed': 'cold', 'repack_run_id': '123',
