@@ -4,11 +4,13 @@
  */
 #include "StdInc.h"
 #include "../../NewHorizonsHistoricalAdventurePolicyTestUtils.h"
+#include "../../spells/HistoricalCrusadeRules.h"
 #include "HeroCommandFixture.h"
 #include "../../../lib/GameLibrary.h"
 #include "../../../lib/GameSettings.h"
 #include "../../../lib/entities/hero/CHero.h"
 #include "../../../lib/entities/hero/NewHorizonsHeroRules.h"
+#include "../../../lib/entities/hero/NewHorizonsChosenSpecialties.h"
 #include "../../../lib/nativeRules/CompiledMetamagicRules.h"
 #include "../../../lib/bonuses/BonusParameters.h"
 #include "../../../lib/gameState/QuestInfo.h"
@@ -44,6 +46,7 @@ public:
 class NewHorizonsRemainingStartTest : public HeroCommandFixture, public ::testing::WithParamInterface<bool>
 {
 protected:
+	bool historicalLightRoster = true;
 	bool presetBook = false;
 	bool legacyMagic = false;
 	bool absent = false;
@@ -64,9 +67,13 @@ protected:
 	void mapLoaded(CMap * loaded) override
 	{
 		HeroCommandFixture::mapLoaded(loaded);
-		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
-			legacyMagic ? JsonNode() : JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
+		JsonNode magic = legacyMagic ? JsonNode() : JsonNode(JsonPath::builtin("config/newHorizonsMagic"));
+		if(historicalLightRoster && !legacyMagic)
+			magic = historicalCrusadeRules(std::move(magic));
+		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, std::move(magic));
 		JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
+		if(historicalLightRoster)
+			rules.Struct().erase("chosenSpecialties");
 		if(absent)
 		{
 			rules["nonDamageSpellSpecialties"].Struct().erase("remainingStartReplacements");
@@ -206,7 +213,7 @@ protected:
 	}
 };
 
-TEST_P(NewHorizonsRemainingStartTest, ActualDefaultBookAndExplicitPaidCastKeepSpecialtyIsolation)
+TEST_P(NewHorizonsRemainingStartTest, HistoricalLightBookAndExplicitPaidCastKeepSpecialtyIsolation)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	if(halon())
@@ -231,6 +238,32 @@ TEST_P(NewHorizonsRemainingStartTest, ActualDefaultBookAndExplicitPaidCastKeepSp
 	EXPECT_EQ(target->getAvailableHealth(), hp);
 	expectValues(target);
 	EXPECT_FALSE(paidCast());
+}
+
+TEST_P(NewHorizonsRemainingStartTest, CurrentBooksAndSpecialtiesRemainDistinctFromHistoricalLightRules)
+{
+	historicalLightRoster = false;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const SpellID chosen(SpellID::decode("new-horizons:theChosen"));
+	ASSERT_TRUE(chosen.hasValue());
+	const SpellID starting = halon() ? SpellID(SpellID::DISPEL) : chosen;
+	EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(starting));
+	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(original()));
+	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(replacement()));
+	EXPECT_EQ(attackerSideHero->getNonDamageSpellSpecialtyBonusPercent(replacement()), 0);
+	EXPECT_EQ(newHorizonsHeroes::chosenSpecialtyDurationBonus(attackerSideHero->getPrimaryGrowthRules(),
+		attackerSideHero->getHeroType()->getJsonKey(), chosen), halon() ? 0 : 1);
+	const auto spells = attackerSideHero->getInscribedSpellsForCasting();
+	CGameState restored;
+	restored.preInit(LIBRARY);
+	ASSERT_NO_THROW(restored.loadFromMemory(gameState()->saveToMemory()));
+	const auto * loaded = restored.getMap().getHero(attackerSideHero->getHeroTypeID());
+	ASSERT_NE(loaded, nullptr);
+	EXPECT_EQ(loaded->getInscribedSpellsForCasting(), spells);
+	EXPECT_TRUE(loaded->spellbookContainsSpell(starting));
+	EXPECT_EQ(newHorizonsHeroes::chosenSpecialtyDurationBonus(loaded->getPrimaryGrowthRules(),
+		loaded->getHeroType()->getJsonKey(), chosen), halon() ? 0 : 1);
+	if(halon()) expectProducer(true);
 }
 
 TEST_P(NewHorizonsRemainingStartTest, ExplicitMapBookRemainsOriginal)
@@ -260,8 +293,21 @@ TEST_P(NewHorizonsRemainingStartTest, AbsentOptInDoesNotEnableReplacement)
 	CMemorySerializer bytes;
 	bytes.oser.version = static_cast<ESerializationVersion>(
 		static_cast<int>(ESerializationVersion::NEW_HORIZONS_REMAINING_START_REPLACEMENTS) - 1);
-	EXPECT_NO_THROW(attackerSideHero->serialize(bytes.oser));
-	EXPECT_FALSE(bytes.extractBuffer().empty());
+	// Absence of this one feature does not downgrade the other captured
+	// modern rules (including Leadership) to the pre-feature save epoch.
+	EXPECT_THROW(attackerSideHero->serialize(bytes.oser), std::runtime_error);
+	EXPECT_TRUE(bytes.extractBuffer().empty());
+	const auto spells = attackerSideHero->getInscribedSpellsForCasting();
+	CGameState restored;
+	restored.preInit(LIBRARY);
+	ASSERT_NO_THROW(restored.loadFromMemory(gameState()->saveToMemory()));
+	const auto * loaded = restored.getMap().getHero(attackerSideHero->getHeroTypeID());
+	ASSERT_NE(loaded, nullptr);
+	EXPECT_EQ(loaded->getInscribedSpellsForCasting(), spells);
+	EXPECT_FALSE(loaded->getPrimaryGrowthRules()["nonDamageSpellSpecialties"].Struct()
+		.contains("remainingStartReplacements"));
+	EXPECT_FALSE(loaded->spellbookContainsSpell(replacement()));
+	EXPECT_EQ(loaded->getNonDamageSpellSpecialtyBonusPercent(replacement()), 0);
 }
 
 TEST_P(NewHorizonsRemainingStartTest, WorldRoundtripAndSavedReinitPreserveBookAndSpecialtyCoefficient)
