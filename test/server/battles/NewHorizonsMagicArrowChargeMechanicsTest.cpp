@@ -393,7 +393,7 @@ TEST_F(NewHorizonsMagicArrowChargeMechanics, OrdinaryAiHeroProjectionAcceptsPaid
 	auto parent = std::make_shared<HypotheticBattle>(&environment, callback);
 	HypotheticBattle projected(&environment, parent);
 	HypotheticBattle sibling(&environment, parent);
-	const auto allowance = projected.prepareHeroSpellAllowance(BattleSide::ATTACKER, ARROW, false, false);
+	const auto allowance = projected.prepareHeroSpellAllowance(BattleSide::ATTACKER, ARROW);
 	ASSERT_TRUE(allowance);
 	const auto * canonicalHero = projected.getSideHero(BattleSide::ATTACKER);
 	ASSERT_NE(canonicalHero, nullptr);
@@ -406,10 +406,15 @@ TEST_F(NewHorizonsMagicArrowChargeMechanics, OrdinaryAiHeroProjectionAcceptsPaid
 	ASSERT_TRUE(mechanics->canBeCast(problem));
 	ASSERT_TRUE(mechanics->canBeCastAt(destination, problem));
 	EXPECT_EQ(mechanics->getTargetAwareManaCost(destination), 30);
+	// The prepared plan is not an accepted cast until its ordinary action begins.
+	EXPECT_FALSE(projected.projectAcceptedHeroSpell(BattleSide::ATTACKER, ARROW,
+		target->unitId(), *allowance, {target->unitId()}));
 	ASSERT_TRUE(projected.beginProjectedHeroAction(BattleSide::ATTACKER, *allowance));
 	mechanics->castEval(projected.getServerCallback(), destination);
 	ASSERT_TRUE(projected.projectAcceptedHeroSpell(BattleSide::ATTACKER, ARROW, target->unitId(),
-		false, false, false, false, *allowance, {target->unitId()}));
+		*allowance, {target->unitId()}));
+	EXPECT_FALSE(projected.projectAcceptedHeroSpell(BattleSide::ATTACKER, ARROW,
+		target->unitId(), *allowance, {target->unitId()}));
 	EXPECT_EQ(health - projected.battleGetUnitByID(target->unitId())->getAvailableHealth(), 620);
 	EXPECT_FALSE(projected.battleGetSpellActionAllowance(BattleSide::ATTACKER, ARROW));
 	EXPECT_TRUE(sibling.battleGetSpellActionAllowance(BattleSide::ATTACKER, ARROW));

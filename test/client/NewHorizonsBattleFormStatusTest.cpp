@@ -67,15 +67,27 @@ TEST(NewHorizonsBattleFormStatusTest, TooltipExplainsFormHealthAndAllegiance)
 TEST(NewHorizonsBattleFormStatusTest, BattleFormUsesAPrioritizedCompactStatusSlot)
 {
 	EXPECT_LT(stackStatusPriority(StackStatusIconKind::BATTLE_FORM),
-		stackStatusPriority(StackStatusIconKind::TIME_STOP));
+		stackStatusPriority(StackStatusIconKind::CONFUSION));
 
 	const auto plan = stackStatusDisplayPlan({StackStatusIconKind::ORDINARY,
-		StackStatusIconKind::TIME_STOP, StackStatusIconKind::BATTLE_FORM}, 4);
+		StackStatusIconKind::CONFUSION, StackStatusIconKind::BATTLE_FORM}, 4);
 	ASSERT_TRUE(plan.overflow);
 	ASSERT_TRUE(plan.ellipsisUsesSlot);
 	ASSERT_EQ(plan.visibleEntryIndices.size(), 2);
 	EXPECT_EQ(plan.visibleEntryIndices[0], 2);
 	EXPECT_EQ(plan.visibleEntryIndices[1], 1);
+}
+
+TEST(NewHorizonsBattleFormStatusTest, FrozenProtectionDoesNotDisplaceTheBattleFormOrConsumeAnEllipsisSlot)
+{
+	const auto plan = stackStatusDisplayPlan({StackStatusIconKind::ORDINARY,
+		StackStatusIconKind::FROZEN, StackStatusIconKind::BATTLE_FORM}, 4);
+	EXPECT_TRUE(plan.overflow);
+	EXPECT_FALSE(plan.ellipsisUsesSlot);
+	ASSERT_EQ(plan.visibleEntryIndices.size(), 3);
+	EXPECT_EQ(plan.visibleEntryIndices[0], 2);
+	EXPECT_EQ(plan.visibleEntryIndices[1], 1);
+	EXPECT_EQ(plan.visibleEntryIndices[2], 0);
 }
 
 TEST(NewHorizonsBattleFormStatusTest, HeldRestorationIsDistinctFromTheOrdinaryFinalRound)
