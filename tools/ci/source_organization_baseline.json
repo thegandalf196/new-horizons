@@ -30,9 +30,11 @@
     },
     ".github/workflows/instruction-portability.yml": {
       "functions": [],
-      "rationale": "Complete exact165-line workflow inventory: twelve literal Bash run blocks33-37,44-52,57-65,76-84,90,96-98,105-107,112-115,126-127,145-152,157-158,163-165 and scalar command138 are commands/assignments, not callable definitions. Two if groups47-49/76-83 and five command substitutions48/77/78/97/105 invoke git,dirname or external Python; GitHub hashFiles/context expressions and external actions are invocations. No shell function, inline Python/JavaScript/lambda, code heredoc or function-like macro definition occurs. External Python/CMake/tests remain separately inventoried. Boolean dispatch input and job-level manual native opt-in change no callable inventory. Empty functions does not exclude165 physical lines, waive numeric growth, approve future edits or certify bootstrap/CI/runtime behavior.",
-      "review": "IR-LOCAL-FIRST-REPOSITORY-CONTRACTS-20261021",
-      "sha256": "7ffd7d68e5d008fdc8c53f220d0076ca68c12fb318f4dff49a67a72d870ce3fe"
+      "rationale": "Complete exact167-line workflow inventory. Twelve literal run blocks33-37,44-52,57-66,77-85,91,97-99,106-108,113-117,128-129,147-154,159-160,165-167 and scalar140 contain external commands/assignments only. Added external bonus-list guard test58 and guard116 define no local callable. Existing shell conditional groups47-49/77-84 and command substitutions48/78/79/98/106 remain invocations. No shell function, inline language/heredoc, lambda or function-like macro. Complete callable inventory stays empty; external sources remain independently measured.",
+      "review": "IR-NEXT-BUILD-LIFETIME-NHART-REVERT-20261119",
+      "sha256": "7d613b87ff341cc8ac5ebac3fe5bcd366eaf99fe996e8130a0433c5606009dc6",
+      "review_scope": "Exact independent source/organization only; no compilation, runtime, rendering, timing, publication or future-growth acceptance.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE"
     },
     ".github/workflows/new-horizons-windows-manual-setup.yml": {
       "functions": [],
@@ -48,10 +50,11 @@
     },
     ".github/workflows/new-horizons-windows.yml": {
       "functions": [],
-      "sha256": "4fe97b8a72b02bbb18f0b305f588e7f08d10b49012df653cdd12ef88863b26df",
-      "review": "IR-WINDOWS-STEP4-JOBS-HOST-MEMORY-ORG-V1",
+      "sha256": "c5f99c03eb4924d66fb7cd919fa9991fdd4b555d24db876246630bd891203cdc",
+      "review": "IR-NEXT-BUILD-WINDOWS-NHART-INTERRUPTION-20261119",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
-      "rationale": "Complete exact549-line committed workflow callable inventory is empty. All Python run bodies were AST checked for function/lambda definitions; Bash/PowerShell run bodies and embedded Python heredoc contain only top-level assignments, controls, imports and external invocations. Six new lines define/forward the bounded build_jobs input; sampling resides in the focused107-line Python owner. No local named function, lambda or generated callable is introduced."
+      "rationale": "Complete exact617-line Windows workflow callable inventory remains empty. Inspected all28 run blocks: three Python heredocs parse to zero FunctionDef/AsyncFunctionDef/Lambda nodes; both PowerShell bodies contain top-level commands or quoted summary data only; Bash bodies contain assignments/conditionals/external invocations without function definitions. Added54-line branch control/launcher integration plus14-line interruption gate define no local callable. Exact owned native recovery runs after measured compile and before package; evidence uploads on failure. No native/runtime acceptance or future size allowance.",
+      "review_scope": "Exact source/organization and seven offline fake-process tests only; no C++ compilation, native Windows recovery, GUI, speed or publication acceptance."
     },
     ".github/workflows/qt_translation_update.yml": {
       "functions": [],
@@ -3577,70 +3580,66 @@
     "clientapp/EntryPoint.cpp": {
       "functions": [
         {
-          "end": 106,
-          "start": 89,
-          "symbol": "static void init()#1"
+          "symbol": "static void init()#1",
+          "start": 90,
+          "end": 107
         },
         {
-          "end": 123,
-          "start": 108,
-          "symbol": "static void checkForModLoadingFailure()#1"
+          "symbol": "static void checkForModLoadingFailure()#1",
+          "start": 109,
+          "end": 124
         },
         {
-          "end": 129,
-          "start": 125,
-          "symbol": "static void prog_version()#1"
+          "symbol": "static void prog_version()#1",
+          "start": 126,
+          "end": 130
         },
         {
-          "end": 141,
-          "start": 131,
-          "symbol": "static void prog_help(const po::options_description &opts)#1"
+          "symbol": "static void prog_help(const po::options_description &opts)#1",
+          "start": 132,
+          "end": 142
         },
         {
-          "end": 515,
-          "start": 143,
-          "symbol": "conditional entrypoint wmain(int argc, wchar_t* argv[]) | SDL_main(int argc, char *argv[]) | main(int argc, char * argv[])#1"
+          "symbol": "conditional entrypoint wmain(int argc, wchar_t* argv[]) | SDL_main(int argc, char *argv[]) | main(int argc, char * argv[])#1",
+          "start": 144,
+          "end": 506
         },
         {
-          "end": 271,
-          "start": 265,
-          "symbol": "[&](const std::string & key, const std::string & arg)#1"
+          "symbol": "[&](const std::string & key, const std::string & arg)#1",
+          "start": 266,
+          "end": 272
         },
         {
-          "end": 278,
-          "start": 272,
-          "symbol": "[&](const std::string & key, const std::string & arg, si64 defaultValue)#1"
+          "symbol": "[&](const std::string & key, const std::string & arg, si64 defaultValue)#1",
+          "start": 273,
+          "end": 279
         },
         {
-          "end": 316,
-          "start": 312,
-          "symbol": "[](const std::string & filename, const std::string & message)#1"
+          "symbol": "[]()#1",
+          "start": 335,
+          "end": 339
         },
         {
-          "end": 349,
-          "start": 345,
-          "symbol": "[]()#1"
+          "symbol": "[]()#2",
+          "start": 410,
+          "end": 429
         },
         {
-          "end": 438,
-          "start": 419,
-          "symbol": "[]()#2"
+          "symbol": "[&reports]()#1",
+          "start": 431,
+          "end": 491
         },
         {
-          "end": 500,
-          "start": 440,
-          "symbol": "[&reports]()#1"
-        },
-        {
-          "end": 532,
-          "start": 519,
-          "symbol": "void handleFatalError(const std::string & message, bool terminate)#1"
+          "symbol": "void handleFatalError(const std::string & message, bool terminate)#1",
+          "start": 510,
+          "end": 523
         }
       ],
-      "rationale": "Complete exact534-line conditional-entry inventory:12 callable bodies, retaining every OS/SDL/thread/CURE alternative and the full145-517 conditional entrypoint. The former console callback moves to the parsed focused BugReportBootstrap owner. All11 retained non-entry bodies are inventoried:ten remap by exact body bytes; the61-line cleanup lambda changes only its reports capture and deconfigure owner. Entry orchestration shrinks385 to373 lines. Ordinary continuous GUI mutex, network temporary-unlock waits and async destruction ordering remain. Parser recovery is covered by this complete inventory, not excluded. Source-only; no native/rendered certification. Exact v5: Complete 12-body conditional-entry inventory retained. All OS/SDL/thread/Cure/owned alternatives inspected; only driver type/name and shared option guard change. Whole conditional entrypoint and cleanup lambda preserved as complete bodies, not branch-selected fragments. Ten other bodies remap by exact bytes; new code adds no callable.",
-      "review": "IR-OWNED-COMPOSITION-V5-R2-EXACT-SOURCE-20261101",
-      "review_status": "INDEPENDENT_SOURCE_REVIEW_ONLY",
-      "sha256": "8bc385c1b5f41a6094e60338f6bbf2c36d387fe2221fd81fc4bca2c1703127b6"
+      "rationale": "Complete exact523-line conditional entry inventory:11 bodies including full144-506 Windows/Mobile/ordinary entrypoint and all OS/SDL/integration alternatives. Ten retained non-entry bodies remap byte-identically from reviewed532-line preimage; the five-line testFile lambda is removed and its five ordered diagnostics move to67-line parsed ClientStartup owner. Whole entrypoint shrinks373 to363 lines, not branch-selected fragments; new menu-ready notification adds no callable. Resource check ordering/messages, startup failure and normal cleanup ordering inspected; inherited stronger lifecycle deferrals retained. Source review only.",
+      "review": "IR-NEXT-BUILD-FROZEN-PLAYER-LAUNCHER-ORG-20261119",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
+      "sha256": "9e6b35116d6a14315950eb2a03399d60d1ba246bb5a6b4e8eef88f58eb658013",
+      "review_scope": "Exact independent source organization and reused prior source review only; no native compilation, GUI, Windows execution, performance, promotion or future growth permission."
     },
     "clientapp/ios/GameChatKeyboardHandler.h": {
       "functions": [],
@@ -12612,100 +12611,60 @@
       "functions": [
         {
           "symbol": "GuardQueryProbe::GuardQueryProbe(const HypotheticBattle * owner, std::shared_ptr<StackWithBonuses> target) : StackWithBonuses(owner, target.get()), target(std::move(target))#1",
-          "start": 28,
-          "end": 29
+          "start": 26,
+          "end": 27
         },
         {
           "symbol": "GuardQueryProbe::bool mayHaveBonusType(BonusType type) const override#1",
-          "start": 30,
-          "end": 30
+          "start": 28,
+          "end": 28
         },
         {
           "symbol": "GuardQueryProbe::TConstBonusListPtr getAllBonuses(const CSelector & selector, const std::string & key = {}) const override#1",
-          "start": 31,
-          "end": 35
+          "start": 29,
+          "end": 33
         },
         {
           "symbol": "GuardQueryProbe::TConstBonusListPtr getUnstackedBonuses(const CSelector & selector) const override#1",
-          "start": 36,
-          "end": 40
+          "start": 34,
+          "end": 38
         },
         {
           "symbol": "GuardQueryProbe::TConstBonusListPtr getBonusesBeforeCreatureAbilitySuppression(const CSelector & selector, const std::string & key = {}, bool unstacked = false) const override#1",
-          "start": 41,
-          "end": 46
+          "start": 39,
+          "end": 44
         },
         {
           "symbol": "Bonus suppressionMarker()#1",
-          "start": 49,
-          "end": 53
+          "start": 47,
+          "end": 51
         },
         {
-          "symbol": "TEST_F(MechanicsPresenceAITest, AbsentLegacyGuardsPerformZeroMergedQueriesAndControlledAppendIsImmediate)#1",
-          "start": 56,
-          "end": 78
+          "symbol": "TEST_F(MechanicsPresenceAITest, AbsentLegacyGuardsPerformZeroMergedQueriesAndPublicAppendIsImmediate)#1",
+          "start": 54,
+          "end": 76
         },
         {
-          "symbol": "TEST_F(MechanicsPresenceAITest, ParentControlledEditsSnapshotsAndSiblingsKeepIndependentPresence)#1",
-          "start": 80,
-          "end": 100
+          "symbol": "TEST_F(MechanicsPresenceAITest, ParentPublicEditsSnapshotsAndSiblingsKeepIndependentPresence)#1",
+          "start": 78,
+          "end": 98
         },
         {
           "symbol": "TEST_F(MechanicsPresenceAITest, InheritedInactiveLimiterAndNativeInvalidationNeverProveFalseAbsence)#1",
-          "start": 102,
-          "end": 119
+          "start": 100,
+          "end": 117
         },
         {
           "symbol": "TEST_F(MechanicsPresenceAITest, CustomGetterExtensionsRemainUnknown)#1",
-          "start": 121,
-          "end": 130
-        },
-        {
-          "symbol": "TEST_F(MechanicsPresenceAITest, OrdinaryOperationsInvalidatePresenceAndRoundExpiry)#1",
-          "start": 132,
-          "end": 154
-        },
-        {
-          "symbol": "TEST_F(MechanicsPresenceAITest, QueriesDuringMutationNeverReuseIntermediateSummary)#1",
-          "start": 156,
-          "end": 163
-        },
-        {
-          "symbol": "TEST_F(MechanicsPresenceAITest, QueryPointeeMutationKeepsExactPresenceAfterAliasEscape)#1",
-          "start": 165,
-          "end": 178
-        },
-        {
-          "symbol": "TEST_F(MechanicsPresenceAITest, PreparedDraftMutableAliasesRetireBothSharedSummaries)#1",
-          "start": 180,
-          "end": 195
-        },
-        {
-          "symbol": "TEST_F(MechanicsPresenceAITest, RawProjectionAndFrozenScoringAliasesRemainObservable)#1",
-          "start": 197,
-          "end": 216
-        },
-        {
-          "symbol": "TEST_F(MechanicsPresenceAITest, PublishingPreparedEffectsInvalidatesBothReceivers)#1",
-          "start": 218,
-          "end": 232
-        },
-        {
-          "symbol": "TEST_F(MechanicsPresenceAITest, BorrowedUpdaterGraphNeverBecomesAnOwnedTypeSummary)#1",
-          "start": 234,
-          "end": 254
-        },
-        {
-          "symbol": "TEST_F(MechanicsPresenceAITest, LayerSummariesPreserveTheCombinedRecordBudget)#1",
-          "start": 256,
-          "end": 268
+          "start": 119,
+          "end": 128
         }
       ],
-      "rationale": "Complete exact268-line Step1 test callable inventory:18 bodies, including all six query/helper bodies and twelve TEST_F scenarios. The two default-initializer recovery contexts at31/42 are covered by inspected original body spans, not excluded. Eight preexisting unchanged bodies remap byte-exact; two renamed controlled-edit scenarios and eight new cache/alias/updater/budget cases were source-reviewed. Native execution remains unverified.",
-      "review": "IR-PERFORMANCE-STEP2-BUILD-ORG-V1",
-      "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
+      "rationale": "Complete exact128-line post-revert inventory: ten bodies, six original helper/query bodies at26-27,28,29-33,34-38,39-44,47-51, and four restored public-mutation scenarios54-76,78-98,100-117,119-128. Remove the eight cache-specific tests retired with Step1 rather than retaining nonexistent spans. Recovery at29/40 is limited to bodyless default argument initialization inside the inspected method signatures. Full original bodies inspected; no union, exclusion, implicit constructor, lambda or macro body omitted.",
+      "review": "IR-NEXT-BUILD-LIFETIME-NHART-REVERT-20261119",
+      "review_scope": "Exact independent source/organization only; no compilation, runtime, rendering, timing, publication or future-growth acceptance.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
-      "sha256": "8ad92a0c724176312f5513dae13b2313eebc59177342aae57c064cdc56289a8e"
+      "sha256": "64602d76372c5dcc0a10daed1024a7d548871f255ad6ee5a684a3e4b661f4dff"
     },
     "test/battleAI/NewHorizonsBulwarkAITest.cpp": {
       "functions": [
@@ -16562,39 +16521,46 @@
     "tools/windows/Launch-Process.ps1": {
       "functions": [
         {
-          "end": 20,
-          "lines": 18,
-          "sha256": "aecede8df8a8f5483bd5b51cfe26257d38f73a7d6f808e27daec106f512d62f1",
+          "symbol": "function Read-BootstrapArguments#1",
           "start": 3,
-          "symbol": "function Read-BootstrapArguments#1"
+          "end": 20
         },
         {
-          "end": 39,
-          "lines": 18,
-          "sha256": "e268de1fd623389a0995418f348a142c39f415eebf1def93497cea214d33fafa",
+          "symbol": "function ConvertTo-NativeArgument#1",
           "start": 22,
-          "symbol": "function ConvertTo-NativeArgument([AllowEmptyString()][string]$Value)#1"
+          "end": 39
         },
         {
-          "end": 59,
-          "lines": 19,
-          "sha256": "15b00de08b7910b1603eb3edf6be37f5a26df43c9b124d2dfae6ee9ded9a5613",
+          "symbol": "function Test-NativeClientGameWindow#1",
           "start": 41,
-          "symbol": "function Invoke-NativeClient([string]$Client, [string]$WorkingDirectory,#1"
+          "end": 51
         },
         {
-          "end": 47,
-          "lines": 1,
-          "sha256": "37bedb250cc19c92be4deea08b4ae02779334daa705863d043a6a654d1a0ff02",
-          "start": 47,
-          "symbol": "Invoke-NativeClient::ForEach-Object::<scriptblock>#1"
+          "symbol": "function New-NativeClientReadySignal#1",
+          "start": 53,
+          "end": 59
+        },
+        {
+          "symbol": "function Wait-NativeClientExit#1",
+          "start": 61,
+          "end": 80
+        },
+        {
+          "symbol": "function Invoke-NativeClient#1",
+          "start": 82,
+          "end": 108
+        },
+        {
+          "symbol": "function Invoke-NativeClient::<scriptblock>#1",
+          "start": 88,
+          "end": 88
         }
       ],
-      "rationale": "Inspected all function declarations and executable scriptblock callbacks; quoted receiver/guard heredoc data are not callables of the containing script. Top-level control flow does not fabricate function spans. Setup progress UI does not alter asset verification/activation; workflow smoke executes only synthetic receiver, no client/GUI. Runtime PowerShell parser/execution remains unrun.",
-      "review": "IR-0911-INTEGRATION-SOURCE-ORGANIZATION",
-      "review_scope": "Complete exact-file callable inventory independently inspected; recorded spans/source hashes cover all bodies including scriptblock callbacks, excluding quoted script data. Grammar-recovery/manual coverage is source measurement, not compiler or platform runtime validation.",
-      "review_status": "INDEPENDENTLY_REVIEWED_SOURCE_ONLY",
-      "sha256": "ffaa05f591051715f2dca1c870b2f53d27caa49d17bf4f0df3658376a7da71a1"
+      "sha256": "06f9c4e0b4e45d7df9a1e5f05097b6c521e09195baba34c4c1f361bf36861d31",
+      "review": "IR-NEXT-BUILD-FROZEN-PLAYER-LAUNCHER-ORG-20261119",
+      "review_scope": "Exact independent source organization and reused prior source review only; no native compilation, GUI, Windows execution, performance, promotion or future growth permission.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
+      "rationale": "Complete exact108-line PowerShell callable inventory independently re-parsed with actual PowerShell7.5.4 AST: all7 FunctionDefinitionAst and executable ScriptBlockExpressionAst bodies, including nested callbacks. Inspected command/param/control-flow blocks and quoted script data are not invented callable definitions. Exact bytes match previously independently reviewed IR-PLAYER-LAUNCHER-FINAL-SOURCE-V1. Largest function is below80 lines; no numeric waiver or missing callback. Parser syntax success on Linux does not establish Windows5.1/WinForms/native readiness execution."
     },
     "tools/windows/Play-New-Horizons.cmd": {
       "functions": [],
@@ -16605,125 +16571,105 @@
     "tools/windows/Setup-Progress.ps1": {
       "functions": [
         {
-          "end": 27,
-          "lines": 25,
-          "sha256": "56297baa0b3b0e53e664f6779f72e4ea9674b0ab3cf63a8f9f4d72e9f21a2b53",
+          "symbol": "function Show-AssetImportProgress#1",
           "start": 3,
-          "symbol": "function Show-AssetImportProgress([int]$Files, [long]$Bytes)#1"
+          "end": 31
         },
         {
-          "end": 12,
-          "lines": 1,
-          "sha256": "ce6f6564c50681edebbcac1282655b44e4e44c9249efb5d4ebdb00a60220c3f8",
+          "symbol": "function Show-AssetImportProgress::<scriptblock>#1",
           "start": 12,
-          "symbol": "FormClosing::<scriptblock>(prevent user abort during transaction)#1"
+          "end": 12
         },
         {
-          "end": 37,
-          "lines": 9,
-          "sha256": "9b7b98694393a5ca9ad7a198ac4e8474e2c7e713c25d5794fbd8635f77567b27",
-          "start": 29,
-          "symbol": "function Update-AssetImportProgress($Progress, [int]$Completed, [long]$Bytes, [string]$Phase)#1"
+          "symbol": "function Update-AssetImportProgress#1",
+          "start": 33,
+          "end": 41
         },
         {
-          "end": 45,
-          "lines": 7,
-          "sha256": "927e57e96c1ec4ab47b47f187207fb4e397f2f6a228b830f5ba04df377623f66",
-          "start": 39,
-          "symbol": "function Close-AssetImportProgress($Progress)#1"
+          "symbol": "function Close-AssetImportProgress#1",
+          "start": 43,
+          "end": 55
+        },
+        {
+          "symbol": "function Show-GameStartupProgress#1",
+          "start": 57,
+          "end": 77
+        },
+        {
+          "symbol": "function Update-GameStartupProgress#1",
+          "start": 79,
+          "end": 83
         }
       ],
-      "rationale": "Inspected all function declarations and executable scriptblock callbacks; quoted receiver/guard heredoc data are not callables of the containing script. Top-level control flow does not fabricate function spans. Setup progress UI does not alter asset verification/activation; workflow smoke executes only synthetic receiver, no client/GUI. Runtime PowerShell parser/execution remains unrun.",
-      "review": "IR-0911-INTEGRATION-SOURCE-ORGANIZATION",
-      "review_scope": "Complete exact-file callable inventory independently inspected; recorded spans/source hashes cover all bodies including scriptblock callbacks, excluding quoted script data. Grammar-recovery/manual coverage is source measurement, not compiler or platform runtime validation.",
-      "review_status": "INDEPENDENTLY_REVIEWED_SOURCE_ONLY",
-      "sha256": "f4f309aeadfba0b659032f0c7b248208c0e2f4a310f776894cb21e607b342750"
+      "sha256": "bf0c3399fbebcd0fc9616f3d3293913ce0e7165fff7dc7fb0fcc5651edd23c94",
+      "review": "IR-NEXT-BUILD-FROZEN-PLAYER-LAUNCHER-ORG-20261119",
+      "review_scope": "Exact independent source organization and reused prior source review only; no native compilation, GUI, Windows execution, performance, promotion or future growth permission.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
+      "rationale": "Complete exact83-line PowerShell callable inventory independently re-parsed with actual PowerShell7.5.4 AST: all6 FunctionDefinitionAst and executable ScriptBlockExpressionAst bodies, including nested callbacks. Inspected command/param/control-flow blocks and quoted script data are not invented callable definitions. Exact bytes match previously independently reviewed IR-PLAYER-LAUNCHER-FINAL-SOURCE-V1. Largest function is below80 lines; no numeric waiver or missing callback. Parser syntax success on Linux does not establish Windows5.1/WinForms/native readiness execution."
     },
     "tools/windows/Start-New-Horizons.ps1": {
       "functions": [
         {
-          "end": 31,
-          "lines": 10,
-          "sha256": "56004b508010ecf4c49206553c2ba7df401ce7d74f22f073b0550845d1078400",
+          "symbol": "function Test-ReportableGameExit#1",
           "start": 22,
-          "symbol": "function Test-ReportableGameExit#1"
+          "end": 31
         },
         {
-          "end": 45,
-          "lines": 13,
-          "sha256": "a72a731ef6ca8deda66786cc531bd894febbd88faafdd9aa33e1811431daea99",
+          "symbol": "function Assert-PlainPath#1",
           "start": 33,
-          "symbol": "function Assert-PlainPath([string]$Path)#1"
+          "end": 45
         },
         {
-          "end": 62,
-          "lines": 16,
-          "sha256": "523d09f06e5258cdcdfec8806276f9b4c71797024328aa4822dabdd727afbe4b",
+          "symbol": "function Get-SafeChildPath#1",
           "start": 47,
-          "symbol": "function Get-SafeChildPath([string]$Root, [string]$Relative)#1"
+          "end": 62
         },
         {
-          "end": 81,
-          "lines": 18,
-          "sha256": "723d0ed32830fda8b22337009f29f0e2288511a546b9e6c6f284bf3486f02d9d",
+          "symbol": "function Assert-CompleteLayout#1",
           "start": 64,
-          "symbol": "function Assert-CompleteLayout([string]$Root)#1"
+          "end": 81
         },
         {
-          "end": 104,
-          "lines": 22,
-          "sha256": "88d6f3fbaf0ff373154c25c51a1f7af2fcb9e75993ed833337c33512cf64c64c",
+          "symbol": "function Get-AssetInventory#1",
           "start": 83,
-          "symbol": "function Get-AssetInventory([string]$Root)#1"
+          "end": 104
         },
         {
-          "end": 131,
-          "lines": 26,
-          "sha256": "56c7aa955e1107ca3da2865bad6567697263fb4080b5db6104e08c2f99c84206",
+          "symbol": "function Assert-ReadyContent#1",
           "start": 106,
-          "symbol": "function Assert-ReadyContent([string]$Root)#1"
+          "end": 131
         },
         {
-          "end": 162,
-          "lines": 30,
-          "sha256": "8540c89f617ad4ca110d96ce18ed5209068353369d575c064895348cf7044b57",
+          "symbol": "function Set-ManagedPreset#1",
           "start": 133,
-          "symbol": "function Set-ManagedPreset([string]$PackageRoot, [string]$ProfileRoot)#1"
+          "end": 162
         },
         {
-          "end": 177,
-          "lines": 14,
-          "sha256": "03f885a549adbfc46f62ae53ab2e3cc36894f066c02ae7ac630f8785f6bb0435",
+          "symbol": "function Select-CompleteFolder#1",
           "start": 164,
-          "symbol": "function Select-CompleteFolder#1"
+          "end": 177
         },
         {
-          "end": 275,
-          "lines": 1,
-          "sha256": "3dde02b8daf531725fdec96c9a6272b71251c82f617ea92040d3ea47b0efd6d4",
-          "start": 275,
-          "symbol": "Where-Object::<scriptblock>($_.path -like 'Maps\\\\*.h3m')#1"
+          "symbol": "<top-level>::<scriptblock>#1",
+          "start": 299,
+          "end": 299
         },
         {
-          "end": 276,
-          "lines": 1,
-          "sha256": "47a44f3caef19caccee71d8840643e67dcd14c969f9aafb1d42c81c7e62da0af",
-          "start": 276,
-          "symbol": "Where-Object::<scriptblock>($_.path -like 'Mp3\\\\*.mp3')#1"
+          "symbol": "<top-level>::<scriptblock>#2",
+          "start": 300,
+          "end": 300
         },
         {
-          "end": 353,
-          "lines": 4,
-          "sha256": "09ad90ca00d65026ba133d33b578b16ab4df539e27a2f609bc3a2dde5f66bb4c",
-          "start": 350,
-          "symbol": "Where-Object::<scriptblock>(pending retained run directory)#1"
+          "symbol": "<top-level>::<scriptblock>#3",
+          "start": 372,
+          "end": 375
         }
       ],
-      "rationale": "Complete exact-file callable inventory renewed for the reviewed manual Setup asset-root selection. Existing named functions and executable callback/scriptblock bodies retained; quoted receiver script data remains excluded. No native/runtime acceptance or future size allowance.",
-      "review": "IR-0911-SETUP-LOAD-WALKING-OBSERVERS",
-      "review_scope": "Complete exact-file callable inventory independently inspected; recorded spans/source hashes cover all bodies including scriptblock callbacks, excluding quoted script data. Grammar-recovery/manual coverage is source measurement, not compiler or platform runtime validation.",
-      "review_status": "INDEPENDENTLY_REVIEWED_SOURCE_ONLY",
-      "sha256": "a565531f2c17312818751f52a22b86a55c21224aa2dcedcd54c488b1a8e8dd1d"
+      "sha256": "a6ddfa7d3bc28905eba0116df98ca6af7c3a759e925b2aea25d75d713e766843",
+      "review": "IR-NEXT-BUILD-FROZEN-PLAYER-LAUNCHER-ORG-20261119",
+      "review_scope": "Exact independent source organization and reused prior source review only; no native compilation, GUI, Windows execution, performance, promotion or future growth permission.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
+      "rationale": "Complete exact426-line PowerShell callable inventory independently re-parsed with actual PowerShell7.5.4 AST: all11 FunctionDefinitionAst and executable ScriptBlockExpressionAst bodies, including nested callbacks. Inspected command/param/control-flow blocks and quoted script data are not invented callable definitions. Exact bytes match previously independently reviewed IR-PLAYER-LAUNCHER-FINAL-SOURCE-V1. Largest function is below80 lines; no numeric waiver or missing callback. Parser syntax success on Linux does not establish Windows5.1/WinForms/native readiness execution."
     },
     "tools/windows/tests/Managed-Preset-Smoke.ps1": {
       "functions": [
@@ -17202,6 +17148,252 @@
       "rationale": "Complete exact committed Step2 callable inventory; every retained body remapped by exact original bytes. Only forward declarations and optional observation arguments change; no new inline implementation. Known parser recovery remains explicitly covered. Moving Step3 working-tree postimages are NOT reviewed by this record.",
       "functions": [],
       "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE"
+    },
+    "tools/windows/Player-Launcher.ps1": {
+      "functions": [
+        {
+          "symbol": "function New-NHPlayerProcess#1",
+          "start": 4,
+          "end": 20
+        },
+        {
+          "symbol": "function New-NHPlayerProcess::<scriptblock>#1",
+          "start": 11,
+          "end": 11
+        },
+        {
+          "symbol": "function Wait-NHPlayerProcess#1",
+          "start": 22,
+          "end": 46
+        },
+        {
+          "symbol": "function Set-NHPlayerBusy#1",
+          "start": 48,
+          "end": 53
+        },
+        {
+          "symbol": "function Invoke-NHPlayerUpdate#1",
+          "start": 55,
+          "end": 95
+        },
+        {
+          "symbol": "function Invoke-NHPlayerGame#1",
+          "start": 97,
+          "end": 121
+        },
+        {
+          "symbol": "function New-NHPlayerButton#1",
+          "start": 123,
+          "end": 130
+        },
+        {
+          "symbol": "function New-NHPlayerView#1",
+          "start": 132,
+          "end": 165
+        },
+        {
+          "symbol": "function Test-NHLauncherAutoCheck#1",
+          "start": 167,
+          "end": 184
+        },
+        {
+          "symbol": "function Show-NHPlayerLauncher#1",
+          "start": 186,
+          "end": 198
+        },
+        {
+          "symbol": "function Show-NHPlayerLauncher::<scriptblock>#1",
+          "start": 189,
+          "end": 189
+        },
+        {
+          "symbol": "function Show-NHPlayerLauncher::<scriptblock>#2",
+          "start": 190,
+          "end": 190
+        },
+        {
+          "symbol": "function Show-NHPlayerLauncher::<scriptblock>#3",
+          "start": 191,
+          "end": 191
+        },
+        {
+          "symbol": "function Show-NHPlayerLauncher::<scriptblock>#4",
+          "start": 192,
+          "end": 192
+        },
+        {
+          "symbol": "function Show-NHPlayerLauncher::<scriptblock>#5",
+          "start": 193,
+          "end": 193
+        },
+        {
+          "symbol": "function Show-NHPlayerLauncher::<scriptblock>#6",
+          "start": 194,
+          "end": 194
+        }
+      ],
+      "sha256": "f6222a896ab4052e000238dd3e4d75bc9ff77f120ee3c4e33550b7b884f4b1b1",
+      "review": "IR-NEXT-BUILD-FROZEN-PLAYER-LAUNCHER-ORG-20261119",
+      "review_scope": "Exact independent source organization and reused prior source review only; no native compilation, GUI, Windows execution, performance, promotion or future growth permission.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
+      "rationale": "Complete exact198-line PowerShell callable inventory independently re-parsed with actual PowerShell7.5.4 AST: all16 FunctionDefinitionAst and executable ScriptBlockExpressionAst bodies, including nested callbacks. Inspected command/param/control-flow blocks and quoted script data are not invented callable definitions. Exact bytes match previously independently reviewed IR-PLAYER-LAUNCHER-FINAL-SOURCE-V1. Largest function is below80 lines; no numeric waiver or missing callback. Parser syntax success on Linux does not establish Windows5.1/WinForms/native readiness execution."
+    },
+    "tools/windows/Player-Launcher-Operation.ps1": {
+      "functions": [
+        {
+          "symbol": "function Assert-PlainPath#1",
+          "start": 11,
+          "end": 11
+        },
+        {
+          "symbol": "function Get-NHLatestPlayerOffer#1",
+          "start": 13,
+          "end": 38
+        },
+        {
+          "symbol": "function Get-NHLatestPlayerOffer::<scriptblock>#1",
+          "start": 20,
+          "end": 20
+        },
+        {
+          "symbol": "function Install-NHPlayerOffer#1",
+          "start": 40,
+          "end": 52
+        },
+        {
+          "symbol": "function Invoke-NHPlayerOperation#1",
+          "start": 54,
+          "end": 71
+        }
+      ],
+      "sha256": "ce040f797298f3d06641a54659f778c4d90106559b4ccc954d50d86429707cd2",
+      "review": "IR-NEXT-BUILD-FROZEN-PLAYER-LAUNCHER-ORG-20261119",
+      "review_scope": "Exact independent source organization and reused prior source review only; no native compilation, GUI, Windows execution, performance, promotion or future growth permission.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
+      "rationale": "Complete exact73-line PowerShell callable inventory independently re-parsed with actual PowerShell7.5.4 AST: all5 FunctionDefinitionAst and executable ScriptBlockExpressionAst bodies, including nested callbacks. Inspected command/param/control-flow blocks and quoted script data are not invented callable definitions. Exact bytes match previously independently reviewed IR-PLAYER-LAUNCHER-FINAL-SOURCE-V1. Largest function is below80 lines; no numeric waiver or missing callback. Parser syntax success on Linux does not establish Windows5.1/WinForms/native readiness execution."
+    },
+    "tools/windows/Portable-Release-Launcher.ps1": {
+      "functions": [
+        {
+          "symbol": "function Read-NHSmallUpdateJson#1",
+          "start": 4,
+          "end": 9
+        },
+        {
+          "symbol": "function Get-NHProductVersion#1",
+          "start": 11,
+          "end": 17
+        },
+        {
+          "symbol": "function Get-NHSelectedUpdateRuntime#1",
+          "start": 19,
+          "end": 39
+        },
+        {
+          "symbol": "function Test-NHUpdatedClient#1",
+          "start": 41,
+          "end": 59
+        },
+        {
+          "symbol": "function Set-NHUpdateSelection#1",
+          "start": 61,
+          "end": 82
+        },
+        {
+          "symbol": "function Install-NHRequestedRelease#1",
+          "start": 84,
+          "end": 101
+        },
+        {
+          "symbol": "function Select-NHPortableRelease#1",
+          "start": 103,
+          "end": 119
+        }
+      ],
+      "sha256": "3e64f0ec54bbd4412c01f09f0bb7ac2b1a047a5f1173d6d50aa0cdfcef4803ae",
+      "review": "IR-NEXT-BUILD-FROZEN-PLAYER-LAUNCHER-ORG-20261119",
+      "review_scope": "Exact independent source organization and reused prior source review only; no native compilation, GUI, Windows execution, performance, promotion or future growth permission.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
+      "rationale": "Complete exact119-line PowerShell callable inventory independently re-parsed with actual PowerShell7.5.4 AST: all7 FunctionDefinitionAst and executable ScriptBlockExpressionAst bodies, including nested callbacks. Inspected command/param/control-flow blocks and quoted script data are not invented callable definitions. Exact bytes match previously independently reviewed IR-PLAYER-LAUNCHER-FINAL-SOURCE-V1. Largest function is below80 lines; no numeric waiver or missing callback. Parser syntax success on Linux does not establish Windows5.1/WinForms/native readiness execution."
+    },
+    "tools/windows/Prepare-NHReleaseUpdate.ps1": {
+      "functions": [
+        {
+          "symbol": "function Assert-UpdatePlainPath#1",
+          "start": 15,
+          "end": 34
+        },
+        {
+          "symbol": "function Write-UpdateStatus#1",
+          "start": 36,
+          "end": 41
+        },
+        {
+          "symbol": "function Get-UpdateRelativePath#1",
+          "start": 43,
+          "end": 56
+        },
+        {
+          "symbol": "function Read-UpdateJSON#1",
+          "start": 58,
+          "end": 76
+        },
+        {
+          "symbol": "function Read-UpdateRequest#1",
+          "start": 78,
+          "end": 101
+        },
+        {
+          "symbol": "function Assert-UpdateTransportURI#1",
+          "start": 103,
+          "end": 111
+        },
+        {
+          "symbol": "function Invoke-UpdateDownload#1",
+          "start": 113,
+          "end": 164
+        },
+        {
+          "symbol": "function Assert-CurrentUpdateRelease#1",
+          "start": 166,
+          "end": 184
+        },
+        {
+          "symbol": "function Assert-CurrentUpdateRelease::<scriptblock>#1",
+          "start": 177,
+          "end": 177
+        },
+        {
+          "symbol": "function Expand-UpdateArchive#1",
+          "start": 186,
+          "end": 238
+        },
+        {
+          "symbol": "function Assert-UpdatePayload#1",
+          "start": 240,
+          "end": 287
+        },
+        {
+          "symbol": "function Assert-UpdatePayload::<scriptblock>#1",
+          "start": 258,
+          "end": 258
+        },
+        {
+          "symbol": "function Assert-UpdateArtHeader#1",
+          "start": 289,
+          "end": 302
+        },
+        {
+          "symbol": "function Prepare-NHReleaseUpdate#1",
+          "start": 304,
+          "end": 360
+        }
+      ],
+      "sha256": "101415aae1ab1d4adb9f0d3fac45610848091147aa94244d3ea2f2dd667ff221",
+      "review": "IR-NEXT-BUILD-FROZEN-PLAYER-LAUNCHER-ORG-20261119",
+      "review_scope": "Exact independent source organization and reused prior source review only; no native compilation, GUI, Windows execution, performance, promotion or future growth permission.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
+      "rationale": "Complete exact365-line PowerShell callable inventory independently re-parsed with actual PowerShell7.5.4 AST: all14 FunctionDefinitionAst and executable ScriptBlockExpressionAst bodies, including nested callbacks. Inspected command/param/control-flow blocks and quoted script data are not invented callable definitions. Exact bytes match previously independently reviewed IR-PLAYER-LAUNCHER-FINAL-SOURCE-V1. Largest function is below80 lines; no numeric waiver or missing callback. Parser syntax success on Linux does not establish Windows5.1/WinForms/native readiness execution."
     }
   },
   "schema": 1,
@@ -17216,16 +17408,16 @@
       "sha256": "709a32fe2882e293a3b4f12f3c99352066714652b2c50861b0d046d915d6f6f8"
     },
     ".github/workflows/new-horizons-windows.yml": {
-      "deferral": "Exact549-line committed workflow only. Owner engine_engineer must extract the next cohesive dependency/preflight/package responsibility into a focused script or shared action before further substantive orchestration expansion, preserve dispatch/cache/CRT/notices/target/artifact controls and lower the orchestration baseline. No future growth, threshold increase, native or performance approval. Preserve all inherited stricter obligations below.\nExact committed hash and size only, not future growth or native/build/performance approval. Owner engine_engineer must keep future conditional compile policy in focused target helpers and extract the next cohesive stage before further orchestration expansion. Preserve all stricter inherited source/link/guard/ordering obligations below.\nPreserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.",
+      "deferral": "Before further workflow expansion, move the next cohesive inline validation or package-check body into a focused tested CI helper while preserving exact inputs, compile-step timing boundaries, failures and artifacts. No generic workflow growth allowance.",
       "kind": "exception",
-      "lines": 549,
+      "lines": 617,
       "owner": "engine_engineer",
       "prior_deferral": "Existing engine engineer ownership remains. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral. This exception covers only the exact542-line official source URL/comment correction with all transport, size, digest and cache admission controls unchanged. No future growth, numerical ceiling change or coverage exclusion is authorized. This separate review permits only the exact547-line explicit-interpreter successor. Before further expansion, engine_engineer must extract the affected dependency/preflight/package stage into a focused script or shared action, preserving source/cache, CRT/notices, dispatch and artifact contract checks and lowering the orchestration baseline. No future growth, default ceiling increase or exclusion is granted. This separate urgent-correctness review covers only the exact556-line early-bootstrap-smoke ordering successor. Existing extraction obligations and all ceilings remain unchanged; no future growth is authorized.",
-      "rationale": "Exact bounded543to549 physical-line successor adds only the build_jobs numeric input(default6), environment forwarding and helper argument. Integer1to10 admission and both compiler stages remain owned by the116-line helper; Windows host memory sampling belongs to the107-line dedicated owner and179-line diagnostic coordinator. Existing bootstrap/dependency four-job limits, target/toolchain order, cache admission, notices, runtime/package checks and opt-in Unity/PCH boundaries remain. No sampling implementation is embedded in workflow. This exact six-line integration allowance does not authorize future orchestration growth or waive inherited stage-extraction obligations.",
-      "review": "IR-WINDOWS-STEP4-JOBS-HOST-MEMORY-ORG-V1",
-      "review_scope": "Exact workflow callable inventory and bounded source organization through ba88edb218 only; no hosted/native execution, performance, package or release acceptance.",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_ONLY",
-      "sha256": "4fe97b8a72b02bbb18f0b305f588e7f08d10b49012df653cdd12ef88863b26df",
+      "rationale": "Exact549 to617-line bounded workflow expansion. Mandatory matched performance-branch controls and offline launcher checks remain external command orchestration; the final14-line delta invokes the focused171-line native interruption driver after compilation and retains its bounded JSON/log evidence. Compiler helper, compiler timer, flags, targets, jobs and cache routing are unchanged by interruption gate; total job time necessarily includes the added post-compile validation. No new search, native process-name scanning or artifact publication permission.",
+      "review": "IR-NEXT-BUILD-WINDOWS-NHART-INTERRUPTION-20261119",
+      "review_scope": "Exact source/organization and seven offline fake-process tests only; no C++ compilation, native Windows recovery, GUI, speed or publication acceptance.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
+      "sha256": "c5f99c03eb4924d66fb7cd919fa9991fdd4b555d24db876246630bd891203cdc",
       "inherited_deferral_step2": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count."
     },
     "AI/BattleAI/AttackPossibility.cpp": {
@@ -22505,27 +22697,27 @@
     },
     "clientapp/EntryPoint.cpp": {
       "deferral": "Existing startup/configuration or cleanup lifecycle extraction remains required before further substantive entrypoint growth. This reviewed six-line urgent mutex-precondition correction only updates exact546-line file and385-line unified conditional entrypoint; no ceiling raise or transferred allowance. Preserve OS/SDL/thread variants, network waiter shutdown, GUI mutex release/reacquire, deferred repaint and normal exit; focused extraction still needs characterization and ordinary restart/menu-new-scenario rendered evidence. Current exact534-file/373-entrypoint bounds ratchet inherited546/385 historical figures downward; inherited initialization, cleanup and extraction obligations remain binding. Exact v5 bounded follow-up: Before further affected expansion, owning specialist must extract the next cohesive query/selection/ordered-transition responsibility; preserve all inherited source/ownership/order/RNG/lifecycle obligations and shrinking baselines. No unrelated or future growth credit.",
-      "kind": "review",
-      "lines": 532,
+      "kind": "exception",
+      "lines": 523,
       "owner": "engine_engineer",
       "previous_review": "isolated-bug-report-bounded-capture-and-reviewed-attachment",
-      "rationale": "Logging/session/report routing moves into focused111-line Bootstrap and106-line Runtime owners; file shrinks546 to534 and conditional main385 to373. Ordinary platform setup and characterized GUI/network cleanup ordering remain; no oversized destination helper. Exact v5 BOUNDED_COMPOSITION_REVIEW: Exact composed responsibility boundary: retain focused owned-frame/callback/retirement owners and original native ordering. File/body changes are those in the sealed source recipe; no duplicated game rules, default activation, source-domain expansion or size-policy exclusion.",
-      "review": "IR-OWNED-COMPOSITION-V5-R2-EXACT-SOURCE-20261101",
-      "review_scope": "Exact finite composed bytes and scoped debt independently reviewed for source and organization only. No compilation, link, native, performance or rendered acceptance; all inherited obligations and explicit domain refusals retained. No default ceilings raised or exclusions.",
-      "review_status": "INDEPENDENT_SOURCE_REVIEW_ONLY",
-      "sha256": "8bc385c1b5f41a6094e60338f6bbf2c36d387fe2221fd81fc4bca2c1703127b6"
+      "rationale": "Exact532 to523-line ratchet: ordered game-resource checks move into cohesive67-line ClientStartup.cpp; readiness is a narrow notification after existing ordinary menu initialization. No new action, background thread, initialization reordering or cleanup owner. Header8lines and one source/header CMake registration included. Preserve inherited lifecycle/extraction obligations; no future growth credit.",
+      "review": "IR-NEXT-BUILD-FROZEN-PLAYER-LAUNCHER-ORG-20261119",
+      "review_scope": "Exact independent source organization and reused prior source review only; no native compilation, GUI, Windows execution, performance, promotion or future growth permission.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
+      "sha256": "9e6b35116d6a14315950eb2a03399d60d1ba246bb5a6b4e8eef88f58eb658013"
     },
     "clientapp/EntryPoint.cpp::conditional entrypoint wmain(int argc, wchar_t* argv[]) | SDL_main(int argc, char *argv[]) | main(int argc, char * argv[])#1": {
       "deferral": "Urgent correctness exception only; retain characterized extraction obligation before further substantive shared-entrypoint growth, shrinking this385-line entrypoint and546-line file together. Preserve every platform branch, initialization ordering, GUI/network temporary-unlock wait contracts, destruction/async ordering and rendered transition verification. No generic function ceiling increase or testing/gameplay expansion admitted. Current exact534-file/373-entrypoint bounds ratchet inherited546/385 historical figures downward; inherited initialization, cleanup and extraction obligations remain binding. Exact v5 bounded follow-up: Before further affected expansion, owning specialist must extract the next cohesive query/selection/ordered-transition responsibility; preserve all inherited source/ownership/order/RNG/lifecycle obligations and shrinking baselines. No unrelated or future growth credit.",
       "kind": "exception",
-      "lines": 373,
+      "lines": 363,
       "owner": "engine_engineer",
       "previous_review": "isolated-bug-report-bounded-capture-and-reviewed-attachment",
-      "rationale": "Complete conditional entrypoint shrinks385 to373 lines after cohesive report/logging extraction. Report-only branch precedes game construction; ordinary OS/SDL/thread/CURE initialization and continuous GUI cleanup ownership remain. Exact source-only bound; no future growth. Exact v5 BOUNDED_COMPOSITION_REVIEW: Exact composed responsibility boundary: retain focused owned-frame/callback/retirement owners and original native ordering. File/body changes are those in the sealed source recipe; no duplicated game rules, default activation, source-domain expansion or size-policy exclusion.",
-      "review": "IR-OWNED-COMPOSITION-V5-R2-EXACT-SOURCE-20261101",
-      "review_scope": "Exact finite composed bytes and scoped debt independently reviewed for source and organization only. No compilation, link, native, performance or rendered acceptance; all inherited obligations and explicit domain refusals retained. No default ceilings raised or exclusions.",
-      "review_status": "INDEPENDENT_SOURCE_REVIEW_ONLY",
-      "sha256": "4bcb3f3866c895c1455fbe1373635e939962070e14826e4b8eababd7ae95ce34"
+      "rationale": "Exact373 to363-line whole conditional entrypoint ratchet at144-506. Five ordered installation diagnostics extracted to a focused owner; menu-ready notification stays after ordinary menu initialization. All Windows/Mobile/ordinary signatures and inherited lock, async teardown, shutdown and reports branches remain covered by complete manual inventory. No broad function-ceiling exception or future expansion approval; retain prior characterization/extraction obligations.",
+      "review": "IR-NEXT-BUILD-FROZEN-PLAYER-LAUNCHER-ORG-20261119",
+      "review_scope": "Exact independent source organization and reused prior source review only; no native compilation, GUI, Windows execution, performance, promotion or future growth permission.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
+      "sha256": "91f08c6f752974fe73a259e3e7d1bf20133f9ba52c96c2b198756680f63b195e"
     },
     "clientapp/PrivateWineStartupWitness.h::privateWineStartup::inline int verifyBeforeSDL()#1": {
       "kind": "legacy",
@@ -23589,11 +23781,11 @@
         "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
         "sha256": "b6b59dfee882fa45be75dfb35f77303c0129bfb62eaef7df4125b32655d46ebd"
       },
-      "rationale": "Exact 606 to 606-line integrated scope. Bounded const typed-owner forwarding, immutable capture/WorldMagic table admission, compiled-out audit hook or source registration only; substantive definition/lookup implementations live in focused new nativeRules units. No broad numerical growth allowance, mutable cache or gameplay rebalance.",
-      "review": "IR-NH092-ORG-E8CD1819-20261116",
-      "review_scope": "Exact source organization hash/count/span only; no runtime, performance, rendered or future-growth approval.",
-      "review_status": "APPROVED_EXACT_ORGANIZATION_METADATA",
-      "sha256": "16f7b7c56861d729bc05330e6b2a00158646e0e6eb8470a90e7331bdb65478c3"
+      "rationale": "Urgent C++20 shared-owner lifetime fix only:606 to606 lines; battleGetRetreatPermission446-467 changes its range initializer, preserving body, query count, iteration order and result. Extracting unrelated callback policy would add risk to a one-line memory-safety repair. Retain all inherited stronger deferrals; no future growth credit.",
+      "review": "IR-NEXT-BUILD-LIFETIME-NHART-REVERT-20261119",
+      "review_scope": "Exact independent source/organization only; no compilation, runtime, rendering, timing, publication or future-growth acceptance.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
+      "sha256": "aacd0d87a734a8934ade257804bb483759bceb335d5d6cedc44be73d54b8e66f"
     },
     "lib/battle/CUnitState.cpp": {
       "completed_p_predecessor": {
@@ -24519,12 +24711,13 @@
     "lib/filesystem/NhArtCache.cpp::nhart::std::shared_ptr<const PreparedCache> prepareCache(const boost::filesystem::path & archive, const boost::filesystem::path & cacheRoot,const std::vector<Record> & records)#1": {
       "deferral": "Before further substantive expansion, extract stage payload population into a cohesive helper while keeping locking, verification and atomic publication in prepareCache. Deferred only for this two-line Windows long-path correctness repair.",
       "kind": "exception",
-      "lines": 105,
+      "lines": 95,
       "owner": "engine_engineer",
-      "rationale": "Windows long-path enumeration and no-follow metadata use the existing Boost filesystem backend. Exact 105-line no-growth correction preserves payload verification, locking and atomic publication. Extract stage payload population into a cohesive helper before further substantive expansion; retain locking and publication in this owner.",
-      "review": "nhart-cache-long-path-metadata-20261026",
-      "review_scope": "bounded-windows-long-path-correctness-deferral-only",
-      "sha256": "f39bf12e7e6b2cc8b3cad45fb2b7a5ab05203cc1d80aa659d068f32bcfaafe87"
+      "rationale": "Exact105 to95-line ratchet at439-533. Kernel lease handling and stage maintenance are focused helpers; removed catch/rethrow wrapper had no side effect beyond obsolete directory-lock cleanup. Preserve source rehash, all payload checks and atomic publication. Existing payload-population extraction deferral retained; no future growth credit.",
+      "review": "IR-NEXT-BUILD-LIFETIME-NHART-REVERT-20261119",
+      "review_scope": "Exact independent source/organization only; no compilation, runtime, rendering, timing, publication or future-growth acceptance.",
+      "sha256": "9a2ebf4b512a1ff3d006bba491498c9de3d0f3cb4f4f86e540d0fa6fc901d283",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE"
     },
     "lib/gameState/CGameState.cpp": {
       "deferral": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.\n\nBefore any further substantive expansion, extract the next cohesive touched policy, callback/read adapter or ordered admission stage into its focused owner. Preserve exact capture metadata, source visibility, schema rejection, RNG/packet ordering and standalone/world wire identity; no future growth credit from this exception.",
@@ -25078,11 +25271,11 @@
         "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
         "sha256": "450543a3563b69fd683ee866089caeddd601609193e8a442ea477703f6021856"
       },
-      "rationale": "Exact 3082 to 3066-line ratchet. Cohesive skill-specialty marker key/construction moves to its shared lib owner, retaining the same saved marker schema and three initialization/query call sites. Prior stronger extraction and invariant deferrals remain; no future growth credit.",
-      "review": "IR-NH0921-CART-INERT-METADATA-20261117",
-      "review_scope": "Exact shrinking file hash/count and skill-specialty marker extraction only. No temporary diagnostics, runtime, performance, rendered or future-growth approval.",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN",
-      "sha256": "a477c7a2994bf9c4acd6e90ab16848cc2f6358c5e0f0eff70eaff910f51c899b"
+      "rationale": "Urgent C++20 shared-owner lifetime fix only:3066 to3066 lines; five range initializers retain their queried lists, including getSourcesForSpell2259-2361. No new policy or responsibility, no query duplication, unchanged loop bodies and order. Retain all inherited extraction obligations; no future growth credit.",
+      "review": "IR-NEXT-BUILD-LIFETIME-NHART-REVERT-20261119",
+      "review_scope": "Exact independent source/organization only; no compilation, runtime, rendering, timing, publication or future-growth acceptance.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
+      "sha256": "31ff194c8a5585dfc686d3afae31e95ca1a0a412d35f62da5340715c27f1148f"
     },
     "lib/mapObjects/CGHeroInstance.cpp::CStackBasicDescriptor CGHeroInstance::calculateNecromancy (const BattleResult &battleResult) const#1": {
       "kind": "legacy",
@@ -25094,13 +25287,15 @@
       "sha256": "acae5e959b4ac8c53ab4bf3a6c50fc7c88ce5e5615abc46b444da3d153548be5"
     },
     "lib/mapObjects/CGHeroInstance.cpp::std::vector<BonusSourceID> CGHeroInstance::getSourcesForSpell(const SpellID & spellId) const#1": {
-      "kind": "legacy",
+      "kind": "exception",
       "lines": 103,
       "owner": "engine_engineer",
-      "rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 103 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "708894003cfd0904955f9276d3f509eb89c1ea2fb5141cc43bf61b487b2ea937"
+      "rationale": "Exact103 to103-line urgent memory-safety repair at2259-2361. Four range initializers (including the16-line captured lambda) retain returned shared BonusList owners; all original guards, loops and source order preserved. No policy expansion. Before further substantive spell-source growth, extract artifact-source enumeration behind a focused owner with parity tests; no future growth allowance.",
+      "review": "IR-NEXT-BUILD-LIFETIME-NHART-REVERT-20261119",
+      "review_scope": "Exact independent source/organization only; no compilation, runtime, rendering, timing, publication or future-growth acceptance.",
+      "sha256": "ac0f5f9c3f199038cc1de652806d75b0db1c24c7c8c33f279e43cdc4333b9b71",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
+      "deferral": "Before further substantive spell-source growth, extract artifact-source enumeration behind a focused engine owner with parity tests. This review allows no growth."
     },
     "lib/mapObjects/CGHeroInstance.cpp::void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)#1": {
       "completed_p_predecessor": {
@@ -28707,15 +28902,15 @@
     },
     "server/processors/NewTurnProcessor.cpp": {
       "deferral": "Keep this reduced legacy-file ceiling; extract the next touched turn-processing responsibility before expansion and retain deterministic calendar, ownership and RNG comparisons.",
-      "kind": "review",
+      "kind": "exception",
       "lines": 734,
       "owner": "engine_engineer",
       "previous_review": "IR-ESTATES-GP-UI-EXACT-SOURCE-20261103",
-      "rationale": "Daily economic production and weekly mine-defender issuance move into the focused NewTurnEconomy.cpp component; the turn processor shrinks122 lines while preserving event order. Exact measured unit only; no future growth credit.",
-      "review": "PROPOSED-0920-EXACT-SOURCE-ORGANIZATION",
-      "review_scope": "Proposed source organization and exact bound only; native/rendered/runtime acceptance remains separate.",
-      "review_status": "PROPOSED_AWAITING_INDEPENDENT_REVIEW",
-      "sha256": "4e7f358b64442ac2dcb309e24987a799bf1c07ccfc4bbf687140ba15b0ee76c9"
+      "rationale": "Urgent C++20 shared-owner lifetime fix only:734 to734 lines; pickWeekType341-415 retains the DEITYOFFIRE list in its loop initializer. Query/body/RNG/publication order unchanged. Keep inherited extraction obligations; no future growth credit.",
+      "review": "IR-NEXT-BUILD-LIFETIME-NHART-REVERT-20261119",
+      "review_scope": "Exact independent source/organization only; no compilation, runtime, rendering, timing, publication or future-growth acceptance.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
+      "sha256": "a25a7f09b74636f9b3235c47af70e8a78f559624ad3effb540b5be0a5fe5e289"
     },
     "server/processors/NewTurnProcessor.cpp::NewTurn NewTurnProcessor::generateNewTurnPack()#1": {
       "kind": "review",
@@ -29528,6 +29723,28 @@
       "review_status": "INDEPENDENT_EXACT_SOURCE_REVIEW_NATIVE_UNRUN",
       "rationale": "New95-line focused winner/projection helper preserves exact exchange scoring, close-score turn tie handling, blocker bypass exchange and predecessor BFS destination. It is below150 ceiling and not a transferred185-line legacy allowance. Target admission/cheap ranking remain separate; native action/quality equivalence is unverified.",
       "deferral": "Review trigger remains80 lines. Split bypass scoring from predecessor traversal before further substantive growth; preserve selected approach lifetime, deterministic ordering and result/BFS semantics."
+    },
+    "lib/filesystem/NhArtCache.cpp": {
+      "lines": 534,
+      "sha256": "73fa7974436a815f0e158b4a7159b11dca9ee40cbf5ae3ef7745e31a6d8c9934",
+      "kind": "exception",
+      "owner": "engine_engineer",
+      "rationale": "Exact391 to534-line bounded native cache-recovery change. Existing no-follow Directory/file admission, payload/hash verification and atomic publication remain local and unchanged. Added OS preparation lease, separate v1.staging root plus exact64hex .stage name recognizer and conservative one-level stage maintenance are cohesive to this cache owner. prepareCache shrinks105 to95 lines; new maintenance helpers are14/24 lines, lock constructor18 and acquisition branches18/15. No helper exceeds80 lines or transfers complexity to an oversized unit; no future growth credit. Historical stages/locks remain untouched and verified digest caches remain reusable. Exact aeefa80 successor preserves v1 digest-cache reuse and legacy v1 stages while pinning/validating both directory roots for cross-directory atomic publication.",
+      "review": "IR-NEXT-BUILD-LIFETIME-NHART-REVERT-20261119",
+      "review_scope": "Exact independent source/organization only; no compilation, runtime, rendering, timing, publication or future-growth acceptance.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
+      "deferral": "Before further substantive native cache expansion, extract stage payload population behind a focused helper while retaining locking, complete verification and atomic publication order in prepareCache; future lock/protocol growth must retain the no-follow Directory boundary and process-death/Windows sharing coverage. No broad growth allowance."
+    },
+    "tools/ci/stage_linux_client.py::main#1": {
+      "lines": 89,
+      "sha256": "467eed6e2f0620069c6120b8f16e39b5935dbc11793ef63d54bcdcbc816fca2c",
+      "kind": "exception",
+      "owner": "engine_engineer",
+      "review": "IR-NEXT-BUILD-FROZEN-PLAYER-LAUNCHER-ORG-20261119",
+      "review_scope": "Exact independent source organization and reused prior source review only; no native compilation, GUI, Windows execution, performance, promotion or future growth permission.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
+      "rationale": "Exact72 to89-line staging orchestration, file157 to174. Adds explicit player/default versus legacy diagnostic route, four small launcher support artifacts, and optional invocation of focused60-line authenticated archive writer. Source/archive/license/runtime admission remains in existing helpers; archive implementation is not inlined. Coherent below150-line orchestration reviewed at80-line trigger, no generic expansion permission.",
+      "deferral": "Before further staging orchestration growth, extract the player-support copy plan and optional archive dispatch into a focused helper with exact artifact membership and byte-identity tests; no extra policy in main."
     }
   }
 }
