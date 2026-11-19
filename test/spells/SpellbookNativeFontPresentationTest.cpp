@@ -156,16 +156,6 @@ TEST_F(SpellbookNativeFontPresentationTest, LifeDrainKeepsDamageAndHealingRateVi
 		EXPECT_NE(detail.find("unselected default"), std::string::npos);
 		EXPECT_NE(detail.find("no random proc"), std::string::npos);
 	}
-	const auto followup = newHorizonsMagic::spellEffectPreview(*hero, *spell, nullptr, true);
-	const auto detail = spellbookPresentation::effectDetail(followup, translator);
-	EXPECT_EQ(followup.qualificationKey, "new-horizons.spellbook.lifeDrainFollowup");
-	EXPECT_NE(detail.find("205"), std::string::npos);
-	EXPECT_NE(detail.find("60% of damage"), std::string::npos);
-	EXPECT_NE(detail.find("Potential follow-up damage"), std::string::npos);
-	EXPECT_NE(detail.find("unselected default"), std::string::npos);
-	EXPECT_NE(detail.find("no random proc"), std::string::npos);
-	EXPECT_NE(detail.find("actual damage"), std::string::npos);
-	EXPECT_NE(detail.find("wounds"), std::string::npos);
 }
 TEST_F(SpellbookNativeFontPresentationTest, HugeLifeDrainRetainsBothDamageAndHealingRate)
 {

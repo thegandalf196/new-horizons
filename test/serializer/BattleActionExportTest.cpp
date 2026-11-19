@@ -71,9 +71,6 @@ TEST(BattleActionExportTest, SelectedIntervalRetainsExplicitOrderAndSeparateCast
 	cast.battleID = BattleID(3);
 	cast.spellID = SpellID::MAGIC_ARROW;
 	cast.side = BattleSide::DEFENDER;
-	cast.counterspellNegated = true;
-	cast.counterspellSide = BattleSide::ATTACKER;
-	cast.paidCounterspellManaCost = 3;
 	cast.paidHeroManaCost = 5;
 	cast.affectedCres = {4, 2};
 	replay.addPack(ReplayPackSerializer::write(cast));
@@ -87,12 +84,45 @@ TEST(BattleActionExportTest, SelectedIntervalRetainsExplicitOrderAndSeparateCast
 	EXPECT_EQ(intent["kind"].String(), "StartAction");
 	const auto & announced = output["events"].Vector()[2];
 	EXPECT_EQ(announced["kind"].String(), "BattleSpellCast");
-	EXPECT_TRUE(announced["counterspellNegated"].Bool());
+	EXPECT_TRUE(announced["counterspellNegated"].isNull());
+	EXPECT_TRUE(announced["metamagicFollowup"].isNull());
+	EXPECT_EQ(announced["automaticHeroCast"]["kind"].Integer(), static_cast<int>(spells::AutomaticHeroCastKind::NONE));
 	EXPECT_EQ(announced["paidHeroManaCost"].Integer(), 5);
 	EXPECT_EQ(announced["affectedCres"].Vector()[0].Integer(), 4);
 	EXPECT_EQ(intent["packetVersion"].Integer(), static_cast<int>(ESerializationVersion::CURRENT));
 	EXPECT_EQ(bytes(replay), before);
 	EXPECT_FALSE(output["requestedActionPayloadsRecorded"].Bool());
+}
+TEST(BattleActionExportTest, AutomaticHeroCastRetainsCurrentProvenanceWithoutRetiredMetamagicFields)
+{
+	auto replay = log();
+	start(replay, 3);
+	BattleSpellCast cast;
+	cast.battleID = BattleID(3);
+	cast.spellID = SpellID::BLESS;
+	cast.side = BattleSide::ATTACKER;
+	cast.automaticHeroCast.kind = spells::AutomaticHeroCastKind::DIVINE_MANDATE;
+	cast.automaticHeroCast.mandateUseOrdinal = 2;
+	cast.automaticHeroCast.issuingOrder = HeroCommand::CHARGE;
+	cast.automaticHeroCast.issuingRound = 3;
+	cast.automaticHeroCast.inspiringDuration = 1;
+	replay.addPack(ReplayPackSerializer::write(cast));
+	finish(replay, 3);
+	const auto before = bytes(replay);
+	const auto output = battleActionExport::inspect(replay, nullptr, 0);
+	const auto & announced = output["events"].Vector().at(1);
+	EXPECT_EQ(announced["kind"].String(), "BattleSpellCast");
+	const auto & receipt = announced["automaticHeroCast"];
+	EXPECT_EQ(receipt["kind"].Integer(), static_cast<int>(spells::AutomaticHeroCastKind::DIVINE_MANDATE));
+	EXPECT_EQ(receipt["mandateUseOrdinal"].Integer(), 2);
+	EXPECT_EQ(receipt["issuingOrder"].Integer(), static_cast<int>(HeroCommand::CHARGE));
+	EXPECT_EQ(receipt["issuingRound"].Integer(), 3);
+	EXPECT_EQ(receipt["inspiringDuration"].Integer(), 1);
+	EXPECT_EQ(announced["paidHeroManaCost"].Integer(), 0);
+	EXPECT_TRUE(announced["paidCounterspellManaCost"].isNull());
+	EXPECT_TRUE(announced["metamagicGrand"].isNull());
+	EXPECT_TRUE(announced["metamagicManaRefund"].isNull());
+	EXPECT_EQ(bytes(replay), before);
 }
 TEST(BattleActionExportTest, SelectionIsAnExplicitRetainedStartIndex)
 {

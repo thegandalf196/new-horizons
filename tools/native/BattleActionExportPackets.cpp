@@ -111,7 +111,6 @@ JsonNode actionData(const StartAction & packet)
 	value["command"].Integer() = static_cast<int>(packet.ba.command);
 	value["actionText"].String() = packet.ba.toString();
 	value["spellOvercharge"].Integer() = packet.ba.spellOvercharge;
-	value["metamagicFollowup"].Bool() = packet.ba.metamagicFollowup;
 	spell(value, packet.ba.spell);
 	if(packet.ba.target.size() > 4096)
 		throw std::runtime_error("Action target list exceeds export limit");
@@ -138,20 +137,22 @@ JsonNode spellData(const BattleSpellCast & packet)
 {
 	JsonNode value;
 	value["kind"].String() = "BattleSpellCast";
-	value["status"].String() = "published_cast_announcement; counterspell may suppress effects";
+	value["status"].String() = "published_cast_announcement; not proof of resolved effects";
 	value["battleID"].Integer() = packet.battleID.getNum();
 	spell(value, packet.spellID);
 	value["side"].Integer() = static_cast<int>(packet.side);
 	value["castByHero"].Bool() = packet.castByHero;
 	value["casterStack"].Integer() = packet.casterStack;
 	value["activeCast"].Bool() = packet.activeCast;
-	value["counterspellNegated"].Bool() = packet.counterspellNegated;
-	value["counterspellSide"].Integer() = static_cast<int>(packet.counterspellSide);
-	value["metamagicFollowup"].Bool() = packet.metamagicFollowup;
-	value["metamagicGrand"].Bool() = packet.metamagicGrand;
-	value["metamagicManaRefund"].Integer() = packet.metamagicManaRefund;
+	value["temporalFieldCast"].Bool() = packet.temporalFieldCast;
+	value["extendedSpell"].Bool() = packet.extendedSpell;
+	auto & automatic = value["automaticHeroCast"];
+	automatic["kind"].Integer() = static_cast<int>(packet.automaticHeroCast.kind);
+	automatic["mandateUseOrdinal"].Integer() = packet.automaticHeroCast.mandateUseOrdinal;
+	automatic["issuingOrder"].Integer() = static_cast<int>(packet.automaticHeroCast.issuingOrder);
+	automatic["issuingRound"].Integer() = packet.automaticHeroCast.issuingRound;
+	automatic["inspiringDuration"].Integer() = packet.automaticHeroCast.inspiringDuration;
 	value["paidHeroManaCost"].Integer() = packet.paidHeroManaCost;
-	value["paidCounterspellManaCost"].Integer() = packet.paidCounterspellManaCost;
 	value["manaGained"].Integer() = packet.manaGained;
 	value["affectedCres"] = numbers(packet.affectedCres);
 	value["resistedCres"] = numbers(packet.resistedCres);
