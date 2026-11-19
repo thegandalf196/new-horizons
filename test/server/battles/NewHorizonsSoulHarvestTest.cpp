@@ -11,6 +11,7 @@
 #include "../../../lib/battle/BattleLayout.h"
 #include "../../../lib/CRandomGenerator.h"
 #include "../../../lib/entities/hero/NewHorizonsGhostSpecialty.h"
+#include "../../../lib/entities/hero/NewHorizonsCommandArmy.h"
 #include "../../../lib/entities/hero/NewHorizonsReclaimer.h"
 #include "../../../lib/gameState/UpgradeInfo.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
@@ -339,7 +340,7 @@ TEST_F(NewHorizonsSoulHarvestTest, ProductionCasualtyCommitRemovesGrowthAndPrese
 	ASSERT_TRUE(attackerSideHero->setCreature(SlotID(0), species, 5));
 	ASSERT_TRUE(defenderSideHero->setCreature(SlotID(0), creatureByName("core:pikeman"), 1));
 	ASSERT_TRUE(defenderSideHero->setCreature(SlotID(1), creatureByName("core:peasant"), 5));
-	ASSERT_TRUE(attackerSideHero->getLeadershipSlotCapacity(species)->accepts(5));
+	ASSERT_TRUE(newHorizonsHeroes::armySlotAccepts(attackerSideHero, SlotID(0), species, 5));
 	startBattle();
 	const auto actors = battle()->battleGetStacksIf([](const CStack * stack)
 	{
