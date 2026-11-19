@@ -6,6 +6,7 @@
 #include "../../lib/filesystem/Filesystem.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/spells/CSpell.h"
+#include "../../lib/spells/NewHorizonsSorcerySpells.h"
 #include "../../lib/spells/SpellEffectPreview.h"
 #include "../../lib/spells/NewHorizonsSpellAvailability.h"
 #include "../../lib/texts/ITranslator.h"
@@ -81,7 +82,16 @@ TEST_F(SpellbookNativeFontPresentationTest, ActualCanonicalFormatterFitsEveryCur
 			ASSERT_EQ(hero->getEffectPower(spell), power);
 			const auto preview = newHorizonsMagic::spellEffectPreview(*hero,*spell);
 			const auto text = line(preview);
-			ASSERT_FALSE(text.empty()) << key;
+			if(key == newHorizonsSorcerySpells::FORCED_RECALL)
+			{
+				// Forced Recall relocates its target without a numerical effect.
+				EXPECT_TRUE(text.empty()) << key;
+				EXPECT_FALSE(spell->getDescriptionTranslated(0).empty()) << key;
+			}
+			else
+			{
+				EXPECT_FALSE(text.empty()) << key;
+			}
 			EXPECT_NE(text,"!") << key;
 			EXPECT_LE(width(text),78) << key << ": " << text;
 			EXPECT_EQ(text.find("%%"),std::string::npos) << key;
