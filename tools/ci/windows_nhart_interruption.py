@@ -5,7 +5,7 @@ import argparse
 import hashlib
 import json
 import os
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 import re
 import stat
 import subprocess
@@ -15,6 +15,48 @@ import uuid
 
 from prepare_nhart_native_pin import verified_pin
 import nhart
+
+
+def normal_windows_name(path):
+    value = str(path)
+    if value.startswith('\\\\?\\UNC\\'):
+        return '\\\\' + value[8:]
+    return value[4:] if value.startswith('\\\\?\\') else value
+
+
+def utf16_units(path):
+    return len(normal_windows_name(path).encode('utf-16-le', errors='surrogatepass')) // 2
+
+
+def extended_windows_name(path):
+    value = normal_windows_name(path)
+    parsed = PureWindowsPath(value)
+    if value.startswith('\\\\.\\') or not parsed.is_absolute() or '..' in parsed.parts:
+        raise ValueError('Extended filesystem access requires an absolute normalized Windows path')
+    return '\\\\?\\UNC\\' + value[2:] if value.startswith('\\\\') else '\\\\?\\' + value
+
+
+def filesystem_path(path):
+    # Python's observer must work without a process/registry long-path opt-in.
+    # The native probe deliberately receives the ordinary spelling instead.
+    return Path(extended_windows_name(path)) if sys.platform == 'win32' else path
+
+
+def native_cache_argument(path):
+    value = str(path)
+    if sys.platform == 'win32':
+        parsed = PureWindowsPath(value)
+        if value.startswith(('\\\\?\\', '\\\\.\\')) or not parsed.is_absolute() or '..' in parsed.parts:
+            raise ValueError('Native cache argument must be an ordinary absolute Windows path')
+    return value
+
+
+def cache_root(output, deep_cache=False):
+    root = output / 'cache'
+    if deep_cache:
+        while utf16_units(root) <= 260:
+            root /= 'nhart-depth-0123456789abcdef0123456789abcdef'
+    return root
 
 
 def plain(path, directory=False):
@@ -68,6 +110,8 @@ def witness_stage(owned, digest, pack, records):
                     raise ValueError('Staged bytes differ from pinned archive')
             return stage, {'stage': stage.name, 'payload': payload.name,
                            'observedBytes': info.st_size, 'matchedPrefixBytes': len(prefix),
+                           'stageUTF16Units': utf16_units(stage),
+                           'payloadUTF16Units': utf16_units(payload),
                            'prefixSHA256': hashlib.sha256(prefix).hexdigest()}
     return None
 
@@ -79,24 +123,38 @@ def kill_owned(process):
 
 
 def run_check(probe, pack, output, pin, records, *, popen=subprocess.Popen,
-              clock=time.monotonic, sleep=time.sleep, witness_timeout=90, recovery_timeout=180):
+              clock=time.monotonic, sleep=time.sleep, witness_timeout=90, recovery_timeout=180,
+              deep_cache=False):
+    cache = cache_root(output, deep_cache)
+    cache_argument = native_cache_argument(cache)
     plain_ancestors(output.parent)
     output.mkdir(mode=0o700)  # Exclusive fresh root; never reuse a caller's cache.
-    cache = output / 'cache'
-    cache.mkdir(mode=0o700)
+    observed_cache = filesystem_path(cache) if deep_cache else cache
     token = uuid.uuid4().hex[:16]
     child = 'nhart-runtime-' + '-'.join(token[i:i + 4] for i in range(0, 16, 4))
-    owned = cache / child
-    base = [str(probe), '--pack', str(pack), '--cache-root', str(cache),
+    owned = observed_cache / child
+    base = [str(probe), '--pack', str(pack), '--cache-root', cache_argument,
             '--expected-pack-sha256', pin[0], '--expected-resources', str(pin[1])]
     report = {'format': 1, 'pass': False, 'platform': sys.platform,
               'sourceRevision': os.environ.get('GITHUB_SHA', ''), 'packSHA256': pin[0],
+              'workflowRunID': os.environ.get('GITHUB_RUN_ID', ''),
+              'workflowRunAttempt': os.environ.get('GITHUB_RUN_ATTEMPT', ''),
               'expectedResources': pin[1], 'probeSHA256': file_hash(probe),
               'nativeCoreDLLSHA256': file_hash(probe.parent / 'VCMI_lib.dll'),
               'pollIntervalSeconds': 0.005, 'witnessTimeoutSeconds': witness_timeout,
-              'recoveryTimeoutSeconds': recovery_timeout, 'ownedChild': child}
+              'recoveryTimeoutSeconds': recovery_timeout, 'ownedChild': child,
+              'cacheMode': 'deep' if deep_cache else 'short',
+              'cacheRootUTF16Units': utf16_units(cache),
+              'ownedCacheRootUTF16Units': utf16_units(owned),
+              'nativeCacheNamespace': 'ordinary',
+              'observerCacheNamespace': 'extended' if deep_cache and sys.platform == 'win32' else 'native'}
     process = None
     try:
+        report['phase'] = 'create-exclusive-private-cache'
+        observed_cache.mkdir(mode=0o700, parents=deep_cache)
+        plain_ancestors(observed_cache)
+        if deep_cache and utf16_units(cache) <= 260:
+            raise ValueError('Deep cache root did not exceed 260 UTF-16 units')
         report['phase'] = 'witness-real-staged-payload'
         with (output / 'killed.stdout.log').open('wb') as stdout, (output / 'killed.stderr.log').open('wb') as stderr:
             process = popen([*base, '--create-owned-cache-child', child], stdin=subprocess.DEVNULL,
@@ -153,6 +211,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ('repo', 'probe', 'pack', 'output'):
         parser.add_argument('--' + name, type=Path, required=True)
+    parser.add_argument('--deep-cache', action='store_true',
+                        help='Use an ordinary native cache root longer than 260 UTF-16 units; keep --output short')
     args = parser.parse_args()
     if sys.platform != 'win32':
         parser.error('This acceptance gate requires native Windows')
@@ -162,7 +222,7 @@ def main():
     plain(probe.parent / 'VCMI_lib.dll')
     pin = verified_pin(args.repo, pack)
     records = nhart.verify(pack)['entries']
-    report = run_check(probe, pack, args.output.absolute(), pin, records)
+    report = run_check(probe, pack, args.output.absolute(), pin, records, deep_cache=args.deep_cache)
     print('NHART native interrupted preparation recovery: ' + ('PASS' if report['pass'] else 'FAIL'))
     return 0 if report['pass'] else 1
 

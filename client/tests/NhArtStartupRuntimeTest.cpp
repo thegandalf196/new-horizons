@@ -8,6 +8,7 @@
 #include "../../lib/filesystem/CNhArtLoader.h"
 #include "../../lib/filesystem/CInputStream.h"
 #include "../../lib/filesystem/NhArtSha256.h"
+#include "../../lib/filesystem/NhArtNativePath.h"
 
 #include <fstream>
 #include <chrono>
@@ -37,6 +38,11 @@ std::string digest(const std::string & text)
 	return nhart::hex(nhart::sha256(std::span<const ui8>(reinterpret_cast<const ui8 *>(text.data()), text.size())));
 }
 
+boost::filesystem::path nativePath(const boost::filesystem::path & path)
+{
+	return boost::filesystem::path(nhart::detail::nativeCachePath(std::filesystem::path(path.native())).native());
+}
+
 void checkKnownVectors()
 {
 	require(digest("") == "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "Empty SHA256 vector");
@@ -58,12 +64,19 @@ Bytes read(CNhArtLoader & loader, const ResourcePath & resource)
 
 void requirePlainRoot(const boost::filesystem::path & root)
 {
-	boost::filesystem::path current = root.root_path();
-	for(const auto & component : root.relative_path())
+	const auto normalized = nhart::detail::absoluteCachePath(std::filesystem::path(root.native()));
+	const auto components = nhart::detail::cachePathComponents(normalized);
+	boost::filesystem::path current(components.root.native());
+	const auto check = [&]()
 	{
-		current /= component;
-		const auto status = boost::filesystem::symlink_status(current);
+		const auto status = boost::filesystem::symlink_status(nativePath(current));
 		require(boost::filesystem::is_directory(status) && !boost::filesystem::is_symlink(status), "Cache root must be plain existing directories");
+	};
+	check();
+	for(const auto & component : components.relative)
+	{
+		current /= boost::filesystem::path(component.native());
+		check();
 	}
 }
 
@@ -85,7 +98,7 @@ void requireSingleCache(const boost::filesystem::path & owned, const ExpectedPac
 {
 	const auto version = owned / "new-horizons-art" / "v1";
 	size_t children = 0;
-	for(const auto & entry : boost::filesystem::directory_iterator(version))
+	for(const auto & entry : boost::filesystem::directory_iterator(nativePath(version)))
 	{
 		++children;
 		require(entry.path().filename().string() == expected.sha256, "Unexpected cache stage/lock/hash directory");
@@ -93,7 +106,7 @@ void requireSingleCache(const boost::filesystem::path & owned, const ExpectedPac
 	}
 	require(children == 1, "Mounts did not share one prepared cache");
 	size_t files = 0;
-	for(const auto & entry : boost::filesystem::directory_iterator(version / expected.sha256))
+	for(const auto & entry : boost::filesystem::directory_iterator(nativePath(version / expected.sha256)))
 	{
 		++files;
 		require(boost::filesystem::is_regular_file(entry.symlink_status()) && !boost::filesystem::is_symlink(entry.symlink_status()), "Non-regular cache payload");
@@ -185,7 +198,7 @@ int main(int argc, char ** argv)
 		if(recover)
 			requirePlainRoot(owned);
 		else
-			require(boost::filesystem::create_directory(owned), "Owned child already exists or is unwritable");
+			require(boost::filesystem::create_directory(nativePath(owned)), "Owned child already exists or is unwritable");
 		std::cout << "Owned cache child: " << childName << '\n';
 		ui64 comparedBytes = 0;
 		{

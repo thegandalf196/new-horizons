@@ -94,10 +94,12 @@ class NativePinTest(unittest.TestCase):
             self.assertIn(required, native)
         start = workflow.index('- name: Verify native NHART preparation and matched-byte reads (CPU only)')
         end = workflow.index('- name: Package client', start); step = workflow[start:end]
-        self.assertIn('python tools/ci/prepare_nhart_native_pin.py --repo .', step)
-        self.assertIn("mapfile -d '' -t pin_args", step)
-        self.assertIn('"${pin_args[@]}"', step)
-        self.assertNotIn('eval ', step)
+        self.assertIn('bash tools/ci/run_windows_nhart_native.sh "$NH_WINDOWS_PYTHON"', step)
+        driver = (ROOT / 'tools/ci/run_windows_nhart_native.sh').read_text()
+        self.assertIn('"$python_exe" tools/ci/prepare_nhart_native_pin.py --repo .', driver)
+        self.assertIn("mapfile -d '' -t pin_args", driver)
+        self.assertIn('"${pin_args[@]}"', driver)
+        self.assertNotIn('eval ', driver + step)
 
 
 if __name__ == '__main__':

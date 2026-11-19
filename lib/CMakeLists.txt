@@ -1139,6 +1139,7 @@ set(lib_HEADERS
 	filesystem/CArchiveLoader.h
 	filesystem/CNhArtLoader.h
 	filesystem/NhArtCache.h
+	filesystem/NhArtNativePath.h
 	filesystem/NhArtSha256.h
 	filesystem/CBinaryReader.h
 	filesystem/CCompressedStream.h

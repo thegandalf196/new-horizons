@@ -1,6 +1,7 @@
 /* Verified pre-game NHART cache, GPL-2.0-or-later. */
 #include "StdInc.h"
 #include "NhArtCache.h"
+#include "NhArtNativePath.h"
 #include <filesystem>
 #include <fstream>
 #include <mutex>
@@ -32,17 +33,17 @@ namespace nhart
 			fs::path path;
 #ifdef _WIN32
 			std::vector<HANDLE> ancestors;
-			explicit Directory(fs::path location, bool create) : path(fs::absolute(location).lexically_normal())
+			explicit Directory(fs::path location, bool create) : path(detail::absoluteCachePath(location))
 			{
 				try
 				{
-					fs::path current=path.root_path();
-					for(const auto & part : path.relative_path())
+					const auto components=detail::cachePathComponents(path);
+					fs::path current=components.root;
+					const auto pin=[&](bool make)
 					{
-						check(part!="." && part!="..");
-						current/=part;
-						if(create && !CreateDirectoryW(current.c_str(),nullptr)) check(GetLastError()==ERROR_ALREADY_EXISTS);
-						const auto handle=CreateFileW(current.c_str(),FILE_READ_ATTRIBUTES,
+						const auto native=detail::nativeCachePath(current);
+						if(make && !CreateDirectoryW(native.c_str(),nullptr)) check(GetLastError()==ERROR_ALREADY_EXISTS);
+						const auto handle=CreateFileW(native.c_str(),FILE_READ_ATTRIBUTES,
 						FILE_SHARE_READ|FILE_SHARE_WRITE,nullptr,OPEN_EXISTING,
 						FILE_FLAG_BACKUP_SEMANTICS|FILE_FLAG_OPEN_REPARSE_POINT,nullptr);
 						check(handle!=INVALID_HANDLE_VALUE);
@@ -52,6 +53,13 @@ namespace nhart
 						};
 						check(GetFileInformationByHandle(handle,&info));
 						check((info.dwFileAttributes&FILE_ATTRIBUTE_DIRECTORY) && !(info.dwFileAttributes&FILE_ATTRIBUTE_REPARSE_POINT));
+					};
+					pin(false);
+					for(const auto & part : components.relative)
+					{
+						check(part!="." && part!="..");
+						current/=part;
+						pin(create);
 					}
 				}
 				catch(...)
@@ -99,7 +107,7 @@ namespace nhart
 			bool make(const std::string & name)
 			{
 #ifdef _WIN32
-				if(CreateDirectoryW((path/name).c_str(),nullptr))return true;
+				if(CreateDirectoryW(detail::nativeCachePath(path/name).c_str(),nullptr))return true;
 				check(GetLastError()==ERROR_ALREADY_EXISTS);
 				return false;
 #else
@@ -111,7 +119,7 @@ namespace nhart
 			void removeEmpty(const std::string & name)
 			{
 #ifdef _WIN32
-				check(RemoveDirectoryW((path/name).c_str()));
+				check(RemoveDirectoryW(detail::nativeCachePath(path/name).c_str()));
 #else
 				check(::unlinkat(handle,name.c_str(),AT_REMOVEDIR)==0);
 #endif
@@ -121,7 +129,7 @@ namespace nhart
 			void removeFile(const std::string & name)
 			{
 #ifdef _WIN32
-				check(DeleteFileW((path/name).c_str()));
+				check(DeleteFileW(detail::nativeCachePath(path/name).c_str()));
 #else
 				check(::unlinkat(handle,name.c_str(),0)==0);
 #endif
@@ -129,7 +137,8 @@ namespace nhart
 			void publish(Directory & from,const std::string & source,const std::string & target)
 			{
 #ifdef _WIN32
-				check(MoveFileExW((from.path/source).c_str(),(path/target).c_str(),MOVEFILE_WRITE_THROUGH));
+				check(MoveFileExW(detail::nativeCachePath(from.path/source).c_str(),
+					detail::nativeCachePath(path/target).c_str(),MOVEFILE_WRITE_THROUGH));
 #else
 				// Exclusive preparation lock excludes cooperating writers. Destination
 				// must be absent; never replace an existing or unrelated cache.
@@ -153,7 +162,7 @@ namespace nhart
 			File(Directory & parent,const std::string & name,bool write)
 			{
 #ifdef _WIN32
-				handle=CreateFileW((parent.path/name).c_str(),write?GENERIC_WRITE:GENERIC_READ,
+				handle=CreateFileW(detail::nativeCachePath(parent.path/name).c_str(),write?GENERIC_WRITE:GENERIC_READ,
 				FILE_SHARE_READ,nullptr,write?CREATE_NEW:OPEN_EXISTING,FILE_FLAG_OPEN_REPARSE_POINT,nullptr);
 				check(handle!=INVALID_HANDLE_VALUE,write ? "Cannot create exclusive NHART cache payload (permissions or occupied path)"
 				: "Missing or unreadable NHART source/cache payload");
@@ -285,7 +294,7 @@ namespace nhart
 				ui8 extra;
 				check(file.read(&extra,1)==0,"NHART cache payload length mismatch: "+name);
 			}
-			for(const auto & entry:boost::filesystem::directory_iterator(boost::filesystem::path(directory.path.native())))
+			for(const auto & entry:boost::filesystem::directory_iterator(boost::filesystem::path(detail::nativeCachePath(directory.path).native())))
 			check(expected.erase(entry.path().filename().string())==1,"Unexpected file or directory in NHART cache");
 			check(expected.empty(),"Missing NHART cache inventory file");
 		}
@@ -300,7 +309,7 @@ namespace nhart
 			{
 				// Exclusive share mode is the lock; delete-on-close removes the file
 				// when the handle is closed, including by process termination.
-				handle=CreateFileW((parent.path/name).c_str(),GENERIC_READ|GENERIC_WRITE|DELETE,0,nullptr,OPEN_ALWAYS,
+				handle=CreateFileW(detail::nativeCachePath(parent.path/name).c_str(),GENERIC_READ|GENERIC_WRITE|DELETE,0,nullptr,OPEN_ALWAYS,
 				FILE_ATTRIBUTE_NORMAL|FILE_FLAG_DELETE_ON_CLOSE|FILE_FLAG_OPEN_REPARSE_POINT,nullptr);
 				if(handle==INVALID_HANDLE_VALUE)
 				{
@@ -395,7 +404,7 @@ namespace nhart
 		{
 			Directory stage(root.path/name,false);
 			std::vector<std::string> payloads;
-			for(const auto & entry:boost::filesystem::directory_iterator(boost::filesystem::path(stage.path.native())))
+			for(const auto & entry:boost::filesystem::directory_iterator(boost::filesystem::path(detail::nativeCachePath(stage.path).native())))
 			{
 				const auto file=entry.path().filename().string();
 				check(isPayloadName(file) && boost::filesystem::is_regular_file(entry.symlink_status()));
@@ -410,7 +419,7 @@ namespace nhart
 		void removeAbandonedEntries(Directory & root)
 		{
 			std::vector<std::string> stages;
-			for(const auto & entry:boost::filesystem::directory_iterator(boost::filesystem::path(root.path.native())))
+			for(const auto & entry:boost::filesystem::directory_iterator(boost::filesystem::path(detail::nativeCachePath(root.path).native())))
 			{
 				const auto name=entry.path().filename().string();
 				if(isPreparationStage(name) && boost::filesystem::is_directory(entry.symlink_status()))
@@ -483,7 +492,7 @@ namespace nhart
 		{
 			auto result=std::make_shared<PreparedCache>(PreparedCache
 			{
-				boost::filesystem::path(path.native()),size,modified,records
+				boost::filesystem::path(detail::nativeCachePath(path).native()),size,modified,records
 			}
 			);
 			prepared[key]=result;
@@ -491,7 +500,7 @@ namespace nhart
 		};
 		// An interrupted stage remains for the next lock owner to clear.
 		const auto cache=root.path/identity;
-		if(boost::filesystem::exists(boost::filesystem::symlink_status(boost::filesystem::path(cache.native()))))
+		if(boost::filesystem::exists(boost::filesystem::symlink_status(boost::filesystem::path(detail::nativeCachePath(cache).native()))))
 		{
 			Directory existing(cache,false);
 			verifyFiles(existing,records);

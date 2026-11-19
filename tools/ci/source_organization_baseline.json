@@ -50,11 +50,11 @@
     },
     ".github/workflows/new-horizons-windows.yml": {
       "functions": [],
-      "sha256": "ef1af338f377af1066e2960b946048f2cfb80234e49207ff263aa7e93e64f9c1",
-      "review": "IR-WINDOWS-NHART-SCRATCH-PATH-20261119",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_ONLY",
-      "rationale": "Complete exact591-line workflow callable inventory is empty. All28run bodies reviewed;4directPython blocks and2Pythonheredocs parse with zero callables; no shell callable definitions. Native NHART body has only its output scratch directory shortened; other27bodies exact unchanged. No inline complexity or ownership moved.",
-      "review_scope": "Exact complete callable inventory and NHART scratch-path plus matching artifact-routing change. No native/runtime/compiler/dispatch acceptance."
+      "sha256": "c42803395e1e941158e225cbb12b2fd0cb8b68d687606b74c48a6e050ebfab58",
+      "review": "IR-A7-NHART-WINDOWS-PATH-AND-ROUTING-20261119",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NATIVE_WINDOWS_PENDING",
+      "rationale": "Complete exact579-line YAML callable inventory remains empty.28runbodies inspected;4directPython blocks+2Pythonheredocs AST clean with zero callables; shell bodies no definitions. Native NHART runbody becomes a single Bash helper call; helper24lines has no functions. No hidden callable relocation.",
+      "review_scope": "Exact YAML+extractedBash callable and routing inventory only; Python harness still separately owned. No runtime/build/dispatch acceptance."
     },
     ".github/workflows/qt_translation_update.yml": {
       "functions": [],
@@ -17436,14 +17436,14 @@
     ".github/workflows/new-horizons-windows.yml": {
       "deferral": "Before further workflow expansion, move the next cohesive inline validation or package-check body into a focused tested CI helper while preserving exact inputs, compile-step timing boundaries, failures and artifacts. No generic workflow growth allowance.",
       "kind": "exception",
-      "lines": 591,
+      "lines": 579,
       "owner": "engine_engineer",
       "prior_deferral": "Existing engine engineer ownership remains. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral. This exception covers only the exact542-line official source URL/comment correction with all transport, size, digest and cache admission controls unchanged. No future growth, numerical ceiling change or coverage exclusion is authorized. This separate review permits only the exact547-line explicit-interpreter successor. Before further expansion, engine_engineer must extract the affected dependency/preflight/package stage into a focused script or shared action, preserving source/cache, CRT/notices, dispatch and artifact contract checks and lowering the orchestration baseline. No future growth, default ceiling increase or exclusion is granted. This separate urgent-correctness review covers only the exact556-line early-bootstrap-smoke ordering successor. Existing extraction obligations and all ceilings remain unchanged; no future growth is authorized.",
-      "rationale": "Exact same-size591-line urgent CI path correction: shorten only native interrupted-cache scratch root and its two JSON/log artifact globs. No helper/guard/default/target/job/timing changes. Original real Windows path reached250UTF16 stage/263actualpayload; new229stage/242actualpayload (248conservative10digitpayload). Preserve original live staged-byte witness, owned-handle kill/reap and same-child all-resource native recovery. No skipped tests or relaxed failure gate; inherited extraction/shrinking obligations remain.",
-      "review": "IR-WINDOWS-NHART-SCRATCH-PATH-20261119",
-      "review_scope": "Exact591to591-line path-only correction after temporary-evidence cleanup; public69f8241c43 is533lines with earlier separately reviewed scopes retained. No generic growth authorization.",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_ONLY",
-      "sha256": "ef1af338f377af1066e2960b946048f2cfb80234e49207ff263aa7e93e64f9c1",
+      "rationale": "Exact591to579-line workflow ratchet: move cohesive16-line nativeNHART stage into focused24-line Bash helper. Preserve existing packpin/ordinaryparity/owned short kill-recovery, explicit audio/display scrubbing, probe copy/removal and fail-fast semantics; use setup-python exact interpreter through cygpath. Add required separate deep-recovery invocation and matching JSON/log artifact globs; all other27bodies/settings/defaults/jobs/compiletiming/CRT gates unchanged. No complexity transferred to an oversized helper; remaining workflow extraction deferrals persist.",
+      "review": "IR-A7-NHART-WINDOWS-PATH-AND-ROUTING-20261119",
+      "review_scope": "Exact A7 stage extraction + deep-case routing; public69f8241c43 original533-line baseline, inherited independently reviewed scopes unchanged. NativeWindows deep CLI/acceptance pending frozen Python harness. No future growth authorization.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NATIVE_WINDOWS_PENDING",
+      "sha256": "c42803395e1e941158e225cbb12b2fd0cb8b68d687606b74c48a6e050ebfab58",
       "inherited_deferral_step2": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count."
     },
     "AI/BattleAI/AttackPossibility.cpp": {
@@ -23365,7 +23365,7 @@
       "inherited_a1_health_deferral": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.",
       "inherited_deferral": "Exact source-list bound only. Before substantive build logic, extract a cohesive target configuration section. Verify source/link membership once and retain no duplicate translation units. Prior stricter obligations remain in inherited_deferral, where present.",
       "kind": "exception",
-      "lines": 2146,
+      "lines": 2147,
       "owner": "engine_engineer",
       "previous_review": "PROPOSED-0920-EXACT-SOURCE-ORGANIZATION",
       "prior_a1_health_scope": {
@@ -23376,11 +23376,11 @@
         "sha256": "7058cdef35cfce13214572d190c4accfdf5721e6c144af3cdfca9f53bb68c2a0"
       },
       "prior_deferral": "Exact mechanical source/header registration only. Before substantive CMake target policy growth, extract a cohesive configuration section while verifying translation-unit membership and facade linkage. No future file growth allowance. Prior stricter obligations remain in inherited_deferral, where present.\n\nKeep registrations in their current coherent tables. Extract any future conditional target/control logic rather than growing this registry into a build framework.",
-      "rationale": "Exact bounded 2145to2146 physical-line successor. Exactly one BattleOrderPresence.cpp registration, separating existing native Order getter from oversized BattleInfo. No duplicate implementation, target/link change or source-list reordering. No future growth credit or performance claim.",
-      "review": "IR-PERFORMANCE-THROUGH-STEP4-ORG-V1",
-      "review_scope": "Only the exact2144-line lib/CMakeLists.txt hash and single shared marker header registration. No compiler, runtime, rendered, performance, publication or future-growth acceptance.",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_REVIEW_NATIVE_UNRUN",
-      "sha256": "1602f07594ee81b7600cb4685d59849686e09faa3fd2f8b3491a3ff233c12c4f",
+      "rationale": "Exact2146to2147-line mechanical registry successor: one NhArtNativePath.h header registered adjacent to existing NHART cache headers, no new TU or target/link/compiler/default logic, no duplicated member. Existing table/extraction deferrals retained; no future growth credit.",
+      "review": "IR-A7-NHART-FINAL-UNC-AND-DEEP-GATE-20261119",
+      "review_scope": "Exact frozen A7 production/routing source only; no compiler, Windows path runtime, recovery, timing, release or future-growth acceptance.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NATIVE_WINDOWS_PENDING",
+      "sha256": "288450505b5694e1de21ef5d28bd80a8c3cde500e17896fbda3aa5fad241a800",
       "inherited_deferral_step2": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.\n\nExact shared-facade source/header registration only. Before conditional target/control policy growth, extract the next coherent configuration section; preserve one translation unit per implementation and consumer linkage through vcmi. No future registry-size growth credit."
     },
     "lib/CSkillHandler.cpp::std::shared_ptr<CSkill> CSkillHandler::loadFromJson(const std::string & scope, const JsonNode & json, const std::string & identifier, size_t index)#1": {
@@ -24739,11 +24739,11 @@
       "kind": "exception",
       "lines": 95,
       "owner": "engine_engineer",
-      "rationale": "Exact105 to95-line ratchet at439-533. Kernel lease handling and stage maintenance are focused helpers; removed catch/rethrow wrapper had no side effect beyond obsolete directory-lock cleanup. Preserve source rehash, all payload checks and atomic publication. Existing payload-population extraction deferral retained; no future growth credit.",
-      "review": "IR-NEXT-BUILD-LIFETIME-NHART-REVERT-20261119",
-      "review_scope": "Exact independent source/organization only; no compilation, runtime, rendering, timing, publication or future-growth acceptance.",
-      "sha256": "9a2ebf4b512a1ff3d006bba491498c9de3d0f3cb4f4f86e540d0fa6fc901d283",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE"
+      "rationale": "Exact same95-line prepareCache body at448\u2013542. Only returned PreparedCache.path and existing-cache status operation gain centralized Windows extended-length access spelling. Lock scope, rehash/records checks, staged population, complete validation and atomic publication order unchanged. Prior focused payload-population extraction deferral remains; no growth credit.",
+      "review": "IR-A7-NHART-FINAL-UNC-AND-DEEP-GATE-20261119",
+      "review_scope": "Exact source/organization review only; Windows native deep preparation/recovery and cached-stream read proof pending.",
+      "sha256": "9a9a73e2e90099d93095485b78762cb7e337b29b81807947a16ebf2e9c29a3ae",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NATIVE_WINDOWS_PENDING"
     },
     "lib/gameState/CGameState.cpp": {
       "deferral": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.\n\nBefore any further substantive expansion, extract the next cohesive touched policy, callback/read adapter or ordered admission stage into its focused owner. Preserve exact capture metadata, source visibility, schema rejection, RNG/packet ordering and standalone/world wire identity; no future growth credit from this exception.",
@@ -29125,6 +29125,17 @@
       "review_scope": "numeric-legacy-debt-freeze-only",
       "sha256": "7051e4e10bfa91f0307175d5c2b3959ff642564a85194802032c38c5beedc422"
     },
+    "tools/ci/windows_nhart_interruption.py::run_check#1": {
+      "kind": "exception",
+      "owner": "engine_engineer",
+      "lines": 83,
+      "sha256": "e239e438aa86cfaa07a153e2f0c6f4c0935f31189b49ebf616864c9f05a3ee98",
+      "review": "IR-A7-NHART-FINAL-UNC-AND-DEEP-GATE-20261119",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NATIVE_WINDOWS_PENDING",
+      "rationale": "Exact83-line cohesive owned-child lifetime at125\u2013207 (previous69). Only deep-root preparation and bound namespace/source/attempt/length fields added around existing staged-byte witness, owned kill/wait, same-child recovery, all-resource validation and finally report. Pure path helpers extracted and admission happens before output or Popen; keeping the two-process transaction and single cleanup/finally together preserves failure atomicity. Below150default; bounded review-trigger allowance only, no future growth credit.",
+      "deferral": "Before further lifecycle expansion, extract report/path preparation as a cohesive value-only helper while keeping process ownership, live witness\u2192kill\u2192wait\u2192same-root recovery and final cleanup/report ordering local. Preserve negative fresh-output/namespace/no-child tests plus actual Windows short/deep evidence.",
+      "review_scope": "Exact final Python lifecycle source and organization only; no executed Windows recovery, runtime, timing or release acceptance."
+    },
     "tools/clean_new_horizons_cabir_alpha.py::clean_atlas#1": {
       "kind": "legacy",
       "lines": 132,
@@ -29753,15 +29764,15 @@
       "deferral": "Review trigger remains80 lines. Split bypass scoring from predecessor traversal before further substantive growth; preserve selected approach lifetime, deterministic ordering and result/BFS semantics."
     },
     "lib/filesystem/NhArtCache.cpp": {
-      "lines": 534,
-      "sha256": "73fa7974436a815f0e158b4a7159b11dca9ee40cbf5ae3ef7745e31a6d8c9934",
+      "lines": 543,
+      "sha256": "c9d968e342a475a402d167b0cce746401e0fea216e613e40708e6badc34179c2",
       "kind": "exception",
       "owner": "engine_engineer",
-      "rationale": "Exact391 to534-line bounded native cache-recovery change. Existing no-follow Directory/file admission, payload/hash verification and atomic publication remain local and unchanged. Added OS preparation lease, separate v1.staging root plus exact64hex .stage name recognizer and conservative one-level stage maintenance are cohesive to this cache owner. prepareCache shrinks105 to95 lines; new maintenance helpers are14/24 lines, lock constructor18 and acquisition branches18/15. No helper exceeds80 lines or transfers complexity to an oversized unit; no future growth credit. Historical stages/locks remain untouched and verified digest caches remain reusable. Exact aeefa80 successor preserves v1 digest-cache reuse and legacy v1 stages while pinning/validating both directory roots for cross-directory atomic publication.",
-      "review": "IR-NEXT-BUILD-LIFETIME-NHART-REVERT-20261119",
-      "review_scope": "Exact independent source/organization only; no compilation, runtime, rendering, timing, publication or future-growth acceptance.",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
-      "deferral": "Before further substantive native cache expansion, extract stage payload population behind a focused helper while retaining locking, complete verification and atomic publication order in prepareCache; future lock/protocol growth must retain the no-follow Directory boundary and process-death/Windows sharing coverage. No broad growth allowance."
+      "rationale": "Exact534to543-line urgent A7 product path correction. New107-line helper owns Windows drive/UNC normalization and component decomposition; all cache operations only route through it. Explicit UNC share/root pin prevents standard-library drive reinterpretation and preserves no-delete ancestor handles/reparse checks. Windows constructor grows for shared pin lambda and one root open, not protocol/state complexity; prepareCache95 unchanged. Kernel lock/constructor failure, exact current-stage cleanup, CREATE_NEW, full rehash/verification and no-replace publish unchanged. Narrow+9routing/ownership correctness exception; no future growth credit.",
+      "review": "IR-A7-NHART-FINAL-UNC-AND-DEEP-GATE-20261119",
+      "review_scope": "Exact frozen A7 production/routing source only; no compiler, Windows path runtime, recovery, timing, release or future-growth acceptance.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NATIVE_WINDOWS_PENDING",
+      "deferral": "Before further substantive native cache expansion, extract stage payload population behind a focused helper while retaining locking, complete verification and atomic publication order in prepareCache; future lock/protocol growth must retain the no-follow Directory boundary and process-death/Windows sharing coverage. No broad growth allowance. A7 narrow urgent correction only: before further cache platform-I/O/protocol growth, engine_engineer must extract the coherent native Directory/File access boundary or existing stage-payload population behind a small interface, keeping handle lifetime, exact share/no-reparse flags, locking and publish ordering; characterize Windows short/deep kill/recovery and POSIX parity before changing that boundary. This +9 allowance is not a relaxed ceiling."
     },
     "tools/ci/stage_linux_client.py::main#1": {
       "lines": 89,
