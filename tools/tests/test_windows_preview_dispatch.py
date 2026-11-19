@@ -35,7 +35,7 @@ class WindowsPreviewDispatchTest(unittest.TestCase):
     def run_controls(self, controls, revision=None):
         with tempfile.TemporaryDirectory() as temporary:
             summary = Path(temporary) / 'summary'
-            revision = revision or subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()
+            revision = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip() if revision is None else revision
             env = dict(os.environ, TRIAL_INPUTS=json.dumps(controls), GITHUB_SHA=revision,
                        GITHUB_STEP_SUMMARY=str(summary))
             result = subprocess.run([sys.executable, '-B', '-c', self.script('Validate matched performance preview controls')],
@@ -57,6 +57,59 @@ class WindowsPreviewDispatchTest(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertIn('Preview artifacts only', summary)
             self.assertIn(json.dumps(unity), summary)
+
+    def test_actual_github_raw_inputs_accept_only_canonical_normalization(self):
+        # Actual failed dispatch shape: a numeric input string and omitted empty strings.
+        for unity in (False, True):
+            raw = {'preflight_only': False, 'use_precompiled_headers': True,
+                   'use_hot_header_pch': False, 'build_jobs': '4',
+                   'skip_pch_cache_save': False, 'use_unity_build': unity}
+            result, summary = self.run_controls(raw)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn(json.dumps(dict(CONTROLS, use_unity_build=unity), sort_keys=True), summary)
+        for omitted in ('pch_off_cache_seed', 'repack_run_id'):
+            raw = dict(CONTROLS)
+            del raw[omitted]
+            result, _ = self.run_controls(raw)
+            self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_bad_types_and_noncanonical_values_are_not_coerced(self):
+        invalid = {'build_jobs': [4.0, True, False, None, 0, 6, '04', '4.0', '+4', ' 4', '4 ', [], {}],
+                   'pch_off_cache_seed': [None, False, 0, [], 'cold'],
+                   'repack_run_id': [None, False, 0, [], '123']}
+        for name in ('preflight_only', 'use_precompiled_headers', 'use_hot_header_pch',
+                     'skip_pch_cache_save', 'use_unity_build'):
+            invalid[name] = [0, 1, 'true', 'false', None]
+        for name, values in invalid.items():
+            for value in values:
+                with self.subTest(name=name, value=value):
+                    result, summary = self.run_controls(dict(CONTROLS, **{name: value}))
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertEqual(summary, '')
+        for name in ('build_jobs', 'preflight_only', 'use_precompiled_headers',
+                     'use_hot_header_pch', 'skip_pch_cache_save', 'use_unity_build'):
+            raw = dict(CONTROLS)
+            del raw[name]
+            result, _ = self.run_controls(raw)
+            self.assertNotEqual(result.returncode, 0, name)
+
+    def test_invalid_revision_and_mismatched_checkout_remain_rejected(self):
+        for revision in ('', 'A' * 40, 'a' * 39, 'a' * 41, 'g' * 40, 'a' * 40):
+            with self.subTest(revision=revision):
+                result, summary = self.run_controls(CONTROLS, revision=revision)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertEqual(summary, '')
+
+    def test_normal_workflow_defaults_remain_opt_in(self):
+        trigger = self.workflow.get('on', self.workflow.get(True))
+        inputs = trigger['workflow_dispatch']['inputs']
+        self.assertIs(inputs['preflight_only']['default'], True)
+        self.assertIs(inputs['use_precompiled_headers']['default'], True)
+        self.assertEqual(inputs['build_jobs']['default'], 4)
+        for name in ('use_unity_build', 'use_hot_header_pch', 'skip_pch_cache_save'):
+            self.assertIs(inputs[name]['default'], False)
+        for name in ('pch_off_cache_seed', 'repack_run_id'):
+            self.assertEqual(inputs[name]['default'], '')
 
     def test_unmatched_controls_fail_before_any_dependency_build(self):
         changes = {'preflight_only': True, 'use_precompiled_headers': False,

@@ -77,6 +77,12 @@ jobs:
           python - <<'PY'
           import json, os, re, subprocess
           controls = json.loads(os.environ['TRIAL_INPUTS'])
+          # Dispatch numbers can arrive as strings; empty optional strings can be omitted.
+          if type(controls.get('build_jobs')) is str and controls['build_jobs'] == '4':
+              controls['build_jobs'] = 4
+          for name in ('pch_off_cache_seed', 'repack_run_id'):
+              if name not in controls:
+                  controls[name] = ''
           required = {'preflight_only': False, 'use_precompiled_headers': True,
                       'use_hot_header_pch': False, 'build_jobs': 4, 'skip_pch_cache_save': False,
                       'pch_off_cache_seed': '', 'repack_run_id': ''}
