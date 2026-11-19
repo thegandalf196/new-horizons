@@ -2,11 +2,18 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 import ctypes
+import json
+from pathlib import Path
+import sys
+import tempfile
 from types import SimpleNamespace
 import unittest
 from unittest.mock import Mock, patch
 
-from tools.tests.test_windows_build_diagnostics import diagnostics
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / 'tools/ci'))
+import build_windows_client as build
+import windows_build_diagnostics as diagnostics
 import windows_build_memory as memory
 
 
@@ -79,10 +86,6 @@ class WindowsBuildMemoryTest(unittest.TestCase):
         thread.join.assert_not_called()
 
     def test_build_diagnostics_stops_sampler_and_retains_host_report_on_failure(self):
-        import json
-        from pathlib import Path
-        import tempfile
-        from tools.tests.test_windows_build_diagnostics import build
         sampler = Mock()
         sampler.finish.return_value = {'available': True, 'sampleCount': 2, 'scope': 'host'}
         with tempfile.TemporaryDirectory() as temporary:
