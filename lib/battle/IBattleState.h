@@ -163,6 +163,9 @@ public:
 	}
 	virtual HeroCommand getActiveDoctrine(BattleSide side) const { return HeroCommand::NONE; }
 	virtual HeroCommand getActiveOrder(BattleSide side) const { return HeroCommand::NONE; }
+	/// Conservative raw environmental Order/mark presence. Unknown implementations
+	/// retain their caller's saved-rules fallback; false proves no stored state.
+	virtual std::optional<bool> heroOrderDamageStatePresence() const { return {}; }
 	/// Returns all independent canonical Order snapshots, oldest issue first.
 	virtual std::vector<HeroOrderState> getHeroOrderStates(BattleSide side) const
 	{

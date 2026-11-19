@@ -22,7 +22,8 @@ bool sameDamageBits(const DamageTable & left, const DamageTable & right)
 				|| std::bit_cast<uint32_t>(value.perCreature) != std::bit_cast<uint32_t>(entry->second.perCreature)
 				|| value.count != entry->second.count || value.total != entry->second.total
 				|| value.leadershipCapacity != entry->second.leadershipCapacity
-				|| value.creature != entry->second.creature)
+				|| value.creature != entry->second.creature
+				|| value.capturedOrderDamageState != entry->second.capturedOrderDamageState)
 				return false;
 		}
 	}

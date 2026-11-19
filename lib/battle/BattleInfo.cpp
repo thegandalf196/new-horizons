@@ -408,11 +408,6 @@ bool BattleInfo::interceptHeroOrderProtect(BattleSide side)
 	return true;
 }
 
-std::vector<HeroOrderState> BattleInfo::getHeroOrderStates(BattleSide side) const
-{
-	return sides.at(side).orderStates;
-}
-
 void BattleInfo::validateDoubleCommandStructure() const
 {
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})

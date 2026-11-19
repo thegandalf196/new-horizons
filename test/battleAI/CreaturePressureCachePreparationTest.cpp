@@ -324,9 +324,19 @@ protected:
 				EXPECT_EQ(full.getOriginalDamage(actor, target, state), terminal.getOriginalDamage(actor, target, state));
 			}
 	}
-	void check(Capability capability, bool fast, bool parented = false, bool populated = false)
+	void check(Capability capability, bool fast, bool parented = false, bool populated = false, bool activeOrder = true)
 	{
 		ASSERT_NO_FATAL_FAILURE(prepare());
+		if(activeOrder && !legacyCommandRules)
+		{
+			HeroOrderState order;
+			order.command = HeroCommand::FOCUS_FIRE;
+			order.issuedRound = model->battleGetRound();
+			order.primaryTargetUnitId = ids[2];
+			model->setHeroOrderState(BattleSide::ATTACKER, order);
+			model->setFocusFireState(BattleSide::ATTACKER,
+				FocusFireState{ids[2], {ids[0], ids[1]}, model->battleGetRound(), 0});
+		}
 		EXPECT_EQ(heroCommands::supportedByRules(model->getHeroCommandRules(), HeroCommand::FOCUS_FIRE), !legacyCommandRules);
 		const auto liveBefore = gameState()->saveToMemory();
 		const auto battleBefore = projectedHitTest::serialized(*battle());
@@ -364,7 +374,7 @@ protected:
 				EXPECT_EQ(calculator->calls, (std::vector<std::pair<uint32_t, uint32_t>>(calls.begin(), calls.begin() + 2)));
 			else
 				EXPECT_EQ(calculator->calls, calls);
-			const bool queriesCapability = !legacyCommandRules && !parented && !populated;
+			const bool queriesCapability = activeOrder && !legacyCommandRules && !parented && !populated;
 			EXPECT_EQ(calculator->events, queriesCapability ? "CCQ" + std::string(fast ? 0 : 6, 'C') : std::string(8, 'C'));
 			compareValues(full, terminal, model);
 			auto changed = std::make_shared<HypotheticBattle>(environment.get(), model);
@@ -964,6 +974,10 @@ protected:
 };
 
 TEST_F(CreaturePressureCachePreparationTest, CanonicalFreshRootRetainsWarmupAndExactValues) { check(Capability::CANONICAL, true); }
+TEST_F(CreaturePressureCachePreparationTest, CanonicalNoOrderRetainsFullPreparation)
+{
+	check(Capability::CANONICAL, false, false, false, false);
+}
 TEST_F(CreaturePressureCachePreparationTest, UnsupportedCapturedRulesRetainFullPreparation)
 {
 	legacyCommandRules = true;

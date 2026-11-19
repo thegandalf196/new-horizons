@@ -5,6 +5,9 @@
  */
 #include "StdInc.h"
 #include "DamageCacheAdmission.h"
+#include "HypotheticBattle.h"
+#include "../../lib/battle/BattleInfo.h"
+#include "../../lib/battle/CPlayerBattleCallback.h"
 
 #include "../../lib/battle/CBattleInfoCallback.h"
 #include "../../lib/battle/IBattleState.h"
@@ -15,6 +18,22 @@
 #include "../../lib/battle/Unit.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/entities/hero/NewHorizonsOrdinaryCreatureSpecialties.h"
+
+bool mayHaveHeroOrderDamageState(const CBattleInfoCallback & battle)
+{
+	// Unknown callback overrides retain the previous conservative capability gate,
+	// even when their backing world happens to be a native BattleInfo.
+	if(typeid(battle) == typeid(BattleInfo) || typeid(battle) == typeid(CPlayerBattleCallback)
+		|| typeid(battle) == typeid(HypotheticBattle))
+		if(const auto known = battle.getBattle()->heroOrderDamageStatePresence())
+			return *known;
+	return heroCommands::supportedByRules(battle.getBattle()->getHeroCommandRules(), HeroCommand::FOCUS_FIRE);
+}
+
+bool DamageCacheAdmission::hasHeroOrderDamageState()
+{
+	return remember(ORDER_DAMAGE_STATE, [&] { return mayHaveHeroOrderDamageState(battle); });
+}
 
 bool OrdinaryDamageObservation::matches(const CBattleInfoCallback & candidate) const
 {

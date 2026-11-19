@@ -52,3 +52,37 @@ bool HypotheticBattle::hasCanonicalDamageQuerySources(size_t remaining, const Ba
 	// Qualified dispatch prevents an unknown callback from certifying itself.
 	return subject->CBattleInfoCallback::hasCanonicalDamageQuerySources(remaining - 1, expected);
 }
+
+const std::vector<HeroOrderState> & HypotheticBattle::localHeroOrderStates(BattleSide side) const
+{
+	const auto & lease = heroOrderStates.at(side);
+	if(!lease) throw std::logic_error("Hypothetical Orders have not been captured");
+	return *lease;
+}
+
+std::shared_ptr<const std::vector<HeroOrderState>> HypotheticBattle::preparedHeroOrderStates(BattleSide side) const
+{
+	const auto & known = forecastSide(side);
+	if(!known || (known->knowledge != VisibleHeroPolicy::Knowledge::VISIBLE_HERO
+		&& known->knowledge != VisibleHeroPolicy::Knowledge::KNOWN_ABSENT)) return {};
+	return heroOrderStates.at(side);
+}
+
+std::optional<bool> HypotheticBattle::heroOrderDamageStatePresence() const
+{
+	if(typeid(*this) != typeid(HypotheticBattle) || !subject || !sourceBinding.isCurrentSource(subject))
+		return {};
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+	{
+		const auto & states = heroOrderStates.at(side);
+		if(!states)
+			return {};
+		const auto mark = focusFireStates.find(side);
+		if(!states->empty() || (mark != focusFireStates.end() && mark->second))
+			return true;
+	}
+	// Historical activeOrder reads still delegate to the subject. Canonical
+	// Orders are fully captured above and must not inherit an expired parent mark.
+	return canonicalHeroOrderStates ? std::optional<bool>(false)
+		: subject->getBattle()->heroOrderDamageStatePresence();
+}

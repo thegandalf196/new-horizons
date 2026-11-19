@@ -220,6 +220,7 @@ set(lib_MAIN_SRCS
 	battle/HeroCommandCoefficientMath.cpp
 	battle/HeroCommandCoefficientQueries.cpp
 	battle/BattleInfo.cpp
+	battle/BattleOrderPresence.cpp
 	battle/BattleDamageSampling.cpp
 	battle/ArcaneInspirationRules.cpp
 	battle/ArcaneInspirationEffects.cpp

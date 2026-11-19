@@ -320,6 +320,7 @@ public:
 	void setSpellResponseState(BattleSide side, const SpellResponseState & state) override;
 	const OverwhelmingFormulaState & getOverwhelmingFormulaState(BattleSide side) const override;
 	void setOverwhelmingFormulaState(BattleSide side, const OverwhelmingFormulaState & state) override;
+	std::optional<bool> heroOrderDamageStatePresence() const override;
 	std::vector<HeroOrderState> getHeroOrderStates(BattleSide side) const override;
 	std::shared_ptr<const std::vector<HeroOrderState>> preparedHeroOrderStates(BattleSide side) const override;
 	const std::vector<HeroOrderState> & localHeroOrderStates(BattleSide side) const;
@@ -620,6 +621,7 @@ private:
 	BattleSideArray<RapidResponseState> rapidResponseStates;
 	BattleSideArray<ReducedExtraActivationState> reducedExtraActivationStates;
 	/// Newest Order is last; updates by command preserve this issuance order.
+	bool canonicalHeroOrderStates = false;
 	BattleSideArray<std::shared_ptr<const std::vector<HeroOrderState>>> heroOrderStates;
 	BattleSideArray<std::optional<newHorizonsCommand::ResourceState>> commandResources;
 	BattleSideArray<newHorizonsHeroes::LeadershipComposition> leadershipCompositions;

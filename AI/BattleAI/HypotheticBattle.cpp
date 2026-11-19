@@ -89,6 +89,7 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle,
 {
 	if(const auto * source = dynamic_cast<const HypotheticBattle *>(realBattle.get()))
 		forecastReferenceOnly = source->referenceForecastOnly();
+	canonicalHeroOrderStates = heroCommands::isCanonicalRules(getHeroCommandRules());
 	captureForecastSides(*realBattle);
 	captureNecromancyPassives(*realBattle);
 	captureElementalAttunement(realBattle);
@@ -280,21 +281,6 @@ void HypotheticBattle::setPreCombatOrderState(BattleSide side, const PreCombatOr
 		throw std::invalid_argument("Invalid hypothetical Battle Plan side");
 	state.validateShape();
 	preCombatOrderStates.at(side) = state;
-}
-
-const std::vector<HeroOrderState> & HypotheticBattle::localHeroOrderStates(BattleSide side) const
-{
-	const auto & lease = heroOrderStates.at(side);
-	if(!lease) throw std::logic_error("Hypothetical Orders have not been captured");
-	return *lease;
-}
-
-std::shared_ptr<const std::vector<HeroOrderState>> HypotheticBattle::preparedHeroOrderStates(BattleSide side) const
-{
-	const auto & known = forecastSide(side);
-	if(!known || (known->knowledge != VisibleHeroPolicy::Knowledge::VISIBLE_HERO
-		&& known->knowledge != VisibleHeroPolicy::Knowledge::KNOWN_ABSENT)) return {};
-	return heroOrderStates.at(side);
 }
 
 std::vector<HeroOrderState> HypotheticBattle::getHeroOrderStates(BattleSide side) const

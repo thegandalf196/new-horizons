@@ -1273,6 +1273,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/RegenerationBaselineReuseTest.cpp
 		battleAI/DamageCacheAdmissionTest.cpp
 		battleAI/OrdinaryDamageObservationTest.cpp
+		battleAI/DamageCacheOrderStateTest.cpp
 		battleAI/ExchangeInitiativeQueueTest.cpp
 		battleAI/CreatureCandidateBaselineTest.cpp
 		battleAI/MovementCandidateScreeningTest.cpp

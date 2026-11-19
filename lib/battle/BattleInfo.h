@@ -431,6 +431,7 @@ public:
 		const auto command = sides.at(side).activeOrder;
 		return heroCommands::isActive(command) ? command : HeroCommand::NONE;
 	}
+	std::optional<bool> heroOrderDamageStatePresence() const override;
 	std::vector<HeroOrderState> getHeroOrderStates(BattleSide side) const override;
 	bool hasSacredCommandOrderState() const
 	{

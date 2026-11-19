@@ -17,6 +17,9 @@ class CBattleInfoCallback;
 class CGHeroInstance;
 class FlatDamageInputs;
 
+/// Exact known presence, or the historical saved-rules gate for unknown views.
+bool mayHaveHeroOrderDamageState(const CBattleInfoCallback & battle);
+
 /// A lazy whole-roster fact for one explicitly immutable observation interval.
 /// Supply a non-null callback. Construct after unit materialization; destroy before
 /// any unit, bonus, hero, ownership, rules or branch mutation, including shared
@@ -62,13 +65,14 @@ public:
 	bool hasReducedExtraActivation();
 	bool hasBloodragePain();
 	bool supportsFocusFire();
+	bool hasHeroOrderDamageState();
 	bool ordinaryCreatureDamageIsStateful();
 	/// Borrowed only by this immutable selector batch; never an applied hit.
 	const FlatDamageInputs * flatInputs = nullptr;
 
 private:
 	enum Fact : std::size_t { AMBUSHER, SHADOW, NIGHT, NIGHT_EFFECT, RELENTLESS, GAMBLER,
-		REDUCED_ACTIVATION, BLOODRAGE, FOCUS_FIRE_RULES, ORDINARY_DAMAGE_POLICY, COUNT };
+		REDUCED_ACTIVATION, BLOODRAGE, FOCUS_FIRE_RULES, ORDINARY_DAMAGE_POLICY, ORDER_DAMAGE_STATE, COUNT };
 	const battle::Unit & actor;
 	const CBattleInfoCallback & battle;
 	OrdinaryDamageObservation * observation;

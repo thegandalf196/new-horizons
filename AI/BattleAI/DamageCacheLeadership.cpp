@@ -1,6 +1,7 @@
 /* DamageCacheLeadership.cpp, VCMI / New Horizons, GPL v2.0 or later. */
 #include "StdInc.h"
 #include "AttackPossibility.h"
+#include "DamageCacheAdmission.h"
 #include "../../lib/entities/hero/NewHorizonsLeadership.h"
 #include <limits>
 
@@ -22,6 +23,7 @@ DamageCache::CachedDamage DamageCache::CachedDamage::capture(int64_t damage,
 	result.total = damage;
 	result.perCreature = result.count > 0 ? static_cast<float>(damage) / result.count : 0;
 	result.creature = actor.creatureId();
+	result.capturedOrderDamageState = mayHaveHeroOrderDamageState(battle);
 	const auto leadership = battle.battleLeadershipReadout(&actor);
 	result.leadershipCapacity = leadership.active ? leadership.capacity : 0;
 	return result;

@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "SearchBudget.h"
+#include "../../lib/battle/ConsecratedArms.h"
 #include "HypotheticBattle.h"
 #include "../../lib/battle/NewHorizonsSpecialtyEvents.h"
 #include "../../lib/battle/NewHorizonsPassiveSpecialties.h"
@@ -53,6 +54,8 @@ bool hasTemporaryCombatModifier(const battle::Unit * unit)
 {
 	return unit && (newHorizonsFocusMagic::active(*unit) || newHorizonsCoordinatedMarks::hasMark(*unit) || unit->hasBonus(CSelector([](const Bonus * bonus)
 	{
+		if(!bonus)
+			return false;
 		return newHorizonsSpecialtyEvents::isReceipt(bonus)
 			|| arcaneInspiration::isEffect(bonus)
 			|| newHorizonsPrismaticVanguard::isEffect(bonus)
@@ -61,7 +64,10 @@ bool hasTemporaryCombatModifier(const battle::Unit * unit)
 			|| newHorizonsInfernoStrikeDebuffs::isEffect(bonus)
 			|| newHorizonsChargeSpecialties::isLanceFormation(bonus)
 			|| newHorizonsReactiveDefense::isSolidarityProtection(bonus)
-			|| newHorizonsReactiveDefense::isIronHideSpent(bonus);
+			|| newHorizonsReactiveDefense::isIronHideSpent(bonus)
+			|| bonus->source == BonusSource::HERO_COMMAND
+			|| bonus->source == BonusSource::SPELL_EFFECT
+			|| consecratedArms::identity(bonus).has_value();
 	})));
 }
 bool hasShadowAssaultSpentMarker(const battle::Unit * unit, BattleSide attackingSide)
@@ -308,7 +314,7 @@ int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit
 		|| sylvanTacticsAI::dynamicDamage(*hb, attacker, defender)
 		|| admission.ordinaryCreatureDamageIsStateful()
 		|| tracksIntrinsicReduction(defender->unitId(), attack.physicalDamage)
-		|| admission.supportsFocusFire()
+		|| admission.hasHeroOrderDamageState()
 		|| newHorizonsBattlecraft::rank(hb->battleGetOwnerHero(attacker)) > 0
 		|| hasRangedFollowUp
 		|| dreadCavalryAI::hasActivationState(attacker)
@@ -356,7 +362,8 @@ int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit
 	}
 	const auto & entries = damageCache[attacker->unitId()];
 	const auto cached = entries.find(defender->unitId());
-	const bool wasComputedBefore = cached != entries.end() && cached->second.matchesLeadership(*attacker, *hb);
+	const bool wasComputedBefore = cached != entries.end() && !cached->second.capturedOrderDamageState
+		&& cached->second.matchesLeadership(*attacker, *hb);
 
 	if (!wasComputedBefore)
 	{

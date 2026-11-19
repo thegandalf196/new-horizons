@@ -218,6 +218,7 @@ private:
 		int64_t total = 0;
 		int64_t leadershipCapacity = 0; // Zero means the ordinary linear profile.
 		CreatureID creature;
+		bool capturedOrderDamageState = false;
 
 		static CachedDamage capture(int64_t damage, const battle::Unit & actor, const CBattleInfoCallback & battle);
 		bool matchesLeadership(const battle::Unit & actor, const CBattleInfoCallback & battle) const;
@@ -275,7 +276,7 @@ public:
 		OrdinaryDamageObservation * observation = nullptr);
 	void buildDamageCache(std::shared_ptr<HypotheticBattle> hb, BattleSide side);
 	/// Terminal creature-pressure root only: retain obstacles, omit pair priming
-	/// only for attested pure damage and saved rules that force dynamic queries.
+	/// only for attested pure damage during an immutable active-Order interval.
 	/// Do not use this root as the parent of another DamageCache.
 	void buildCreaturePressureCache(std::shared_ptr<HypotheticBattle> hb, BattleSide side);
 };

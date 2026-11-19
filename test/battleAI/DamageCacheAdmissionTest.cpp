@@ -56,6 +56,7 @@ public:
 	mutable unsigned queries = 0;
 	mutable bool failNext = false;
 	explicit CountingRulesBattle(JsonNode rules) : BattleInfo(nullptr), rules(std::move(rules)) {}
+	std::optional<bool> heroOrderDamageStatePresence() const override { return {}; }
 	const JsonNode & getHeroCommandRules() const override
 	{
 		++queries;
@@ -303,8 +304,8 @@ TEST_F(DamageCacheAdmissionTest, WrongActorAndSiblingBranchFallBackToIndependent
 		EXPECT_EQ(timing.rootCacheHits, 1u);
 		DamageCacheProbeTiming currentTiming;
 		EXPECT_EQ(cache.getDamage(actor.get(), defender.get(), child, &currentTiming, hint), expected);
-		EXPECT_EQ(currentTiming.dynamicBypasses, 1u);
-		EXPECT_EQ(currentTiming.rootCacheHits, 0u);
+		EXPECT_EQ(currentTiming.dynamicBypasses, 0u);
+		EXPECT_EQ(currentTiming.rootCacheHits, 1u);
 	}
 }
 
@@ -471,6 +472,8 @@ TEST_F(DamageCacheAdmissionTest, SavedRulesSupportIsLazyAndCachesTrueAndFalseWit
 		EXPECT_EQ(admission.supportsFocusFire(), expected);
 		EXPECT_EQ(admission.supportsFocusFire(), heroCommands::supportedByRules(rules, HeroCommand::FOCUS_FIRE));
 		EXPECT_EQ(source.queries, 1u);
+		EXPECT_EQ(mayHaveHeroOrderDamageState(source), expected);
+		EXPECT_EQ(source.queries, 2u);
 	}
 }
 
@@ -720,6 +723,14 @@ TEST_F(DamageCacheAdmissionTest, ActualMainProbeKeepsBothFullCalculationsDamageS
 {
 	useRevisedOrders = true;
 	ASSERT_NO_FATAL_FAILURE(prepare());
+	// This test characterizes the dynamic path, so provide actual Order state.
+	HeroOrderState order;
+	order.command = HeroCommand::FOCUS_FIRE;
+	order.issuedRound = child->battleGetRound();
+	order.primaryTargetUnitId = incoming->unitId();
+	child->setHeroOrderState(BattleSide::ATTACKER, order);
+	child->setFocusFireState(BattleSide::ATTACKER,
+		FocusFireState{incoming->unitId(), {braced->unitId()}, child->battleGetRound(), 0});
 	ASSERT_NE(dynamic_cast<const NativeDamageCalculator *>(LIBRARY->scriptTypes()->getDamageCalculator()), nullptr);
 	auto actor = child->getForUpdate(braced->unitId());
 	auto target = child->getForUpdate(incoming->unitId());

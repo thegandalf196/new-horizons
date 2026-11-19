@@ -6,6 +6,7 @@
 #include "StdInc.h"
 #include "SearchBudget.h"
 #include "AttackPossibility.h"
+#include "DamageCacheAdmission.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/battle/HeroCommand.h"
 #include "../../lib/combatScripts/IDamageCalculatorScript.h"
@@ -22,13 +23,13 @@ void DamageCache::buildDamageCache(std::shared_ptr<HypotheticBattle> hb, BattleS
 void DamageCache::buildCreaturePressureCache(std::shared_ptr<HypotheticBattle> hb, BattleSide side)
 {
 	// This terminal root cache is not a baseline for child DamageCaches. Its
-	// current/original queries always bypass pair entries under these saved rules.
+	// current/original queries bypass pair entries during this immutable active-Order interval.
 	const bool populated = !damageCache.empty() || !obstacleDamage.empty()
 		|| !temporaryCombatModifierUnits.empty()
 		|| !ambusherAttackers.empty() || !shadowAssaultTargetSides.empty()
 		|| !nightProwlerAttackers.empty() || !frozenTargets.empty() || !intrinsicMdrTargets.empty() || !intrinsicPdrTargets.empty();
 	if(parent || populated
-		|| !heroCommands::supportedByRules(hb->getBattle()->getHeroCommandRules(), HeroCommand::FOCUS_FIRE))
+		|| !mayHaveHeroOrderDamageState(*hb))
 	{
 		buildDamageCache(hb, side);
 		return;
