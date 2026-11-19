@@ -120,8 +120,8 @@ TEST_F(CSkillTest, MissingCombatStatusDefaultsToNoneAndEmptyTooltip)
 TEST_F(CSkillTest, CombatStatusDescriptionIsRegisteredForTranslation)
 {
 	TestSkillHandler handler;
-	const auto parsed = handler.loadFromJson("vcmi-test", skillConfig("metamagicUses"), "combatStatusTranslatedProbe", 42);
-	EXPECT_EQ(parsed->getCombatStatusProvider(), CSkill::CombatStatusProvider::METAMAGIC_USES);
+	const auto parsed = handler.loadFromJson("vcmi-test", skillConfig("bloodrageDamage"), "combatStatusTranslatedProbe", 42);
+	EXPECT_EQ(parsed->getCombatStatusProvider(), CSkill::CombatStatusProvider::BLOODRAGE_DAMAGE);
 	EXPECT_EQ(parsed->getCombatStatusDescriptionTranslated(), "Localized combat status probe");
 }
 
@@ -141,6 +141,14 @@ TEST_F(CSkillTest, DivineMandateCombatStatusProviderIsTyped)
 	EXPECT_EQ(parsed->getCombatStatusDescriptionTranslated(), "Localized combat status probe");
 }
 
+TEST(CSkillCombatStatusLoaderTest, RetiredMetamagicUsesProviderIsRejected)
+{
+	TestSkillHandler handler;
+	const auto retired = skillConfig("metamagicUses");
+	EXPECT_FALSE(validSkillSchema(retired));
+	EXPECT_THROW(handler.loadFromJson("vcmi-test", retired, "retiredMetamagicCombatStatusProbe", 42), std::runtime_error);
+}
+
 TEST(CSkillCombatStatusSchemaTest, OptionalStatusAcceptsCanonicalAndRejectsMalformedShapes)
 {
 	JsonNode skills(JsonPath::builtin("config/newHorizonsSkills"));
@@ -153,12 +161,12 @@ TEST(CSkillCombatStatusSchemaTest, OptionalStatusAcceptsCanonicalAndRejectsMalfo
 			canonicalSkill[rank].Struct().erase("images");
 		ASSERT_TRUE(validSkillSchema(canonicalSkill)) << identifier;
 	}
-	JsonNode canonical = skills["metamagic"];
+	JsonNode canonical = skills["bloodrage"];
 	for(const auto * rank : {"basic", "advanced", "expert"})
 		canonical[rank].Struct().erase("images");
 
 	JsonNode invalidObjectType = canonical;
-	invalidObjectType["combatStatus"] = JsonNode("metamagicUses");
+	invalidObjectType["combatStatus"] = JsonNode("bloodrageDamage");
 	EXPECT_FALSE(validSkillSchema(invalidObjectType));
 
 	JsonNode invalidProvider = canonical;
@@ -183,7 +191,7 @@ TEST(CSkillCombatStatusLoaderTest, RejectsMalformedMetadataBeforeLoadingSkillDat
 	TestSkillHandler handler;
 	std::vector<JsonNode> invalidStatuses;
 	invalidStatuses.emplace_back(); // explicit null differs from an omitted key
-	invalidStatuses.emplace_back("metamagicUses");
+	invalidStatuses.emplace_back("bloodrageDamage");
 	JsonNode arrayStatus;
 	arrayStatus.Vector();
 	invalidStatuses.push_back(arrayStatus);
@@ -199,21 +207,21 @@ TEST(CSkillCombatStatusLoaderTest, RejectsMalformedMetadataBeforeLoadingSkillDat
 	invalidStatuses.push_back(missingProvider);
 
 	JsonNode invalidDescriptionType(JsonMap{});
-	invalidDescriptionType["provider"].String() = "metamagicUses";
+	invalidDescriptionType["provider"].String() = "bloodrageDamage";
 	invalidDescriptionType["description"].Integer() = 9;
 	invalidStatuses.push_back(invalidDescriptionType);
 
 	JsonNode missingDescription(JsonMap{});
-	missingDescription["provider"].String() = "metamagicUses";
+	missingDescription["provider"].String() = "bloodrageDamage";
 	invalidStatuses.push_back(missingDescription);
 
 	JsonNode emptyDescription(JsonMap{});
-	emptyDescription["provider"].String() = "metamagicUses";
+	emptyDescription["provider"].String() = "bloodrageDamage";
 	emptyDescription["description"].String().clear();
 	invalidStatuses.push_back(emptyDescription);
 
 	JsonNode unknownField(JsonMap{});
-	unknownField["provider"].String() = "metamagicUses";
+	unknownField["provider"].String() = "bloodrageDamage";
 	unknownField["description"].String() = "Description";
 	unknownField["extra"].Bool() = true;
 	invalidStatuses.push_back(unknownField);
