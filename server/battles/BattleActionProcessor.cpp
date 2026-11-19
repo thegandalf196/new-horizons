@@ -3656,7 +3656,8 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 	// spell-like attacks still spend ordinary attack resources but do not spend
 	// this physical-damage state.  Retaliations use this same path, so their
 	// consumption is authoritative and is included in attackerChanges below.
-	battleCreatureKillRewards::finishStrike(battle, *attackerState, bat.bsa, attack.ranged, normalCounter, !bat.spellLike());
+	const bool soulHarvestGrowth = battleCreatureKillRewards::finishStrike(
+		battle, *attackerState, bat.bsa, attack.ranged, normalCounter, !bat.spellLike());
 	if(attack.aerialExcursion && attackerState->creatureId() == CreatureID(CreatureID::decode("core:griffin")))
 		attackerState->aerialRetaliationRound = battle.battleGetRound();
 
@@ -3832,14 +3833,10 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 	const auto primaryEffects = preparePrimaryStrikeAftermath(battle, attacker, defender, attack, bat);
 	const auto judgment = battleConsecratedArms::prepareJudgment(battle, *attacker,
 		!bat.spellLike() && !attack.brace && attack.preemptiveDamagePercent <= 0, bat.bsa, consecrated);
-	if(attack.hostileCreatureKills)
-		for(const auto & hit : bat.bsa)
-			if(const auto * victim = battle.battleGetUnitByID(hit.stackAttacked); victim
-				&& newHorizonsAttackControllers::barrageKillQualifies(battle, *attacker, *victim, hit.killedAmount))
-				*attack.hostileCreatureKills += hit.killedAmount;
+	battleCreatureKillRewards::recordHostileKills(battle, *attacker, bat.bsa, attack.hostileCreatureKills);
 	battleFocusMagic::capturePresentation(bat, *attacker);
 	consecrated.redemption.record(battle, bat.bsa);
-	gameHandler->sendAndApply(bat);
+	battleCreatureKillRewards::publishStrike(*gameHandler, battle, bat, soulHarvestGrowth);
 	battleConsecratedArms::applyJudgment(*gameHandler, battle, judgment, consecrated);
 	consecrated.redemption.complete(battle, *gameHandler->spellcastEnvironment());
 	battleFocusMagic::consumeAcceptedStrike(*gameHandler->spellEnv, battle, bat);

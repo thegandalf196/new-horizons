@@ -879,6 +879,7 @@ set(test_SRCS
 	server/battles/NewHorizonsLivingInfernoTest.cpp
 	server/battles/NewHorizonsDreadCavalryTest.cpp
 	server/battles/NewHorizonsSoulHarvestTest.cpp
+	server/battles/SoulHarvestPresentationTest.cpp
 	server/battles/SoulHarvestOptionalContentTest.cpp
 	server/battles/NewHorizonsParalyzingGazeTest.cpp
 	server/battles/NewHorizonsAerialSupremacyTest.cpp

@@ -4,15 +4,53 @@
  */
 #include "StdInc.h"
 #include "BattleCreatureKillRewards.h"
+#include "../CGameHandler.h"
 #include <set>
 #include "../../lib/battle/BattleInfo.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/battle/NewHorizonsSoulHarvest.h"
+#include "../../lib/battle/NewHorizonsAttackControllers.h"
 #include "../../lib/battle/CUnitState.h"
 #include "../../lib/battle/CBattleInfoCallback.h"
 #include "../../lib/networkPacks/PacksForClientBattle.h"
+#include "../../lib/spells/CSpell.h"
 namespace battleCreatureKillRewards
 {
+void recordHostileKills(const CBattleInfoCallback & battle, const battle::Unit & actor,
+	const std::vector<BattleStackAttacked> & hits, int64_t * killedCreatures)
+{
+	if(killedCreatures)
+		for(const auto & hit : hits)
+			if(const auto * victim = battle.battleGetUnitByID(hit.stackAttacked); victim
+				&& newHorizonsAttackControllers::barrageKillQualifies(battle, actor, *victim, hit.killedAmount))
+				*killedCreatures += hit.killedAmount;
+}
+
+void publishStrike(CGameHandler & handler, const CBattleInfoCallback & battle, BattleAttack & attack, bool harvested)
+{
+	handler.sendAndApply(attack);
+	if(!harvested)
+		return;
+	const auto * actor = battle.battleGetUnitByID(attack.stackAttacking);
+	const auto * resurrection = SpellID(SpellID::RESURRECTION).toSpell();
+	if(!actor || !resurrection)
+		return;
+	BattleAnimationPlayed animation;
+	animation.battleID = attack.battleID;
+	// The existing Vampire Lord drain script uses this sound.
+	animation.sound = AudioPath::builtin("DRAINLIF");
+	animation.targets.push_back({static_cast<int32_t>(actor->unitId()), actor->getPosition()});
+	for(const auto & visual : resurrection->animationInfo.affect)
+	{
+		if(visual.resourceName.empty())
+			continue;
+		animation.animation = visual.resourceName;
+		animation.transparency = visual.transparency;
+		handler.sendAndApply(animation);
+		animation.sound = AudioPath();
+	}
+}
+
 void recordPredictedEnemyDestruction(const CBattleInfoCallback & battle, const battle::Unit * actor,
 	const std::vector<BattleStackAttacked> & hits, bool * destroyedEnemyOut)
 {
@@ -29,7 +67,7 @@ void recordPredictedEnemyDestruction(const CBattleInfoCallback & battle, const b
 	}
 }
 
-void finishStrike(const CBattleInfoCallback & battle, battle::CUnitState & actor,
+bool finishStrike(const CBattleInfoCallback & battle, battle::CUnitState & actor,
 	const std::vector<BattleStackAttacked> & hits, bool ranged, bool counter, bool physical)
 {
 	std::set<uint32_t> creditedVictims;
@@ -51,8 +89,9 @@ void finishStrike(const CBattleInfoCallback & battle, battle::CUnitState & actor
 		killedCreatures += std::min<int64_t>(hit.killedAmount,
 			newHorizonsSoulHarvest::casualtiesAfterHit(*state, victim->getCount(), false));
 	}
-	newHorizonsSoulHarvest::grant(actor, killedCreatures);
+	const bool harvested = newHorizonsSoulHarvest::grant(actor, killedCreatures);
 	actor.afterAttack(ranged, counter, physical);
+	return harvested;
 }
 }
 
