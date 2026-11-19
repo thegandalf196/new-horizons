@@ -15,7 +15,7 @@ void CGHeroInstance::fillUpgradeInfo(UpgradeInfo & info, const CStackInstance & 
 	{
 		const CreatureID ghost(CreatureID::decode("new-horizons:ghost"));
 		if(ghost.hasValue())
-			info.addUpgrade(ghost, stack.getType());
+			info.addUpgradeWithCost(ghost, newHorizonsHeroes::ghostUpgradeCost());
 	}
 	TConstBonusListPtr lista = stack.getBonusesOfType(BonusType::SPECIAL_UPGRADE, BonusSubtypeID(stack.getId()));
 	for(const auto & it : *lista)

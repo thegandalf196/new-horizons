@@ -13,9 +13,12 @@
 
 void UpgradeInfo::addUpgrade(const CreatureID & upgradeID, const Creature * creature, int costPercentageModifier)
 {
-	const bool upgradeAvaiable = costPercentageModifier >= 0;
-
 	ResourceSet upgradeCost = (upgradeID.toCreature()->getFullRecruitCost() - creature->getFullRecruitCost()) * costPercentageModifier / 100;
+	addUpgradeWithCost(upgradeID, std::move(upgradeCost), costPercentageModifier >= 0);
+}
+
+void UpgradeInfo::addUpgradeWithCost(const CreatureID & upgradeID, ResourceSet upgradeCost, bool available)
+{
 	upgradeCost.positive(); //upgrade cost can't be negative, ignore missing resources
 
 	auto idIt = std::find(upgradesIDs.begin(), upgradesIDs.end(), upgradeID);
@@ -26,7 +29,7 @@ void UpgradeInfo::addUpgrade(const CreatureID & upgradeID, const Creature * crea
 
 		// Prefer an available offer over an unavailable one;
 		// otherwise replace only with an offer no more expensive in any resource.
-		if (upgradeAvaiable && (!isAvailable || existingCost.canAfford(upgradeCost)))
+		if (available && (!isAvailable || existingCost.canAfford(upgradeCost)))
 		{
 			existingCost = upgradeCost;
 			isAvailable = true;
@@ -35,7 +38,7 @@ void UpgradeInfo::addUpgrade(const CreatureID & upgradeID, const Creature * crea
 		return;
 	}
 
-	isAvailable = upgradeAvaiable;
+	isAvailable = available;
 	upgradesIDs.push_back(upgradeID);
 	upgradesCosts.push_back(std::move(upgradeCost));
 

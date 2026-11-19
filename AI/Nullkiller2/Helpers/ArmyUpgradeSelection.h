@@ -13,7 +13,7 @@ namespace NK2AI::armyUpgrade
 {
 /// Chooses from actual offers only, valuing current Leadership efficiency and
 /// unchanged durability while retaining ordinary affordability.
-/// The recognized free Wraith-to-Ghost added ability can break an otherwise inert tie.
+/// The recognized Wraith-to-Ghost added ability can break an otherwise inert tie.
 std::optional<CreatureID> choose(const CStackInstance & stack, const UpgradeInfo & offers,
 	const CGHeroInstance * carrier, const TResources & available);
 }

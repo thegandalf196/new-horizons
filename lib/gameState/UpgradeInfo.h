@@ -69,6 +69,7 @@ public:
 
 	// Adds a new upgrade and ensures alignment and sorted order
 	void addUpgrade(const CreatureID & upgradeID, const Creature * creature, int costPercentageModifier = 100);
+	void addUpgradeWithCost(const CreatureID & upgradeID, ResourceSet upgradeCost, bool available = true);
 
 	auto size() const
 	{

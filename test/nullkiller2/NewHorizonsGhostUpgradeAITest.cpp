@@ -78,19 +78,33 @@ protected:
 		gameState()->fillUpgradeInfo(hero, SlotID(0), result);
 		return result;
 	}
+	TResources price() const
+	{
+		const CreatureID wight(CreatureID::decode("core:wight"));
+		UpgradeInfo ordinary(wight);
+		ordinary.addUpgrade(wraith(), wight.toCreature());
+		return ordinary.getUpgradeCostsFor(wraith());
+	}
+	void fund(int count = 1)
+	{
+		gameState()->getPlayerState(PlayerColor(0))->resources = price() * count;
+	}
 };
 }
-TEST_F(NewHorizonsGhostUpgradeAITest, ImmediateAIExecutesOneRecognizedFreeUpgradeWithoutInventedArmyValue)
+TEST_F(NewHorizonsGhostUpgradeAITest, ImmediateAIExecutesPaidUpgradeAtExactWraithUpgradePrice)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	ASSERT_EQ(wraith().toCreature()->getAIValue(), ghost().toCreature()->getAIValue());
+	ASSERT_NE(price(), TResources());
+	EXPECT_EQ(offer().getUpgradeCostsFor(ghost()), price());
+	fund();
 	const auto before = gameState()->getPlayerState(PlayerColor(0))->resources;
 	UpgradeClient client(gameState());
 	auto gateway = makeGateway(PlayerColor(0), &client);
 	EXPECT_TRUE(gateway->makePossibleUpgrades(hero));
 	EXPECT_EQ(hero->getCreature(SlotID(0))->getId(), ghost());
 	EXPECT_EQ(hero->getStackCount(SlotID(0)), 1);
-	EXPECT_EQ(gameState()->getPlayerState(PlayerColor(0))->resources, before);
+	EXPECT_EQ(gameState()->getPlayerState(PlayerColor(0))->resources, before - price());
 	EXPECT_EQ(client.requests, 1);
 	EXPECT_FALSE(gateway->makePossibleUpgrades(hero));
 	EXPECT_EQ(client.requests, 1);
@@ -103,7 +117,7 @@ TEST_F(NewHorizonsGhostUpgradeAITest, ChoiceRequiresActualOfferAndQualifiedCarri
 	offered.addUpgrade(ghost(), wraith().toCreature());
 	EXPECT_FALSE(NK2AI::armyUpgrade::choose(*hero->getStackPtr(SlotID(0)), offered, hero, TResources()));
 }
-TEST_F(NewHorizonsGhostUpgradeAITest, PaidEqualValueGhostOfferIsNotGivenAnInventedBenefit)
+TEST_F(NewHorizonsGhostUpgradeAITest, NoncanonicalGhostPriceIsNotGivenAnInventedBenefit)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	UpgradeInfo offered(wraith());
@@ -136,11 +150,13 @@ TEST_F(NewHorizonsGhostUpgradeAITest, OrdinaryPaidUpgradeKeepsExistingValueAndAf
 TEST_F(NewHorizonsGhostUpgradeAITest, TurnPreparationUpgradesFieldVidominaBeforePlanning)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
+	fund();
 	ASSERT_EQ(hero->getVisitedTown(), nullptr);
 	UpgradeClient client(gameState());
 	auto gateway = makeGateway(PlayerColor(0), &client);
 	gateway->upgradeGhosts();
 	EXPECT_EQ(hero->getCreature(SlotID(0))->getId(), ghost());
+	EXPECT_EQ(gameState()->getPlayerState(PlayerColor(0))->resources, TResources());
 	EXPECT_EQ(client.requests, 1);
 	gateway->upgradeGhosts();
 	EXPECT_EQ(client.requests, 1);
@@ -158,12 +174,60 @@ TEST_F(NewHorizonsGhostUpgradeAITest, TurnPreparationLeavesUnqualifiedFieldHeroU
 TEST_F(NewHorizonsGhostUpgradeAITest, RejectedOrUnobservedImmediateRequestExitsAfterOneAttempt)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
+	fund();
 	UpgradeClient client(gameState());
 	client.accept = false;
 	auto gateway = makeGateway(PlayerColor(0), &client);
 	EXPECT_FALSE(gateway->makePossibleUpgrades(hero));
 	EXPECT_EQ(hero->getCreature(SlotID(0))->getId(), wraith());
 	EXPECT_EQ(client.requests, 1);
+}
+TEST_F(NewHorizonsGhostUpgradeAITest, UnaffordableFieldUpgradeIssuesNoRequestAndPreservesResources)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	UpgradeClient client(gameState());
+	auto gateway = makeGateway(PlayerColor(0), &client);
+	gateway->upgradeGhosts();
+	EXPECT_FALSE(gateway->makePossibleUpgrades(hero));
+	EXPECT_EQ(hero->getCreature(SlotID(0))->getId(), wraith());
+	EXPECT_EQ(gameState()->getPlayerState(PlayerColor(0))->resources, TResources());
+	EXPECT_EQ(client.requests, 0);
+}
+TEST_F(NewHorizonsGhostUpgradeAITest, AuthoritativeUpgradeRejectsInsufficientPaymentAndChargesWholeStackOnce)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_TRUE(hero->setCreature(SlotID(0), wraith(), 3));
+	const auto total = price() * 3;
+	auto & resources = gameState()->getPlayerState(PlayerColor(0))->resources;
+	resources = total;
+	ASSERT_GT(resources[EGameResID::GOLD], 0);
+	--resources[EGameResID::GOLD];
+	const auto insufficient = resources;
+	UpgradeClient client(gameState());
+	UpgradeCreature request(SlotID(0), hero->id, ghost());
+	client.sendRequest(request, PlayerColor(0), false);
+	EXPECT_EQ(hero->getCreature(SlotID(0))->getId(), wraith());
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), 3);
+	EXPECT_EQ(resources, insufficient);
+	resources = total;
+	client.sendRequest(request, PlayerColor(0), false);
+	EXPECT_EQ(hero->getCreature(SlotID(0))->getId(), ghost());
+	EXPECT_EQ(hero->getStackCount(SlotID(0)), 3);
+	EXPECT_EQ(resources, TResources());
+	client.sendRequest(request, PlayerColor(0), false);
+	EXPECT_EQ(resources, TResources());
+}
+TEST_F(NewHorizonsGhostUpgradeAITest, FieldUpgradePreservesResourcesReservedForAnotherGoal)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	fund();
+	UpgradeClient client(gameState());
+	auto gateway = makeGateway(PlayerColor(0), &client);
+	gateway->nullkiller->lockResources(price());
+	gateway->upgradeGhosts();
+	EXPECT_EQ(client.requests, 0);
+	EXPECT_EQ(hero->getCreature(SlotID(0))->getId(), wraith());
+	EXPECT_EQ(gameState()->getPlayerState(PlayerColor(0))->resources, price());
 }
 TEST_F(NewHorizonsGhostUpgradeAITest, UnaffordableHighestValueOfferRetainsExistingNoFallbackPolicy)
 {

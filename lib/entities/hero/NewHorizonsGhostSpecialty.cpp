@@ -9,6 +9,7 @@
 #include "NewHorizonsRuleValidation.h"
 #include "CHero.h"
 #include "../../mapObjects/CGHeroInstance.h"
+#include "../../CCreatureHandler.h"
 namespace newHorizonsHeroes
 {
 void validateGhostSpecialtySerialization(const JsonNode & rules, bool supported)
@@ -35,6 +36,14 @@ bool hasGhostUpgrade(const CGHeroInstance & hero)
 		&& hero.getHeroTypeID() == HeroTypeID(HeroTypeID::decode("core:vidomina"))
 		&& hero.compiledDevelopment()->ghostUpgrade;
 }
+ResourceSet ghostUpgradeCost()
+{
+	const CreatureID wraith(CreatureID::decode("core:wraith"));
+	const CreatureID wight(CreatureID::decode("core:wight"));
+	ResourceSet cost = wraith.toCreature()->getFullRecruitCost() - wight.toCreature()->getFullRecruitCost();
+	cost.positive();
+	return cost;
+}
 bool resolveGhostSpecialtyPresentation(const CHero & hero, const JsonNode & rules, SpecialtyPresentation & result)
 {
 	if(hero.getJsonKey() != "core:vidomina" || !usesGhostUpgrade(rules))
@@ -44,7 +53,7 @@ bool resolveGhostSpecialtyPresentation(const CHero & hero, const JsonNode & rule
 		+ std::to_string(newHorizonsSoulHarvest::GHOSTS_PER_CREATURE_KILLED) + " extra Ghost for this battle only.";
 	result.artwork = "newHorizons/heroSpecialties/VidominaSoulHarvest";
 	result.creature = CreatureID(CreatureID::decode("new-horizons:ghost"));
-	result.description = "Vidomina may upgrade Wraiths to Ghosts at the ordinary upgrade cost. "
+	result.description = "Vidomina may upgrade Wraiths to Ghosts for the same cost as a Wight-to-Wraith upgrade. "
 		"Ghosts retain Wraith combat statistics. Each enemy creature personally killed by a Ghost stack "
 		"grants it " + std::to_string(newHorizonsSoulHarvest::GHOSTS_PER_CREATURE_KILLED)
 		+ " extra Ghost for this battle only. Partial casualties count, and creatures killed again after resurrection count again; "

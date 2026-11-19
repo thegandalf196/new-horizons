@@ -14,13 +14,13 @@ namespace NK2AI::armyUpgrade
 {
 namespace
 {
-bool recognizedFreeBenefit(const CStackInstance & stack, const UpgradeInfo & offers,
+bool recognizedSpecialtyBenefit(const CStackInstance & stack, const UpgradeInfo & offers,
 	const CGHeroInstance * carrier, CreatureID upgrade)
 {
 	return carrier && newHorizonsHeroes::hasGhostUpgrade(*carrier)
 		&& stack.getId() == CreatureID(CreatureID::decode("core:wraith"))
 		&& upgrade == CreatureID(CreatureID::decode("new-horizons:ghost"))
-		&& offers.getUpgradeCostsFor(upgrade) == TResources();
+		&& offers.getUpgradeCostsFor(upgrade) == newHorizonsHeroes::ghostUpgradeCost();
 }
 }
 std::optional<CreatureID> choose(const CStackInstance & stack, const UpgradeInfo & offers,
@@ -56,12 +56,12 @@ std::optional<CreatureID> choose(const CStackInstance & stack, const UpgradeInfo
 	if(newValue == oldValue)
 		for(const auto candidate : viable)
 			if(strength(candidate) == newValue
-				&& recognizedFreeBenefit(stack, offers, carrier, candidate))
+				&& recognizedSpecialtyBenefit(stack, offers, carrier, candidate))
 			{
 				selected = candidate;
 				break;
 			}
-	if((newValue > oldValue || (newValue == oldValue && recognizedFreeBenefit(stack, offers, carrier, selected)))
+	if((newValue > oldValue || (newValue == oldValue && recognizedSpecialtyBenefit(stack, offers, carrier, selected)))
 		&& available.canAfford(offers.getUpgradeCostsFor(selected) * stack.getCount()))
 		return selected;
 	return std::nullopt;

@@ -54,7 +54,7 @@ void AIGateway::upgradeGhosts()
 				continue;
 			UpgradeInfo offers(stack->getId());
 			cc->fillUpgradeInfo(hero, SlotID(slot), offers);
-			const auto selected = armyUpgrade::choose(*stack, offers, hero, TResources());
+			const auto selected = armyUpgrade::choose(*stack, offers, hero, nullkiller->getFreeResources());
 			if(selected && *selected == ghost)
 				cc->upgradeCreature(hero, SlotID(slot), ghost);
 		}
