@@ -3,6 +3,7 @@
 #include "BattlecraftPreemptiveAIFixture.h"
 #include "ProjectedTargetHitFixture.h"
 #include "../../AI/BattleAI/MovementCandidateScreening.h"
+#include "../../AI/BattleAI/MovementApproachRanking.h"
 #include "../../AI/BattleAI/CreatureCandidateScreening.h"
 #include "../../AI/BattleAI/BattleSearchPolicy.h"
 #include "../../lib/CRandomGenerator.h"
@@ -370,4 +371,21 @@ TEST_F(MovementCandidateForecastTest, ProductionQuickProfileRetainsNativeAdmissi
 	}
 	EXPECT_FALSE(battleSearch::forecastBeamOne());
 	EXPECT_EQ(worldAndRng(), before);
+}
+
+TEST(MovementApproachRanking, SelectsBestThreeRatherThanFirstThree)
+{
+	const std::array<float, 6> estimates{1, 9, 2, 8, 7, 3};
+	EXPECT_EQ(movementApproachRanking::select(estimates), (std::vector<size_t>{1, 3, 4}));
+}
+TEST(MovementApproachRanking, TiesAtCutoffAndExecutionKeepAdmissionOrder)
+{
+	const std::array<float, 5> estimates{5, 8, 5, 5, 9};
+	EXPECT_EQ(movementApproachRanking::select(estimates), (std::vector<size_t>{0, 1, 4}));
+}
+TEST(MovementApproachRanking, EmptyAndSmallPoolsKeepEveryEntry)
+{
+	EXPECT_TRUE(movementApproachRanking::select({}).empty());
+	const std::array<float, 2> estimates{-8, -3};
+	EXPECT_EQ(movementApproachRanking::select(estimates), (std::vector<size_t>{0, 1}));
 }

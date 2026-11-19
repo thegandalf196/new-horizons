@@ -20,6 +20,7 @@ namespace petrifyingBloodAI { struct Pending; }
 class SelectedProbeDamage;
 class PhysicalStrikeProjection;
 class BattleExchangeEvaluator;
+struct MovementApproach;
 
 /// A full reaction preview may already have replayed every hit in this action.
 /// The future-actor caller must not then repeat its ordinary extra-hit loop.
@@ -294,6 +295,9 @@ private:
 	bool reuseSelectedProbeScore;
 
 	float scoreValue(const BattleScore & score) const;
+	void considerMovementApproach(const MovementApproach &, const battle::Unit *, PotentialTargets &,
+		DamageCache &, const std::shared_ptr<HypotheticBattle> &, const ReachabilityInfo &,
+		uint32_t speed, bool flying, MoveTarget &, BattleMovementTiming *);
 
 	bool acceptsExchangeAnchor(const AttackPossibility &, const HypotheticBattle &) const;
 	ReachabilityData noActionMembership(const HypotheticBattle &) const;

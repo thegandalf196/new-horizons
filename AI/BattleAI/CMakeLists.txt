@@ -252,6 +252,7 @@ set(battleAI_SRCS
 		TacticsHandler.cpp
 		ThreatMap.cpp
 		BattleExchangeVariant.cpp
+		BattleMovementApproaches.cpp
 		BattleExchangeArcaneInspiration.cpp
 		CreatureCandidateScreening.cpp
 		MovementCandidateScreening.cpp
@@ -424,6 +425,7 @@ set(battleAI_HEADERS
 		BattleSearchPolicy.h
 		BattleStrengthRatio.h
 		MovementCandidateScreening.h
+		MovementApproachRanking.h
 		ExchangeInitiativeQueue.h
 		BattleExchangeAftermath.h
 		EnemyBypassReachability.h
