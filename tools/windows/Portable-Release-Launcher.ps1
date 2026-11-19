@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # Windows PowerShell 5.1. Called by the portable player entry point.
+if (-not (Get-Command Get-NHUpdateStore -ErrorAction SilentlyContinue)) {
+    . (Join-Path $PSScriptRoot 'Prepare-NHReleaseUpdate.ps1')
+}
 
 function Read-NHSmallUpdateJson([string]$Path) {
     Assert-PlainPath $Path
@@ -106,7 +109,7 @@ function Select-NHPortableRelease([string]$Original, [bool]$ApplyRequest = $fals
     try {
         Assert-PlainPath $Original
         if (-not (Test-Path -LiteralPath (Join-Path $Original 'BUILD-IDENTITY.json') -PathType Leaf)) { return $result }
-        $store = Join-Path ([IO.Path]::GetDirectoryName($Original)) '.nhu'
+        $store = Get-NHUpdateStore $Original
         Assert-PlainPath $store
         $selection = Join-Path $store 'current.json'
         if (Test-Path -LiteralPath $selection -PathType Leaf) {

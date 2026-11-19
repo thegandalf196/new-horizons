@@ -38,7 +38,7 @@ function Get-NHLatestPlayerOffer([string]$MetadataPath) {
 }
 
 function Install-NHPlayerOffer([string]$Original, [string]$Request, [string]$StatusPath) {
-    $store = Join-Path ([IO.Path]::GetDirectoryName($Original)) '.nhu'
+    $store = Get-NHUpdateStore $Original $true
     Assert-PlainPath $store
     $null = [IO.Directory]::CreateDirectory($store)
     $lockPath = Join-Path $store 'lock'

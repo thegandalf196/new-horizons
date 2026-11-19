@@ -14,8 +14,22 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[2]
 WORKER = ROOT / 'tools/windows/Prepare-NHReleaseUpdate.ps1'
+# Exact deepest member of the verified public 0.92.3 Windows ZIP (147 UTF-16 units).
+REAL_WINDOWS_MEMBER = ('runtime/licenses/dependencies/boost_1.83.0/source_folder/src/libs/geometry/'
+                       'doc/src/docutils/tools/doxygen_xml2qbk/contrib/rapidxml-1.13/license.txt')
 POWERSHELL = os.environ.get('NH_TEST_POWERSHELL') or shutil.which('powershell') or shutil.which('pwsh')
 
+
+DOWNLOAD_FIXTURE = r'''function Invoke-UpdateDownload([string]$URL, [string]$Output, [long]$MaximumBytes, [long]$ExactBytes = 0) {
+    [IO.File]::AppendAllText($env:NH_UPDATE_DOWNLOAD_LOG, $URL + [Environment]::NewLine)
+    if ($URL -eq $script:ReleaseAPI) { [IO.File]::Copy($env:NH_UPDATE_METADATA, $Output); return }
+    if ($env:NH_UPDATE_FAIL -eq '1') {
+        [IO.File]::WriteAllText($Output, 'interrupted download')
+        throw 'Fixture interrupted transport'
+    }
+    [IO.File]::Copy($env:NH_UPDATE_ARCHIVE, $Output)
+}
+'''
 
 def digest(data):
     return hashlib.sha256(data).hexdigest()
@@ -44,6 +58,8 @@ class WindowsPortableReleaseUpdateTest(unittest.TestCase):
                  'runtime/Setup-Progress.ps1': b'# progress helper', 'runtime/Complete-Assets.ps1': b'# import helper',
                  'runtime/Player-Launcher.ps1': b'# player launcher',
                  'runtime/Player-Launcher-Operation.ps1': b'# launcher background operations',
+                 'runtime/Portable-Release-Launcher.ps1': b'# release selector',
+                 'runtime/Prepare-NHReleaseUpdate.ps1': b'# update preparer',
                  'runtime/config/dirs.json': b'{}', 'runtime/config/filesystem.json': b'{}',
                  'runtime/Mods/vcmi/mod.json': b'{}', 'runtime/Mods/new-horizons/mod.json': b'{}',
                  'runtime/Mods/new-horizons/NewHorizons.nhart': struct.pack('<8sIIQQ', b'NHART\r\n\x1a', 1, 0, 32, 1),
@@ -81,26 +97,19 @@ class WindowsPortableReleaseUpdateTest(unittest.TestCase):
         release.update(metadata_changes or {})
         self.metadata.write_text(json.dumps(release))
 
-    def execute(self, command=None, download_failure=False):
+    def execute(self, command=None, download_failure=False, initialization=None, extra_env=None):
         harness = self.root / 'run.ps1'
         harness.write_text('''
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 . $env:NH_UPDATE_WORKER
-function Invoke-UpdateDownload([string]$URL, [string]$Output, [long]$MaximumBytes, [long]$ExactBytes = 0) {
-    [IO.File]::AppendAllText($env:NH_UPDATE_DOWNLOAD_LOG, $URL + [Environment]::NewLine)
-    if ($URL -eq $script:ReleaseAPI) { [IO.File]::Copy($env:NH_UPDATE_METADATA, $Output); return }
-    if ($env:NH_UPDATE_FAIL -eq '1') {
-        [IO.File]::WriteAllText($Output, 'interrupted download')
-        throw 'Fixture interrupted transport'
-    }
-    [IO.File]::Copy($env:NH_UPDATE_ARCHIVE, $Output)
-}
-''' + (command or 'Prepare-NHReleaseUpdate $env:NH_UPDATE_STORE $env:NH_UPDATE_REQUEST | ConvertTo-Json -Compress'))
+''' + (initialization or '') + '''
+''' + DOWNLOAD_FIXTURE + (command or 'Prepare-NHReleaseUpdate $env:NH_UPDATE_STORE $env:NH_UPDATE_REQUEST | ConvertTo-Json -Compress'))
         environment = dict(os.environ, NH_UPDATE_WORKER=str(WORKER), NH_UPDATE_METADATA=str(self.metadata),
                            NH_UPDATE_ARCHIVE=str(self.source), NH_UPDATE_STORE=str(self.store),
                            NH_UPDATE_REQUEST=str(self.request), NH_UPDATE_FAIL=str(int(download_failure)),
                            NH_UPDATE_DOWNLOAD_LOG=str(self.root / 'downloads.txt'))
+        environment.update(extra_env or {})
         return subprocess.run([POWERSHELL, '-NoLogo', '-NoProfile', '-NonInteractive', '-File', str(harness)],
                               env=environment, text=True, capture_output=True, timeout=30, check=False)
 
@@ -109,6 +118,159 @@ function Invoke-UpdateDownload([string]$URL, [string]$Output, [long]$MaximumByte
         self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(list((self.store / 'r').glob('*')), [])
         self.assertEqual(list(self.store.glob('.p-*')), [])
+
+    @staticmethod
+    def windows_units(path):
+        return len(str(path).encode('utf-16-le')) // 2
+
+    def directory_at_units(self, units):
+        parent = self.root.resolve()
+        name = 'OneDrive - NH ' + 'x' * (units - self.windows_units(parent) - 1 - len('OneDrive - NH '))
+        path = parent / name
+        self.assertEqual(self.windows_units(path), units)
+        path.mkdir()
+        return path
+
+    def prepare_long_install(self, short_alias=False):
+        installation = self.directory_at_units(120)
+        local = self.directory_at_units(64)
+        original = installation / 'runtime'
+        (original / 'config').mkdir(parents=True)
+        (original / 'config/newHorizonsVersion.json').write_text('{"version":"0.92.3"}')
+        (original / 'BUILD-IDENTITY.json').write_text('{}')
+        (original / 'new-horizons.exe').write_bytes(b'original remains untouched')
+        # Run the actual worker in its real script scope; replace only offline transport.
+        worker = WORKER.read_text()
+        guard = "if ($MyInvocation.InvocationName -ne '.') {"
+        self.assertEqual(worker.count(guard), 1)
+        (original / 'Prepare-NHReleaseUpdate.ps1').write_text(worker.replace(guard, DOWNLOAD_FIXTURE + guard))
+        passed_original = original
+        passed_local = local
+        if short_alias:
+            import ctypes
+            function = ctypes.WinDLL('kernel32', use_last_error=True).GetShortPathNameW
+            function.argtypes = [ctypes.c_wchar_p, ctypes.c_wchar_p, ctypes.c_uint]
+            function.restype = ctypes.c_uint
+            output = ctypes.create_unicode_buffer(32768)
+            count = function(str(original), output, len(output))
+            self.assertGreater(count, 0)
+            self.assertLess(count, len(output))
+            passed_original = Path(output.value)
+            if os.path.normcase(str(passed_original)) == os.path.normcase(str(original)):
+                self.skipTest('This Windows volume exposes no 8.3 alias for the fixture')
+            self.assertTrue(passed_original.samefile(original))
+            count = function(str(local), output, len(output))
+            self.assertGreater(count, 0)
+            self.assertLess(count, len(output))
+            passed_local = Path(output.value)
+            self.assertTrue(passed_local.samefile(local))
+        self.archive(changes={REAL_WINDOWS_MEMBER: b'verified deepest license'})
+        return installation, local, original, passed_original, passed_local
+
+    def check_long_install_update(self, short_alias=False):
+        installation, local, original, passed_original, passed_local = self.prepare_long_install(short_alias)
+        original_files = {path.relative_to(original).as_posix(): path.read_bytes()
+                          for path in original.rglob('*') if path.is_file()}
+        command = r"""
+$env:OS = 'Windows_NT'
+$script:ProbeCount = 0
+function Test-NHUpdatedClient([string]$Runtime) { $script:ProbeCount++ }
+$result = Install-NHPlayerOffer $env:NH_UPDATE_ORIGINAL $env:NH_UPDATE_REQUEST $null
+$selected = Select-NHPortableRelease $env:NH_UPDATE_ORIGINAL $false
+$store = Get-NHUpdateStore $env:NH_UPDATE_ORIGINAL
+$canonicalStore = Get-NHUpdateStore $env:NH_UPDATE_CANONICAL_ORIGINAL
+[ordered]@{runtime=$result.runtime;selected=$selected.runtime;store=$store;canonicalStore=$canonicalStore;probes=$script:ProbeCount} | ConvertTo-Json -Compress
+"""
+        result = self.execute(command, initialization='. $env:NH_UPDATE_OPERATION\n',
+                              extra_env={'LOCALAPPDATA': str(passed_local), 'NH_UPDATE_ORIGINAL': str(passed_original),
+                                         'NH_UPDATE_CANONICAL_ORIGINAL': str(original),
+                                         'NH_UPDATE_OPERATION': str(ROOT / 'tools/windows/Player-Launcher-Operation.ps1')})
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        report = json.loads(result.stdout)
+        store = Path(report['store'])
+        self.assertTrue(Path(report['canonicalStore']).samefile(store))
+        self.assertEqual(self.windows_units(local.resolve()), 64)
+        self.assertEqual(self.windows_units(installation.resolve()), 120)
+        self.assertTrue(store.parent.parent.samefile(local))
+        self.assertEqual(store.parent.name, 'NH')
+        self.assertRegex(store.name, r'^[a-f0-9]{16}$')
+        ready = store / 'r' / self.offer['sha256'][:24]
+        self.assertTrue(Path(report['runtime']).samefile(ready / 'runtime'))
+        self.assertTrue(Path(report['selected']).samefile(ready / 'runtime'))
+        self.assertEqual(report['probes'], 1)
+        self.assertEqual((ready / REAL_WINDOWS_MEMBER).read_bytes(), b'verified deepest license')
+        self.assertEqual(self.windows_units(ready / REAL_WINDOWS_MEMBER), 259)
+        self.assertEqual(self.windows_units((ready / REAL_WINDOWS_MEMBER).parent), 247)
+        self.assertEqual({path.relative_to(original).as_posix(): path.read_bytes()
+                          for path in original.rglob('*') if path.is_file()}, original_files)
+        self.assertFalse((installation / '.nhu').exists())
+        self.assertTrue((store / 'current.json').is_file())
+        self.assertEqual(list(store.glob('.p-*')), [])
+
+    def test_120_unit_install_root_updates_and_activates_real_package_depth(self):
+        self.check_long_install_update()
+
+    @unittest.skipUnless(os.name == 'nt', 'Real Windows GetShortPathNameW and NTFS identity')
+    def test_native_short_alias_updates_and_selects_same_120_unit_installation(self):
+        self.check_long_install_update(short_alias=True)
+
+    def test_short_payload_updates_with_canonical_local_data_over_64_units(self):
+        installation, _, original, _, _ = self.prepare_long_install()
+        local = self.directory_at_units(80)
+        self.archive()  # The complete required payload, without the deep license fixture.
+        result = self.execute(r"""
+$env:OS = 'Windows_NT'
+$store = Get-NHUpdateStore $env:NH_UPDATE_ORIGINAL $true
+Prepare-NHReleaseUpdate $store $env:NH_UPDATE_REQUEST | ConvertTo-Json -Compress
+""", extra_env={'LOCALAPPDATA': str(local), 'NH_UPDATE_ORIGINAL': str(original)})
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        ready = Path(json.loads(result.stdout)['ready'])
+        self.assertGreater(self.windows_units(local.resolve()), 64)
+        self.assertTrue(ready.parent.parent.parent.parent.samefile(local))
+        self.assertEqual((ready / 'new-horizons.exe').read_bytes(), b'fake entry')
+        self.assertTrue(all(self.windows_units(path) < 260 for path in ready.rglob('*')))
+        self.assertEqual((original / 'new-horizons.exe').read_bytes(), b'original remains untouched')
+        self.assertFalse((installation / '.nhu').exists())
+
+    def test_abandoned_identity_temporary_cannot_block_store_retry(self):
+        installation, local, original, _, _ = self.prepare_long_install()
+        identity = str(installation.resolve()).upper()
+        key = digest(identity.encode())[:16]
+        parent = local / 'NH'
+        store = parent / key
+        store.mkdir(parents=True)
+        abandoned = parent / ('.i-' + key + '-' + 'a' * 32)
+        abandoned.write_bytes(b'partial interrupted identity')
+        result = self.execute('Get-NHUpdateStore $env:NH_UPDATE_ORIGINAL $true',
+                              extra_env={'LOCALAPPDATA': str(local), 'NH_UPDATE_ORIGINAL': str(original)})
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertTrue(Path(result.stdout.strip()).samefile(store))
+        self.assertEqual(json.loads((store / 'installation.json').read_text()),
+                         {'format': 1, 'installation': identity})
+        self.assertEqual(abandoned.read_bytes(), b'partial interrupted identity')
+        self.assertEqual(list(parent.glob('.i-*')), [abandoned])
+
+    def test_store_isolation_and_full_installation_identity_are_validated(self):
+        installation, local, original, _, _ = self.prepare_long_install()
+        other = self.root / 'other-installation' / 'runtime'
+        other.mkdir(parents=True)
+        result = self.execute(r"""
+$first = Get-NHUpdateStore $env:NH_UPDATE_ORIGINAL $true
+$second = Get-NHUpdateStore $env:NH_UPDATE_OTHER $true
+[ordered]@{first=$first;second=$second} | ConvertTo-Json -Compress
+""", extra_env={'LOCALAPPDATA': str(local), 'NH_UPDATE_ORIGINAL': str(original), 'NH_UPDATE_OTHER': str(other)})
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        stores = json.loads(result.stdout)
+        self.assertNotEqual(stores['first'], stores['second'])
+        marker = Path(stores['first']) / 'installation.json'
+        record = json.loads(marker.read_text())
+        self.assertEqual(record['installation'], str(installation.resolve()).upper())
+        record['installation'] = str(other.parent.resolve()).upper()
+        marker.write_text(json.dumps(record))
+        rejected = self.execute('Get-NHUpdateStore $env:NH_UPDATE_ORIGINAL $true',
+                                extra_env={'LOCALAPPDATA': str(local), 'NH_UPDATE_ORIGINAL': str(original)})
+        self.assertNotEqual(rejected.returncode, 0)
+        self.assertIn('another installation', rejected.stderr)
 
     def test_success_stages_complete_package_without_activation_or_execution(self):
         self.archive()
@@ -204,9 +366,9 @@ function Invoke-UpdateDownload([string]$URL, [string]$Output, [long]$MaximumByte
     def test_ready_destination_over_classic_limit_is_rejected_and_cleaned(self):
         self.store = self.root / ('boundary-' + 'x' * 32) / '.nhu'
         ready = self.store.resolve() / 'r' / ('a' * 24)
-        padding = 260 - len(str(ready / 'runtime' / 'limit.txt')) - 1
+        padding = 260 - len(str(ready / 'runtime' / 'long-limit-name.txt')) - 1
         self.assertGreater(padding, 0)
-        member = 'runtime/' + 'd' * padding + '/limit.txt'
+        member = 'runtime/' + 'd' * padding + '/long-limit-name.txt'
         self.assertEqual(len(str(ready / member)), 260)
         self.assertLessEqual(len(self.name[:-4] + '/' + member), 240)
         self.archive(changes={member: b'bounded'})
@@ -215,6 +377,27 @@ function Invoke-UpdateDownload([string]$URL, [string]$Output, [long]$MaximumByte
         self.assertIn('ready update path would exceed Windows path limits', result.stderr)
         self.assertEqual(list((self.store / 'r').glob('*')), [])
         self.assertEqual(list(self.store.glob('.p-*')), [])
+
+    def test_ready_parent_directory_limit_rejects_even_a_shorter_file(self):
+        self.store = self.root / ('boundary-' + 'x' * 32) / '.nhu'
+        ready = self.store.resolve() / 'r' / ('a' * 24)
+        padding = 248 - self.windows_units(ready / 'runtime') - 1
+        self.assertGreater(padding, 0)
+        member = 'runtime/' + 'd' * padding + '/x.txt'
+        self.assertEqual(self.windows_units((ready / member).parent), 248)
+        self.assertLess(self.windows_units(ready / member), 260)
+        for empty_directory in (False, True):
+            with self.subTest(empty_directory=empty_directory):
+                if empty_directory:
+                    name = self.name[:-4] + '/' + member.rsplit('/', 1)[0] + '/'
+                    self.archive(extra=[(name, b'', 0)])
+                else:
+                    self.archive(changes={member: b'bounded'})
+                result = self.execute("$env:OS = 'Windows_NT'; Prepare-NHReleaseUpdate $env:NH_UPDATE_STORE $env:NH_UPDATE_REQUEST | ConvertTo-Json -Compress")
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn('ready update directory path would exceed Windows path limits', result.stderr)
+                self.assertEqual(list((self.store / 'r').glob('*')), [])
+                self.assertEqual(list(self.store.glob('.p-*')), [])
 
     def test_invalid_zip_constructor_releases_archive_handle(self):
         self.archive()

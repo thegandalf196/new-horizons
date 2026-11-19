@@ -22,11 +22,19 @@ class WindowsPortableReleaseLauncherTest(unittest.TestCase):
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
         self.original = self.root / 'runtime'
-        self.store = self.root / '.nhu'
+        self.local_data = self.root / 'ld'
+        self.local_data.mkdir()
+        self.make_runtime(self.original, '0.92.3')
+        locator = subprocess.run([POWERSHELL, '-NoProfile', '-NonInteractive', '-Command',
+                                  '. $env:TEST_HELPER; Get-NHUpdateStore $env:TEST_RUNTIME $true'],
+                                 env=dict(os.environ, TEST_HELPER=str(LAUNCHER), TEST_RUNTIME=str(self.original),
+                                          LOCALAPPDATA=str(self.local_data)),
+                                 text=True, capture_output=True, timeout=20, check=False)
+        self.assertEqual(locator.returncode, 0, locator.stderr)
+        self.store = Path(locator.stdout.strip())
         self.updated = self.store / 'r' / SHA256[:24] / 'runtime'
         self.request = self.store / 'request.json'
         self.selector = self.store / 'current.json'
-        self.make_runtime(self.original, '0.92.3')
         self.harness = self.root / 'harness.ps1'
         self.harness.write_text(r'''
 $ErrorActionPreference = 'Stop'
@@ -72,7 +80,7 @@ Select-NHPortableRelease $env:TEST_RUNTIME $false | ConvertTo-Json -Compress
 
     def select(self, update=True, probe='pass'):
         env = dict(os.environ, TEST_HELPER=str(LAUNCHER), TEST_RUNTIME=str(self.original),
-                   TEST_PROBE=probe, TEST_UPDATE=str(update).lower(), TEST_STORE=str(self.store),
+                   TEST_PROBE=probe, TEST_UPDATE=str(update).lower(), TEST_STORE=str(self.store), LOCALAPPDATA=str(self.local_data),
                    TEST_REQUEST=str(self.request))
         result = subprocess.run([POWERSHELL, '-NoProfile', '-NonInteractive', '-File', str(self.harness)],
                                 env=env, capture_output=True, text=True, check=False, timeout=20)
@@ -114,6 +122,9 @@ Select-NHPortableRelease $env:TEST_RUNTIME $false | ConvertTo-Json -Compress
         self.assertFalse(self.selector.exists())
 
     def test_help_or_setup_probe_does_not_create_update_state(self):
+        (self.store / 'installation.json').unlink()
+        self.store.rmdir()
+        self.store.parent.rmdir()
         self.assertEqual(Path(self.select(update=False)['runtime']), self.original)
         self.assertFalse(self.store.exists())
 

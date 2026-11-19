@@ -33,6 +33,97 @@ function Assert-UpdatePlainPath([string]$Path) {
     }
 }
 
+function Get-NHCanonicalUpdateDirectory([string]$Path) {
+    $full = [IO.Path]::GetFullPath($Path)
+    if ($full.StartsWith('\\') -or $full.StartsWith('//')) { throw 'Use a local update directory.' }
+    Assert-UpdatePlainPath $full
+    if (-not [IO.Directory]::Exists($full)) { throw 'Update directory does not exist.' }
+    if ([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT) {
+        if (-not ('NHUpdateNativePaths' -as [type])) {
+            Add-Type -TypeDefinition @'
+using System;
+using System.Text;
+using System.Runtime.InteropServices;
+public static class NHUpdateNativePaths {
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, ExactSpelling = true, SetLastError = true)]
+    public static extern uint GetLongPathNameW(string path, StringBuilder output, uint length);
+}
+'@
+        }
+        $buffer = New-Object Text.StringBuilder 32768
+        $length = [NHUpdateNativePaths]::GetLongPathNameW($full, $buffer, $buffer.Capacity)
+        if ($length -eq 0 -or $length -ge $buffer.Capacity) { throw 'Cannot resolve the canonical update directory.' }
+        $full = $buffer.ToString()
+        Assert-UpdatePlainPath $full
+    }
+    if ($full -eq [IO.Path]::GetPathRoot($full)) { return $full }
+    return $full.TrimEnd([IO.Path]::DirectorySeparatorChar)
+}
+
+function Assert-NHUpdateStoreIdentity([string]$Store, [string]$Installation, [bool]$Create) {
+    $marker = Join-Path $Store 'installation.json'
+    Assert-UpdatePlainPath $marker
+    if ([IO.File]::Exists($marker)) {
+        $saved = Read-UpdateJSON $marker 32768
+        if (@($saved.PSObject.Properties.Name).Count -ne 2 -or ($saved.format -isnot [int] -and $saved.format -isnot [long]) -or
+            $saved.format -ne 1 -or $saved.installation -isnot [string] -or $saved.installation -cne $Installation) {
+            throw 'The update store belongs to another installation.'
+        }
+        return
+    }
+    if (-not $Create) { throw 'The update store has no installation identity.' }
+    if (@(Get-ChildItem -LiteralPath $Store -Force).Count -ne 0) { throw 'Unowned update store is not empty.' }
+    $temporary = Join-Path ([IO.Path]::GetDirectoryName($Store)) ('.i-' + [IO.Path]::GetFileName($Store) + '-' + [Guid]::NewGuid().ToString('N'))
+    Assert-UpdatePlainPath $temporary
+    $ownedTemporary = $false
+    try {
+        $stream = [IO.File]::Open($temporary, [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::None)
+        $ownedTemporary = $true
+        try {
+            $record = [ordered]@{format = 1; installation = $Installation}
+            $bytes = [Text.Encoding]::UTF8.GetBytes(($record | ConvertTo-Json -Compress))
+            $stream.Write($bytes, 0, $bytes.Length)
+            $stream.Flush($true)
+        } finally { $stream.Dispose() }
+        if (-not [IO.File]::Exists($marker) -and @(Get-ChildItem -LiteralPath $Store -Force).Count -ne 0) {
+            throw 'Unowned update store is not empty.'
+        }
+        try {
+            [IO.File]::Move($temporary, $marker)
+            $ownedTemporary = $false
+        } catch {
+            if (-not [IO.File]::Exists($marker)) { throw }
+            Assert-NHUpdateStoreIdentity $Store $Installation $false
+        }
+        Assert-NHUpdateStoreIdentity $Store $Installation $false
+    } finally {
+        if ($ownedTemporary -and [IO.File]::Exists($temporary)) { [IO.File]::Delete($temporary) }
+    }
+}
+
+function Get-NHUpdateStore([string]$OriginalRuntime, [bool]$Create = $false) {
+    $original = Get-NHCanonicalUpdateDirectory $OriginalRuntime
+    $installation = (Get-NHCanonicalUpdateDirectory ([IO.Path]::GetDirectoryName($original))).ToUpperInvariant()
+    if ([string]::IsNullOrWhiteSpace($env:LOCALAPPDATA)) { throw 'LOCALAPPDATA is required for portable updates.' }
+    $local = [IO.Path]::GetFullPath($env:LOCALAPPDATA)
+    if ($local.StartsWith('\\') -or $local.StartsWith('//')) { throw 'Use a local update directory.' }
+    Assert-UpdatePlainPath $local
+    if ($Create) { $null = [IO.Directory]::CreateDirectory($local) }
+    $local = Get-NHCanonicalUpdateDirectory $local
+    $digest = [Security.Cryptography.SHA256]::Create()
+    try { $key = ([BitConverter]::ToString($digest.ComputeHash([Text.Encoding]::UTF8.GetBytes($installation)))).Replace('-', '').ToLowerInvariant().Substring(0, 16) }
+    finally { $digest.Dispose() }
+    $store = Join-Path (Join-Path $local 'NH') $key
+    Assert-UpdatePlainPath $store
+    if (-not [IO.Directory]::Exists($store)) {
+        if (-not $Create) { return $store }
+        $null = [IO.Directory]::CreateDirectory($store)
+    }
+    $store = Get-NHCanonicalUpdateDirectory $store
+    Assert-NHUpdateStoreIdentity $store $installation $Create
+    return $store
+}
+
 function Write-UpdateStatus([string]$Message) {
     if ($StatusPath) {
         Assert-UpdatePlainPath $StatusPath
@@ -216,7 +307,11 @@ function Expand-UpdateArchive([string]$Archive, [string]$Destination, [string]$P
             # Keep the authenticated archive root out of the installed path.
             $relative = if ($parts.Count -eq 1) { '' } else { $name.Substring($PackageRoot.Length + 1) }
             $path = if ($relative) { Join-Path $Destination $relative } else { $Destination }
-            if ($env:OS -eq 'Windows_NT' -and $path.Length -ge 260) { throw 'Update path is too long.' }
+            if ($env:OS -eq 'Windows_NT') {
+                if ($path.Length -ge 260) { throw 'Update path is too long.' }
+                $directoryPath = if ($directory) { $path } else { [IO.Path]::GetDirectoryName($path) }
+                if ($directoryPath.Length -ge 248) { throw 'Update directory path is too long.' }
+            }
             Assert-UpdatePlainPath $path
             if ($directory) {
                 if ($entry.Length -ne 0) { throw 'Invalid directory archive member.' }
@@ -248,6 +343,7 @@ function Expand-UpdateArchive([string]$Archive, [string]$Destination, [string]$P
 }
 
 function Assert-UpdatePayload([string]$Root, $Offer) {
+    $Root = Get-NHCanonicalUpdateDirectory $Root
     $manifestPath = Join-Path $Root 'runtime/SHA256SUMS.txt'
     Assert-UpdatePlainPath $manifestPath
     if (-not (Test-Path -LiteralPath $manifestPath -PathType Leaf) -or
@@ -270,6 +366,7 @@ function Assert-UpdatePayload([string]$Root, $Offer) {
     $prefix = [IO.Path]::GetFullPath($Root).TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
     foreach ($file in $files) {
         Assert-UpdatePlainPath $file.FullName
+        if (-not $file.FullName.StartsWith($prefix, [StringComparison]::OrdinalIgnoreCase)) { throw 'Update file is outside its canonical payload.' }
         $relative = $file.FullName.Substring($prefix.Length).Replace('\', '/')
         if ($relative -ceq 'runtime/SHA256SUMS.txt') { continue }
         if (-not $expected.ContainsKey($relative) -or
@@ -317,6 +414,7 @@ function Prepare-NHReleaseUpdate([string]$InstallStore, [string]$RequestFile) {
     if ($root.StartsWith('\\') -or $root.StartsWith('//')) { throw 'Use a local update store.' }
     Assert-UpdatePlainPath $root
     $null = [IO.Directory]::CreateDirectory($root)
+    $root = Get-NHCanonicalUpdateDirectory $root
     $releases = Join-Path $root 'r'
     Assert-UpdatePlainPath $releases
     $null = [IO.Directory]::CreateDirectory($releases)
@@ -341,15 +439,17 @@ function Prepare-NHReleaseUpdate([string]$InstallStore, [string]$RequestFile) {
         $stem = [IO.Path]::GetFileNameWithoutExtension($offer.name)
         Write-UpdateStatus 'Verifying and preparing game files...'
         Expand-UpdateArchive $archive $unpacked $stem
-        $payload = $unpacked
+        $payload = Get-NHCanonicalUpdateDirectory $unpacked
         Assert-UpdatePayload $payload $offer
         Assert-UpdatePlainPath $destination
         if ($env:OS -eq 'Windows_NT') {
             $prefix = $payload.TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
-            foreach ($file in @(Get-ChildItem -LiteralPath $payload -Recurse -Force -File)) {
-                if ((Join-Path $destination $file.FullName.Substring($prefix.Length)).Length -ge 260) {
-                    throw 'The ready update path would exceed Windows path limits.'
-                }
+            foreach ($entry in @(Get-ChildItem -LiteralPath $payload -Recurse -Force)) {
+                if (-not $entry.FullName.StartsWith($prefix, [StringComparison]::OrdinalIgnoreCase)) { throw 'Update file is outside its canonical payload.' }
+                $readyPath = Join-Path $destination $entry.FullName.Substring($prefix.Length)
+                if ($readyPath.Length -ge 260) { throw 'The ready update path would exceed Windows path limits.' }
+                $directoryPath = if ($entry.PSIsContainer) { $readyPath } else { [IO.Path]::GetDirectoryName($readyPath) }
+                if ($directoryPath.Length -ge 248) { throw 'The ready update directory path would exceed Windows path limits.' }
             }
         }
         if (Test-Path -LiteralPath $destination) {

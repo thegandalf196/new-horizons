@@ -17272,55 +17272,55 @@
           "end": 71
         }
       ],
-      "sha256": "ce040f797298f3d06641a54659f778c4d90106559b4ccc954d50d86429707cd2",
-      "review": "IR-NEXT-BUILD-FROZEN-PLAYER-LAUNCHER-ORG-20261119",
-      "review_scope": "Exact independent source organization and reused prior source review only; no native compilation, GUI, Windows execution, performance, promotion or future growth permission.",
+      "sha256": "9ae3e46d0de13da54f4a38787661cd56c5a906ea497f30ad61b9339f0531924b",
+      "review": "IR-WINDOWS-AMENDMENT4-CANONICAL-STORE-20261119",
+      "review_scope": "Exact source and full actual PowerShell AST inventory only; no native Windows/path/8.3/runtime or release acceptance.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
-      "rationale": "Complete exact73-line PowerShell callable inventory independently re-parsed with actual PowerShell7.5.4 AST: all5 FunctionDefinitionAst and executable ScriptBlockExpressionAst bodies, including nested callbacks. Inspected command/param/control-flow blocks and quoted script data are not invented callable definitions. Exact bytes match previously independently reviewed IR-PLAYER-LAUNCHER-FINAL-SOURCE-V1. Largest function is below80 lines; no numeric waiver or missing callback. Parser syntax success on Linux does not establish Windows5.1/WinForms/native readiness execution."
+      "rationale": "Complete exact 73-line PowerShell inventory parsed independently using real PowerShell AST; all 5 named functions and executable scriptblock expressions included. Canonical managed store, atomic complete identity publication, containment and path routing reviewed. Embedded CSharp PInvoke source is quoted data, not a PowerShell callable. Largest callable is 26 lines. No size exception or future growth allowance. Windows5.1/NTFS behavior still requires hosted execution."
     },
     "tools/windows/Portable-Release-Launcher.ps1": {
       "functions": [
         {
           "symbol": "function Read-NHSmallUpdateJson#1",
-          "start": 4,
-          "end": 9
+          "start": 7,
+          "end": 12
         },
         {
           "symbol": "function Get-NHProductVersion#1",
-          "start": 11,
-          "end": 17
+          "start": 14,
+          "end": 20
         },
         {
           "symbol": "function Get-NHSelectedUpdateRuntime#1",
-          "start": 19,
-          "end": 39
+          "start": 22,
+          "end": 42
         },
         {
           "symbol": "function Test-NHUpdatedClient#1",
-          "start": 41,
-          "end": 59
+          "start": 44,
+          "end": 62
         },
         {
           "symbol": "function Set-NHUpdateSelection#1",
-          "start": 61,
-          "end": 82
+          "start": 64,
+          "end": 85
         },
         {
           "symbol": "function Install-NHRequestedRelease#1",
-          "start": 84,
-          "end": 101
+          "start": 87,
+          "end": 104
         },
         {
           "symbol": "function Select-NHPortableRelease#1",
-          "start": 103,
-          "end": 119
+          "start": 106,
+          "end": 122
         }
       ],
-      "sha256": "3e64f0ec54bbd4412c01f09f0bb7ac2b1a047a5f1173d6d50aa0cdfcef4803ae",
-      "review": "IR-NEXT-BUILD-FROZEN-PLAYER-LAUNCHER-ORG-20261119",
-      "review_scope": "Exact independent source organization and reused prior source review only; no native compilation, GUI, Windows execution, performance, promotion or future growth permission.",
+      "sha256": "af49269accfe42c9c89acd82f23e61e8c168e7baeb52dffa850b347f3a0f1cd3",
+      "review": "IR-WINDOWS-AMENDMENT4-CANONICAL-STORE-20261119",
+      "review_scope": "Exact source and full actual PowerShell AST inventory only; no native Windows/path/8.3/runtime or release acceptance.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
-      "rationale": "Complete exact119-line PowerShell callable inventory independently re-parsed with actual PowerShell7.5.4 AST: all7 FunctionDefinitionAst and executable ScriptBlockExpressionAst bodies, including nested callbacks. Inspected command/param/control-flow blocks and quoted script data are not invented callable definitions. Exact bytes match previously independently reviewed IR-PLAYER-LAUNCHER-FINAL-SOURCE-V1. Largest function is below80 lines; no numeric waiver or missing callback. Parser syntax success on Linux does not establish Windows5.1/WinForms/native readiness execution."
+      "rationale": "Complete exact 122-line PowerShell inventory parsed independently using real PowerShell AST; all 7 named functions and executable scriptblock expressions included. Canonical managed store, atomic complete identity publication, containment and path routing reviewed. Embedded CSharp PInvoke source is quoted data, not a PowerShell callable. Largest callable is 22 lines. No size exception or future growth allowance. Windows5.1/NTFS behavior still requires hosted execution."
     },
     "tools/windows/Prepare-NHReleaseUpdate.ps1": {
       "functions": [
@@ -17330,76 +17330,91 @@
           "end": 34
         },
         {
-          "symbol": "function Write-UpdateStatus#1",
+          "symbol": "function Get-NHCanonicalUpdateDirectory#1",
           "start": 36,
-          "end": 41
+          "end": 61
+        },
+        {
+          "symbol": "function Assert-NHUpdateStoreIdentity#1",
+          "start": 63,
+          "end": 102
+        },
+        {
+          "symbol": "function Get-NHUpdateStore#1",
+          "start": 104,
+          "end": 125
+        },
+        {
+          "symbol": "function Write-UpdateStatus#1",
+          "start": 127,
+          "end": 132
         },
         {
           "symbol": "function Get-UpdateRelativePath#1",
-          "start": 43,
-          "end": 56
+          "start": 134,
+          "end": 147
         },
         {
           "symbol": "function Read-UpdateJSON#1",
-          "start": 58,
-          "end": 76
+          "start": 149,
+          "end": 167
         },
         {
           "symbol": "function Read-UpdateRequest#1",
-          "start": 78,
-          "end": 101
+          "start": 169,
+          "end": 192
         },
         {
           "symbol": "function Assert-UpdateTransportURI#1",
-          "start": 103,
-          "end": 111
+          "start": 194,
+          "end": 202
         },
         {
           "symbol": "function Invoke-UpdateDownload#1",
-          "start": 113,
-          "end": 164
+          "start": 204,
+          "end": 255
         },
         {
           "symbol": "function Assert-CurrentUpdateRelease#1",
-          "start": 166,
-          "end": 184
+          "start": 257,
+          "end": 275
         },
         {
           "symbol": "function Assert-CurrentUpdateRelease::<scriptblock>#1",
-          "start": 177,
-          "end": 177
-        },
-        {
-          "symbol": "function Expand-UpdateArchive#1",
-          "start": 186,
-          "end": 248
-        },
-        {
-          "symbol": "function Assert-UpdatePayload#1",
-          "start": 250,
-          "end": 297
-        },
-        {
-          "symbol": "function Assert-UpdatePayload::<scriptblock>#1",
           "start": 268,
           "end": 268
         },
         {
+          "symbol": "function Expand-UpdateArchive#1",
+          "start": 277,
+          "end": 343
+        },
+        {
+          "symbol": "function Assert-UpdatePayload#1",
+          "start": 345,
+          "end": 394
+        },
+        {
+          "symbol": "function Assert-UpdatePayload::<scriptblock>#1",
+          "start": 364,
+          "end": 364
+        },
+        {
           "symbol": "function Assert-UpdateArtHeader#1",
-          "start": 299,
-          "end": 312
+          "start": 396,
+          "end": 409
         },
         {
           "symbol": "function Prepare-NHReleaseUpdate#1",
-          "start": 314,
-          "end": 370
+          "start": 411,
+          "end": 470
         }
       ],
-      "sha256": "12820d5e656f1d284bb514f513ba6ae514e39cf2ed1c458918e68ebbe97f3109",
-      "review": "IR-WINDOWS-UPDATE-STREAM-DISPOSAL-20261119",
-      "review_scope": "Exact source/lifetime review and complete AST inventory only; no duplicate PowerShell fixtures, native/game/build, hosted result or release acceptance.",
+      "sha256": "28b237b05a9e7b2cd8aaa752ebb74659233ce66e5d71f9df6e1acd47fab16370",
+      "review": "IR-WINDOWS-AMENDMENT4-CANONICAL-STORE-20261119",
+      "review_scope": "Exact source and full actual PowerShell AST inventory only; no native Windows/path/8.3/runtime or release acceptance.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
-      "rationale": "Complete exact375-line PowerShell callable inventory independently re-parsed with actual PowerShell7 AST: same14 FunctionDefinitionAst/ScriptBlockExpressionAst callables. Only Expand-UpdateArchive grows53to63lines (186to248); subsequent callables shift10lines. Nested try/finally closes opened source/target/archive/stream through constructor, existing-target and disposal failure paths. Largest function63lines; no file/function size exception required. Parsing on Linux is not Windows5.1 runtime acceptance."
+      "rationale": "Complete exact 475-line PowerShell inventory parsed independently using real PowerShell AST; all 17 named functions and executable scriptblock expressions included. Canonical managed store, atomic complete identity publication, containment and path routing reviewed. Embedded CSharp PInvoke source is quoted data, not a PowerShell callable. Largest callable is 67 lines. No size exception or future growth allowance. Windows5.1/NTFS behavior still requires hosted execution."
     }
   },
   "schema": 1,
