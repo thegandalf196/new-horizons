@@ -142,13 +142,17 @@ protected:
 			JsonNode(JsonPath::builtin("config/newHorizonsHeroes")));
 		if(finiteProtectRoster)
 		{
-			// Authored custom roster in a current-format game, not a historical save
-			// or canonical V4 roster. Keep finite payment and current perk policies.
+			// The captured V3 roster uses finite Command on both the combat
+			// and hero-policy sides, as in the released 0.89 finite profile.
 			const JsonNode file(JsonPath::builtin("config/newHorizonsCombatV3"));
 			auto rules = file["combat"]["heroCommands"];
 			rules["commandResourcePolicyVersion"].Integer() = 1;
 			heroCommands::validateRules(rules);
 			loaded->overrideGameSetting(EGameSettings::COMBAT_HERO_COMMANDS, rules);
+			JsonNode perks(JsonPath::builtin("config/newHorizonsPerks"));
+			perks.Struct().erase("warfarePolicyVersion");
+			perks["commandPolicyVersion"].Integer() = 1;
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
 		}
 	}
 
@@ -517,7 +521,7 @@ TEST_F(DamageCacheAdmissionTest, NewBatchObservesChangedSavedRulesAndCallbackIde
 	EXPECT_EQ(sibling.queries, 1u);
 }
 
-TEST_F(DamageCacheAdmissionTest, SelectedOrdinaryProbeAndFirstApplicationRepeatDamageWork)
+TEST_F(DamageCacheAdmissionTest, SelectedOrdinaryProbeAndFirstApplicationReuseCachedDamage)
 {
 	useRevisedOrders = true;
 	ASSERT_NO_FATAL_FAILURE(prepare());
@@ -546,6 +550,14 @@ TEST_F(DamageCacheAdmissionTest, SelectedOrdinaryProbeAndFirstApplicationRepeatD
 	ASSERT_FALSE(child->battleCanTriggerCleave(actor.get()));
 	DamageCache cache;
 	cache.buildDamageCache(child, BattleSide::DEFENDER);
+	ASSERT_EQ(child->heroOrderDamageStatePresence(), std::optional<bool>(false));
+	const auto directDamage = child->battleExpectedLuckDamage(
+		BattleAttackInfo(actor.get(), target.get(), 0, false));
+	DamageCacheProbeTiming cacheAdmission;
+	EXPECT_EQ(cache.getDamage(actor.get(), target.get(), child, &cacheAdmission), directDamage);
+	EXPECT_EQ(cacheAdmission.rootCacheHits, 1u);
+	EXPECT_EQ(cacheAdmission.dynamicBypasses, 0u);
+	EXPECT_EQ(cacheAdmission.cacheFillCalls, 0u);
 	const auto before = snapshot();
 	const auto world = gameState()->saveToMemory();
 	const auto serverRng = projectedHitTest::serialized(*gameHandler->randomizer);
@@ -579,8 +591,8 @@ TEST_F(DamageCacheAdmissionTest, SelectedOrdinaryProbeAndFirstApplicationRepeatD
 	EXPECT_GT(appliedValue, 0.0f);
 	EXPECT_LT(target->getAvailableHealth(), targetHealthBefore);
 	EXPECT_EQ(std::bit_cast<uint32_t>(probeValue), std::bit_cast<uint32_t>(appliedValue));
-	EXPECT_GT(probeCalculations.initialCalls, 0u);
-	EXPECT_GT(appliedCalculations.initialCalls, 0u);
+	EXPECT_EQ(probeCalculations.initialCalls, 0u);
+	EXPECT_EQ(appliedCalculations.initialCalls, 0u);
 	EXPECT_EQ(gameState()->saveToMemory(), world);
 	EXPECT_EQ(projectedHitTest::serialized(*gameHandler->randomizer), serverRng);
 	EXPECT_EQ(projectedHitTest::serialized(dynamic_cast<CRandomGenerator &>(*getRNG())), gameRng);
