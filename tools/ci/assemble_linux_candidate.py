@@ -90,6 +90,21 @@ def installed_client_payload(install, source_commit):
     return files
 
 
+def installed_resource_payload(install, resources):
+    files = {}
+    for tree in TREES:
+        files.update(checked_tree_files(resources / tree, tree))
+    # OS application icons are the documented pre-NHART platform exception.
+    # Never copy other installed share/icons, applications, profiles or artwork.
+    for name in PLATFORM_FILES:
+        path = install / name
+        regular(path)
+        files[name] = path
+    if any(name not in files for name in (*REQUIRED_FILES, *NOTICES)):
+        raise RuntimeError('Missing required curated resource or notice')
+    return files
+
+
 def assemble(install, engine_source, source_commit, source_repository, manifest, output):
     if not re.fullmatch('[0-9a-f]{40}', source_commit):
         raise RuntimeError('Source commit must be an exact full lowercase SHA')
@@ -107,16 +122,7 @@ def assemble(install, engine_source, source_commit, source_repository, manifest,
     resources = install / 'share/vcmi'
     art = verify_install(resources, manifest)
     files = installed_client_payload(install, source_commit)
-    for tree in TREES:
-        files.update(checked_tree_files(resources / tree, tree))
-    # OS application icons are the documented pre-NHART platform exception.
-    # Never copy other installed share/icons, applications, profiles or artwork.
-    for name in PLATFORM_FILES:
-        path = install / name
-        regular(path)
-        files[name] = path
-    if any(name not in files for name in (*REQUIRED_FILES, *NOTICES)):
-        raise RuntimeError('Missing required curated resource or notice')
+    files.update(installed_resource_payload(install, resources))
     before = {name: digest(path) for name, path in files.items()}
     archive_digest = digest(engine_source)
     manifest_digest = digest(manifest)
