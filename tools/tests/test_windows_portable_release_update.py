@@ -125,7 +125,9 @@ $ErrorActionPreference = 'Stop'
 
     def directory_at_units(self, units):
         parent = self.root.resolve()
-        name = 'OneDrive - NH ' + 'x' * (units - self.windows_units(parent) - 1 - len('OneDrive - NH '))
+        name_units = units - self.windows_units(parent) - 1
+        self.assertGreaterEqual(name_units, 4, 'Fixture parent leaves no room for a spaced directory')
+        name = 'NH ' + 'x' * (name_units - 3)
         path = parent / name
         self.assertEqual(self.windows_units(path), units)
         path.mkdir()

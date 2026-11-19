@@ -79,7 +79,7 @@ class PortableLayoutTest(unittest.TestCase):
             layout.archive_portable_package(self.stage, runtime, destination, package.sha256)
         with zipfile.ZipFile(destination) as archive:
             members = archive.namelist()
-            self.assertEqual(members, sorted(members))
+            self.assertEqual(members, sorted(members, key=Path))
             self.assertEqual(archive.read('release/runtime/README-New-Horizons.txt'), readme.read_bytes())
             checksums = archive.read('release/runtime/SHA256SUMS.txt').decode()
         self.assertIn(f'{package.sha256(readme)}  runtime/README-New-Horizons.txt\n', checksums)
