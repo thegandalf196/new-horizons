@@ -50,11 +50,11 @@
     },
     ".github/workflows/new-horizons-windows.yml": {
       "functions": [],
-      "sha256": "c5f99c03eb4924d66fb7cd919fa9991fdd4b555d24db876246630bd891203cdc",
-      "review": "IR-NEXT-BUILD-WINDOWS-NHART-INTERRUPTION-20261119",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
-      "rationale": "Complete exact617-line Windows workflow callable inventory remains empty. Inspected all28 run blocks: three Python heredocs parse to zero FunctionDef/AsyncFunctionDef/Lambda nodes; both PowerShell bodies contain top-level commands or quoted summary data only; Bash bodies contain assignments/conditionals/external invocations without function definitions. Added54-line branch control/launcher integration plus14-line interruption gate define no local callable. Exact owned native recovery runs after measured compile and before package; evidence uploads on failure. No native/runtime acceptance or future size allowance.",
-      "review_scope": "Exact source/organization and seven offline fake-process tests only; no C++ compilation, native Windows recovery, GUI, speed or publication acceptance."
+      "sha256": "c0f13fd1e52d3fd8dd94f1a492d7a148d76afeb169adb80e344ca678e055197d",
+      "review": "IR-RELEASE-ORG-SCOPED-WINDOWS-SKILL-ASSEMBLY-20261119",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_ONLY",
+      "rationale": "Complete exact621-line workflow manual callable inventory remains empty. The617to621 successor adds only four dispatch-input lines and modifies the existing scalar job default, matched-control dictionary and cache-save condition. All four Python-shell run bodies parse to zero FunctionDef/AsyncFunctionDef/Lambda nodes; changed Bash-embedded Python dictionary adds no callable. Retained shell bodies keep their previously reviewed top-level shape. No callable exemption, future growth or hosted execution acceptance.",
+      "review_scope": "Only exact workflow source shape and complete callable inventory; no test/native/build/Windows/performance acceptance."
     },
     ".github/workflows/qt_translation_update.yml": {
       "functions": [],
@@ -12927,23 +12927,23 @@
         {
           "symbol": "test::TEST(CSkillCombatStatusLoaderTest, RetiredMetamagicUsesProviderIsRejected)#1",
           "start": 144,
-          "end": 150
+          "end": 154
         },
         {
           "symbol": "test::TEST(CSkillCombatStatusSchemaTest, OptionalStatusAcceptsCanonicalAndRejectsMalformedShapes)#1",
-          "start": 152,
-          "end": 187
+          "start": 156,
+          "end": 191
         },
         {
           "symbol": "test::TEST(CSkillCombatStatusLoaderTest, RejectsMalformedMetadataBeforeLoadingSkillData)#1",
-          "start": 189,
-          "end": 236
+          "start": 193,
+          "end": 240
         }
       ],
-      "rationale": "Complete exact 238-line inventory of the skill fixture, two helpers, all eight test bodies and the forwarding lambda. The retired-provider rejection test adds one body. Empty default argument parser recovery at line 29 remains covered by the complete helper span.",
-      "review": "IR-0924-CURRENT-SKILL-COMBAT-STATUS",
-      "review_scope": "Exact independently reviewed source spans and typed test intent.",
-      "sha256": "9422b87460bf549c9a0d1d2a9b3766897c97edd9381529b2aa52a89e928bd65c"
+      "rationale": "Complete242-line successor to238-line skill fixture: all12 retained callable bodies remain represented, including two helpers, fixture setup, eight tests and forwarding lambda. Eleven bodies are byte-identical after exact span remapping. Only RetiredMetamagicUsesProviderIsRejected expands144-150to144-154 to validate the same retired-provider metadata with optional unmounted images removed from a schema-only copy; runtime loader rejection still receives original input. Later complete test spans shift+4. No new callable or coverage gap; existing empty-default-argument parser recovery remains covered by exact skillConfig29-58.",
+      "review": "IR-RELEASE-ORG-SCOPED-WINDOWS-SKILL-ASSEMBLY-20261119",
+      "review_scope": "Exact complete242-line callable inventory; no functional/native test execution claim.",
+      "sha256": "4d7b450d437ba01528b416535f7faf916cb995b9153d65cb9fc6f9c3c1ca5b24"
     },
     "test/game/MovementCostTest.cpp": {
       "functions": [
@@ -17416,14 +17416,14 @@
     ".github/workflows/new-horizons-windows.yml": {
       "deferral": "Before further workflow expansion, move the next cohesive inline validation or package-check body into a focused tested CI helper while preserving exact inputs, compile-step timing boundaries, failures and artifacts. No generic workflow growth allowance.",
       "kind": "exception",
-      "lines": 617,
+      "lines": 621,
       "owner": "engine_engineer",
       "prior_deferral": "Existing engine engineer ownership remains. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral. This exception covers only the exact542-line official source URL/comment correction with all transport, size, digest and cache admission controls unchanged. No future growth, numerical ceiling change or coverage exclusion is authorized. This separate review permits only the exact547-line explicit-interpreter successor. Before further expansion, engine_engineer must extract the affected dependency/preflight/package stage into a focused script or shared action, preserving source/cache, CRT/notices, dispatch and artifact contract checks and lowering the orchestration baseline. No future growth, default ceiling increase or exclusion is granted. This separate urgent-correctness review covers only the exact556-line early-bootstrap-smoke ordering successor. Existing extraction obligations and all ceilings remain unchanged; no future growth is authorized.",
-      "rationale": "Exact549 to617-line bounded workflow expansion. Mandatory matched performance-branch controls and offline launcher checks remain external command orchestration; the final14-line delta invokes the focused171-line native interruption driver after compilation and retains its bounded JSON/log evidence. Compiler helper, compiler timer, flags, targets, jobs and cache routing are unchanged by interruption gate; total job time necessarily includes the added post-compile validation. No new search, native process-name scanning or artifact publication permission.",
-      "review": "IR-NEXT-BUILD-WINDOWS-NHART-INTERRUPTION-20261119",
-      "review_scope": "Exact source/organization and seven offline fake-process tests only; no C++ compilation, native Windows recovery, GUI, speed or publication acceptance.",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
-      "sha256": "c5f99c03eb4924d66fb7cd919fa9991fdd4b555d24db876246630bd891203cdc",
+      "rationale": "Exact617to621-line bounded orchestration successor. Jobs default returns6to4; new skip_pch_cache_save boolean defaultsfalse and is checked by existing matched-control admission. Existing cache save remains enabled ordinarily and can be disabled only through explicit opt-in while PCH is on. Real validation remains in existing focused helpers; no inline process, parsing, timing or package stage is added. Existing dependency/bootstrap budgets, target order, failure evidence and all inherited extraction obligations remain. This exact hash allowance grants no future growth.",
+      "review": "IR-RELEASE-ORG-SCOPED-WINDOWS-SKILL-ASSEMBLY-20261119",
+      "review_scope": "Exact four-line opt-in control successor only; no compilation, hosted Windows result or measured performance acceptance.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_ONLY",
+      "sha256": "c0f13fd1e52d3fd8dd94f1a492d7a148d76afeb169adb80e344ca678e055197d",
       "inherited_deferral_step2": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count."
     },
     "AI/BattleAI/AttackPossibility.cpp": {
@@ -29013,13 +29013,13 @@
     "tools/ci/assemble_linux_candidate.py::assemble#1": {
       "deferral": "Before further substantive assembly expansion, extract source-archive correspondence/filter admission into a focused read-only boundary returning its exact admitted manifest before package mutation. Preserve exact source bytes, binary/facade/setup identity, art/notice provenance, no-link inventory, rejection before output creation and unchanged-input checks; maintain callable<=150/file<=1000. Current installed-resource extraction is a bounded ratchet, not generic future growth permission.",
       "kind": "exception",
-      "lines": 113,
-      "rationale": "Exact assemble120 to113-line ratchet relative69f (committed mandatory-setup intermediate122); final span108-220. New13-line installed_resource_payload owns the unchanged curated-tree/platform-file inventory and required-resource/notice checks before any mutation. Mandatory17-line installed_client_payload reuses existing executable ABI admission for installed setup and carries setup binary/source-exact support into existing manifest, hash/mode metadata and final verification. All source/archive/resource/privacy admission and copied/input hash rechecks retained. File220 to232, all ten callable bodies parse cleanly; no oversized helper introduced. All36focused synthetic assembler tests pass. No native/rendered/distribution acceptance or future growth credit.",
-      "review": "IR-LINUX-MANDATORY-SETUP-ASSEMBLER-20261119",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_AND_SYNTHETIC_TESTS_NO_NATIVE_ACCEPTANCE",
-      "sha256": "7a146cfe27d4f309eb2cce9a093adfb9b187fb63e0072e57a7641524c1b7686f",
+      "lines": 115,
+      "rationale": "Exact assemble113to115-line bounded successor, span108-222; file232to234. Replaces executable-only chmod with complete output-tree directory/executable0755 and data0644 normalization before BUILD-IDENTITY/SHA256 records, then adds verify_candidate after final0555/0444 freezing. Existing admission-before-output, no-link/source/art/hash/provider checks remain in the same order. No new callable or moved responsibility; nested source_bytes body unchanged. Function remains below150-line ceiling and retains the specific source-archive admission extraction deferral; no future growth credit.",
+      "review": "IR-RELEASE-ORG-SCOPED-WINDOWS-SKILL-ASSEMBLY-20261119",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_ONLY",
+      "sha256": "3be36327a57cff059019e77a92132c83e2a09d93ea51e172880b2cbdfe656a39",
       "owner": "engine_engineer",
-      "review_scope": "Exact mandatory-setup integration and installed resource inventory extraction only; no ELF execution, native setup/UI, loader, source-provenance/licensing or release acceptance."
+      "review_scope": "Only exact115-line assemble callable mode-finalization successor; no assembly test/build/ELF/runtime/distribution acceptance."
     },
     "tools/ci/linux_playable_snapshot.py": {
       "deferral": "Only this exact native migration content/hash/size is proposed; no future growth allowance. Owner: engine_engineer. Next substantive edit must extract the affected calculation/query/forecast routing into the existing dedicated component with exact state, packet/RNG, action-choice and lifecycle regressions; preserve any narrower inherited deferral below.  Before further growth, the engine engineer owns a reviewed candidate-validation/pointer-commit extraction retaining begin_validation/finish_validation and freeze/promote/validate APIs. Keep payload assembly and process-group supervision separate. Preserve one-shot/default/ABA/stale/mutation/deadline/temp-cleanup and CLI import/rollback tests.",
