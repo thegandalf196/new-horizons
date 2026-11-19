@@ -41,7 +41,10 @@ concurrency:
 
 jobs:
   build:
-    if: github.repository == 'thegandalf196/new-horizons' && github.ref == 'refs/heads/main'
+    if: >-
+      github.repository == 'thegandalf196/new-horizons' &&
+      (github.ref == 'refs/heads/main' ||
+       (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/performance/quick-combat-and-ci'))
     runs-on: windows-2025-vs2026
     timeout-minutes: 240
     env:
@@ -61,6 +64,34 @@ jobs:
         id: python
         with:
           python-version: '3.15'
+
+      - name: Validate matched performance preview controls
+        if: github.ref == 'refs/heads/performance/quick-combat-and-ci'
+        env:
+          TRIAL_INPUTS: ${{ toJSON(inputs) }}
+        run: |
+          python - <<'PY'
+          import json, os, re, subprocess
+          controls = json.loads(os.environ['TRIAL_INPUTS'])
+          required = {'preflight_only': False, 'use_precompiled_headers': True,
+                      'use_hot_header_pch': False, 'build_jobs': 4,
+                      'pch_off_cache_seed': '', 'repack_run_id': ''}
+          for name, expected in required.items():
+              value = controls.get(name)
+              if type(value) is not type(expected) or value != expected:
+                  raise SystemExit(f'Performance preview requires {name}={expected!r}')
+          if type(controls.get('use_unity_build')) is not bool:
+              raise SystemExit('Performance preview requires a boolean use_unity_build')
+          revision = os.environ['GITHUB_SHA']
+          if not re.fullmatch('[0-9a-f]{40}', revision):
+              raise SystemExit('Invalid source revision')
+          if subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip() != revision:
+              raise SystemExit('Checkout differs from the dispatched source revision')
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as stream:
+              stream.write('## Matched Windows preview trial\n')
+              stream.write(f'Source: `{revision}`\n\nControls: `{json.dumps(controls, sort_keys=True)}`\n\n')
+              stream.write('Preview artifacts only. Release, tag and updater publication are separate.\n')
+          PY
 
       - name: Verify preserved dependency recipes without upstream lookup
         run: python tools/ci/verify_vendored_dependencies.py
@@ -324,6 +355,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "Manual Setup smoke failed: $LASTEXITCODE" }
 
       - name: Compile Windows x64 client
+        id: compile-client
         if: ${{ !inputs.preflight_only && inputs.repack_run_id == '' }}
         env:
           REQUESTED_KEY: ${{ steps.pch-cache.outputs.key }}
@@ -335,6 +367,28 @@ jobs:
             --jobs "$BUILD_JOBS" \
             --diagnostics-dir build/new-horizons-windows-x64/compile-diagnostics \
             --cache-key-requested "$REQUESTED_KEY" --cache-key-matched "$MATCHED_KEY"
+
+      - name: Record performance preview compiler finish state
+        if: ${{ always() && github.ref == 'refs/heads/performance/quick-combat-and-ci' }}
+        env:
+          COMPILE_OUTCOME: ${{ steps.compile-client.outcome }}
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          root = Path('build/new-horizons-windows-x64/compile-diagnostics')
+          root.mkdir(parents=True, exist_ok=True)
+          report = {'format': 1, 'sourceRevision': os.environ['GITHUB_SHA'],
+                    'compileOutcome': os.environ.get('COMPILE_OUTCOME', ''),
+                    'jobStatusAtCompilerCheckpoint': os.environ.get('JOB_STATUS', ''),
+                    'finalDiagnosticsPresent': (root / 'build-diagnostics.json').is_file(),
+                    'afterCacheStatsPresent': (root / 'sccache-after.json').is_file(),
+                    'note': 'Missing final evidence or cancellation is an incomplete trial, not a speed result. Packaging follows this checkpoint.'}
+          (root / 'branch-trial-finish.json').write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as stream:
+              stream.write('\nCompiler checkpoint: `' + json.dumps(report, sort_keys=True) + '`\n')
+          PY
 
       - name: Retain Windows compiler diagnostics
         if: ${{ always() && !inputs.preflight_only && inputs.repack_run_id == '' }}
