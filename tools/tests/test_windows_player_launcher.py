@@ -20,6 +20,7 @@ class PlayerLauncherTest(unittest.TestCase):
             harness.write_text(r'''
 Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
+$env:LOCALAPPDATA=Join-Path $env:FIXTURE 'local-data'
 $runtime=Join-Path $env:FIXTURE 'runtime'
 $null=[IO.Directory]::CreateDirectory((Join-Path $runtime 'config'))
 [IO.File]::WriteAllText((Join-Path $runtime 'config/newHorizonsVersion.json'),'{"version":"0.92.3"}')
@@ -165,7 +166,7 @@ function Install-NHRequestedRelease($Original,$Current,$Store,$Request,$StatusPa
 $rejected=$false
 try{$null=Install-NHPlayerOffer $runtime 'accepted.json' 'progress.txt'}catch{$rejected=$true}
 Require $rejected 'Install failure hidden'
-$store=Join-Path $env:FIXTURE '.nhu'
+$store=Get-NHUpdateStore $runtime
 $other=[IO.File]::Open((Join-Path $store 'lock'),[IO.FileMode]::OpenOrCreate,[IO.FileAccess]::ReadWrite,[IO.FileShare]::None)
 $other.Dispose()
 Require (-not [IO.File]::Exists((Join-Path $store 'current.json'))) 'Failure activated a release'
