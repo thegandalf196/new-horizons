@@ -1272,6 +1272,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/SelectedProbeScoreTest.cpp
 		battleAI/RegenerationBaselineReuseTest.cpp
 		battleAI/DamageCacheAdmissionTest.cpp
+		battleAI/OrdinaryDamageObservationTest.cpp
 		battleAI/ExchangeInitiativeQueueTest.cpp
 		battleAI/CreatureCandidateBaselineTest.cpp
 		battleAI/MovementCandidateScreeningTest.cpp

@@ -6,6 +6,7 @@
 #include "HeroSpellRefinement.h"
 #include "ForecastHeroActionAdmission.h"
 #include "FlatDamageInputs.h"
+#include "DamageCacheAdmission.h"
 #include "BattleSearchPolicy.h"
 #include "AttackPossibility.h"
 #include "BattleExchangeVariant.h"
@@ -313,24 +314,28 @@ bool Baseline::prepare(const std::vector<Approach> & existingApproaches, bool di
 	FlatDamageInputs flat(*reference, false);
 	if(battleSearch::forecastBeamOne()) flat.prepareRoster(*reference);
 	FlatDamageInputs::Scope prepared(*reference, &flat);
+	// create()/prepare() already admitted the canonical calculator and complete
+	// source graph. All branch materialization above precedes this read interval.
+	OrdinaryDamageObservation observation(reference);
 	for(auto & pair : pairs)
 		{
 			battleSearch::require(reference->searchBudget().get(), battleSearch::WorkKind::Node);
-			pair.referenceValue = pairValue(*reference, pair);
+			pair.referenceValue = pairValue(*reference, pair, false, &observation);
 		}
 	referencePressure = pressure(*reference);
 	return true;
 }
 
-float Baseline::damageValue(uint32_t attacker, uint32_t victim, int64_t amount)
+float Baseline::damageValue(uint32_t attacker, uint32_t victim, int64_t amount, OrdinaryDamageObservation * observation)
 {
 	const auto * a = reference->battleGetUnitByID(attacker);
 	const auto * d = reference->battleGetUnitByID(victim);
 	return AttackPossibility::calculateDamageReduce(a, d,
-		static_cast<uint64_t>(std::max<int64_t>(0, amount)), *damage, reference);
+		static_cast<uint64_t>(std::max<int64_t>(0, amount)), *damage, reference, nullptr, observation);
 }
 
-float Baseline::pairValue(const CBattleInfoCallback & view, const Pair & pair, bool grantedActivation)
+float Baseline::pairValue(const CBattleInfoCallback & view, const Pair & pair, bool grantedActivation,
+	OrdinaryDamageObservation * observation)
 {
 	const auto * a = view.battleGetUnitByID(pair.attacker);
 	const auto * d = view.battleGetUnitByID(pair.victim);
@@ -344,9 +349,9 @@ float Baseline::pairValue(const CBattleInfoCallback & view, const Pair & pair, b
 	const auto estimate = view.battleEstimateDamage(attack, &counter);
 	const bool ours = reference->battleGetOwner(reference->battleGetUnitByID(pair.attacker))
 		== reference->sideToPlayer(side);
-	return damageValue(pair.attacker, pair.victim, battleDamageValue::averageOrderDamage(estimate))
+	return damageValue(pair.attacker, pair.victim, battleDamageValue::averageOrderDamage(estimate), observation)
 			* (ours ? positiveMultiplier : negativeMultiplier)
-		- damageValue(pair.victim, pair.attacker, battleDamageValue::averageOrderDamage(counter))
+		- damageValue(pair.victim, pair.attacker, battleDamageValue::averageOrderDamage(counter), observation)
 			* (ours ? negativeMultiplier : positiveMultiplier);
 }
 
@@ -355,11 +360,14 @@ float Baseline::pressure(HypotheticBattle & view)
 	FlatDamageInputs flat(view, false);
 	if(&view != reference.get() && battleSearch::forecastBeamOne()) flat.prepareRoster(view);
 	FlatDamageInputs::Scope prepared(view, &flat);
+	// The reference retains prepare()'s canonical source/calculator admission.
+	// Scoring uses that immutable baseline, even for projected view damage.
+	OrdinaryDamageObservation observation(reference);
 	std::map<uint32_t, float> best;
 	for(const auto & pair : pairs)
 	{
 		battleSearch::require(reference->searchBudget().get(), battleSearch::WorkKind::Node);
-		const float value = &view == reference.get() ? pair.referenceValue : pairValue(view, pair);
+		const float value = &view == reference.get() ? pair.referenceValue : pairValue(view, pair, false, &observation);
 		auto & maximum = best[pair.attacker];
 		maximum = std::max(maximum, value);
 	}

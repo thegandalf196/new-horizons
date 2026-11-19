@@ -54,10 +54,16 @@ bool isDynamicPassiveBonus(const Bonus & bonus)
 }
 bool hasDynamicDamagePassive(const battle::Unit & unit)
 {
-	return unit.hasBonusOfType(BonusType::CASUALTY_DAMAGE_PERCENTAGE)
-		|| unit.hasBonusOfType(BonusType::MAGICAL_DAMAGE_IMMUNITY)
-		|| unit.hasBonusOfType(BonusType::CREATURE_ATTACK_TARGET_PROTECTION)
-		|| unit.hasBonusOfType(BonusType::DYNAMIC_CREATURE_DAMAGE);
+	// Raw absence is authoritative, while presence still needs the effective,
+	// limiter- and suppression-aware query (including zero-valued bonuses).
+	return (unit.mayHaveBonusType(BonusType::CASUALTY_DAMAGE_PERCENTAGE)
+			&& unit.hasBonusOfType(BonusType::CASUALTY_DAMAGE_PERCENTAGE))
+		|| (unit.mayHaveBonusType(BonusType::MAGICAL_DAMAGE_IMMUNITY)
+			&& unit.hasBonusOfType(BonusType::MAGICAL_DAMAGE_IMMUNITY))
+		|| (unit.mayHaveBonusType(BonusType::CREATURE_ATTACK_TARGET_PROTECTION)
+			&& unit.hasBonusOfType(BonusType::CREATURE_ATTACK_TARGET_PROTECTION))
+		|| (unit.mayHaveBonusType(BonusType::DYNAMIC_CREATURE_DAMAGE)
+			&& unit.hasBonusOfType(BonusType::DYNAMIC_CREATURE_DAMAGE));
 }
 int casualtyDamagePercent(const BattleAttackInfo & attack)
 {

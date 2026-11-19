@@ -16,6 +16,18 @@
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/entities/hero/NewHorizonsOrdinaryCreatureSpecialties.h"
 
+bool OrdinaryDamageObservation::matches(const CBattleInfoCallback & candidate) const
+{
+	return source.get() == &candidate;
+}
+
+bool OrdinaryDamageObservation::ordinaryCreatureDamageIsStateful()
+{
+	if(!stateful.has_value())
+		stateful = newHorizonsHeroes::ordinaryCreatureDamageIsStateful(*source);
+	return *stateful;
+}
+
 bool DamageCacheAdmission::matches(const battle::Unit & candidate, const CBattleInfoCallback & branch) const
 {
 	return &candidate == &actor && &branch == &battle;
@@ -109,6 +121,8 @@ bool DamageCacheAdmission::ordinaryCreatureDamageIsStateful()
 {
 	return remember(ORDINARY_DAMAGE_POLICY, [&]
 	{
-		return newHorizonsHeroes::ordinaryCreatureDamageIsStateful(battle);
+		return observation && observation->matches(battle)
+			? observation->ordinaryCreatureDamageIsStateful()
+			: newHorizonsHeroes::ordinaryCreatureDamageIsStateful(battle);
 	});
 }

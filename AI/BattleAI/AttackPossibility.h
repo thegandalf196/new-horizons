@@ -28,6 +28,7 @@
 #define BATTLE_TRACE_LEVEL 0
 
 class DamageCacheAdmission;
+class OrdinaryDamageObservation;
 namespace forecast { class State; class AcceptedSnapshotSeal; }
 
 /// Match BattleActionProcessor's physical-creature provenance rule for a
@@ -265,11 +266,13 @@ public:
 	int64_t getDamage(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb);
 	int64_t getDamage(const battle::Unit * attacker, const battle::Unit * defender,
 		std::shared_ptr<CBattleInfoCallback> hb, DamageCacheProbeTiming * timing,
-		DamageCacheAdmission * mainProbeAdmission = nullptr);
+		DamageCacheAdmission * mainProbeAdmission = nullptr,
+		OrdinaryDamageObservation * observation = nullptr);
 	int64_t getObstacleDamage(const BattleHex & hex, const battle::Unit * defender) const;
 	int64_t getOriginalDamage(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb);
 	int64_t getOriginalDamage(const battle::Unit * attacker, const battle::Unit * defender,
-		std::shared_ptr<CBattleInfoCallback> hb, DamageCacheProbeTiming * timing);
+		std::shared_ptr<CBattleInfoCallback> hb, DamageCacheProbeTiming * timing,
+		OrdinaryDamageObservation * observation = nullptr);
 	void buildDamageCache(std::shared_ptr<HypotheticBattle> hb, BattleSide side);
 	/// Terminal creature-pressure root only: retain obstacles, omit pair priming
 	/// only for attested pure damage and saved rules that force dynamic queries.
@@ -373,7 +376,8 @@ public:
 		uint64_t damageDealt,
 		DamageCache & damageCache,
 		std::shared_ptr<CBattleInfoCallback> cb,
-		DamageCacheProbeTiming * timing);
+		DamageCacheProbeTiming * timing,
+		OrdinaryDamageObservation * observation = nullptr);
 
 private:
 	static int64_t evaluateBlockedShootersDmg(

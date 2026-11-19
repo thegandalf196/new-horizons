@@ -13,6 +13,7 @@ class CBattleInfoCallback;
 class Environment;
 class HypotheticBattle;
 class DamageCache;
+class OrdinaryDamageObservation;
 class BattleExchangeEvaluator;
 class BattleInfo;
 class PossibleSpellcast;
@@ -102,10 +103,10 @@ private:
 		const BattleExchangeEvaluator * utility, std::shared_ptr<battleSearch::SearchBudget> budget);
 	bool prepare(const std::vector<Approach> & existingApproaches, bool directOnly, bool buildOriginal);
 	float pairValue(const CBattleInfoCallback & view, const Pair & pair,
-		bool grantedActivation = false);
+		bool grantedActivation = false, OrdinaryDamageObservation * observation = nullptr);
 	float pressure(HypotheticBattle & view);
 	std::optional<float> extraActivationUtility(const HypotheticBattle & accepted);
-	float damageValue(uint32_t attacker, uint32_t victim, int64_t damage);
+	float damageValue(uint32_t attacker, uint32_t victim, int64_t damage, OrdinaryDamageObservation * observation);
 	std::shared_ptr<CBattleInfoCallback> source;
 	std::shared_ptr<HypotheticBattle> reference;
 	std::unique_ptr<DamageCache> damage;

@@ -9,11 +9,35 @@
 #include <array>
 #include <cstddef>
 #include <optional>
+#include <memory>
+#include <utility>
 
 namespace battle { class Unit; }
 class CBattleInfoCallback;
 class CGHeroInstance;
 class FlatDamageInputs;
+
+/// A lazy whole-roster fact for one explicitly immutable observation interval.
+/// Supply a non-null callback. Construct after unit materialization; destroy before
+/// any unit, bonus, hero, ownership, rules or branch mutation, including shared
+/// native ancestors. Queries
+/// must be read-only; custom callbacks/scripts with mutable queries use no scope.
+/// This is deliberately not a version key.
+/// The strong owner preserves callback identity; mismatching callbacks fall back.
+class OrdinaryDamageObservation
+{
+public:
+	explicit OrdinaryDamageObservation(std::shared_ptr<CBattleInfoCallback> source)
+		: source(std::move(source)) {}
+	OrdinaryDamageObservation(const OrdinaryDamageObservation &) = delete;
+	OrdinaryDamageObservation & operator=(const OrdinaryDamageObservation &) = delete;
+	bool matches(const CBattleInfoCallback & candidate) const;
+	bool ordinaryCreatureDamageIsStateful();
+
+private:
+	const std::shared_ptr<CBattleInfoCallback> source;
+	std::optional<bool> stateful;
+};
 
 /// Lazy actor and callback-only admission facts for ONE immutable main-target probe batch.
 /// Not a damage cache or mutation-aware cache. End before any applied action,
@@ -22,8 +46,9 @@ class FlatDamageInputs;
 class DamageCacheAdmission
 {
 public:
-	DamageCacheAdmission(const battle::Unit & actor, const CBattleInfoCallback & battle)
-		: actor(actor), battle(battle) {}
+	DamageCacheAdmission(const battle::Unit & actor, const CBattleInfoCallback & battle,
+		OrdinaryDamageObservation * observation = nullptr)
+		: actor(actor), battle(battle), observation(observation) {}
 	DamageCacheAdmission(const DamageCacheAdmission &) = delete;
 	DamageCacheAdmission & operator=(const DamageCacheAdmission &) = delete;
 	bool matches(const battle::Unit & candidate, const CBattleInfoCallback & branch) const;
@@ -46,6 +71,7 @@ private:
 		REDUCED_ACTIVATION, BLOODRAGE, FOCUS_FIRE_RULES, ORDINARY_DAMAGE_POLICY, COUNT };
 	const battle::Unit & actor;
 	const CBattleInfoCallback & battle;
+	OrdinaryDamageObservation * observation;
 	std::optional<BattleSide> actorSide;
 	std::optional<const CGHeroInstance *> actorHero;
 	std::array<std::optional<bool>, COUNT> facts{};

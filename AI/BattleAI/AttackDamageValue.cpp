@@ -45,7 +45,7 @@ float AttackPossibility::calculateDamageReduce(
 	uint64_t damageDealt,
 	DamageCache & damageCache,
 	std::shared_ptr<CBattleInfoCallback> state,
-	DamageCacheProbeTiming * timing)
+	DamageCacheProbeTiming * timing, OrdinaryDamageObservation * observation)
 {
 	const float HEALTH_BOUNTY = 0.5;
 	const float KILL_BOUNTY = 0.5;
@@ -81,7 +81,7 @@ float AttackPossibility::calculateDamageReduce(
 			|| damageDealt < static_cast<uint64_t>(integrity))
 			return 0.0f;
 
-		const auto copiedStackDamage = damageCache.getOriginalDamage(defender, attackerUnitForMeasurement, state, timing);
+		const auto copiedStackDamage = damageCache.getOriginalDamage(defender, attackerUnitForMeasurement, state, timing, observation);
 		return static_cast<float>(copiedStackDamage);
 	}
 
@@ -108,7 +108,7 @@ float AttackPossibility::calculateDamageReduce(
 		const auto healthAfter = damageProjection->getAvailableHealth();
 		const auto actualDamage = std::max<int64_t>(0, healthBefore - healthAfter);
 		const auto enemiesKilled = std::max(0, countBefore - damageProjection->getCount());
-		const auto enemyDamageBeforeAttack = damageCache.getOriginalDamage(defender, attackerUnitForMeasurement, state, timing);
+		const auto enemyDamageBeforeAttack = damageCache.getOriginalDamage(defender, attackerUnitForMeasurement, state, timing, observation);
 		const auto damagePerEnemy = enemyDamageBeforeAttack / static_cast<double>(countBefore);
 		const auto woundHealth = static_cast<float>(actualDamage) / std::max(1, capacityReferenceMax);
 		const auto hpValue = std::min(woundHealth, static_cast<float>(countBefore));
@@ -121,7 +121,7 @@ float AttackPossibility::calculateDamageReduce(
 
 	vstd::amin(damageDealt, availableHealth);
 
-	auto enemyDamageBeforeAttack = damageCache.getOriginalDamage(defender, attackerUnitForMeasurement, state, timing);
+	auto enemyDamageBeforeAttack = damageCache.getOriginalDamage(defender, attackerUnitForMeasurement, state, timing, observation);
 	auto enemiesKilled = damageDealt / maxHealth + (damageDealt % maxHealth >= defender->getFirstHPleft() ? 1 : 0);
 	auto damagePerEnemy = enemyDamageBeforeAttack / (double)defender->getCount();
 	auto exceedingDamage = (damageDealt % maxHealth);

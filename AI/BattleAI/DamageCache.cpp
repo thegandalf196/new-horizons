@@ -243,7 +243,7 @@ int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit
 
 int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit * defender,
 	std::shared_ptr<CBattleInfoCallback> hb, DamageCacheProbeTiming * receiver,
-	DamageCacheAdmission * mainProbeAdmission)
+	DamageCacheAdmission * mainProbeAdmission, OrdinaryDamageObservation * observation)
 {
 	if(const auto * state = dynamic_cast<const HypotheticBattle *>(hb.get()))
 		battleSearch::require(state->searchBudget().get(), battleSearch::WorkKind::Node);
@@ -261,7 +261,7 @@ int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit
 	rememberTemporaryCombatModifiers(attacker, defender, *hb);
 	if(newHorizonsReactiveDefense::ironHideConfiguredPercent(*hb, *defender) > 0)
 		temporaryCombatModifierUnits.insert(defender->unitId());
-	DamageCacheAdmission localAdmission(*attacker, *hb);
+	DamageCacheAdmission localAdmission(*attacker, *hb, observation);
 	auto & admission = mainProbeAdmission && mainProbeAdmission->matches(*attacker, *hb)
 		? *mainProbeAdmission : localAdmission;
 	const auto raSide = admission.side();
@@ -399,7 +399,8 @@ int64_t DamageCache::getOriginalDamage(const battle::Unit * attacker, const batt
 }
 
 int64_t DamageCache::getOriginalDamage(const battle::Unit * attacker, const battle::Unit * defender,
-	std::shared_ptr<CBattleInfoCallback> hb, DamageCacheProbeTiming * receiver)
+	std::shared_ptr<CBattleInfoCallback> hb, DamageCacheProbeTiming * receiver,
+	OrdinaryDamageObservation * observation)
 {
 	if(const auto * state = dynamic_cast<const HypotheticBattle *>(hb.get()))
 		battleSearch::require(state->searchBudget().get(), battleSearch::WorkKind::Node);
@@ -435,7 +436,7 @@ int64_t DamageCache::getOriginalDamage(const battle::Unit * attacker, const batt
 			++timing->rootOriginalFallbacks;
 	}
 	preflight.finish();
-	return getDamage(attacker, defender, hb, timing);
+	return getDamage(attacker, defender, hb, timing, nullptr, observation);
 }
 
 bool DamageCache::tracksIntrinsicReduction(uint32_t defenderId, bool physical) const
