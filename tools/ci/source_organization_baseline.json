@@ -29011,13 +29011,15 @@
       "sha256": "83e6b42f7c226fd654d9e1da07670dbe747011973200d97a60fc69892333740e"
     },
     "tools/ci/assemble_linux_candidate.py::assemble#1": {
-      "deferral": "Owner: engine_engineer. Before next substantive expansion, extract payload inventory/resource filtering and its validation into a focused pure inventory/filter boundary returning the exact payload manifest before any package mutation. Preserve exact-source binding, selected art and licensing, native binary/facade identity, complete manifest agreement, and negative tests proving invalid input causes no partial package mutation. Keep extracted callables <=150 lines and files <=1000 lines. Only the present native Lua-resource filter at the recorded hash/size is excepted; no future growth allowance. ",
+      "deferral": "Before further substantive assembly expansion, extract source-archive correspondence/filter admission into a focused read-only boundary returning its exact admitted manifest before package mutation. Preserve exact source bytes, binary/facade/setup identity, art/notice provenance, no-link inventory, rejection before output creation and unchanged-input checks; maintain callable<=150/file<=1000. Current installed-resource extraction is a bounded ratchet, not generic future growth permission.",
       "kind": "exception",
-      "lines": 120,
-      "rationale": "Archive native-port exact scope: 119 to 120 physical lines. Existing assembly function gains native resource-filter exclusion; one line growth, no extra ownership.",
-      "review": "IR-NATIVE-MIGRATION-BOUNDED-STRUCTURE-20261105",
-      "review_status": "INDEPENDENT_BOUNDED_EXACT_SOURCE_STRUCTURE_REVIEWED",
-      "sha256": "9f59d7d68fa314527ce9247070644a5a9eb231f3a66e9e525b2e4ab2290cc784"
+      "lines": 113,
+      "rationale": "Exact assemble120 to113-line ratchet relative69f (committed mandatory-setup intermediate122); final span108-220. New13-line installed_resource_payload owns the unchanged curated-tree/platform-file inventory and required-resource/notice checks before any mutation. Mandatory17-line installed_client_payload reuses existing executable ABI admission for installed setup and carries setup binary/source-exact support into existing manifest, hash/mode metadata and final verification. All source/archive/resource/privacy admission and copied/input hash rechecks retained. File220 to232, all ten callable bodies parse cleanly; no oversized helper introduced. All36focused synthetic assembler tests pass. No native/rendered/distribution acceptance or future growth credit.",
+      "review": "IR-LINUX-MANDATORY-SETUP-ASSEMBLER-20261119",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_AND_SYNTHETIC_TESTS_NO_NATIVE_ACCEPTANCE",
+      "sha256": "7a146cfe27d4f309eb2cce9a093adfb9b187fb63e0072e57a7641524c1b7686f",
+      "owner": "engine_engineer",
+      "review_scope": "Exact mandatory-setup integration and installed resource inventory extraction only; no ELF execution, native setup/UI, loader, source-provenance/licensing or release acceptance."
     },
     "tools/ci/linux_playable_snapshot.py": {
       "deferral": "Only this exact native migration content/hash/size is proposed; no future growth allowance. Owner: engine_engineer. Next substantive edit must extract the affected calculation/query/forecast routing into the existing dedicated component with exact state, packet/RNG, action-choice and lifecycle regressions; preserve any narrower inherited deferral below.  Before further growth, the engine engineer owns a reviewed candidate-validation/pointer-commit extraction retaining begin_validation/finish_validation and freeze/promote/validate APIs. Keep payload assembly and process-group supervision separate. Preserve one-shot/default/ABA/stale/mutation/deadline/temp-cleanup and CLI import/rollback tests.",
