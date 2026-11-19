@@ -434,19 +434,19 @@ TEST_F(DISABLED_NativeEncounterBenchmarkTest, MirrorNecropolis)
 TEST_F(DISABLED_NativeEncounterBenchmarkTest, MirrorCastleHeroOptions)
 {
 	const auto army = mirrorCastleArmy();
-	ASSERT_NO_FATAL_FAILURE(prepare(army, army, "core:orrin", true, false, false, true, "core:orrin"));
+	ASSERT_NO_FATAL_FAILURE(prepare(army, army, "core:orrin", true, false, false, true, "core:valeska"));
 	runEncounter();
 }
 TEST_F(DISABLED_NativeEncounterBenchmarkTest, MirrorRampartHeroOptions)
 {
 	const auto army = mirrorRampartArmy();
-	ASSERT_NO_FATAL_FAILURE(prepare(army, army, "core:mephala", true, false, false, true, "core:mephala"));
+	ASSERT_NO_FATAL_FAILURE(prepare(army, army, "core:mephala", true, false, false, true, "core:ivor"));
 	runEncounter();
 }
 TEST_F(DISABLED_NativeEncounterBenchmarkTest, MirrorNecropolisHeroOptions)
 {
 	const auto army = mirrorNecropolisArmy();
-	ASSERT_NO_FATAL_FAILURE(prepare(army, army, "core:straker", true, false, false, true, "core:straker"));
+	ASSERT_NO_FATAL_FAILURE(prepare(army, army, "core:straker", true, false, false, true, "core:galthran"));
 	runEncounter();
 }
 
