@@ -15,6 +15,9 @@ read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
   it and evaluates the three most promising approaches to distant targets.
 - Fixes a crash while the AI evaluates a spell against an affected stack.
 - Interrupted artwork preparation can be retried on the next launch.
+- Canceling artwork preparation or closing the Linux launcher during startup
+  retains the log and allows the game to start normally on the next launch.
+- Fixed a Linux image-scaling crash when the X11 display disconnects.
 - Vidomina pays the normal Wight-to-Wraith upgrade price to convert each
   Wraith into a Ghost. Soul Harvest shows the Resurrection animation on the
   growing Ghost stack and plays the Vampire Lord's drain sound.
