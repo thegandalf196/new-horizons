@@ -677,18 +677,12 @@ def main():
         for path in package.rglob("*"):
             if path.is_file() and path.suffix.lower() in FORBIDDEN_ASSETS:
                 raise RuntimeError(f"Forbidden game asset/save in package: {path.relative_to(package)}")
-        from windows_portable_layout import append_windows_path_budget, assemble_portable_root
+        from windows_portable_layout import archive_portable_package, assemble_portable_root
         runtime = assemble_portable_root(package, install, run, SYSTEM_DLLS, write_json)
         # Audit both PE domains recursively; the report belongs inside runtime/.
         require_clean(package, verified_github_ci_provenance())
         (package / "BINARY-PRIVACY.json").replace(runtime / "BINARY-PRIVACY.json")
-        print(append_windows_path_budget(package, runtime), end="")
-        checksums = [f"{sha256(p)}  {p.relative_to(package).as_posix()}" for p in sorted(package.rglob("*")) if p.is_file()]
-        (runtime / "SHA256SUMS.txt").write_text("\n".join(checksums) + "\n", encoding="utf-8")
-        with zipfile.ZipFile(args.output_dir / (package_name + ".zip"), "w", compression=zipfile.ZIP_DEFLATED, compresslevel=6) as archive:
-            for path in sorted(package.rglob("*")):
-                if path.is_file():
-                    archive.write(path, f"{package_name}/{path.relative_to(package).as_posix()}")
+        archive_portable_package(package, runtime, args.output_dir / (package_name + ".zip"), sha256)
     (args.output_dir / "SHA256SUMS.txt").write_text("\n".join(
         f"{sha256(p)}  {p.name}" for p in sorted(args.output_dir.iterdir()) if p.is_file()
     ) + "\n", encoding="utf-8")

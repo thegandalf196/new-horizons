@@ -6,6 +6,7 @@ import sys
 import tempfile
 import unittest
 from unittest.mock import patch
+import zipfile
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'ci'))
 import windows_portable_layout as layout
@@ -68,6 +69,20 @@ class PortableLayoutTest(unittest.TestCase):
         self.assertIn('Maximum managed update store path: 84', report)
         self.assertIn('Maximum LocalAppData path for this managed update layout: 64', report)
         self.assertEqual(readme.read_text(encoding='utf-8'), 'Original installation instructions.\n\n' + report)
+
+    def test_report_is_part_of_archived_authenticated_payload(self):
+        runtime = self.assemble()
+        readme = runtime / 'README-New-Horizons.txt'
+        readme.write_text('Instructions.\n', encoding='utf-8')
+        destination = self.root / 'release.zip'
+        with patch('builtins.print'):
+            layout.archive_portable_package(self.stage, runtime, destination, package.sha256)
+        with zipfile.ZipFile(destination) as archive:
+            members = archive.namelist()
+            self.assertEqual(members, sorted(members))
+            self.assertEqual(archive.read('release/runtime/README-New-Horizons.txt'), readme.read_bytes())
+            checksums = archive.read('release/runtime/SHA256SUMS.txt').decode()
+        self.assertIn(f'{package.sha256(readme)}  runtime/README-New-Horizons.txt\n', checksums)
 
     def test_installed_setup_is_audited_independently_before_staging(self):
         setup = self.install / 'bootstrap/Setup.exe'

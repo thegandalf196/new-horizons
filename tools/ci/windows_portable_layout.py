@@ -4,6 +4,7 @@
 from pathlib import Path
 import re
 import shutil
+import zipfile
 
 
 def audit_bootstrap(binary, run, system_dlls, tool):
@@ -89,6 +90,18 @@ budget is separate from full ZIP extraction.
     with (runtime / 'README-New-Horizons.txt').open('a', encoding='utf-8') as readme:
         readme.write('\n' + report)
     return report
+
+
+def archive_portable_package(package, runtime, destination, sha256):
+    """Finalize the checksummed payload and archive under the portable root name."""
+    print(append_windows_path_budget(package, runtime), end='')
+    manifest = runtime / 'SHA256SUMS.txt'
+    members = sorted(path for path in package.rglob('*') if path != manifest and path.is_file())
+    checksums = [f'{sha256(path)}  {path.relative_to(package).as_posix()}' for path in members]
+    manifest.write_text('\n'.join(checksums) + '\n', encoding='utf-8')
+    with zipfile.ZipFile(destination, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=6) as archive:
+        for path in sorted([*members, manifest]):
+            archive.write(path, f'{destination.stem}/{path.relative_to(package).as_posix()}')
 
 
 def assert_portable_layout(package, *, require_setup=False):

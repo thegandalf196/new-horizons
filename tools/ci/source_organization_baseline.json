@@ -29058,12 +29058,12 @@
     "tools/ci/package_new_horizons_windows.py": {
       "deferral": "Owner: engine_engineer. Before next substantive expansion, extract payload inventory/resource filtering and its validation into a focused pure inventory/filter boundary returning the exact payload manifest before any package mutation. Preserve exact-source binding, selected art and licensing, native binary/facade identity, complete manifest agreement, and negative tests proving invalid input causes no partial package mutation. Keep extracted callables <=150 lines and files <=1000 lines. Only the present native Lua-resource filter at the recorded hash/size is excepted; no future growth allowance. ",
       "kind": "review",
-      "lines": 699,
-      "rationale": "Bounded urgent Amendment4 packaging visibility correction. File698to699/main102to103 add one call to cohesive windows_portable_layout.append_windows_path_budget (29lines, helperfile109to140). All substantive inventory/UTF16 arithmetic and README append live in focused existing layout owner. Routing occurs after final runtime/privacy move and before checksum enumeration/ZIP, so report bytes are authenticated. No unrelated packaging rules change. Exact one-line growth exception only; retain inherited payload-inventory extraction obligation and nofuture-growth rule.",
-      "review": "IR-WINDOWS-PACKAGE-PATH-BUDGET-20261119",
-      "review_scope": "Exact path-budget reporting call and packaging order only; no actual package assembly, tests, runtime, Windows path success or performance result.",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_RUNTIME_ACCEPTANCE",
-      "sha256": "ee71de7077e0001ae6677b9ac5b7bfcb1be8f66c48788bfab134b77a55551a6a"
+      "lines": 693,
+      "rationale": "Packager file shrinks698to693 and main102to97 against explicit broadbase69f8241c43. Existing portable layout owner grows106to154, with focused30line path report and10line archive helper; no transferred oversized unit. Caller retains resource/privacy audit and ordering, delegating only finalized report+manifest+ZIP publication. Fresh payload file membership/order, checksum relative paths, archive stem, DEFLATEDlevel6 and external artifact summary remain unchanged. Manifest explicitly excludes itself. Preserve inherited payload-inventory/resource-filter extraction obligation before unrelated growth. No numerical exception or future expansion allowance.",
+      "review": "IR-WINDOWS-ARCHIVE-BOUNDARY-EXTRACTION-20261119",
+      "review_scope": "Exact cohesive archive extraction and path-report/checksum order against69f8241c43; no build/package/native or hosted acceptance.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY",
+      "sha256": "0cb2e5e638792874b1c7f5b8d1ba2514aaec490f1bfcaf13fc18106c7df4c05d"
     },
     "tools/ci/package_new_horizons_windows.py::collect_notices#1": {
       "kind": "legacy",
@@ -29075,14 +29075,14 @@
       "sha256": "89c7d855b75630a722958f550c78657d8fc29144989ad408d66483c4ef8edb1d"
     },
     "tools/ci/package_new_horizons_windows.py::main#1": {
-      "kind": "legacy",
-      "lines": 103,
+      "kind": "review",
+      "lines": 97,
       "owner": "engine_engineer",
-      "rationale": "Bounded urgent Amendment4 packaging visibility correction. File698to699/main102to103 add one call to cohesive windows_portable_layout.append_windows_path_budget (29lines, helperfile109to140). All substantive inventory/UTF16 arithmetic and README append live in focused existing layout owner. Routing occurs after final runtime/privacy move and before checksum enumeration/ZIP, so report bytes are authenticated. No unrelated packaging rules change. Exact one-line growth exception only; retain inherited payload-inventory extraction obligation and nofuture-growth rule.",
-      "review": "IR-WINDOWS-PACKAGE-PATH-BUDGET-20261119",
-      "review_scope": "Exact path-budget reporting call and packaging order only; no actual package assembly, tests, runtime, Windows path success or performance result.",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_RUNTIME_ACCEPTANCE",
-      "sha256": "3d99770545b2edd686fdaa172a0d2eb4fd5c88402a73444d2f92459bb6b93907"
+      "rationale": "Packager file shrinks698to693 and main102to97 against explicit broadbase69f8241c43. Existing portable layout owner grows106to154, with focused30line path report and10line archive helper; no transferred oversized unit. Caller retains resource/privacy audit and ordering, delegating only finalized report+manifest+ZIP publication. Fresh payload file membership/order, checksum relative paths, archive stem, DEFLATEDlevel6 and external artifact summary remain unchanged. Manifest explicitly excludes itself. Preserve inherited payload-inventory/resource-filter extraction obligation before unrelated growth. No numerical exception or future expansion allowance.",
+      "review": "IR-WINDOWS-ARCHIVE-BOUNDARY-EXTRACTION-20261119",
+      "review_scope": "Exact cohesive archive extraction and path-report/checksum order against69f8241c43; no build/package/native or hosted acceptance.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY",
+      "sha256": "f3f9439f33b7e59ddd1deef9629fc7da1e5d48f835e72e2799f09d9a5013344e"
     },
     "tools/ci/package_private_preview.py::package#1": {
       "kind": "legacy",
