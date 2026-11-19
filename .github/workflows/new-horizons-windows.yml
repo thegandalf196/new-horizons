@@ -184,10 +184,14 @@ jobs:
           save: ${{ inputs.pch_off_cache_seed == '' && (!inputs.use_precompiled_headers || !inputs.skip_pch_cache_save) }}
 
       - name: Package audit regression tests (no PE execution)
+        id: package-audit
         run: |
           python tools/tests/run_windows_package_regressions.py --report build/new-horizons-windows-x64/PACKAGE-REGRESSIONS.json
 
       - name: Preflight Microsoft notices before compiling
+        if: >-
+          success() || (failure() && steps.package-audit.outcome == 'failure' &&
+          github.ref == 'refs/heads/performance/quick-combat-and-ci')
         shell: python
         run: |
           import os, pathlib, runpy, subprocess, sys, tempfile
