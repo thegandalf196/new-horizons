@@ -50,11 +50,11 @@
     },
     ".github/workflows/new-horizons-windows.yml": {
       "functions": [],
-      "sha256": "c2277d720409f9c6b83272299682537b42dec4d04e3528c399c440bda2839092",
-      "review": "IR-WINDOWS-DISPATCH-INPUT-NORMALIZATION-20261119",
+      "sha256": "e8eefab5ad77af728630262bb9e96dbb54a6c7890b6e85998cf8f558e136660f",
+      "review": "IR-WINDOWS-FAILURE-LICENSE-EVIDENCE-20261119",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_ONLY",
-      "rationale": "Complete exact627-line workflow callable inventory is empty. Exact621to627 successor inserts six lines only in the existing top-level dispatch admission Python heredoc: canonical string4 normalization and absent optional-empty defaults. All28 run bodies reviewed; four direct Python-shell bodies and three Bash Python heredocs parse to zero FunctionDef/AsyncFunctionDef/Lambda nodes. Other run bodies byte-equivalent in parsed YAML; no shell/PowerShell function declarations. Empty inventory remains correct; no callable ranges need shifting.",
-      "review_scope": "Exact source/callable shape only; no compiler, hosted rerun, gameplay, performance or release acceptance."
+      "rationale": "Complete exact626-line YAML callable inventory is empty. All28 run bodies inspected; four directPython bodies and three BashPython heredocs parse to zero functions/lambdas, and shell/PowerShell bodies add no definitions. Changed licensing preflight retains top-level ordered statements; helper source12functions is parsed separately, not hidden in workflow inventory.",
+      "review_scope": "Exact complete callable inventory and failure-only diagnostic routing; no build, remote result, privatekey access, licenseadmission or package authorization."
     },
     ".github/workflows/qt_translation_update.yml": {
       "functions": [],
@@ -17431,14 +17431,14 @@
     ".github/workflows/new-horizons-windows.yml": {
       "deferral": "Before further workflow expansion, move the next cohesive inline validation or package-check body into a focused tested CI helper while preserving exact inputs, compile-step timing boundaries, failures and artifacts. No generic workflow growth allowance.",
       "kind": "exception",
-      "lines": 627,
+      "lines": 626,
       "owner": "engine_engineer",
       "prior_deferral": "Existing engine engineer ownership remains. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral. This exception covers only the exact542-line official source URL/comment correction with all transport, size, digest and cache admission controls unchanged. No future growth, numerical ceiling change or coverage exclusion is authorized. This separate review permits only the exact547-line explicit-interpreter successor. Before further expansion, engine_engineer must extract the affected dependency/preflight/package stage into a focused script or shared action, preserving source/cache, CRT/notices, dispatch and artifact contract checks and lowering the orchestration baseline. No future growth, default ceiling increase or exclusion is granted. This separate urgent-correctness review covers only the exact556-line early-bootstrap-smoke ordering successor. Existing extraction obligations and all ceilings remain unchanged; no future growth is authorized.",
-      "rationale": "Exact621to627-line urgent hosted-workflow admission fix: two actual hosted runs serialized numeric build_jobs as canonical string4 and omitted optional empty strings, so prior strict admission rejected before dependencies/build. Six lines normalize only this proven representation; other values/types, boolean controls, revision/checkout and existing compile/cache/jobs/targets/package/artifact behavior remain unchanged. Inline placement preserves immediate strict rejection without adding a second subsystem. Bounded correctness exception for exact bytes only; inherited extraction obligation retained, no future growth allowance.",
-      "review": "IR-WINDOWS-DISPATCH-INPUT-NORMALIZATION-20261119",
-      "review_scope": "Exact six-line input representation normalization only; both saved hosted failure logs inspected. No build, dispatch, timing or native execution acceptance.",
+      "rationale": "Current exact workflow shrinks627to626 by extracting previous inline failure notice filename scan into a focused250-line evidence helper (largestfunction26). Failure handler remains after unchanged authoritative Microsoft admission; only exactperformance branch manual dispatch may invoke diagnostics, and originalfailure is reraised. Upload adds only sanitizedJSON and recipientencryptedCMS, never plaintext. Earlier accepted branch trial/instrumentation explains broadbase533to626; this exact bounded technical exception preserves inherited next-cohesive-extraction obligations and authorizes no future growth.",
+      "review": "IR-WINDOWS-FAILURE-LICENSE-EVIDENCE-20261119",
+      "review_scope": "Exact failure-only encrypteddiagnostic successor627to626; inherited previously reviewed branch/cache/trial instrumentation retained. Broad comparison69f824 has533lines; no generalized workflow growth permission.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_ONLY",
-      "sha256": "c2277d720409f9c6b83272299682537b42dec4d04e3528c399c440bda2839092",
+      "sha256": "e8eefab5ad77af728630262bb9e96dbb54a6c7890b6e85998cf8f558e136660f",
       "inherited_deferral_step2": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count."
     },
     "AI/BattleAI/AttackPossibility.cpp": {
