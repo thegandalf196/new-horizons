@@ -270,7 +270,8 @@ TEST_F(NewHorizonsWarcastingTest, TypedOrderAfterHeroSpellPreservesAllowancesAnd
 	ASSERT_TRUE(cast(SpellID::BLESS, attacker));
 	const auto & afterSpell = battle()->getSide(side);
 	ASSERT_EQ(afterSpell.castSpellsCount, 1u);
-	ASSERT_EQ(afterSpell.metamagicSequenceSpells, (std::vector<SpellID>{}));
+	ASSERT_EQ(afterSpell.usedSpellsHistory, (std::vector<SpellID>{SpellID::BLESS}));
+	const auto spellMemory = wisdomBytes(battle()->getWisdomCombatState(side));
 	const auto afterSpellCounts = afterSpell.heroActionAllowances.remainingCounts(round);
 	EXPECT_EQ(afterSpellCounts.heroActions, 0u);
 	EXPECT_EQ(afterSpellCounts.orderActions, 1u);
@@ -288,7 +289,7 @@ TEST_F(NewHorizonsWarcastingTest, TypedOrderAfterHeroSpellPreservesAllowancesAnd
 	EXPECT_EQ(battle()->getActiveOrder(side), HeroCommand::CHARGE);
 	EXPECT_EQ(afterOrder.castSpellsCount, 1u);
 	EXPECT_EQ(afterOrder.usedSpellsHistory, (std::vector<SpellID>{SpellID::BLESS}));
-	EXPECT_EQ(afterOrder.metamagicSequenceSpells, (std::vector<SpellID>{}));
+	EXPECT_EQ(wisdomBytes(battle()->getWisdomCombatState(side)), spellMemory);
 	const auto afterOrderCounts = afterOrder.heroActionAllowances.remainingCounts(round);
 	EXPECT_EQ(afterOrderCounts.heroActions, 0u);
 	EXPECT_EQ(afterOrderCounts.orderActions, 0u);
@@ -300,7 +301,6 @@ TEST_F(NewHorizonsWarcastingTest, TypedOrderAfterHeroSpellPreservesAllowancesAnd
 	const auto & restoredSide = restored->getSide(side);
 	EXPECT_EQ(restoredSide.castSpellsCount, 1u);
 	EXPECT_EQ(restoredSide.usedSpellsHistory, afterOrder.usedSpellsHistory);
-	EXPECT_EQ(restoredSide.metamagicSequenceSpells, afterOrder.metamagicSequenceSpells);
 	EXPECT_EQ(wisdomBytes(restored->getWisdomCombatState(side)), wisdomBytes(battle()->getWisdomCombatState(side)));
 	EXPECT_TRUE(restored->getHeroCommandUsed(side));
 	EXPECT_EQ(restored->getActiveOrder(side), HeroCommand::CHARGE);
