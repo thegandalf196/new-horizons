@@ -53,6 +53,7 @@ protected:
 	void SetUp() override
 	{
 		HeroCommandFixture::SetUp();
+		useRevisedOrders = true; // Shipped Warfare issuance; no retired finite Order pool.
 		if(!vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE))
 			GTEST_SKIP() << "Requires the New Horizons content module";
 	}
