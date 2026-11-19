@@ -109,12 +109,15 @@ void checkRestoration(SetErrorHandler setter)
 		require(installed && installed != previousHandler, "X11 fatal handler was not installed");
 		setter(installed);
 	}
-	// Observe and restore the previous callback, including a deliberately null value.
+	// Xlib 1.8.13 src/ErrHndlr.c normalizes nullptr to _XDefaultIOError.
+	// https://www.x.org/releases/individual/lib/libX11-1.8.13.tar.xz
 	require(setter(nullptr) == previousHandler, "Normal shutdown did not restore prior X11 handler");
+	const auto defaultHandler = setter(nullptr);
+	require(defaultHandler != nullptr, "Xlib did not expose its default I/O handler");
 	{
 		DisplayFailureHandler handler("x11");
 	}
-	require(setter(previousHandler) == nullptr, "Null prior X11 handler was not restored");
+	require(setter(previousHandler) == defaultHandler, "Default prior X11 handler was not restored");
 }
 
 void checkUnavailableProvider(SetErrorHandler setter)
