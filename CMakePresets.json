@@ -40,6 +40,16 @@
             }
         },
         {
+            "name": "new-horizons-linux-unity",
+            "displayName": "New Horizons Linux Unity compile experiment",
+            "inherits": "new-horizons-linux",
+            "binaryDir": "${sourceDir}/build/new-horizons-linux-unity",
+            "cacheVariables": {
+                "ENABLE_NH_UNITY_BUILD": "ON",
+                "NH_UNITY_BUILD_BATCH_SIZE": "8"
+            }
+        },
+        {
             "name": "new-horizons-linux-test",
             "displayName": "New Horizons Linux test development",
             "description": "Build native tests; the matching test preset runs only asset-free state checks. Native gameplay requires an isolated TEST profile and original data.",
@@ -85,6 +95,17 @@
                 "ENABLE_PCH": "ON",
                 "ENABLE_STRICT_COMPILATION": "OFF",
                 "COPY_CONFIG_ON_BUILD": "OFF"
+            }
+        },
+        {
+            "name": "new-horizons-windows-x64-unity",
+            "displayName": "New Horizons Windows x64 Unity compile experiment",
+            "inherits": "new-horizons-windows-x64",
+            "binaryDir": "${sourceDir}/build/new-horizons-windows-x64-unity",
+            "cacheVariables": {
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/build/new-horizons-windows-x64-unity/install",
+                "ENABLE_NH_UNITY_BUILD": "ON",
+                "NH_UNITY_BUILD_BATCH_SIZE": "8"
             }
         },
         {
@@ -479,6 +500,18 @@
         }
     ],
     "buildPresets": [
+        {
+            "name": "new-horizons-linux-unity",
+            "configurePreset": "new-horizons-linux-unity",
+            "targets": ["vcmiclient"],
+            "jobs": 2
+        },
+        {
+            "name": "new-horizons-windows-x64-unity",
+            "configurePreset": "new-horizons-windows-x64-unity",
+            "targets": ["vcmiclient"],
+            "jobs": 4
+        },
         {
             "name": "new-horizons-linux-test",
             "configurePreset": "new-horizons-linux-test",

@@ -41,6 +41,8 @@ def configure(args):
     command = [
         args.cmake, '--preset', 'new-horizons-windows-x64',
         '-DENABLE_PCH=' + args.use_precompiled_headers,
+        '-DENABLE_NH_UNITY_BUILD=' + args.use_unity_build,
+        '-DNH_UNITY_BUILD_BATCH_SIZE=' + str(args.unity_batch_size),
         '-DENABLE_CCACHE=ON',
         '-DENABLE_NH_SDL3_MASK_REGRESSION=ON',
         '-DENABLE_NH_ART_CACHE_REGRESSION=ON',
@@ -90,6 +92,8 @@ def main(argv=None):
     commands = parser.add_subparsers(required=True)
     configure_parser = commands.add_parser('configure', help='Configure the existing CI preset')
     configure_parser.add_argument('--use-precompiled-headers', choices=('ON', 'OFF'), default='ON')
+    configure_parser.add_argument('--use-unity-build', choices=('ON', 'OFF'), default='OFF')
+    configure_parser.add_argument('--unity-batch-size', type=int, choices=range(8, 17), default=8)
     configure_parser.set_defaults(operation=configure)
     build_parser = commands.add_parser('build', help='Build the client, portable entry point and regression targets')
     build_parser.add_argument('--build-root', required=True, help='Configured Windows Ninja build directory')

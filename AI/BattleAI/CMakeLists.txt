@@ -459,3 +459,4 @@ target_link_libraries(BattleAI PRIVATE vcmiMain)
 
 vcmi_set_output_dir(BattleAI "AI")
 enable_pch(BattleAI)
+nh_enable_unity_build(BattleAI)

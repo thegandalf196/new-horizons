@@ -756,6 +756,7 @@ endif()
 
 vcmi_set_output_dir(vcmiclientcommon "")
 enable_pch(vcmiclientcommon)
+nh_enable_unity_build(vcmiclientcommon)
 
 # Test-only alternate owner object. The ordinary archive member remains unchanged;
 # the dedicated executable supplies this same implementation exactly once.

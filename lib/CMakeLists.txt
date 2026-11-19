@@ -2133,6 +2133,7 @@ if(MINGW AND CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif()
 
 enable_pch(vcmiMain)
+nh_enable_unity_build(vcmiMain)
 
 # Update version before vcmiMain compiling
 if(TARGET update_version)

@@ -11,6 +11,10 @@ on:
         description: Use precompiled headers; disable for MSVC sccache object caching
         type: boolean
         default: true
+      use_unity_build:
+        description: Opt-in C++ Unity compilation experiment (batch size 8)
+        type: boolean
+        default: false
       pch_off_cache_seed:
         description: Leave empty for a normal build, enter cold to seed a trial, or enter the cold run ID to repeat it
         type: string
@@ -104,7 +108,7 @@ jobs:
         if: inputs.pch_off_cache_seed != ''
         env:
           CACHE_SEED: ${{ inputs.pch_off_cache_seed }}
-          FULL_PCH_OFF_BUILD: ${{ !inputs.preflight_only && !inputs.use_precompiled_headers && inputs.repack_run_id == '' }}
+          FULL_PCH_OFF_BUILD: ${{ !inputs.preflight_only && !inputs.use_precompiled_headers && !inputs.use_unity_build && inputs.repack_run_id == '' }}
         run: |
           set -euo pipefail
           if [[ "$FULL_PCH_OFF_BUILD" != true ]]; then
@@ -267,6 +271,7 @@ jobs:
         run: >-
           python tools/ci/build_windows_client.py configure
           --use-precompiled-headers ${{ inputs.use_precompiled_headers && 'ON' || 'OFF' }}
+          --use-unity-build ${{ inputs.use_unity_build && 'ON' || 'OFF' }}
 
       - name: Verify CMake-selected CRT bytes before compiling
         if: ${{ !inputs.preflight_only && inputs.repack_run_id == '' }}
