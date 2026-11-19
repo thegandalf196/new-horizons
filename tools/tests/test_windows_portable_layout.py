@@ -53,6 +53,22 @@ class PortableLayoutTest(unittest.TestCase):
                      'Portable-Release-Launcher.ps1', 'Prepare-NHReleaseUpdate.ps1'):
             self.assertEqual((frontend / name).read_bytes(), (helpers / name).read_bytes())
 
+    def test_release_path_budget_counts_real_deep_member_relative_to_installed_root(self):
+        runtime = self.assemble()
+        readme = runtime / 'README-New-Horizons.txt'
+        readme.write_text('Original installation instructions.\n', encoding='utf-8')
+        member = (runtime / 'licenses/dependencies/boost_1.83.0/source_folder/src/libs/geometry'
+                  / 'doc/src/docutils/tools/doxygen_xml2qbk/contrib/rapidxml-1.13/license.txt')
+        member.parent.mkdir(parents=True)
+        member.write_text('License text', encoding='utf-8')
+        report = layout.append_windows_path_budget(self.stage, runtime)
+        self.assertIn('Longest relative file path: 147', report)
+        self.assertIn('Maximum extracted package root for classic full ZIP extraction: 111', report)
+        self.assertIn('Existing installation lookup budget for the updater: 220', report)
+        self.assertIn('Maximum managed update store path: 84', report)
+        self.assertIn('Maximum LocalAppData path for this managed update layout: 64', report)
+        self.assertEqual(readme.read_text(encoding='utf-8'), 'Original installation instructions.\n\n' + report)
+
     def test_installed_setup_is_audited_independently_before_staging(self):
         setup = self.install / 'bootstrap/Setup.exe'
         setup.write_bytes(b'MANUAL ENTRY')

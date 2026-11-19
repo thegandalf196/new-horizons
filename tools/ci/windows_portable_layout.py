@@ -59,6 +59,38 @@ def assemble_portable_root(package, install, run, system_dlls, write_json):
     return runtime
 
 
+def append_windows_path_budget(package, runtime):
+    """Record classic Windows path budgets using the final payload inventory."""
+    def units(path):
+        return len(path.as_posix().encode('utf-16-le')) // 2
+
+    # The checksum file is written after the README is finalized.
+    members = [path.relative_to(package) for path in package.rglob('*') if path.is_file()]
+    members.append((runtime / 'SHA256SUMS.txt').relative_to(package))
+    longest = max(map(units, members))
+    deepest = max(map(units, (path.parent for path in members)))
+    file_limit, directory_limit = 259, 247
+    initial = min(file_limit - 1 - longest, directory_limit - 1 - deepest)
+    # Ready contents live beneath r/<24 hex>. This is five characters deeper
+    # than .p-<16 hex>/p. Selection writes a 43-character temporary suffix.
+    store = min(file_limit - max(28 + longest, 43), directory_limit - 28 - deepest)
+    # The per-installation store adds NH/<16 hex> beneath LocalAppData.
+    local_data = store - 20
+    original_lookup = file_limit - 1 - units(Path('runtime/config/newHorizonsVersion.json'))
+    report = f"""Windows path budget for this ZIP
+Longest relative file path: {longest} UTF-16 units.
+Maximum extracted package root for classic full ZIP extraction: {initial} UTF-16 units.
+Existing installation lookup budget for the updater: {original_lookup} UTF-16 units.
+Maximum managed update store path: {store} UTF-16 units.
+Maximum LocalAppData path for this managed update layout: {local_data} UTF-16 units.
+Lengths exclude any trailing separator. The existing-installation lookup
+budget is separate from full ZIP extraction.
+"""
+    with (runtime / 'README-New-Horizons.txt').open('a', encoding='utf-8') as readme:
+        readme.write('\n' + report)
+    return report
+
+
 def assert_portable_layout(package, *, require_setup=False):
     package = Path(package)
     names = {path.name for path in package.iterdir()}

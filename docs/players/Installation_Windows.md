@@ -79,6 +79,18 @@ client. When the installed version changes, choose **Play**. Saves, settings
 and the selected Heroes III assets stay in their existing locations. Extract
 the first launcher-capable release into a writable folder.
 
+Managed updates use a separate store for each installation under
+`%LOCALAPPDATA%\NH\`. The launcher uses the same store if Windows refers to
+the installation by its 8.3 short name. Moving the program folder creates a
+new installation identity for updates.
+
+The ZIP's `runtime/README-New-Horizons.txt` reports the measured path budgets
+for that package. The full ZIP extraction limit applies to the extracted
+package root, including the top-level folder supplied by the ZIP. An existing
+installation can update from a longer folder because staging and activation
+use the managed store. The update budget lists the maximum `LocalAppData`
+path separately.
+
 ## Setup problems
 
 - **Cancel:** no game starts; existing content and saves remain. Launch again

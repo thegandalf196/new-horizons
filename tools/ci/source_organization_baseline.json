@@ -29043,12 +29043,12 @@
     "tools/ci/package_new_horizons_windows.py": {
       "deferral": "Owner: engine_engineer. Before next substantive expansion, extract payload inventory/resource filtering and its validation into a focused pure inventory/filter boundary returning the exact payload manifest before any package mutation. Preserve exact-source binding, selected art and licensing, native binary/facade identity, complete manifest agreement, and negative tests proving invalid input causes no partial package mutation. Keep extracted callables <=150 lines and files <=1000 lines. Only the present native Lua-resource filter at the recorded hash/size is excepted; no future growth allowance. ",
       "kind": "review",
-      "lines": 698,
-      "rationale": "Extracts portable Windows root assembly and Linux setup payload validation into focused owners; existing package, snapshot and provenance lifecycles retain their responsibilities.",
-      "review": "IR-0911-INTEGRATION-SOURCE-ORGANIZATION",
-      "review_scope": "Exact bounded0.91.1 integration source organization at the recorded current hash/physical line count: focused helper extractions, routing seams and specified finite configuration/UI/package integration reviewed. All inherited owner, no-future-growth and next-extraction obligations remain binding. No native, rendered, save-load, performance, build or publication acceptance is implied.",
-      "review_status": "INDEPENDENTLY_REVIEWED_SOURCE_ONLY",
-      "sha256": "8ec47f177ac10b25279caa12101c59d8df55950f3e85e43ef6402e58c293ea80"
+      "lines": 699,
+      "rationale": "Bounded urgent Amendment4 packaging visibility correction. File698to699/main102to103 add one call to cohesive windows_portable_layout.append_windows_path_budget (29lines, helperfile109to140). All substantive inventory/UTF16 arithmetic and README append live in focused existing layout owner. Routing occurs after final runtime/privacy move and before checksum enumeration/ZIP, so report bytes are authenticated. No unrelated packaging rules change. Exact one-line growth exception only; retain inherited payload-inventory extraction obligation and nofuture-growth rule.",
+      "review": "IR-WINDOWS-PACKAGE-PATH-BUDGET-20261119",
+      "review_scope": "Exact path-budget reporting call and packaging order only; no actual package assembly, tests, runtime, Windows path success or performance result.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_RUNTIME_ACCEPTANCE",
+      "sha256": "ee71de7077e0001ae6677b9ac5b7bfcb1be8f66c48788bfab134b77a55551a6a"
     },
     "tools/ci/package_new_horizons_windows.py::collect_notices#1": {
       "kind": "legacy",
@@ -29061,13 +29061,13 @@
     },
     "tools/ci/package_new_horizons_windows.py::main#1": {
       "kind": "legacy",
-      "lines": 102,
+      "lines": 103,
       "owner": "engine_engineer",
-      "rationale": "Extracts portable Windows root assembly and Linux setup payload validation into focused owners; existing package, snapshot and provenance lifecycles retain their responsibilities.",
-      "review": "IR-0911-INTEGRATION-SOURCE-ORGANIZATION",
-      "review_scope": "Exact bounded0.91.1 integration source organization at the recorded current hash/physical line count: focused helper extractions, routing seams and specified finite configuration/UI/package integration reviewed. All inherited owner, no-future-growth and next-extraction obligations remain binding. No native, rendered, save-load, performance, build or publication acceptance is implied.",
-      "review_status": "INDEPENDENTLY_REVIEWED_SOURCE_ONLY",
-      "sha256": "c34df25723cc149420fc2af0b04a87f24687945d7fcd4c2c76738a005a935493"
+      "rationale": "Bounded urgent Amendment4 packaging visibility correction. File698to699/main102to103 add one call to cohesive windows_portable_layout.append_windows_path_budget (29lines, helperfile109to140). All substantive inventory/UTF16 arithmetic and README append live in focused existing layout owner. Routing occurs after final runtime/privacy move and before checksum enumeration/ZIP, so report bytes are authenticated. No unrelated packaging rules change. Exact one-line growth exception only; retain inherited payload-inventory extraction obligation and nofuture-growth rule.",
+      "review": "IR-WINDOWS-PACKAGE-PATH-BUDGET-20261119",
+      "review_scope": "Exact path-budget reporting call and packaging order only; no actual package assembly, tests, runtime, Windows path success or performance result.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_RUNTIME_ACCEPTANCE",
+      "sha256": "3d99770545b2edd686fdaa172a0d2eb4fd5c88402a73444d2f92459bb6b93907"
     },
     "tools/ci/package_private_preview.py::package#1": {
       "kind": "legacy",

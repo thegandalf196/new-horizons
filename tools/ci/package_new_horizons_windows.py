@@ -677,11 +677,12 @@ def main():
         for path in package.rglob("*"):
             if path.is_file() and path.suffix.lower() in FORBIDDEN_ASSETS:
                 raise RuntimeError(f"Forbidden game asset/save in package: {path.relative_to(package)}")
-        from windows_portable_layout import assemble_portable_root
+        from windows_portable_layout import append_windows_path_budget, assemble_portable_root
         runtime = assemble_portable_root(package, install, run, SYSTEM_DLLS, write_json)
         # Audit both PE domains recursively; the report belongs inside runtime/.
         require_clean(package, verified_github_ci_provenance())
         (package / "BINARY-PRIVACY.json").replace(runtime / "BINARY-PRIVACY.json")
+        print(append_windows_path_budget(package, runtime), end="")
         checksums = [f"{sha256(p)}  {p.relative_to(package).as_posix()}" for p in sorted(package.rglob("*")) if p.is_file()]
         (runtime / "SHA256SUMS.txt").write_text("\n".join(checksums) + "\n", encoding="utf-8")
         with zipfile.ZipFile(args.output_dir / (package_name + ".zip"), "w", compression=zipfile.ZIP_DEFLATED, compresslevel=6) as archive:
