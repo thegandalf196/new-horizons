@@ -52,6 +52,8 @@ public:
 				JsonNode row;
 				row["id"].Integer() = unit->unitId();
 				row["side"].Integer() = static_cast<int>(unit->unitSide());
+				row["availableHealth"].Integer() = unit->getAvailableHealth();
+				row["summoned"].Bool() = unit->isSummoned();
 				row["state"] = unit->acquireState()->save();
 				terminalUnits.Vector().push_back(std::move(row));
 			}

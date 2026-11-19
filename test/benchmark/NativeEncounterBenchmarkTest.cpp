@@ -1,6 +1,9 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt and AUTHORS. */
 #include "StdInc.h"
 #include "NativeEncounterBenchmarkSupport.h"
+#include "NativeEncounterBenchmarkInputs.h"
+#include "../../lib/modding/CModHandler.h"
+#include "../../lib/filesystem/ResourcePath.h"
 #ifdef NH_PERF_EXPERIMENTS
 #include "SearchWorkXml.h"
 #endif
@@ -21,26 +24,12 @@
 namespace
 {
 using namespace nativeBenchmark;
-CreatureID troop(const char * id) { return CreatureID(CreatureID::decode(id)); }
 battleSearch::Profile selectedProfile()
 {
 	const char * value = std::getenv("NH_BENCHMARK_POLICY");
 	if(!value || std::string_view(value) == "Full") return battleSearch::Profile::Full;
 	if(std::string_view(value) == "Fast") return battleSearch::Profile::BeamOneTwoActors;
 	throw std::invalid_argument("Expected explicit Full or Fast benchmark policy");
-}
-using Army = std::vector<std::pair<CreatureID, uint16_t>>;
-Army rangedArmy()
-{
-	return {{troop("core:halberdier"), 14}, {troop("core:marksman"), 13},
-		{troop("core:gremlin"), 16}, {troop("core:marksman"), 13},
-		{troop("core:halberdier"), 9}, {troop("core:marksman"), 13}, {troop("core:halberdier"), 7}};
-}
-Army knightArmy()
-{
-	Army result(7, {troop("core:dreadKnight"), 2});
-	result.back().second = 1;
-	return result;
 }
 class DISABLED_NativeEncounterBenchmarkTest : public TinyMapGameTest
 {
@@ -56,9 +45,10 @@ protected:
 	uint64_t callbackUs = 0;
 	uint64_t callbacksMade = 0;
 	int maximumRound = 0;
+	const int seed = benchmarkSeed();
 
 	Services * gameServices() override { return LIBRARY; }
-	void configureWorldInitialization(StartInfo &, GameRandomizer & rng) const override { rng.setSeed(1337); }
+	void configureWorldInitialization(StartInfo &, GameRandomizer & rng) const override { rng.setSeed(seed); }
 	void configurePlayer(PlayerSettings & settings) const override
 	{
 		settings.bonus = PlayerStartingBonus::GOLD;
@@ -91,11 +81,14 @@ protected:
 	}
 	void grantSpells(CGHeroInstance * hero, bool sorcery)
 	{
-		NewArtifact book;
-		book.artHolder = hero->id;
-		book.artId = ArtifactID::SPELLBOOK;
-		book.pos = ArtifactPosition::SPELLBOOK;
-		handler->sendAndApply(book);
+		if(!hero->getArt(ArtifactPosition::SPELLBOOK))
+		{
+			NewArtifact book;
+			book.artHolder = hero->id;
+			book.artId = ArtifactID::SPELLBOOK;
+			book.pos = ArtifactPosition::SPELLBOOK;
+			handler->sendAndApply(book);
+		}
 		hero->setPrimarySkill(PrimarySkill::KNOWLEDGE, sorcery ? 80 : 24, ChangeValueMode::ABSOLUTE);
 		hero->setPrimarySkill(PrimarySkill::SPELL_POWER, 17, ChangeValueMode::ABSOLUTE);
 		setTestSpellPointTotal(hero, sorcery ? 80 : 24);
@@ -136,8 +129,34 @@ protected:
 			ASSERT_EQ(stack->getCount(), expected[slot].second);
 		}
 	}
-	void prepare(const Army & left, const Army & right, const char * heroName, bool options, bool sorcery = false, bool neutralDefender = false, bool nativeHeroDefaults = false)
+	void verifyStartingHero(const CGHeroInstance & hero)
 	{
+		const JsonNode canonical(JsonPath::builtin("config/newHorizonsHeroes"));
+		ASSERT_EQ(gameState()->getHeroDevelopmentRules(), canonical);
+		const auto & starts = canonical["startingSkills"];
+		ASSERT_EQ(starts["startingPerksPolicyVersion"].Integer(), 4);
+		const auto identity = HeroTypeID::encode(hero.getHeroTypeID().getNum());
+		const auto & expected = starts["startingPerkProfiles"][identity].Vector();
+		ASSERT_EQ(expected.size(), 1u) << identity;
+		ASSERT_EQ(hero.getPerkState().getSelected().size(), 1u) << identity;
+		EXPECT_TRUE(hero.getPerkState().hasSelection(expected.front()["skill"].String(), expected.front()["perk"].String()));
+		ASSERT_EQ(hero.secSkills.size(), 2u);
+		for(const auto & entry : starts["startingDevelopmentProfiles"][identity]["skills"].Vector())
+			EXPECT_EQ(hero.getSecSkillLevel(SecondarySkill(SecondarySkill::decode(entry["skill"].String()))), 1);
+		for(const auto & [skill, rank] : hero.secSkills) EXPECT_EQ(rank, 1);
+		ASSERT_NE(hero.getArt(ArtifactPosition::SPELLBOOK), nullptr);
+	}
+	void verifyBenchmarkPreset()
+	{
+		const auto & active = LIBRARY->modh->getActiveMods();
+		for(const std::string name : {"core", "vcmi", "vcmi-test", "new-horizons"})
+			ASSERT_NE(std::find(active.begin(), active.end(), name), active.end()) << name;
+		ASSERT_EQ(active.size(), 4u) << "Encounter benchmarks require the isolated curated test preset";
+		for(const auto & mod : active) initial["activeMods"].Vector().emplace_back(mod);
+	}
+	void prepare(const Army & left, const Army & right, const char * heroName, bool options, bool sorcery = false, bool neutralDefender = false, bool nativeHeroDefaults = false, const char * defenderHeroName = nullptr)
+	{
+		ASSERT_NO_FATAL_FAILURE(verifyBenchmarkPreset());
 		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
 		builder.size(36, false).name("Owned native encounter benchmark")
 			.playerActive(PlayerColor(0)).playerActive(PlayerColor(1))
@@ -155,13 +174,13 @@ protected:
 				builder.monster({7, 7, 0}, right.front().first, right.front().second);
 			}
 			else
-				builder.hero({7, 7, 0}, HeroTypeID(1), PlayerColor(1)).heroGarrison(placeholder);
+				builder.hero({7, 7, 0}, defenderHeroName ? HeroTypeID(HeroTypeID::decode(defenderHeroName)) : HeroTypeID(1), PlayerColor(1)).heroGarrison(placeholder);
 		}
 		ASSERT_NO_FATAL_FAILURE(startWithMap(std::move(builder), EMapDifficulty::NORMAL));
 		server.gameState = gameState();
 		handler = std::make_unique<CGameHandler>(server, gameState());
-		handler->randomizer->setSeed(1337);
-		CRandomGenerator::getDefault().setSeed(1337);
+		handler->randomizer->setSeed(seed);
+		CRandomGenerator::getDefault().setSeed(seed);
 		CGHeroInstance * leftHero = heroName ? findHeroByOwner(PlayerColor(0)) : nullptr;
 		CGHeroInstance * rightHero = heroName && !neutralDefender ? findHeroByOwner(PlayerColor(1)) : nullptr;
 		std::shared_ptr<CArmedInstance> leftPlain, rightPlain;
@@ -173,12 +192,9 @@ protected:
 			if(!neutralDefender) ASSERT_NE(rightHero, nullptr);
 			ASSERT_NO_FATAL_FAILURE(arrangeRuntimeArmy(*leftHero, left));
 			if(rightHero) ASSERT_NO_FATAL_FAILURE(arrangeRuntimeArmy(*rightHero, right));
-			// New heroes own zero automatic perks. External rank grants below
-			// must never invent acquisitions; capture the actual ledger.
-			ASSERT_TRUE(leftHero->getPerkState().toJson()["selected"].Vector().empty());
-			ASSERT_EQ(leftHero->secSkills.size(), 2u);
-			for(const auto & entry : leftHero->secSkills) ASSERT_EQ(entry.second, 1);
-			if(rightHero) ASSERT_TRUE(rightHero->getPerkState().toJson()["selected"].Vector().empty());
+			// Assert the actual authored creation ledger before external rank grants.
+			ASSERT_NO_FATAL_FAILURE(verifyStartingHero(*leftHero));
+			if(rightHero) ASSERT_NO_FATAL_FAILURE(verifyStartingHero(*rightHero));
 			if(options && !nativeHeroDefaults) ASSERT_NO_FATAL_FAILURE(grantSpells(leftHero, sorcery));
 			initial["attackerHero"] = heroEvidence(*leftHero);
 			if(rightHero) initial["defenderHero"] = heroEvidence(*rightHero);
@@ -245,7 +261,7 @@ protected:
 			const auto * actor = current->battleActiveUnit();
 			ASSERT_NE(actor, nullptr) << "No active unit; deployment/flow prerequisite unresolved";
 			const auto player = current->battleGetActionController(actor);
-			const auto index = player == PlayerColor(0) ? size_t{0} : size_t{1};
+			const auto index = player == current->getSide(BattleSide::ATTACKER).color ? size_t{0} : size_t{1};
 			ASSERT_TRUE(player == current->getSide(BattleSide::ATTACKER).color
 				|| player == current->getSide(BattleSide::DEFENDER).color);
 			for(auto & ai : ais) ai->battleNewRound(BattleID(0));
@@ -291,7 +307,7 @@ protected:
 		RecordProperty("experienceHex", hex(bytes(server.result->exp)));
 		RecordProperty("authorityRngAfter", hex(bytes(*handler->randomizer)));
 		RecordProperty("aiRngAfter", hex(bytes(CRandomGenerator::getDefault())));
-		RecordProperty("seed", "1337");
+		RecordProperty("seed", std::to_string(seed));
 		RecordProperty("policy", selectedProfile() == battleSearch::Profile::Full ? "Full" : "Fast/BeamOneTwoActors");
 		RecordProperty("scope", "Authoritative encounter to result receipt; includes callback RNG witnesses and packet observers; excludes init, acknowledgment, progression and adventure continuation");
 		for(size_t index = 0; index < 2; ++index)
@@ -397,4 +413,41 @@ TEST_F(DISABLED_NativeEncounterBenchmarkTest, SorceryEncounter)
 		{{troop("core:halfling"), 29}}, "core:neela", true, true, true));
 	runEncounter();
 }
+TEST_F(DISABLED_NativeEncounterBenchmarkTest, MirrorCastle)
+{
+	const auto army = mirrorCastleArmy();
+	ASSERT_NO_FATAL_FAILURE(prepare(army, army, nullptr, false));
+	runEncounter();
+}
+TEST_F(DISABLED_NativeEncounterBenchmarkTest, MirrorRampart)
+{
+	const auto army = mirrorRampartArmy();
+	ASSERT_NO_FATAL_FAILURE(prepare(army, army, nullptr, false));
+	runEncounter();
+}
+TEST_F(DISABLED_NativeEncounterBenchmarkTest, MirrorNecropolis)
+{
+	const auto army = mirrorNecropolisArmy();
+	ASSERT_NO_FATAL_FAILURE(prepare(army, army, nullptr, false));
+	runEncounter();
+}
+TEST_F(DISABLED_NativeEncounterBenchmarkTest, MirrorCastleHeroOptions)
+{
+	const auto army = mirrorCastleArmy();
+	ASSERT_NO_FATAL_FAILURE(prepare(army, army, "core:orrin", true, false, false, true, "core:orrin"));
+	runEncounter();
+}
+TEST_F(DISABLED_NativeEncounterBenchmarkTest, MirrorRampartHeroOptions)
+{
+	const auto army = mirrorRampartArmy();
+	ASSERT_NO_FATAL_FAILURE(prepare(army, army, "core:mephala", true, false, false, true, "core:mephala"));
+	runEncounter();
+}
+TEST_F(DISABLED_NativeEncounterBenchmarkTest, MirrorNecropolisHeroOptions)
+{
+	const auto army = mirrorNecropolisArmy();
+	ASSERT_NO_FATAL_FAILURE(prepare(army, army, "core:straker", true, false, false, true, "core:straker"));
+	runEncounter();
+}
+
 }

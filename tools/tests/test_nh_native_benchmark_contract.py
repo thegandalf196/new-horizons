@@ -16,6 +16,43 @@ import nh_native_acceptance_workloads as workloads
 import nh_native_benchmark_ci as benchmark_ci
 
 
+class EncounterPresetContractTest(unittest.TestCase):
+    def test_encounter_activates_only_explicit_curated_test_mods(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            environment = {'XDG_CONFIG_HOME': tmp, 'NH_BENCHMARK_SEED': '17'}
+            workloads.prepare_encounter_preset(environment, workloads.ENCOUNTER + 'MirrorCastle')
+            path = Path(tmp) / 'vcmi/testModSettings.json'
+            self.assertEqual(json.loads(path.read_text()), {
+                'activePreset': 'default', 'presets': {'default': {
+                    'mods': ['core', 'vcmi', 'vcmi-test', 'new-horizons'], 'settings': {}}}})
+            self.assertEqual(environment['NH_BENCHMARK_SEED'], '17')
+            with self.assertRaises(FileExistsError):
+                workloads.prepare_encounter_preset(environment, workloads.ENCOUNTER + 'MirrorCastle')
+
+    def test_world_and_ordinary_workloads_keep_their_existing_preset(self):
+        for selector in (workloads.WORLD + 'SmallMapInitialization', guard.FILTER):
+            with self.subTest(selector=selector), tempfile.TemporaryDirectory() as tmp:
+                workloads.prepare_encounter_preset({'XDG_CONFIG_HOME': tmp}, selector)
+                self.assertEqual(list(Path(tmp).iterdir()), [])
+
+    def test_mirror_discovery_names_match_native_cases_and_preserve_seed_witnesses(self):
+        root = Path(__file__).resolve().parents[2]
+        source = (root / 'test/benchmark/NativeEncounterBenchmarkTest.cpp').read_text()
+        for key in ('mcastle', 'mrampart', 'mnecro', 'mcastle-hero', 'mrampart-hero', 'mnecro-hero'):
+            selector, clock = workloads.WORKLOADS[key]
+            case = selector[len(workloads.ENCOUNTER):]
+            self.assertIn('TEST_F(DISABLED_NativeEncounterBenchmarkTest, ' + case + ')', source)
+            self.assertEqual(clock, 'encounterUs')
+        for witness in ('submittedActionsHex', 'outcome', 'authorityRngBefore', 'authorityRngAfter',
+                        'aiRngBefore', 'aiRngAfter'):
+            self.assertIn('RecordProperty("' + witness + '"', source)
+        self.assertIn('RecordProperty("seed", std::to_string(seed))', source)
+        support = (root / 'test/benchmark/NativeEncounterBenchmarkSupport.h').read_text()
+        self.assertIn('row["availableHealth"].Integer() = unit->getAvailableHealth()', support)
+        self.assertIn('row["summoned"].Bool() = unit->isSummoned()', support)
+        self.assertIn('row["state"] = unit->acquireState()->save()', support)
+
+
 class DiscoveryContractTest(unittest.TestCase):
     def test_parameter_comments_and_disabled_names_remain_literal(self):
         text = ('Running main()\nTyped/Suite/0.  # TypeParam = int\n'

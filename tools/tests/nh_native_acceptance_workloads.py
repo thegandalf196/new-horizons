@@ -24,6 +24,12 @@ WORKLOADS = {
     'rampart': (ENCOUNTER + 'RampartEncounter', 'encounterUs'),
     'conflux-aenain-gnolls': (ENCOUNTER + 'ConfluxAenainGnolls', 'encounterUs'),
     'sorcery': (ENCOUNTER + 'SorceryEncounter', 'encounterUs'),
+    'mcastle': (ENCOUNTER + 'MirrorCastle', 'encounterUs'),
+    'mrampart': (ENCOUNTER + 'MirrorRampart', 'encounterUs'),
+    'mnecro': (ENCOUNTER + 'MirrorNecropolis', 'encounterUs'),
+    'mcastle-hero': (ENCOUNTER + 'MirrorCastleHeroOptions', 'encounterUs'),
+    'mrampart-hero': (ENCOUNTER + 'MirrorRampartHeroOptions', 'encounterUs'),
+    'mnecro-hero': (ENCOUNTER + 'MirrorNecropolisHeroOptions', 'encounterUs'),
     'small': (WORLD + 'SmallMapInitialization', 'initializationUs'),
     'large': (WORLD + 'LargeMapInitialization', 'initializationUs'),
     'day8-memory': (WORLD + 'DayEightCurrentFormatMemoryRoundTrip', 'snapshotReadUs'),
@@ -62,6 +68,17 @@ def read_diagnostics(log, world, volume):
             'heroTypeRowsPresent': bool(hero)}
 
 
+def prepare_encounter_preset(environment, selector):
+    """Activate shipping NH only in this fresh encounter's isolated test profile."""
+    if not selector.startswith(ENCOUNTER):
+        return
+    config = Path(environment['XDG_CONFIG_HOME']) / 'vcmi'
+    config.mkdir(mode=0o700)
+    with (config / 'testModSettings.json').open('x') as output:
+        json.dump({'activePreset': 'default', 'presets': {'default': {
+            'mods': ['core', 'vcmi', 'vcmi-test', 'new-horizons'], 'settings': {}}}}, output)
+
+
 def workload_sample(plan, prepared, output, selector, clock, args):
     """Own one isolated listing/body sample; parity and aggregation stay in main."""
     candidate = dict(prepared)
@@ -72,6 +89,7 @@ def workload_sample(plan, prepared, output, selector, clock, args):
         target = output / name
         target.mkdir(mode=0o700)
         candidate['environment'][key] = str(target)
+    prepare_encounter_preset(candidate['environment'], selector)
     candidate['environment']['NH_BENCHMARK_POLICY'] = args.policy
     candidate['environment']['NH_MAPLOAD_PROFILE'] = '1' if args.diagnostics else '0'
     candidate['environment']['NH_MAPLOAD_PROFILE_BYTES'] = '1' if args.volume else '0'
