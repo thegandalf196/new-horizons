@@ -145,7 +145,11 @@ TEST(CSkillCombatStatusLoaderTest, RetiredMetamagicUsesProviderIsRejected)
 {
 	TestSkillHandler handler;
 	const auto retired = skillConfig("metamagicUses");
-	EXPECT_FALSE(validSkillSchema(retired));
+	JsonNode schemaOnly = retired;
+	// Validate status metadata independently of synthetic, unmounted image paths.
+	for(const auto * rank : {"basic", "advanced", "expert"})
+		schemaOnly[rank].Struct().erase("images");
+	EXPECT_FALSE(validSkillSchema(schemaOnly));
 	EXPECT_THROW(handler.loadFromJson("vcmi-test", retired, "retiredMetamagicCombatStatusProbe", 42), std::runtime_error);
 }
 

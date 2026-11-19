@@ -45,6 +45,8 @@ newHorizonsHeroes::PerkState fourOfferState()
 	auto rules = result.getRules();
 	rules.Struct().erase("unifiedSkillProgressionVersion");
 	rules["fourOfferProgressionVersion"].Integer() = 1;
+	// Captured initial four-offer rules permitted repeated tiers (policy 1).
+	rules["perkProgressionPolicyVersion"].Integer() = 1;
 	result.replaceRules(std::move(rules));
 	return result;
 }
