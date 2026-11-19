@@ -105,6 +105,41 @@ int main(int argc, char ** argv)
 			session.finishCleanly();
 			require(!boost::filesystem::exists(directory), "clean session must be removed");
 		}
+		{
+			boost::filesystem::path cancelled;
+			{ CrashReportSession session(root); cancelled = session.directory(); }
+			const auto receipt = [&](const char * name, const std::string & text)
+			{
+				boost::filesystem::ofstream output(cancelled / name, std::ios::binary);
+				output << text;
+			};
+			const auto offered = [&]
+			{
+				const auto sessions = CrashReportSession::inactiveSessions(root);
+				return std::find(sessions.begin(), sessions.end(), cancelled) != sessions.end();
+			};
+			require(offered(), "unknown unfinished session remains reportable");
+			receipt("launcher-cancelled", "NH_LAUNCH_CANCEL_V1\n");
+			require(!offered(), "accepted cancellation survives forced supervisor teardown");
+			for(const auto * status : {"139", "134", "17", "0"})
+			{
+				receipt("launcher-exit", std::string("NH_LAUNCH_EXIT_V1\n") + status + "\n");
+				require(offered(), "recorded fault or unexpected exit overrides cancellation");
+			}
+			for(const auto * status : {"129", "130", "137", "143", "-1073741510"})
+			{
+				receipt("launcher-exit", std::string("NH_LAUNCH_EXIT_V1\n") + status + "\n");
+				require(!offered(), "known cancelled child is not offered as a crash");
+			}
+#ifndef _WIN32
+			boost::filesystem::remove(cancelled / "launcher-exit");
+			boost::filesystem::create_symlink(cancelled / "absent-status", cancelled / "launcher-exit");
+			require(offered(), "dangling terminal symlink must not look like absent evidence");
+			boost::filesystem::remove(cancelled / "launcher-exit");
+#endif
+			receipt("launcher-cancelled", "unknown cancellation protocol\n");
+			require(offered(), "malformed intent never suppresses pending evidence");
+		}
 		boost::filesystem::remove_all(root);
 		return 0;
 	}

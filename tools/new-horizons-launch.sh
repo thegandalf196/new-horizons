@@ -254,6 +254,32 @@ trap 'rm -rf -- "$runtime"' EXIT
 # until the child has actually exited. Bash traps interrupt `wait`; retrying the
 # wait keeps the runtime and profile lock alive for TERM-delayed clients.
 client_pid=''
+# Receipts are bounded, exact-run metadata, never a guess at the newest run.
+write_session_receipt() {
+	local name=$1 text=$2 temporary
+	[[ ${current_client_is_game:-false} == true && -n ${crash_session:-} ]] || return 0
+	[[ -d $crash_session && ! -L $crash_session && -f $crash_session/active.lock && ! -L $crash_session/active.lock ]] || return 0
+	[[ ! -e $crash_session/$name && ! -L $crash_session/$name ]] || return 0
+	temporary="$crash_session/.launcher-$name-$crash_token"
+	if (set -C; printf '%s' "$text" > "$temporary") 2>/dev/null; then
+		mv -n -- "$temporary" "$crash_session/$name" 2>/dev/null || true
+		rm -f -- "$temporary"
+	fi
+}
+session_was_cancelled() {
+	local directory=$1 request terminal
+	[[ -f $directory/launcher-cancelled && ! -L $directory/launcher-cancelled && $(stat -c %s -- "$directory/launcher-cancelled") == 20 ]] || return 1
+	IFS= read -r -N 128 request < "$directory/launcher-cancelled" || true
+	[[ $request == $'NH_LAUNCH_CANCEL_V1\n' ]] || return 1
+	[[ ! -e $directory/launcher-exit && ! -L $directory/launcher-exit ]] && return 0
+	[[ -f $directory/launcher-exit && ! -L $directory/launcher-exit && $(stat -c %s -- "$directory/launcher-exit") -le 128 ]] || return 1
+	IFS= read -r -N 128 terminal < "$directory/launcher-exit" || true
+	case $terminal in
+		$'NH_LAUNCH_EXIT_V1\n129\n'|$'NH_LAUNCH_EXIT_V1\n130\n'|$'NH_LAUNCH_EXIT_V1\n137\n'|$'NH_LAUNCH_EXIT_V1\n143\n'|$'NH_LAUNCH_EXIT_V1\n-1073741510\n') return 0;;
+	esac
+	return 1
+}
+current_client_is_game=false
 received_signal=''
 received_signal_count=0
 forward_signal() {
@@ -261,6 +287,7 @@ forward_signal() {
 	received_signal=$signal
 	received_signal_count=$((received_signal_count + 1))
 	if [[ -n ${client_pid:-} ]] && kill -0 "$client_pid" 2>/dev/null; then
+		write_session_receipt launcher-cancelled $'NH_LAUNCH_CANCEL_V1\n'
 		kill -s "$signal" "$client_pid" 2>/dev/null || true
 	fi
 	return 0
@@ -316,6 +343,7 @@ if supports_bug_report "$client" "$resources"; then reporter_supported=true; fi
 # This exact launch owns a unique evidence path; reporter never guesses latest.
 crash_token=$(od -An -N16 -tx1 /dev/urandom | tr -d ' \n')
 crash_session="$profile/cache/vcmi/crash-reports/run-$crash_token"
+[[ ! -e $crash_session && ! -L $crash_session ]] || fail 'The assigned crash session already exists.'
 # An explicit reporter request owns its single process. Do not prepend a
 # fallback form or supervise that form as a new game crash.
 report_only_requested=false
@@ -348,6 +376,7 @@ launch_managed_client() {
 if $reporter_supported && ! $report_only_requested && [[ -z $debugger_log ]]; then
 	for pending_marker in "$profile/cache/vcmi/crash-reports"/run-*/pending; do
 		[[ -f $pending_marker && ! -L $pending_marker ]] || continue
+		session_was_cancelled "${pending_marker%/pending}" && continue
 		saved_launch_command=("${launch_command[@]}")
 		launch_command=("$runtime/new-horizons" --nointro --report-bug pending)
 		launch_managed_client &
@@ -365,6 +394,7 @@ fi
 if [[ -n $received_signal ]]; then
 	case $received_signal in HUP) exit 129;; INT) exit 130;; TERM) exit 143;; esac
 fi
+current_client_is_game=true
 if [[ -n $debugger_log ]]; then
 	launch_managed_client >&8 2>&1 &
 else
@@ -373,6 +403,7 @@ fi
 client_pid=$!
 # Cover a signal that arrived between the pre-start check and PID assignment.
 if [[ -n $received_signal ]] && kill -0 "$client_pid" 2>/dev/null; then
+	write_session_receipt launcher-cancelled $'NH_LAUNCH_CANCEL_V1\n'
 	kill -s "$received_signal" "$client_pid" 2>/dev/null || true
 fi
 
@@ -395,6 +426,15 @@ while true; do
 		break
 	fi
 done
+# The child may have created capture metadata after the signal was forwarded.
+if [[ -n $received_signal ]]; then
+	write_session_receipt launcher-cancelled $'NH_LAUNCH_CANCEL_V1\n'
+fi
+write_session_receipt launcher-exit $'NH_LAUNCH_EXIT_V1\n'"$client_status"$'\n'
+if session_was_cancelled "$crash_session"; then
+	rm -f -- "$crash_session/pending"
+fi
+current_client_is_game=false
 client_pid=''
 # Preserve diagnostics, original status, runtime and lock through reporter exit.
 # Cancellation/kill is not classified as a crash, and debugger mode retains its

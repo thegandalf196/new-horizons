@@ -12,6 +12,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include <cstdlib>
+#include <array>
 #include <regex>
 #include <boost/interprocess/sync/scoped_lock.hpp>
 
@@ -33,6 +34,38 @@ int64_t sessionCreatedAt(const boost::filesystem::path & directory)
 	if(stamp)
 		stamp >> created;
 	return created;
+}
+
+// Only the launcher assigned to this exact run may publish this receipt.
+// A recorded fault/unexpected exit overrides an earlier user cancellation.
+bool cancelledSession(const boost::filesystem::path & directory)
+{
+	const auto readReceipt = [](const boost::filesystem::path & path) -> std::string
+	{
+		if(boost::filesystem::is_symlink(path) || !boost::filesystem::is_regular_file(path)
+			|| boost::filesystem::file_size(path) > 128)
+			return {};
+		boost::filesystem::ifstream input(path, std::ios::binary);
+		std::array<char, 129> bytes{};
+		input.read(bytes.data(), bytes.size());
+		return input.gcount() <= 128 ? std::string(bytes.data(), input.gcount()) : std::string{};
+	};
+	try
+	{
+		if(readReceipt(directory / "launcher-cancelled") != "NH_LAUNCH_CANCEL_V1\n")
+			return false;
+		const auto terminal = directory / "launcher-exit";
+		if(boost::filesystem::is_symlink(terminal))
+			return false;
+		if(!boost::filesystem::exists(terminal))
+			return true; // The explicitly cancelled supervisor may have been killed too.
+		const auto status = readReceipt(terminal);
+		for(const auto * expected : {"129", "130", "137", "143", "-1073741510"})
+			if(status == std::string("NH_LAUNCH_EXIT_V1\n") + expected + "\n")
+				return true;
+	}
+	catch(const std::exception &) { } // Unreadable/malformed evidence remains reportable.
+	return false;
 }
 
 bool newestFirst(const std::pair<int64_t, boost::filesystem::path> & left,
@@ -205,6 +238,8 @@ std::vector<boost::filesystem::path> CrashReportSession::inactiveSessions(const 
 	for(const auto & entry : boost::filesystem::directory_iterator(root))
 	{
 		if(boost::filesystem::is_symlink(entry.path()) || !boost::filesystem::is_directory(entry.path()))
+			continue;
+		if(cancelledSession(entry.path()))
 			continue;
 		const auto pending = entry.path() / "pending";
 		const auto lockPath = entry.path() / "active.lock";

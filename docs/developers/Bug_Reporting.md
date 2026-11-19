@@ -21,12 +21,17 @@ or initializing gameplay networking. It opens the same form as manual reporting.
 It still needs a working renderer and the matching installed interface resources.
 
 Linux launcher supervision recognizes a bounded set of signal-derived statuses.
-Forwarded cancellation and debugger launches do not trigger this classification.
+For a cancellation it forwards to its own game process, the Linux launcher
+records that cancellation against the assigned session. This also covers an
+interrupted startup where the supervisor cannot finish recording the exit.
+The pending-session fallback excludes that cancellation while retaining its logs.
+An independently recorded fault or a reaped unexpected exit takes precedence.
+Debugger launches do not trigger immediate exit classification.
 Windows `Test-ReportableGameExit` recognizes selected exception statuses and CRT
-abort/terminate code 3. These are reasons to offer a report about an unclean exit;
-they do not prove that a crash occurred or identify its cause. In particular,
-code 3 alone is insufficient evidence of a crash. Other unexpected endings can
-remain available through retained-session fallback on a later launcher start.
+abort/terminate code 3. A reaped Windows child with `STATUS_CONTROL_C_EXIT` can
+be classified as a cancellation. Code 3 offers a report about an unclean exit
+with an unconfirmed cause. Other unexpected endings can remain available
+through retained-session fallback on a later launcher start.
 The reporter is not recursively supervised as another crashing game session.
 
 ## Capture, identity and retention

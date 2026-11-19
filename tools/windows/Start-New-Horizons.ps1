@@ -384,6 +384,7 @@ try {
         }
     }
     $crashSession = Join-Path $profileRoot ('logs\crash-reports\run-' + [Guid]::NewGuid().ToString('N'))
+    if (Test-Path -LiteralPath $crashSession) { throw 'The assigned crash session already exists.' }
     $previousCrashSession = $env:NH_CRASH_SESSION_DIR
     $env:NH_CRASH_SESSION_DIR = $crashSession
     try {
@@ -392,6 +393,9 @@ try {
         $launchExitCode = Invoke-NativeClient $client $packageRoot $gameArguments $startupProgress
     } finally {
         $env:NH_CRASH_SESSION_DIR = $previousCrashSession
+    }
+    try { Complete-NativeClientSession $crashSession $launchExitCode } catch {
+        [Console]::Error.WriteLine('Session disposition could not be recorded; retained evidence is unchanged.')
     }
     if ((Test-ReportableGameExit -ExitCode $launchExitCode) -and (Test-Path -LiteralPath (Join-Path $crashSession 'pending'))) {
         try {

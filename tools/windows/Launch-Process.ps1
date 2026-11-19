@@ -38,6 +38,54 @@ function ConvertTo-NativeArgument([AllowEmptyString()][string]$Value) {
     return $quoted.ToString()
 }
 
+# Only complete the exact newly assigned session after its owned child is reaped.
+function Complete-NativeClientSession([string]$Session, [int]$ExitCode) {
+    if (-not $Session -or -not [IO.Directory]::Exists($Session) -or
+        -not [IO.File]::Exists((Join-Path $Session 'active.lock'))) { return }
+    if (([IO.File]::GetAttributes((Join-Path $Session 'active.lock')) -band [IO.FileAttributes]::ReparsePoint) -ne 0) { return }
+    $cursor = [IO.Path]::GetFullPath($Session)
+    while ($cursor) {
+        if (([IO.File]::GetAttributes($cursor) -band [IO.FileAttributes]::ReparsePoint) -ne 0) { return }
+        $cursor = [IO.Path]::GetDirectoryName($cursor)
+    }
+    $status = [BitConverter]::ToUInt32([BitConverter]::GetBytes($ExitCode), 0)
+    $cancelled = $status -eq 3221225786L # STATUS_CONTROL_C_EXIT, not an access violation.
+    $receipts = [ordered]@{}
+    if ($cancelled) { $receipts['launcher-cancelled'] = "NH_LAUNCH_CANCEL_V1`n" }
+    $receipts['launcher-exit'] = "NH_LAUNCH_EXIT_V1`n$ExitCode`n"
+    foreach ($name in $receipts.Keys) {
+        $destination = Join-Path $Session $name
+        if ([IO.File]::Exists($destination)) { continue }
+        $temporary = Join-Path $Session ('.launcher-' + [Guid]::NewGuid().ToString('N'))
+        $owned = $false
+        try {
+            $stream = [IO.File]::Open($temporary, [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::None)
+            $owned = $true
+            try {
+                $bytes = [Text.Encoding]::ASCII.GetBytes($receipts[$name])
+                $stream.Write($bytes, 0, $bytes.Length)
+                $stream.Flush($true)
+            } finally { $stream.Dispose() }
+            [IO.File]::Move($temporary, $destination)
+            $owned = $false
+        } finally {
+            if ($owned -and [IO.File]::Exists($temporary)) { [IO.File]::Delete($temporary) }
+        }
+    }
+    $intent = Join-Path $Session 'launcher-cancelled'
+    $terminal = Join-Path $Session 'launcher-exit'
+    if ($cancelled -and [IO.File]::Exists($intent) -and [IO.File]::Exists($terminal)) {
+        foreach ($receipt in @($intent, $terminal)) {
+            if (([IO.File]::GetAttributes($receipt) -band [IO.FileAttributes]::ReparsePoint) -ne 0 -or
+                ([IO.FileInfo]$receipt).Length -gt 128) { return }
+        }
+        if ([IO.File]::ReadAllText($intent) -ceq "NH_LAUNCH_CANCEL_V1`n" -and
+            [IO.File]::ReadAllText($terminal) -ceq "NH_LAUNCH_EXIT_V1`n$ExitCode`n") {
+            [IO.File]::Delete((Join-Path $Session 'pending'))
+        }
+    }
+}
+
 function Test-NativeClientGameWindow($Process) {
     try {
         $Process.Refresh()

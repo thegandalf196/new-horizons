@@ -188,6 +188,17 @@ class LinuxPortableReleaseLauncherTest(unittest.TestCase):
         state.set_visible.assert_called_once_with(False)
         state.cancel_clicked.assert_not_called()
 
+    def test_closing_launcher_during_preparation_accepts_startup_cancellation(self):
+        import PortableLauncherWindow as desktop
+        cancellation = StartupCancellation()
+        state = SimpleNamespace(busy=True, closed=False, kind='game', ready=cancellation.ready,
+                                game_cancel=cancellation, set_visible=unittest.mock.Mock())
+        state.cancel_clicked = lambda button: desktop.LauncherWindow.cancel_clicked(state, button)
+        self.assertTrue(desktop.LauncherWindow.close_requested(state, None))
+        self.assertTrue(state.closed)
+        self.assertTrue(cancellation.requested.is_set())
+        state.set_visible.assert_called_once_with(False)
+
     def test_check_is_bounded_and_returns_only_an_authenticated_unambiguous_offer(self):
         name = 'New-Horizons-Linux-x64-abcdef123456.tar.gz'
         release = {'draft': False, 'prerelease': False, 'tag_name': 'v0.92.4',

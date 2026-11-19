@@ -16537,36 +16537,41 @@
           "end": 39
         },
         {
+          "symbol": "function Complete-NativeClientSession#1",
+          "start": 42,
+          "end": 87
+        },
+        {
           "symbol": "function Test-NativeClientGameWindow#1",
-          "start": 41,
-          "end": 51
+          "start": 89,
+          "end": 99
         },
         {
           "symbol": "function New-NativeClientReadySignal#1",
-          "start": 53,
-          "end": 59
+          "start": 101,
+          "end": 107
         },
         {
           "symbol": "function Wait-NativeClientExit#1",
-          "start": 61,
-          "end": 80
+          "start": 109,
+          "end": 128
         },
         {
           "symbol": "function Invoke-NativeClient#1",
-          "start": 82,
-          "end": 108
+          "start": 130,
+          "end": 156
         },
         {
-          "symbol": "function Invoke-NativeClient::<scriptblock>#1",
-          "start": 88,
-          "end": 88
+          "symbol": "Invoke-NativeClient::<scriptblock>#1",
+          "start": 136,
+          "end": 136
         }
       ],
-      "sha256": "06f9c4e0b4e45d7df9a1e5f05097b6c521e09195baba34c4c1f361bf36861d31",
-      "review": "IR-NEXT-BUILD-FROZEN-PLAYER-LAUNCHER-ORG-20261119",
-      "review_scope": "Exact independent source organization and reused prior source review only; no native compilation, GUI, Windows execution, performance, promotion or future growth permission.",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
-      "rationale": "Complete exact108-line PowerShell callable inventory independently re-parsed with actual PowerShell7.5.4 AST: all7 FunctionDefinitionAst and executable ScriptBlockExpressionAst bodies, including nested callbacks. Inspected command/param/control-flow blocks and quoted script data are not invented callable definitions. Exact bytes match previously independently reviewed IR-PLAYER-LAUNCHER-FINAL-SOURCE-V1. Largest function is below80 lines; no numeric waiver or missing callback. Parser syntax success on Linux does not establish Windows5.1/WinForms/native readiness execution."
+      "sha256": "e9029d544d8af59fb78eab2a868d2ab6e60004585aeef34e0aa4a3dfa7c3bdef",
+      "review": "IR-A6-OWNED-LAUNCH-CANCELLATION-20261119",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_RUNTIME_ACCEPTANCE",
+      "review_scope": "Complete current PowerShell callable inventory and Amendment6D owned-session disposition source review. No native console, GUI, runtime, release, or future growth acceptance.",
+      "rationale": "Complete callable inventory independently measured with actual PowerShell7.5.4 FunctionDefinitionAst and ScriptBlockExpressionAst, including nested callbacks. Bounded exact-session terminal disposition adds one46-line function to Launch-Process; Start routes its assigned reaped child only. Every callable below80lines. Actual Windows pipeline interruption remains an explicit acceptance gap."
     },
     "tools/windows/Play-New-Horizons.cmd": {
       "functions": [],
@@ -16671,11 +16676,11 @@
           "end": 375
         }
       ],
-      "sha256": "a6ddfa7d3bc28905eba0116df98ca6af7c3a759e925b2aea25d75d713e766843",
-      "review": "IR-NEXT-BUILD-FROZEN-PLAYER-LAUNCHER-ORG-20261119",
-      "review_scope": "Exact independent source organization and reused prior source review only; no native compilation, GUI, Windows execution, performance, promotion or future growth permission.",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
-      "rationale": "Complete exact426-line PowerShell callable inventory independently re-parsed with actual PowerShell7.5.4 AST: all11 FunctionDefinitionAst and executable ScriptBlockExpressionAst bodies, including nested callbacks. Inspected command/param/control-flow blocks and quoted script data are not invented callable definitions. Exact bytes match previously independently reviewed IR-PLAYER-LAUNCHER-FINAL-SOURCE-V1. Largest function is below80 lines; no numeric waiver or missing callback. Parser syntax success on Linux does not establish Windows5.1/WinForms/native readiness execution."
+      "sha256": "a20fa917efca1b1e07e58e4b60ac9f8f4eada10b874da5f4c2287ab5093ec2c5",
+      "review": "IR-A6-OWNED-LAUNCH-CANCELLATION-20261119",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_RUNTIME_ACCEPTANCE",
+      "review_scope": "Complete current PowerShell callable inventory and Amendment6D owned-session disposition source review. No native console, GUI, runtime, release, or future growth acceptance.",
+      "rationale": "Complete callable inventory independently measured with actual PowerShell7.5.4 FunctionDefinitionAst and ScriptBlockExpressionAst, including nested callbacks. Bounded exact-session terminal disposition adds one46-line function to Launch-Process; Start routes its assigned reaped child only. Every callable below80lines. Actual Windows pipeline interruption remains an explicit acceptance gap."
     },
     "tools/windows/tests/Managed-Preset-Smoke.ps1": {
       "functions": [

@@ -135,7 +135,19 @@ else
 	! grep -q 'new-horizons' "$preset"
 fi
 if [[ -n ${LIFETIME_SIGNAL:-} ]]; then
+	if [[ ${LIFETIME_CAPTURE_SESSION:-0} == 1 ]]; then
+		mkdir -p -- "$NH_CRASH_SESSION_DIR"
+		: > "$NH_CRASH_SESSION_DIR/active.lock"
+		printf '1\n' > "$NH_CRASH_SESSION_DIR/pending"
+		printf 'startup fixture log\n' > "$NH_CRASH_SESSION_DIR/client.log"
+	fi
 	handle_lifetime_signal() {
+		if [[ ${LIFETIME_CAPTURE_SESSION:-0} == late ]]; then
+			mkdir -p -- "$NH_CRASH_SESSION_DIR"
+			: > "$NH_CRASH_SESSION_DIR/active.lock"
+			printf '1\n' > "$NH_CRASH_SESSION_DIR/pending"
+			printf 'startup fixture log\n' > "$NH_CRASH_SESSION_DIR/client.log"
+		fi
 		printf '%s received\n' "$LIFETIME_SIGNAL" > "$LIFETIME_SIGNAL_SEEN"
 		if [[ ${LIFETIME_EXIT_ON_SIGNAL:-0} == 1 ]]; then
 			[[ -r Data/h3sprite.lod ]]
@@ -144,7 +156,7 @@ if [[ -n ${LIFETIME_SIGNAL:-} ]]; then
 		fi
 	}
 	trap handle_lifetime_signal "$LIFETIME_SIGNAL"
-	printf '%s\n%s\n' "$PWD" "$$" > "$LIFETIME_READY"
+	printf '%s\n%s\n%s\n' "$PWD" "$$" "${NH_CRASH_SESSION_DIR:-}" > "$LIFETIME_READY"
 	while [[ ! -e $LIFETIME_RELEASE ]]; do sleep 0.05; done
 	[[ -r Data/h3sprite.lod ]]
 	printf 'child read Data after signal\n' > "$LIFETIME_READ"
@@ -296,15 +308,16 @@ exercise_reporter_launches() {
 }
 
 exercise_signal_lifecycle() {
-	local signal=$1 exitOnSignal=${2:-0} expectedExit=${3:-23} label ready release seen readFile launchPid
+	local signal=$1 exitOnSignal=${2:-0} expectedExit=${3:-23} capture=${4:-0} label ready release seen readFile launchPid
 	local childRuntime childPid status
 	label=${signal,,}
+	[[ $capture == late ]] && label+="-late-capture"
 	[[ $exitOnSignal == 1 ]] && label+="-immediate-$expectedExit"
 	ready="$tmp/$label.ready"
 	release="$tmp/$label.release"
 	seen="$tmp/$label.signal-seen"
 	readFile="$tmp/$label.read"
-	LIFETIME_SIGNAL=$signal LIFETIME_EXIT_ON_SIGNAL=$exitOnSignal LIFETIME_EXIT=$expectedExit \
+	LIFETIME_SIGNAL=$signal LIFETIME_EXIT_ON_SIGNAL=$exitOnSignal LIFETIME_EXIT=$expectedExit LIFETIME_CAPTURE_SESSION=$capture \
 		LIFETIME_READY=$ready LIFETIME_RELEASE=$release \
 		LIFETIME_SIGNAL_SEEN=$seen LIFETIME_READ=$readFile \
 		env --default-signal=INT bash "$launcher" "${args[@]}" \
@@ -328,6 +341,17 @@ exercise_signal_lifecycle() {
 		[[ $status == "$expectedExit" ]]
 		[[ $(< "$readFile") == 'child read Data after signal' ]]
 		[[ ! -e $childRuntime ]]
+		if [[ $capture != 0 ]]; then
+			local session=${readyValues[2]}
+			[[ $(< "$session/launcher-cancelled") == NH_LAUNCH_CANCEL_V1 ]]
+			[[ $(< "$session/launcher-exit") == $'NH_LAUNCH_EXIT_V1\n'"$expectedExit" ]]
+			case $expectedExit in
+				129|130|137|143) [[ ! -e $session/pending ]];;
+				*) [[ -f $session/pending ]];;
+			esac
+			[[ $(< "$session/client.log") == 'startup fixture log' ]]
+			rm -rf -- "$session"
+		fi
 		return
 	fi
 	kill -0 "$launchPid"
@@ -345,6 +369,48 @@ exercise_signal_lifecycle() {
 	[[ $status == 23 ]]
 	[[ $(< "$readFile") == 'child read Data after signal' ]]
 	[[ ! -e $childRuntime ]]
+}
+exercise_forced_parent_cancel() {
+	local ready="$tmp/forced.ready" release="$tmp/forced.release" seen="$tmp/forced.seen" readFile="$tmp/forced.read"
+	local launchPid session status attempt hash receipt="$tmp/forced.report-receipt"
+	LIFETIME_SIGNAL=TERM LIFETIME_EXIT_ON_SIGNAL=0 LIFETIME_EXIT=143 LIFETIME_CAPTURE_SESSION=1 \
+		LIFETIME_READY=$ready LIFETIME_RELEASE=$release LIFETIME_SIGNAL_SEEN=$seen LIFETIME_READ=$readFile \
+		env --default-signal=INT bash "$launcher" "${args[@]}" > "$tmp/forced.output" 2>&1 &
+	launchPid=$!
+	cleanup_launcher_pids+=("$launchPid")
+	cleanup_release_files+=("$release")
+	cleanup_done_files+=("$readFile")
+	wait_for_file "$ready"
+	session=$(sed -n '3p' "$ready")
+	kill -TERM "$launchPid"
+	wait_for_file "$seen"
+	[[ -f $session/launcher-cancelled && -f $session/pending && ! -e $session/launcher-exit ]]
+	kill -KILL "$launchPid"
+	if wait "$launchPid"; then status=0; else status=$?; fi
+	forget_launcher "$launchPid"
+	[[ $status == 137 ]]
+	: > "$release"
+	wait_for_file "$readFile"
+	for ((attempt=0; attempt<200; ++attempt)); do
+		if flock -n "$profile/.nh-lock" true; then break; fi
+		sleep 0.01
+	done
+	(( attempt < 200 ))
+	hash=$(sha256sum -- "$engine/new-horizons"); hash=${hash%% *}
+	printf 'NH_CLIENT_FEATURES_V1\nBUG_REPORT_V1_SHA256=%s\n' "$hash" > "$engine/new-horizons.features"
+	REPORT_FIXTURE_RECEIPT="$receipt" bash "$launcher" "${args[@]}" > "$tmp/forced.restart"
+	[[ $(< "$receipt") == play ]]
+	[[ -f $session/pending && -f $session/client.log && ! -e $session/launcher-exit ]]
+	# Suppression is only for the owned cancellation, never an unrelated session.
+	local unrelated="${session%/*}/run-00000000000000000000000000000000"
+	mkdir -p -- "$unrelated"
+	printf 'unrelated evidence\n' > "$unrelated/pending"
+	: > "$receipt"
+	REPORT_FIXTURE_RECEIPT="$receipt" bash "$launcher" "${args[@]}" > "$tmp/forced.unrelated-restart"
+	[[ $(sed -n '1p' "$receipt") == report:pending && $(sed -n '2p' "$receipt") == play ]]
+	[[ $(< "$unrelated/pending") == 'unrelated evidence' ]]
+	rm -rf -- "$session" "$unrelated"
+	rm -- "$engine/new-horizons.features"
 }
 if [[ ${NH_LAUNCHER_REPORT_TESTS_ONLY:-0} == 1 ]]; then
 	bash "$launcher" "${args[@]}" > "$tmp/output"
@@ -459,6 +525,13 @@ for signal in TERM HUP INT; do
 done
 exercise_signal_lifecycle TERM 1
 exercise_signal_lifecycle TERM 1 127
+exercise_signal_lifecycle TERM 1 143 1
+exercise_signal_lifecycle TERM 1 143 late
+exercise_signal_lifecycle INT 1 130 1
+exercise_signal_lifecycle HUP 1 129 1
+exercise_signal_lifecycle TERM 1 139 1
+exercise_signal_lifecycle TERM 1 17 1
+exercise_forced_parent_cancel
 # Simulate a hard-killed previous launch.  An exact launcher-owned runtime is
 # reclaimed after locking; a lookalike with unexpected contents is still refused.
 stale=$profile/runtime.A1b2C3d4
