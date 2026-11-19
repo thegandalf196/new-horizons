@@ -9,6 +9,7 @@
 #include "../../../lib/GameSettings.h"
 #include "../../../lib/entities/hero/CHero.h"
 #include "../../../lib/entities/hero/NewHorizonsHeroRules.h"
+#include "../../../lib/nativeRules/CompiledMetamagicRules.h"
 #include "../../../lib/bonuses/BonusParameters.h"
 #include "../../../lib/gameState/QuestInfo.h"
 #include "../../../lib/modding/CModHandler.h"
@@ -112,9 +113,12 @@ protected:
 	void combat()
 	{
 		// Normalize only numerical forecast controls, not production starts or
-		// Halon's faction specialty/capacity. No competing action is disabled.
+		// Halon's passive faction specialty. No competing action is disabled.
 		for(const auto key : {"new-horizons:lightMagic", "new-horizons:natureMagic", "new-horizons:spellcraft"})
 			attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode(key)), 0, ChangeValueMode::ABSOLUTE);
+		// Guardian Spirit is an explicitly learned spell in this effect fixture.
+		// Current Halon starts with Dispel; do not restore his retired default.
+		if(halon()) attackerSideHero->addSpellToSpellbook(replacement());
 		startBattle();
 		BattleUnitsChanged remove;
 		remove.battleID = BattleID(0);
@@ -147,8 +151,13 @@ protected:
 		{
 			EXPECT_TRUE(type->nonDamageSpellSpecialtyProducers.empty());
 			EXPECT_EQ(attackerSideHero->getNonDamageSpellSpecialtyBonusPercent(replacement()), 0);
-			EXPECT_EQ(newHorizonsMagic::metamagicRank(attackerSideHero), legacyMagic ? 2 : 1);
-			EXPECT_EQ(newHorizonsMagic::metamagicCapacity(attackerSideHero), 2);
+			EXPECT_EQ(nativeRules::metamagicSkillRank(attackerSideHero), 1);
+			const auto * policy = nativeRules::metamagicRules(attackerSideHero);
+			ASSERT_NE(policy, nullptr);
+			ASSERT_NE(policy->policy(), nullptr);
+			EXPECT_TRUE(policy->policy()->optionalRemoval);
+			EXPECT_EQ(policy->overflowPercent(1), 30);
+			EXPECT_EQ(policy->removalChance(1, attackerSideHero->getHeroTypeID()), 25);
 			return;
 		}
 		ASSERT_EQ(type->nonDamageSpellSpecialtyProducers.size(), 1);
@@ -196,12 +205,21 @@ protected:
 	}
 };
 
-TEST_P(NewHorizonsRemainingStartTest, ActualDefaultPaidCastAndSpecialtyIsolation)
+TEST_P(NewHorizonsRemainingStartTest, ActualDefaultBookAndExplicitPaidCastKeepSpecialtyIsolation)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
-	EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(replacement()));
+	if(halon())
+	{
+		EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(SpellID(SpellID::DISPEL)));
+		EXPECT_TRUE(attackerSideHero->getHeroType()->spells.contains(SpellID(SpellID::DISPEL)));
+		EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(replacement()));
+	}
+	else
+	{
+		EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(replacement()));
+		EXPECT_TRUE(attackerSideHero->getHeroType()->spells.contains(original()));
+	}
 	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(original()));
-	EXPECT_TRUE(attackerSideHero->getHeroType()->spells.contains(original()));
 	EXPECT_FALSE(attackerSideHero->getHeroType()->spells.contains(replacement()));
 	expectProducer(true);
 	ASSERT_NO_FATAL_FAILURE(combat());
@@ -223,11 +241,11 @@ TEST_P(NewHorizonsRemainingStartTest, ExplicitMapBookRemainsOriginal)
 	expectProducer(true);
 }
 
-TEST_P(NewHorizonsRemainingStartTest, CapturedLegacyBookAndProducerRemainOriginal)
+TEST_P(NewHorizonsRemainingStartTest, CapturedLegacyMagicPreservesAuthoredBookAndProducer)
 {
 	legacyMagic = true;
 	ASSERT_NO_FATAL_FAILURE(prepare());
-	EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(original()));
+	EXPECT_TRUE(attackerSideHero->spellbookContainsSpell(halon() ? SpellID(SpellID::DISPEL) : original()));
 	EXPECT_FALSE(attackerSideHero->spellbookContainsSpell(replacement()));
 	expectProducer(false);
 }
@@ -259,9 +277,15 @@ TEST_P(NewHorizonsRemainingStartTest, WorldRoundtripAndSavedReinitPreserveBookAn
 	GameRandomizer randomizer(restored);
 	ASSERT_NO_THROW(loaded->initHero(randomizer));
 	EXPECT_EQ(loaded->getInscribedSpellsForCasting(), spells);
-	EXPECT_TRUE(loaded->spellbookContainsSpell(replacement()));
+	EXPECT_TRUE(loaded->spellbookContainsSpell(halon() ? SpellID(SpellID::DISPEL) : replacement()));
 	EXPECT_EQ(loaded->getNonDamageSpellSpecialtyBonusPercent(replacement()), halon() ? 0 : 20);
-	if(halon()) EXPECT_EQ(newHorizonsMagic::metamagicCapacity(loaded), 2);
+	if(halon())
+	{
+		EXPECT_EQ(nativeRules::metamagicSkillRank(loaded), 1);
+		const auto * policy = nativeRules::metamagicRules(loaded);
+		ASSERT_NE(policy, nullptr);
+		EXPECT_EQ(policy->removalChance(1, loaded->getHeroTypeID()), 25);
+	}
 }
 
 TEST_P(NewHorizonsRemainingStartTest, FalseKeyRejectsOlderHeroMapWorldLobbyAndRawSettingsBeforeAdmission)
@@ -315,7 +339,7 @@ TEST_P(NewHorizonsRemainingStartTest, NullKeyAndMissingInteusIdentityRejectWhile
 }
 
 #ifdef ENABLE_BATTLE_AI
-TEST_P(NewHorizonsRemainingStartTest, DetachedPredictionMatchesPaidCastWithoutMutatingLiveOrCapacity)
+TEST_P(NewHorizonsRemainingStartTest, DetachedPredictionMatchesPaidCastWithoutMutatingLiveOrPassiveMetamagic)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	ASSERT_NO_FATAL_FAILURE(combat());
@@ -323,7 +347,9 @@ TEST_P(NewHorizonsRemainingStartTest, DetachedPredictionMatchesPaidCastWithoutMu
 	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor::SPECTATOR);
 	HypotheticBattle projected(&environment, callback);
 	const auto mana = attackerSideHero->getManaAvailable();
-	const auto capacity = newHorizonsMagic::metamagicCapacity(attackerSideHero);
+	const auto rank = nativeRules::metamagicSkillRank(attackerSideHero);
+	const auto policyOwner = attackerSideHero->getPerkState().capturedOwner();
+	const auto selections = attackerSideHero->getPerkState().getSelected();
 	spells::BattleCast cast(&projected, attackerSideHero, spells::Mode::HERO, replacement().toSpell());
 	const auto mechanics = replacement().toSpell()->battleMechanics(&cast);
 	spells::Target aim{halon() ? spells::Destination(projected.battleGetUnitByID(target->unitId()))
@@ -334,7 +360,9 @@ TEST_P(NewHorizonsRemainingStartTest, DetachedPredictionMatchesPaidCastWithoutMu
 	EXPECT_EQ(target->getGuardianSpiritHitPoints(), 0);
 	EXPECT_TRUE(target->getAllBonuses(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(replacement())))->empty());
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
-	EXPECT_EQ(newHorizonsMagic::metamagicCapacity(attackerSideHero), capacity);
+	EXPECT_EQ(nativeRules::metamagicSkillRank(attackerSideHero), rank);
+	EXPECT_EQ(attackerSideHero->getPerkState().capturedOwner(), policyOwner);
+	EXPECT_EQ(attackerSideHero->getPerkState().getSelected(), selections);
 	ASSERT_TRUE(paidCast());
 	expectValues(target);
 }

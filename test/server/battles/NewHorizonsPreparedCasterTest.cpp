@@ -42,7 +42,6 @@ constexpr auto MANA_CONSERVATION = "new-horizons:wisdom.manaConservation";
 constexpr auto ARCHMAGE = "new-horizons:wisdom.archmage";
 constexpr auto HAVOC_MAGIC = "new-horizons:havocMagic";
 constexpr auto METAMAGIC_SKILL = "new-horizons:metamagic";
-constexpr auto MANA_CONDUIT = "new-horizons:metamagic.manaConduit";
 
 class NewHorizonsSpellFamiliarityTest : public HeroCommandFixture
 {
@@ -123,14 +122,13 @@ protected:
 		ASSERT_TRUE(hero->hasActivePerk(WISDOM_SKILL, SPELL_FAMILIARITY));
 	}
 
-	void grantManaConduit(CGHeroInstance * hero)
+	void grantBasicMetamagic(CGHeroInstance * hero)
 	{
 		const int decoded = SecondarySkill::decode(METAMAGIC_SKILL);
 		ASSERT_GE(decoded, 0);
 		hero->setHeroType(HeroTypeID(HeroTypeID::decode("core:solmyr")));
 		hero->setSecSkillLevel(SecondarySkill(decoded), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
-		hero->applyPerkSelection({METAMAGIC_SKILL, MANA_CONDUIT});
-		ASSERT_TRUE(hero->hasActivePerk(METAMAGIC_SKILL, MANA_CONDUIT));
+		ASSERT_EQ(hero->getSecSkillLevel(SecondarySkill(decoded)), MasteryLevel::BASIC);
 	}
 
 	void grantArchmage(CGHeroInstance * hero, bool includeSpellFamiliarity = false)
@@ -214,12 +212,12 @@ protected:
 		return breakdown;
 	}
 
-	CStack * prepareBattleWithSpellFamiliarity(int wisdomRank = MasteryLevel::BASIC, bool includeManaConduit = false)
+	CStack * prepareBattleWithSpellFamiliarity(int wisdomRank = MasteryLevel::BASIC, bool includeMetamagic = false)
 	{
 		startGame();
 		grantSpellFamiliarity(attackerSideHero, wisdomRank);
-		if(includeManaConduit)
-			grantManaConduit(attackerSideHero);
+		if(includeMetamagic)
+			grantBasicMetamagic(attackerSideHero);
 		prepareAttackerSpellbook(attackerSideHero);
 		attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
 		startBattle();
@@ -317,7 +315,7 @@ TEST_F(NewHorizonsSpellFamiliarityTest, FirstSpellHasNoDiscountAndParticularSpel
 	EXPECT_EQ(battle()->getWisdomCombatState(BattleSide::ATTACKER).priorCasts(SpellID::MAGIC_ARROW), 2);
 }
 
-TEST_F(NewHorizonsSpellFamiliarityTest, AdventureSpellBreakdownIgnoresWisdomAndMetamagicFollowup)
+TEST_F(NewHorizonsSpellFamiliarityTest, BattleAdventureQuoteIgnoresWisdomAndRetiredMetamagicDiscount)
 {
 	auto * target = prepareBattleWithSpellFamiliarity(MasteryLevel::EXPERT, true);
 	ASSERT_NE(target, nullptr);
@@ -325,13 +323,13 @@ TEST_F(NewHorizonsSpellFamiliarityTest, AdventureSpellBreakdownIgnoresWisdomAndM
 	const auto * townPortal = SpellID(SpellID::TOWN_PORTAL).toSpell();
 	const auto adventureBreakdown = readSpellCostBreakdown(townPortal,
 		attackerSideHero->getListedSpellCost(townPortal));
-	const auto adventureFollowupBreakdown = battle()->battleGetSpellCostBreakdown(
-		townPortal, attackerSideHero, 1, true);
+	const auto battleBreakdown = battle()->battleGetSpellCostBreakdown(
+		townPortal, attackerSideHero);
 
 	EXPECT_TRUE(newHorizonsMagic::isAdventureSpell(attackerSideHero->getMagicRules(), townPortal->getId()));
-	EXPECT_EQ(adventureFollowupBreakdown.finalCost, adventureBreakdown.finalCost);
-	EXPECT_EQ(adventureFollowupBreakdown.finalCost, battle()->battleGetSpellCost(townPortal, attackerSideHero));
-	EXPECT_TRUE(std::none_of(adventureFollowupBreakdown.stages.begin(), adventureFollowupBreakdown.stages.end(),
+	EXPECT_EQ(battleBreakdown.finalCost, adventureBreakdown.finalCost);
+	EXPECT_EQ(battleBreakdown.finalCost, battle()->battleGetSpellCost(townPortal, attackerSideHero));
+	EXPECT_TRUE(std::none_of(battleBreakdown.stages.begin(), battleBreakdown.stages.end(),
 		[](const auto & stage)
 		{
 			return stage.kind == SpellCostStage::Kind::WISDOM
@@ -343,7 +341,7 @@ TEST_F(NewHorizonsSpellFamiliarityTest, WorldSpellCostBreakdownSeparatesAdventur
 {
 	startGame();
 	grantSpellFamiliarity(attackerSideHero, MasteryLevel::EXPERT);
-	grantManaConduit(attackerSideHero);
+	grantBasicMetamagic(attackerSideHero);
 	prepareAttackerSpellbook(attackerSideHero);
 	attackerSideHero->addSpellToSpellbook(SpellID(SpellID::TOWN_PORTAL));
 
@@ -351,20 +349,12 @@ TEST_F(NewHorizonsSpellFamiliarityTest, WorldSpellCostBreakdownSeparatesAdventur
 	const auto * magicArrow = SpellID(SpellID::MAGIC_ARROW).toSpell();
 	const auto manaBefore = attackerSideHero->getManaAvailable();
 	const auto adventure = gameState()->getSpellCostBreakdown(townPortal, attackerSideHero);
-	const auto adventureFollowup = gameState()->getSpellCostBreakdown(townPortal, attackerSideHero, true);
 	const auto ordinary = gameState()->getSpellCostBreakdown(magicArrow, attackerSideHero);
 
 	EXPECT_TRUE(newHorizonsMagic::isAdventureSpell(attackerSideHero->getMagicRules(), townPortal->getId()));
 	EXPECT_EQ(adventure.listedCost, attackerSideHero->getListedSpellCost(townPortal));
 	EXPECT_EQ(adventure.finalCost, attackerSideHero->getSpellCost(townPortal));
-	EXPECT_EQ(adventureFollowup.finalCost, adventure.finalCost)
-		<< "World-map spells do not receive an Arcane Economy follow-up discount";
 	EXPECT_TRUE(std::none_of(adventure.stages.begin(), adventure.stages.end(), [](const auto & stage)
-	{
-		return stage.kind == SpellCostStage::Kind::WISDOM
-			|| stage.kind == SpellCostStage::Kind::METAMAGIC_ARCANE_ECONOMY;
-	}));
-	EXPECT_TRUE(std::none_of(adventureFollowup.stages.begin(), adventureFollowup.stages.end(), [](const auto & stage)
 	{
 		return stage.kind == SpellCostStage::Kind::WISDOM
 			|| stage.kind == SpellCostStage::Kind::METAMAGIC_ARCANE_ECONOMY;

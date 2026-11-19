@@ -8,6 +8,7 @@
  */
 #include "StdInc.h"
 #include "../../PerkTestSetup.h"
+#include "../../PerkStateFixture.h"
 
 #include "HeroCommandFixture.h"
 
@@ -328,16 +329,23 @@ TEST_F(NewHorizonsMandateOfHeavenTest, ExpertWithoutSelectedPerkRetainsThreePair
 	EXPECT_FALSE(attackerSideHero->hasActivePerk(divineMandateSkill, mandateOfHeavenPerk));
 }
 
-TEST_F(NewHorizonsMandateOfHeavenTest, InactiveSavedPerkRuleRetainsThreePairCap)
+TEST_F(NewHorizonsMandateOfHeavenTest, InactiveSelectedStrictPerkRuleIsRejectedWithoutChangingTheCapturedCap)
 {
 	prepare(true);
-	// Simulate loading the same selected identity against a saved profile where the mechanic is inactive.
+	// Replacement must re-admit the immutable capture and its selected tiers.
+	// A strict profile cannot make an acquired prerequisite/perk inactive in place.
 	auto & savedPerks = const_cast<newHorizonsHeroes::PerkState &>(attackerSideHero->getPerkState());
 	ASSERT_TRUE(savedPerks.hasSelection(divineMandateSkill, mandateOfHeavenPerk));
-	ASSERT_TRUE(setPerkStatus(savedPerks.getRules(), mandateOfHeavenPerk, "planned"));
+	const auto owner = savedPerks.capturedOwner();
+	EXPECT_THROW(perkStateFixture::editRules(savedPerks, [](JsonNode & rules)
+	{
+		if(!setPerkStatus(rules, mandateOfHeavenPerk, "planned"))
+			throw std::runtime_error("Missing selected historical Mandate identity");
+	}), std::runtime_error);
+	EXPECT_EQ(savedPerks.capturedOwner(), owner);
 	EXPECT_TRUE(savedPerks.hasSelection(divineMandateSkill, mandateOfHeavenPerk));
-	EXPECT_FALSE(attackerSideHero->hasActivePerk(divineMandateSkill, mandateOfHeavenPerk));
+	EXPECT_TRUE(attackerSideHero->hasActivePerk(divineMandateSkill, mandateOfHeavenPerk));
 	const auto status = battle()->battleGetDivineMandateStatus(BattleSide::ATTACKER);
 	EXPECT_TRUE(status.active);
-	EXPECT_EQ(status.maximumPairs, 3);
+	EXPECT_EQ(status.maximumPairs, 4);
 }
