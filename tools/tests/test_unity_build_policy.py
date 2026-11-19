@@ -34,7 +34,9 @@ nh_enable_unity_build({target})
 get_target_property(unity {target} UNITY_BUILD)
 get_target_property(batch {target} UNITY_BUILD_BATCH_SIZE)
 get_source_file_property(guard ForecastRoundIntegration.cpp SKIP_UNITY_BUILD_INCLUSION)
-file(WRITE "${{CMAKE_BINARY_DIR}}/policy.txt" "${{unity}}\\n${{batch}}\\n${{guard}}\\n")
+get_source_file_property(attack AttackPossibility.cpp SKIP_UNITY_BUILD_INCLUSION)
+get_source_file_property(exchange BattleExchangeVariant.cpp SKIP_UNITY_BUILD_INCLUSION)
+file(WRITE "${{CMAKE_BINARY_DIR}}/policy.txt" "${{unity}}\\n${{batch}}\\n${{guard}}\\n${{attack}}\\n${{exchange}}\\n")
 '''
             (root / 'CMakeLists.txt').write_text(source)
             command = ['cmake', '-S', str(root), '-B', str(root / 'build'), '-G', 'Ninja',
@@ -52,14 +54,14 @@ file(WRITE "${{CMAKE_BINARY_DIR}}/policy.txt" "${{unity}}\\n${{batch}}\\n${{guar
         result, policy = self.configure_policy()
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(policy[0], 'unity-NOTFOUND')
-        self.assertEqual(policy[2], 'NOTFOUND')
+        self.assertEqual(policy[2:], ['NOTFOUND'] * 3)
         for target in ('vcmiMain', 'BattleAI', 'vcmiclientcommon'):
             with self.subTest(target=target):
                 result, policy = self.configure_policy('ON', target=target)
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertEqual(policy[:2], ['ON', '8'])
                 if target == 'BattleAI':
-                    self.assertEqual(policy[2], 'ON')
+                    self.assertEqual(policy[2:], ['ON'] * 3)
 
     def test_batch_boundaries_and_unadmitted_targets_fail_closed(self):
         for batch in range(8, 17):

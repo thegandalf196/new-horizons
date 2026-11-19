@@ -44,6 +44,9 @@ function(nh_enable_unity_build target)
 			ForecastAcceptedAttackIntegration.cpp
 			StackPreparedEffectState.cpp
 			OwnedFrameEffectPublication.cpp
+			# The Windows AI flag audit requires original compile database rows.
+			AttackPossibility.cpp
+			BattleExchangeVariant.cpp
 			# Its anonymous require(bool) collides with ForecastExchangeIntegration.
 			ForecastFocusIntegration.cpp
 			ForecastNativeReadView.cpp
