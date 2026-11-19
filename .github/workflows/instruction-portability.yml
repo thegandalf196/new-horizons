@@ -55,6 +55,7 @@ jobs:
           PYTHON: ${{ steps.python.outputs.python-path }}
         run: |
           "$PYTHON" -B -m unittest discover -s tools/tests -p test_instruction_home_paths.py
+          "$PYTHON" -B -m unittest discover -s tools/tests -p test_bonus_list_lifetimes.py
           "$PYTHON" -B -m unittest discover -s tools/tests -p test_source_organization.py
           "$PYTHON" -B -m unittest discover -s tools/tests -p test_test_inventory.py
           "$PYTHON" -B -m unittest discover -s tools/tests -p test_text_line_endings.py
@@ -112,6 +113,7 @@ jobs:
           "$PYTHON" -B CI/check_text_line_endings.py
           "$PYTHON" -B CI/validate_json.py
           "$PYTHON" -B CI/normalize_relative_includes.py --repo .
+          "$PYTHON" -B CI/check_bonus_list_lifetimes.py
           "$PYTHON" -B tools/ci/source_export_policy.py
       - name: Validate changed Markdown
         if: steps.markdown.outputs.count != '0'
