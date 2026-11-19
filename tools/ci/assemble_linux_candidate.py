@@ -194,8 +194,9 @@ def assemble(install, engine_source, source_commit, source_repository, manifest,
         for name, data in additions.items():
             (output / name).write_bytes(data)
     executables = {'new-horizons', SETUP_NAME, *(name for name in SUPPORT if name.endswith('.sh'))}
-    for name in executables:
-        (output / name).chmod(0o755)
+    # Identity records final read-only modes independently of the caller's umask.
+    for path in output.rglob('*'):
+        path.chmod(0o755 if path.is_dir() or path.name in executables else 0o644)
     if any(digest(output / name) != value or digest(files[name]) != value for name, value in before.items()):
         raise RuntimeError('Installed input changed during assembly')
     if digest(engine_source) != archive_digest or digest(manifest) != manifest_digest:
@@ -217,6 +218,7 @@ def assemble(install, engine_source, source_commit, source_repository, manifest,
     for path in output.rglob('*'):
         path.chmod(0o555 if path.is_dir() or path.name in executables else 0o444)
     output.chmod(0o555)
+    verify_candidate(output)
     return identity
 
 

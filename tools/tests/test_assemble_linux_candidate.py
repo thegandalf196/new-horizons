@@ -2,6 +2,7 @@
 import hashlib
 import io
 import json
+import os
 from pathlib import Path
 import shutil
 import sys
@@ -139,6 +140,19 @@ class AssembleLinuxCandidateTest(unittest.TestCase):
         self.assertTrue(setup.stat().st_mode & 0o111)
         self.assertFalse(setup.stat().st_mode & 0o222)
         self.assertEqual(verify_candidate(self.output), result)
+        self.assertEqual(self.before, self.inventory(self.install))
+
+    def test_restrictive_umask_keeps_frozen_setup_identity_and_payload_modes_consistent(self):
+        previous = os.umask(0o077)
+        try:
+            result = self.assemble()
+        finally:
+            os.umask(previous)
+        self.assertEqual(verify_candidate(self.output), result)
+        for name, metadata in result['setup'].items():
+            expected = 0o555 if name == assembler.SETUP_NAME or name.endswith('.sh') else 0o444
+            self.assertEqual(metadata['mode'], expected)
+            self.assertEqual((self.output / name).stat().st_mode & 0o777, expected)
         self.assertEqual(self.before, self.inventory(self.install))
 
     def test_missing_nonexecutable_or_wrong_abi_setup_is_rejected_before_output(self):
