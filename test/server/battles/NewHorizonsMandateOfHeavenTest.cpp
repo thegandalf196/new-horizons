@@ -11,16 +11,20 @@
 #include "../../PerkStateFixture.h"
 
 #include "HeroCommandFixture.h"
+#include "../../../AI/BattleAI/HypotheticBattle.h"
 
 #include "../../../lib/GameConstants.h"
 #include "../../../lib/GameSettings.h"
 #include "../../../lib/IGameSettings.h"
 #include "../../../lib/battle/BattleAction.h"
 #include "../../../lib/battle/CBattleInfoEssentials.h"
+#include "../../../lib/battle/CPlayerBattleCallback.h"
+#include "../../../lib/battle/NewHorizonsWarfare.h"
 #include "../../../lib/battle/HeroActionAllowanceState.h"
 #include "../../../lib/battle/HeroCommand.h"
 #include "../../../lib/battle/NewHorizonsDivineMandate.h"
 #include "../../../lib/entities/hero/NewHorizonsPerkState.h"
+#include "../../../lib/gameState/CGameState.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
 #include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/networkPacks/PacksForClientBattle.h"
@@ -196,6 +200,16 @@ void captureHistoricalPairRules(JsonNode & rules)
 }
 
 constexpr auto previousVersion = ESerializationVersion::NEW_HORIZONS_KNIGHTLY_SEQUENCE;
+
+class MandateProjectionEnvironment final : public Environment
+{
+	std::shared_ptr<CGameState> state;
+public:
+	explicit MandateProjectionEnvironment(std::shared_ptr<CGameState> value) : state(std::move(value)) {}
+	const Services * services() const override { return LIBRARY; }
+	const BattleCb * battle(const BattleID & id) const override { return state->getBattle(id); }
+	const GameCb * game() const override { return state.get(); }
+};
 }
 
 class NewHorizonsMandateOfHeavenTest : public HeroCommandFixture
@@ -344,6 +358,10 @@ protected:
 		ASSERT_TRUE(pending.pendingFollowup);
 		EXPECT_EQ(pending.pendingFollowup->source, HeroActionAllowanceState::GrantSource::DIVINE_MANDATE);
 		EXPECT_EQ(pending.pendingFollowup->allowance, HeroActionAllowanceState::AllowanceKind::SPELL);
+		const auto grantId = pending.pendingFollowup->id;
+		const auto selected = battle()->battleGetSpellActionAllowance(BattleSide::ATTACKER, SpellID::BLESS);
+		ASSERT_TRUE(selected);
+		EXPECT_EQ(selected->grantId, grantId);
 		const int32_t cost = blessCost();
 		ASSERT_GT(cost, 0);
 		ASSERT_TRUE(castBless());
@@ -358,6 +376,27 @@ protected:
 			expectedManaSpent);
 		EXPECT_EQ(battle()->battleGetDivineMandateStatus(BattleSide::ATTACKER).completedPairs,
 			expectedCompletedPairs);
+		assertConsumedPair(grantId);
+	}
+
+	void assertConsumedPair(uint32_t grantId)
+	{
+		const auto side = BattleSide::ATTACKER;
+		const auto ledger = battle()->getHeroActionAllowances(side);
+		EXPECT_TRUE(std::ranges::none_of(ledger.grants, [grantId](const auto & grant)
+		{
+			return grant.id == grantId || grant.source == HeroActionAllowanceState::GrantSource::DIVINE_MANDATE;
+		}));
+		EXPECT_FALSE(battle()->battleGetDivineMandateStatus(side).pendingFollowup);
+		EXPECT_FALSE(battle()->battleGetOrderActionAllowance(side));
+		EXPECT_FALSE(battle()->battleGetSpellActionAllowance(side, SpellID::BLESS));
+		const auto mana = attackerSideHero->getManaAvailable();
+		const auto actions = server.startedActions.size();
+		EXPECT_FALSE(issueCharge());
+		EXPECT_FALSE(castBless());
+		EXPECT_EQ(battle()->getHeroActionAllowances(side), ledger);
+		EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
+		EXPECT_EQ(server.startedActions.size(), actions);
 	}
 
 	void completeSpellFirstPair(uint8_t expectedCompletedPairs)
@@ -376,9 +415,17 @@ protected:
 		ASSERT_TRUE(pending.pendingFollowup);
 		EXPECT_EQ(pending.pendingFollowup->source, HeroActionAllowanceState::GrantSource::DIVINE_MANDATE);
 		EXPECT_EQ(pending.pendingFollowup->allowance, HeroActionAllowanceState::AllowanceKind::ORDER);
+		const auto grantId = pending.pendingFollowup->id;
+		const auto selected = battle()->battleGetOrderActionAllowance(BattleSide::ATTACKER);
+		ASSERT_TRUE(selected);
+		EXPECT_EQ(selected->grantId, grantId);
+		EXPECT_EQ(selected->source, HeroActionAllowanceState::GrantSource::DIVINE_MANDATE);
+		const auto actions = server.startedActions.size();
 		ASSERT_TRUE(issueCharge());
+		EXPECT_EQ(server.startedActions.size(), actions + 1);
 		EXPECT_EQ(battle()->battleGetDivineMandateStatus(BattleSide::ATTACKER).completedPairs,
 			expectedCompletedPairs);
+		assertConsumedPair(grantId);
 	}
 };
 
@@ -457,6 +504,55 @@ TEST_F(NewHorizonsMandateOfHeavenTest, FourCompletedPairsAlternateActionsAndOnly
 	EXPECT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0),
 		BattleAction::makeDefend(friendly)))
 		<< "Completing or exhausting Hero-action pairs does not lock Creature Activation";
+}
+
+TEST_F(NewHorizonsMandateOfHeavenTest, RealHistoricalSpellFollowupProjectsAndConsumesTheSameOrderGrantOnce)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(true));
+	const auto side = BattleSide::ATTACKER;
+	ASSERT_TRUE(newHorizonsWarfare::usesRules(battle()->getHeroCommandRules()));
+	ASSERT_TRUE(attackerSideHero->getPerkState().getRules()["divineMandatePolicy"].isNull());
+	// Complete the one-time recovery first so this branch compares only the
+	// second pair's ordinary payment and exact Order receipt.
+	completeOrderFirstPair(1);
+	advanceRound();
+	ASSERT_TRUE(castBless());
+	const auto pending = battle()->battleGetDivineMandateStatus(side);
+	ASSERT_TRUE(pending.pendingFollowup);
+	ASSERT_EQ(pending.pendingFollowup->allowance, HeroActionAllowanceState::AllowanceKind::ORDER);
+	ASSERT_EQ(pending.pendingFollowup->source, HeroActionAllowanceState::GrantSource::DIVINE_MANDATE);
+	const auto selected = battle()->battleGetOrderActionAllowance(side);
+	ASSERT_TRUE(selected);
+	ASSERT_EQ(selected->grantId, pending.pendingFollowup->id);
+	const auto liveLedger = battle()->getHeroActionAllowances(side);
+	const auto world = gameState()->saveToMemory();
+	const auto liveMana = attackerSideHero->getManaAvailable();
+	MandateProjectionEnvironment environment(gameState());
+	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+	HypotheticBattle projection(&environment, callback);
+	HypotheticBattle sibling(&environment, callback);
+	const auto prepared = projection.prepareHeroOrderAllowance(side);
+	ASSERT_TRUE(prepared);
+	EXPECT_EQ(prepared->action.receipt.grantId, selected->grantId);
+	EXPECT_EQ(prepared->action.receipt.source, selected->source);
+	EXPECT_EQ(prepared->action.receipt.allowance, selected->allowance);
+	const auto projectedMana = projection.getProjectedManaAvailable(side);
+	const auto effects = projection.beginProjectedHeroOrder(side, HeroCommand::CHARGE, {}, *prepared);
+	ASSERT_TRUE(effects);
+	ASSERT_TRUE(projection.projectAcceptedHeroOrder(side, *effects, *prepared));
+	const auto projectedLedger = projection.getHeroActionAllowances(side);
+	EXPECT_EQ(projectedLedger.divineMandateCompletedPairs, 2);
+	EXPECT_FALSE(projection.prepareHeroOrderAllowance(side));
+	EXPECT_FALSE(projection.projectAcceptedHeroOrder(side, *effects, *prepared));
+	EXPECT_EQ(projection.getHeroActionAllowances(side), projectedLedger);
+	EXPECT_EQ(projection.getProjectedManaAvailable(side), projectedMana);
+	EXPECT_EQ(sibling.getHeroActionAllowances(side), liveLedger);
+	EXPECT_EQ(battle()->getHeroActionAllowances(side), liveLedger);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), liveMana);
+	EXPECT_EQ(gameState()->saveToMemory(), world);
+	ASSERT_TRUE(issueCharge());
+	EXPECT_EQ(battle()->getHeroActionAllowances(side), projectedLedger);
+	assertConsumedPair(selected->grantId);
 }
 
 TEST_F(NewHorizonsMandateOfHeavenTest, ExpertWithoutSelectedPerkRetainsThreePairCap)

@@ -283,12 +283,13 @@ TEST_F(NewHorizonsWarcastingTest, InjectedOrderOnlyGrantCannotIssueAfterHeroSpel
 	ASSERT_TRUE(eligibleOrder);
 	EXPECT_EQ(eligibleOrder->grantId, orderGrantId);
 	EXPECT_EQ(eligibleOrder->allowance, HeroActionAllowanceState::AllowanceKind::ORDER);
-	// The generic ledger supports this receipt, while current Warfare only
-	// admits the ordinary ROUND/HERO allowance for actual Order issuance.
+	// The generic ledger supports this receipt; the actual Order route
+	// must reject an arbitrary PERK grant even though it could pay in the ledger.
 	auto generic = afterSpell.heroActionAllowances;
 	ASSERT_TRUE(generic.consumeAllowance(orderGrantId, HeroActionAllowanceState::ActionKind::ORDER, round));
 	EXPECT_EQ(generic.remainingCounts(round).orderActions, 0u);
 	const auto liveLedger = afterSpell.heroActionAllowances;
+	const bool commandHistory = battle()->getHeroCommandUsed(side);
 	const auto mana = attackerSideHero->getManaAvailable();
 	const auto actions = server.startedActions.size();
 	EXPECT_FALSE(battle()->battleGetOrderActionAllowance(side));
@@ -298,7 +299,7 @@ TEST_F(NewHorizonsWarcastingTest, InjectedOrderOnlyGrantCannotIssueAfterHeroSpel
 	EXPECT_EQ(afterOrder.heroActionAllowances, liveLedger);
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
 	EXPECT_EQ(server.startedActions.size(), actions);
-	EXPECT_FALSE(battle()->getHeroCommandUsed(side));
+	EXPECT_EQ(battle()->getHeroCommandUsed(side), commandHistory);
 	EXPECT_EQ(battle()->getActiveOrder(side), HeroCommand::NONE);
 	EXPECT_EQ(afterOrder.castSpellsCount, 1u);
 	EXPECT_EQ(afterOrder.usedSpellsHistory, (std::vector<SpellID>{SpellID::BLESS}));
@@ -316,7 +317,7 @@ TEST_F(NewHorizonsWarcastingTest, InjectedOrderOnlyGrantCannotIssueAfterHeroSpel
 	EXPECT_EQ(restoredSide.castSpellsCount, 1u);
 	EXPECT_EQ(restoredSide.usedSpellsHistory, afterOrder.usedSpellsHistory);
 	EXPECT_EQ(wisdomBytes(restored->getWisdomCombatState(side)), wisdomBytes(battle()->getWisdomCombatState(side)));
-	EXPECT_FALSE(restored->getHeroCommandUsed(side));
+	EXPECT_EQ(restored->getHeroCommandUsed(side), commandHistory);
 	EXPECT_EQ(restored->getActiveOrder(side), HeroCommand::NONE);
 	EXPECT_EQ(restored->getHeroOrderState(side), battle()->getHeroOrderState(side));
 	EXPECT_EQ(restored->getHeroActionAllowances(side), afterOrder.heroActionAllowances);

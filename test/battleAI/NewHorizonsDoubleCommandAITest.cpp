@@ -172,7 +172,11 @@ protected:
 		gameHandler->sendAndApply(activate);
 		ASSERT_EQ(battle()->battleActiveUnit(), active);
 
+		const auto beforeOrder = server.startedActions.size();
 		ASSERT_TRUE(issue(HeroCommand::CHARGE));
+		ASSERT_EQ(server.startedActions.size(), beforeOrder + 1);
+		ASSERT_EQ(server.startedActions.back().ba.actionType, EActionType::HERO_COMMAND);
+		ASSERT_EQ(server.startedActions.back().ba.command, HeroCommand::CHARGE);
 		ASSERT_FALSE(battle()->battleHasPendingDoubleCommand(BattleSide::ATTACKER));
 		ASSERT_EQ(battle()->getDoubleCommandState(BattleSide::ATTACKER), DoubleCommandState{});
 
@@ -192,9 +196,6 @@ TEST_F(NewHorizonsDoubleCommandAITest, MasterCommanderCannotSubmitAnOrderAfterTh
 	const auto resources = battle()->getCommandResources(BattleSide::ATTACKER);
 	// Current Warfare pays with the ordinary Hero Action and keeps no finite pool.
 	ASSERT_EQ(resources, newHorizonsCommand::ResourceState{});
-	ASSERT_EQ(server.startedActions.size(), 1u);
-	ASSERT_EQ(server.startedActions.front().ba.actionType, EActionType::HERO_COMMAND);
-	ASSERT_EQ(server.startedActions.front().ba.command, HeroCommand::CHARGE);
 	const auto before = gameState()->saveToMemory();
 	const auto started = server.startedActions.size();
 	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0), BattleSide::ATTACKER, 1.0f, 2);
