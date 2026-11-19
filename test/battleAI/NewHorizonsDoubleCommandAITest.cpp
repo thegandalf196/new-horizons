@@ -190,7 +190,11 @@ TEST_F(NewHorizonsDoubleCommandAITest, MasterCommanderCannotSubmitAnOrderAfterTh
 	ASSERT_EQ(counts.heroActions, 0u);
 	ASSERT_EQ(counts.orderActions, 0u);
 	const auto resources = battle()->getCommandResources(BattleSide::ATTACKER);
-	ASSERT_GT(resources.remaining, 0);
+	// Current Warfare pays with the ordinary Hero Action and keeps no finite pool.
+	ASSERT_EQ(resources, newHorizonsCommand::ResourceState{});
+	ASSERT_EQ(server.startedActions.size(), 1u);
+	ASSERT_EQ(server.startedActions.front().ba.actionType, EActionType::HERO_COMMAND);
+	ASSERT_EQ(server.startedActions.front().ba.command, HeroCommand::CHARGE);
 	const auto before = gameState()->saveToMemory();
 	const auto started = server.startedActions.size();
 	BattleEvaluator evaluator(environment, callback, active, PlayerColor(0), BattleID(0), BattleSide::ATTACKER, 1.0f, 2);

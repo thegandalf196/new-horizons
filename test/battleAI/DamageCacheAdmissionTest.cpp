@@ -5,6 +5,7 @@
  */
 #include "StdInc.h"
 #include "ProjectedTargetHitFixture.h"
+#include "../hero/HistoricalHeroEpochFixture.h"
 #include "../../AI/BattleAI/DamageCacheAdmission.h"
 #include "../../AI/BattleAI/DreadCavalryProjection.h"
 #include "../../AI/BattleAI/NewHorizonsHexOfPain.h"
@@ -149,9 +150,15 @@ protected:
 			rules["commandResourcePolicyVersion"].Integer() = 1;
 			heroCommands::validateRules(rules);
 			loaded->overrideGameSetting(EGameSettings::COMBAT_HERO_COMMANDS, rules);
-			JsonNode perks(JsonPath::builtin("config/newHorizonsPerks"));
-			perks.Struct().erase("warfarePolicyVersion");
+			// Keep the complete 31-Skill hero/perk/capability capture from
+			// 09bbf77b4da3, including its authored starting identities.
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS,
+				historicalHeroFixture::rules(ESerializationVersion::NEW_HORIZONS_HERO_LUCK));
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_CAPABILITIES,
+				historicalCapabilityRulesV4());
+			JsonNode perks(JsonPath::builtin("test/newHorizonsHistoricalHeroLuckPerks"));
 			perks["commandPolicyVersion"].Integer() = 1;
+			perks.setOverrideFlag(true);
 			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
 		}
 	}
