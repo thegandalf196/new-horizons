@@ -19,12 +19,30 @@ import build_windows_client as build
 
 
 class WindowsBuildClientTest(unittest.TestCase):
+    def test_dispatch_jobs_are_integer_bounded_and_reach_both_shared_stages(self):
+        workflow = yaml.safe_load((ROOT / '.github/workflows/new-horizons-windows.yml').read_text())
+        setting = workflow.get('on', workflow.get(True))['workflow_dispatch']['inputs']['build_jobs']
+        self.assertEqual(setting['type'], 'number')
+        self.assertEqual(setting['default'], 6)
+        step = next(row for row in workflow['jobs']['build']['steps']
+                    if row.get('name') == 'Compile Windows x64 client')
+        self.assertEqual(step['env']['BUILD_JOBS'], '${{ inputs.build_jobs }}')
+        for jobs in (4, 6):
+            command = shlex.split(step['run'].replace('\\\n', '').replace('$BUILD_JOBS', str(jobs)))
+            with patch('windows_build_diagnostics.BuildDiagnostics', return_value=None), \
+                    patch.object(build.subprocess, 'run', return_value=SimpleNamespace(returncode=0)) as run:
+                self.assertEqual(build.main(command[2:]), 0)
+            self.assertEqual(run.call_count, 2)
+            for invocation in run.call_args_list:
+                args = invocation.args[0]
+                self.assertEqual(args[args.index('--parallel') + 1], str(jobs))
+
     def test_normal_workflow_builds_guard_objects_before_full_targets(self):
         workflow = yaml.safe_load((ROOT / '.github/workflows/new-horizons-windows.yml').read_text())
         step = next(step for job in workflow['jobs'].values() for step in job['steps']
                     if step.get('name') == 'Compile Windows x64 client')
         self.assertEqual(step['if'], "${{ !inputs.preflight_only && inputs.repack_run_id == '' }}")
-        invocation = shlex.split(step['run'].replace('\\\n', ''))
+        invocation = shlex.split(step['run'].replace('\\\n', '').replace('$BUILD_JOBS', '6'))
         self.assertEqual(invocation[:2], ['python', 'tools/ci/build_windows_client.py'])
         with patch('windows_build_diagnostics.BuildDiagnostics', return_value=None), \
                 patch.object(build.subprocess, 'run', return_value=SimpleNamespace(returncode=0)) as run:
@@ -42,13 +60,13 @@ class WindowsBuildClientTest(unittest.TestCase):
         self.assertEqual(run.call_args_list, [
             call([
                 'cmake', '--build', 'build/new-horizons-windows-x64', '--target',
-                *guard_targets, '--parallel', '4', '--', '-d', 'keeprsp', '-k', '0',
+                *guard_targets, '--parallel', '6', '--', '-d', 'keeprsp', '-k', '0',
             ], check=False),
             call([
                 'cmake', '--build', 'build/new-horizons-windows-x64', '--target',
                 'vcmiclient', 'nhWindowsBootstrap', 'nhWindowsSetup', 'nhSdl3GrayscaleMaskRuntimeTest', 'nhArtStartupRuntimeTest',
                 'nhImageOptimizerRuntimeTest', 'nhCreaturePreviewSurfaceRuntimeTest',
-                'nhSdl3OutlineRuntimeTest', '--parallel', '4', '--', '-d', 'keeprsp',
+                'nhSdl3OutlineRuntimeTest', '--parallel', '6', '--', '-d', 'keeprsp',
             ], check=False),
         ])
 
@@ -133,13 +151,13 @@ class WindowsBuildClientTest(unittest.TestCase):
         self.assertEqual(status, 19)
         run.assert_called_once_with([
             'cmake', '--build', 'configured build tree', '--target',
-            *build.GUARD_OBJECT_TARGETS, '--parallel', '4', '--', '-d', 'keeprsp', '-k', '0',
+            *build.GUARD_OBJECT_TARGETS, '--parallel', '6', '--', '-d', 'keeprsp', '-k', '0',
         ], check=False)
         self.assertNotIn('vcmiclient', run.call_args.args[0])
 
     def test_invalid_job_counts_and_missing_build_root_never_start_a_process(self):
         arguments = [['build', '--build-root', 'configured', '--jobs', value]
-                     for value in ('0', '-1', '11', 'all')]
+                     for value in ('0', '-1', '11', '4.5', 'all')]
         arguments.extend([[], ['build'], ['configure', '--use-precompiled-headers', 'false']])
         for argv in arguments:
             with self.subTest(argv=argv), redirect_stderr(io.StringIO()):

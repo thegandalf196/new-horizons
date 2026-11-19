@@ -10,6 +10,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import time
+from windows_build_memory import create_windows_memory_sampler
 
 
 CACHE_COUNTERS = (
@@ -115,6 +116,7 @@ class BuildDiagnostics:
         log = self.build_root / '.ninja_log'
         self.previous_ninja = log.read_text(encoding='utf-8', errors='replace') if log.is_file() else ''
         self.before = self.cache_snapshot('before')
+        self.memory = create_windows_memory_sampler()
 
     def cache_snapshot(self, when):
         decoded = {}
@@ -141,6 +143,8 @@ class BuildDiagnostics:
         return decoded
 
     def run(self, command):
+        if self.memory:
+            self.memory.start()
         began = time.perf_counter()
         portable_command = [ntpath.basename(command[0]), *command[1:]]
         portable_command[portable_command.index('--build') + 1] = '<build-root>'
@@ -154,6 +158,8 @@ class BuildDiagnostics:
             stage['wallSeconds'] = time.perf_counter() - began
 
     def finish(self):
+        self.report['hostMemory'] = (self.memory.finish() if self.memory else
+                                     {'available': False, 'reason': 'Sampling requires a native Windows host'})
         # Record compile wall time before diagnostic subprocesses and copying.
         self.report['wallSeconds'] = sum(stage['wallSeconds'] for stage in self.report['stages'])
         self.report['finishedUTC'] = datetime.now(timezone.utc).isoformat()

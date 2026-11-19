@@ -19,6 +19,10 @@ on:
         description: Opt-in target-local hot header PCH experiment (requires precompiled headers)
         type: boolean
         default: false
+      build_jobs:
+        description: Integer compiler jobs from 1 through 10 (compare 4 and 6 on the same revision)
+        type: number
+        default: 6
       pch_off_cache_seed:
         description: Leave empty for a normal build, enter cold to seed a trial, or enter the cold run ID to repeat it
         type: string
@@ -324,9 +328,11 @@ jobs:
         env:
           REQUESTED_KEY: ${{ steps.pch-cache.outputs.key }}
           MATCHED_KEY: ${{ steps.restore-pch-cache.outputs.cache-matched-key }}
+          BUILD_JOBS: ${{ inputs.build_jobs }}
         run: |
           python tools/ci/build_windows_client.py build \
             --build-root build/new-horizons-windows-x64 \
+            --jobs "$BUILD_JOBS" \
             --diagnostics-dir build/new-horizons-windows-x64/compile-diagnostics \
             --cache-key-requested "$REQUESTED_KEY" --cache-key-matched "$MATCHED_KEY"
 

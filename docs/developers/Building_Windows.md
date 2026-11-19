@@ -266,7 +266,10 @@ python tools/ci/build_windows_client.py build --build-root build/new-horizons-wi
 regression-target and compile-database flags used by the
 [Windows workflow](../../.github/workflows/new-horizons-windows.yml). `build` compiles
 the BattleAI guard objects first, then builds the client and its companion targets.
-Both stages use four jobs by default. `--jobs` accepts 1 through 10. Ninja response files are
+Both stages use six jobs by default. `--jobs` accepts integers from 1 through 10.
+The manual workflow exposes `build_jobs` (default 6) for same-revision comparisons
+with 4 jobs. Dependency preparation and the early bootstrap smoke keep their
+existing four-job limits. Ninja response files are
 retained with `-d keeprsp`. Dependency preparation, installation, packaging and
 runtime checks remain separate steps.
 
@@ -290,6 +293,16 @@ keys and sccache counters before and after compilation. It retains
 Ninja action durations for slow-action analysis. Each Ninja invocation has its
 own clock, so action timestamps across the guard and client stages cannot be
 used as one timeline.
+
+On native Windows, diagnostics also sample host physical memory and committed
+memory every 0.5 seconds during the compiler stages. The report includes total
+and available physical bytes, sampled peaks, sample failures and missed
+intervals. These host measurements include sccache children and unrelated
+processes. They are sampled lower bounds, not exact process-tree peaks or memory
+attributed solely to compilation. The sampler uses
+[GetPerformanceInfo](https://learn.microsoft.com/en-us/windows/win32/api/psapi/nf-psapi-getperformanceinfo);
+the system's since-boot commit peak is deliberately excluded. Non-Windows hosts
+do not start a sampler.
 
 For a Wine host, configure the licensed MSVC/SDK tools and wrappers externally,
 then use `build --build-root` for that configured tree and select the host's CMake

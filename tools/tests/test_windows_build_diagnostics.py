@@ -90,7 +90,7 @@ class WindowsBuildDiagnosticsTest(unittest.TestCase):
             self.assertEqual(len(compile_calls), 1)
             self.assertEqual(compile_calls[0].args[0], [
                 'cmake', '--build', str(tree), '--target', *build.GUARD_OBJECT_TARGETS,
-                '--parallel', '4', '--', '-d', 'keeprsp', '-k', '0'])
+                '--parallel', '6', '--', '-d', 'keeprsp', '-k', '0'])
             report = json.loads((output / 'build-diagnostics.json').read_text())
             self.assertEqual(report['stages'][0]['exitCode'], 17)
             self.assertGreaterEqual(report['wallSeconds'], 0)
