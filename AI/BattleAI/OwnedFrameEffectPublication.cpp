@@ -34,7 +34,6 @@ void OwnedFrameEffectQueries::publish()
 	}
 	for(auto & [unit, prepared] : scalars)
 	{
-		const StackWithBonuses::ProjectionMutation projectionMutation(*unit);
 		battle::exchangePreparedUnitStateValues(*unit, prepared.unit());
 		++unit->treeVersionLocal;
 	}

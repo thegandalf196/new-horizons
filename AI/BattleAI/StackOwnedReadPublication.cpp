@@ -18,7 +18,6 @@ bool StackWithBonuses::stageOwnedModifierFacts(
 		|| binding.ghost != ghost || binding.summoned != summoned
 		|| binding.natureSummoned != natureSummoned) return false;
 	// Never swap fixed base, source lease, owner, environment, proxy or cache.
-	const ProjectionMutation projectionMutation(*this);
 	modifierCurrentProgram = std::move(program);
 	modifierQueryFrame = std::move(queries);
 	modifierQueriesVersion = treeVersionLocal;

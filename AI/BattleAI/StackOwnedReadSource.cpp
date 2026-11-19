@@ -41,7 +41,6 @@ std::unique_ptr<PreparedOwnedReadSource> StackWithBonuses::prepareOwnedReadSourc
 void StackWithBonuses::publishOwnedReadSource(PreparedOwnedReadSource & prepared) noexcept
 {
 	assert(prepared.source && prepared.program && prepared.queries && prepared.unit);
-	const ProjectionMutation projectionMutation(*this);
 	ownedReadSource.swap(prepared.source);
 	modifierBaseEffects.swap(prepared.effects);
 	modifierBaseProgram = prepared.program;
@@ -56,8 +55,6 @@ void StackWithBonuses::publishOwnedReadSource(PreparedOwnedReadSource & prepared
 	// native write view starts with an empty leaf; never merge it twice.
 	bonusesToAdd.clear(); bonusesToUpdate.clear(); bonusesToRemove.clear();
 	projectedEffects.reset(); projectedUnstackedEffects.reset();
-	projectionAliasesEscaped = false;
-	projectionAliasLease.reset();
 	capturedPhysicalAfflictionGroups.clear();
 	projectedBearer.reset(); ownedBearer.reset();
 	++treeVersionLocal;

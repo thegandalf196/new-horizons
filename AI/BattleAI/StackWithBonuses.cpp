@@ -64,7 +64,6 @@ bool hasSnapshotHeroSpecialEffects(const IBonusBearer & bearer)
 
 void StackWithBonuses::setOriginalBearer(const IBonusBearer * bearer)
 {
-	const ProjectionMutation projectionMutation(*this);
 	origBearer = bearer;
 	const auto * projected = dynamic_cast<const StackWithBonuses *>(bearer);
 	if(projected)
@@ -195,7 +194,6 @@ StackWithBonuses::~StackWithBonuses() = default;
 
 StackWithBonuses & StackWithBonuses::operator=(const battle::CUnitState & other)
 {
-	const ProjectionMutation projectionMutation(*this);
 	battle::CUnitState::operator=(other);
 	battleStartMaximumAggregateHP = other.getBattleStartMaximumAggregateHP();
 	return *this;
@@ -267,7 +265,6 @@ TConstBonusListPtr StackWithBonuses::getUnstackedBonuses(const CSelector & selec
 TConstBonusListPtr StackWithBonuses::getBonusesBeforeCreatureAbilitySuppression(
 	const CSelector & selector, const std::string & cachingStr, const bool unstacked) const
 {
-	exposeProjectionAliases(unstacked);
 	if(modifierBaseProgram && !damageScoringBonuses && !damageScoringUnstackedBonuses)
 		return currentModifierQueries()->query(selector, unstacked);
 	if(ownedQuerySource && !damageScoringBonuses)
@@ -302,7 +299,6 @@ int32_t StackWithBonuses::getTreeVersion() const
 
 void StackWithBonuses::onBattleFormChanged()
 {
-	const ProjectionMutation projectionMutation(*this);
 	battle::CUnitState::onBattleFormChanged();
 }
 

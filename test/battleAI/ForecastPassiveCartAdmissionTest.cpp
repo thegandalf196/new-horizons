@@ -1,6 +1,5 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt and AUTHORS. */
 #include "StdInc.h"
-#include "StackProjectionTestAccess.h"
 #include "ForecastNativeAdapterFixture.h"
 #include "../../AI/BattleAI/ForecastAmmoCartAdmission.h"
 
@@ -32,9 +31,9 @@ TEST_F(ForecastNativeAdapterTest, CanonicalCartIntrinsicRemainsPassiveAndRejects
 		auto branch = std::make_shared<HypotheticBattle>(environment.get(), visible);
 		auto edited = branch->getForUpdate(cart->unitId());
 		auto foreign = std::make_shared<Bonus>(*intrinsic);
-		if(mutation == 0) StackWithBonusesTestAccess::removeIdentity(*edited, intrinsicRecord);
-		if(mutation == 1) StackWithBonusesTestAccess::appendAdded(*edited, foreign);
-		if(mutation == 2) StackWithBonusesTestAccess::appendUpdated(*edited, foreign);
+		if(mutation == 0) edited->bonusesToRemove.insert(intrinsicRecord);
+		if(mutation == 1) edited->bonusesToAdd.push_back(foreign);
+		if(mutation == 2) edited->bonusesToUpdate.push_back(foreign);
 		EXPECT_EQ(forecast::ammoCartAdmission::intrinsic(*edited), nullptr) << mutation;
 		EXPECT_FALSE(forecast::NativeAdapter::prepareExchange(*branch)) << mutation;
 		EXPECT_FALSE(branch->forecastState());

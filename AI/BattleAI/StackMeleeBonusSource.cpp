@@ -64,7 +64,6 @@ bool StackWithBonuses::captureMeleeBonusSource(MeleeBonusSource & result) const
 				--remaining;
 				if(meleeExpiry(record.get()) && !excluded.contains(record))
 				{
-					layer->exposeProjectionAliases(false);
 					result.localExports.push_back(record);
 				}
 			}
@@ -76,7 +75,6 @@ bool StackWithBonuses::captureMeleeBonusSource(MeleeBonusSource & result) const
 
 void StackWithBonuses::suppressMeleeBonusIdentities(const std::set<std::shared_ptr<Bonus>> & records)
 {
-	const ProjectionMutation projectionMutation(*this);
 	bonusesToRemove.insert(records.begin(), records.end());
 	const auto selected = [&records](const auto & record) { return records.contains(record); };
 	vstd::erase_if(bonusesToAdd, selected);

@@ -21,7 +21,6 @@
 #include "../../lib/bonuses/RecipientBonusOverlay.h"
 #include "../../lib/battle/CUnitState.h"
 #include "../../lib/battle/GraveDustEffectChanges.h"
-#include "../../lib/battle/MechanicsPresence.h"
 
 namespace frozenScoring { class OwnedSource; }
 namespace bonusDependencies { struct QueryFrameBinding; class CapturedModifiers; class OwnedBonusQueryFrame; class RecipientLayerSource; }
@@ -45,13 +44,19 @@ class DLL_LINKAGE StackWithBonuses : public battle::CUnitState, public virtual I
 	friend class HypotheticBattle;
 	friend class forecast::NativeAdapter;
 	friend class OwnedFrameEffectQueries;
-	friend struct StackWithBonusesTestAccess;
 public:
 	/// Exact original export owner plus uncopied unit-local overlay identities.
 	bool captureMeleeBonusSource(MeleeBonusSource & result) const;
 	std::shared_ptr<const bonusDependencies::CapturedModifiers> captureModifierFacts(
 		const battle::OwnedUnitBonusFrame * authorizedOwnedFrame) const;
 	void suppressMeleeBonusIdentities(const std::set<std::shared_ptr<Bonus>> & records);
+	// Queries must retain each local record's identity: descendant removals
+	// suppress the original pointer, not every bonus with an equal value.
+	std::vector<std::shared_ptr<Bonus>> bonusesToAdd;
+	std::vector<std::shared_ptr<Bonus>> bonusesToUpdate;
+	std::set<std::shared_ptr<Bonus>> bonusesToRemove;
+	int treeVersionLocal;
+
 	StackWithBonuses(const HypotheticBattle *, std::shared_ptr<const forecast::NativeReadView>,
 		std::shared_ptr<const bonusDependencies::CapturedModifiers>, std::shared_ptr<const forecastEffects::State>);
 	std::unique_ptr<PreparedOwnedReadSource> prepareOwnedReadSource(std::shared_ptr<const forecast::NativeReadView>,
@@ -148,48 +153,6 @@ public:
 	std::string getDescription() const override;
 
 private:
-	// Queries retain each local identity. Only the unit's effect operations may
-	// mutate these containers; imported caller-owned aliases are test fixtures.
-	std::vector<std::shared_ptr<Bonus>> bonusesToAdd;
-	std::vector<std::shared_ptr<Bonus>> bonusesToUpdate;
-	std::set<std::shared_ptr<Bonus>> bonusesToRemove;
-	int treeVersionLocal;
-	struct LocalPresence
-	{
-		battle::MechanicsPresence types;
-		size_t records = 0;
-		uint64_t version = 0;
-		bool complete = true;
-		bool cacheable = true;
-	};
-	mutable std::optional<LocalPresence> projectionPresence;
-	uint64_t projectionVersion = 0;
-	unsigned projectionMutationDepth = 0;
-	mutable bool projectionAliasesEscaped = false;
-	// Allocated only when an effect draft shares owned record pointees. Either
-	// receiver exposing a mutable query alias retires both receivers' caches.
-	mutable std::shared_ptr<bool> projectionAliasLease;
-	void invalidateProjectionPresence() noexcept;
-	void exposeProjectionAliases(bool unstacked = true) const noexcept;
-	const LocalPresence & localProjectionPresence() const;
-	recipientBonusOverlay::View borrowedRecipientOverlayView() const;
-	class ProjectionMutation
-	{
-		StackWithBonuses & unit;
-	public:
-		explicit ProjectionMutation(StackWithBonuses & unit) : unit(unit)
-		{
-			++unit.projectionMutationDepth;
-			unit.invalidateProjectionPresence();
-		}
-		~ProjectionMutation()
-		{
-			unit.invalidateProjectionPresence();
-			--unit.projectionMutationDepth;
-		}
-		ProjectionMutation(const ProjectionMutation &) = delete;
-		ProjectionMutation & operator=(const ProjectionMutation &) = delete;
-	};
 	std::shared_ptr<const bonusDependencies::CapturedModifiers> modifierBaseProgram;
 	std::shared_ptr<const bonusDependencies::RecipientLayerSource> modifierSourceLease;
 	mutable std::shared_ptr<const bonusDependencies::CapturedModifiers> modifierCurrentProgram;
