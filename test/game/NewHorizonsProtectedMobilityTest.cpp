@@ -474,7 +474,8 @@ TEST_F(NewHorizonsProtectedMobilityTest, OldPlainHeroReadResetsPreloadedFlightLa
 	start(false);
 	ASSERT_TRUE(hero->getPrimaryGrowthRules().isNull());
 	ASSERT_TRUE(hero->getCapabilityRules().isNull());
-	for(const auto * rules : {&hero->getMagicRules(), &hero->getMasteryState().rules, &hero->getPerkState().getRules()})
+	const JsonNode & masteryRules = hero->getMasteryState().rules;
+	for(const auto * rules : {&hero->getMagicRules(), &masteryRules, &hero->getPerkState().getRules()})
 	{
 		ASSERT_TRUE(rules->isStruct() && rules->Struct().empty());
 	}

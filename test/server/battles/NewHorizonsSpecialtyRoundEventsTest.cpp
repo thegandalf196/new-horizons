@@ -204,7 +204,6 @@ TEST_F(NewHorizonsSpecialtyRoundEventsTest, RoundReceiptCopiesRoundtripsAndRejec
 TEST_F(NewHorizonsSpecialtyRoundEventsTest, NativeRoundPublicationAddsOneAndPublishesTheSpentReceipt)
 {
 	prepare("core:kalt", "core:waterElemental");
-	BattleNextRound next; next.battleID = BattleID(0);
 	BattleNextRound next; next.battleID = battle()->getBattleID();
 	gameHandler->sendAndApply(next);
 	battleRoundHealing::afterRound(*gameHandler, *battle());

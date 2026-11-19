@@ -234,7 +234,10 @@ TEST(NewHorizonsPerkAvailability, TierSlotUsesRegistryTierRegardlessOfSavedSelec
 	};
 
 	checkSelectedTiers();
-	std::reverse(state.getSelected().begin(), state.getSelected().end());
+	perkStateFixture::editSelected(state, [](auto & selected)
+	{
+		std::reverse(selected.begin(), selected.end());
+	});
 	checkSelectedTiers();
 }
 
