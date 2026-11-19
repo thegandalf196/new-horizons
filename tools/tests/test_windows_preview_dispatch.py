@@ -146,13 +146,14 @@ class WindowsPreviewDispatchTest(unittest.TestCase):
                 self.assertNotEqual(result.returncode, 0)
                 self.assertEqual(summary, '')
 
-    def test_normal_workflow_defaults_remain_opt_in(self):
+    def test_normal_workflow_defaults_enable_unity_and_preserve_other_controls(self):
         trigger = self.workflow.get('on', self.workflow.get(True))
         inputs = trigger['workflow_dispatch']['inputs']
         self.assertIs(inputs['preflight_only']['default'], True)
         self.assertIs(inputs['use_precompiled_headers']['default'], True)
         self.assertEqual(inputs['build_jobs']['default'], 4)
-        for name in ('use_unity_build', 'use_hot_header_pch', 'skip_pch_cache_save'):
+        self.assertIs(inputs['use_unity_build']['default'], True)
+        for name in ('use_hot_header_pch', 'skip_pch_cache_save'):
             self.assertIs(inputs[name]['default'], False)
         for name in ('pch_off_cache_seed', 'repack_run_id'):
             self.assertEqual(inputs[name]['default'], '')

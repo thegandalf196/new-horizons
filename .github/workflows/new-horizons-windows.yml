@@ -12,9 +12,9 @@ on:
         type: boolean
         default: true
       use_unity_build:
-        description: Opt-in C++ Unity compilation experiment (batch size 8)
+        description: Use C++ Unity compilation (batch size 8)
         type: boolean
-        default: false
+        default: true
       use_hot_header_pch:
         description: Opt-in target-local hot header PCH experiment (requires precompiled headers)
         type: boolean

@@ -11,9 +11,9 @@ read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 
 - The Windows and Linux launchers show first-run setup and artwork preparation
   progress. They can check for and install matching game updates.
-- Quick combat reuses damage estimates when the active battle state permits
-  it and evaluates the three most promising approaches to distant targets.
-- Fixes a crash while the AI evaluates a spell against an affected stack.
+- Faster Quick Combat reuses damage estimates when the active battle state
+  permits it and evaluates the three most promising approaches to distant targets.
+- Fixed crashes when a unit has Bind and in several other bonus checks.
 - Interrupted artwork preparation can be retried on the next launch.
 - Canceling artwork preparation or closing the Linux launcher during startup
   retains the log and allows the game to start normally on the next launch.
@@ -21,6 +21,7 @@ read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 - Vidomina pays the normal Wight-to-Wraith upgrade price to convert each
   Wraith into a Ghost. Soul Harvest shows the Resurrection animation on the
   growing Ghost stack and plays the Vampire Lord's drain sound.
+- Fixed Consecrated Arms granting an unintended follow-up spell or Order.
 - Supported 1164 saves keep their captured rules.
 
 ## 0.92.3 Early Access
