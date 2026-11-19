@@ -99,8 +99,8 @@ def main(argv=None):
     configure_parser.set_defaults(operation=configure)
     build_parser = commands.add_parser('build', help='Build the client, portable entry point and regression targets')
     build_parser.add_argument('--build-root', required=True, help='Configured Windows Ninja build directory')
-    build_parser.add_argument('--jobs', type=int, choices=range(1, 11), default=6,
-                              help='Maximum concurrent build jobs (default: 6)')
+    build_parser.add_argument('--jobs', type=int, choices=range(1, 11), default=4,
+                              help='Maximum concurrent build jobs (default: 4)')
     build_parser.add_argument('--diagnostics-dir', help='Retain timings, cache statistics and Ninja log here')
     build_parser.add_argument('--sccache', default='sccache', help='Compiler cache executable for diagnostics')
     build_parser.add_argument('--cache-key-requested', default='', help='Requested compiler-cache archive key')

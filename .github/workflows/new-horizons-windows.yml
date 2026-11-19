@@ -22,7 +22,11 @@ on:
       build_jobs:
         description: Integer compiler jobs from 1 through 10 (compare 4 and 6 on the same revision)
         type: number
-        default: 6
+        default: 4
+      skip_pch_cache_save:
+        description: Opt-in experiment to skip saving the compiler cache while PCH is enabled
+        type: boolean
+        default: false
       pch_off_cache_seed:
         description: Leave empty for a normal build, enter cold to seed a trial, or enter the cold run ID to repeat it
         type: string
@@ -74,7 +78,7 @@ jobs:
           import json, os, re, subprocess
           controls = json.loads(os.environ['TRIAL_INPUTS'])
           required = {'preflight_only': False, 'use_precompiled_headers': True,
-                      'use_hot_header_pch': False, 'build_jobs': 4,
+                      'use_hot_header_pch': False, 'build_jobs': 4, 'skip_pch_cache_save': False,
                       'pch_off_cache_seed': '', 'repack_run_id': ''}
           for name, expected in required.items():
               value = controls.get(name)
@@ -197,7 +201,7 @@ jobs:
           create-symlink: false
           max-size: 5G
           restore: ${{ inputs.pch_off_cache_seed == '' }}
-          save: ${{ !inputs.use_precompiled_headers && inputs.pch_off_cache_seed == '' }}
+          save: ${{ inputs.pch_off_cache_seed == '' && (!inputs.use_precompiled_headers || !inputs.skip_pch_cache_save) }}
 
       - name: Package audit regression tests (no PE execution)
         run: |

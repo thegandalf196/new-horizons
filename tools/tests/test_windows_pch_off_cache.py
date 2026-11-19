@@ -81,14 +81,15 @@ class WindowsPchOffCacheTest(unittest.TestCase):
         self.assertIs(diagnostics['with']['include-hidden-files'], True)
         self.assertIn('build/new-horizons-windows-x64/.ninja_log', diagnostics['with']['path'].splitlines())
 
-    def test_normal_cache_restores_but_saves_only_without_pch_or_a_trial(self):
+    def test_normal_cache_save_retains_default_and_allows_pch_opt_out(self):
         cache = self.steps['Cache compiler outputs for packaging retries']
         self.assertNotIn('inputs.use_precompiled_headers', cache.get('if', ''))
         self.assertEqual(cache['with']['variant'], 'sccache')
         self.assertEqual(cache['with']['restore'], "${{ inputs.pch_off_cache_seed == '' }}")
         self.assertIsInstance(cache['with']['save'], str)
         self.assertEqual(cache['with']['save'],
-                         "${{ !inputs.use_precompiled_headers && inputs.pch_off_cache_seed == '' }}")
+                         "${{ inputs.pch_off_cache_seed == '' && "
+                         "(!inputs.use_precompiled_headers || !inputs.skip_pch_cache_save) }}")
 
 
 if __name__ == '__main__':

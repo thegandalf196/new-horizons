@@ -15,7 +15,8 @@ ROOT = Path(__file__).resolve().parents[2]
 BRANCH = 'refs/heads/performance/quick-combat-and-ci'
 CONTROLS = {'preflight_only': False, 'use_precompiled_headers': True,
             'use_hot_header_pch': False, 'build_jobs': 4,
-            'pch_off_cache_seed': '', 'repack_run_id': '', 'use_unity_build': False}
+            'pch_off_cache_seed': '', 'repack_run_id': '', 'use_unity_build': False,
+            'skip_pch_cache_save': False}
 
 
 class WindowsPreviewDispatchTest(unittest.TestCase):
@@ -60,7 +61,7 @@ class WindowsPreviewDispatchTest(unittest.TestCase):
     def test_unmatched_controls_fail_before_any_dependency_build(self):
         changes = {'preflight_only': True, 'use_precompiled_headers': False,
                    'use_hot_header_pch': True, 'build_jobs': 6,
-                   'pch_off_cache_seed': 'cold', 'repack_run_id': '123',
+                   'pch_off_cache_seed': 'cold', 'repack_run_id': '123', 'skip_pch_cache_save': True,
                    'use_unity_build': 'true'}
         for key, value in changes.items():
             with self.subTest(key=key):

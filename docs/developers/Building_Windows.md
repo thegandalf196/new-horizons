@@ -266,9 +266,9 @@ python tools/ci/build_windows_client.py build --build-root build/new-horizons-wi
 regression-target and compile-database flags used by the
 [Windows workflow](../../.github/workflows/new-horizons-windows.yml). `build` compiles
 the BattleAI guard objects first, then builds the client and its companion targets.
-Both stages use six jobs by default. `--jobs` accepts integers from 1 through 10.
-The manual workflow exposes `build_jobs` (default 6) for same-revision comparisons
-with 4 jobs. Dependency preparation and the early bootstrap smoke keep their
+Both stages use four jobs by default. `--jobs` accepts integers from 1 through 10.
+Set the manual workflow input `build_jobs=6` to compare six jobs against the
+four-job configuration on the same revision. Dependency preparation and the early bootstrap smoke keep their
 existing four-job limits. Ninja response files are
 retained with `-d keeprsp`. Dependency preparation, installation, packaging and
 runtime checks remain separate steps.
@@ -278,7 +278,8 @@ The workflow dispatch input `use_precompiled_headers` defaults to `true`. Set it
 ordinary MSVC object compilations without PCH. A cold build may be slower; this
 option provides no full-build speed guarantee. The shared `configure` command also
 defaults to PCH on; select `--use-precompiled-headers OFF` explicitly to use that route.
-The `build` command retains the tree's configured PCH setting.
+The `build` command retains the tree's configured PCH setting. Set
+`skip_pch_cache_save=true` to test skipping cache upload with PCH enabled.
 
 To measure a cold and warm compiler cache pair, dispatch a full Windows build with
 `preflight_only=false`, `use_precompiled_headers=false`, and

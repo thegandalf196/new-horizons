@@ -23,7 +23,7 @@ class WindowsBuildClientTest(unittest.TestCase):
         workflow = yaml.safe_load((ROOT / '.github/workflows/new-horizons-windows.yml').read_text())
         setting = workflow.get('on', workflow.get(True))['workflow_dispatch']['inputs']['build_jobs']
         self.assertEqual(setting['type'], 'number')
-        self.assertEqual(setting['default'], 6)
+        self.assertEqual(setting['default'], 4)
         step = next(row for row in workflow['jobs']['build']['steps']
                     if row.get('name') == 'Compile Windows x64 client')
         self.assertEqual(step['env']['BUILD_JOBS'], '${{ inputs.build_jobs }}')
@@ -151,7 +151,7 @@ class WindowsBuildClientTest(unittest.TestCase):
         self.assertEqual(status, 19)
         run.assert_called_once_with([
             'cmake', '--build', 'configured build tree', '--target',
-            *build.GUARD_OBJECT_TARGETS, '--parallel', '6', '--', '-d', 'keeprsp', '-k', '0',
+            *build.GUARD_OBJECT_TARGETS, '--parallel', '4', '--', '-d', 'keeprsp', '-k', '0',
         ], check=False)
         self.assertNotIn('vcmiclient', run.call_args.args[0])
 
