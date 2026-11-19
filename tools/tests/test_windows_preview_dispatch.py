@@ -32,14 +32,25 @@ class WindowsPreviewDispatchTest(unittest.TestCase):
         self.assertTrue(text.endswith('PY\n'))
         return text.split('\n', 1)[1].rsplit('PY\n', 1)[0]
 
-    def run_controls(self, controls, revision=None):
+    def run_controls(self, controls, revision=None, environment=None):
         with tempfile.TemporaryDirectory() as temporary:
             summary = Path(temporary) / 'summary'
             revision = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip() if revision is None else revision
             env = dict(os.environ, TRIAL_INPUTS=json.dumps(controls), GITHUB_SHA=revision,
-                       GITHUB_STEP_SUMMARY=str(summary))
-            result = subprocess.run([sys.executable, '-B', '-c', self.script('Validate matched performance preview controls')],
+                       GITHUB_STEP_SUMMARY=str(summary), GITHUB_REF=BRANCH,
+                       GITHUB_EVENT_NAME='workflow_dispatch')
+            env.update(environment or {})
+            report = Path(temporary) / 'trial-controls.json'
+            result = subprocess.run([sys.executable, '-B', str(ROOT / 'tools/ci/windows_preview_controls.py'),
+                                     '--report', str(report)],
                                     cwd=ROOT, env=env, text=True, capture_output=True, check=False)
+            if result.returncode == 0:
+                recorded = json.loads(report.read_text())
+                self.assertEqual(recorded['sourceRevision'], revision)
+                self.assertIs(type(recorded['controls']['build_jobs']), int)
+                self.assertIn(recorded['profile'], summary.read_text())
+            else:
+                self.assertFalse(report.exists())
             return result, summary.read_text() if summary.exists() else ''
 
     def test_only_main_and_exact_manual_branch_are_admitted(self):
@@ -50,6 +61,9 @@ class WindowsPreviewDispatchTest(unittest.TestCase):
         self.assertEqual(self.steps['Validate matched performance preview controls']['if'], "github.ref == '" + BRANCH + "'")
         self.assertEqual(self.workflow['permissions'], {'contents': 'read', 'actions': 'read'})
         self.assertEqual(self.workflow['concurrency'], {'group': 'new-horizons-windows-x64', 'cancel-in-progress': False})
+        self.assertEqual(self.steps['Validate matched performance preview controls']['run'],
+                         'python tools/ci/windows_preview_controls.py '
+                         '--report build/new-horizons-windows-x64/compile-diagnostics/trial-controls.json')
 
     def test_both_arms_accept_identical_controls_and_record_source(self):
         for unity in (False, True):
@@ -73,8 +87,27 @@ class WindowsPreviewDispatchTest(unittest.TestCase):
             result, _ = self.run_controls(raw)
             self.assertEqual(result.returncode, 0, result.stderr)
 
+    def test_all_bounded_profiles_accept_canonical_jobs_and_record_distinct_names(self):
+        profiles = set()
+        for unity in (False, True):
+            for jobs in (4, 6):
+                for skip in (False, True):
+                    for hot in (False, True):
+                        controls = dict(CONTROLS, use_unity_build=unity, build_jobs=jobs,
+                                        skip_pch_cache_save=skip, use_hot_header_pch=hot)
+                        result, summary = self.run_controls(controls)
+                        self.assertEqual(result.returncode, 0, result.stderr)
+                        self.assertIn(json.dumps(controls, sort_keys=True), summary)
+                        profile = summary.split('Profile: `', 1)[1].split('`', 1)[0]
+                        self.assertNotIn(profile, profiles)
+                        profiles.add(profile)
+                        result, raw_summary = self.run_controls(dict(controls, build_jobs=str(jobs)))
+                        self.assertEqual(result.returncode, 0, result.stderr)
+                        self.assertEqual(summary, raw_summary)
+        self.assertEqual(len(profiles), 16)
+
     def test_bad_types_and_noncanonical_values_are_not_coerced(self):
-        invalid = {'build_jobs': [4.0, True, False, None, 0, 6, '04', '4.0', '+4', ' 4', '4 ', [], {}],
+        invalid = {'build_jobs': [4.0, 6.0, True, False, None, 0, 5, 10, '04', '06', '4.0', '+4', ' 4', '4 ', [], {}],
                    'pch_off_cache_seed': [None, False, 0, [], 'cold'],
                    'repack_run_id': [None, False, 0, [], '123']}
         for name in ('preflight_only', 'use_precompiled_headers', 'use_hot_header_pch',
@@ -92,6 +125,19 @@ class WindowsPreviewDispatchTest(unittest.TestCase):
             del raw[name]
             result, _ = self.run_controls(raw)
             self.assertNotEqual(result.returncode, 0, name)
+
+    def test_unknown_controls_and_nonobject_inputs_are_rejected(self):
+        for controls in (dict(CONTROLS, unknown=True), [], None, 'controls'):
+            result, summary = self.run_controls(controls)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertEqual(summary, '')
+
+    def test_helper_rejects_nonmanual_or_other_branch_execution(self):
+        for environment in ({'GITHUB_REF': 'refs/heads/main'}, {'GITHUB_REF': BRANCH + '-other'},
+                            {'GITHUB_EVENT_NAME': 'push'}, {'GITHUB_EVENT_NAME': ''}):
+            result, summary = self.run_controls(CONTROLS, environment=environment)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertEqual(summary, '')
 
     def test_invalid_revision_and_mismatched_checkout_remain_rejected(self):
         for revision in ('', 'A' * 40, 'a' * 39, 'a' * 41, 'g' * 40, 'a' * 40):
@@ -113,8 +159,7 @@ class WindowsPreviewDispatchTest(unittest.TestCase):
 
     def test_unmatched_controls_fail_before_any_dependency_build(self):
         changes = {'preflight_only': True, 'use_precompiled_headers': False,
-                   'use_hot_header_pch': True, 'build_jobs': 6,
-                   'pch_off_cache_seed': 'cold', 'repack_run_id': '123', 'skip_pch_cache_save': True,
+                   'build_jobs': 8, 'pch_off_cache_seed': 'cold', 'repack_run_id': '123',
                    'use_unity_build': 'true'}
         for key, value in changes.items():
             with self.subTest(key=key):

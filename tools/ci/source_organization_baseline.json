@@ -50,11 +50,11 @@
     },
     ".github/workflows/new-horizons-windows.yml": {
       "functions": [],
-      "sha256": "e8eefab5ad77af728630262bb9e96dbb54a6c7890b6e85998cf8f558e136660f",
-      "review": "IR-WINDOWS-FAILURE-LICENSE-EVIDENCE-20261119",
+      "sha256": "6d60c89c6df34a5058b19ef0d0d7aa2d51c36a5dda132f22ff4f00897fb5c4c7",
+      "review": "IR-WINDOWS-A6A-BOUNDED-TRIAL-CONTROLS-20261119",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_ONLY",
-      "rationale": "Complete exact626-line YAML callable inventory is empty. All28 run bodies inspected; four directPython bodies and three BashPython heredocs parse to zero functions/lambdas, and shell/PowerShell bodies add no definitions. Changed licensing preflight retains top-level ordered statements; helper source12functions is parsed separately, not hidden in workflow inventory.",
-      "review_scope": "Exact complete callable inventory and failure-only diagnostic routing; no build, remote result, privatekey access, licenseadmission or package authorization."
+      "rationale": "Complete exact600-line workflow inventory is empty. All28run bodies reviewed; fourdirectPython and twoBashPython heredocs parse to zero functions/lambdas. The former admission heredoc is extracted into focused94-line windows_preview_controls.py (3functions,largest23lines). Other workflow structure is unchanged. No hidden callable or missing manual span.",
+      "review_scope": "Exact complete workflow callable inventory and bounded trial admission only; no tests/build/remote result/default tuning or release acceptance."
     },
     ".github/workflows/qt_translation_update.yml": {
       "functions": [],
@@ -17431,14 +17431,14 @@
     ".github/workflows/new-horizons-windows.yml": {
       "deferral": "Before further workflow expansion, move the next cohesive inline validation or package-check body into a focused tested CI helper while preserving exact inputs, compile-step timing boundaries, failures and artifacts. No generic workflow growth allowance.",
       "kind": "exception",
-      "lines": 626,
+      "lines": 600,
       "owner": "engine_engineer",
       "prior_deferral": "Existing engine engineer ownership remains. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral. This exception covers only the exact542-line official source URL/comment correction with all transport, size, digest and cache admission controls unchanged. No future growth, numerical ceiling change or coverage exclusion is authorized. This separate review permits only the exact547-line explicit-interpreter successor. Before further expansion, engine_engineer must extract the affected dependency/preflight/package stage into a focused script or shared action, preserving source/cache, CRT/notices, dispatch and artifact contract checks and lowering the orchestration baseline. No future growth, default ceiling increase or exclusion is granted. This separate urgent-correctness review covers only the exact556-line early-bootstrap-smoke ordering successor. Existing extraction obligations and all ceilings remain unchanged; no future growth is authorized.",
-      "rationale": "Current exact workflow shrinks627to626 by extracting previous inline failure notice filename scan into a focused250-line evidence helper (largestfunction26). Failure handler remains after unchanged authoritative Microsoft admission; only exactperformance branch manual dispatch may invoke diagnostics, and originalfailure is reraised. Upload adds only sanitizedJSON and recipientencryptedCMS, never plaintext. Earlier accepted branch trial/instrumentation explains broadbase533to626; this exact bounded technical exception preserves inherited next-cohesive-extraction obligations and authorizes no future growth.",
-      "review": "IR-WINDOWS-FAILURE-LICENSE-EVIDENCE-20261119",
-      "review_scope": "Exact failure-only encrypteddiagnostic successor627to626; inherited previously reviewed branch/cache/trial instrumentation retained. Broad comparison69f824 has533lines; no generalized workflow growth permission.",
+      "rationale": "Shrinks currentworkflow626to600 by moving complete branch/source/typed-controls admission and structured report into focused94-line helper. Newbehavior only explicitly admits16bounded combinations of Unity,4/6jobs,skipcache-save andhotPCH, with fixedPCHon/preflightoff/emptycache/repack. Normaldefaults and allotherworkflowkeys/steps byte-equivalent in parsedYAML to frozenbase3ce75993. No compilation/runtime settings are silently changed; records identify eachprofile. Inherited previously reviewed broadbase533to600 technicalexception remains exacthash-bound. Preserve nextcohesive stage extraction obligations; nofuturegrowth allowance.",
+      "review": "IR-WINDOWS-A6A-BOUNDED-TRIAL-CONTROLS-20261119",
+      "review_scope": "Exact626to600-line cohesive admission extraction and16boundedprofiles. Broad69f8241c43 base533lines; earlier separately reviewed branch/trial/diagnostic scopes remain, no broad workflow growth permission.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_ONLY",
-      "sha256": "e8eefab5ad77af728630262bb9e96dbb54a6c7890b6e85998cf8f558e136660f",
+      "sha256": "6d60c89c6df34a5058b19ef0d0d7aa2d51c36a5dda132f22ff4f00897fb5c4c7",
       "inherited_deferral_step2": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count."
     },
     "AI/BattleAI/AttackPossibility.cpp": {

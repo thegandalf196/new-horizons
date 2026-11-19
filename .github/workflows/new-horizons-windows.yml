@@ -73,35 +73,9 @@ jobs:
         if: github.ref == 'refs/heads/performance/quick-combat-and-ci'
         env:
           TRIAL_INPUTS: ${{ toJSON(inputs) }}
-        run: |
-          python - <<'PY'
-          import json, os, re, subprocess
-          controls = json.loads(os.environ['TRIAL_INPUTS'])
-          # Dispatch numbers can arrive as strings; empty optional strings can be omitted.
-          if type(controls.get('build_jobs')) is str and controls['build_jobs'] == '4':
-              controls['build_jobs'] = 4
-          for name in ('pch_off_cache_seed', 'repack_run_id'):
-              if name not in controls:
-                  controls[name] = ''
-          required = {'preflight_only': False, 'use_precompiled_headers': True,
-                      'use_hot_header_pch': False, 'build_jobs': 4, 'skip_pch_cache_save': False,
-                      'pch_off_cache_seed': '', 'repack_run_id': ''}
-          for name, expected in required.items():
-              value = controls.get(name)
-              if type(value) is not type(expected) or value != expected:
-                  raise SystemExit(f'Performance preview requires {name}={expected!r}')
-          if type(controls.get('use_unity_build')) is not bool:
-              raise SystemExit('Performance preview requires a boolean use_unity_build')
-          revision = os.environ['GITHUB_SHA']
-          if not re.fullmatch('[0-9a-f]{40}', revision):
-              raise SystemExit('Invalid source revision')
-          if subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip() != revision:
-              raise SystemExit('Checkout differs from the dispatched source revision')
-          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as stream:
-              stream.write('## Matched Windows preview trial\n')
-              stream.write(f'Source: `{revision}`\n\nControls: `{json.dumps(controls, sort_keys=True)}`\n\n')
-              stream.write('Preview artifacts only. Release, tag and updater publication are separate.\n')
-          PY
+        run: >-
+          python tools/ci/windows_preview_controls.py
+          --report build/new-horizons-windows-x64/compile-diagnostics/trial-controls.json
 
       - name: Verify preserved dependency recipes without upstream lookup
         run: python tools/ci/verify_vendored_dependencies.py
