@@ -29063,12 +29063,12 @@
     "tools/ci/package_new_horizons_windows.py": {
       "deferral": "Owner: engine_engineer. Before next substantive expansion, extract payload inventory/resource filtering and its validation into a focused pure inventory/filter boundary returning the exact payload manifest before any package mutation. Preserve exact-source binding, selected art and licensing, native binary/facade identity, complete manifest agreement, and negative tests proving invalid input causes no partial package mutation. Keep extracted callables <=150 lines and files <=1000 lines. Only the present native Lua-resource filter at the recorded hash/size is excepted; no future growth allowance. ",
       "kind": "review",
-      "lines": 693,
-      "rationale": "Packager file shrinks698to693 and main102to97 against explicit broadbase69f8241c43. Existing portable layout owner grows106to154, with focused30line path report and10line archive helper; no transferred oversized unit. Caller retains resource/privacy audit and ordering, delegating only finalized report+manifest+ZIP publication. Fresh payload file membership/order, checksum relative paths, archive stem, DEFLATEDlevel6 and external artifact summary remain unchanged. Manifest explicitly excludes itself. Preserve inherited payload-inventory/resource-filter extraction obligation before unrelated growth. No numerical exception or future expansion allowance.",
-      "review": "IR-WINDOWS-ARCHIVE-BOUNDARY-EXTRACTION-20261119",
-      "review_scope": "Exact cohesive archive extraction and path-report/checksum order against69f8241c43; no build/package/native or hosted acceptance.",
+      "lines": 684,
+      "rationale": "Packager shrinks693to684 (public69f8241c43 base698) by moving reviewed environment/installednotice logic into focused existing windows_crt_provenance.py,105to216lines with10functions/largest53. collect_microsoft_notices shrinks55to46; main and existing178line collect_notices bodies remain byte-identical to priorreview. Full downloaded originalDOCX hashes/retention preserved; exact reviewed14.52environment adds stablecompleteVS/toolset/provider/DLL/notice checks without broadening historical14.51route. Preserve prior packageinventory/filter extraction obligations; no numeric waiver or futuregrowth permission.",
+      "review": "IR-WINDOWS-A5-EXACT-REVIEWED-RUNTIME-20261119",
+      "review_scope": "Exact A5 notice/provider admission and finalbinding source only; no compiler, realselectedCMake/newpackage or redistribution authorization.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY",
-      "sha256": "0cb2e5e638792874b1c7f5b8d1ba2514aaec490f1bfcaf13fc18106c7df4c05d"
+      "sha256": "9e643faad0ec3ea9c20ec4d42ea134d2b7259330510f56b69e5974c75045bbf0"
     },
     "tools/ci/package_new_horizons_windows.py::collect_notices#1": {
       "kind": "legacy",

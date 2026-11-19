@@ -154,10 +154,8 @@ def collect_microsoft_notices(package):
     """Retain exact full CRT AND redistribution terms; an SDK EULA is not a substitute."""
     vs = Path(os.environ.get("VSINSTALLDIR", "__missing__"))
     redist = Path(os.environ.get("VCToolsRedistDir", "__missing__"))
-    if vs.parent.name != "18" or vs.name not in {"Enterprise", "Professional"}:
-        raise RuntimeError("Microsoft notice applicability requires VS 2026 Enterprise/Professional")
-    if not re.fullmatch(r"14\.51\.\d+", redist.name):
-        raise RuntimeError("Review Microsoft runtime version and terms before publishing this toolchain")
+    from windows_crt_provenance import retain_installed_notices, review_notice_environment
+    reviewed = review_notice_environment(vs, redist)
     destination = package / "licenses" / "Microsoft"
     destination.mkdir(parents=True, exist_ok=True)
     terms = [
@@ -189,20 +187,13 @@ def collect_microsoft_notices(package):
         original.with_suffix(".txt").write_text("\n".join(paragraphs) + "\n", encoding="utf-8")
         provenance.append({"file": filename, "sha256": expected, "url": url,
                            "resolved_url": resolved, "official_landing_page": page})
-    redist_list = vs / "Licenses" / "1033" / "Redist.txt"
-    if not redist_list.is_file():
-        raise RuntimeError("Installed Visual Studio redistribution-list notice missing")
-    shutil.copyfile(redist_list, destination / "VS2026-Redist.txt")
     sdk = Path(os.environ.get("WindowsSdkDir", "__missing__"))
-    sdk_terms = sorted((sdk / "Licenses").glob("*/sdk_license.rtf"))
-    if not sdk_terms:
-        raise RuntimeError("Installed Windows SDK license missing")
-    for source in sdk_terms:
-        shutil.copyfile(source, destination / ("SDK-" + source.parent.name + "-license.rtf"))
+    installed = retain_installed_notices(vs, sdk, destination, reviewed)
     write_json(destination / "PROVENANCE.json", {
         "visual_studio_major": 18, "edition": vs.name, "notice_environment_redist_directory_version": redist.name,
         "runtime_binding_status": "pending-final-package-byte-verification",
         "terms": provenance, "redistribution_list": "https://aka.ms/vs/18/redistribution",
+        "installed_notices": installed,
         "scope": "Full runtime terms plus VS redistribution terms; SDK terms do not grant CRT redistribution",
     })
 
