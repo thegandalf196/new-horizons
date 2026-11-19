@@ -2638,27 +2638,17 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 		auto nextAllowances = side.heroActionAllowances;
 		if(sharedActionBudget)
 		{
-			const auto mandate = commandBattle->battleGetDivineMandateStatus(pack.ba.side);
-			const bool mandateAvailable = mandate.active
-				&& mandate.completedPairs < mandate.maximumPairs;
-			const auto orderGrantFilter = [mandateAvailable, commandBattle, &pack](const HeroActionAllowanceState::Grant & grant)
-			{
-				if(newHorizonsCommand::usesRules(commandBattle->getHeroCommandRules()))
-					return grant.allowance == HeroActionAllowanceState::AllowanceKind::HERO
-						&& grant.source == HeroActionAllowanceState::GrantSource::ROUND;
-				return commandBattle->getCrisisCommandState().allowsGrant(pack.ba.side, grant)
-					&& (grant.source != HeroActionAllowanceState::GrantSource::DIVINE_MANDATE || mandateAvailable);
-			};
-			const auto selected = orderActionTransition::select(nextAllowances, commandBattle->getRound(), orderGrantFilter);
+			const auto selected = commandBattle->battleGetOrderActionAllowance(pack.ba.side);
 			if(!selected)
 				throw std::runtime_error("Accepted Order has no eligible action allowance");
 			if(acceptedPreCombatOrderState
 				&& (selected->allowance != HeroActionAllowanceState::AllowanceKind::ORDER
 					|| selected->source != HeroActionAllowanceState::GrantSource::BATTLE_PLAN))
 				throw std::runtime_error("Battle Plan Order has no selected dedicated allowance");
-			orderReceipt = orderActionTransition::consume(nextAllowances, selected->grantId, commandBattle->getRound(), orderGrantFilter);
+			orderReceipt = orderActionTransition::consume(nextAllowances, *selected, commandBattle->getRound());
 			if(!orderReceipt)
 				throw std::runtime_error("Could not commit accepted Order action allowance");
+			const auto mandate = commandBattle->battleGetDivineMandateStatus(pack.ba.side);
 			const auto * hero = commandBattle->battleGetFightingHero(pack.ba.side);
 			const auto recipients = pack.orderState && newHorizonsDivineMandate::needsRecipientCapture(hero)
 				? newHorizonsDivineMandate::sharedPurposeOrderRecipients(*commandBattle, pack.ba.side, *pack.orderState)

@@ -82,13 +82,7 @@ bool projectOrderAllowance(const CBattleInfoCallback & battle, BattleSide side,
 	if(!selected)
 		throw std::runtime_error("Order has no accepted action allowance");
 	const auto mandate = battle.battleGetDivineMandateStatus(side);
-	const bool mandateAvailable = mandate.active && mandate.completedPairs < mandate.maximumPairs;
-	const auto filter = [&battle, side, mandateAvailable](const HeroActionAllowanceState::Grant & grant)
-	{
-		return battle.getBattle()->getCrisisCommandState().allowsGrant(side, grant)
-			&& (grant.source != HeroActionAllowanceState::GrantSource::DIVINE_MANDATE || mandateAvailable);
-	};
-	const auto receipt = orderActionTransition::consume(projected, selected->grantId, battle.battleGetRound(), filter);
+	const auto receipt = orderActionTransition::consume(projected, *selected, battle.battleGetRound());
 	if(!receipt)
 		throw std::runtime_error("Order allowance changed during projection");
 	const auto * hero = battle.battleGetFightingHero(side);

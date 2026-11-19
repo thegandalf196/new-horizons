@@ -76,8 +76,10 @@ bool HypotheticBattle::commitProjectedHeroOrder(BattleSide side,
 {
 	const auto command = effects ? effects->order.command : legacyCommand;
 	const auto & action = prepared.action;
+	const bool historicalMandate = action.receipt.allowance == HeroActionAllowanceState::AllowanceKind::ORDER
+		&& action.receipt.source == HeroActionAllowanceState::GrantSource::DIVINE_MANDATE;
 	if(action.receipt.action != HeroActionAllowanceState::ActionKind::ORDER
-		|| !action.isHeroAction() || !isCurrentPreparedOrderAction(side, prepared, true))
+		|| (!action.isHeroAction() && !historicalMandate) || !isCurrentPreparedOrderAction(side, prepared, true))
 		return false;
 	const bool finiteCommand = newHorizonsCommand::usesFiniteResources(getHeroCommandRules());
 	newHorizonsCommand::ResourceState paidResources;

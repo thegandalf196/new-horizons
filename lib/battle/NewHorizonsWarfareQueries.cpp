@@ -34,10 +34,18 @@ std::optional<HeroActionAllowanceState::Selection> CBattleInfoEssentials::battle
 		const auto & resources = getBattle()->getCommandResources(side);
 		if(!resources.initialized || resources.remaining == 0) return {};
 	}
-	return allowances.eligibleAllowance(HeroActionAllowanceState::ActionKind::ORDER, round,
-		[](const HeroActionAllowanceState::Grant & grant)
-		{ return grant.allowance == HeroActionAllowanceState::AllowanceKind::HERO
-			&& grant.source == HeroActionAllowanceState::GrantSource::ROUND; });
+	using Ledger = HeroActionAllowanceState;
+	return allowances.eligibleAllowance(Ledger::ActionKind::ORDER, round,
+		[this, side](const Ledger::Grant & grant)
+		{
+			if(grant.allowance == Ledger::AllowanceKind::HERO)
+				return grant.source == Ledger::GrantSource::ROUND;
+			if(grant.allowance != Ledger::AllowanceKind::ORDER || grant.source != Ledger::GrantSource::DIVINE_MANDATE)
+				return false;
+			// Captured paired Mandate may spend only its own active follow-up.
+			const auto mandate = battleGetDivineMandateStatus(side);
+			return mandate.pendingFollowup && mandate.pendingFollowup->id == grant.id;
+		});
 }
 
 int CBattleInfoCallback::battleWarfareStatBonus(const battle::Unit * unit) const

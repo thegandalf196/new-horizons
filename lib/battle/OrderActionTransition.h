@@ -30,6 +30,16 @@ std::optional<Ledger::Receipt> consume(Ledger & staged, uint32_t selectedGrantId
 		round, grantPredicate);
 }
 
+/// Admit only the exact selection already validated by the battle callback.
+inline std::optional<Ledger::Receipt> consume(Ledger & staged, const Ledger::Selection & selection, int32_t round)
+{
+	return consume(staged, selection.grantId, round, [&selection](const Ledger::Grant & grant)
+	{
+		return grant.id == selection.grantId && grant.allowance == selection.allowance
+			&& grant.source == selection.source && grant.expiryRound == selection.expiryRound;
+	});
+}
+
 /// Does not imply a selected perk: false still calls begin, whose shape check
 /// precedes its inactive-perk return. Do not replace this with a caller guard.
 DLL_LINKAGE std::optional<DoubleCommandState> preparePrimaryDoubleCommand(

@@ -125,12 +125,10 @@ std::optional<HypotheticBattle::ProjectedOrderAllowance> HypotheticBattle::prepa
 		auto nextLedger = ledger;
 		if(nextLedger.currentRound != projectedRound)
 			return {};
-		const auto crisisFilter = [](const HeroActionAllowanceState::Grant & grant)
-			{ return grant.allowance == HeroActionAllowanceState::AllowanceKind::HERO; };
-		const auto selection = orderActionTransition::select(nextLedger, projectedRound, crisisFilter);
+		const auto selection = battleGetOrderActionAllowance(side);
 		if(!selection)
 			return {};
-		const auto receipt = orderActionTransition::consume(nextLedger, selection->grantId, projectedRound, crisisFilter);
+		const auto receipt = orderActionTransition::consume(nextLedger, *selection, projectedRound);
 		if(!receipt)
 			return {};
 		return ProjectedOrderAllowance{{side, *receipt, true, projectedActionEpochs.at(side)},

@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "NewHorizonsCommandResources.h"
+#include "ConsecratedArms.h"
 #include "PassiveDivineMandate.h"
 #include "CBattleInfoEssentials.h"
 
@@ -46,8 +47,10 @@ const HeroActionAllowanceState & callbackAllowanceLedger(const CBattleInfoEssent
 
 uint8_t divineMandateMaximumPairs(const CGHeroInstance * hero)
 {
-	if(!hero || newHorizonsPassiveDivineMandate::enabled(hero->getPerkState().getRules())
-		|| !hero->usesPrimaryGrowth())
+	if(!hero || !hero->usesPrimaryGrowth()) return 0;
+	const auto & perkRules = hero->getPerkState().getRules();
+	if(!newHorizonsHeroes::usesPerkRules(perkRules)
+		|| newHorizonsPassiveDivineMandate::enabled(perkRules) || consecratedArms::enabled(perkRules))
 		return 0;
 	const auto * savedRules = hero->compiledDevelopment();
 	if(!savedRules->active())
@@ -58,9 +61,6 @@ uint8_t divineMandateMaximumPairs(const CGHeroInstance * hero)
 		return 0;
 	const int rank = hero->getSecSkillLevel(*factionSkill);
 	if(rank < 1 || rank > 3)
-		return 0;
-	const auto & perkRules = hero->getPerkState().getRules();
-	if(!newHorizonsHeroes::usesPerkRules(perkRules))
 		return 0;
 	static constexpr std::array<const char *, 4> rankNames = {"", "basic", "advanced", "expert"};
 	const auto & rankEffect = perkRules["skills"]["new-horizons:divineMandate"]["ranks"][rankNames[rank]]["effect"];
@@ -128,7 +128,6 @@ std::optional<HeroActionAllowanceState::Selection> CBattleInfoEssentials::battle
 	const bool lightSpell = isLightSpellInSavedRules(getBattle()->getMagicRules(), spell);
 	const auto mandate = battleGetDivineMandateStatus(side);
 	const bool mandateAvailable = mandate.active && mandate.completedPairs < mandate.maximumPairs;
-	const auto * hero = battleGetFightingHero(side);
 	return allowances.eligibleAllowance(HeroActionAllowanceState::ActionKind::SPELL, round,
 		[lightSpell, mandateAvailable](const HeroActionAllowanceState::Grant & grant)
 		{
