@@ -48,9 +48,10 @@
     },
     ".github/workflows/new-horizons-windows.yml": {
       "functions": [],
-      "rationale": "Complete exact533-line workflow manual callable inventory remains empty. All retained/new run bodies are top-level Bash, PowerShell and Python assignments, imports, control/loop blocks and external invocations; no new local named function, lambda or generated callable is introduced. Removed inline dependency seed bodies now live as exactly inventoried42/41/22-line named Bash functions in the119-line dedicated source. Existing run blocks retain their earlier reviewed callable shape. Exact hash coverage only; no growth waiver or hosted/native/rendered acceptance.",
-      "review": "IR-WINDOWS-PCH-OFF-COLD-WARM-EXPERIMENT-20261118",
-      "sha256": "4c55451e656520cd802b5b31572429a2c4d07a9565036ed1ae7c586c13dcebd0"
+      "sha256": "4fe97b8a72b02bbb18f0b305f588e7f08d10b49012df653cdd12ef88863b26df",
+      "review": "IR-WINDOWS-STEP4-JOBS-HOST-MEMORY-ORG-V1",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
+      "rationale": "Complete exact549-line committed workflow callable inventory is empty. All Python run bodies were AST checked for function/lambda definitions; Bash/PowerShell run bodies and embedded Python heredoc contain only top-level assignments, controls, imports and external invocations. Six new lines define/forward the bounded build_jobs input; sampling resides in the focused107-line Python owner. No local named function, lambda or generated callable is introduced."
     },
     ".github/workflows/qt_translation_update.yml": {
       "functions": [],
@@ -65,103 +66,105 @@
       "sha256": "4e16898f372a3f2cc153db43b5326a4327a9156ee29722a3d3ce0e31b1b2dd09"
     },
     "AI/BattleAI/AttackPossibility.h": {
-      "sha256": "b926803004df5e92d59eac480bdd8ec93da60aa2f37790f444d2336fe83e9ee5",
-      "review": "IR-NH0921-C14-1164-CODEORG-20261117",
-      "rationale": "All five body-bearing definitions are included: two damage/provenance helpers, one pointer-to-member timing accumulator, and two cache constructors. All remaining methods are declarations or deleted/defaulted declarations without handwritten bodies. Recovery at the existing pointer-to-member arithmetic is confined to the16-line accumulator, whose original signature/body span is retained. Complete original-file callable inventory independently checked against the pinned parser and a syntax-only probe retaining every original body span. Original source and span hashes remain authoritative; this is no diagnostics waiver or content/size/runtime approval.",
+      "sha256": "fb54d7f08a341311f79dbb128c8d8a5aaa0fc86e6b05f7bb14446ba03004610e",
+      "review": "IR-PERFORMANCE-THROUGH-STEP4-ORG-V1",
+      "rationale": "Complete exact389-line committed header inventory: all5 handwritten callable bodies remap by byte-identical text from reviewed preimage; only a forward declaration, state member or method declarations/optional forwarding arguments change. Known parser recovery is covered by these complete original spans, not waived. No new inline implementation, source-size exclusion or native/runtime acceptance.",
       "functions": [
         {
           "symbol": "inline battle::DamageProvenance battleAIDamageProvenance(const battle::Unit * attacker, bool physicalDamage)#1",
-          "start": 36,
-          "end": 44
+          "start": 37,
+          "end": 45
         },
         {
           "symbol": "inline BattleAIDamageProjection battleAIProjectDamage(const battle::Unit * target, int64_t incomingDamage, battle::DamageProvenance provenance, const battle::DamageContext * context = nullptr)#1",
-          "start": 56,
-          "end": 93
+          "start": 57,
+          "end": 94
         },
         {
           "symbol": "DamageCacheProbeTiming::void accumulate(const DamageCacheProbeTiming & sample)#1",
-          "start": 192,
-          "end": 207
+          "start": 193,
+          "end": 208
         },
         {
           "symbol": "DamageCache::DamageCache() : parent(nullptr)#1",
-          "start": 261,
-          "end": 261
+          "start": 263,
+          "end": 263
         },
         {
           "symbol": "DamageCache::DamageCache(const DamageCache * parent) : parent(parent)#1",
-          "start": 262,
-          "end": 262
+          "start": 264,
+          "end": 264
         }
-      ]
+      ],
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE"
     },
     "AI/BattleAI/BattleExchangeVariant.h": {
-      "sha256": "fa790e55491717bea96e02c05bc05f5e55b472ef13d5ce4aa8fb55ed735a2eef",
-      "review": "IR-NH0921-C20-ELEVEN-EXPORTS-MANUAL-20261117",
-      "rationale": "Complete exact368-line header inventory independently inspected: all12 handwritten callable bodies are retained, including score constructors/value/operator, result and exchange constructors, score accessor, reachability budget accessors, evaluator constructor and two effect multipliers. All other methods are out-of-line declarations; aggregates/default member initializers and declarations contain no hidden callable implementation. The sole change adds DLL_LINKAGE to one existing trackAttack overload declaration; every body span, body hash and function-list record remains unchanged. Two empty additional-unit default arguments cause declaration-only parser recovery; an exact-line syntax probe gives zero diagnostics and the same12 complete original spans. Exact coverage only; no body, size, native or future-content approval.",
+      "sha256": "f262c538f0dba92204115ff8406f6aea0adc7f5c76be109bad6780be25f02d36",
+      "review": "IR-PERFORMANCE-THROUGH-STEP4-ORG-V1",
+      "rationale": "Complete exact372-line committed header inventory: all12 handwritten callable bodies remap by byte-identical text from reviewed preimage; only a forward declaration, state member or method declarations/optional forwarding arguments change. Known parser recovery is covered by these complete original spans, not waived. No new inline implementation, source-size exclusion or native/runtime acceptance.",
       "functions": [
         {
           "symbol": "BattleScore::BattleScore(float enemyDamageReduce, float ourDamageReduce) :enemyDamageReduce(enemyDamageReduce), ourDamageReduce(ourDamageReduce)#1",
-          "start": 37,
-          "end": 40
+          "start": 38,
+          "end": 41
         },
         {
           "symbol": "BattleScore::BattleScore() : BattleScore(0, 0)#1",
-          "start": 42,
-          "end": 42
+          "start": 43,
+          "end": 43
         },
         {
           "symbol": "BattleScore::float value()#1",
-          "start": 44,
-          "end": 47
+          "start": 45,
+          "end": 48
         },
         {
           "symbol": "BattleScore::BattleScore operator+(BattleScore & other)#1",
-          "start": 49,
-          "end": 57
+          "start": 50,
+          "end": 58
         },
         {
           "symbol": "EvaluationResult::EvaluationResult(const AttackPossibility & ap) :wait(false), score(INEFFECTIVE_SCORE), bestAttack(ap), defend(false)#1",
-          "start": 80,
-          "end": 83
+          "start": 81,
+          "end": 84
         },
         {
           "symbol": "BattleExchangeVariant::BattleExchangeVariant() : dpsScore()#1",
-          "start": 95,
-          "end": 96
+          "start": 96,
+          "end": 97
         },
         {
           "symbol": "BattleExchangeVariant::const BattleScore & getScore() const#1",
-          "start": 127,
-          "end": 127
+          "start": 128,
+          "end": 128
         },
         {
           "symbol": "ReachabilityMapCache::const auto & searchBudget() const#1",
-          "start": 209,
-          "end": 209
-        },
-        {
-          "symbol": "ReachabilityMapCache::void setSearchBudget(std::shared_ptr<battleSearch::SearchBudget> budget)#1",
           "start": 210,
           "end": 210
         },
         {
+          "symbol": "ReachabilityMapCache::void setSearchBudget(std::shared_ptr<battleSearch::SearchBudget> budget)#1",
+          "start": 211,
+          "end": 211
+        },
+        {
           "symbol": "BattleExchangeEvaluator::BattleExchangeEvaluator( std::shared_ptr<CBattleInfoCallback> cb, std::shared_ptr<Environment> env, float strengthRatio, int simulationTurnsCount, bool reuseSelectedProbeScore = true) : cb(cb), env(env), simulationTurnsCount(simulationTurnsCount), reuseSelectedProbeScore(reuseSelectedProbeScore)#1",
-          "start": 318,
-          "end": 325
+          "start": 322,
+          "end": 329
         },
         {
           "symbol": "BattleExchangeEvaluator::float getPositiveEffectMultiplier() const#1",
-          "start": 366,
-          "end": 366
+          "start": 370,
+          "end": 370
         },
         {
           "symbol": "BattleExchangeEvaluator::float getNegativeEffectMultiplier() const#1",
-          "start": 367,
-          "end": 367
+          "start": 371,
+          "end": 371
         }
-      ]
+      ],
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE"
     },
     "AI/BattleAI/DamageCacheTimingScope.h": {
       "functions": [
@@ -271,9 +274,9 @@
       "sha256": "247cdfe27811667c1d5d4e5987d7e1fcf02f8057b6807f8d7636587248d29123"
     },
     "AI/BattleAI/HypotheticBattle.h": {
-      "sha256": "de1e337d7721f451e7c5d442ee11c247ec9cb751bd07d5cac2bc791c462b8953",
-      "review": "IR-NH0921-MSVC-OBSERVATION-INVENTORY-20261118",
-      "rationale": "Complete exact756-line header inventory independently checked against the prior765-line source. All64 handwritten callable bodies remain byte-identical; only the nine-line nested data-only observation definition is removed and the optional names its focused shared type. Nested callback/environment bodies after that location shift by-9; earlier spans and both conditional branches remain exact. No constructor body, lambda or function-like macro is omitted. Existing declaration-only empty-default recovery at411 is unchanged. Immutable observation payload ownership is implemented in the focused native observation owner, with no new inline implementation here. Exact-content coverage only; no size waiver, future growth, native/MSVC/rendered/performance or publication acceptance.",
+      "sha256": "e96732e4e079ed7a7ba5b2a67a6c0432a91fb2f8cc286a2e04c73d450f897764",
+      "review": "IR-PERFORMANCE-THROUGH-STEP4-ORG-V1",
+      "rationale": "Complete exact758-line committed header inventory: all64 handwritten callable bodies remap by byte-identical text from reviewed preimage; only a forward declaration, state member or method declarations/optional forwarding arguments change. Known parser recovery is covered by these complete original spans, not waived. No new inline implementation, source-size exclusion or native/runtime acceptance.",
       "functions": [
         {
           "symbol": "HypotheticBattle::const auto & searchBudget() const#1",
@@ -432,170 +435,171 @@
         },
         {
           "symbol": "HypotheticBattle::const newHorizonsCommand::ResourceState & getCommandResources(BattleSide side) const override#1",
-          "start": 339,
-          "end": 343
-        },
-        {
-          "symbol": "HypotheticBattle::bool hasCommandResourceObservation(BattleSide side) const#1",
-          "start": 344,
+          "start": 340,
           "end": 344
         },
         {
-          "symbol": "HypotheticBattle::void setCommandResources(BattleSide side, const newHorizonsCommand::ResourceState & state) override#1",
+          "symbol": "HypotheticBattle::bool hasCommandResourceObservation(BattleSide side) const#1",
           "start": 345,
-          "end": 349
+          "end": 345
         },
         {
-          "symbol": "HypotheticBattle::const newHorizonsCrisisCommand::State & getCrisisCommandState() const override#1",
-          "start": 350,
+          "symbol": "HypotheticBattle::void setCommandResources(BattleSide side, const newHorizonsCommand::ResourceState & state) override#1",
+          "start": 346,
           "end": 350
         },
         {
-          "symbol": "HypotheticBattle::void setCrisisCommandState(const newHorizonsCrisisCommand::State & state) override#1",
+          "symbol": "HypotheticBattle::const newHorizonsCrisisCommand::State & getCrisisCommandState() const override#1",
           "start": 351,
-          "end": 360
+          "end": 351
+        },
+        {
+          "symbol": "HypotheticBattle::void setCrisisCommandState(const newHorizonsCrisisCommand::State & state) override#1",
+          "start": 352,
+          "end": 361
         },
         {
           "symbol": "HypotheticBattle::const DoubleCommandState & getDoubleCommandState(BattleSide side) const override#1",
-          "start": 361,
-          "end": 364
+          "start": 362,
+          "end": 365
         },
         {
           "symbol": "HypotheticBattle::const PreCombatOrderState & getPreCombatOrderState(BattleSide side) const override#1",
-          "start": 365,
-          "end": 368
+          "start": 366,
+          "end": 369
         },
         {
           "symbol": "HypotheticBattle::bool hasCompletedHeroSpellCast(BattleSide side) const override#1",
-          "start": 370,
-          "end": 371
+          "start": 371,
+          "end": 372
         },
         {
           "symbol": "HypotheticBattle::int32_t getCastSpells(BattleSide side) const override#1",
-          "start": 373,
-          "end": 375
-        },
-        {
-          "symbol": "HypotheticBattle::bool getChainGateArmed(BattleSide side) const override#1",
-          "start": 376,
+          "start": 374,
           "end": 376
         },
         {
-          "symbol": "HypotheticBattle::bool getMasterGateUsed(BattleSide side) const override#1",
+          "symbol": "HypotheticBattle::bool getChainGateArmed(BattleSide side) const override#1",
           "start": 377,
           "end": 377
         },
         {
-          "symbol": "HypotheticBattle::uint8_t getPassiveDivineMandateUses(BattleSide side) const override#1",
+          "symbol": "HypotheticBattle::bool getMasterGateUsed(BattleSide side) const override#1",
           "start": 378,
           "end": 378
         },
         {
-          "symbol": "HypotheticBattle::bool hasObstacleChanges() const#1",
-          "start": 439,
-          "end": 439
+          "symbol": "HypotheticBattle::uint8_t getPassiveDivineMandateUses(BattleSide side) const override#1",
+          "start": 379,
+          "end": 379
         },
         {
-          "symbol": "HypotheticBattle::bool hasWallChanges() const#1",
+          "symbol": "HypotheticBattle::bool hasObstacleChanges() const#1",
           "start": 440,
           "end": 440
         },
         {
+          "symbol": "HypotheticBattle::bool hasWallChanges() const#1",
+          "start": 441,
+          "end": 441
+        },
+        {
           "symbol": "HypotheticBattle::int32_t getMoraleExtraDamagePercent() const override#1",
-          "start": 449,
-          "end": 449
+          "start": 450,
+          "end": 450
         },
         {
           "symbol": "HypotheticBattle::SylvanLuckState getSylvanLuckState(BattleSide side) const override#1",
-          "start": 465,
-          "end": 465
-        },
-        {
-          "symbol": "HypotheticBattle::SylvanLuckDamageFlags getSylvanLuckDamageFlags(BattleSide side) const override#1",
           "start": 466,
           "end": 466
         },
         {
-          "symbol": "HypotheticBattle::PerfectFortuneState getPerfectFortuneState(BattleSide side) const override#1",
+          "symbol": "HypotheticBattle::SylvanLuckDamageFlags getSylvanLuckDamageFlags(BattleSide side) const override#1",
           "start": 467,
           "end": 467
         },
         {
-          "symbol": "HypotheticBattle::LuckSerendipityState getLuckSerendipityState(BattleSide side) const override#1",
+          "symbol": "HypotheticBattle::PerfectFortuneState getPerfectFortuneState(BattleSide side) const override#1",
           "start": 468,
           "end": 468
         },
         {
-          "symbol": "HypotheticBattle::void setLuckSerendipityState(BattleSide side, const LuckSerendipityState & state) override#1",
+          "symbol": "HypotheticBattle::LuckSerendipityState getLuckSerendipityState(BattleSide side) const override#1",
           "start": 469,
-          "end": 473
+          "end": 469
+        },
+        {
+          "symbol": "HypotheticBattle::void setLuckSerendipityState(BattleSide side, const LuckSerendipityState & state) override#1",
+          "start": 470,
+          "end": 474
         },
         {
           "symbol": "HypotheticBattle::void setPerfectFortuneState(BattleSide side, const PerfectFortuneState & state) override#1",
-          "start": 474,
-          "end": 478
-        },
-        {
-          "symbol": "HypotheticBattle::void setSylvanLuckState(BattleSide side, const SylvanLuckState & state)#1",
-          "start": 479,
+          "start": 475,
           "end": 479
         },
         {
-          "symbol": "HypotheticBattle::AdverseCombatRerollState getAdverseCombatRerollState(BattleSide side) const override#1",
+          "symbol": "HypotheticBattle::void setSylvanLuckState(BattleSide side, const SylvanLuckState & state)#1",
           "start": 480,
-          "end": 483
+          "end": 480
+        },
+        {
+          "symbol": "HypotheticBattle::AdverseCombatRerollState getAdverseCombatRerollState(BattleSide side) const override#1",
+          "start": 481,
+          "end": 484
         },
         {
           "symbol": "HypotheticBattle::void setAdverseCombatRerollState(BattleSide side, const AdverseCombatRerollState & state) override#1",
-          "start": 484,
-          "end": 489
+          "start": 485,
+          "end": 490
         },
         {
           "symbol": "HypotheticBattle::void endFortuneActivation()#1",
-          "start": 490,
-          "end": 500
+          "start": 491,
+          "end": 501
         },
         {
           "symbol": "HypotheticBattle::MoraleSuppressionState getMoraleSuppressionState(BattleSide side) const override#1",
-          "start": 503,
-          "end": 506
+          "start": 504,
+          "end": 507
         },
         {
           "symbol": "HypotheticBattle::void setMoraleSuppressionState(BattleSide side, const MoraleSuppressionState & state) override#1",
-          "start": 507,
-          "end": 511
+          "start": 508,
+          "end": 512
         },
         {
           "symbol": "HypotheticBattle::LuckRollRules getLuckRollRules() const override#1",
-          "start": 516,
-          "end": 516
-        },
-        {
-          "symbol": "HypotheticBattle::bool getRawFinalDirectPhysicalLuckPolicy() const override#1",
           "start": 517,
           "end": 517
         },
         {
+          "symbol": "HypotheticBattle::bool getRawFinalDirectPhysicalLuckPolicy() const override#1",
+          "start": 518,
+          "end": 518
+        },
+        {
           "symbol": "HypotheticBattle::const std::vector<ProjectedPlagueHit> & getProjectedPlagueHits() const#1",
-          "start": 584,
-          "end": 584
+          "start": 585,
+          "end": 585
         },
         {
           "symbol": "HypotheticBattle::void resetActiveUnit()#1",
-          "start": 595,
-          "end": 598
+          "start": 596,
+          "end": 599
         },
         {
           "symbol": "HypotheticBattle::HypotheticServerCallback::void recordExtendSpellCast(BattleSide side) override#1",
-          "start": 701,
-          "end": 701
+          "start": 703,
+          "end": 703
         },
         {
           "symbol": "HypotheticBattle::HypotheticEnvironment::void closeNativeSource() noexcept#1",
-          "start": 731,
-          "end": 731
+          "start": 733,
+          "end": 733
         }
-      ]
+      ],
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE"
     },
     "AI/BattleAI/HypotheticBattleTypes.h": {
       "functions": [
@@ -12607,61 +12611,101 @@
     "test/battleAI/MechanicsPresenceAITest.cpp": {
       "functions": [
         {
-          "end": 27,
-          "start": 26,
-          "symbol": "GuardQueryProbe::GuardQueryProbe(const HypotheticBattle * owner, std::shared_ptr<StackWithBonuses> target) : StackWithBonuses(owner, target.get()), target(std::move(target))#1"
-        },
-        {
-          "end": 28,
+          "symbol": "GuardQueryProbe::GuardQueryProbe(const HypotheticBattle * owner, std::shared_ptr<StackWithBonuses> target) : StackWithBonuses(owner, target.get()), target(std::move(target))#1",
           "start": 28,
-          "symbol": "GuardQueryProbe::bool mayHaveBonusType(BonusType type) const override#1"
+          "end": 29
         },
         {
-          "end": 33,
-          "start": 29,
-          "symbol": "GuardQueryProbe::TConstBonusListPtr getAllBonuses(const CSelector & selector, const std::string & key = {}) const override#1"
+          "symbol": "GuardQueryProbe::bool mayHaveBonusType(BonusType type) const override#1",
+          "start": 30,
+          "end": 30
         },
         {
-          "end": 38,
-          "start": 34,
-          "symbol": "GuardQueryProbe::TConstBonusListPtr getUnstackedBonuses(const CSelector & selector) const override#1"
+          "symbol": "GuardQueryProbe::TConstBonusListPtr getAllBonuses(const CSelector & selector, const std::string & key = {}) const override#1",
+          "start": 31,
+          "end": 35
         },
         {
-          "end": 44,
-          "start": 39,
-          "symbol": "GuardQueryProbe::TConstBonusListPtr getBonusesBeforeCreatureAbilitySuppression(const CSelector & selector, const std::string & key = {}, bool unstacked = false) const override#1"
+          "symbol": "GuardQueryProbe::TConstBonusListPtr getUnstackedBonuses(const CSelector & selector) const override#1",
+          "start": 36,
+          "end": 40
         },
         {
-          "end": 51,
-          "start": 47,
-          "symbol": "Bonus suppressionMarker()#1"
+          "symbol": "GuardQueryProbe::TConstBonusListPtr getBonusesBeforeCreatureAbilitySuppression(const CSelector & selector, const std::string & key = {}, bool unstacked = false) const override#1",
+          "start": 41,
+          "end": 46
         },
         {
-          "end": 76,
-          "start": 54,
-          "symbol": "TEST_F(MechanicsPresenceAITest, AbsentLegacyGuardsPerformZeroMergedQueriesAndPublicAppendIsImmediate)#1"
+          "symbol": "Bonus suppressionMarker()#1",
+          "start": 49,
+          "end": 53
         },
         {
-          "end": 98,
-          "start": 78,
-          "symbol": "TEST_F(MechanicsPresenceAITest, ParentPublicEditsSnapshotsAndSiblingsKeepIndependentPresence)#1"
+          "symbol": "TEST_F(MechanicsPresenceAITest, AbsentLegacyGuardsPerformZeroMergedQueriesAndControlledAppendIsImmediate)#1",
+          "start": 56,
+          "end": 78
         },
         {
-          "end": 117,
-          "start": 100,
-          "symbol": "TEST_F(MechanicsPresenceAITest, InheritedInactiveLimiterAndNativeInvalidationNeverProveFalseAbsence)#1"
+          "symbol": "TEST_F(MechanicsPresenceAITest, ParentControlledEditsSnapshotsAndSiblingsKeepIndependentPresence)#1",
+          "start": 80,
+          "end": 100
         },
         {
-          "end": 128,
-          "start": 119,
-          "symbol": "TEST_F(MechanicsPresenceAITest, CustomGetterExtensionsRemainUnknown)#1"
+          "symbol": "TEST_F(MechanicsPresenceAITest, InheritedInactiveLimiterAndNativeInvalidationNeverProveFalseAbsence)#1",
+          "start": 102,
+          "end": 119
+        },
+        {
+          "symbol": "TEST_F(MechanicsPresenceAITest, CustomGetterExtensionsRemainUnknown)#1",
+          "start": 121,
+          "end": 130
+        },
+        {
+          "symbol": "TEST_F(MechanicsPresenceAITest, OrdinaryOperationsInvalidatePresenceAndRoundExpiry)#1",
+          "start": 132,
+          "end": 154
+        },
+        {
+          "symbol": "TEST_F(MechanicsPresenceAITest, QueriesDuringMutationNeverReuseIntermediateSummary)#1",
+          "start": 156,
+          "end": 163
+        },
+        {
+          "symbol": "TEST_F(MechanicsPresenceAITest, QueryPointeeMutationKeepsExactPresenceAfterAliasEscape)#1",
+          "start": 165,
+          "end": 178
+        },
+        {
+          "symbol": "TEST_F(MechanicsPresenceAITest, PreparedDraftMutableAliasesRetireBothSharedSummaries)#1",
+          "start": 180,
+          "end": 195
+        },
+        {
+          "symbol": "TEST_F(MechanicsPresenceAITest, RawProjectionAndFrozenScoringAliasesRemainObservable)#1",
+          "start": 197,
+          "end": 216
+        },
+        {
+          "symbol": "TEST_F(MechanicsPresenceAITest, PublishingPreparedEffectsInvalidatesBothReceivers)#1",
+          "start": 218,
+          "end": 232
+        },
+        {
+          "symbol": "TEST_F(MechanicsPresenceAITest, BorrowedUpdaterGraphNeverBecomesAnOwnedTypeSummary)#1",
+          "start": 234,
+          "end": 254
+        },
+        {
+          "symbol": "TEST_F(MechanicsPresenceAITest, LayerSummariesPreserveTheCombinedRecordBudget)#1",
+          "start": 256,
+          "end": 268
         }
       ],
-      "rationale": "Complete exact-file callable inventory: 10 body-bearing definitions/macros (previous 0; 0 exact body-span bytes retained from the independently reviewed HEAD preimage). Named current spans include nested lambdas and all inline/template bodies; removed/added identities are separately reconciled. Recovery contexts: line29: TConstBonusListPtr getAllBonuses(const CSelector & selector, const std::string & key = {}) const override; line40: const std::string & key = {}, bool unstacked = false) const override. These coverage spans are not size exceptions, parser/gate exclusions, native acceptance or future-content approval.",
-      "review": "IR-NH092-ORG-3E82D142-20261116",
+      "rationale": "Complete exact268-line Step1 test callable inventory:18 bodies, including all six query/helper bodies and twelve TEST_F scenarios. The two default-initializer recovery contexts at31/42 are covered by inspected original body spans, not excluded. Eight preexisting unchanged bodies remap byte-exact; two renamed controlled-edit scenarios and eight new cache/alias/updater/budget cases were source-reviewed. Native execution remains unverified.",
+      "review": "IR-PERFORMANCE-STEP2-BUILD-ORG-V1",
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
-      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "64602d76372c5dcc0a10daed1024a7d548871f255ad6ee5a684a3e4b661f4dff"
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
+      "sha256": "8ad92a0c724176312f5513dae13b2313eebc59177342aae57c064cdc56289a8e"
     },
     "test/battleAI/NewHorizonsBulwarkAITest.cpp": {
       "functions": [
@@ -17153,10 +17197,11 @@
       ]
     },
     "AI/BattleAI/HeroDecisionPressure.h": {
-      "sha256": "c42595eed2b5f9243a30aca00d447ef548cdc664fa8cc97198a8a55e4786add4",
-      "review": "IR-NH0921-COMPOSED4-CODEORG-20261117",
-      "rationale": "Complete exact-content callable inventory independently checked, including definitions, inline bodies, templates, lambdas and function-like macros across both NH_PERF_EXPERIMENTS branches. Original physical spans are retained; parser recovery remains explicit and does not imply empty coverage. Known recovery contexts were inspected; declaration/default-initializer syntax contributes no executable body.",
-      "functions": []
+      "sha256": "18ac220bdb3a274a4e63cb998310c1556636712b3974f2b236883518b82804a8",
+      "review": "IR-PERFORMANCE-STEP2-BUILD-ORG-V1",
+      "rationale": "Complete exact committed Step2 callable inventory; every retained body remapped by exact original bytes. Only forward declarations and optional observation arguments change; no new inline implementation. Known parser recovery remains explicitly covered. Moving Step3 working-tree postimages are NOT reviewed by this record.",
+      "functions": [],
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE"
     }
   },
   "schema": 1,
@@ -17171,27 +17216,17 @@
       "sha256": "709a32fe2882e293a3b4f12f3c99352066714652b2c50861b0d046d915d6f6f8"
     },
     ".github/workflows/new-horizons-windows.yml": {
-      "deferral": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.",
+      "deferral": "Exact549-line committed workflow only. Owner engine_engineer must extract the next cohesive dependency/preflight/package responsibility into a focused script or shared action before further substantive orchestration expansion, preserve dispatch/cache/CRT/notices/target/artifact controls and lower the orchestration baseline. No future growth, threshold increase, native or performance approval. Preserve all inherited stricter obligations below.\nExact committed hash and size only, not future growth or native/build/performance approval. Owner engine_engineer must keep future conditional compile policy in focused target helpers and extract the next cohesive stage before further orchestration expansion. Preserve all stricter inherited source/link/guard/ordering obligations below.\nPreserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.",
       "kind": "exception",
-      "lines": 533,
+      "lines": 549,
       "owner": "engine_engineer",
       "prior_deferral": "Existing engine engineer ownership remains. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral. This exception covers only the exact542-line official source URL/comment correction with all transport, size, digest and cache admission controls unchanged. No future growth, numerical ceiling change or coverage exclusion is authorized. This separate review permits only the exact547-line explicit-interpreter successor. Before further expansion, engine_engineer must extract the affected dependency/preflight/package stage into a focused script or shared action, preserving source/cache, CRT/notices, dispatch and artifact contract checks and lowering the orchestration baseline. No future growth, default ceiling increase or exclusion is granted. This separate urgent-correctness review covers only the exact556-line early-bootstrap-smoke ordering successor. Existing extraction obligations and all ceilings remain unchanged; no future growth is authorized.",
-      "rationale": "Exact555 to533-line shrinking workflow scope: the three preexisting verified dependency-source seeds move into a focused119-line Bash owner (largest42-line function), with shell indentation normalized and heredoc bytes exactly preserved. New opt-in PCH-off cold/warm trial uses one explicit commit/run-ID cache key, an initially empty isolated directory, no broad restore fallback, exact warm matched-key admission and success-only cold save. Existing configure flags, target order, guard fail-fast behavior, four jobs, toolchain/CRT/notices/package gates unchanged. Diagnostics upload runs on failure and includes the raw build-root Ninja log even before the helper starts; compiler terminal output stays in Actions logs. All inherited stage-extraction obligations and no-future-growth limits remain binding.",
-      "review": "IR-WINDOWS-PCH-OFF-COLD-WARM-EXPERIMENT-20261118",
-      "review_scope": "Exact source-only workflow/cache/diagnostic integration review and metadata; no remote dispatch, compilation, measured speedup, native or package/publication acceptance.",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_REVIEW_HOSTED_UNRUN",
-      "sha256": "4c55451e656520cd802b5b31572429a2c4d07a9565036ed1ae7c586c13dcebd0"
-    },
-    "AI/BattleAI/AttackDamageValue.cpp::float AttackPossibility::calculateDamageReduce( const battle::Unit * attacker, const battle::Unit * defender, uint64_t damageDealt, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, DamageCacheProbeTiming * timing)#1": {
-      "deferral": "Extract the capacity-health valuation branch into a typed detached-state scoring helper before extending this estimator. Characterize Phantom threshold, survivor cohorts, capped damage, fallback reference attacker and original-damage cache observations.",
-      "kind": "legacy",
-      "lines": 100,
-      "owner": "ai_engineer",
-      "rationale": "The100-line damage-reduction estimator keeps Phantom Integrity all-or-nothing pressure, detached capacity-health cohorts and ordinary wounded-creature bounty calculation in one read-only scoring entry. Cache timing is optional and forwarded; it does not sample live RNG. Freeze only of this unchanged comparison-source body; existing concentration remains debt, not accepted design quality. No future expansion or feature/native/rendered approval.",
-      "review": "IR-F86-IMMUTABLE-METADATA-COVERAGE-AND-DEBT-FREEZE-20261109",
-      "review_scope": "Exact unchanged comparison-source legacy debt freeze only; no future growth, feature or native/rendered approval.",
-      "review_status": "INDEPENDENT_EXACT_UNCHANGED_LEGACY_DEBT_FREEZE",
-      "sha256": "e601ead3122291a4fb34993f681723c4a2eba998bf36246af08551b4e1029f1c"
+      "rationale": "Exact bounded543to549 physical-line successor adds only the build_jobs numeric input(default6), environment forwarding and helper argument. Integer1to10 admission and both compiler stages remain owned by the116-line helper; Windows host memory sampling belongs to the107-line dedicated owner and179-line diagnostic coordinator. Existing bootstrap/dependency four-job limits, target/toolchain order, cache admission, notices, runtime/package checks and opt-in Unity/PCH boundaries remain. No sampling implementation is embedded in workflow. This exact six-line integration allowance does not authorize future orchestration growth or waive inherited stage-extraction obligations.",
+      "review": "IR-WINDOWS-STEP4-JOBS-HOST-MEMORY-ORG-V1",
+      "review_scope": "Exact workflow callable inventory and bounded source organization through ba88edb218 only; no hosted/native execution, performance, package or release acceptance.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_ONLY",
+      "sha256": "4fe97b8a72b02bbb18f0b305f588e7f08d10b49012df653cdd12ef88863b26df",
+      "inherited_deferral_step2": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count."
     },
     "AI/BattleAI/AttackPossibility.cpp": {
       "composition_predecessor_review": "PROPOSED-IR-CURRENT704-REBASED-FINITE-PREREQUISITES-20261031",
@@ -17832,13 +17867,13 @@
       "sha256": "c5ea67d1bcf5f9ca27733eaf25a2d42f9d594153a6c8010ca0276b7cb7ec01d0"
     },
     "AI/BattleAI/BattleExchangeVariant.cpp": {
-      "deferral": "Only this exact native migration content/hash/size is proposed; no future growth allowance. Owner: ai_engineer. Next substantive edit must extract the affected calculation/query/forecast routing into the existing dedicated component with exact state, packet/RNG, action-choice and lifecycle regressions; preserve any narrower inherited deferral below. Extract the next touched ordered strike/result stage before growth, passing selected damage/probe state and typed observations. Preserve native post-shield application, terminal/deferred reuse, no double mutation/scoring and parent-state/RNG isolation. Current exact-scope addendum: Retain the inherited before-growth extraction and characterization triggers; this reduction grants no regrowth credit.",
+      "deferral": "Exact hash/size only. Preserve prior narrower extraction, ownership, registration, state/RNG and lifecycle obligations below; next substantive affected expansion must extract a cohesive responsibility and lower the retained bound. Owner ai_engineer.\nOnly this exact native migration content/hash/size is proposed; no future growth allowance. Owner: ai_engineer. Next substantive edit must extract the affected calculation/query/forecast routing into the existing dedicated component with exact state, packet/RNG, action-choice and lifecycle regressions; preserve any narrower inherited deferral below. Extract the next touched ordered strike/result stage before growth, passing selected damage/probe state and typed observations. Preserve native post-shield application, terminal/deferred reuse, no double mutation/scoring and parent-state/RNG isolation. Current exact-scope addendum: Retain the inherited before-growth extraction and characterization triggers; this reduction grants no regrowth credit.",
       "kind": "exception",
-      "lines": 1603,
+      "lines": 1377,
       "owner": "ai_engineer",
       "previous_review": "IR-AI-F86-IMMUTABLE-SOURCE-ORGANIZATION",
-      "rationale": "Exact shrinking legacy boundary: substantive forecast/search implementation moves into focused shared components, preserving current native action/effect authority and inherited characterization obligations.\n\nIndependently reviewed C14 scope (1600 to 1603 physical lines): The existing strike aftermath accounts actual actor health loss and the completed modeled action is recorded before activation expiry. No independent damage formula or new search stage is added. This bounds only the recorded hash and measured span; all inherited deferrals, ratchets and runtime holds remain binding, with no future growth allowance.",
-      "review": "IR-NH0921-C14-1164-CODEORG-20261117",
+      "rationale": "Exact bounded 1603to1377 physical-line successor. Movement approach collection, exact winner/bypass/BFS handling and distance helpers move to a cohesive285-line movement owner plus39-line independent index ranking. Remaining298/434/312-line inherited exchange bodies are byte-identical and retain their prior explicit extraction obligations. No future growth credit or performance claim.",
+      "review": "IR-PERFORMANCE-THROUGH-STEP4-ORG-V1",
       "review_history": [
         {
           "kind": "exception",
@@ -17850,8 +17885,8 @@
         }
       ],
       "review_scope": "Exact recorded C14 source hash, physical span and organization delta only. No future growth, whole-mechanic, compiler, native, rendered, performance, save-resume, publication or promotion acceptance.",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN",
-      "sha256": "883b9fd9c6466b74700e4c28a2fc21490e7cb861a69402d9ccb3713b9debafd2",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_REVIEW_NATIVE_UNRUN",
+      "sha256": "e91cfd2e801894eeda1d12385af1d97fd7346ae8839ed74629ffcf642c7d7b79",
       "source_organization_review": {
         "debt_boundary": "trackAttack 269-565, trackAttackWithSelectedDamage 567-1003, movement 1010-1186 and calculateExchange 1211-1519 are independent debt boundaries; timing and structural blocking policy add secondary responsibilities.",
         "next_bounded_extraction": {
@@ -17917,51 +17952,6 @@
         "review": "IR-NH092-ORG-3E82D142-20261116",
         "sha256": "e5951169a7ccc8f9752eb50be265b9defef39d1f4451d563c214c9f45533a0fd",
         "lines": 309,
-        "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW"
-      }
-    },
-    "AI/BattleAI/BattleExchangeVariant.cpp::MoveTarget BattleExchangeEvaluator::findMoveTowardsUnreachable( const battle::Unit * activeStack, PotentialTargets & targets, DamageCache & damageCache, std::shared_ptr<HypotheticBattle> hb, BattleMovementTiming * timing)#1": {
-      "deferral": "Before further unreachable-movement changes, extract ally-distance penalty evaluation into a focused helper with the same integer/float order and target ties. Cap this renewal to the recorded exact size and hash; independent review and relevant runtime validation remain required. Current exact-scope addendum: AI owner separates existing attack-resolution and exchange orchestration phases after native parity; preserve selected receipt application, turn/round final-iteration order, legal incumbent and exact child budget. This exact wiring allowance grants no future growth.",
-      "kind": "exception",
-      "lines": 185,
-      "owner": "ai_engineer",
-      "previous_review": "IR-AI-F86-IMMUTABLE-SOURCE-ORGANIZATION",
-      "rationale": "Exact 185-line movement body matches the prior bounded source review. Adds finite Movement admission at reachability, enemy/ally/hex and predecessor traversal boundaries; no new movement policy, distance arithmetic or tie rule. Whole phase extraction during work-admission repair increases path-order and exception-scope risk; no forwarding-only split.",
-      "review": "IR-NH0921-COMPOSED4-CODEORG-20261117",
-      "review_history": [
-        {
-          "kind": "legacy",
-          "lines": 168,
-          "rationale": "Existing movement owner shrinks178 to168 lines by extracting forced Berserk routing and geometry-only representative policy. Existing full forecast, multiplier, route and bypass bodies remain in original order for retained candidates; intentional candidate omission is reviewed separately.",
-          "review": "IR-CREATURE-MOVEMENT-SCREENING-SOURCE-20261102",
-          "review_scope": "Exact cohesive reachable-selector extraction and deliberate ordinary normal/movement candidate-screening source review. Full waited path, retained original candidate order/comparators, final full evaluator, horizon, callback visibility, branch ownership and authoritative execution preserved. Shared typed-poison and double-wide occupied-tail fallbacks source-reviewed; bounded dormant Edric/Countercharge admission reviewed. Compile/native omission, quality/regret, real workload admission and timing remain pending. Preserve inherited extraction/invariant obligations; no future growth credit or general limit increase.",
-          "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_QUALITY_AND_TIMING_PENDING",
-          "sha256": "7f954ee0bceace15e3fab93fc7b8559cdb0ec7e308869b91e3a79c5845d55b24"
-        }
-      ],
-      "review_scope": "Exact recorded composed4 physical size and content hash only; no future growth credit or relaxed ceiling. All inherited technical requirements, extraction triggers and runtime holds remain. Source organization review does not establish compilation, functional/native/rendered acceptance, timing, balance or publication authority.",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN",
-      "sha256": "8bdc8d63a4536cfd9f7387e7b3c03d12df50e77bb050278c34957e6d752f0a3a",
-      "source_organization_review": {
-        "debt_boundary": "Route/predecessor walking and blocker bypass probes 1123-1176 are separable from approach ranking; beam/screening admission must remain a distinct policy decision.",
-        "next_bounded_extraction": {
-          "characterization_required": "Ground/flying, occupied-tail, unreachable predecessor, legal blocker attack, score ties and cachedAttack identity; full versus screened fallback, quality/regret separately from exact state/cache/RNG and callback-lifetime parity.",
-          "component": "Focused movement approach reconstruction and blocker-bypass owner.",
-          "interface": "Read-only reachability, actor/enemy IDs, chosen approach and speed, plus synchronous typed bypass-evaluation callback; return legal endpoint and optional improved bypass score. Caller keeps multipliers, ranking and incumbent update order.",
-          "owner": "ai_engineer",
-          "trigger": "Before future affected movement/route growth."
-        },
-        "preserved_invariants": [
-          "Forced Berserk route and empty/zero-speed exits; reachability, double-wide geometry and flying/ground distinction.",
-          "Ally-distance and speed multiplier arithmetic, approach enumeration and near-equal turnsToReach tie behavior.",
-          "Bypass full-exchange call order and cachedAttack/position identity; source-visible queries, branch ownership and both RNGs. Existing omission/regret/native/timing holds survive."
-        ],
-        "responsibility": "Select a move toward unreachable enemies and retain the associated future attack/exchange score."
-      },
-      "inherited_exact_source_review": {
-        "review": "IR-NH092-ORG-3E82D142-20261116",
-        "sha256": "af4ab93ad7df9617ea2e75bf70c13d4e3c227256acd34226273ace39267d0fe2",
-        "lines": 177,
         "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW"
       }
     },
@@ -18092,56 +18082,6 @@
         "sha256": "0ee36482c8ca2972e9aaa439bd160155ff67c7b9e7e0a7338a1e850bf49995ad",
         "lines": 111,
         "review_status": "INDEPENDENTLY_REVIEWED_UNCHANGED_LEGACY_FREEZE_FUNCTIONAL_UNRUN"
-      }
-    },
-    "AI/BattleAI/DamageCache.cpp::int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb, DamageCacheProbeTiming * receiver, DamageCacheAdmission * mainProbeAdmission)#1": {
-      "deferral": "Before further getDamage admission branching, extract the next cohesive state-sensitive pair-admission group into DamageCacheAdmission, retaining existing bypass order, timing counters and exception/reentry ownership. Keep nonlinear captured count/capacity arithmetic in its focused owner. Require actual cached-hit, frozen-parent, branch isolation and snapshot controls. Exact134-line exception only; prior stricter obligations remain in inherited_deferral, where present. Current exact-scope addendum: AI owner extracts the named optional source/valuation stage after characterization; preserve current callback ownership, explicit work quota and shared native formula. No future allowance or mechanics change.",
-      "execution_removal_predecessor_review": "IR-DPS-FORTUNE-CONFIGURED-FLAGS-PROJECTION-SOURCE-20261101",
-      "inherited_deferral": "Existing owner: before further substantive growth, extract the relevant cohesive state-aware admission or ordered serializer routing into its existing typed domain owner with old-policy, sequencing and branch-isolation characterization. AI engineer owns further ordered target-hit/retaliation stage extraction before substantive affected-area expansion. Interface must accept the synchronous branch-local context and unit identities and return explicit strike/resource receipts, preserving reaction order, original attack count, saved coefficients, callback visibility and RNG isolation. Acceptance requires current Strong/formula witnesses, fixed-count diagnostics, native Brace/current-controller parity and selected-replay/sibling-state comparisons. Exact2091/1727 ceilings only; no regrowth allowance. Before further affected-area growth, ai_engineer must extract the target-selection pass and explicit main-probe forwarding seam as one focused component. Preserve readonly actor/callback lifetime, empty/singleton admission, exact target order/ties, target-sensitive gates, reverse DPS, reaction children, branch/bonus isolation, unified score bits, state and both RNGs. This exact +6 file/+2 trackAttack/+3 calculateExchange routing exception is not a future growth allowance. Before further obstacle-cache growth, ai_engineer must extract the focused obstacle damage forecast with explicit observer knowledge, current caster proxy and per-victim applicability inputs. Preserve hidden-obstacle exclusion, parent-cache delegation and branch/state/BOTH-RNG isolation; require actual obstacle-cache parity tests. This exact four-line urgent visibility exception permits no unrelated growth. This exact120-line unchanged-size query redirection permits no substantive getDamage growth; AI engineer retains ordered damage/admission extraction before any further affected-area expansion. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Gameplay/AI owners: retain focused passive snapshot and damage adjustment owners; before further caller growth extract the affected coherent query/damage stage, preserving current-controller ownership, hypothetical isolation, damage taxonomy, attack order and historical absence. This exact advanced-Necromancy source hash/size exception grants no future growth. AI engineer: retain ordered admission/query extraction obligations before further cache growth; preserve branch visibility, target order, source identity, state isolation and both RNG streams. Next4: retain all inherited extraction/order/ownership/captured-absence obligations.22 authored native cases UNRUN; full1146 envelope/history plus branch/RNG/AI integration remain required. Further lifecycle/cache growth must extract a cohesive domain phase, not grow another oversized helper. Exact bounded1151 change only. Exact130-line getDamage renewal recognizes one new visible physical protection through the existing remembered-target set/query. Existing Evasive history is preserved by exact rename; no new cache field or query protocol. Expiry keeps conservative bypass rather than reusing stale ID-only entries; same-size routing has no performance credit. No ceiling increase, coverage exclusion or unrelated/future growth allowance. Preserve ALL inherited deferrals and exact prior shrinking baselines. Further growth must extract a cohesive domain owner before expansion; no future growth credit or limit increase. Exact finite prefix successor only; retain all inherited extraction/lifetime/visibility/order/RNG obligations. No future/unrelated growth, source authority, default activation or higher ceiling is granted. Exact typed-call correction only; all inherited obligations remain binding. No future growth credit or raised ceiling; native/custom fallback and original callback ownership stay unchanged. Before further affected header/admission growth, preserve inherited receipt/allowance and query-stage extraction obligations; this tiny readonlyprojection grants no general inline growth. Validate full/custom/native/finalHB query andstate/RNG behavior after coherent rebuild.",
-      "kind": "exception",
-      "lines": 134,
-      "owner": "ai_engineer",
-      "prefix_predecessor_review": "IR-PHASE2-ORDINARY-POLICY-FACT-SOURCE-20261101",
-      "previous_review": "IR-0911-INTEGRATION-SOURCE-ORGANIZATION",
-      "proposed_review": "IR-R6-EXECUTION-REMOVAL-126-PRIMARY-SOURCE-20261101",
-      "rationale": "Adds two-line explicit Node admission at expensive damage-cache expansion before existing work; numeric getters/cache hits retain native semantics.",
-      "review": "IR-NH0921-COMPOSED4-CODEORG-20261117",
-      "review_history": [
-        {
-          "kind": "exception",
-          "lines": 132,
-          "rationale": "129to130 adds one constant-two-side captured-positive Tyraxor policy predicate in existing dynamic bypass. Prevents stale ID-only damage across allowance/effective-owner transitions; no unit search/new cache framework. Pure policy decision is extracted. Exact130-line getDamage renewal recognizes one new visible physical protection through the existing remembered-target set/query. Existing Evasive history is preserved by exact rename; no new cache field or query protocol. Expiry keeps conservative bypass rather than reusing stale ID-only entries; same-size routing has no performance credit. Independently measured composition of the 106-path native source layer, reviewed 71-path combat-AI layer, independently reviewed optional cleansing UI, and finite owned-frame stages, preserving the accepted predecessor source. Source identity/registration/callable preservation is approved only for this exact bounded assembly; original mechanic, legal-candidate, owned-query and runtime holds are retained. Finite E3 remains unused pure context only, with no factory/live caller/injury activation. This unchanged-size 132-line renewal replaces only the existing second OR policy predicate with the existing actor/callback-scoped lazy admission fact. First-use position, exception retry, hidden hero policy, independent fallback, score/RNG and mutation boundaries remain unchanged; containing file shrinks 448 to 447 lines. This source review grants no future growth, source-volume or measured performance claim; postchange native acceptance remains separate. Exact prefix successor: Existing132-line getDamage grows only to137 at the dynamic main-probe branch: matched immutable admission supplies a synchronous lazy proof callback; direct/applied/reverse/mismatched paths retain ordinary calls. Focus Fire and all prior dynamic/cache policy gates remain unchanged. Exact pair-local native prefix preparation only. Both normal and rolled Lua arithmetic and every flag-dependent finalizer still execute; no score/search/choice/RNG, visibility, saved policy, ownership, serialization or generic cache change. Known immutable source admission is separate from script identity; custom/unknown/owned domains keep ordinary virtual dispatch. No compile/native/measurement acceptance or future growth credit. Exact typed callback correction: getDamage receives shared_ptr<CBattleInfoCallback>; only a successful const HypotheticBattle dynamic_cast of the same hb.get() enters final-HB native-prefix optimization. Failed casts preserve the existing ordinary virtual expected-Luck fallback. Shared hb retains the actual receiver; no conversion/export/native authority is acquired. No score/formula/search/visibility/RNG change. Exact current projection is owned beside the existing value state/getter; no borrowed history or generic cache/context. One-line finalHBoverride retains samefortuneStates.at(side) bounds lookup and reads configuredflags, not spent availability. Exact R6 execution removal: unused pair-prefix execution/key/fact/copy/counter machinery is removed; sequential full native preparation/finalization/Lua and custom virtual dispatch remain. Current exact size/hash ratchets downward; prior reuse rationale is historical and grants no surviving execution authority.",
-          "review": "IR-R6-EXECUTION-REMOVAL-126-PRIMARY-SOURCE-20261101",
-          "review_scope": "Exact standalone primary R6 execution removal only; native/build/ABI/render/performance acceptance unrun. All meaningful inherited deferrals remain; no new ceiling or future growth credit.",
-          "review_status": "INDEPENDENT_EXACT_SOURCE_REVIEW_NATIVE_ABI_MEASUREMENT_UNRUN",
-          "sha256": "c5a1f5d315648ed214ec76d983bd3905f23c6946da1a0026099c678e2ee96018"
-        }
-      ],
-      "review_scope": "Exact recorded composed4 physical size and content hash only; no future growth credit or relaxed ceiling. All inherited technical requirements, extraction triggers and runtime holds remain. Source organization review does not establish compilation, functional/native/rendered acceptance, timing, balance or publication authority.",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN",
-      "sha256": "46ac6dba18d5a1ebfe3742b055188d82d2388d832348a7cadc07f1c1a9fb777c",
-      "source_organization_review": {
-        "debt_boundary": "Remembered per-unit effect history and the dynamic bypass lattice 270-352 are the next state-aware admission boundary; cache fill/original-parent delegation and obstacle forecasts remain separate responsibilities.",
-        "next_bounded_extraction": {
-          "characterization_required": "Marker present/expired/Dispel, controller/form/round changes, parent history, wrong admission fallback, Protect, original versus dynamic damage and native/custom/final-HB behavior; exact cache/query/score order, visibility and both-RNG isolation. Original deferral remains verbatim.",
-          "component": "Existing DamageCacheAdmission plus a focused target-sensitive cache-admission phase.",
-          "interface": "Synchronous actor/victim/callback, matched actor admission and explicit remembered-marker access -> typed cache decision/current attack descriptor. Preserve original ordered/lazy predicates and remembering; do not eagerly evaluate every policy or introduce a generic cache context.",
-          "owner": "ai_engineer",
-          "trigger": "Before future affected damage-admission growth."
-        },
-        "preserved_invariants": [
-          "Expired or dispelled effects cannot revive stale ID-only premium/reduction; parent history participates in bypass.",
-          "mainProbeAdmission accepted only for the same actor/callback, preserving lazy query/exception order and custom virtual dispatch.",
-          "Protect target redirection and current attack flags precede dynamic expected damage; cached count scaling, dead dynamic return, visible hero/caster restrictions, score/state/both-RNG isolation and nonadditive timing."
-        ],
-        "responsibility": "Choose a safe current expected-damage query or ID-keyed per-creature cache and report optional probe diagnostics."
-      },
-      "typed_callback_predecessor_review": "IR-DAMAGE-PREFIX-PAIR-REUSE-R6-SOURCE-20261101",
-      "inherited_exact_source_review": {
-        "review": "IR-NH092-ORG-3E82D142-20261116",
-        "sha256": "dc8a496148abcad563cf82b5b642f34db5920c2d764a6d49f00a79e2eade542a",
-        "lines": 132,
-        "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW"
       }
     },
     "AI/BattleAI/HandOfFateExpectedValue.cpp::std::optional<SpellTargetEvaluator::HandOfFateExpectedDamageValue> SpellTargetEvaluator::handOfFateExpectedDamageValue(const Mechanics * spellMechanics, const Target & target, PlayerColor scoringPlayer, std::shared_ptr<CBattleInfoCallback> battleState, const Environment * environment, const heroSpellProjection::OutcomeValue & outcomeValue, const std::shared_ptr<HypotheticBattle> & runicBoard)#1": {
@@ -18336,17 +18276,17 @@
         "review_status": "INDEPENDENTLY_REVIEWED_UNCHANGED_LEGACY_FREEZE_FUNCTIONAL_UNRUN",
         "sha256": "c1bf8f8c830879bde8d757d3a288dd8be8e6d2dcb1ae01a4753265052380b568"
       },
-      "deferral": "Before further projection constructor/header growth, extract the next side-state capture group. Preserve capture order, historical absence and parent/child/sibling isolation. Prior stricter obligations remain in inherited_deferral, where present. Current exact-scope addendum: AI/engine owner extracts root/child capture-construction boundary into a focused preparation component after source-lifetime differential tests; preserve Sidev3 ownership, fortification, raw program and observer ordering.",
+      "deferral": "Exact hash/size only. Preserve prior narrower extraction, ownership, registration, state/RNG and lifecycle obligations below; next substantive affected expansion must extract a cohesive responsibility and lower the retained bound. Owner ai_engineer.\nBefore further projection constructor/header growth, extract the next side-state capture group. Preserve capture order, historical absence and parent/child/sibling isolation. Prior stricter obligations remain in inherited_deferral, where present. Current exact-scope addendum: AI/engine owner extracts root/child capture-construction boundary into a focused preparation component after source-lifetime differential tests; preserve Sidev3 ownership, fortification, raw program and observer ordering.",
       "inherited_deferral": "Only this exact native migration content/hash/size is proposed; no future growth allowance. Owner: ai_engineer. Next substantive edit must extract the affected calculation/query/forecast routing into the existing dedicated component with exact state, packet/RNG, action-choice and lifecycle regressions; preserve any narrower inherited deferral below. Further branch-state growth should use a focused value transition owner with explicit side/round/receipt, preserving constructor copying, live/child/sibling separation, callback ownership and current point/Wisdom/action identity.",
       "kind": "exception",
-      "lines": 699,
+      "lines": 685,
       "owner": "ai_engineer",
       "previous_review": "IR-LEADERSHIP-1159-INDEPENDENT-20261113-V1-UNITS",
-      "rationale": "Root/child constructor binds exact work owner before capture and retains immutable compact read/session source; existing side methods moved to focused owners. Only residual constructor/fortification wiring remains here.",
-      "review": "IR-NH0921-COMPOSED4-CODEORG-20261117",
+      "rationale": "Exact bounded 699to685 physical-line successor. Two existing Order-state lease getters move unchanged with the new environmental presence proof into88-line HypotheticHeroActionSnapshot; the constructor adds one immutable policy capture. No lifecycle/order/RNG or ownership ordering changes. No future growth credit or performance claim.",
+      "review": "IR-PERFORMANCE-THROUGH-STEP4-ORG-V1",
       "review_scope": "Exact recorded composed4 physical size and content hash only; no future growth credit or relaxed ceiling. All inherited technical requirements, extraction triggers and runtime holds remain. Source organization review does not establish compilation, functional/native/rendered acceptance, timing, balance or publication authority.",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN",
-      "sha256": "7a3e317d68642bfe4159c92182a4ca7233e3c99ad90c9b5add4926f07be7f99d",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_REVIEW_NATIVE_UNRUN",
+      "sha256": "d27729c09b10cda250c9ba9525c729166b7cde6060c12a4ef5bf49b943afe73a",
       "inherited_exact_source_review": {
         "review": "IR-NH092-ORG-M4-SIX-20261116",
         "sha256": "e4d54f754400977a083ff423876dc4b71f8d653ddb5f9f24b73f21a9bf5a7105",
@@ -18362,18 +18302,18 @@
         "review_status": "INDEPENDENT_BOUNDED_EXACT_SOURCE_STRUCTURE_REVIEWED",
         "sha256": "6aa906876d99d05ab9c309c2495c36fa69984eb0aa65e687707e67dd3b9fe32b"
       },
-      "deferral": "Before further projection constructor/header growth, extract the next side-state capture group. Preserve capture order, historical absence and parent/child/sibling isolation. Prior stricter obligations remain in inherited_deferral, where present. Current exact-scope addendum: AI owner splits owned forecast/side/query capability declarations from legacy HypotheticBattle interface after consumers stabilize; preserve one instance/type identity and facade exports, no textual include fragments.",
+      "deferral": "Exact hash/size only. Preserve prior narrower extraction, ownership, registration, state/RNG and lifecycle obligations below; next substantive affected expansion must extract a cohesive responsibility and lower the retained bound. Owner ai_engineer.\nBefore further projection constructor/header growth, extract the next side-state capture group. Preserve capture order, historical absence and parent/child/sibling isolation. Prior stricter obligations remain in inherited_deferral, where present. Current exact-scope addendum: AI owner splits owned forecast/side/query capability declarations from legacy HypotheticBattle interface after consumers stabilize; preserve one instance/type identity and facade exports, no textual include fragments.",
       "inherited_deferral": "Only this exact native migration content/hash/size is proposed; no future growth allowance. Owner: ai_engineer. Next substantive edit must extract the affected calculation/query/forecast routing into the existing dedicated component with exact state, packet/RNG, action-choice and lifecycle regressions; preserve any narrower inherited deferral below. Before another projected state family expands the header, extract the cohesive completion observation holder. Preserve exact callback lifetime, immutable packet copies, transaction reset and reverse application order. Minimum checks: failed apply has no receipt, core/shock refresh restores prior status, ordinary candidate effects/HP remain, no source/sibling/RNG change. Expanded exact review: AI engineer: subsequent snapshot-family expansion belongs in the existing HypotheticUnitSnapshots/HypotheticUnitEnvironment owners, using explicit captured side values and branch IUnitEnvironment; characterize parent/child/sibling isolation and owned-frame lifetime before adding more header logic.",
       "kind": "exception",
-      "lines": 756,
+      "lines": 758,
       "owner": "ai_engineer",
       "previous_review": "IR-LEADERSHIP-1159-INDEPENDENT-20261113-V1-UNITS",
-      "rationale": "Exact shrinking756-line successor of the765-line header. The passive observation holder moves to the existing174-line HypotheticBattleTypes owner, while the one optional remains private in HypotheticBattle. Its JSON snapshot is shared immutable storage; IDs, form/death provenance and validity/update flags stay independently copied values. All64 remaining inline bodies are byte-identical; no gameplay, serialization or second battle owner is introduced. Begin creates the immutable payload within its existing exception boundary, finish compares the same exact JSON, and NativePreparation retains an actual optional storage-swap noexcept assertion. This bounded extraction meets the observation-holder boundary while retaining every inherited capture/ownership/side-state extraction and characterization obligation. Ratchet756 only; no unrelated/future growth or relaxed ceiling.",
-      "review": "IR-NH0921-MSVC-OBSERVATION-EXTRACTION-20261118",
+      "rationale": "Exact bounded 756to758 physical-line successor. One optional environmental Order-presence declaration and one immutable captured canonical-policy boolean. All64 retained inline bodies are byte-identical. This transient AI state is not serialized or a save-schema reinterpretation. No future growth credit or performance claim.",
+      "review": "IR-PERFORMANCE-THROUGH-STEP4-ORG-V1",
       "review_category": "component-interface-review",
       "review_scope": "Exact four-file observation storage repair and756-line header organization/manual coverage only. Preserve inherited obligations and76 unchanged retained bodies across both headers. No compiler/MSVC/native/rendered/performance, save-resume or promotion acceptance.",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN",
-      "sha256": "de1e337d7721f451e7c5d442ee11c247ec9cb751bd07d5cac2bc791c462b8953",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_REVIEW_NATIVE_UNRUN",
+      "sha256": "e96732e4e079ed7a7ba5b2a67a6c0432a91fb2f8cc286a2e04c73d450f897764",
       "inherited_exact_source_review": {
         "review": "IR-NH092-ORG-3E82D142-20261116",
         "sha256": "632547c06df7e99570e3f14c81748c9d323ad2a3cb9f425e85e3289ebce6081d",
@@ -19697,13 +19637,14 @@
       "sha256": "0ddd0469bc1426151d011e634bb9d549b241c56191f0d8703c1be31b0cdcf20e"
     },
     "CMakeLists.txt": {
-      "deferral": "Only this exact native migration content/hash/size is proposed; no future growth allowance. Owner: engine_engineer. Next substantive edit must extract the affected calculation/query/forecast routing into the existing dedicated component with exact state, packet/RNG, action-choice and lifecycle regressions; preserve any narrower inherited deferral below. Engine owner must extract cohesive component-selection/assembly before further routing growth, preserving explicit full/minimal-library, servercommon, facade, client, test and tool dependencies and ordering. Compare ordinary toolOFF and toolON/full-library graphs and reject toolON+minimal. No cosmetic forwarding include, install expansion or future growth credit; exact1126-line endpoint only.",
+      "deferral": "Exact committed hash and size only, not future growth or native/build/performance approval. Owner engine_engineer must keep future conditional compile policy in focused target helpers and extract the next cohesive stage before further orchestration expansion. Preserve all stricter inherited source/link/guard/ordering obligations below.\nOnly this exact native migration content/hash/size is proposed; no future growth allowance. Owner: engine_engineer. Next substantive edit must extract the affected calculation/query/forecast routing into the existing dedicated component with exact state, packet/RNG, action-choice and lifecycle regressions; preserve any narrower inherited deferral below. Engine owner must extract cohesive component-selection/assembly before further routing growth, preserving explicit full/minimal-library, servercommon, facade, client, test and tool dependencies and ordering. Compare ordinary toolOFF and toolON/full-library graphs and reject toolON+minimal. No cosmetic forwarding include, install expansion or future growth credit; exact1126-line endpoint only.",
       "kind": "exception",
-      "lines": 1134,
-      "rationale": "Archive native-port exact scope: 1126 to 1134 physical lines. Mechanical native source/strict-FP lists and optional Lua-oracle/build gates remain coherent registries; source line count is not runtime concentration. Do not fragment registries merely for a numeric ceiling.",
-      "review": "IR-NATIVE-MIGRATION-BOUNDED-STRUCTURE-20261105",
-      "review_status": "INDEPENDENT_BOUNDED_EXACT_SOURCE_STRUCTURE_REVIEWED",
-      "sha256": "d10fdec92cabedc4b4e8e57d06a010fec5b00ad64a464800d769fbddc485cc9d"
+      "lines": 1137,
+      "rationale": "Exact bounded 1134to1137 physical-line successor. Three dispatcher lines include focused81-line Unity and30-line hot-PCH owners and call the latter from existing enable_pch. Conditional policy is owned by those bounded helpers; existing source/target/link ordering remains. Both experiments defaultOFF.",
+      "review": "IR-PERFORMANCE-STEP2-BUILD-ORG-V1",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_ONLY",
+      "sha256": "c0f4b706228c281d0920bf333321910df40621d075c8c480ee2b30cf89d5878c",
+      "inherited_deferral_step2": "Only this exact native migration content/hash/size is proposed; no future growth allowance. Owner: engine_engineer. Next substantive edit must extract the affected calculation/query/forecast routing into the existing dedicated component with exact state, packet/RNG, action-choice and lifecycle regressions; preserve any narrower inherited deferral below. Engine owner must extract cohesive component-selection/assembly before further routing growth, preserving explicit full/minimal-library, servercommon, facade, client, test and tool dependencies and ordering. Compare ordinary toolOFF and toolON/full-library graphs and reject toolON+minimal. No cosmetic forwarding include, install expansion or future growth credit; exact1126-line endpoint only."
     },
     "Global.h": {
       "kind": "legacy",
@@ -19741,22 +19682,23 @@
         "review_status": "INDEPENDENT_SOURCE_ORGANIZATION_LEGACY_FREEZE_ONLY",
         "sha256": "9672d816b03bf86940dfd0f49c405ca769cff7ea0f32166e47eaaa3654894b28"
       },
-      "deferral": "Exact current size only. Retain all prior obligations below; further renderer/cache expansion must extract its specific presentation or map-cache policy behind a focused interface and verify clipping, zoom, wrap, retained ownership, both backends and guarded scene/quit behavior before accepting it.",
+      "deferral": "Exact committed hash and size only, not future growth or native/build/performance approval. Owner engine_engineer must keep future conditional compile policy in focused target helpers and extract the next cohesive stage before further orchestration expansion. Preserve all stricter inherited source/link/guard/ordering obligations below.\nExact current size only. Retain all prior obligations below; further renderer/cache expansion must extract its specific presentation or map-cache policy behind a focused interface and verify clipping, zoom, wrap, retained ownership, both backends and guarded scene/quit behavior before accepting it.",
       "hybrid_predecessor_review": "IR-0911-BOUNDED-DIRECT-MAP-COMPOSITION-V3",
       "inherited_deferral": "Owner: ui_developer / gameplay_engineer. Bounded exception for Major System Rework: Leadership attribute restoration, square-root damage scaling, and hero UI panel integration. Hotspots remain subject to ongoing shrinking and modularization policy.\nExact source-list bound only. Before substantive build logic, extract a cohesive target configuration section. Verify source/link membership once and retain no duplicate translation units. Prior stricter obligations remain in inherited_deferral, where present.\n\nBefore introducing conditional build logic, extract a cohesive target helper; retain exact source/link membership, one registration per translation unit and existing inherited obligations.",
       "kind": "exception",
-      "lines": 772,
+      "lines": 773,
       "owner": "ui_developer",
       "previous_exact_review": "IR-QUICK-STUDY-CURRENT2-PRESERVING-METADATA-SOURCE-20261101",
       "previous_proposal_review": "PROPOSED-EXACT-REGISTRY-SIX-SOURCE-20261103",
       "previous_review": "PROPOSED-0920-EXACT-SOURCE-ORGANIZATION",
       "prior_deferral": "Before substantive build-control growth, extract a cohesive target helper; retain all inherited deferrals and one registration per translation unit.",
       "proposal_predecessor_review": "PROPOSED-CLIENT225-BOUNDED-20261103",
-      "rationale": "Exact771 to772-line successor adds only lobby/OptionsTabTooltip.cpp once to the common-client source registry. Preserve the prior three presentation registrations and all inherited target-helper/no-future-growth obligations. No conditional build or link policy changes.",
-      "review": "IR-NH0923-FOLLOWUP-TOOLTIPS-ABILITY-20261118",
+      "rationale": "Exact bounded 772to773 physical-line successor. One call admits only the existing vcmiclientcommon target to the focused opt-in Unity helper. No source or link registration moves or duplicates.",
+      "review": "IR-PERFORMANCE-STEP2-BUILD-ORG-V1",
       "review_scope": "Exact bounded source organization and failure-path review only; native/rendered acceptance and future growth unapproved.",
-      "review_status": "INDEPENDENT_SOURCE_REVIEW_NATIVE_RENDERED_UNRUN",
-      "sha256": "9bfa68386d58384e5c499cfb43145f82342e86d1266dd18948c00a2557a11683"
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_ONLY",
+      "sha256": "19d8a067f972e42cc5ea92ace07041a9e9dbc92b60b61db14b06c0d18bdd519d",
+      "inherited_deferral_step2": "Exact current size only. Retain all prior obligations below; further renderer/cache expansion must extract its specific presentation or map-cache policy behind a focused interface and verify clipping, zoom, wrap, retained ownership, both backends and guarded scene/quit behavior before accepting it."
     },
     "client/CPlayerInterface.cpp": {
       "completed_p_predecessor": {
@@ -23201,11 +23143,11 @@
         "review_status": "INDEPENDENT_BOUNDED_EXACT_SOURCE_STRUCTURE_REVIEWED",
         "sha256": "71cae56d01d8f6dc1027732e50d62b4364d673f8f6299b951476e8a4c01e859b"
       },
-      "deferral": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.\n\nExact shared-facade source/header registration only. Before conditional target/control policy growth, extract the next coherent configuration section; preserve one translation unit per implementation and consumer linkage through vcmi. No future registry-size growth credit.",
+      "deferral": "Exact hash/size only. Preserve prior narrower extraction, ownership, registration, state/RNG and lifecycle obligations below; next substantive affected expansion must extract a cohesive responsibility and lower the retained bound. Owner engine_engineer.\nExact committed hash and size only, not future growth or native/build/performance approval. Owner engine_engineer must keep future conditional compile policy in focused target helpers and extract the next cohesive stage before further orchestration expansion. Preserve all stricter inherited source/link/guard/ordering obligations below.\nPreserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.\n\nExact shared-facade source/header registration only. Before conditional target/control policy growth, extract the next coherent configuration section; preserve one translation unit per implementation and consumer linkage through vcmi. No future registry-size growth credit.",
       "inherited_a1_health_deferral": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.",
       "inherited_deferral": "Exact source-list bound only. Before substantive build logic, extract a cohesive target configuration section. Verify source/link membership once and retain no duplicate translation units. Prior stricter obligations remain in inherited_deferral, where present.",
       "kind": "exception",
-      "lines": 2144,
+      "lines": 2146,
       "owner": "engine_engineer",
       "previous_review": "PROPOSED-0920-EXACT-SOURCE-ORGANIZATION",
       "prior_a1_health_scope": {
@@ -23216,11 +23158,12 @@
         "sha256": "7058cdef35cfce13214572d190c4accfdf5721e6c144af3cdfca9f53bb68c2a0"
       },
       "prior_deferral": "Exact mechanical source/header registration only. Before substantive CMake target policy growth, extract a cohesive configuration section while verifying translation-unit membership and facade linkage. No future file growth allowance. Prior stricter obligations remain in inherited_deferral, where present.\n\nKeep registrations in their current coherent tables. Extract any future conditional target/control logic rather than growing this registry into a build framework.",
-      "rationale": "Exact 2143 to 2144-line mechanical header registration: add entities/hero/NewHorizonsSkillSpecialtyMarker.h once to the existing shared-library header list. No target conditions, compilation units, source order, linkage or build policy change. All inherited extraction and registry-size deferrals remain; no future growth credit.",
-      "review": "IR-NH0921-CLEAN-FORECAST-EXTRACTION-20261117",
+      "rationale": "Exact bounded 2145to2146 physical-line successor. Exactly one BattleOrderPresence.cpp registration, separating existing native Order getter from oversized BattleInfo. No duplicate implementation, target/link change or source-list reordering. No future growth credit or performance claim.",
+      "review": "IR-PERFORMANCE-THROUGH-STEP4-ORG-V1",
       "review_scope": "Only the exact2144-line lib/CMakeLists.txt hash and single shared marker header registration. No compiler, runtime, rendered, performance, publication or future-growth acceptance.",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN",
-      "sha256": "56aeb2264653e94712798750d390a12389a20b7e31650718e5ebed632fae744c"
+      "review_status": "INDEPENDENT_EXACT_SOURCE_REVIEW_NATIVE_UNRUN",
+      "sha256": "1602f07594ee81b7600cb4685d59849686e09faa3fd2f8b3491a3ff233c12c4f",
+      "inherited_deferral_step2": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.\n\nExact shared-facade source/header registration only. Before conditional target/control policy growth, extract the next coherent configuration section; preserve one translation unit per implementation and consumer linkage through vcmi. No future registry-size growth credit."
     },
     "lib/CSkillHandler.cpp::std::shared_ptr<CSkill> CSkillHandler::loadFromJson(const std::string & scope, const JsonNode & json, const std::string & identifier, size_t index)#1": {
       "kind": "legacy",
@@ -23343,11 +23286,11 @@
       "sha256": "2187bca96a51829e846640ebcb669fb58e8be43675540830d8629ff6a7dbee70"
     },
     "lib/battle/BattleInfo.cpp": {
-      "deferral": "Before further battle-state execution growth, extract the next touched cohesive deterministic state/query family with explicit side/unit inputs. Retain ownership, action/round ordering and RNG receipts. Sampling stays in focused owner with positive ordered input guards, exact floored mean and identical draw-sequence tests; exact2223-line remaining legacy bound only. Prior stricter obligations remain in inherited_deferral, where present.\n\nBefore any further substantive expansion, extract the next cohesive touched policy, callback/read adapter or ordered admission stage into its focused owner. Preserve exact capture metadata, source visibility, schema rejection, RNG/packet ordering and standalone/world wire identity; no future growth credit from this exception.",
+      "deferral": "Exact hash/size only. Preserve prior narrower extraction, ownership, registration, state/RNG and lifecycle obligations below; next substantive affected expansion must extract a cohesive responsibility and lower the retained bound. Owner engine_engineer.\nBefore further battle-state execution growth, extract the next touched cohesive deterministic state/query family with explicit side/unit inputs. Retain ownership, action/round ordering and RNG receipts. Sampling stays in focused owner with positive ordered input guards, exact floored mean and identical draw-sequence tests; exact2223-line remaining legacy bound only. Prior stricter obligations remain in inherited_deferral, where present.\n\nBefore any further substantive expansion, extract the next cohesive touched policy, callback/read adapter or ordered admission stage into its focused owner. Preserve exact capture metadata, source visibility, schema rejection, RNG/packet ordering and standalone/world wire identity; no future growth credit from this exception.",
       "inherited_a1_health_deferral": "Before further battle-state execution growth, extract the next touched cohesive deterministic state/query family with explicit side/unit inputs. Retain ownership, action/round ordering and RNG receipts. Sampling stays in focused owner with positive ordered input guards, exact floored mean and identical draw-sequence tests; exact2223-line remaining legacy bound only. Prior stricter obligations remain in inherited_deferral, where present.",
       "inherited_deferral": "Before next substantive round expansion, extract round-owned effect expiry stage receiving IBattleState&, nextRound, keeping query preconditions/reset/expiry/Meta/ordinary timed effects order, TimeStop exemption and retained charge semantics.",
       "kind": "exception",
-      "lines": 2103,
+      "lines": 2098,
       "organization_acceptance": "Characterize round zero/one, Time Stop, paused forms and competing wide-stack restorations with exact state/packet order and unchanged RNG. Retain separate exchange stale-endpoint and all-or-nothing preparation checks. These are requirements for a future extraction, not executed evidence here.",
       "organization_interface": "A focused round-effects operation with explicit BattleInfo/state access, first-round flag, captured magic rules and next round; ordered unit IDs for form restoration. No global event bus or new state ledger.",
       "organization_invariants": [
@@ -23373,11 +23316,11 @@
         "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
         "sha256": "5a8d7dab07dc481069be4744123ff166820216ec204aaff6a70d15037027a04a"
       },
-      "rationale": "Exact2100 to2101 line shared-clock integration scope. Narrow reviewed native clock/expiry/Bind predicate extraction delegates to shared TimedEffectValueTransitions; preserves original ordering/current gates and removes duplicated predicates. Global BattleInfo activation uses explicit battle:: namespace. No new gameplay behavior or future growth allowance.\n\nIndependently reviewed C14 scope (2101 to 2103 physical lines): One shared Divine Purpose refresh is routed after native round advancement, alongside the explicit captured battle-start basis admission. No second prayer clock or independent rules are added. This bounds only the recorded hash and measured span; all inherited deferrals, ratchets and runtime holds remain binding, with no future growth allowance.",
-      "review": "IR-NH0921-C14-1164-CODEORG-20261117",
+      "rationale": "Exact bounded 2103to2098 physical-line successor. Existing five-line getHeroOrderStates definition moves byte-identically to focused22-line BattleOrderPresence owner alongside the new12-line conservative environmental presence query. Untouched399-line setupBattle remains exactly unchanged. No future growth credit or performance claim.",
+      "review": "IR-PERFORMANCE-THROUGH-STEP4-ORG-V1",
       "review_scope": "Exact recorded C14 source hash, physical span and organization delta only. No future growth, whole-mechanic, compiler, native, rendered, performance, save-resume, publication or promotion acceptance.",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN",
-      "sha256": "6a609011e017ce8193c07c0b24ed6ea10f8fd8bfbf83fb4e349e292971d36167"
+      "review_status": "INDEPENDENT_EXACT_SOURCE_REVIEW_NATIVE_UNRUN",
+      "sha256": "9aae572d79951aef3e85671046b9ed87ab69b13e53b11c55d4cd013e9b42e4e3"
     },
     "lib/battle/BattleInfo.cpp::std::unique_ptr<BattleInfo> BattleInfo::setupBattle(IGameInfoCallback *cb, const int3 & tile, TerrainId terrain, const BattleField & battlefieldType, BattleSideArray<const CArmedInstance *> armies, BattleSideArray<const CGHeroInstance *> heroes, const BattleLayout & layout, const CGTownInstance * town)#1": {
       "deferral": "Extract the next touched captured creature-line/specialty initialization stage behind an explicit hero plus captured-policy initialization helper, preserving authored override\u2192producer refresh\u2192secondary bonus order, removals and level-one meaning; return declared assignments/refresh outcome rather than expose all hero internals. Required characterization: Current versus absent capture, explicit override/zero, old hero specialties/starting perks, level-one/no retroactive growth, real gained-level primary state and no extra RNG. Trigger: Before the next substantive expansion of this affected responsibility. Existing stronger invariant/deferral obligations remain; this approval covers only the pinned finite batch. Current setupBattle-specific obligation (the inherited specialty-init wording above is retained, not used as the rationale for this battle boundary): gameplay_engineer must extract the next touched captured faction battle-start configuration stage behind explicit hero, side and captured-policy inputs before further substantive setup expansion. Keep native startup ordering, absent-policy fallback, side independence, obstacle/placement RNG and exact initialized faction-state characterization; the helper must not own stack placement or world mutation. Before further affected expansion, owning engine/gameplay specialist must extract the next cohesive healing/provider/selection or ordered-transition responsibility, retaining query/mutation/serialization order and historical behavior. No raised ceiling, pending-baseline escape, runtime approval or later-growth permission. Preserve ALL inherited deferrals and exact prior shrinking baselines. Further growth must extract a cohesive domain owner before expansion; no future growth credit or limit increase. Owning gameplay/engine specialist: before further substantive expansion of this touched rule/transition, extract the next coherent affected policy or ordered stage into a focused owner. Preserve callback visibility, original recipient/caster identity, rejection atomicity and packet/RNG order; characterization must compare exact state and emitted packets. This is no future growth credit.",
@@ -23415,11 +23358,11 @@
         "review_status": "INDEPENDENT_COMPLETE_SOURCE_ORGANIZATION_LEGACY_FREEZE_ONLY",
         "sha256": "cfa32a8f21db48256848b23b60aa16fded3e289599e68a2a6f67ae47f0183bef"
       },
-      "deferral": "Before further side/battle codec growth, extract the next ordered nonwriting side-policy validation traversal. Preserve contiguous fields, unsupported absence/refusal and active-battle/owned-branch roundtrip; exact current serializer bound only. Prior stricter obligations remain in inherited_deferral, where present.\n\nBefore any further substantive expansion, extract the next cohesive touched policy, callback/read adapter or ordered admission stage into its focused owner. Preserve exact capture metadata, source visibility, schema rejection, RNG/packet ordering and standalone/world wire identity; no future growth credit from this exception.",
+      "deferral": "Exact hash/size only. Preserve prior narrower extraction, ownership, registration, state/RNG and lifecycle obligations below; next substantive affected expansion must extract a cohesive responsibility and lower the retained bound. Owner engine_engineer.\nBefore further side/battle codec growth, extract the next ordered nonwriting side-policy validation traversal. Preserve contiguous fields, unsupported absence/refusal and active-battle/owned-branch roundtrip; exact current serializer bound only. Prior stricter obligations remain in inherited_deferral, where present.\n\nBefore any further substantive expansion, extract the next cohesive touched policy, callback/read adapter or ordered admission stage into its focused owner. Preserve exact capture metadata, source visibility, schema rejection, RNG/packet ordering and standalone/world wire identity; no future growth credit from this exception.",
       "inherited_a1_health_deferral": "Before further side/battle codec growth, extract the next ordered nonwriting side-policy validation traversal. Preserve contiguous fields, unsupported absence/refusal and active-battle/owned-branch roundtrip; exact current serializer bound only. Prior stricter obligations remain in inherited_deferral, where present.",
       "inherited_deferral": "Next substantive persistence expansion should extract a cohesive current passive-combat serialization group with explicit Handler/state refs; preserve exact ordered layout, current1156 validation, branch state and type IDs. No historical adapter matrix required.",
       "kind": "exception",
-      "lines": 1437,
+      "lines": 1438,
       "owner": "engine_engineer",
       "previous_review": "IR-LEADERSHIP-1159-INDEPENDENT-20261113-V1-UNITS",
       "prior_a1_health_scope": {
@@ -23429,11 +23372,11 @@
         "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
         "sha256": "2d7d24c20b48746bc66101dd368361d2ef59eef7773d212e0ef605c348876646"
       },
-      "rationale": "Exact 1448 to 1450-line integrated scope. Bounded const typed-owner forwarding, immutable capture/WorldMagic table admission, compiled-out audit hook or source registration only; substantive definition/lookup implementations live in focused new nativeRules units. No broad numerical growth allowance, mutable cache or gameplay rebalance.\n\nIndependently reviewed C14 scope (1450 to 1437 physical lines): Only stale retired declarations/comments are removed. Existing field and validation ownership remains unchanged and the header ratchets down. This bounds only the recorded hash and measured span; all inherited deferrals, ratchets and runtime holds remain binding, with no future growth allowance.",
-      "review": "IR-NH0921-C14-1164-CODEORG-20261117",
+      "rationale": "Exact bounded 1437to1438 physical-line successor. One optional raw environmental Order-presence virtual override declaration. Existing603-line serialization definition is byte-identical; no save fields, protocol version, order roster or authority mutation changes. No future growth credit or performance claim.",
+      "review": "IR-PERFORMANCE-THROUGH-STEP4-ORG-V1",
       "review_scope": "Exact recorded C14 source hash, physical span and organization delta only. No future growth, whole-mechanic, compiler, native, rendered, performance, save-resume, publication or promotion acceptance.",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN",
-      "sha256": "5b3cf5f2748bd214900201c1197bd01c9914354a3930ca9c356e0c4bec590f8e"
+      "review_status": "INDEPENDENT_EXACT_SOURCE_REVIEW_NATIVE_UNRUN",
+      "sha256": "4f6621fe27f088e3e2729f231a56add95ee9089514871cb7d70831bbdc16b167"
     },
     "lib/battle/BattleInfo.h::BattleInfo::void serialize(Handler &h)#1": {
       "completed_p_predecessor": {
@@ -25167,8 +25110,8 @@
         "review_status": "INDEPENDENT_COMPLETE_EXACT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
         "sha256": "0fbe23fe3e84e1f458ec0548c4dcb7a6145b17999a3d43b5524941067d6002b0"
       },
-      "deferral": "Owner: Gameplay engineer. Interface/acceptance: Extract starting specialty producer conversion and hero cost composition behind captured-rule helpers; preserve explicit authored overrides, default starting projections, old policy absence and battle/spellbook cost parity. Owner: gameplay_engineer. Before further specialty producer growth, extract cohesive captured creature-line producer selection; preserve initialization order, explicit zero/absence, removal identities and existing saved-rule behavior. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance. Fafner bounded follow-up: Before further producer selection growth, extract the captured creature-line conversion owner while preserving authored initialization order, zero/absence, removal identity, hero-cost composition and old-save behavior. Extract the next touched captured creature-line/specialty initialization stage behind an explicit hero plus captured-policy initialization helper, preserving authored override→producer refresh→secondary bonus order, removals and level-one meaning; return declared assignments/refresh outcome rather than expose all hero internals. Required characterization: Current versus absent capture, explicit override/zero, old hero specialties/starting perks, level-one/no retroactive growth, real gained-level primary state and no extra RNG. Trigger: Before the next substantive expansion of this affected responsibility. Existing stronger invariant/deferral obligations remain; this approval covers only the pinned finite batch. Retain existing scoped decomposition obligations for the next affected substantive growth; this removal ratchets the exact baseline down and grants no regrowth credit.\n\nBefore any further substantive expansion, extract the next cohesive touched policy, callback/read adapter or ordered admission stage into its focused owner. Preserve exact capture metadata, source visibility, schema rejection, RNG/packet ordering and standalone/world wire identity; no future growth credit from this exception.",
-      "inherited_a1_health_deferral": "Owner: Gameplay engineer. Interface/acceptance: Extract starting specialty producer conversion and hero cost composition behind captured-rule helpers; preserve explicit authored overrides, default starting projections, old policy absence and battle/spellbook cost parity. Owner: gameplay_engineer. Before further specialty producer growth, extract cohesive captured creature-line producer selection; preserve initialization order, explicit zero/absence, removal identities and existing saved-rule behavior. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance. Fafner bounded follow-up: Before further producer selection growth, extract the captured creature-line conversion owner while preserving authored initialization order, zero/absence, removal identity, hero-cost composition and old-save behavior. Extract the next touched captured creature-line/specialty initialization stage behind an explicit hero plus captured-policy initialization helper, preserving authored override→producer refresh→secondary bonus order, removals and level-one meaning; return declared assignments/refresh outcome rather than expose all hero internals. Required characterization: Current versus absent capture, explicit override/zero, old hero specialties/starting perks, level-one/no retroactive growth, real gained-level primary state and no extra RNG. Trigger: Before the next substantive expansion of this affected responsibility. Existing stronger invariant/deferral obligations remain; this approval covers only the pinned finite batch. Retain existing scoped decomposition obligations for the next affected substantive growth; this removal ratchets the exact baseline down and grants no regrowth credit.",
+      "deferral": "Owner: Gameplay engineer. Interface/acceptance: Extract starting specialty producer conversion and hero cost composition behind captured-rule helpers; preserve explicit authored overrides, default starting projections, old policy absence and battle/spellbook cost parity. Owner: gameplay_engineer. Before further specialty producer growth, extract cohesive captured creature-line producer selection; preserve initialization order, explicit zero/absence, removal identities and existing saved-rule behavior. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance. Fafner bounded follow-up: Before further producer selection growth, extract the captured creature-line conversion owner while preserving authored initialization order, zero/absence, removal identity, hero-cost composition and old-save behavior. Extract the next touched captured creature-line/specialty initialization stage behind an explicit hero plus captured-policy initialization helper, preserving authored override\u2192producer refresh\u2192secondary bonus order, removals and level-one meaning; return declared assignments/refresh outcome rather than expose all hero internals. Required characterization: Current versus absent capture, explicit override/zero, old hero specialties/starting perks, level-one/no retroactive growth, real gained-level primary state and no extra RNG. Trigger: Before the next substantive expansion of this affected responsibility. Existing stronger invariant/deferral obligations remain; this approval covers only the pinned finite batch. Retain existing scoped decomposition obligations for the next affected substantive growth; this removal ratchets the exact baseline down and grants no regrowth credit.\n\nBefore any further substantive expansion, extract the next cohesive touched policy, callback/read adapter or ordered admission stage into its focused owner. Preserve exact capture metadata, source visibility, schema rejection, RNG/packet ordering and standalone/world wire identity; no future growth credit from this exception.",
+      "inherited_a1_health_deferral": "Owner: Gameplay engineer. Interface/acceptance: Extract starting specialty producer conversion and hero cost composition behind captured-rule helpers; preserve explicit authored overrides, default starting projections, old policy absence and battle/spellbook cost parity. Owner: gameplay_engineer. Before further specialty producer growth, extract cohesive captured creature-line producer selection; preserve initialization order, explicit zero/absence, removal identities and existing saved-rule behavior. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance. Fafner bounded follow-up: Before further producer selection growth, extract the captured creature-line conversion owner while preserving authored initialization order, zero/absence, removal identity, hero-cost composition and old-save behavior. Extract the next touched captured creature-line/specialty initialization stage behind an explicit hero plus captured-policy initialization helper, preserving authored override\u2192producer refresh\u2192secondary bonus order, removals and level-one meaning; return declared assignments/refresh outcome rather than expose all hero internals. Required characterization: Current versus absent capture, explicit override/zero, old hero specialties/starting perks, level-one/no retroactive growth, real gained-level primary state and no extra RNG. Trigger: Before the next substantive expansion of this affected responsibility. Existing stronger invariant/deferral obligations remain; this approval covers only the pinned finite batch. Retain existing scoped decomposition obligations for the next affected substantive growth; this removal ratchets the exact baseline down and grants no regrowth credit.",
       "kind": "exception",
       "lines": 346,
       "owner": "gameplay_engineer",
@@ -29316,17 +29259,6 @@
       "inherited_exact_source_review": {},
       "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN"
     },
-    "AI/BattleAI/HeroDecisionPressure.cpp::heroDecisionPressure::bool Baseline::prepare(const std::vector<Approach> & existingApproaches, bool directOnly, bool buildOriginal)#1": {
-      "kind": "review",
-      "lines": 95,
-      "sha256": "cb8bd8a0eac70329557681d55e03b6744a17cd21d15bde95d63167d93d387028",
-      "review": "IR-NH0921-COMPOSED4-CODEORG-20261117",
-      "rationale": "Exact shrinking legacy boundary: substantive forecast/search implementation moves into focused shared components, preserving current native action/effect authority and inherited characterization obligations.",
-      "owner": "ai_engineer",
-      "review_scope": "Exact recorded composed4 physical size and content hash only; no future growth credit or relaxed ceiling. All inherited technical requirements, extraction triggers and runtime holds remain. Source organization review does not establish compilation, functional/native/rendered acceptance, timing, balance or publication authority.",
-      "inherited_exact_source_review": {},
-      "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN"
-    },
     "AI/BattleAI/PotentialTargets.cpp::void PotentialTargets::enumerateCandidates(const battle::Unit * attackerInfo, DamageCache & actionDamageCache, const std::shared_ptr<HypotheticBattle> & evaluationState, const ReachabilityInfo & reachability, const BattleHexArray & avHexes)#1": {
       "kind": "review",
       "lines": 95,
@@ -29510,6 +29442,92 @@
       "review_scope": "Exact recorded C14 source hash, physical span and organization delta only. No future growth, whole-mechanic, compiler, native, rendered, performance, save-resume, publication or promotion acceptance.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN",
       "sha256": "b67ed34853e8729e563cc9d6a49281a9cfeb2ac71c480ae826a9f9bbe3f182ec"
+    },
+    "AI/BattleAI/AttackDamageValue.cpp::float AttackPossibility::calculateDamageReduce( const battle::Unit * attacker, const battle::Unit * defender, uint64_t damageDealt, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, DamageCacheProbeTiming * timing, OrdinaryDamageObservation * observation)#1": {
+      "deferral": "Owner ai_engineer: retain inherited bound and extract the next affected scoring/preparation responsibility before further substantive estimator growth. Characterize ordinary/Phantom/capacity health, callback identity, canonical provider admission and exception fallback; no future growth allowance.\nExtract the capacity-health valuation branch into a typed detached-state scoring helper before extending this estimator. Characterize Phantom threshold, survivor cohorts, capped damage, fallback reference attacker and original-damage cache observations.",
+      "kind": "exception",
+      "lines": 100,
+      "owner": "ai_engineer",
+      "rationale": "Exact Step2 signature/forwarding and lazy immutable observation scope only. Existing numeric damage, Phantom/cohort handling, reference/projected distinction, cache admission order and custom-provider fallback remain. A renamed signature does not erase inherited estimator/orchestration debt. No algorithm/gameplay expansion or runtime acceptance.",
+      "review": "IR-PERFORMANCE-STEP2-BUILD-ORG-V1",
+      "review_scope": "Exact unchanged comparison-source legacy debt freeze only; no future growth, feature or native/rendered approval.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_REVIEW_NATIVE_UNRUN",
+      "sha256": "e2d12cc5ab59172166317865c2a099f2df8a86d5fad9443a0fb6481b6aa853f9",
+      "inherited_deferral_step2": "Extract the capacity-health valuation branch into a typed detached-state scoring helper before extending this estimator. Characterize Phantom threshold, survivor cohorts, capped damage, fallback reference attacker and original-damage cache observations."
+    },
+    "AI/BattleAI/DamageCache.cpp::int64_t DamageCache::getDamage(const battle::Unit * attacker, const battle::Unit * defender, std::shared_ptr<CBattleInfoCallback> hb, DamageCacheProbeTiming * receiver, DamageCacheAdmission * mainProbeAdmission, OrdinaryDamageObservation * observation)#1": {
+      "deferral": "Exact135-line bound. Before substantive query growth, ai_engineer must extract the dynamic-admission predicate with ordered/exception and current-versus-parent-original characterization; preserve inherited Step2 reference/Phantom/cohort and callback ownership obligations.\nOwner ai_engineer: retain inherited bound and extract the next affected scoring/preparation responsibility before further substantive estimator growth. Characterize ordinary/Phantom/capacity health, callback identity, canonical provider admission and exception fallback; no future growth allowance.\nBefore further getDamage admission branching, extract the next cohesive state-sensitive pair-admission group into DamageCacheAdmission, retaining existing bypass order, timing counters and exception/reentry ownership. Keep nonlinear captured count/capacity arithmetic in its focused owner. Require actual cached-hit, frozen-parent, branch isolation and snapshot controls. Exact134-line exception only; prior stricter obligations remain in inherited_deferral, where present. Current exact-scope addendum: AI owner extracts the named optional source/valuation stage after characterization; preserve current callback ownership, explicit work quota and shared native formula. No future allowance or mechanics change.",
+      "execution_removal_predecessor_review": "IR-DPS-FORTUNE-CONFIGURED-FLAGS-PROJECTION-SOURCE-20261101",
+      "inherited_deferral": "Existing owner: before further substantive growth, extract the relevant cohesive state-aware admission or ordered serializer routing into its existing typed domain owner with old-policy, sequencing and branch-isolation characterization. AI engineer owns further ordered target-hit/retaliation stage extraction before substantive affected-area expansion. Interface must accept the synchronous branch-local context and unit identities and return explicit strike/resource receipts, preserving reaction order, original attack count, saved coefficients, callback visibility and RNG isolation. Acceptance requires current Strong/formula witnesses, fixed-count diagnostics, native Brace/current-controller parity and selected-replay/sibling-state comparisons. Exact2091/1727 ceilings only; no regrowth allowance. Before further affected-area growth, ai_engineer must extract the target-selection pass and explicit main-probe forwarding seam as one focused component. Preserve readonly actor/callback lifetime, empty/singleton admission, exact target order/ties, target-sensitive gates, reverse DPS, reaction children, branch/bonus isolation, unified score bits, state and both RNGs. This exact +6 file/+2 trackAttack/+3 calculateExchange routing exception is not a future growth allowance. Before further obstacle-cache growth, ai_engineer must extract the focused obstacle damage forecast with explicit observer knowledge, current caster proxy and per-victim applicability inputs. Preserve hidden-obstacle exclusion, parent-cache delegation and branch/state/BOTH-RNG isolation; require actual obstacle-cache parity tests. This exact four-line urgent visibility exception permits no unrelated growth. This exact120-line unchanged-size query redirection permits no substantive getDamage growth; AI engineer retains ordered damage/admission extraction before any further affected-area expansion. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Gameplay/AI owners: retain focused passive snapshot and damage adjustment owners; before further caller growth extract the affected coherent query/damage stage, preserving current-controller ownership, hypothetical isolation, damage taxonomy, attack order and historical absence. This exact advanced-Necromancy source hash/size exception grants no future growth. AI engineer: retain ordered admission/query extraction obligations before further cache growth; preserve branch visibility, target order, source identity, state isolation and both RNG streams. Next4: retain all inherited extraction/order/ownership/captured-absence obligations.22 authored native cases UNRUN; full1146 envelope/history plus branch/RNG/AI integration remain required. Further lifecycle/cache growth must extract a cohesive domain phase, not grow another oversized helper. Exact bounded1151 change only. Exact130-line getDamage renewal recognizes one new visible physical protection through the existing remembered-target set/query. Existing Evasive history is preserved by exact rename; no new cache field or query protocol. Expiry keeps conservative bypass rather than reusing stale ID-only entries; same-size routing has no performance credit. No ceiling increase, coverage exclusion or unrelated/future growth allowance. Preserve ALL inherited deferrals and exact prior shrinking baselines. Further growth must extract a cohesive domain owner before expansion; no future growth credit or limit increase. Exact finite prefix successor only; retain all inherited extraction/lifetime/visibility/order/RNG obligations. No future/unrelated growth, source authority, default activation or higher ceiling is granted. Exact typed-call correction only; all inherited obligations remain binding. No future growth credit or raised ceiling; native/custom fallback and original callback ownership stay unchanged. Before further affected header/admission growth, preserve inherited receipt/allowance and query-stage extraction obligations; this tiny readonlyprojection grants no general inline growth. Validate full/custom/native/finalHB query andstate/RNG behavior after coherent rebuild.",
+      "kind": "exception",
+      "lines": 135,
+      "owner": "ai_engineer",
+      "prefix_predecessor_review": "IR-PHASE2-ORDINARY-POLICY-FACT-SOURCE-20261101",
+      "previous_review": "IR-0911-INTEGRATION-SOURCE-ORGANIZATION",
+      "proposed_review": "IR-R6-EXECUTION-REMOVAL-126-PRIMARY-SOURCE-20261101",
+      "rationale": "Exact134to135-line cache query successor replaces ruleset-wide Focus Fire bypass with conservative current environmental Order state and rejects current entries captured under expired Orders. Parent original numeric snapshots remain unchanged; per-entry stamp is compared by snapshot tests. Existing guards/order, provider fallback, damage values and invalidation history remain. No generic-state memo or future growth credit.",
+      "review": "IR-PERFORMANCE-THROUGH-STEP4-ORG-V1",
+      "review_history": [
+        {
+          "kind": "exception",
+          "lines": 132,
+          "rationale": "129to130 adds one constant-two-side captured-positive Tyraxor policy predicate in existing dynamic bypass. Prevents stale ID-only damage across allowance/effective-owner transitions; no unit search/new cache framework. Pure policy decision is extracted. Exact130-line getDamage renewal recognizes one new visible physical protection through the existing remembered-target set/query. Existing Evasive history is preserved by exact rename; no new cache field or query protocol. Expiry keeps conservative bypass rather than reusing stale ID-only entries; same-size routing has no performance credit. Independently measured composition of the 106-path native source layer, reviewed 71-path combat-AI layer, independently reviewed optional cleansing UI, and finite owned-frame stages, preserving the accepted predecessor source. Source identity/registration/callable preservation is approved only for this exact bounded assembly; original mechanic, legal-candidate, owned-query and runtime holds are retained. Finite E3 remains unused pure context only, with no factory/live caller/injury activation. This unchanged-size 132-line renewal replaces only the existing second OR policy predicate with the existing actor/callback-scoped lazy admission fact. First-use position, exception retry, hidden hero policy, independent fallback, score/RNG and mutation boundaries remain unchanged; containing file shrinks 448 to 447 lines. This source review grants no future growth, source-volume or measured performance claim; postchange native acceptance remains separate. Exact prefix successor: Existing132-line getDamage grows only to137 at the dynamic main-probe branch: matched immutable admission supplies a synchronous lazy proof callback; direct/applied/reverse/mismatched paths retain ordinary calls. Focus Fire and all prior dynamic/cache policy gates remain unchanged. Exact pair-local native prefix preparation only. Both normal and rolled Lua arithmetic and every flag-dependent finalizer still execute; no score/search/choice/RNG, visibility, saved policy, ownership, serialization or generic cache change. Known immutable source admission is separate from script identity; custom/unknown/owned domains keep ordinary virtual dispatch. No compile/native/measurement acceptance or future growth credit. Exact typed callback correction: getDamage receives shared_ptr<CBattleInfoCallback>; only a successful const HypotheticBattle dynamic_cast of the same hb.get() enters final-HB native-prefix optimization. Failed casts preserve the existing ordinary virtual expected-Luck fallback. Shared hb retains the actual receiver; no conversion/export/native authority is acquired. No score/formula/search/visibility/RNG change. Exact current projection is owned beside the existing value state/getter; no borrowed history or generic cache/context. One-line finalHBoverride retains samefortuneStates.at(side) bounds lookup and reads configuredflags, not spent availability. Exact R6 execution removal: unused pair-prefix execution/key/fact/copy/counter machinery is removed; sequential full native preparation/finalization/Lua and custom virtual dispatch remain. Current exact size/hash ratchets downward; prior reuse rationale is historical and grants no surviving execution authority.",
+          "review": "IR-R6-EXECUTION-REMOVAL-126-PRIMARY-SOURCE-20261101",
+          "review_scope": "Exact standalone primary R6 execution removal only; native/build/ABI/render/performance acceptance unrun. All meaningful inherited deferrals remain; no new ceiling or future growth credit.",
+          "review_status": "INDEPENDENT_EXACT_SOURCE_REVIEW_NATIVE_ABI_MEASUREMENT_UNRUN",
+          "sha256": "c5a1f5d315648ed214ec76d983bd3905f23c6946da1a0026099c678e2ee96018"
+        }
+      ],
+      "review_scope": "Exact recorded composed4 physical size and content hash only; no future growth credit or relaxed ceiling. All inherited technical requirements, extraction triggers and runtime holds remain. Source organization review does not establish compilation, functional/native/rendered acceptance, timing, balance or publication authority.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_REVIEW_NATIVE_UNRUN",
+      "sha256": "fd3852507f91823d8a8e671174cd90a4116e8320342caa869bd5106d0f91ce8d",
+      "source_organization_review": {
+        "debt_boundary": "Remembered per-unit effect history and the dynamic bypass lattice 270-352 are the next state-aware admission boundary; cache fill/original-parent delegation and obstacle forecasts remain separate responsibilities.",
+        "next_bounded_extraction": {
+          "characterization_required": "Marker present/expired/Dispel, controller/form/round changes, parent history, wrong admission fallback, Protect, original versus dynamic damage and native/custom/final-HB behavior; exact cache/query/score order, visibility and both-RNG isolation. Original deferral remains verbatim.",
+          "component": "Existing DamageCacheAdmission plus a focused target-sensitive cache-admission phase.",
+          "interface": "Synchronous actor/victim/callback, matched actor admission and explicit remembered-marker access -> typed cache decision/current attack descriptor. Preserve original ordered/lazy predicates and remembering; do not eagerly evaluate every policy or introduce a generic cache context.",
+          "owner": "ai_engineer",
+          "trigger": "Before future affected damage-admission growth."
+        },
+        "preserved_invariants": [
+          "Expired or dispelled effects cannot revive stale ID-only premium/reduction; parent history participates in bypass.",
+          "mainProbeAdmission accepted only for the same actor/callback, preserving lazy query/exception order and custom virtual dispatch.",
+          "Protect target redirection and current attack flags precede dynamic expected damage; cached count scaling, dead dynamic return, visible hero/caster restrictions, score/state/both-RNG isolation and nonadditive timing."
+        ],
+        "responsibility": "Choose a safe current expected-damage query or ID-keyed per-creature cache and report optional probe diagnostics."
+      },
+      "typed_callback_predecessor_review": "IR-DAMAGE-PREFIX-PAIR-REUSE-R6-SOURCE-20261101",
+      "inherited_exact_source_review": {
+        "review": "IR-NH092-ORG-3E82D142-20261116",
+        "sha256": "dc8a496148abcad563cf82b5b642f34db5920c2d764a6d49f00a79e2eade542a",
+        "lines": 132,
+        "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW"
+      },
+      "inherited_deferral_step2": "Before further getDamage admission branching, extract the next cohesive state-sensitive pair-admission group into DamageCacheAdmission, retaining existing bypass order, timing counters and exception/reentry ownership. Keep nonlinear captured count/capacity arithmetic in its focused owner. Require actual cached-hit, frozen-parent, branch isolation and snapshot controls. Exact134-line exception only; prior stricter obligations remain in inherited_deferral, where present. Current exact-scope addendum: AI owner extracts the named optional source/valuation stage after characterization; preserve current callback ownership, explicit work quota and shared native formula. No future allowance or mechanics change."
+    },
+    "AI/BattleAI/HeroDecisionPressure.cpp::heroDecisionPressure::bool Baseline::prepare(const std::vector<Approach> & existingApproaches, bool directOnly, bool buildOriginal)#1": {
+      "kind": "exception",
+      "lines": 98,
+      "sha256": "a851767efd9e7f81a6cfd631c353f643b26e95067d36063b4841c7954a04133e",
+      "review": "IR-PERFORMANCE-STEP2-BUILD-ORG-V1",
+      "rationale": "Exact Step2 signature/forwarding and lazy immutable observation scope only. Existing numeric damage, Phantom/cohort handling, reference/projected distinction, cache admission order and custom-provider fallback remain. A renamed signature does not erase inherited estimator/orchestration debt. No algorithm/gameplay expansion or runtime acceptance.",
+      "owner": "ai_engineer",
+      "review_scope": "Exact recorded composed4 physical size and content hash only; no future growth credit or relaxed ceiling. All inherited technical requirements, extraction triggers and runtime holds remain. Source organization review does not establish compilation, functional/native/rendered acceptance, timing, balance or publication authority.",
+      "inherited_exact_source_review": {},
+      "review_status": "INDEPENDENT_EXACT_SOURCE_REVIEW_NATIVE_UNRUN",
+      "inherited_deferral_step2": "",
+      "deferral": "Owner ai_engineer: retain inherited bound and extract the next affected scoring/preparation responsibility before further substantive estimator growth. Characterize ordinary/Phantom/capacity health, callback identity, canonical provider admission and exception fallback; no future growth allowance.\n"
+    },
+    "AI/BattleAI/BattleMovementApproaches.cpp::void BattleExchangeEvaluator::considerMovementApproach(const MovementApproach & approach, const battle::Unit * activeStack, PotentialTargets & targets, DamageCache & damageCache, const std::shared_ptr<HypotheticBattle> & hb, const ReachabilityInfo & dists, uint32_t speed, bool flying, MoveTarget & result, BattleMovementTiming * timing)#1": {
+      "kind": "review",
+      "lines": 95,
+      "sha256": "b29a9f3b56a78d425b302a697c94df049dd4d096d282c33f612b3c4d26ff63ef",
+      "review": "IR-PERFORMANCE-THROUGH-STEP4-ORG-V1",
+      "owner": "ai_engineer",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_REVIEW_NATIVE_UNRUN",
+      "rationale": "New95-line focused winner/projection helper preserves exact exchange scoring, close-score turn tie handling, blocker bypass exchange and predecessor BFS destination. It is below150 ceiling and not a transferred185-line legacy allowance. Target admission/cheap ranking remain separate; native action/quality equivalence is unverified.",
+      "deferral": "Review trigger remains80 lines. Split bypass scoring from predecessor traversal before further substantive growth; preserve selected approach lifetime, deterministic ordering and result/BFS semantics."
     }
   }
 }
