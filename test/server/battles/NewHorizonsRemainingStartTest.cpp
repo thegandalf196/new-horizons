@@ -58,6 +58,7 @@ protected:
 	void SetUp() override
 	{
 		HeroCommandFixture::SetUp();
+		useRevisedOrders = true; // Shipped Warfare issuance; independent of captured magic rules.
 		ASSERT_TRUE(vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE));
 	}
 	void mapLoaded(CMap * loaded) override
