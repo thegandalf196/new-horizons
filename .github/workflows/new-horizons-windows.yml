@@ -162,7 +162,7 @@ jobs:
           create-symlink: false
           max-size: 5G
           restore: ${{ inputs.pch_off_cache_seed == '' }}
-          save: ${{ inputs.pch_off_cache_seed == '' }}
+          save: ${{ !inputs.use_precompiled_headers && inputs.pch_off_cache_seed == '' }}
 
       - name: Package audit regression tests (no PE execution)
         run: |
