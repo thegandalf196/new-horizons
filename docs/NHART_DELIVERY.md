@@ -214,7 +214,8 @@ The native startup cache currently admits packages up to 1 GiB. Preparation
 holds an operating-system lock on `new-horizons-art/v1.prepare.lock`, which the
 kernel releases when the process ends for any reason, so a crashed, killed or
 cancelled first launch can be retried. Under that lock, startup clears stages
-using the current preparation protocol. It removes only recognised generated
+from the current protocol’s `new-horizons-art/v1.staging` directory. It removes
+only recognised generated
 regular payload files and empty stage directories without following links or
 recursively deleting content. Unexpected contents are retained and logged.
 Older clients use a different lock. Their stages and lock directories are

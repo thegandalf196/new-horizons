@@ -126,10 +126,10 @@ namespace nhart
 				check(::unlinkat(handle,name.c_str(),0)==0);
 #endif
 			}
-			void publish(const std::string & source,const std::string & target)
+			void publish(Directory & from,const std::string & source,const std::string & target)
 			{
 #ifdef _WIN32
-				check(MoveFileExW((path/source).c_str(),(path/target).c_str(),MOVEFILE_WRITE_THROUGH));
+				check(MoveFileExW((from.path/source).c_str(),(path/target).c_str(),MOVEFILE_WRITE_THROUGH));
 #else
 				// Exclusive preparation lock excludes cooperating writers. Destination
 				// must be absent; never replace an existing or unrelated cache.
@@ -137,8 +137,8 @@ namespace nhart
 				{
 				};
 				check(::fstatat(handle,target.c_str(),&info,AT_SYMLINK_NOFOLLOW)<0 && errno==ENOENT);
-				check(::renameat(handle,source.c_str(),handle,target.c_str())==0);
-				check(::fsync(handle)==0);
+				check(::renameat(from.handle,source.c_str(),handle,target.c_str())==0);
+				check(::fsync(handle)==0 && ::fsync(from.handle)==0);
 #endif
 			}
 		};
@@ -374,7 +374,7 @@ namespace nhart
 				&& std::all_of(name.begin()+prefix.size(),name.end(),[](char c){return c>='0' && c<='9';});
 		}
 
-		constexpr std::string_view stageMarker=".prepare-";
+		constexpr std::string_view stageMarker=".stage-";
 		constexpr std::string_view stagePattern="%%%%-%%%%-%%%%-%%%%";
 
 		bool isPreparationStage(std::string_view name)
@@ -406,8 +406,7 @@ namespace nhart
 			return payloads.size();
 		}
 
-		// Legacy clients use different staging names and markers. Leave them
-		// alone: this lock only excludes preparers using the current protocol.
+		// Only scan the staging root owned by the current lock protocol.
 		void removeAbandonedEntries(Directory & root)
 		{
 			std::vector<std::string> stages;
@@ -467,8 +466,9 @@ namespace nhart
 		check(input.read(&byte,1)==0);
 		Directory artRoot(fs::path(cacheRoot.native())/"new-horizons-art",true);
 		Directory root(artRoot.path/"v1",true);
+		Directory stages(artRoot.path/"v1.staging",true);
 #ifndef _WIN32
-		for(const auto * owned:{&artRoot,&root})
+		for(const auto * owned:{&artRoot,&root,&stages})
 		{
 			struct stat rootInfo
 			{
@@ -478,7 +478,7 @@ namespace nhart
 #endif
 		// Kept beside, not inside, v1 so the version directory holds only caches.
 		PreparationLock lock(artRoot,"v1.prepare.lock");
-		removeAbandonedEntries(root);
+		removeAbandonedEntries(stages);
 		const auto finish=[&](const fs::path & path)
 		{
 			auto result=std::make_shared<PreparedCache>(PreparedCache
@@ -499,10 +499,10 @@ namespace nhart
 			return finish(cache);
 		}
 		const auto stage=identity+std::string(stageMarker)+boost::filesystem::unique_path(std::string(stagePattern)).string();
-		check(root.make(stage));
+		check(stages.make(stage));
 		logGlobal->info("Preparing NHART disk cache (%zu records)",records.size());
 		{
-			Directory staging(root.path/stage,false);
+			Directory staging(stages.path/stage,false);
 			std::array<ui8,65536> bytes
 			{
 			};
@@ -527,7 +527,7 @@ namespace nhart
 		// A changing input cannot publish mixed payloads under its old hash.
 		input.seek(0);
 		check(hex(digest(input,size))==identity);
-		root.publish(stage,identity);
+		root.publish(stages,stage,identity);
 		logGlobal->info("Prepared verified NHART cache (%zu records)",records.size());
 		return finish(cache);
 	}

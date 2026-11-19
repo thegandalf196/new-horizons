@@ -423,17 +423,20 @@ TEST_F(CNhArtLoaderTest, InterruptedPreparationDoesNotBlockTheNextLaunch)
 	const auto archive=makeArchive({{"art.png",{1,2,3}},{"other.png",{4}}});
 	const auto path=write(archive.data);
 	const auto identity=nhart::hex(nhart::sha256(archive.data));
-	const auto version=cacheRoot()/"new-horizons-art"/"v1";
+	const auto artRoot=cacheRoot()/"new-horizons-art";
+	const auto version=artRoot/"v1";
+	const auto stages=artRoot/"v1.staging";
 	ASSERT_TRUE(boost::filesystem::create_directories(version/(identity+".lock")));
-	for(const auto & owned:{cacheRoot(),cacheRoot()/"new-horizons-art",version})
+	ASSERT_TRUE(boost::filesystem::create_directory(stages));
+	for(const auto & owned:{cacheRoot(),artRoot,version,stages})
 		boost::filesystem::permissions(owned,boost::filesystem::owner_all);
-	const auto partial=version/(identity+".prepare-dead-0000-0000-0000");
+	const auto partial=stages/(identity+".stage-dead-0000-0000-0000");
 	ASSERT_TRUE(boost::filesystem::create_directory(partial));
 	std::ofstream((partial/nhart::cacheFileName(0)).string(),std::ios::binary).put(1);
-	const auto unexpected=version/(identity+".prepare-aaaa-0000-0000-0000");
+	const auto unexpected=stages/(identity+".stage-aaaa-0000-0000-0000");
 	ASSERT_TRUE(boost::filesystem::create_directory(unexpected));
 	std::ofstream((unexpected/"notes.txt").string()).put(1);
-	const auto unrelated=version/"notes.prepare-dead-0000-0000-0000";
+	const auto unrelated=stages/"notes.stage-dead-0000-0000-0000";
 	const auto legacyStage=version/(identity+".stage-dead-0000-0000-0000");
 	for(const auto & kept:{unrelated,legacyStage})
 	{
