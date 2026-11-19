@@ -55,6 +55,146 @@ bool setPerkStatus(JsonNode & rules, const std::string & perkId, const std::stri
 	return true;
 }
 
+// Pair-policy characterization, before the passive Divine Mandate redesign.
+// Complete authored row retained from 2488cb6bdc17, not current Consecrated Arms.
+void captureHistoricalPairRules(JsonNode & rules)
+{
+	const std::string text = R"DIVINE_PAIR({
+	"id": "new-horizons:divineMandate",
+	"name": "Divine Mandate",
+	"domain": "Faction",
+	"availability": "Castle heroes only",
+	"description": "Faction-locked Skill. Castle unites sacred intervention and military command. Divine Mandate creates a precise exception to the normal Spell-or-Order choice without introducing a second action currency.",
+	"ranks": {
+		"basic": {
+			"description": "Once per completed pair per combat, when the hero uses the Hero Action to cast a Light Spell, gain one Order-only follow-up usable until round end; or after using the Hero Action to issue an Order, gain one Light-Spell-only follow-up usable until round end.",
+			"effect": {
+				"status": "active",
+				"description": "Once per completed pair per combat, when the hero uses the Hero Action to cast a Light Spell, gain one Order-only follow-up usable until round end; or after using the Hero Action to issue an Order, gain one Light-Spell-only follow-up usable until round end."
+			}
+		},
+		"advanced": {
+			"description": "Divine Mandate may be used twice per combat.",
+			"effect": {
+				"status": "active",
+				"description": "Divine Mandate may be used twice per combat."
+			}
+		},
+		"expert": {
+			"description": "Divine Mandate may be used three times per combat.",
+			"effect": {
+				"status": "active",
+				"description": "Divine Mandate may be used three times per combat."
+			}
+		}
+	},
+	"perks": [
+		{
+			"id": "new-horizons:divineMandate.sacredCommand",
+			"name": "Sacred Command",
+			"requires": "basic",
+			"description": "An Order issued through Divine Mandate gains +10 percentage points of efficiency on its attribute-derived components.",
+			"effect": {
+				"status": "active",
+				"description": "An Order issued through Divine Mandate gains +10 percentage points of efficiency on its attribute-derived components."
+			}
+		},
+		{
+			"id": "new-horizons:divineMandate.consecratedCasting",
+			"name": "Consecrated Casting",
+			"requires": "basic",
+			"description": "A Light Spell cast through Divine Mandate gains +10% to its Spell Power-derived numerical component.",
+			"effect": {
+				"status": "active",
+				"description": "A Light Spell cast through Divine Mandate gains +10% to its Spell Power-derived numerical component."
+			}
+		},
+		{
+			"id": "new-horizons:divineMandate.sharedPurpose",
+			"name": "Shared Purpose",
+			"requires": "basic",
+			"description": "If the paired Light Spell and Order both affect the same friendly stack, that stack gains +1 Morale until its next activation.",
+			"effect": {
+				"status": "active",
+				"description": "If the paired Light Spell and Order both affect the same friendly stack, that stack gains +1 Morale until its next activation."
+			}
+		},
+		{
+			"id": "new-horizons:divineMandate.chaplainSReserve",
+			"name": "Chaplain's Reserve",
+			"requires": "basic",
+			"description": "After the first Divine Mandate sequence each combat resolves, recover 3 Mana.",
+			"effect": {
+				"status": "active",
+				"description": "After the first Divine Mandate sequence each combat resolves, recover 3 Mana."
+			}
+		},
+		{
+			"id": "new-horizons:divineMandate.divineDiscipline",
+			"name": "Divine Discipline",
+			"requires": "advanced",
+			"description": "An Order issued through Divine Mandate that would normally end at round end remains separately on its original affected friendly recipients through their first genuine completed Creature Activation after the issuing round. Wait and same-activation continuations do not consume this carry.",
+			"effect": {
+				"status": "active",
+				"description": "An Order issued through Divine Mandate that would normally end at round end remains separately on its original affected friendly recipients through their first genuine completed Creature Activation after the issuing round. Wait and same-activation continuations do not consume this carry."
+			}
+		},
+		{
+			"id": "new-horizons:divineMandate.purifyingMandate",
+			"name": "Purifying Mandate",
+			"requires": "advanced",
+			"description": "When a Light Spell cast through Divine Mandate removes a negative magical effect, it also removes one physical affliction from that target if present.",
+			"effect": {
+				"status": "active",
+				"description": "When a Light Spell cast through Divine Mandate removes a negative magical effect, it also removes one physical affliction from that target if present."
+			}
+		},
+		{
+			"id": "new-horizons:divineMandate.knightlySequence",
+			"name": "Knightly Sequence",
+			"requires": "advanced",
+			"description": "If the Order is performed first, the paired Light Spell costs 2 less Mana; if the Light Spell is performed first, the paired Order gains +5 additional percentage points of efficiency.",
+			"effect": {
+				"status": "active",
+				"description": "If the Order is performed first, the paired Light Spell costs 2 less Mana; if the Light Spell is performed first, the paired Order gains +5 additional percentage points of efficiency."
+			}
+		},
+		{
+			"id": "new-horizons:divineMandate.royalStandard",
+			"name": "Royal Standard",
+			"requires": "advanced",
+			"description": "Friendly stacks affected by an Order issued through Divine Mandate treat negative Morale as 0 for that Order's duration.",
+			"effect": {
+				"status": "active",
+				"description": "Friendly stacks affected by an Order issued through Divine Mandate treat negative Morale as 0 for that Order's duration."
+			}
+		},
+		{
+			"id": "new-horizons:divineMandate.mandateOfHeaven",
+			"name": "Mandate of Heaven",
+			"requires": "expert",
+			"description": "The first Divine Mandate sequence each combat does not count against the Skill's normal per-combat usage limit.",
+			"effect": {
+				"status": "active",
+				"description": "The first Divine Mandate sequence each combat does not count against the Skill's normal per-combat usage limit."
+			}
+		},
+		{
+			"id": "new-horizons:divineMandate.crownAndAltar",
+			"name": "Crown and Altar",
+			"requires": "expert",
+			"description": "The second action of a Divine Mandate pair automatically gains +20% to its rating-derived numerical components on each friendly stack also affected by the first action. This applies in either Spell-then-Order or Order-then-Spell order. It requires no extra button or target-preselection step and does not retroactively change the first action.",
+			"effect": {
+				"status": "active",
+				"description": "The second action of a Divine Mandate pair automatically gains +20% to its rating-derived numerical components on each friendly stack also affected by the first action. This applies in either Spell-then-Order or Order-then-Spell order. It requires no extra button or target-preselection step and does not retroactively change the first action."
+			}
+		}
+	]
+})DIVINE_PAIR";
+	rules["skills"][std::string(divineMandateSkill)] = JsonNode(text);
+	rules.Struct().erase("divineMandatePolicy");
+}
+
 constexpr auto previousVersion = ESerializationVersion::NEW_HORIZONS_KNIGHTLY_SEQUENCE;
 }
 
@@ -78,12 +218,6 @@ protected:
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS,
 			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 
-		JsonNode perkRules(JsonPath::builtin("config/newHorizonsPerks"));
-		if(!setPerkStatus(perkRules, chaplainReservePerk, "active")
-			|| !setPerkStatus(perkRules, knightlySequencePerk, "active")
-			|| !setPerkStatus(perkRules, mandateOfHeavenPerk, "active"))
-			throw std::runtime_error("Missing Divine Mandate perk from the New Horizons registry");
-		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, std::move(perkRules));
 	}
 
 	SecondarySkill divineMandate() const
@@ -127,6 +261,10 @@ protected:
 		expectedManaSpent = 0;
 		startGame();
 		ASSERT_EQ(attackerSideHero->getFactionID(), FactionID::CASTLE);
+		// Author this hero's captured legacy profile after ordinary current-rule
+		// initialization; unrelated starting heroes keep their current roster.
+		auto & perks = const_cast<newHorizonsHeroes::PerkState &>(attackerSideHero->getPerkState());
+		perkStateFixture::editRules(perks, captureHistoricalPairRules);
 
 		// Acquire each rank through its real offer, preserving the Basic-to-Expert prerequisites.
 		selectPerk(attackerSideHero, MasteryLevel::BASIC, chaplainReservePerk);
@@ -348,4 +486,34 @@ TEST_F(NewHorizonsMandateOfHeavenTest, InactiveSelectedStrictPerkRuleIsRejectedW
 	const auto status = battle()->battleGetDivineMandateStatus(BattleSide::ATTACKER);
 	EXPECT_TRUE(status.active);
 	EXPECT_EQ(status.maximumPairs, 4);
+}
+
+TEST_F(NewHorizonsMandateOfHeavenTest, DeserializedInactiveSelectedHistoricalPerkRetainsThreePairCap)
+{
+	prepare(true);
+	auto & livePerks = const_cast<newHorizonsHeroes::PerkState &>(attackerSideHero->getPerkState());
+	auto payload = livePerks.toJson();
+	auto & rules = payload["rules"];
+	// Pre-strict captured profiles retain existing inactive identities. Neither
+	// current rules nor deserialization may reinterpret them as active perks.
+	rules.Struct().erase("perkProgressionPolicyVersion");
+	rules.Struct().erase("fourOfferProgressionVersion");
+	ASSERT_TRUE(setPerkStatus(rules, mandateOfHeavenPerk, "planned"));
+	auto historical = newHorizonsHeroes::PerkState::fromJson(payload);
+	ASSERT_TRUE(historical.hasSelection(divineMandateSkill, mandateOfHeavenPerk));
+	CMemorySerializer saved;
+	saved.oser & historical;
+	newHorizonsHeroes::PerkState restored;
+	saved.iser & restored;
+	EXPECT_EQ(restored.getRules(), historical.getRules());
+	EXPECT_EQ(restored.getSelected(), historical.getSelected());
+	livePerks = std::move(restored);
+	EXPECT_TRUE(livePerks.hasSelection(divineMandateSkill, mandateOfHeavenPerk));
+	EXPECT_FALSE(attackerSideHero->hasActivePerk(divineMandateSkill, mandateOfHeavenPerk));
+	const auto status = battle()->battleGetDivineMandateStatus(BattleSide::ATTACKER);
+	EXPECT_TRUE(status.active);
+	EXPECT_EQ(status.maximumPairs, 3);
+	const auto snapshot = CMemorySerializer::deepCopy(*battle(), gameState().get());
+	ASSERT_NE(snapshot, nullptr);
+	EXPECT_EQ(snapshot->battleGetDivineMandateStatus(BattleSide::ATTACKER).maximumPairs, 3);
 }
