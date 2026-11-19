@@ -57,6 +57,13 @@ public:
 
 	RecordingDoubleCommandCallback() : CBattleCallback(PlayerColor(0), nullptr) {}
 
+	// This recording fixture owns no client and keeps the creature-action decision in battle.
+	std::optional<BattleAction> makeSurrenderRetreatDecision(const BattleID &,
+		const BattleStateInfoForRetreat &) override
+	{
+		return std::nullopt;
+	}
+
 	void battleMakeSpellAction(const BattleID &, const BattleAction & action) override
 	{
 		heroActions.push_back(action);
