@@ -427,6 +427,8 @@ protected:
 		ASSERT_TRUE(newHorizonsHeroes::usesR2PerkOffers(state.getRules()));
 		auto expectedRules = historicalLevelOffer::perks();
 		ASSERT_TRUE(newHorizonsHeroes::usesStrictPerkProgression(state.getRules()));
+		ASSERT_FALSE(newHorizonsHeroes::usesFourOfferProgression(state.getRules()));
+		ASSERT_FALSE(newHorizonsHeroes::usesUnifiedSkillProgression(state.getRules()));
 		expectedRules["perkOfferNormalization"]["maximumPreferenceRatio"].Float() = ratio;
 		ASSERT_EQ(state.getRules(), expectedRules);
 		const JsonNode heroRules(JsonPath::builtin("config/newHorizonsHeroes"));
@@ -498,6 +500,7 @@ protected:
 			JsonNode row;
 			row["before"] = snapshot();
 			const auto selectedBefore = state.getSelected();
+			const auto stateBefore = state;
 			hero->setExperience(LIBRARY->heroh->reqExp(level), ChangeValueMode::ABSOLUTE);
 			handler.levelUpHero(hero);
 			auto query = std::dynamic_pointer_cast<CHeroLevelUpDialogQuery>(handler.queries->topQuery(hero->getOwner()));
@@ -530,9 +533,20 @@ protected:
 			EXPECT_EQ(hero->getPrimaryGrowthRules()["skillOfferWeights"], initialWeights);
 			if(static_cast<size_t>(choice) < query->hlu.skills.size())
 			{
-				EXPECT_EQ(state.getSelected(), selectedBefore);
 				const auto skillId = SecondarySkill::encode(query->hlu.skills.at(choice).getNum());
-				EXPECT_EQ(hero->getPerkSkillRank(skillId), row["before"][skillId]["rank"].Integer() + 1);
+				const int newRank = row["before"][skillId]["rank"].Integer() + 1;
+				EXPECT_EQ(hero->getPerkSkillRank(skillId), newRank);
+				// Historical nonhuman rank completion fills each missing available
+				// tier with its first candidate; current four-offer rules do not.
+				auto expected = stateBefore;
+				for(int tier = 1; tier <= newRank; ++tier)
+				{
+					if(expected.hasPerkForTier(skillId, tier)) continue;
+					const auto candidates = expected.candidatesForSkillTier(skillId, tier);
+					if(!candidates.empty())
+						expected.select(skillId, candidates.front().selection.perkId, newRank);
+				}
+				EXPECT_EQ(state.getSelected(), expected.getSelected());
 			}
 			else
 			{
