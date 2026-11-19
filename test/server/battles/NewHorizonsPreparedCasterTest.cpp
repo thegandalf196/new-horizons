@@ -8,6 +8,7 @@
  */
 #include "StdInc.h"
 #include "../../PerkTestSetup.h"
+#include "../../PerkStateFixture.h"
 #include "HeroCommandFixture.h"
 #include "../../SpellPointTestUtils.h"
 
@@ -736,8 +737,17 @@ TEST_F(NewHorizonsSpellFamiliarityTest, WizardSelectsSpellFamiliarityThroughTheN
 
 TEST_F(NewHorizonsSpellFamiliarityTest, CapturedPlannedSnapshotDoesNotOfferOrActivateSpellFamiliarity)
 {
-	captureSpellFamiliarityAsPlanned = true;
 	startGameWithWizard();
+	// Global starter profiles include Spell Familiarity; isolate this captured
+	// inactive-offer case after those unrelated authored starts are admitted.
+	auto & state = const_cast<newHorizonsHeroes::PerkState &>(attackerSideHero->getPerkState());
+	ASSERT_FALSE(state.hasSelection(WISDOM_SKILL, SPELL_FAMILIARITY));
+	perkStateFixture::editRules(state, [](JsonNode & rules)
+	{
+		for(auto & perk : rules["skills"][WISDOM_SKILL]["perks"].Vector())
+			if(perk["id"].String() == SPELL_FAMILIARITY)
+				perk["effect"]["status"].String() = "planned";
+	});
 	attackerSideHero->setSecSkillLevel(wisdomSkill(), MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
 	const auto & savedPerks = attackerSideHero->getPerkState().getRules()["skills"][WISDOM_SKILL]["perks"].Vector();
 	const auto capturedSpellFamiliarity = std::find_if(savedPerks.begin(), savedPerks.end(), [](const auto & perk)

@@ -191,7 +191,7 @@ void captureHistoricalPairRules(JsonNode & rules)
 		}
 	]
 })DIVINE_PAIR";
-	rules["skills"][std::string(divineMandateSkill)] = JsonNode(text);
+	rules["skills"][std::string(divineMandateSkill)] = JsonNode(text.data(), text.size(), "captured historical Divine Mandate");
 	rules.Struct().erase("divineMandatePolicy");
 }
 

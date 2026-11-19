@@ -257,7 +257,7 @@ TEST_F(NewHorizonsWarcastingTest, FreshBattleStartRoundTripsBeforeAnyHeroActionI
 	EXPECT_THROW(CMemorySerializer::deepCopy(*battle(), gameState().get()), std::runtime_error);
 }
 
-TEST_F(NewHorizonsWarcastingTest, TypedOrderAfterHeroSpellPreservesAllowancesAndRoundTrips)
+TEST_F(NewHorizonsWarcastingTest, InjectedOrderOnlyGrantCannotIssueAfterHeroSpellAndRoundTrips)
 {
 	prepareWarcasting(1, true);
 	const auto side = BattleSide::ATTACKER;
@@ -283,19 +283,32 @@ TEST_F(NewHorizonsWarcastingTest, TypedOrderAfterHeroSpellPreservesAllowancesAnd
 	ASSERT_TRUE(eligibleOrder);
 	EXPECT_EQ(eligibleOrder->grantId, orderGrantId);
 	EXPECT_EQ(eligibleOrder->allowance, HeroActionAllowanceState::AllowanceKind::ORDER);
-	ASSERT_TRUE(issue(HeroCommand::CHARGE));
+	// The generic ledger supports this receipt, while current Warfare only
+	// admits the ordinary ROUND/HERO allowance for actual Order issuance.
+	auto generic = afterSpell.heroActionAllowances;
+	ASSERT_TRUE(generic.consumeAllowance(orderGrantId, HeroActionAllowanceState::ActionKind::ORDER, round));
+	EXPECT_EQ(generic.remainingCounts(round).orderActions, 0u);
+	const auto liveLedger = afterSpell.heroActionAllowances;
+	const auto mana = attackerSideHero->getManaAvailable();
+	const auto actions = server.startedActions.size();
+	EXPECT_FALSE(battle()->battleGetOrderActionAllowance(side));
+	EXPECT_FALSE(issue(HeroCommand::CHARGE));
 
 	const auto & afterOrder = battle()->getSide(side);
-	EXPECT_EQ(battle()->getHeroCommandUsed(side), true);
-	EXPECT_EQ(battle()->getActiveOrder(side), HeroCommand::CHARGE);
+	EXPECT_EQ(afterOrder.heroActionAllowances, liveLedger);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
+	EXPECT_EQ(server.startedActions.size(), actions);
+	EXPECT_FALSE(battle()->getHeroCommandUsed(side));
+	EXPECT_EQ(battle()->getActiveOrder(side), HeroCommand::NONE);
 	EXPECT_EQ(afterOrder.castSpellsCount, 1u);
 	EXPECT_EQ(afterOrder.usedSpellsHistory, (std::vector<SpellID>{SpellID::BLESS}));
 	EXPECT_EQ(wisdomBytes(battle()->getWisdomCombatState(side)), spellMemory);
 	const auto afterOrderCounts = afterOrder.heroActionAllowances.remainingCounts(round);
 	EXPECT_EQ(afterOrderCounts.heroActions, 0u);
-	EXPECT_EQ(afterOrderCounts.orderActions, 0u);
+	EXPECT_EQ(afterOrderCounts.orderActions, 1u);
 	EXPECT_EQ(afterOrderCounts.spellActions, 0u);
-	EXPECT_TRUE(afterOrder.heroActionAllowances.grants.empty());
+	ASSERT_EQ(afterOrder.heroActionAllowances.grants.size(), 1u);
+	EXPECT_EQ(afterOrder.heroActionAllowances.grants.front().id, orderGrantId);
 
 	auto restored = CMemorySerializer::deepCopy(*battle(), gameState().get());
 	ASSERT_NE(restored, nullptr);
@@ -303,12 +316,12 @@ TEST_F(NewHorizonsWarcastingTest, TypedOrderAfterHeroSpellPreservesAllowancesAnd
 	EXPECT_EQ(restoredSide.castSpellsCount, 1u);
 	EXPECT_EQ(restoredSide.usedSpellsHistory, afterOrder.usedSpellsHistory);
 	EXPECT_EQ(wisdomBytes(restored->getWisdomCombatState(side)), wisdomBytes(battle()->getWisdomCombatState(side)));
-	EXPECT_TRUE(restored->getHeroCommandUsed(side));
-	EXPECT_EQ(restored->getActiveOrder(side), HeroCommand::CHARGE);
+	EXPECT_FALSE(restored->getHeroCommandUsed(side));
+	EXPECT_EQ(restored->getActiveOrder(side), HeroCommand::NONE);
 	EXPECT_EQ(restored->getHeroOrderState(side), battle()->getHeroOrderState(side));
 	EXPECT_EQ(restored->getHeroActionAllowances(side), afterOrder.heroActionAllowances);
 	const auto restoredCounts = restored->getHeroActionAllowances(side).remainingCounts(round);
-	EXPECT_EQ(restoredCounts.orderActions, 0u);
+	EXPECT_EQ(restoredCounts.orderActions, 1u);
 	EXPECT_EQ(restoredCounts.spellActions, 0u);
 }
 
@@ -366,13 +379,22 @@ TEST_F(NewHorizonsWarcastingTest, PreparedAllowanceCommitCannotBeReplayed)
 	HypotheticBattle projection(&environment, callback);
 	const auto prepared = projection.prepareHeroSpellAllowance(BattleSide::ATTACKER, SpellID::BLESS);
 	ASSERT_TRUE(prepared);
+	const auto mana = projection.getProjectedManaAvailable(BattleSide::ATTACKER);
+	ASSERT_TRUE(mana);
+	const int32_t cost = projection.battleGetSpellCost(SpellID(SpellID::BLESS).toSpell(),
+		projection.getSideHero(BattleSide::ATTACKER));
+	ASSERT_GT(cost, 0);
 	ASSERT_TRUE(projection.beginProjectedHeroAction(BattleSide::ATTACKER, *prepared));
+	ASSERT_TRUE(projection.stageProjectedSpellPayment(BattleSide::ATTACKER, SpellID::BLESS, cost));
 	ASSERT_TRUE(projection.projectAcceptedHeroSpell(BattleSide::ATTACKER, SpellID::BLESS,
 		attacker->unitId(), *prepared));
 	const auto afterCommit = projection.getHeroActionAllowances(BattleSide::ATTACKER);
+	EXPECT_EQ(projection.getProjectedManaAvailable(BattleSide::ATTACKER), *mana - cost);
+	EXPECT_EQ(projection.getWisdomCombatState(BattleSide::ATTACKER).priorCasts(SpellID::BLESS), 1u);
 	EXPECT_FALSE(projection.projectAcceptedHeroSpell(BattleSide::ATTACKER, SpellID::BLESS,
 		attacker->unitId(), *prepared));
 	EXPECT_EQ(projection.getHeroActionAllowances(BattleSide::ATTACKER), afterCommit);
+	EXPECT_EQ(projection.getProjectedManaAvailable(BattleSide::ATTACKER), *mana - cost);
 }
 
 TEST_F(NewHorizonsWarcastingTest, StalePreparedActionCannotClearEffectsBeforeCommitRejection)
@@ -392,8 +414,8 @@ TEST_F(NewHorizonsWarcastingTest, StalePreparedActionCannotClearEffectsBeforeCom
 	const auto staleSpell = projection.prepareHeroSpellAllowance(side, SpellID::BLESS);
 	ASSERT_TRUE(staleSpell);
 
-	// A typed Order consumes a different grant without crossing the Hero-action
-	// boundary. It makes the prepared spell token stale while preserving effects.
+	// The accepted ordinary Order consumes the competing Hero Action and makes
+	// the prepared spell token stale while preserving unrelated effects.
 	ASSERT_TRUE(projection.projectHeroOrderAllowance(side));
 	auto projectedAttacker = projection.battleGetUnitByID(attacker->unitId());
 	ASSERT_NE(projectedAttacker, nullptr);
@@ -424,7 +446,10 @@ TEST_F(NewHorizonsWarcastingTest, BegunOrderTokenCannotAuthorizeSameEpochSpellCo
 	ASSERT_TRUE(spell);
 	ASSERT_TRUE(order);
 	EXPECT_EQ(spell->action.receipt.allowance, HeroActionAllowanceState::AllowanceKind::HERO);
-	EXPECT_EQ(order->action.receipt.allowance, HeroActionAllowanceState::AllowanceKind::ORDER);
+	// Injected ORDER/PERK grants are not eligible current Order producers.
+	EXPECT_EQ(order->action.receipt.allowance, HeroActionAllowanceState::AllowanceKind::HERO);
+	EXPECT_EQ(order->action.receipt.source, HeroActionAllowanceState::GrantSource::ROUND);
+	EXPECT_EQ(projection.battleHeroActionAllowanceCounts(side).orderActions, 1u);
 
 	ASSERT_TRUE(projection.beginProjectedHeroAction(side, *order));
 	EXPECT_FALSE(projection.projectAcceptedHeroSpell(side, SpellID::BLESS,
@@ -435,6 +460,8 @@ TEST_F(NewHorizonsWarcastingTest, BegunOrderTokenCannotAuthorizeSameEpochSpellCo
 
 	ASSERT_TRUE(projection.projectAcceptedHeroOrder(side, *order));
 	EXPECT_TRUE(projectedAttacker->hasBonusOfType(BonusType::LUCK));
+	EXPECT_EQ(projection.battleHeroActionAllowanceCounts(side).heroActions, 0u);
+	EXPECT_EQ(projection.battleHeroActionAllowanceCounts(side).orderActions, 1u);
 }
 
 
