@@ -23777,7 +23777,7 @@
       "deferral": "No future growth permission; actual recipient sequence/shared replay/common absolute horizon and native source/alias intervals remain required. Exact v5 bounded follow-up: Before further affected expansion, owning specialist must extract the next cohesive query/selection/ordered-transition responsibility; preserve all inherited source/ownership/order/RNG/lifecycle obligations and shrinking baselines. No unrelated or future growth credit. Owning gameplay/engine specialist: before further substantive expansion of this touched rule/transition, extract the next coherent affected policy or ordered stage into a focused owner. Preserve callback visibility, original recipient/caster identity, rejection atomicity and packet/RNG order; characterization must compare exact state and emitted packets. This is no future growth credit.\n\nBefore any further substantive expansion, extract the next cohesive touched policy, callback/read adapter or ordered admission stage into its focused owner. Preserve exact capture metadata, source visibility, schema rejection, RNG/packet ordering and standalone/world wire identity; no future growth credit from this exception.",
       "inherited_a1_health_deferral": "No future growth permission; actual recipient sequence/shared replay/common absolute horizon and native source/alias intervals remain required. Exact v5 bounded follow-up: Before further affected expansion, owning specialist must extract the next cohesive query/selection/ordered-transition responsibility; preserve all inherited source/ownership/order/RNG/lifecycle obligations and shrinking baselines. No unrelated or future growth credit. Owning gameplay/engine specialist: before further substantive expansion of this touched rule/transition, extract the next coherent affected policy or ordered stage into a focused owner. Preserve callback visibility, original recipient/caster identity, rejection atomicity and packet/RNG order; characterization must compare exact state and emitted packets. This is no future growth credit.",
       "kind": "exception",
-      "lines": 606,
+      "lines": 605,
       "owner": "gameplay_engineer",
       "previous_review": "IR-COMMAND-AUTHORITY-SCOPED-ORGANIZATION-20261109-UNITS",
       "prior_a1_health_scope": {
@@ -23787,11 +23787,11 @@
         "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
         "sha256": "b6b59dfee882fa45be75dfb35f77303c0129bfb62eaef7df4125b32655d46ebd"
       },
-      "rationale": "Urgent C++20 shared-owner lifetime fix only:606 to606 lines; battleGetRetreatPermission446-467 changes its range initializer, preserving body, query count, iteration order and result. Extracting unrelated callback policy would add risk to a one-line memory-safety repair. Retain all inherited stronger deferrals; no future growth credit.",
-      "review": "IR-NEXT-BUILD-LIFETIME-NHART-REVERT-20261119",
-      "review_scope": "Exact independent source/organization only; no compilation, runtime, rendering, timing, publication or future-growth acceptance.",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
-      "sha256": "aacd0d87a734a8934ade257804bb483759bceb335d5d6cedc44be73d54b8e66f"
+      "rationale": "Exact606\u2192605 shrinking callback scope. Urgent shared status correction suppresses obsolete paired Mandate for captured passivev2 and current Consecratedv3 before historical capacity; reuses the existing policy helpers and removes an unused read. No new independent policy owner or serialization. Preserve inherited deferrals; no future growth credit.",
+      "review": "IR-MANDATE-HISTORICAL-ALLOWANCE-794806-20261119",
+      "review_scope": "Exact organization and source-policy review only; no native/rendered acceptance, future growth approval or publication authorization.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_REVIEWED_NATIVE_UNRUN",
+      "sha256": "fb1faf2f1eab82bf17d06bc6956f4d7bc7c76f6bf74240b8e00bf1a81de59c8b"
     },
     "lib/battle/CUnitState.cpp": {
       "completed_p_predecessor": {
@@ -24929,14 +24929,14 @@
       "deferral": "Before further recruitment visitor growth, extract the next deterministic batch admission step into existing training rules. Preserve source/count receipts, mutation order, duplicate rejection and server/client conservation; exact file freeze only. Prior stricter obligations remain recorded in inherited_deferral, where present.",
       "inherited_deferral": "Before next substantive visitor expansion extract accepted action/history stages using validated packet and explicit BattleInfo/side refs; preserve all validation-before-mutation, typed allowance, Wisdom epoch/count, packet/RNG order and rejection atomicity. Before further substantive expansion, owning engine/gameplay/UI specialist must extract the next coherent touched policy, ordered stage, codec family or widget responsibility into a focused owner, preserving callback visibility, rejection atomicity, serialized field order, payment and RNG/packet order. This exact bounded migration/registry/validation routing gives no future growth credit.",
       "kind": "exception",
-      "lines": 3782,
+      "lines": 3772,
       "owner": "engine_engineer",
       "previous_review": "PROPOSED-0920-EXACT-SOURCE-ORGANIZATION",
-      "rationale": "Exact3783 to3782 line shared native SpellPoint transition extraction; owned-payment arithmetic/provenance lives in focused shared helper. Preserve adventure restoration and existing validation-before-mutation order.",
-      "review": "IR-NH092-ORG-M4-SIX-20261116",
-      "review_scope": "Approval applies only to this exact source-organization record and callable inventory. Other records, semantic correctness, native or rendered validation, performance, and future growth require separate review.",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
-      "sha256": "f53ba7aa71c5f390a2f7514c33f149d693ce5e97823d3ef58b29293469718375"
+      "rationale": "Exact3782\u21923772 shrinking authority scope. Order payment now consumes the exact selection admitted by the shared callback instead of repeating divergent policy filters; staged allowance copy and validated transition/commit ordering remain. No packet/wire change. Preserve inherited stronger extraction obligations; no future growth credit.",
+      "review": "IR-MANDATE-HISTORICAL-ALLOWANCE-794806-20261119",
+      "review_scope": "Exact organization and source-policy review only; no native/rendered acceptance, future growth approval or publication authorization.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_REVIEWED_NATIVE_UNRUN",
+      "sha256": "2fc60c75086cfa8f76085f5f79e893372aa3140735e6d39fae7d165e54232543"
     },
     "lib/gameState/GameStatePackVisitor.cpp::void BattleStatePackVisitor::visitBattleHeroOrderStateChanged(BattleHeroOrderStateChanged & pack)#1": {
       "kind": "legacy",
@@ -25039,14 +25039,14 @@
       },
       "deferral": "Before next substantive visitor expansion extract accepted action/history stages using validated packet and explicit BattleInfo/side refs; preserve all validation-before-mutation, typed allowance, Wisdom epoch/count, packet/RNG order and rejection atomicity.",
       "kind": "legacy",
-      "lines": 374,
+      "lines": 364,
       "owner": "engine_engineer",
       "previous_review": "IR-COMMAND-AUTHORITY-SCOPED-ORGANIZATION-20261109-UNITS",
-      "rationale": "Exact 430 to 374-line scope. Existing state/content/serialization responsibility integrates current captured rules and explicit native routing. Preserve independent captures, validation boundaries, deterministic order, existing ownership and saved absence.",
-      "review": "IR-NH092-ORG-3E82D142-20261116",
-      "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
-      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "2dd29664b6298503495f7a21c66373bd9e1857d8c3c4a257fe12f38c460103e5"
+      "rationale": "Exact374\u2192364 shrinking inherited action visitor. Removed duplicate grant-policy filter and consumes exact shared callback selection with allowance/source/expiry agreement before receipt-driven Mandate transition and eventual ledger commit. Retain prior bounded extraction deferral before any future expansion.",
+      "review": "IR-MANDATE-HISTORICAL-ALLOWANCE-794806-20261119",
+      "review_scope": "Exact organization and source-policy review only; no native/rendered acceptance, future growth approval or publication authorization.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_REVIEWED_NATIVE_UNRUN",
+      "sha256": "a4b1c5731d016b2f1ca36b9fa62636c17390a20202fe2a94b5d92ee6f68cf39d"
     },
     "lib/gameState/GameStatePackVisitor.cpp::void GameStatePackVisitor::visitTryMoveHero(TryMoveHero & pack)#1": {
       "deferral": "Keep this exact ordered registry/serialization/authoritative-routing seam for Fly integration. Owning gameplay/engine specialist should separately extract cohesive validation or movement stages with prefix/rejection/wire/state parity before future expansion; no blanket ceiling allowance.",
