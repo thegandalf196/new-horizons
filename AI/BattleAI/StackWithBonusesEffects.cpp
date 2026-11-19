@@ -170,6 +170,7 @@ void StackWithBonuses::removeGamblerLuckPenalty(HypotheticLifecycleTiming::Effec
 void StackWithBonuses::removeUnitBonusImpl(const CSelector & selector, bool mayAffectControlState,
 	HypotheticLifecycleTiming::EffectWorkTiming * timing)
 {
+	const ProjectionMutation projectionMutation(*this);
 	if(ownedQuerySource) throw std::logic_error("Owned selector mutation needs its canonical raw selector transaction");
 	const auto protectedRemoval = selector;
 	if(const auto subject = owner->initialExportSubject())
@@ -228,6 +229,7 @@ void StackWithBonuses::freezeDamageScoringBonusSnapshot()
 {
 	if(damageScoringBonuses)
 		return;
+	const ProjectionMutation projectionMutation(*this);
 
 	const auto stacked = getBonusesBeforeCreatureAbilitySuppression(Selector::all, {}, false);
 	const auto unstacked = getBonusesBeforeCreatureAbilitySuppression(Selector::all, {}, true);
@@ -293,6 +295,7 @@ void StackWithBonuses::captureLocalSpellEffects()
 
 void StackWithBonuses::replaceLocalSpellEffectsExact(const std::vector<Bonus> & replacement)
 {
+	const ProjectionMutation projectionMutation(*this);
 	if(ownedQuerySource) throw std::logic_error("Owned replacement requires its canonical source-export transaction");
 	captureLocalSpellEffects();
 	captureEffects();
@@ -328,6 +331,7 @@ void StackWithBonuses::captureEffects()
 
 void StackWithBonuses::captureEffects(HypotheticLifecycleTiming::EffectWorkTiming * timing)
 {
+	const ProjectionMutation projectionMutation(*this);
 	// Resolve refreshes before aging or another mutation. In addition to spell and
 	// command effects, explicitly marked affliction groups may use non-spell
 	// sources; capture only those exact source/sid groups, not unrelated stats.
@@ -417,6 +421,7 @@ void StackWithBonuses::advanceTimedRound()
 
 void StackWithBonuses::advanceTimedRound(HypotheticLifecycleTiming::EffectWorkTiming * timing)
 {
+	const ProjectionMutation projectionMutation(*this);
 	if(ownedQuerySource) throw std::logic_error("Owned aging requires its canonical raw duration transaction");
 	captureLocalSpellEffects();
 	captureEffects(timing);

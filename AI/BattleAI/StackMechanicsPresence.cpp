@@ -9,22 +9,70 @@
 namespace
 {
 template<typename Records>
-bool includeRecords(battle::MechanicsPresence & result, const Records & records, size_t & remaining)
+bool includeRecords(battle::MechanicsPresence & result, const Records & records,
+	size_t & remaining, bool & cacheable)
 {
 	if(records.size() > remaining) return false;
 	remaining -= records.size();
 	for(const auto & record : records)
 	{
 		if constexpr(std::is_same_v<std::decay_t<decltype(record)>, Bonus>)
+		{
 			result.include(record);
+			cacheable &= !record.updater && !record.propagationUpdater;
+		}
 		else
 		{
 			if(!record) return false;
 			result.include(*record);
+			cacheable &= !record->updater && !record->propagationUpdater;
 		}
 	}
 	return true;
 }
+}
+
+void StackWithBonuses::invalidateProjectionPresence() noexcept
+{
+	++projectionVersion;
+	projectionPresence.reset();
+}
+
+void StackWithBonuses::exposeProjectionAliases(bool unstacked) const noexcept
+{
+	const bool pointers = damageScoringBonuses
+		? unstacked && damageScoringUnstackedBonuses && !damageScoringUnstackedBonuses->empty()
+		: !bonusesToAdd.empty() || !bonusesToUpdate.empty()
+			|| (unstacked && projectedUnstackedEffects && !projectedUnstackedEffects->empty());
+	if(!pointers)
+		return;
+	projectionAliasesEscaped = true;
+	if(projectionAliasLease)
+		*projectionAliasLease = true;
+	projectionPresence.reset();
+}
+
+const StackWithBonuses::LocalPresence & StackWithBonuses::localProjectionPresence() const
+{
+	const bool aliases = projectionAliasesEscaped || (projectionAliasLease && *projectionAliasLease);
+	if(projectionPresence && projectionPresence->version == projectionVersion
+		&& projectionPresence->cacheable && !aliases && !projectionMutationDepth)
+		return *projectionPresence;
+	LocalPresence next;
+	next.version = projectionVersion;
+	size_t remaining = 8192;
+	if(damageScoringBonuses)
+		next.complete = includeRecords(next.types, *damageScoringBonuses, remaining, next.cacheable)
+			&& (!damageScoringUnstackedBonuses
+				|| includeRecords(next.types, *damageScoringUnstackedBonuses, remaining, next.cacheable));
+	else
+		next.complete = includeRecords(next.types, bonusesToAdd, remaining, next.cacheable)
+			&& includeRecords(next.types, bonusesToUpdate, remaining, next.cacheable)
+			&& (!projectedEffects || includeRecords(next.types, *projectedEffects, remaining, next.cacheable))
+			&& (!projectedUnstackedEffects || includeRecords(next.types, *projectedUnstackedEffects, remaining, next.cacheable));
+	next.records = 8192 - remaining;
+	projectionPresence = std::move(next);
+	return *projectionPresence;
 }
 
 bool StackWithBonuses::mayHaveBonusType(BonusType type) const
@@ -35,26 +83,21 @@ bool StackWithBonuses::mayHaveBonusType(BonusType type) const
 	{
 		if(typeid(*layer) != typeid(StackWithBonuses)) return true;
 		if(type == BonusType::MORALE && layer->veteranCohesionEarned) return true;
-		battle::MechanicsPresence local;
 		if(layer->damageScoringBonuses)
 		{
 			// This route is explicitly frozen: mergeBonusesImpl never consults
 			// original providers or local overlays, even after movement/form edits.
-			if(!includeRecords(local, *layer->damageScoringBonuses, remaining)
-				|| (layer->damageScoringUnstackedBonuses
-					&& !includeRecords(local, *layer->damageScoringUnstackedBonuses, remaining))) return true;
-			return local.mayHave(type);
+			const auto & local = layer->localProjectionPresence();
+			if(!local.complete || local.records > remaining) return true;
+			return local.types.mayHave(type);
 		}
 		if(layer->ownedQuerySource || layer->hasBattleFormState()
 			|| layer->damageScoringUnstackedBonuses
 			|| !ProjectedAdjacencyBonuses::canProveTypeAbsence(*layer)) return true;
-		// These containers are intentionally public and mutable. Read their
-		// current values, including edits without a version bump; no stale mirror.
-		if(!includeRecords(local, layer->bonusesToAdd, remaining)
-			|| !includeRecords(local, layer->bonusesToUpdate, remaining)
-			|| (layer->projectedEffects && !includeRecords(local, *layer->projectedEffects, remaining))
-			|| (layer->projectedUnstackedEffects && !includeRecords(local, *layer->projectedUnstackedEffects, remaining))) return true;
-		if(local.mayHave(type)) return true;
+		const auto & local = layer->localProjectionPresence();
+		if(!local.complete || local.records > remaining) return true;
+		remaining -= local.records;
+		if(local.types.mayHave(type)) return true;
 		// Removals only subtract possibilities. Continue through the original
 		// source even after a selected snapshot: inactive inherited auras matter.
 		if(!layer->originalUnit || layer->originalUnit->unitId() != id

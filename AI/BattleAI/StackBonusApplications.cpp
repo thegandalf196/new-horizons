@@ -40,6 +40,7 @@ void applyGuardianSpiritBonus(StackWithBonuses & unit, const Bonus & bonus)
 }
 void StackWithBonuses::replacePhysicalAfflictionMarker(Bonus marker)
 {
+	const ProjectionMutation projectionMutation(*this);
 	physicalAfflictions::markerMetadata(marker);
 	const CSelector selector([&marker](const Bonus * bonus)
 	{
@@ -60,6 +61,7 @@ void StackWithBonuses::replacePhysicalAfflictionMarker(Bonus marker)
 
 void StackWithBonuses::addUnitBonus(const std::vector<Bonus> & bonus)
 {
+	const ProjectionMutation projectionMutation(*this);
 	if(ownedQuerySource) { applyOwnedBonusVector(bonus, newHorizonsGraveDust::EffectOperation::ADD); return; }
 	owner->validateOrdinaryEffectVector(*this, bonus, newHorizonsGraveDust::EffectOperation::ADD);
 	newHorizonsGraveDust::validateMutation(*owner, *this, bonus, newHorizonsGraveDust::EffectOperation::ADD);
@@ -118,6 +120,7 @@ void StackWithBonuses::addUnitBonus(const std::vector<Bonus> & bonus)
 
 void StackWithBonuses::updateUnitBonus(const std::vector<Bonus> & bonus)
 {
+	const ProjectionMutation projectionMutation(*this);
 	if(ownedQuerySource) { applyOwnedBonusVector(bonus, newHorizonsGraveDust::EffectOperation::UPDATE); return; }
 	owner->validateOrdinaryEffectVector(*this, bonus, newHorizonsGraveDust::EffectOperation::UPDATE);
 	newHorizonsGraveDust::validateMutation(*owner, *this, bonus, newHorizonsGraveDust::EffectOperation::UPDATE);

@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "StackProjectionTestAccess.h"
 #include "OriginalMeleeSequenceFixture.h"
 #include "../../AI/BattleAI/ProjectedMeleeExpiry.h"
 #include "../../lib/bonuses/BonusList.h"
@@ -116,7 +117,7 @@ TEST_F(RecipientMeleeInjuryTest, RecipientRefreshWithoutAnInheritedMatchDoesNotI
 	known->getForUpdate(incoming->unitId())->updateUnitBonus({rating()});
 	const int expected = known->battleGetUnitByID(incoming->unitId())->getAttack(false);
 	ASSERT_EQ(expected, nativeAttack + 4); // Existing unmatched UPDATE is a recipient-local addition.
-	ASSERT_FALSE(known->getForUpdate(incoming->unitId())->bonusesToUpdate.empty());
+	ASSERT_FALSE(StackWithBonusesTestAccess::updatedEmpty(*known->getForUpdate(incoming->unitId())));
 	ASSERT_NO_FATAL_FAILURE(oldPrefixRemainsExplicit());
 	auto result = continued();
 	ASSERT_TRUE(result.meleeSequenceComplete());
@@ -136,7 +137,7 @@ TEST_F(RecipientMeleeInjuryTest, CapturedHeroSpecialValueAndClockSurvivePhysical
 	const auto layer = known->getForUpdate(incoming->unitId());
 	layer->addUnitBonus({record});
 	layer->removeUnitBonus(Bonus::UntilAttack);
-	ASSERT_TRUE(layer->bonusesToAdd.empty());
+	ASSERT_TRUE(StackWithBonusesTestAccess::addedEmpty(*layer));
 	ASSERT_NO_FATAL_FAILURE(oldPrefixRemainsExplicit());
 	auto result = continued();
 	ASSERT_TRUE(result.meleeSequenceComplete());

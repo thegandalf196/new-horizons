@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "StackProjectionTestAccess.h"
 #include "ProjectedTargetHitFixture.h"
 #include "../../AI/BattleAI/InitialExportBattleSubject.h"
 #include "../../lib/battle/BattleLayout.h"
@@ -530,8 +531,8 @@ TEST_F(StackWithBonusesQueryTest, CanonicalSuppressionQueryTracksNestedParentAnd
 	const auto parent = std::make_shared<StackWithBonuses>(child.get(), braced);
 	parent->updateUnitBonus({addedAttack()});
 	const auto target = std::make_shared<StackWithBonuses>(child.get(), parent.get());
-	// Direct public edit exercises a live parent route without capturing empty spell effects.
-	target->bonusesToUpdate.push_back(std::make_shared<Bonus>(addedAttack()));
+	// Controlled fixture edit exercises a live parent route without capturing empty spell effects.
+	StackWithBonusesTestAccess::appendUpdated(*target, std::make_shared<Bonus>(addedAttack()));
 	MarkerQueryProbe probe(child.get(), target);
 	EXPECT_EQ(newHorizonsCreatureAbilitySuppression::suppressionLevel(probe), 0);
 	parent->addUnitBonus({suppressionMarker(2, 3)});
@@ -539,7 +540,7 @@ TEST_F(StackWithBonusesQueryTest, CanonicalSuppressionQueryTracksNestedParentAnd
 	parent->removeUnitBonus(Selector::type()(BonusType::CREATURE_ABILITY_SUPPRESSION));
 	EXPECT_EQ(newHorizonsCreatureAbilitySuppression::suppressionLevel(probe), 0);
 	const auto alias = std::make_shared<Bonus>(suppressionMarker(1, 3));
-	target->bonusesToAdd = {alias, alias};
+	StackWithBonusesTestAccess::replaceAdded(*target, {alias, alias});
 	EXPECT_EQ(newHorizonsCreatureAbilitySuppression::suppressionLevel(probe), 1);
 	ASSERT_NE(probe.canonicalSelector, nullptr);
 	const CSelector copied = *probe.canonicalSelector;
@@ -569,10 +570,10 @@ TEST_F(StackWithBonusesQueryTest, CanonicalSuppressionQueryKeepsFormFrozenAndFor
 	for(const auto & view : {target, foreign.projected})
 	{
 		// A foreign raw query source cannot originate timed effects. Construct
-		// every reader first, then expose the documented public query overlay.
+		// every reader first, then expose the documented fixture query overlay.
 		MarkerQueryProbe probe(child.get(), view);
-		view->bonusesToAdd.push_back(std::make_shared<Bonus>(suppressionMarker(2, 3)));
-		view->bonusesToUpdate.push_back(std::make_shared<Bonus>(addedAttack()));
+		StackWithBonusesTestAccess::appendAdded(*view, std::make_shared<Bonus>(suppressionMarker(2, 3)));
+		StackWithBonusesTestAccess::appendUpdated(*view, std::make_shared<Bonus>(addedAttack()));
 		EXPECT_EQ(newHorizonsCreatureAbilitySuppression::suppressionLevel(probe), 2);
 		view->beginBattleForm(creatureByName("core:pikeman"), 2);
 		EXPECT_EQ(newHorizonsCreatureAbilitySuppression::suppressionLevel(probe), 2);
@@ -590,8 +591,8 @@ TEST_F(StackWithBonusesQueryTest, CanonicalSuppressionQueryKeepsFormFrozenAndFor
 	ASSERT_TRUE(snapshot);
 	ASSERT_TRUE(std::ranges::any_of(*snapshot, [](const Bonus & bonus)
 	{ return bonus.type == BonusType::CREATURE_ABILITY_SUPPRESSION && bonus.val == 2; }));
-	ASSERT_TRUE(snapshotTarget->bonusesToAdd.empty());
-	ASSERT_TRUE(snapshotTarget->bonusesToUpdate.empty());
+	ASSERT_TRUE(StackWithBonusesTestAccess::addedEmpty(*snapshotTarget));
+	ASSERT_TRUE(StackWithBonusesTestAccess::updatedEmpty(*snapshotTarget));
 	MarkerQueryProbe snapshotProbe(child.get(), snapshotTarget);
 	ASSERT_EQ(newHorizonsCreatureAbilitySuppression::suppressionLevel(snapshotProbe), 2);
 	ASSERT_NE(snapshotProbe.canonicalSelector, nullptr);
@@ -653,18 +654,16 @@ TEST_F(StackWithBonusesQueryTest, CanonicalSuppressionQueryRetainsForeignPointer
 	// Expose them only after all constructor-time provenance checks have finished.
 	foreign.markerExposed = true;
 	const auto update = std::make_shared<Bonus>(addedAttack());
-	parent->bonusesToUpdate.push_back(update);
-	target->bonusesToUpdate.push_back(update);
-	target->bonusesToRemove.insert(foreign.allMarker);
-	const int version = target->treeVersionLocal;
+	StackWithBonusesTestAccess::appendUpdated(*parent, update);
+	StackWithBonusesTestAccess::appendUpdated(*target, update);
+	StackWithBonusesTestAccess::removeIdentity(*target, foreign.allMarker);
+	const int version = StackWithBonusesTestAccess::treeVersion(*target);
 	EXPECT_EQ(newHorizonsCreatureAbilitySuppression::suppressionLevel(probe), 0);
 	// Same-sized direct identity replacement without a version bump must remain live.
-	target->bonusesToRemove.clear();
-	target->bonusesToRemove.insert(foreign.narrowMarker);
-	EXPECT_EQ(target->treeVersionLocal, version);
+	StackWithBonusesTestAccess::replaceRemoved(*target, {foreign.narrowMarker});
+	EXPECT_EQ(StackWithBonusesTestAccess::treeVersion(*target), version);
 	EXPECT_EQ(newHorizonsCreatureAbilitySuppression::suppressionLevel(probe), 2);
-	target->bonusesToRemove.clear();
-	target->bonusesToRemove.insert(foreign.allMarker);
+	StackWithBonusesTestAccess::replaceRemoved(*target, {foreign.allMarker});
 	EXPECT_EQ(newHorizonsCreatureAbilitySuppression::suppressionLevel(probe), 0);
 }
 
@@ -708,7 +707,7 @@ TEST_F(StackWithBonusesQueryTest, CanonicalSuppressionQueryKeepsFrozenParentRead
 		parent->freezeDamageScoringBonusSnapshot();
 		target = std::make_shared<StackWithBonuses>(child.get(), parent.get());
 		// Keep the child un-frozen so its query must inspect the retained parent.
-		target->bonusesToUpdate.push_back(std::make_shared<Bonus>(addedAttack()));
+		StackWithBonusesTestAccess::appendUpdated(*target, std::make_shared<Bonus>(addedAttack()));
 		probe = std::make_unique<MarkerQueryProbe>(child.get(), target);
 		EXPECT_EQ(newHorizonsCreatureAbilitySuppression::suppressionLevel(*probe), 2);
 	}

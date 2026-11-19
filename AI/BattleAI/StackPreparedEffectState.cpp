@@ -22,6 +22,11 @@ std::unique_ptr<StackWithBonuses> StackWithBonuses::prepareEffectDraft(const Hyp
 		? std::make_unique<StackWithBonuses>(prospective ? prospective : owner, ownedReadSource,
 			modifierBaseProgram, modifierBaseEffects)
 		: std::make_unique<StackWithBonuses>(prospective ? prospective : owner, originalUnit);
+	const ProjectionMutation projectionMutation(*prepared);
+	if(!projectionAliasLease)
+		projectionAliasLease = std::make_shared<bool>(projectionAliasesEscaped);
+	prepared->projectionAliasLease = projectionAliasLease;
+	prepared->projectionAliasesEscaped = projectionAliasesEscaped;
 	prepared->origBearer = origBearer;
 	prepared->originalUnit = originalUnit;
 	prepared->projectedBearer = projectedBearer;
@@ -71,6 +76,8 @@ bool StackWithBonuses::preparedEffectSourceMatches(const StackWithBonuses & prep
 void StackWithBonuses::publishPreparedEffects(StackWithBonuses & prepared) noexcept
 {
 	assert(preparedEffectSourceMatches(prepared));
+	const ProjectionMutation projectionMutation(*this);
+	const ProjectionMutation preparedMutation(prepared);
 	static_assert(std::is_nothrow_swappable_v<decltype(projectedEffects)>);
 	static_assert(std::is_nothrow_swappable_v<decltype(projectedUnstackedEffects)>);
 	static_assert(std::is_nothrow_swappable_v<decltype(exactLocalSpellEffects)>);
@@ -78,6 +85,8 @@ void StackWithBonuses::publishPreparedEffects(StackWithBonuses & prepared) noexc
 	bonusesToAdd.swap(prepared.bonusesToAdd);
 	bonusesToUpdate.swap(prepared.bonusesToUpdate);
 	bonusesToRemove.swap(prepared.bonusesToRemove);
+	projectionAliasLease.swap(prepared.projectionAliasLease);
+	std::swap(projectionAliasesEscaped, prepared.projectionAliasesEscaped);
 	projectedEffects.swap(prepared.projectedEffects);
 	projectedUnstackedEffects.swap(prepared.projectedUnstackedEffects);
 	capturedPhysicalAfflictionGroups.swap(prepared.capturedPhysicalAfflictionGroups);

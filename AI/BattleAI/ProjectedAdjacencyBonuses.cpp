@@ -315,6 +315,7 @@ TConstBonusListPtr StackWithBonuses::mergeBonuses(const CSelector & selector,
 TConstBonusListPtr StackWithBonuses::mergeBonusesImpl(const CSelector & selector,
 	const std::string & cachingStr, bool unstacked, const ProjectedAdjacencyQuery * adjacency) const
 {
+	exposeProjectionAliases(unstacked);
 	if(damageScoringBonuses)
 		return frozenScoring::query({*damageScoringBonuses, damageScoringUnstackedBonuses,
 			veteranCohesionEarned}, selector, unstacked);
@@ -339,7 +340,7 @@ TConstBonusListPtr StackWithBonuses::mergeBonusesImpl(const CSelector & selector
 		originalList = unstacked
 			? origBearer->getUnstackedBonuses(sourceSelector)
 			: origBearer->getAllBonuses(sourceSelector, originalCachingStr);
-	const auto overlay = recipientOverlayView();
+	const auto overlay = borrowedRecipientOverlayView();
 	if(!replaceNativeCreatureBonuses && overlay.updated.empty()
 		&& !overlay.veteranCohesionEarned && hasStableInheritedBonusList())
 	{

@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt and AUTHORS. */
 #include "StdInc.h"
+#include "StackProjectionTestAccess.h"
 #include "ForecastNativeAdapterFixture.h"
 #include "../../AI/BattleAI/ForecastSkillSpecialtyAdmission.h"
 
@@ -37,7 +38,7 @@ TEST_F(ForecastNativeAdapterTest, InertSkillMarkerRequiresExactAuthoredHeroLocal
 	const auto units = parent->battleGetAllUnits(false);
 	ASSERT_FALSE(units.empty());
 	auto branch = std::make_shared<HypotheticBattle>(environment.get(), visible);
-	branch->getForUpdate(units.front()->unitId())->bonusesToAdd.push_back(copied);
+	StackWithBonusesTestAccess::appendAdded(*branch->getForUpdate(units.front()->unitId()), copied);
 	EXPECT_FALSE(forecast::NativeAdapter::prepareExchange(*branch));
 	EXPECT_FALSE(branch->forecastState());
 }
@@ -53,7 +54,7 @@ TEST_F(ForecastNativeAdapterTest, SpellLearningMetadataDoesNotGrantHeroResources
 	{
 		auto row = std::make_shared<Bonus>();
 		row->type = type; row->source = BonusSource::GLOBAL; row->val = 10;
-		target->bonusesToAdd.push_back(row);
+		StackWithBonusesTestAccess::appendAdded(*target, row);
 	}
 	const auto outside = gameState()->saveToMemory();
 	const auto authority = projectedHitTest::serialized(*handler->randomizer);
@@ -78,7 +79,7 @@ TEST_F(ForecastNativeAdapterTest, SpellLearningMetadataDoesNotGrantHeroResources
 	auto timed = std::make_shared<Bonus>();
 	timed->type = BonusType::LEARN_BATTLE_SPELL_CHANCE; timed->source = BonusSource::GLOBAL;
 	timed->duration = BonusDuration::N_TURNS; timed->turnsRemain = 1;
-	invalid->getForUpdate(target->unitId())->bonusesToAdd.push_back(timed);
+	StackWithBonusesTestAccess::appendAdded(*invalid->getForUpdate(target->unitId()), timed);
 	EXPECT_FALSE(forecast::NativeAdapter::prepareExchange(*invalid));
 	EXPECT_FALSE(invalid->forecastState());
 }

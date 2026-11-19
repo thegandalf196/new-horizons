@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "StackProjectionTestAccess.h"
 #include "ProjectedTargetHitFixture.h"
 #include "../../lib/bonuses/BonusList.h"
 #include "../../lib/battle/NewHorizonsCreatureAbilitySuppression.h"
@@ -112,8 +113,8 @@ TEST_F(SelectedBonusOverlayReuseTest, PointerRemovalDoesNotRemoveEqualIndependen
 	const auto retained = std::make_shared<Bonus>(native);
 	braced->addNewBonus(removed);
 	braced->addNewBonus(retained);
-	projected->bonusesToRemove.insert(removed);
-	reference->bonusesToRemove.insert(removed);
+	StackWithBonusesTestAccess::removeIdentity(*projected, removed);
+	StackWithBonusesTestAccess::removeIdentity(*reference, removed);
 	compare();
 	const auto raw = projected->getBonusesBeforeCreatureAbilitySuppression(Selector::type()(BonusType::LUCK), {}, true);
 	EXPECT_EQ(std::ranges::count(*raw, removed), 0);
@@ -156,7 +157,7 @@ TEST_F(SelectedBonusOverlayReuseTest, SelectedAdditionPredicateRunsOnceAndExcept
 {
 	ASSERT_NO_FATAL_FAILURE(start());
 	const auto addition = std::make_shared<Bonus>(luck(777));
-	projected->bonusesToAdd.push_back(addition);
+	StackWithBonusesTestAccess::appendAdded(*projected, addition);
 	int selectedCalls = 0;
 	const CSelector selected([&](const Bonus * record)
 	{

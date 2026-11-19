@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "StackProjectionTestAccess.h"
 #include "OriginalMeleeSequenceFixture.h"
 #include "../../lib/bonuses/Propagators.h"
 #include "../../lib/battle/StackEffectRemoval.h"
@@ -141,7 +142,7 @@ TEST_F(MeleeResourceOrderTest, NonExpiringLegacyPropagatedUpdateCannotMasquerade
 	ASSERT_NO_FATAL_FAILURE(prepareSequence(false, true));
 	ASSERT_NO_FATAL_FAILURE(refreshLegacyKnown());
 	known->getForUpdate(incoming->unitId())->updateUnitBonus({*aura(BonusDuration::ONE_BATTLE)});
-	ASSERT_FALSE(known->getForUpdate(incoming->unitId())->bonusesToUpdate.empty());
+	ASSERT_FALSE(StackWithBonusesTestAccess::updatedEmpty(*known->getForUpdate(incoming->unitId())));
 	ASSERT_NO_FATAL_FAILURE(expectUnavailableBeforeInjury());
 }
 
@@ -155,7 +156,7 @@ TEST_F(MeleeResourceOrderTest, NonExpiringPropagatedValueCopyCannotEraseTheIniti
 	auto parent = known->getForUpdate(incoming->unitId());
 	parent->addUnitBonus({*copied});
 	parent->removeUnitBonus(Bonus::UntilAttack); // Captures HERO_SPECIAL clocks by value.
-	ASSERT_TRUE(parent->bonusesToAdd.empty());
+	ASSERT_TRUE(StackWithBonusesTestAccess::addedEmpty(*parent));
 	ASSERT_TRUE(hasDelta(*parent, *copied));
 	ASSERT_NO_FATAL_FAILURE(expectUnavailableBeforeInjury());
 }

@@ -13,6 +13,12 @@
 
 recipientBonusOverlay::View StackWithBonuses::recipientOverlayView() const
 {
+	exposeProjectionAliases();
+	return borrowedRecipientOverlayView();
+}
+
+recipientBonusOverlay::View StackWithBonuses::borrowedRecipientOverlayView() const
+{
 	return {bonusesToAdd, bonusesToUpdate, bonusesToRemove, projectedEffects,
 		projectedUnstackedEffects, capturedPhysicalAfflictionGroups, veteranCohesionEarned};
 }
