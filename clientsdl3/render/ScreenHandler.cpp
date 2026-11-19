@@ -11,6 +11,7 @@
 #include "StdInc.h"
 #include "../../client/PerfTrace.h"
 #include "ScreenHandler.h"
+#include "DisplayFailureHandler.h"
 #include "GpuResources.h"
 
 #include "SDL_Extensions.h"
@@ -398,6 +399,9 @@ void ScreenHandler::initializeWindow()
 		std::string message = boost::str(boost::format(messagePattern) % error);
 		handleFatalError(message, true);
 	}
+
+	if(!displayFailureHandler)
+		displayFailureHandler = std::make_unique<DisplayFailureHandler>(SDL_GetCurrentVideoDriver());
 
 	const int requestedVsync = settings["video"]["vsync"].Bool() ? 1 : SDL_RENDERER_VSYNC_DISABLED;
 	const bool vsyncSet = SDL_SetRenderVSync(GpuResources::get().renderer(), requestedVsync);
@@ -810,16 +814,6 @@ void ScreenHandler::destroyWindow()
 		SDL_DestroyWindow(mainWindow);
 		mainWindow = nullptr;
 	}
-}
-
-ScreenHandler::~ScreenHandler()
-{
-	if(settings["general"]["notifications"].Bool())
-		NotificationHandler::destroy();
-
-	destroyScreenBuffers();
-	destroyWindow();
-	SDL_Quit();
 }
 
 void ScreenHandler::clearScreen()

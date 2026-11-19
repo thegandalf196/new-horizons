@@ -23073,17 +23073,17 @@
     "clientsdl3/render/ScreenHandler.cpp": {
       "deferral": "Exact current size only. Retain all prior obligations below; further renderer/cache expansion must extract its specific presentation or map-cache policy behind a focused interface and verify clipping, zoom, wrap, retained ownership, both backends and guarded scene/quit behavior before accepting it.",
       "kind": "review",
-      "lines": 974,
+      "lines": 968,
       "owner": "ui_developer",
       "prior_deferral": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.",
       "prior_deferral_history": [
         "Existing file owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 1028 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral. Owner: engine_engineer. Before further screenshot/reporting growth, extract screenshot persistence and optional gameplay notification as focused ordered helpers; preserve image/path behavior, input ownership, null-game reporting and both SDL backend teardown contracts."
       ],
-      "rationale": "Exact reviewed direct map-composition successor. Renderer presentation is extracted into the focused ScreenComposition unit with pure ownership/geometry helpers; map-cache drawing retains dirty-tile traversal and existing layer order. Nearest-neighbor and one-to-one integer-origin eligibility preserve resampled fallback, retained scene generation prevents late clearing, and shutdown checks preserve null-engine behavior. Registry changes only declare the new renderer unit/header and two standalone tests. No numerical, gameplay, resource or future growth waiver.",
-      "review": "IR-0911-BOUNDED-DIRECT-MAP-COMPOSITION-V3",
-      "review_scope": "exact-isolated-reporting-source-no-runtime-or-future-growth-certification",
-      "review_status": "INDEPENDENTLY_REVIEWED_SOURCE_ONLY",
-      "sha256": "9efb2024684bb27f0254eecf1f24b1faa62f4e29753f0f0b25db8fd50d080138"
+      "rationale": "ScreenHandler.cpp shrinks974to968 against69f8241c43 by extracting original destructor to focused19-line ScreenShutdown.cpp while retaining notifications, buffers, window andSDL_Quit order. New pointer-owned displayhandler is installed after successfulrenderer, persists through SDL_Quit and is reset afterward. New production helper61lines/header23; every production callable below80lines, no oversized complexity transfer. Preserve existing renderer/scene/restart extraction and guarded acceptance obligations. No numerical waiver or futuregrowth permission.",
+      "review": "IR-A6-X11-SCREEN-LIFETIME-20261119",
+      "review_scope": "Exact ScreenHandler ownership routing and destructor extraction only; separate handler/test liveness findings and fresh native/rendered acceptance remain open.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_ONLY",
+      "sha256": "d98c411b468e034311dc83267d01fe2737c0b68b5219b3d5b71e9ccbb6c4c582"
     },
     "cmake_modules/Findffmpeg.cmake::function(_ffmpeg_find component headername)#1": {
       "kind": "legacy",

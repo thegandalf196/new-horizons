@@ -13,12 +13,14 @@
 #include "lib/Point.h"
 #include "IScreenHandler.h"
 #include "PresentedCanvasState.h"
+#include <memory>
 #include <mutex>
 
 struct SDL_Texture;
 struct SDL_Window;
 struct SDL_Renderer;
 struct SDL_Surface;
+class DisplayFailureHandler;
 
 enum class EWindowMode
 {
@@ -47,6 +49,7 @@ enum class EUpscalingFilter
 class ScreenHandler final : public IScreenHandler
 {
 	SDL_Window * mainWindow = nullptr;
+	std::unique_ptr<DisplayFailureHandler> displayFailureHandler;
 	SDL_Texture * screenTexture = nullptr;
 
 	/// Render target every window draws into while the GPU path is active. Replaces

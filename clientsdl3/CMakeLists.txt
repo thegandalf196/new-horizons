@@ -42,6 +42,8 @@ set(vcmisdl3_SRCS
 	render/SDLImageScaler.cpp
 	render/SDLRWwrapper.cpp
 	render/ScreenHandler.cpp
+	render/ScreenShutdown.cpp
+	render/DisplayFailureHandler.cpp
 	render/ScreenComposition.cpp
 	render/SDL_Extensions.cpp
 	render/TextTextureCache.cpp
@@ -82,6 +84,7 @@ set(vcmisdl3_HEADERS
 	render/SDLImageScaler.h
 	render/SDLRWwrapper.h
 	render/ScreenHandler.h
+	render/DisplayFailureHandler.h
 	render/PresentedCanvasState.h
 	render/SDL_Extensions.h
 	render/TextTextureCache.h
@@ -90,6 +93,11 @@ set(vcmisdl3_HEADERS
 
 assign_source_group(${vcmisdl3_SRCS} ${vcmisdl3_HEADERS})
 add_library(vcmisdl3 STATIC ${vcmisdl3_SRCS} ${vcmisdl3_HEADERS})
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+	find_package(Threads REQUIRED)
+	target_link_libraries(vcmisdl3 PRIVATE Threads::Threads)
+endif()
 
 if(WIN32)
 	set_target_properties(vcmisdl3
@@ -148,6 +156,16 @@ endif()
 
 vcmi_set_output_dir(vcmisdl3 "")
 enable_pch(vcmisdl3)
+
+option(ENABLE_NH_SDL3_DISPLAY_FAILURE_REGRESSION "Build process-only X11 fatal display loss regression" OFF)
+if(ENABLE_NH_SDL3_DISPLAY_FAILURE_REGRESSION AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
+	add_executable(nhSdl3DisplayFailureRuntimeTest
+		../client/tests/Sdl3DisplayFailureRuntimeTest.cpp render/DisplayFailureHandler.cpp)
+	target_link_libraries(nhSdl3DisplayFailureRuntimeTest PRIVATE ${SDL3_CORE_TARGET} Threads::Threads)
+	target_link_options(nhSdl3DisplayFailureRuntimeTest PRIVATE
+		-Wl,--wrap=SDL_LoadObject -Wl,--wrap=SDL_LoadFunction -Wl,--wrap=SDL_UnloadObject -Wl,--wrap=waitpid)
+	vcmi_set_output_dir(nhSdl3DisplayFailureRuntimeTest "")
+endif()
 
 option(ENABLE_NH_SDL3_OUTLINE_REGRESSION "Build CPU-only SDL3 outline equivalence and timing regression" OFF)
 if(ENABLE_NH_SDL3_OUTLINE_REGRESSION)
