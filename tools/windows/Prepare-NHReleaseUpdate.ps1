@@ -186,9 +186,11 @@ function Assert-CurrentUpdateRelease($Offer, [string]$MetadataPath) {
 function Expand-UpdateArchive([string]$Archive, [string]$Destination, [string]$PackageRoot) {
     Add-Type -AssemblyName System.IO.Compression
     Add-Type -AssemblyName System.IO.Compression.FileSystem
-    $stream = [IO.File]::OpenRead($Archive)
-    $zip = New-Object IO.Compression.ZipArchive($stream, [IO.Compression.ZipArchiveMode]::Read)
+    $stream = $null
+    $zip = $null
     try {
+        $stream = [IO.File]::OpenRead($Archive)
+        $zip = New-Object IO.Compression.ZipArchive($stream, [IO.Compression.ZipArchiveMode]::Read)
         if ($zip.Entries.Count -gt $script:MaximumMembers) { throw 'Too many update archive members.' }
         $seen = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
         $expanded = 0L
@@ -222,9 +224,11 @@ function Expand-UpdateArchive([string]$Archive, [string]$Destination, [string]$P
                 continue
             }
             $null = [IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($path))
-            $source = $entry.Open()
-            $target = [IO.File]::Open($path, [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::None)
+            $source = $null
+            $target = $null
             try {
+                $source = $entry.Open()
+                $target = [IO.File]::Open($path, [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::None)
                 $copied = 0L
                 while (($read = $source.Read($buffer, 0, $buffer.Length)) -gt 0) {
                     $copied += $read
@@ -232,9 +236,15 @@ function Expand-UpdateArchive([string]$Archive, [string]$Destination, [string]$P
                     $target.Write($buffer, 0, $read)
                 }
                 if ($copied -ne $entry.Length) { throw 'Truncated archive member.' }
-            } finally { $target.Dispose(); $source.Dispose() }
+            } finally {
+                try { if ($null -ne $target) { $target.Dispose() } }
+                finally { if ($null -ne $source) { $source.Dispose() } }
+            }
         }
-    } finally { $zip.Dispose(); $stream.Dispose() }
+    } finally {
+        try { if ($null -ne $zip) { $zip.Dispose() } }
+        finally { if ($null -ne $stream) { $stream.Dispose() } }
+    }
 }
 
 function Assert-UpdatePayload([string]$Root, $Offer) {

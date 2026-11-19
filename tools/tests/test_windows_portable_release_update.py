@@ -117,7 +117,8 @@ function Invoke-UpdateDownload([string]$URL, [string]$Output, [long]$MaximumByte
         ready = json.loads(result.stdout)
         self.assertEqual(ready['version'], self.offer['version'])
         self.assertEqual(ready['sha256'], self.offer['sha256'])
-        self.assertEqual(Path(ready['ready']), self.store / 'r' / self.offer['sha256'][:24])
+        # Windows PowerShell may expand an NTFS 8.3 ancestor (RUNNER~1).
+        self.assertTrue(Path(ready['ready']).samefile(self.store / 'r' / self.offer['sha256'][:24]))
         self.assertEqual((Path(ready['ready']) / 'new-horizons.exe').read_bytes(), b'fake entry')
         self.assertFalse((self.store / 'current.json').exists())
         self.assertEqual(list(self.store.glob('.p-*')), [])
@@ -163,18 +164,18 @@ function Invoke-UpdateDownload([string]$URL, [string]$Output, [long]$MaximumByte
         self.assertEqual(list(self.store.glob('.p-*')), [])
 
     def test_short_stage_strips_the_archive_stem_under_classic_windows_limit(self):
-        self.store = self.root / ('portable-installation-' + 'x' * 16) / '.nhu'
+        self.store = self.root / 'portable' / '.nhu'
         member = ('runtime/licenses/dependencies/boost_1.83.0/source_folder/src/libs/geometry/'
                   'doc/src/docutils/tools/doxygen_xml2qbk/contrib/rapidxml-1.13/license.txt')
         stem = self.name[:-4]
-        old_path = self.store / ('.prepare-' + 'x' * 32) / 'unpacked' / stem / member
+        old_path = self.store.resolve() / ('.prepare-' + 'x' * 32) / 'unpacked' / stem / member
         self.assertGreaterEqual(len(str(old_path)), 260)
         self.archive(changes={member: b'{}'}, extra=[(stem + '/', b'', 0)])
-        ready = self.store / 'r' / self.offer['sha256'][:24]
+        ready = self.store.resolve() / 'r' / self.offer['sha256'][:24]
         self.assertLess(len(str(ready / member)), 260)
         result = self.execute("$env:OS = 'Windows_NT'; Prepare-NHReleaseUpdate $env:NH_UPDATE_STORE $env:NH_UPDATE_REQUEST | ConvertTo-Json -Compress")
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertEqual(Path(json.loads(result.stdout)['ready']), ready)
+        self.assertTrue(Path(json.loads(result.stdout)['ready']).samefile(ready))
         self.assertEqual((ready / member).read_bytes(), b'{}')
         self.assertFalse((ready / stem).exists())
         self.assertEqual(list(self.store.glob('.p-*')), [])
@@ -198,6 +199,55 @@ function Invoke-UpdateDownload([string]$URL, [string]$Output, [long]$MaximumByte
             with self.subTest(header=header):
                 self.archive(changes={'runtime/Mods/new-horizons/NewHorizons.nhart': header})
                 self.assert_rejected()
+
+
+    def test_ready_destination_over_classic_limit_is_rejected_and_cleaned(self):
+        self.store = self.root / ('boundary-' + 'x' * 32) / '.nhu'
+        ready = self.store.resolve() / 'r' / ('a' * 24)
+        padding = 260 - len(str(ready / 'runtime' / 'limit.txt')) - 1
+        self.assertGreater(padding, 0)
+        member = 'runtime/' + 'd' * padding + '/limit.txt'
+        self.assertEqual(len(str(ready / member)), 260)
+        self.assertLessEqual(len(self.name[:-4] + '/' + member), 240)
+        self.archive(changes={member: b'bounded'})
+        result = self.execute("$env:OS = 'Windows_NT'; Prepare-NHReleaseUpdate $env:NH_UPDATE_STORE $env:NH_UPDATE_REQUEST | ConvertTo-Json -Compress")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('ready update path would exceed Windows path limits', result.stderr)
+        self.assertEqual(list((self.store / 'r').glob('*')), [])
+        self.assertEqual(list(self.store.glob('.p-*')), [])
+
+    def test_invalid_zip_constructor_releases_archive_handle(self):
+        self.archive()
+        self.source.write_bytes(b'not a ZIP archive')
+        result = self.execute("""
+$failed = $false
+try { Expand-UpdateArchive $env:NH_UPDATE_ARCHIVE (Join-Path $env:NH_UPDATE_STORE 'p') 'fixture' }
+catch { $failed = $true }
+if (-not $failed) { throw 'Invalid archive unexpectedly opened' }
+$exclusive = [IO.File]::Open($env:NH_UPDATE_ARCHIVE, [IO.FileMode]::Open, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
+try { Write-Output 'released archive handle' } finally { $exclusive.Dispose() }
+""")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('released archive handle', result.stdout)
+
+
+    def test_existing_member_target_failure_closes_archive_handle(self):
+        self.archive()
+        self.store.mkdir()
+        existing = self.store / 'new-horizons.exe'
+        existing.write_bytes(b'preserve existing target')
+        result = self.execute("""
+$failed = $false
+$offer = Read-UpdateRequest $env:NH_UPDATE_REQUEST
+try { Expand-UpdateArchive $env:NH_UPDATE_ARCHIVE $env:NH_UPDATE_STORE ([IO.Path]::GetFileNameWithoutExtension($offer.name)) }
+catch { $failed = $true }
+if (-not $failed) { throw 'Existing member unexpectedly overwritten' }
+$exclusive = [IO.File]::Open($env:NH_UPDATE_ARCHIVE, [IO.FileMode]::Open, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
+try { Write-Output 'released failed member' } finally { $exclusive.Dispose() }
+""")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('released failed member', result.stdout)
+        self.assertEqual(existing.read_bytes(), b'preserve existing target')
 
     @unittest.skipIf(os.name == 'nt', 'POSIX symlink fixture')
     def test_linked_ready_directory_is_rejected_even_when_empty(self):
