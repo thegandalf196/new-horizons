@@ -2,6 +2,7 @@
 #include "StdInc.h"
 #include "CreatureBonusStatusPresentation.h"
 #include "SylvanFactionStatusPresentation.h"
+#include "SylvanStatusArt.h"
 #include "CreatureAbilityGrouping.h"
 #include "../../lib/CCreatureHandler.h"
 #include "../../lib/spells/CSpellHandler.h"
@@ -54,6 +55,7 @@ std::optional<Row> groupedRow(const IBonusBearer & bonusSource, const CStackInst
 				entries.emplace_back(percent, spell->getNameTranslated());
 		}
 		card = first.type == BonusType::HATE ? creatureAbilityGrouping::hatred(entries)
+			: first.type == BonusType::SPELL_AFTER_ATTACK ? creatureAbilityGrouping::onHitEffects(entries)
 			: creatureAbilityGrouping::spellVulnerability(entries);
 	}
 	if(card.description.empty())
@@ -79,7 +81,8 @@ std::vector<Row> visibleRows(const IBonusBearer & bonusSource, const CStackInsta
 	const auto groupable = [](const Bonus & bonus)
 	{
 		return !bonus.hidden && (bonus.type == BonusType::MORE_DAMAGE_FROM_SPELL
-			|| bonus.type == BonusType::HATE || bonus.type == BonusType::SPELL_IMMUNITY);
+			|| bonus.type == BonusType::HATE || bonus.type == BonusType::SPELL_IMMUNITY
+			|| bonus.type == BonusType::SPELL_AFTER_ATTACK);
 	};
 	std::map<BonusType, std::vector<std::shared_ptr<Bonus>>> groups;
 	for(const auto & bonus : visibleBonuses)
@@ -206,6 +209,10 @@ std::vector<Row> supplementalRows(const CStack * battleStack, const CStackInstan
 				Row status;
 				status.description = text;
 				status.bonusSource = BonusSource::SECONDARY_SKILL;
+				const auto art = sylvanStatusArt::forRow(text);
+				if(!art.image.empty())
+					status.imagePath = ImagePath::builtin(art.image);
+				status.tooltip = art.help;
 				rows.push_back(std::move(status));
 			}
 	}

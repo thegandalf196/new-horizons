@@ -12,6 +12,7 @@
 #include "../widgets/MiscWidgets.h"
 #include "../../lib/CStack.h"
 #include "../../lib/GameLibrary.h"
+#include "../../lib/CBonusTypeHandler.h"
 #include "../../lib/battle/NewHorizonsFocusMagic.h"
 #include "../../lib/texts/CGeneralTextHandler.h"
 #include "../../lib/texts/Languages.h"
@@ -82,6 +83,21 @@ std::optional<EffectTile> describeEffect(const CStack & battleStack, SpellID eff
 		spellText.replaceNumber(duration);
 	}
 	std::string description = spellText.toString(&GAME->translator());
+	// The generic text describes the untrained spell; the stack's own bonuses give
+	// the values actually in effect at the caster's mastery and current rules.
+	std::vector<std::string> actual;
+	for(const auto & bonus : *spellBonuses)
+	{
+		auto line = LIBRARY->getBth()->bonusToString(bonus, &battleStack);
+		if(!line.empty() && std::find(actual.begin(), actual.end(), line) == actual.end())
+			actual.push_back(std::move(line));
+	}
+	if(!actual.empty())
+	{
+		description += "\n\n{Current effect}";
+		for(const auto & line : actual)
+			description += "\n" + line;
+	}
 	if(confusion)
 		description = newHorizonsBattleStatus::confusionTooltip(spell->getDescriptionTranslated(0), confusionStatus);
 	else if(focusMagic)

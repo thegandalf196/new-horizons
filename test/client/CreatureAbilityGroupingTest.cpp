@@ -23,3 +23,22 @@ TEST(CreatureAbilityGrouping, SpellImmunitiesListEverySpell)
 	EXPECT_EQ(card.description, "{Spell Immunity}\nUnaffected by Frost Ring and Ice Bolt.");
 	EXPECT_EQ(card.tooltip, "{Spell Immunity}\n\nThis unit cannot be affected by Frost Ring and Ice Bolt.");
 }
+
+TEST(CreatureAbilityGrouping, OnHitEffectsShareOneCardAndKeepDistinctChances)
+{
+	// Dragon Fly: Dispel and Weakness always; differing chances stay on their own lines.
+	const auto card = creatureAbilityGrouping::onHitEffects({{100, "Dispel"}, {100, "Weakness"}, {20, "Acid"}});
+	EXPECT_EQ(card.description, "{On-hit Effects}\nAlways: Dispel and Weakness\n20% chance: Acid");
+}
+
+#include "../../client/windows/SylvanStatusArt.h"
+
+TEST(SylvanStatusArt, RowsGetPerkIconAndTimingHelp)
+{
+	const auto art = sylvanStatusArt::forRow("Dappled Cover: 20% ranged creature-damage protection (current).");
+	EXPECT_EQ(art.image, "NH_perk_sylvan_tactics_dappled_cover.png");
+	EXPECT_NE(art.help.find("ends when it leaves that state"), std::string::npos);
+	EXPECT_EQ(sylvanStatusArt::forRow("Disruptive Strike: -15% Initiative until this stack's next activation.").image,
+		"NH_perk_sylvan_tactics_disruptive_strike.png");
+	EXPECT_TRUE(sylvanStatusArt::forRow("Unknown: something").image.empty());
+}
