@@ -7,6 +7,15 @@ and revisions as the game develops.
 For individual perk effects, spell formulas, creature statistics and Order rules,
 read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 
+## 0.92.6 Early Access
+
+- The Windows and Linux launchers have a Version track: Stable or Beta. Beta
+  installs experimental releases beside the stable version and plays them with
+  separate saves and settings; switching back leaves stable untouched.
+- The launcher now hands over to the launcher inside the newest installed
+  update, so later launcher improvements arrive with ordinary updates.
+- No gameplay changes.
+
 ## 0.92.5 Early Access
 
 - The creature inspector shows Elemental Attunement damage beside base damage,
