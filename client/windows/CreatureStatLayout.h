@@ -22,6 +22,7 @@ enum class Stat : size_t
 	MAGICAL_RESISTANCE,
 	MANA,
 	LEADERSHIP,
+	LEADERSHIP_EFFICIENCY, // New Horizons only; the classic layout keeps its rows
 	RANK,
 	AFTER_LAST
 };
@@ -34,7 +35,10 @@ inline constexpr int BUTTON_PANEL_HEIGHT = 43;
 constexpr size_t row(Stat stat, bool newHorizons)
 {
 	const auto index = static_cast<size_t>(stat);
-	return !newHorizons && index >= static_cast<size_t>(Stat::MANA) ? index - 5 : index;
+	if(newHorizons)
+		return index;
+	return index > static_cast<size_t>(Stat::LEADERSHIP_EFFICIENCY) ? index - 6
+		: index >= static_cast<size_t>(Stat::MANA) ? index - 5 : index;
 }
 
 constexpr int iconY(Stat stat, bool newHorizons)
@@ -47,7 +51,7 @@ constexpr int iconY(Stat stat, bool newHorizons)
 
 constexpr int panelRows(bool newHorizons, bool rank)
 {
-	return (newHorizons ? 14 : 9) + (rank ? 1 : 0);
+	return (newHorizons ? 15 : 9) + (rank ? 1 : 0);
 }
 
 constexpr int panelHeight(bool newHorizons, bool rank)

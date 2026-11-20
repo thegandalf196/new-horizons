@@ -2,6 +2,9 @@
 #include "StdInc.h"
 #include "CreatureBonusStatusPresentation.h"
 #include "SylvanFactionStatusPresentation.h"
+#include "CreatureAbilityGrouping.h"
+#include "../../lib/CCreatureHandler.h"
+#include "../../lib/spells/CSpellHandler.h"
 #include "../battle/ArcaneInspirationPresentation.h"
 #include "../battle/CurrentFactionSkillPresentation.h"
 #include "../../lib/CStack.h"
@@ -16,9 +19,49 @@
 #include <boost/algorithm/string/replace.hpp>
 #include <algorithm>
 #include <array>
+#include <map>
+#include <optional>
 
 namespace creatureBonusStatusPresentation
 {
+namespace
+{
+std::optional<Row> groupedRow(const IBonusBearer & bonusSource, const CStackInstance & stackNode,
+	const std::vector<std::shared_ptr<Bonus>> & members)
+{
+	const auto & first = *members.front();
+	creatureAbilityGrouping::Card card;
+	if(first.type == BonusType::SPELL_IMMUNITY)
+	{
+		std::vector<std::string> spells;
+		for(const auto & bonus : members)
+			if(const auto * spell = bonus->subtype.as<SpellID>().toSpell())
+				spells.push_back(spell->getNameTranslated());
+		card = creatureAbilityGrouping::spellImmunity(spells);
+	}
+	else
+	{
+		std::vector<std::pair<int, std::string>> entries;
+		for(const auto & bonus : members)
+		{
+			const int percent = bonusSource.valOfBonuses(bonus->type, bonus->subtype);
+			if(bonus->type == BonusType::HATE)
+			{
+				if(const auto * creature = bonus->subtype.as<CreatureID>().toCreature())
+					entries.emplace_back(percent, creature->getNamePluralTranslated());
+			}
+			else if(const auto * spell = bonus->subtype.as<SpellID>().toSpell())
+				entries.emplace_back(percent, spell->getNameTranslated());
+		}
+		card = first.type == BonusType::HATE ? creatureAbilityGrouping::hatred(entries)
+			: creatureAbilityGrouping::spellVulnerability(entries);
+	}
+	if(card.description.empty())
+		return std::nullopt;
+	return Row{card.description, stackNode.bonusToGraphics(members.front()), first.source, card.tooltip};
+}
+}
+
 std::vector<Row> visibleRows(const IBonusBearer & bonusSource, const CStackInstance & stackNode,
 	const BonusList & visibleBonuses,
 	const std::function<std::string(const std::shared_ptr<Bonus> &)> & describe)
@@ -32,12 +75,33 @@ std::vector<Row> visibleRows(const IBonusBearer & bonusSource, const CStackInsta
 		const auto policy = randomSpellcaster->parameters->toJsonNode();
 		hostileWishes = policy.getType() == JsonNode::JsonType::DATA_INTEGER && policy.Integer() == 1;
 	}
+	// Cards that differ only by target merge into one card per type when repeated.
+	const auto groupable = [](const Bonus & bonus)
+	{
+		return !bonus.hidden && (bonus.type == BonusType::MORE_DAMAGE_FROM_SPELL
+			|| bonus.type == BonusType::HATE || bonus.type == BonusType::SPELL_IMMUNITY);
+	};
+	std::map<BonusType, std::vector<std::shared_ptr<Bonus>>> groups;
+	for(const auto & bonus : visibleBonuses)
+		if(groupable(*bonus))
+			groups[bonus->type].push_back(bonus);
+	std::erase_if(groups, [](const auto & group) { return group.second.size() < 2; });
+
 	std::vector<Row> rows;
 	for(const auto & bonus : visibleBonuses)
 	{
 		// The supplemental row carries this marker's captured potency and lifetime.
 		if(bonus->type == BonusType::NONE && consecratedArms::identity(bonus.get()))
 			continue;
+		if(const auto group = groups.find(bonus->type); group != groups.end())
+		{
+			if(group->second.empty())
+				continue; // already emitted at the first member's position
+			if(auto row = groupedRow(bonusSource, stackNode, group->second))
+				rows.push_back(std::move(*row));
+			group->second.clear();
+			continue;
+		}
 		Row row;
 		row.description = describe(bonus);
 		row.imagePath = stackNode.bonusToGraphics(bonus);

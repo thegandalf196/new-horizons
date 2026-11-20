@@ -68,69 +68,7 @@
 #include "../../lib/texts/Languages.h"
 
 
-class UnitView
-{
-public:
-	// helper structs
-	struct CommanderLevelInfo
-	{
-		std::vector<ui32> skills;
-		std::function<void(ui32)> callback;
-	};
-	struct StackDismissInfo
-	{
-		std::function<void()> callback;
-	};
-	struct StackUpgradeInfo
-	{
-		StackUpgradeInfo() = delete;
-		StackUpgradeInfo(const UpgradeInfo & upgradeInfo)
-			: info(upgradeInfo)
-		{ }
-		UpgradeInfo info;
-		std::function<void(CreatureID)> callback;
-	};
-
-	// pointers to permanent objects in game state
-	const CCreature * creature;
-	const CCommanderInstance * commander;
-	const CStackInstance * stackNode;
-	const CStack * stack;
-	const CGHeroInstance * owner;
-	const IGameInfoCallback * categoryContext;
-
-	// temporary objects which should be kept as copy if needed
-	std::optional<CommanderLevelInfo> levelupInfo;
-	std::optional<StackDismissInfo> dismissInfo;
-	std::optional<StackUpgradeInfo> upgradeInfo;
-	std::optional<newHorizonsCreatures::CreatureCategoryView> category;
-
-	// misc fields
-	unsigned int creatureCount;
-	bool popupWindow;
-
-	UnitView()
-		: creature(nullptr),
-		commander(nullptr),
-		stackNode(nullptr),
-		stack(nullptr),
-		owner(nullptr),
-		categoryContext(nullptr),
-		creatureCount(0),
-		popupWindow(false)
-	{
-	}
-
-	std::string getName() const
-	{
-		if(commander)
-			return commander->getType()->getNameSingularTranslated();
-		else
-			return creature->getNamePluralTranslated();
-	}
-private:
-
-};
+#include "CreatureUnitView.h"
 
 CCommanderSkillIcon::CCommanderSkillIcon(std::shared_ptr<CIntObject> object_, bool isMasterAbility_, std::function<void()> callback)
 	: object(),
@@ -238,102 +176,6 @@ CStackWindow::CWindowSection::CWindowSection(CStackWindow * parent, const ImageP
 	}
 }
 
-CStackWindow::ActiveSpellsSection::ActiveSpellsSection(CStackWindow * owner, int yOffset)
-	: CWindowSection(owner, ImagePath::builtin("stackWindow/spell-effects"), yOffset)
-{
-	static const Point firstPos(6, 2); // position of 1st spell box
-	static const Point offset(54, 0);  // offset of each spell box from previous
-
-	OBJECT_CONSTRUCTION;
-
-	const CStack * battleStack = parent->info->stack;
-
-	assert(battleStack); // Section should be created only for battles
-
-	//spell effects
-	int printed=0; //how many effect pics have been printed
-	if(const auto frozen = newHorizonsFrozenPresentation::currentTooltip(*battleStack))
-	{
-		physicalStatusIcons.push_back(std::make_shared<newHorizonsFrozenPresentation::FrozenStatusIcon>(firstPos));
-		labels.push_back(std::make_shared<CLabel>(firstPos.x + 46, firstPos.y + 36, EFonts::FONT_TINY,
-			ETextAlignment::BOTTOMRIGHT, ColorRGBA(178, 224, 244, 255), "F"));
-		clickableAreas.push_back(std::make_shared<LRClickableAreaWText>(Rect(firstPos, Point(50, 38)), *frozen, *frozen));
-		++printed;
-	}
-	std::vector<SpellID> spells = battleStack->activeSpells();
-	// Keep the New Horizons combat statuses visible when the full stack window
-	// reaches its eight-icon display limit. stable_partition preserves their
-	// relative order and the ordering of all other effects.
-	const auto prioritizedEnd = std::stable_partition(spells.begin(), spells.end(), [](const SpellID effect)
-	{
-		const auto spellKey = effect.toSpell()->getJsonKey();
-		return newHorizonsBattleStatus::isConfusion(spellKey)
-			|| newHorizonsBattleStatus::isDoom(spellKey)
-			|| newHorizonsBattleStatus::isFocusMagic(spellKey);
-	});
-	std::stable_partition(spells.begin(), prioritizedEnd, [](const SpellID effect)
-	{
-		return newHorizonsBattleStatus::isDoom(effect.toSpell()->getJsonKey());
-	});
-	for(SpellID effect : spells)
-	{
-		const spells::Spell * spell = LIBRARY->spells()->getById(effect);
-
-		//not all effects have graphics (for eg. Acid Breath)
-		//for modded spells iconEffect is added to SpellInt.def
-		const bool hasGraphics = (effect < SpellID::THUNDERBOLT) || (effect >= SpellID::AFTER_LAST);
-
-		if (hasGraphics)
-		{
-			auto spellBonuses = battleStack->getBonuses(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(effect)));
-			if (spellBonuses->empty())
-				throw std::runtime_error("Failed to find effects for spell " + effect.toSpell()->getJsonKey());
-
-			int duration = spellBonuses->front()->turnsRemain;
-			const auto spellKey = spell->getJsonKey();
-			const bool confusion = newHorizonsBattleStatus::isConfusion(spellKey);
-			const auto confusionStatus = confusion
-				? newHorizonsBattleStatus::confusionStatus(*spellBonuses, battleStack->confusionState)
-				: newHorizonsBattleStatus::ConfusionStatus{};
-			if(confusion && !confusionStatus.active())
-				continue;
-			const bool focusMagic = newHorizonsBattleStatus::isFocusMagic(spellKey);
-			const bool doom = newHorizonsBattleStatus::isDoom(spellKey);
-			const auto doomEffect = doom ? newHorizonsBattleStatus::doomStatus(*spellBonuses)
-				: newHorizonsBattleStatus::DoomStatus{};
-			std::string preferredLanguage = LIBRARY->generaltexth->getPreferredLanguage();
-
-			MetaString spellText;
-			spellText.appendTextID(spell->getDescriptionTextID(0)); // TODO: select correct mastery level?
-			spellText.appendRawString("\n");
-			if(!confusion)
-			{
-				spellText.appendTextID(Languages::getPluralFormTextID( preferredLanguage, duration, "vcmi.battleResultsWindow.spellDurationRemaining"));
-				spellText.replaceNumber(duration);
-			}
-			std::string spellDescription = spellText.toString(&GAME->translator());
-			if(confusion)
-				spellDescription = newHorizonsBattleStatus::confusionTooltip(spell->getDescriptionTranslated(0), confusionStatus);
-			else if(focusMagic)
-				spellDescription = spell->getDescriptionTranslated(0)
-					+ "\n\nEnergy shots remaining: " + std::to_string(newHorizonsFocusMagic::charges(*battleStack)) + ".";
-
-			spellIcons.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("SpellInt"), effect + 1, 0, firstPos.x + offset.x * printed, firstPos.y + offset.y * printed));
-			const std::string badge = confusion ? std::string(newHorizonsBattleStatus::CONFUSION_BADGE) : focusMagic ? std::to_string(newHorizonsFocusMagic::charges(*battleStack))
-				: doom && doomEffect.active()
-					? newHorizonsBattleStatus::formatBasisPoints(
-						static_cast<int64_t>(doomEffect.damagePenaltyPercent) * 100)
-					: std::to_string(duration);
-			if(doom && doomEffect.active())
-				spellDescription = newHorizonsBattleStatus::doomTooltip(
-					spell->getDescriptionTranslated(0), doomEffect);
-			labels.push_back(std::make_shared<CLabel>(firstPos.x + offset.x * printed + 46, firstPos.y + offset.y * printed + 36, EFonts::FONT_TINY, ETextAlignment::BOTTOMRIGHT, Colors::WHITE, badge));
-			clickableAreas.push_back(std::make_shared<LRClickableAreaWText>(Rect(firstPos + offset * printed, Point(50, 38)), spellDescription, spellDescription));
-			if(++printed >= 8) // interface limit reached
-				break;
-		}
-	}
-}
 
 
 CStackWindow::TrainingSection::TrainingSection(CStackWindow * owner, int yOffset)
@@ -352,9 +194,14 @@ CStackWindow::TrainingSection::TrainingSection(CStackWindow * owner, int yOffset
 	else if(receipt.drillDeadline >= 0)
 		lines.push_back("Drill Sergeant: first-combat training window expired.");
 	for(const auto & origin : receipt.mercenaryOrigins)
-		lines.push_back("Diplomacy cohort: original recruiter #" + std::to_string(origin.hero.getNum())
-			+ "; Captain allowance " + std::to_string(origin.combatsRemaining)
-			+ "/3 combats. Loyal provenance persists; benefits require that recruiter.");
+	{
+		const auto * recruiter = dynamic_cast<const CGHeroInstance *>(GAME->interface()->cb->getObj(origin.hero, false));
+		const auto name = recruiter ? GAME->translator().translate(recruiter->getNameTextID()) : std::string("their original recruiter");
+		lines.push_back(origin.combatsRemaining > 0
+			? "Mercenary Captain: +1 Morale in " + std::to_string(origin.combatsRemaining)
+				+ (origin.combatsRemaining == 1 ? " more combat" : " more combats") + " under " + name + "."
+			: "Mercenary Captain: recruited by " + name + "; all Morale combats used.");
+	}
 	if(owner->info->stack && owner->info->stack->hasBonus(CSelector(newHorizonsTraining::isMercenaryBonus)))
 		lines.push_back("Mercenary Captain: +1 Morale this combat; one allowance consumed.");
 	if(receipt.fieldTrained)
@@ -449,9 +296,11 @@ CStackWindow::BonusLineSection::BonusLineSection(CStackWindow * owner, size_t li
 
 			description[leftRight] = std::make_shared<CMultiLineLabel>(Rect(position.x + 60, position.y, 137, 50), FONT_TINY, ETextAlignment::TOPLEFT, Colors::WHITE, bi.description);
 			drawBonusSource(leftRight, Point(position.x - 1, position.y - 1), bi);
-			if(!bi.tooltip.empty())
+			// Cards clip long text; right-click always shows the complete description.
+			const auto & help = bi.tooltip.empty() ? bi.description : bi.tooltip;
+			if(!help.empty())
 				abilityHelp[leftRight] = std::make_shared<LRClickableAreaWText>(
-					Rect(position.x, position.y, 197, 50), bi.tooltip, bi.tooltip);
+					Rect(position.x, position.y, 197, 50), help, help);
 		}
 	}
 }

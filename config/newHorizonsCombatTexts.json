@@ -450,7 +450,7 @@
 	"new-horizons.leadership.readout.costCapacity": "%REQUIREMENT% (%COUNT%/%CAPACITY%)",
 	"new-horizons.progression.perkTitle": "%HERO% — choose a perk",
 	"new-horizons.progression.perkInstruction": "Choose one perk to complete this Skill rank.",
-	"new-horizons.leadership.heroHelp": "{Leadership: %BASE%}\n\nLeadership determines how many creatures each stack commands at full attack efficiency.\n\nAuthority rank bonus: +%AUTHORITY%%\nWith Authority rank, before perks: %RANK_EFFECTIVE%\n\nAdditional Authority perk bonuses depend on the creature and the army composition. Each stack has its own capacity; there is no shared Leadership budget. Excess creatures still add damage with diminishing returns. Health and movement are unchanged.",
+	"new-horizons.leadership.heroHelp": "{Leadership: %BASE%}\n\nThe hero’s Leadership determines each stack’s capacity: how many creatures can deal full damage, based on their Leadership Cost.\n\nCreatures beyond this capacity still contribute damage, but each additional creature contributes less. All creatures contribute their full health, regardless of capacity.\n\nAuthority rank bonus: +%AUTHORITY%%\nWith Authority rank, before perks: %RANK_EFFECTIVE%\n\nAdditional Authority perk bonuses depend on the creature and the army composition. Each stack has its own capacity; there is no shared Leadership budget.",
 	"new-horizons.creature.stat.retaliations.name": "Retaliations",
 	"new-horizons.creature.stat.retaliations.help": "Available retaliations / round allowance. Unlimited retaliations are shown as Unlimited. Attack-specific restrictions can still prevent retaliation.",
 	"new-horizons.creature.stat.retaliations.unlimited": "Unlimited",

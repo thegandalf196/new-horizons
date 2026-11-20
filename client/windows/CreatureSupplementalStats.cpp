@@ -86,13 +86,18 @@ Readout query(const CStackInstance & armyStack, const CStack * battleStack,
 	return result;
 }
 
+std::string remainingOfTotal(int64_t available, int64_t total)
+{
+	if(available == total)
+		return std::to_string(total);
+	return std::to_string(available) + "/" + std::to_string(total);
+}
+
 std::string retaliationText(const Retaliations & value)
 {
 	if(value.unlimited)
 		return "∞";
-	if(value.available == value.total)
-		return std::to_string(value.total);
-	return std::to_string(value.available) + "/" + std::to_string(value.total);
+	return remainingOfTotal(value.available, value.total);
 }
 
 std::string percentageText(int basisPoints)

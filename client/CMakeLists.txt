@@ -283,6 +283,7 @@ set(vcmiclientcommon_SRCS
 	windows/LevelUpChoiceCards.cpp
 	windows/CreatureLeadershipPresentation.cpp
 	windows/CreatureStatPresentation.cpp
+	windows/CreatureActiveEffectsSection.cpp
 	windows/CreatureSupplementalStats.cpp
 	windows/CLevelWindowReroll.cpp
 	windows/NewHorizonsMusterUI.cpp

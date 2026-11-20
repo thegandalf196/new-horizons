@@ -160,7 +160,9 @@ class CStackWindow : public CWindowObject
 		std::shared_ptr<MoraleLuckBox> luck;
 		std::shared_ptr<LRClickableAreaWText> rankArea;
 		std::shared_ptr<LRClickableAreaWText> leadershipArea;
+		std::shared_ptr<LRClickableAreaWText> leadershipEfficiencyArea;
 		std::shared_ptr<LRClickableAreaWText> defenseArea;
+		std::shared_ptr<LRClickableAreaWText> damageArea;
 		std::array<std::shared_ptr<LRClickableAreaWText>, 4> supplementalAreas;
 		std::optional<int> leadershipEfficiencyPercent;
 
@@ -178,6 +180,7 @@ class CStackWindow : public CWindowObject
 		void addStatLabel(EStat index, int64_t value1, int64_t value2);
 		void addStatLabel(EStat index, int64_t value);
 		void addStatLabel(EStat index, const std::string & value);
+		void addDamageReadout(int64_t minimum, int64_t maximum, const CStack & battleStack);
 		void addDefenseReadout(const AFactionMember & creature, const AFactionMember & subject, bool ranged);
 		void addLeadershipReadout(int rowY, const CGHeroInstance * hero,
 			const CStack * stack, CreatureID creature, int64_t count);

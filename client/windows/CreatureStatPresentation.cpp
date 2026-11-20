@@ -2,6 +2,7 @@
 #include "StdInc.h"
 #include "CCreatureWindow.h"
 #include "CreatureDefensePresentation.h"
+#include "CreatureDamagePresentation.h"
 #include "CreatureSupplementalStats.h"
 #include "../GameInstance.h"
 #include "../CPlayerInterface.h"
@@ -73,6 +74,24 @@ void CStackWindow::MainSection::addDefenseReadout(const AFactionMember & creatur
 		physical + "\n" + magical + "\n\nPhysical-only Defense bonuses do not apply against magical creature attacks.");
 }
 
+void CStackWindow::MainSection::addDamageReadout(int64_t minimum, int64_t maximum, const CStack & battleStack)
+{
+	const auto attunement = battleStack.alive() ? battleStack.elementalAttunementPassives()
+		: newHorizonsElementalAttunement::UnitPassives{};
+	const bool ranged = battleStack.isShooter();
+	const int percent = ranged ? attunement.rangedDamagePercent : attunement.meleeDamagePercent;
+	if(!attunement.attuned || percent <= 0)
+	{
+		addStatLabel(EStat::DAMAGE, minimum, maximum);
+		return;
+	}
+	const auto readout = creatureDamagePresentation::attuned(minimum, maximum, percent, ranged);
+	addStatLabel(EStat::DAMAGE, readout.value);
+	damageArea = std::make_shared<LRClickableAreaWText>(
+		Rect(114, 30 + static_cast<int>(statRow(EStat::DAMAGE)) * creatureStatLayout::ROW_HEIGHT, 194, 20),
+		readout.hover, readout.help);
+}
+
 void CStackWindow::MainSection::initializeStatMetadata()
 {
 	statNames =
@@ -90,8 +109,9 @@ void CStackWindow::MainSection::initializeStatMetadata()
 		LIBRARY->generaltexth->translate("new-horizons.creature.stat.physicalProtection.name"),
 		LIBRARY->generaltexth->translate("new-horizons.creature.stat.magicalProtection.name"),
 		LIBRARY->generaltexth->translate("new-horizons.creature.stat.magicalResistance.name"),
-		LIBRARY->generaltexth->allTexts[399],//MANA
+		showNewHorizonsStats ? std::string("Casts") : LIBRARY->generaltexth->allTexts[399],//MANA: creature spell casts
 		"Leadership Cost",
+		"Leadership Efficiency",
 		"Rank"
 	};
 
@@ -111,6 +131,7 @@ void CStackWindow::MainSection::initializeStatMetadata()
 		"%s",
 		"%s",
 		"%d (%d)",
+		"%s",
 		"%s",
 		"%s"
 	};
@@ -160,16 +181,21 @@ void CStackWindow::MainSection::addUnitStats(const CCreature & creature, const C
 	{
 		addStatLabel(EStat::ATTACK, creature.getAttack(battleStack->isShooter()), battleStack->getAttack(battleStack->isShooter()));
 		addDefenseReadout(creature, *battleStack, battleStack->isShooter());
-		addStatLabel(EStat::DAMAGE, armyStack.getMinDamage(battleStack->isShooter()) * damageMultiplier, battleStack->getMaxDamage(battleStack->isShooter()) * damageMultiplier);
+		addDamageReadout(armyStack.getMinDamage(battleStack->isShooter()) * damageMultiplier,
+			battleStack->getMaxDamage(battleStack->isShooter()) * damageMultiplier, *battleStack);
 		addStatLabel(EStat::HEALTH, creature.getMaxHealth(), battleStack->getMaxHealth());
 		addStatLabel(EStat::SPEED, creature.getMovementRange(), battleStack->getMovementRange());
 		if(showNewHorizonsStats)
 			addStatLabel(EStat::INITIATIVE, creature.getBaseInitiative(), battleStack->getInitiative());
 
 		if(battleStack->isShooter())
-			addStatLabel(EStat::SHOTS, battleStack->shots.total(), battleStack->shots.available());
+			addStatLabel(EStat::SHOTS, showNewHorizonsStats
+				? creatureSupplementalStats::remainingOfTotal(battleStack->shots.available(), battleStack->shots.total())
+				: std::to_string(battleStack->shots.total()) + " (" + std::to_string(battleStack->shots.available()) + ")");
 		if(battleStack->isCaster())
-			addStatLabel(EStat::MANA, battleStack->casts.total(), battleStack->casts.available());
+			addStatLabel(EStat::MANA, showNewHorizonsStats
+				? creatureSupplementalStats::remainingOfTotal(battleStack->casts.available(), battleStack->casts.total())
+				: std::to_string(battleStack->casts.total()) + " (" + std::to_string(battleStack->casts.available()) + ")");
 		addStatLabel(EStat::HEALTH_LEFT, battleStack->getFirstHPleft());
 
 		const auto * battleInfo = battleStack->getBattle();

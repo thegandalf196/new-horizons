@@ -33,6 +33,7 @@ struct Readout
 /// attacks and spells; school- and spell-specific effects are excluded.
 Readout query(const CStackInstance & armyStack, const CStack * battleStack,
 	const CGHeroInstance * hero, const JsonNode & magicRules);
+std::string remainingOfTotal(int64_t available, int64_t total);
 std::string retaliationText(const Retaliations & value);
 std::string percentageText(int basisPoints);
 }

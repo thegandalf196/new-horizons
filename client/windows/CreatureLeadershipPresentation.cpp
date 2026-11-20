@@ -1,6 +1,7 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
 #include "CCreatureWindow.h"
+#include "LeadershipEfficiencyRow.h"
 #include "../CPlayerInterface.h"
 #include "../GameInstance.h"
 #include "../widgets/Images.h"
@@ -36,6 +37,18 @@ void CStackWindow::MainSection::addLeadershipReadout(int rowY, const CGHeroInsta
 	boost::replace_all(hover, "%REQUIREMENT%", std::to_string(readout.requirement));
 	leadershipArea = std::make_shared<LRClickableAreaWText>(Rect(114, rowY, 194, 20),
 		hover, leadershipPresentation::detailText(readout));
+
+	// Leadership Efficiency, immediately below Leadership Cost (canon #efficiency-presentation).
+	if(!readout.active)
+	{
+		addStatLabel(EStat::LEADERSHIP_EFFICIENCY, "--");
+		return;
+	}
+	const auto row = leadershipEfficiencyRow::describe(readout.count, readout.capacity, readout.efficiency);
+	addStatLabel(EStat::LEADERSHIP_EFFICIENCY, row.value);
+	leadershipEfficiencyArea = std::make_shared<LRClickableAreaWText>(
+		Rect(114, creatureStatLayout::iconY(EStat::LEADERSHIP_EFFICIENCY, showNewHorizonsStats), 194, 20),
+		"Leadership Efficiency: " + row.value, row.help);
 }
 
 void CStackWindow::MainSection::show(Canvas & canvas)

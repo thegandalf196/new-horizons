@@ -252,18 +252,15 @@
 		},
 		{
 			"name": "rollingReplayLabel",
-			"type": "label",
-			"font": "small",
-			"alignment": "left",
-			"color": "white",
+			"type": "labelDescription",
 			"text": "new-horizons.settings.rollingReplay.hover",
-			"position": {"x": 415, "y": 357}
+			"position": {"x": 45, "y": 475}
 		},
 		{
 			"name": "rollingReplayCheckbox",
 			"type": "checkbox",
 			"help": "new-horizons.settings.rollingReplay",
-			"position": {"x": 380, "y": 353},
+			"position": {"x": 10, "y": 473},
 			"callback": "rollingReplayChanged"
 		},
 /////////////////////////////////////// Bottom section - Towns Settings
