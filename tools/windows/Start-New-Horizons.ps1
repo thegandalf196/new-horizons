@@ -182,6 +182,9 @@ try {
     $packageRoot = [IO.Path]::GetFullPath($PSScriptRoot)
     $portableChild = $env:NH_WINDOWS_PORTABLE_UPDATE_CHILD -ceq $packageRoot
     $env:NH_WINDOWS_PORTABLE_UPDATE_CHILD = $null
+    # Set only while an original launcher hands its window over to this copy.
+    $delegatedOriginal = $env:NH_WINDOWS_LAUNCHER_DELEGATED
+    $env:NH_WINDOWS_LAUNCHER_DELEGATED = $null
     if (-not $portableChild) {
         $updateLauncher = Join-Path $packageRoot 'Portable-Release-Launcher.ps1'
         if (Test-Path -LiteralPath $updateLauncher -PathType Leaf) {
@@ -189,10 +192,21 @@ try {
             . $updateLauncher
             if ($env:NH_WINDOWS_BOOTSTRAP_UI -eq '1' -and $gameArguments.Count -eq 0 -and
                 -not $SetupOnly -and -not $SelectAssets -and -not $AssetsPath) {
+                $launcherOriginal = Resolve-NHLauncherOriginal $packageRoot $delegatedOriginal
+                if ($launcherOriginal -ceq $packageRoot) {
+                    # Run the self-tested launcher of the selected stable update in
+                    # this same owned process, once; it never hands over again.
+                    $newerLauncher = Get-NHNewerLauncher $packageRoot
+                    if ($newerLauncher) {
+                        $env:NH_WINDOWS_LAUNCHER_DELEGATED = $packageRoot
+                        & $newerLauncher
+                        exit $LASTEXITCODE
+                    }
+                }
                 $playerLauncher = Join-Path $packageRoot 'Player-Launcher.ps1'
                 Assert-PlainPath $playerLauncher
                 . $playerLauncher
-                exit (Show-NHPlayerLauncher $packageRoot)
+                exit (Show-NHPlayerLauncher $launcherOriginal $packageRoot)
             }
             $selectedRelease = Select-NHPortableRelease $packageRoot $false
             if ($selectedRelease.runtime -cne $packageRoot) {

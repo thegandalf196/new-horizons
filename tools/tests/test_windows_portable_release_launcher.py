@@ -7,12 +7,29 @@ from pathlib import Path
 import shutil
 import subprocess
 import tempfile
+import time
 import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
 LAUNCHER = ROOT / 'tools/windows/Portable-Release-Launcher.ps1'
 POWERSHELL = os.environ.get('NH_TEST_POWERSHELL') or shutil.which('powershell') or shutil.which('pwsh')
+# The self-test child is always Windows PowerShell 5.1 beside the running host.
+WINDOWS_POWERSHELL = os.name == 'nt' and bool(POWERSHELL) and Path(POWERSHELL).stem.lower() == 'powershell'
 SHA256 = 'c' * 64
+SELF_TEST = "param([string]$Operation)\nif ($Operation -ceq 'SelfTest') { [Console]::Out.WriteLine('NH_WINDOWS_PORTABLE_LAUNCHER_V2') }\n"
+TRACK_HARNESS = r'''
+$ErrorActionPreference = 'Stop'
+Set-StrictMode -Version Latest
+function Assert-PlainPath([string]$Path) {
+    if ((Test-Path -LiteralPath $Path) -and ((Get-Item -LiteralPath $Path -Force).Attributes -band [IO.FileAttributes]::ReparsePoint)) {
+        throw 'Linked test path.'
+    }
+}
+. $env:TEST_PROCESS
+. $env:TEST_HELPER
+function Test-NHUpdatedClient([string]$Runtime) { }
+function Test-Rejected([scriptblock]$Action) { try { $null = & $Action; return $false } catch { return $true } }
+'''
 
 
 @unittest.skipUnless(POWERSHELL, 'Set NH_TEST_POWERSHELL to run offline PowerShell fixtures')
@@ -86,6 +103,84 @@ Select-NHPortableRelease $env:TEST_RUNTIME $false | ConvertTo-Json -Compress
                                 env=env, capture_output=True, text=True, check=False, timeout=20)
         self.assertEqual(result.returncode, 0, result.stderr)
         return json.loads(result.stdout)
+
+    def run_tracks(self, body, **environment):
+        harness = self.root / 'tracks.ps1'
+        harness.write_text(TRACK_HARNESS + body, encoding='ascii')
+        env = dict(os.environ, TEST_HELPER=str(LAUNCHER), TEST_PROCESS=str(LAUNCHER.with_name('Launch-Process.ps1')),
+                   TEST_RUNTIME=str(self.original), TEST_STORE=str(self.store), TEST_REQUEST=str(self.request),
+                   LOCALAPPDATA=str(self.local_data), **environment)
+        result = subprocess.run([POWERSHELL, '-NoProfile', '-NonInteractive', '-File', str(harness)],
+                                env=env, capture_output=True, text=True, check=False, timeout=60)
+        self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
+        return json.loads(result.stdout)
+
+    def test_beta_install_selects_only_the_beta_track(self):
+        updated = self.offer_update()
+        self.request.write_text(json.dumps({'version': '0.92.4', 'sha256': SHA256, 'format': 2, 'channel': 'beta'}))
+        report = self.run_tracks(r'''
+$before = Get-NHTrackRuntime $env:TEST_RUNTIME 'beta'
+$stable = Get-NHTrackRuntime $env:TEST_RUNTIME 'stable'
+$installed = Install-NHRequestedRelease $env:TEST_RUNTIME $stable $env:TEST_STORE $env:TEST_REQUEST
+[IO.File]::WriteAllText($env:TEST_REQUEST, '{"version":"0.92.6","sha256":"' + ('e' * 64) + '","channel":"nightly"}')
+$unknown = Test-Rejected { Install-NHRequestedRelease $env:TEST_RUNTIME $stable $env:TEST_STORE $env:TEST_REQUEST }
+[ordered]@{before=$before;installed=$installed;stable=(Get-NHTrackRuntime $env:TEST_RUNTIME 'stable');
+    beta=(Get-NHTrackRuntime $env:TEST_RUNTIME 'beta');unknown=$unknown} | ConvertTo-Json -Compress
+''')
+        self.assertIsNone(report['before'])
+        self.assertTrue(Path(report['installed']).samefile(updated))
+        self.assertEqual(Path(report['stable']), self.original)
+        self.assertTrue(Path(report['beta']).samefile(updated))
+        self.assertTrue(report['unknown'])
+        self.assertFalse(self.selector.exists())
+        self.assertEqual(json.loads((self.store / 'beta.json').read_text()),
+                         {'format': 1, 'version': '0.92.4', 'sha256': SHA256})
+
+    @unittest.skipUnless(WINDOWS_POWERSHELL, 'The launcher self-test child is Windows PowerShell 5.1')
+    def test_launcher_hands_over_to_the_selected_stable_launcher_after_its_self_test(self):
+        hand_over = "$newer = Get-NHNewerLauncher $env:TEST_RUNTIME; ConvertTo-Json -InputObject @{newer=$newer} -Compress"
+        self.assertIsNone(self.run_tracks(hand_over)['newer'])
+        updated = self.offer_update()
+        self.assertEqual(Path(self.select()['runtime']), updated)
+        operation = updated / 'Player-Launcher-Operation.ps1'
+        operation.write_text(SELF_TEST)
+        self.assertTrue(Path(self.run_tracks(hand_over)['newer']).samefile(updated / 'Start-New-Horizons.ps1'))
+        for broken in ('exit 3\n', "[Console]::Out.WriteLine('something else')\n", SELF_TEST + 'exit 1\n'):
+            with self.subTest(broken=broken):
+                operation.write_text(broken)
+                self.assertIsNone(self.run_tracks(hand_over)['newer'])
+        operation.write_text('Start-Sleep -Seconds 30\n')
+        started = time.monotonic()
+        report = self.run_tracks("ConvertTo-Json -InputObject @{passed=(Test-NHLauncherSelfTest $env:TEST_UPDATED 1000)} -Compress",
+                                 TEST_UPDATED=str(updated))
+        self.assertFalse(report['passed'])
+        self.assertLess(time.monotonic() - started, 20)
+
+    def test_delegated_launcher_belongs_to_the_selected_update_and_runs_its_own_worker(self):
+        self.offer_update()
+        updated = Path(self.select()['runtime'])
+        code = self.root / 'newer-code'
+        code.mkdir()
+        newer = self.offer_update('0.92.5', 'd' * 64)
+        prepared = json.dumps({'version': '0.92.5', 'sha256': 'd' * 64})
+        (code / 'Prepare-NHReleaseUpdate.ps1').write_text(
+            "param([string]$Store,[string]$Request,[string]$StatusPath)\n"
+            "[IO.File]::WriteAllText((Join-Path $PSScriptRoot 'used.txt'), 'newer worker')\n'" + prepared + "'\n")
+        (self.original / 'Prepare-NHReleaseUpdate.ps1').write_text("throw 'The original worker ran'\n")
+        report = self.run_tracks(r'''
+$original = Resolve-NHLauncherOriginal $env:TEST_UPDATED $env:TEST_RUNTIME
+$plain = Resolve-NHLauncherOriginal $env:TEST_RUNTIME ''
+$self = Test-Rejected { Resolve-NHLauncherOriginal $env:TEST_RUNTIME $env:TEST_RUNTIME }
+$other = Test-Rejected { Resolve-NHLauncherOriginal $env:TEST_CODE $env:TEST_RUNTIME }
+$relative = Test-Rejected { Resolve-NHLauncherOriginal $env:TEST_UPDATED 'runtime' }
+$installed = Install-NHRequestedRelease $env:TEST_RUNTIME $env:TEST_UPDATED $env:TEST_STORE $env:TEST_REQUEST $null $env:TEST_CODE
+[ordered]@{original=$original;plain=$plain;rejected=@($self,$other,$relative);installed=$installed} | ConvertTo-Json -Compress
+''', TEST_UPDATED=str(updated), TEST_CODE=str(code))
+        self.assertTrue(Path(report['original']).samefile(self.original))
+        self.assertTrue(Path(report['plain']).samefile(self.original))
+        self.assertEqual(report['rejected'], [True, True, True])
+        self.assertTrue(Path(report['installed']).samefile(newer))
+        self.assertEqual((code / 'used.txt').read_text(), 'newer worker')
 
     def test_successful_probe_activates_only_the_verified_directory(self):
         self.offer_update()

@@ -31,6 +31,16 @@ DOWNLOAD_FIXTURE = r'''function Invoke-UpdateDownload([string]$URL, [string]$Out
 }
 '''
 
+# Serves the beta tag metadata and the archive; any other release API is an error.
+BETA_TAG_FIXTURE = r'''function Invoke-UpdateDownload([string]$URL, [string]$Output, [long]$MaximumBytes, [long]$ExactBytes = 0) {
+    [IO.File]::AppendAllText($env:NH_UPDATE_DOWNLOAD_LOG, $URL + [Environment]::NewLine)
+    if ($URL -ceq (Get-UpdateReleaseTagAPI '0.93.0')) { [IO.File]::Copy($env:NH_UPDATE_METADATA, $Output); return }
+    if ($URL.StartsWith('https://api.github.com/')) { throw 'Unexpected release metadata request' }
+    [IO.File]::Copy($env:NH_UPDATE_ARCHIVE, $Output)
+}
+Prepare-NHReleaseUpdate $env:NH_UPDATE_STORE $env:NH_UPDATE_REQUEST | ConvertTo-Json -Compress
+'''
+
 def digest(data):
     return hashlib.sha256(data).hexdigest()
 
@@ -60,6 +70,7 @@ class WindowsPortableReleaseUpdateTest(unittest.TestCase):
                  'runtime/Player-Launcher-Operation.ps1': b'# launcher background operations',
                  'runtime/Portable-Release-Launcher.ps1': b'# release selector',
                  'runtime/Prepare-NHReleaseUpdate.ps1': b'# update preparer',
+                 'runtime/Release-Metadata.ps1': b'# release tracks',
                  'runtime/config/dirs.json': b'{}', 'runtime/config/filesystem.json': b'{}',
                  'runtime/Mods/vcmi/mod.json': b'{}', 'runtime/Mods/new-horizons/mod.json': b'{}',
                  'runtime/Mods/new-horizons/NewHorizons.nhart': struct.pack('<8sIIQQ', b'NHART\r\n\x1a', 1, 0, 32, 1),
@@ -146,6 +157,7 @@ $ErrorActionPreference = 'Stop'
         guard = "if ($MyInvocation.InvocationName -ne '.') {"
         self.assertEqual(worker.count(guard), 1)
         (original / 'Prepare-NHReleaseUpdate.ps1').write_text(worker.replace(guard, DOWNLOAD_FIXTURE + guard))
+        shutil.copyfile(WORKER.with_name('Release-Metadata.ps1'), original / 'Release-Metadata.ps1')
         passed_original = original
         passed_local = local
         if short_alias:
@@ -347,7 +359,8 @@ $second = Get-NHUpdateStore $env:NH_UPDATE_OTHER $true
     def test_valid_manifest_cannot_omit_launch_dependencies(self):
         for missing in ('runtime/Launch-Process.ps1', 'runtime/Setup-Progress.ps1',
                         'runtime/Complete-Assets.ps1', 'runtime/Player-Launcher.ps1',
-                        'runtime/Player-Launcher-Operation.ps1', 'runtime/config/dirs.json',
+                        'runtime/Player-Launcher-Operation.ps1', 'runtime/Portable-Release-Launcher.ps1',
+                        'runtime/Prepare-NHReleaseUpdate.ps1', 'runtime/Release-Metadata.ps1', 'runtime/config/dirs.json',
                         'runtime/config/filesystem.json', 'runtime/VCMI_lib.dll',
                         'runtime/Mods/vcmi/mod.json', 'runtime/Mods/new-horizons/mod.json',
                         'runtime/Mods/new-horizons/NewHorizons.nhart',
@@ -518,6 +531,36 @@ try { Write-Output 'released failed member' } finally { $exclusive.Dispose() }
         release['assets'].append(dict(release['assets'][0]))
         self.metadata.write_text(json.dumps(release))
         self.assert_rejected()
+
+    def test_beta_request_revalidates_its_own_tag_and_accepts_a_prerelease(self):
+        self.offer.update(format=2, channel='beta')
+        self.archive()
+        self.write_inputs({'prerelease': True, 'draft': True})
+        self.assert_rejected(command=BETA_TAG_FIXTURE)
+        self.write_inputs({'prerelease': True})
+        result = self.execute(BETA_TAG_FIXTURE)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(json.loads(result.stdout)['version'], '0.93.0')
+        tag = 'https://api.github.com/repos/thegandalf196/new-horizons/releases/tags/v0.93.0'
+        self.assertEqual((self.root / 'downloads.txt').read_text().splitlines(), [tag, tag, self.offer['url']])
+
+    def test_track_requests_cannot_mix_formats_name_unknown_tracks_or_take_a_stable_prerelease(self):
+        self.archive()
+        accepted = dict(self.offer)
+        for change in ({'format': 1, 'channel': 'beta'}, {'format': 2}, {'format': 2, 'channel': 'nightly'},
+                       {'format': 2, 'channel': 7}):
+            with self.subTest(change=change):
+                self.offer = dict(accepted, **change)
+                self.write_inputs()
+                self.assert_rejected()
+        self.offer = dict(accepted, format=2, channel='stable')
+        self.write_inputs({'prerelease': True})
+        self.assert_rejected()
+        self.write_inputs()
+        result = self.execute()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertNotIn('/tags/', (self.root / 'downloads.txt').read_text())
+        self.assertNotEqual(self.execute("Get-UpdateReleaseTagAPI '0.93.0/../latest'").returncode, 0)
 
     def test_partial_download_is_cleaned_without_replacing_existing_content(self):
         self.archive()

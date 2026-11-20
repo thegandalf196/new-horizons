@@ -17,6 +17,13 @@ PLAY (no installer, administrator access or build tools)
 4. Next time, use the same root new-horizons.exe. A completed import is checked
    and reused; the original installation need not remain at its previous path.
 
+Version track chooses Stable or Beta. Beta installs newer GitHub prereleases
+for trying experimental changes. It keeps its own saves, settings, cache, logs
+and imported game files below %LOCALAPPDATA%\NewHorizons-Beta\, so stable saves
+are never touched. On its first Play, Beta copies the stable imported game
+files; use Original game files while Beta is selected to choose another folder.
+Installing a beta never changes the stable version.
+
 To select or reselect assets, use Original game files in the launcher or open
 Setup.exe beside new-horizons.exe. Setup opens the folder picker and returns
 when preparation finishes. It accepts Data or the Complete parent folder as

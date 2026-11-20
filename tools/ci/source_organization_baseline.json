@@ -16619,6 +16619,11 @@
       "rationale": "Complete exact83-line PowerShell callable inventory independently re-parsed with actual PowerShell7.5.4 AST: all6 FunctionDefinitionAst and executable ScriptBlockExpressionAst bodies, including nested callbacks. Inspected command/param/control-flow blocks and quoted script data are not invented callable definitions. Exact bytes match previously independently reviewed IR-PLAYER-LAUNCHER-FINAL-SOURCE-V1. Largest function is below80 lines; no numeric waiver or missing callback. Parser syntax success on Linux does not establish Windows5.1/WinForms/native readiness execution."
     },
     "tools/windows/Start-New-Horizons.ps1": {
+      "sha256": "2d16dfe8bcfc3832248760a29e6e18e4b3281c9583bf54cad370ecb53e8b2a58",
+      "review": "CLAUDE-BETA-TRACK-WINDOWS-20261120",
+      "review_scope": "Exact source organization and code review of the Windows Beta track port; no Windows 5.1/WinForms execution.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
+      "rationale": "Complete 444-line PowerShell callable inventory generated with the PowerShell 7.5.0 AST (all FunctionDefinitionAst and ScriptBlockExpressionAst spans); the generator reproduces every previously reviewed Windows inventory exactly. Largest callable is 30 lines, below 80. Reviewed by the integrator, not the author. Linux parsing does not establish Windows PowerShell 5.1 or WinForms behaviour.",
       "functions": [
         {
           "symbol": "function Test-ReportableGameExit#1",
@@ -16661,26 +16666,21 @@
           "end": 177
         },
         {
-          "symbol": "<top-level>::<scriptblock>#1",
-          "start": 299,
-          "end": 299
+          "symbol": "<script>::<scriptblock>#1",
+          "start": 313,
+          "end": 313
         },
         {
-          "symbol": "<top-level>::<scriptblock>#2",
-          "start": 300,
-          "end": 300
+          "symbol": "<script>::<scriptblock>#2",
+          "start": 314,
+          "end": 314
         },
         {
-          "symbol": "<top-level>::<scriptblock>#3",
-          "start": 372,
-          "end": 375
+          "symbol": "<script>::<scriptblock>#3",
+          "start": 386,
+          "end": 389
         }
-      ],
-      "sha256": "a20fa917efca1b1e07e58e4b60ac9f8f4eada10b874da5f4c2287ab5093ec2c5",
-      "review": "IR-A6-OWNED-LAUNCH-CANCELLATION-20261119",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_RUNTIME_ACCEPTANCE",
-      "review_scope": "Complete current PowerShell callable inventory and Amendment6D owned-session disposition source review. No native console, GUI, runtime, release, or future growth acceptance.",
-      "rationale": "Complete callable inventory independently measured with actual PowerShell7.5.4 FunctionDefinitionAst and ScriptBlockExpressionAst, including nested callbacks. Bounded exact-session terminal disposition adds one46-line function to Launch-Process; Start routes its assigned reaped child only. Every callable below80lines. Actual Windows pipeline interruption remains an explicit acceptance gap."
+      ]
     },
     "tools/windows/tests/Managed-Preset-Smoke.ps1": {
       "functions": [
@@ -16724,90 +16724,68 @@
       "sha256": "c24cd2fda1562f11a62162607c92e05eb78e698bda113be9562ee6a980398a0e"
     },
     "tools/windows/tests/Setup-Smoke.ps1": {
+      "sha256": "41e92171829fc651c6cccb624c3ed97ae74af9d445e51aa1ac99e2936c4240bb",
+      "review": "CLAUDE-BETA-TRACK-WINDOWS-20261120",
+      "review_scope": "Exact source organization and code review of the Windows Beta track port; no Windows 5.1/WinForms execution.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
+      "rationale": "Complete 309-line PowerShell callable inventory generated with the PowerShell 7.5.0 AST (all FunctionDefinitionAst and ScriptBlockExpressionAst spans); the generator reproduces every previously reviewed Windows inventory exactly. Largest callable is 34 lines, below 80. Reviewed by the integrator, not the author. Linux parsing does not establish Windows PowerShell 5.1 or WinForms behaviour.",
       "functions": [
         {
-          "end": 16,
-          "lines": 5,
-          "sha256": "5be4f328a9a8c153c47b39885fc1cc156b246b7e4834cc1f6a099806527f12ce",
+          "symbol": "function Assert-Check#1",
           "start": 12,
-          "symbol": "function Assert-Check([bool]$Condition, [string]$Message)#1"
+          "end": 16
         },
         {
-          "end": 26,
-          "lines": 9,
-          "sha256": "49f541cb2cf9cc6c16666a286697a4aec39dc48047186404c88440e68cca1c6c",
+          "symbol": "function Get-ParsedScript#1",
           "start": 18,
-          "symbol": "function Get-ParsedScript([string]$Path)#1"
+          "end": 26
         },
         {
-          "end": 23,
-          "lines": 1,
-          "sha256": "720102f84ee00223cbf84f05cb5dd86a4183ee3ba813fd3df5e017127c2e4c48",
+          "symbol": "function Get-ParsedScript::<scriptblock>#1",
           "start": 23,
-          "symbol": "Get-ParsedScript::ForEach-Object::scriptblock#1"
+          "end": 23
         },
         {
-          "end": 31,
-          "lines": 4,
-          "sha256": "c5fdc1652f12807c434187e46f868fc4d66640386b5f8dea25d92b8e88936dcf",
+          "symbol": "function Write-FixtureFile#1",
           "start": 28,
-          "symbol": "function Write-FixtureFile([string]$Path, [string]$Text)#1"
+          "end": 31
         },
         {
-          "end": 43,
-          "lines": 11,
-          "sha256": "0b22aae0888114780c20708eba81186e53b89c6cf115fffe9eee31de63e224dc",
+          "symbol": "function New-Assets#1",
           "start": 33,
-          "symbol": "function New-Assets([string]$Root, [string]$Label)#1"
+          "end": 43
         },
         {
-          "end": 53,
-          "lines": 9,
-          "sha256": "e3d5138df51726f5a232b44749997cda47f7856dd13c3df95bf4dded82c77850",
+          "symbol": "function Get-TreeFingerprint#1",
           "start": 45,
-          "symbol": "function Get-TreeFingerprint([string]$Root)#1"
+          "end": 53
         },
         {
-          "end": 52,
-          "lines": 5,
-          "sha256": "b9eb7c609c598ccda6587cabe257b8584e369d53dc95f85e746783145baf85eb",
+          "symbol": "function Get-TreeFingerprint::<scriptblock>#1",
           "start": 48,
-          "symbol": "Get-TreeFingerprint::ForEach-Object::scriptblock#1"
+          "end": 52
         },
         {
-          "end": 62,
-          "lines": 8,
-          "sha256": "b2e7dfe28ee8ed55f018e550765cf9879a841ee6e02c1b72e2ece0bc93d06b15",
+          "symbol": "function Quote-NativeArgument#1",
           "start": 55,
-          "symbol": "function Quote-NativeArgument([string]$Value)#1"
+          "end": 62
         },
         {
-          "end": 97,
-          "lines": 34,
-          "sha256": "95c09b615485f65ae0d0a84f3b7523ca25986af0922966c04c588cb44c3f4a91",
+          "symbol": "function Invoke-Setup#1",
           "start": 64,
-          "symbol": "function Invoke-Setup([string]$Source = '', [switch]$Reselect, [switch]$CancelFolder, [ValidateSet('None', 'Copy', 'Activation')][string]$Fault = 'None')#1"
+          "end": 97
         },
         {
-          "end": 71,
-          "lines": 1,
-          "sha256": "a64140a51dbcc59d0fe978731613d6e16fd5734bce123e6754a7eb1b2dcc2afc",
+          "symbol": "function Invoke-Setup::<scriptblock>#1",
           "start": 71,
-          "symbol": "Invoke-Setup::ForEach-Object::scriptblock#1"
+          "end": 71
         },
         {
-          "end": 135,
-          "lines": 3,
-          "sha256": "140212328f91991a304b66fd32666fbf403f9a9b9141bd60f3e1ac23db1f7b74",
-          "start": 133,
-          "symbol": "AST.FindAll::scriptblock(param($node))#1"
+          "symbol": "<script>::<scriptblock>#1",
+          "start": 137,
+          "end": 139
         }
-      ],
-      "rationale": "Complete exact-file callable inventory renewed for the reviewed manual Setup asset-root selection. Existing named functions and executable callback/scriptblock bodies retained; quoted receiver script data remains excluded. No native/runtime acceptance or future size allowance.",
-      "review": "IR-0911-SETUP-LOAD-WALKING-OBSERVERS",
-      "review_scope": "Complete exact-file callable inventory independently inspected; recorded spans/source hashes cover all bodies including scriptblock callbacks, excluding quoted script data. Grammar-recovery/manual coverage is source measurement, not compiler or platform runtime validation.",
-      "review_status": "INDEPENDENTLY_REVIEWED_SOURCE_ONLY",
-      "sha256": "4150d23b9f7718cddb51e7c9ab363870b658f11c47ad1d3b86224cf4ae9ca662"
+      ]
     },
     "tools/windows/tests/Test-CrashReportExit.ps1": {
       "functions": [
@@ -17161,11 +17139,16 @@
       "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE"
     },
     "tools/windows/Player-Launcher.ps1": {
+      "sha256": "810d64f88c83d8cefd86b845efdf7e9e6ac7dec86cfa6f6a77132b4bb1d060a0",
+      "review": "CLAUDE-BETA-TRACK-WINDOWS-20261120",
+      "review_scope": "Exact source organization and code review of the Windows Beta track port; no Windows 5.1/WinForms execution.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
+      "rationale": "Complete 319-line PowerShell callable inventory generated with the PowerShell 7.5.0 AST (all FunctionDefinitionAst and ScriptBlockExpressionAst spans); the generator reproduces every previously reviewed Windows inventory exactly. Largest callable is 40 lines, below 80. Reviewed by the integrator, not the author. Linux parsing does not establish Windows PowerShell 5.1 or WinForms behaviour.",
       "functions": [
         {
           "symbol": "function New-NHPlayerProcess#1",
           "start": 4,
-          "end": 20
+          "end": 22
         },
         {
           "symbol": "function New-NHPlayerProcess::<scriptblock>#1",
@@ -17174,252 +17157,381 @@
         },
         {
           "symbol": "function Wait-NHPlayerProcess#1",
-          "start": 22,
-          "end": 46
+          "start": 24,
+          "end": 48
         },
         {
           "symbol": "function Set-NHPlayerBusy#1",
-          "start": 48,
-          "end": 53
+          "start": 50,
+          "end": 56
         },
         {
-          "symbol": "function Invoke-NHPlayerUpdate#1",
-          "start": 55,
-          "end": 95
+          "symbol": "function Get-NHTrackLocalData#1",
+          "start": 58,
+          "end": 69
         },
         {
-          "symbol": "function Invoke-NHPlayerGame#1",
-          "start": 97,
-          "end": 121
+          "symbol": "function Get-NHBetaAssetArguments#1",
+          "start": 71,
+          "end": 80
         },
         {
-          "symbol": "function New-NHPlayerButton#1",
-          "start": 123,
-          "end": 130
+          "symbol": "function Update-NHPlayerVersion#1",
+          "start": 82,
+          "end": 91
         },
         {
-          "symbol": "function New-NHPlayerView#1",
-          "start": 132,
-          "end": 165
-        },
-        {
-          "symbol": "function Test-NHLauncherAutoCheck#1",
-          "start": 167,
-          "end": 184
-        },
-        {
-          "symbol": "function Show-NHPlayerLauncher#1",
-          "start": 186,
-          "end": 198
-        },
-        {
-          "symbol": "function Show-NHPlayerLauncher::<scriptblock>#1",
-          "start": 189,
-          "end": 189
-        },
-        {
-          "symbol": "function Show-NHPlayerLauncher::<scriptblock>#2",
-          "start": 190,
-          "end": 190
-        },
-        {
-          "symbol": "function Show-NHPlayerLauncher::<scriptblock>#3",
-          "start": 191,
-          "end": 191
-        },
-        {
-          "symbol": "function Show-NHPlayerLauncher::<scriptblock>#4",
-          "start": 192,
-          "end": 192
-        },
-        {
-          "symbol": "function Show-NHPlayerLauncher::<scriptblock>#5",
-          "start": 193,
-          "end": 193
-        },
-        {
-          "symbol": "function Show-NHPlayerLauncher::<scriptblock>#6",
-          "start": 194,
-          "end": 194
-        }
-      ],
-      "sha256": "f6222a896ab4052e000238dd3e4d75bc9ff77f120ee3c4e33550b7b884f4b1b1",
-      "review": "IR-NEXT-BUILD-FROZEN-PLAYER-LAUNCHER-ORG-20261119",
-      "review_scope": "Exact independent source organization and reused prior source review only; no native compilation, GUI, Windows execution, performance, promotion or future growth permission.",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
-      "rationale": "Complete exact198-line PowerShell callable inventory independently re-parsed with actual PowerShell7.5.4 AST: all16 FunctionDefinitionAst and executable ScriptBlockExpressionAst bodies, including nested callbacks. Inspected command/param/control-flow blocks and quoted script data are not invented callable definitions. Exact bytes match previously independently reviewed IR-PLAYER-LAUNCHER-FINAL-SOURCE-V1. Largest function is below80 lines; no numeric waiver or missing callback. Parser syntax success on Linux does not establish Windows5.1/WinForms/native readiness execution."
-    },
-    "tools/windows/Player-Launcher-Operation.ps1": {
-      "functions": [
-        {
-          "symbol": "function Assert-PlainPath#1",
-          "start": 11,
-          "end": 11
-        },
-        {
-          "symbol": "function Get-NHLatestPlayerOffer#1",
-          "start": 13,
-          "end": 38
-        },
-        {
-          "symbol": "function Get-NHLatestPlayerOffer::<scriptblock>#1",
-          "start": 20,
-          "end": 20
-        },
-        {
-          "symbol": "function Install-NHPlayerOffer#1",
-          "start": 40,
-          "end": 52
-        },
-        {
-          "symbol": "function Invoke-NHPlayerOperation#1",
-          "start": 54,
-          "end": 71
-        }
-      ],
-      "sha256": "9ae3e46d0de13da54f4a38787661cd56c5a906ea497f30ad61b9339f0531924b",
-      "review": "IR-WINDOWS-AMENDMENT4-CANONICAL-STORE-20261119",
-      "review_scope": "Exact source and full actual PowerShell AST inventory only; no native Windows/path/8.3/runtime or release acceptance.",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
-      "rationale": "Complete exact 73-line PowerShell inventory parsed independently using real PowerShell AST; all 5 named functions and executable scriptblock expressions included. Canonical managed store, atomic complete identity publication, containment and path routing reviewed. Embedded CSharp PInvoke source is quoted data, not a PowerShell callable. Largest callable is 26 lines. No size exception or future growth allowance. Windows5.1/NTFS behavior still requires hosted execution."
-    },
-    "tools/windows/Portable-Release-Launcher.ps1": {
-      "functions": [
-        {
-          "symbol": "function Read-NHSmallUpdateJson#1",
-          "start": 7,
-          "end": 12
-        },
-        {
-          "symbol": "function Get-NHProductVersion#1",
-          "start": 14,
-          "end": 20
-        },
-        {
-          "symbol": "function Get-NHSelectedUpdateRuntime#1",
-          "start": 22,
-          "end": 42
-        },
-        {
-          "symbol": "function Test-NHUpdatedClient#1",
-          "start": 44,
-          "end": 62
-        },
-        {
-          "symbol": "function Set-NHUpdateSelection#1",
-          "start": 64,
-          "end": 85
-        },
-        {
-          "symbol": "function Install-NHRequestedRelease#1",
-          "start": 87,
-          "end": 104
-        },
-        {
-          "symbol": "function Select-NHPortableRelease#1",
-          "start": 106,
-          "end": 122
-        }
-      ],
-      "sha256": "af49269accfe42c9c89acd82f23e61e8c168e7baeb52dffa850b347f3a0f1cd3",
-      "review": "IR-WINDOWS-AMENDMENT4-CANONICAL-STORE-20261119",
-      "review_scope": "Exact source and full actual PowerShell AST inventory only; no native Windows/path/8.3/runtime or release acceptance.",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
-      "rationale": "Complete exact 122-line PowerShell inventory parsed independently using real PowerShell AST; all 7 named functions and executable scriptblock expressions included. Canonical managed store, atomic complete identity publication, containment and path routing reviewed. Embedded CSharp PInvoke source is quoted data, not a PowerShell callable. Largest callable is 22 lines. No size exception or future growth allowance. Windows5.1/NTFS behavior still requires hosted execution."
-    },
-    "tools/windows/Prepare-NHReleaseUpdate.ps1": {
-      "functions": [
-        {
-          "symbol": "function Assert-UpdatePlainPath#1",
-          "start": 15,
-          "end": 34
-        },
-        {
-          "symbol": "function Get-NHCanonicalUpdateDirectory#1",
-          "start": 36,
-          "end": 61
-        },
-        {
-          "symbol": "function Assert-NHUpdateStoreIdentity#1",
-          "start": 63,
+          "symbol": "function Get-NHTrackBaseline#1",
+          "start": 93,
           "end": 102
         },
         {
-          "symbol": "function Get-NHUpdateStore#1",
+          "symbol": "function Set-NHPlayerTrack#1",
           "start": 104,
-          "end": 125
+          "end": 123
+        },
+        {
+          "symbol": "function Complete-NHPlayerCheck#1",
+          "start": 125,
+          "end": 137
+        },
+        {
+          "symbol": "function Complete-NHPlayerInstall#1",
+          "start": 139,
+          "end": 146
+        },
+        {
+          "symbol": "function Invoke-NHPlayerUpdate#1",
+          "start": 148,
+          "end": 187
+        },
+        {
+          "symbol": "function Invoke-NHPlayerGame#1",
+          "start": 189,
+          "end": 220
+        },
+        {
+          "symbol": "function New-NHPlayerButton#1",
+          "start": 222,
+          "end": 229
+        },
+        {
+          "symbol": "function New-NHPlayerTrack#1",
+          "start": 231,
+          "end": 246
+        },
+        {
+          "symbol": "function New-NHPlayerView#1",
+          "start": 248,
+          "end": 282
+        },
+        {
+          "symbol": "function Test-NHLauncherAutoCheck#1",
+          "start": 284,
+          "end": 301
+        },
+        {
+          "symbol": "function Show-NHPlayerLauncher#1",
+          "start": 303,
+          "end": 319
+        },
+        {
+          "symbol": "function Show-NHPlayerLauncher::<scriptblock>#1",
+          "start": 309,
+          "end": 309
+        },
+        {
+          "symbol": "function Show-NHPlayerLauncher::<scriptblock>#2",
+          "start": 310,
+          "end": 310
+        },
+        {
+          "symbol": "function Show-NHPlayerLauncher::<scriptblock>#3",
+          "start": 311,
+          "end": 311
+        },
+        {
+          "symbol": "function Show-NHPlayerLauncher::<scriptblock>#4",
+          "start": 312,
+          "end": 312
+        },
+        {
+          "symbol": "function Show-NHPlayerLauncher::<scriptblock>#5",
+          "start": 313,
+          "end": 313
+        },
+        {
+          "symbol": "function Show-NHPlayerLauncher::<scriptblock>#6",
+          "start": 314,
+          "end": 314
+        },
+        {
+          "symbol": "function Show-NHPlayerLauncher::<scriptblock>#7",
+          "start": 315,
+          "end": 315
+        }
+      ]
+    },
+    "tools/windows/Player-Launcher-Operation.ps1": {
+      "sha256": "4f1d0dda9a2ee02a90898aaad27804b329badb512465f929a0151a3db67babd5",
+      "review": "CLAUDE-BETA-TRACK-WINDOWS-20261120",
+      "review_scope": "Exact source organization and code review of the Windows Beta track port; no Windows 5.1/WinForms execution.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
+      "rationale": "Complete 115-line PowerShell callable inventory generated with the PowerShell 7.5.0 AST (all FunctionDefinitionAst and ScriptBlockExpressionAst spans); the generator reproduces every previously reviewed Windows inventory exactly. Largest callable is 32 lines, below 80. Reviewed by the integrator, not the author. Linux parsing does not establish Windows PowerShell 5.1 or WinForms behaviour.",
+      "functions": [
+        {
+          "symbol": "function Assert-PlainPath#1",
+          "start": 12,
+          "end": 12
+        },
+        {
+          "symbol": "function Get-NHPublishedRelease#1",
+          "start": 14,
+          "end": 21
+        },
+        {
+          "symbol": "function Get-NHLatestPlayerOffer#1",
+          "start": 23,
+          "end": 54
+        },
+        {
+          "symbol": "function Get-NHLatestPlayerOffer::<scriptblock>#1",
+          "start": 32,
+          "end": 32
+        },
+        {
+          "symbol": "function Install-NHPlayerOffer#1",
+          "start": 56,
+          "end": 68
+        },
+        {
+          "symbol": "function Invoke-NHPlayerOperation#1",
+          "start": 70,
+          "end": 87
+        },
+        {
+          "symbol": "function Test-NHPlayerLauncherCode#1",
+          "start": 89,
+          "end": 110
+        }
+      ]
+    },
+    "tools/windows/Portable-Release-Launcher.ps1": {
+      "sha256": "752bb78d73f6c11a8d528a309dffa385a1c3d5c5e015582ed46e1293df6692f8",
+      "review": "CLAUDE-BETA-TRACK-WINDOWS-20261120",
+      "review_scope": "Exact source organization and code review of the Windows Beta track port; no Windows 5.1/WinForms execution.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
+      "rationale": "Complete 224-line PowerShell callable inventory generated with the PowerShell 7.5.0 AST (all FunctionDefinitionAst and ScriptBlockExpressionAst spans); the generator reproduces every previously reviewed Windows inventory exactly. Largest callable is 33 lines, below 80. Reviewed by the integrator, not the author. Linux parsing does not establish Windows PowerShell 5.1 or WinForms behaviour.",
+      "functions": [
+        {
+          "symbol": "function Read-NHSmallUpdateJson#1",
+          "start": 9,
+          "end": 14
+        },
+        {
+          "symbol": "function Get-NHProductVersion#1",
+          "start": 16,
+          "end": 22
+        },
+        {
+          "symbol": "function Get-NHSelectedUpdateRuntime#1",
+          "start": 24,
+          "end": 44
+        },
+        {
+          "symbol": "function Test-NHUpdatedClient#1",
+          "start": 46,
+          "end": 64
+        },
+        {
+          "symbol": "function Get-NHTrackSelectionName#1",
+          "start": 66,
+          "end": 71
+        },
+        {
+          "symbol": "function Set-NHUpdateSelection#1",
+          "start": 73,
+          "end": 94
+        },
+        {
+          "symbol": "function Install-NHRequestedRelease#1",
+          "start": 96,
+          "end": 123
+        },
+        {
+          "symbol": "function Get-NHTrackRuntime#1",
+          "start": 125,
+          "end": 142
+        },
+        {
+          "symbol": "function Select-NHPortableRelease#1",
+          "start": 144,
+          "end": 160
+        },
+        {
+          "symbol": "function Test-NHLauncherSelfTest#1",
+          "start": 165,
+          "end": 197
+        },
+        {
+          "symbol": "function Test-NHLauncherSelfTest::<scriptblock>#1",
+          "start": 177,
+          "end": 177
+        },
+        {
+          "symbol": "function Get-NHNewerLauncher#1",
+          "start": 199,
+          "end": 212
+        },
+        {
+          "symbol": "function Resolve-NHLauncherOriginal#1",
+          "start": 214,
+          "end": 224
+        }
+      ]
+    },
+    "tools/windows/Prepare-NHReleaseUpdate.ps1": {
+      "sha256": "aaa71d8fb9923fe72dcefdc71ffd0cc1e361636e757b0c609320326ffde00f48",
+      "review": "CLAUDE-BETA-TRACK-WINDOWS-20261120",
+      "review_scope": "Exact source organization and code review of the Windows Beta track port; no Windows 5.1/WinForms execution.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
+      "rationale": "Complete 432-line PowerShell callable inventory generated with the PowerShell 7.5.0 AST (all FunctionDefinitionAst and ScriptBlockExpressionAst spans); the generator reproduces every previously reviewed Windows inventory exactly. Largest callable is 67 lines, below 80. Reviewed by the integrator, not the author. Linux parsing does not establish Windows PowerShell 5.1 or WinForms behaviour.",
+      "functions": [
+        {
+          "symbol": "function Assert-UpdatePlainPath#1",
+          "start": 16,
+          "end": 35
+        },
+        {
+          "symbol": "function Get-NHCanonicalUpdateDirectory#1",
+          "start": 37,
+          "end": 62
+        },
+        {
+          "symbol": "function Assert-NHUpdateStoreIdentity#1",
+          "start": 64,
+          "end": 103
+        },
+        {
+          "symbol": "function Get-NHUpdateStore#1",
+          "start": 105,
+          "end": 126
         },
         {
           "symbol": "function Write-UpdateStatus#1",
-          "start": 127,
-          "end": 132
+          "start": 128,
+          "end": 133
         },
         {
           "symbol": "function Get-UpdateRelativePath#1",
-          "start": 134,
-          "end": 147
+          "start": 135,
+          "end": 148
         },
         {
           "symbol": "function Read-UpdateJSON#1",
-          "start": 149,
-          "end": 167
-        },
-        {
-          "symbol": "function Read-UpdateRequest#1",
-          "start": 169,
-          "end": 192
+          "start": 150,
+          "end": 168
         },
         {
           "symbol": "function Assert-UpdateTransportURI#1",
-          "start": 194,
-          "end": 202
+          "start": 170,
+          "end": 178
         },
         {
           "symbol": "function Invoke-UpdateDownload#1",
-          "start": 204,
-          "end": 255
-        },
-        {
-          "symbol": "function Assert-CurrentUpdateRelease#1",
-          "start": 257,
-          "end": 275
-        },
-        {
-          "symbol": "function Assert-CurrentUpdateRelease::<scriptblock>#1",
-          "start": 268,
-          "end": 268
+          "start": 180,
+          "end": 231
         },
         {
           "symbol": "function Expand-UpdateArchive#1",
-          "start": 277,
-          "end": 343
+          "start": 233,
+          "end": 299
         },
         {
           "symbol": "function Assert-UpdatePayload#1",
-          "start": 345,
-          "end": 394
+          "start": 301,
+          "end": 351
         },
         {
           "symbol": "function Assert-UpdatePayload::<scriptblock>#1",
-          "start": 364,
-          "end": 364
+          "start": 320,
+          "end": 320
         },
         {
           "symbol": "function Assert-UpdateArtHeader#1",
-          "start": 396,
-          "end": 409
+          "start": 353,
+          "end": 366
         },
         {
           "symbol": "function Prepare-NHReleaseUpdate#1",
-          "start": 411,
-          "end": 470
+          "start": 368,
+          "end": 427
         }
-      ],
-      "sha256": "28b237b05a9e7b2cd8aaa752ebb74659233ce66e5d71f9df6e1acd47fab16370",
-      "review": "IR-WINDOWS-AMENDMENT4-CANONICAL-STORE-20261119",
-      "review_scope": "Exact source and full actual PowerShell AST inventory only; no native Windows/path/8.3/runtime or release acceptance.",
+      ]
+    },
+    "tools/windows/Release-Metadata.ps1": {
+      "sha256": "f55e7456a46f6c14f8e99fed761fbdb4550d400073ea6077ead1fc15f478c2e6",
+      "review": "CLAUDE-BETA-TRACK-WINDOWS-20261120",
+      "review_scope": "Exact source organization and code review of the Windows Beta track port; no Windows 5.1/WinForms execution.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
-      "rationale": "Complete exact 475-line PowerShell inventory parsed independently using real PowerShell AST; all 17 named functions and executable scriptblock expressions included. Canonical managed store, atomic complete identity publication, containment and path routing reviewed. Embedded CSharp PInvoke source is quoted data, not a PowerShell callable. Largest callable is 67 lines. No size exception or future growth allowance. Windows5.1/NTFS behavior still requires hosted execution."
+      "rationale": "Complete 135-line PowerShell callable inventory generated with the PowerShell 7.5.0 AST (all FunctionDefinitionAst and ScriptBlockExpressionAst spans); the generator reproduces every previously reviewed Windows inventory exactly. Largest callable is 28 lines, below 80. Reviewed by the integrator, not the author. Linux parsing does not establish Windows PowerShell 5.1 or WinForms behaviour.",
+      "functions": [
+        {
+          "symbol": "function Get-UpdateRequestChannel#1",
+          "start": 10,
+          "end": 18
+        },
+        {
+          "symbol": "function Get-UpdateReleaseTagAPI#1",
+          "start": 20,
+          "end": 23
+        },
+        {
+          "symbol": "function Get-UpdateRevalidationAPI#1",
+          "start": 25,
+          "end": 30
+        },
+        {
+          "symbol": "function Read-UpdateRequest#1",
+          "start": 32,
+          "end": 59
+        },
+        {
+          "symbol": "function Assert-CurrentUpdateRelease#1",
+          "start": 61,
+          "end": 63
+        },
+        {
+          "symbol": "function Assert-UpdateReleaseObject#1",
+          "start": 65,
+          "end": 84
+        },
+        {
+          "symbol": "function Assert-UpdateReleaseObject::<scriptblock>#1",
+          "start": 77,
+          "end": 77
+        },
+        {
+          "symbol": "function Read-UpdateReleaseList#1",
+          "start": 86,
+          "end": 101
+        },
+        {
+          "symbol": "function Get-UpdateReleaseVersion#1",
+          "start": 103,
+          "end": 112
+        },
+        {
+          "symbol": "function Select-UpdateBetaRelease#1",
+          "start": 114,
+          "end": 135
+        },
+        {
+          "symbol": "function Select-UpdateBetaRelease::<scriptblock>#1",
+          "start": 125,
+          "end": 127
+        }
+      ]
     }
   },
   "schema": 1,

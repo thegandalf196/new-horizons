@@ -11,6 +11,7 @@ $script:ReleaseRoot = 'https://github.com/thegandalf196/new-horizons/releases/'
 $script:MaximumArchiveBytes = 2147483648L
 $script:MaximumExpandedBytes = 8589934592L
 $script:MaximumMembers = 20000
+. (Join-Path $PSScriptRoot 'Release-Metadata.ps1')
 
 function Assert-UpdatePlainPath([string]$Path) {
     $cursor = [IO.Path]::GetFullPath($Path)
@@ -166,31 +167,6 @@ function Read-UpdateJSON([string]$Path, [long]$MaximumBytes) {
     return $value
 }
 
-function Read-UpdateRequest([string]$Path) {
-    $value = Read-UpdateJSON $Path 16384
-    $expected = @('format', 'version', 'name', 'url', 'bytes', 'sha256')
-    $properties = @($value.PSObject.Properties.Name)
-    if ($properties.Count -ne $expected.Count) { throw 'Invalid update request fields.' }
-    $raw = [IO.File]::ReadAllText([IO.Path]::GetFullPath($Path))
-    foreach ($key in $expected) {
-        if (-not ($properties -ccontains $key) -or
-            [regex]::Matches($raw, '"' + $key + '"\s*:').Count -ne 1) {
-            throw 'Missing or duplicate update request field.'
-        }
-    }
-    if (($value.format -isnot [int] -and $value.format -isnot [long]) -or $value.format -ne 1 -or
-        $value.version -isnot [string] -or $value.version.Length -gt 32 -or $value.version -cnotmatch '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$' -or
-        $value.name -isnot [string] -or $value.name -cnotmatch '^New-Horizons-Windows-x64-([a-f0-9]{12})\.zip$' -or
-        $value.url -isnot [string] -or
-        $value.url -cne ($script:ReleaseRoot + 'download/v' + $value.version + '/' + $value.name) -or
-        ($value.bytes -isnot [int] -and $value.bytes -isnot [long]) -or
-        $value.bytes -le 0 -or $value.bytes -gt $script:MaximumArchiveBytes -or
-        $value.sha256 -isnot [string] -or $value.sha256 -cnotmatch '^[a-f0-9]{64}$') {
-        throw 'Invalid portable update request.'
-    }
-    return $value
-}
-
 function Assert-UpdateTransportURI([Uri]$URI) {
     $hosts = @('api.github.com', 'github.com', 'release-assets.githubusercontent.com',
         'objects.githubusercontent.com', 'github-releases.githubusercontent.com')
@@ -252,26 +228,6 @@ function Invoke-UpdateDownload([string]$URL, [string]$Output, [long]$MaximumByte
     } finally {
         if ($null -ne $response) { $response.Dispose() }
     }
-}
-
-function Assert-CurrentUpdateRelease($Offer, [string]$MetadataPath) {
-    $release = Read-UpdateJSON $MetadataPath 1048576
-    $published = [DateTimeOffset]::MinValue
-    if ($release.draft -isnot [bool] -or $release.draft -or $release.prerelease -isnot [bool] -or
-        $release.prerelease -or $release.tag_name -cne ('v' + $Offer.version) -or
-        $release.html_url -cne ($script:ReleaseRoot + 'tag/v' + $Offer.version) -or
-        $release.published_at -isnot [string] -or $release.published_at -cnotmatch '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$' -or
-        -not [DateTimeOffset]::TryParse($release.published_at, [ref]$published) -or
-        $release.assets -isnot [Array] -or $release.assets.Count -gt 128) {
-        throw 'The selected update is no longer the published stable release.'
-    }
-    $matches = @($release.assets | Where-Object { $_.name -cmatch '^New-Horizons-Windows-x64-[a-f0-9]{12}\.zip$' })
-    if ($matches.Count -ne 1) { throw 'Ambiguous Windows release archive.' }
-    $asset = $matches[0]
-    if ($asset.name -cne $Offer.name -or $asset.browser_download_url -cne $Offer.url -or
-        $asset.state -cne 'uploaded' -or ($asset.size -isnot [int] -and $asset.size -isnot [long]) -or
-        $asset.size -ne $Offer.bytes -or
-        $asset.digest -cne ('sha256:' + $Offer.sha256)) { throw 'Update asset metadata changed.' }
 }
 
 function Expand-UpdateArchive([string]$Archive, [string]$Destination, [string]$PackageRoot) {
@@ -377,6 +333,7 @@ function Assert-UpdatePayload([string]$Root, $Offer) {
     foreach ($required in @('new-horizons.exe', 'Setup.exe', 'runtime/new-horizons.exe', 'runtime/VCMI_lib.dll',
         'runtime/Start-New-Horizons.ps1', 'runtime/Launch-Process.ps1', 'runtime/Setup-Progress.ps1',
         'runtime/Complete-Assets.ps1', 'runtime/Player-Launcher.ps1', 'runtime/Player-Launcher-Operation.ps1',
+        'runtime/Portable-Release-Launcher.ps1', 'runtime/Prepare-NHReleaseUpdate.ps1', 'runtime/Release-Metadata.ps1',
         'runtime/config/dirs.json', 'runtime/config/filesystem.json',
         'runtime/Mods/vcmi/mod.json', 'runtime/Mods/new-horizons/mod.json', 'runtime/Mods/new-horizons/NewHorizons.nhart',
         'runtime/config/newHorizonsCombat.json', 'runtime/config/schemas/newHorizonsCombat.json',
@@ -424,7 +381,7 @@ function Prepare-NHReleaseUpdate([string]$InstallStore, [string]$RequestFile) {
     try {
         Write-UpdateStatus 'Checking published release...'
         $metadata = Join-Path $stage 'release.json'
-        Invoke-UpdateDownload $script:ReleaseAPI $metadata 1048576
+        Invoke-UpdateDownload (Get-UpdateRevalidationAPI $offer) $metadata 1048576
         Assert-CurrentUpdateRelease $offer $metadata
         $archive = Join-Path $stage 'release.zip'
         Write-UpdateStatus 'Downloading update...'

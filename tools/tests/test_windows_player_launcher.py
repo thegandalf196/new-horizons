@@ -36,7 +36,15 @@ function New-FixtureView {
         Status=[PSCustomObject]@{Text=''};Bar=[PSCustomObject]@{Visible=$false};
         Play=[PSCustomObject]@{Enabled=$true};Check=[PSCustomObject]@{Enabled=$true};
         Assets=[PSCustomObject]@{Enabled=$true};Install=[PSCustomObject]@{Enabled=$false};
-        State=[PSCustomObject]@{Runtime=$runtime;Offer=$null;Busy=$false;ExitCode=0}}
+        Track=[PSCustomObject]@{Enabled=$true;SelectedIndex=0};
+        State=[PSCustomObject]@{Runtime=$runtime;Offer=$null;Busy=$false;ExitCode=0;Track='stable';
+            Runtimes=@{stable=$runtime;beta=$null};Code=(Join-Path $env:SOURCE 'tools/windows')}}
+}
+function New-FixtureRelease([string]$Version,[bool]$Prerelease,[bool]$Draft) {
+    $name='New-Horizons-Windows-x64-0123456789ab.zip'
+    return @{draft=$Draft;prerelease=$Prerelease;tag_name='v'+$Version;published_at='2026-11-21T12:00:00Z';
+        html_url=$script:ReleaseRoot+'tag/v'+$Version;assets=@(@{name=$name;state='uploaded';size=100;
+        digest='sha256:'+('a'*64);browser_download_url=$script:ReleaseRoot+'download/v'+$Version+'/'+$name})}
 }
 ''' + body, encoding='ascii')
             result = subprocess.run([PS, '-NoProfile', '-NonInteractive', '-File', str(harness)],
@@ -64,6 +72,103 @@ $script:ReleaseText=$release|ConvertTo-Json -Depth 5
 $rejected=$false
 try{$null=Get-NHLatestPlayerOffer $metadata}catch{$rejected=$true}
 Require $rejected 'Prerelease accepted'
+''')
+
+    def test_beta_check_offers_newest_published_release_including_prereleases(self):
+        self.execute(r'''
+$metadata=Join-Path $env:FIXTURE 'metadata.json'
+$script:Downloads=@()
+function Invoke-UpdateDownload($URL,$Output,$MaximumBytes){$script:Downloads+=$URL;[IO.File]::WriteAllText($Output,$script:ReleaseText)}
+$list=@((New-FixtureRelease '0.92.5' $false $false),(New-FixtureRelease '0.93.1' $false $true),
+    (New-FixtureRelease '0.93.0' $true $false),@{tag_name='nonsense'},'not a release')
+$script:ReleaseText=ConvertTo-Json -InputObject $list -Depth 6
+$offer=Get-NHLatestPlayerOffer $metadata 'beta'
+Require ($script:Downloads[0] -ceq $script:ReleaseListAPI) 'Beta did not list recent releases'
+Require ($offer.version -ceq '0.93.0' -and $offer.channel -ceq 'beta' -and $offer.format -eq 2) 'Wrong beta offer'
+Require (-not [IO.File]::Exists($metadata+'.offer')) 'Validation scratch survived'
+$script:ReleaseText=(New-FixtureRelease '0.93.0' $true $false)|ConvertTo-Json -Depth 6
+$rejected=$false
+try{$null=Get-NHLatestPlayerOffer $metadata}catch{$rejected=$true}
+Require $rejected 'Stable accepted a prerelease'
+$script:ReleaseText=ConvertTo-Json -InputObject @((New-FixtureRelease '0.92.3' $true $false)) -Depth 6
+$view=New-FixtureView
+$view.State.Track='beta'
+$view.State.Runtime=$null
+Complete-NHPlayerCheck $view (Get-NHLatestPlayerOffer $metadata 'beta')
+Require ($null -eq $view.State.Offer) 'A beta not newer than stable was offered'
+Require ($view.Status.Text -ceq 'No beta newer than your installed versions is available right now.') 'Wrong empty beta status'
+$script:ReleaseText='[]'
+Require ($null -eq (Get-NHLatestPlayerOffer $metadata 'beta')) 'Empty release list produced an offer'
+Complete-NHPlayerCheck $view $offer
+Require ($view.State.Offer.version -ceq '0.93.0' -and $view.Status.Text -ceq 'Beta 0.93.0 is available.') 'Beta offer hidden'
+''')
+
+    def test_beta_plays_with_separate_profile_and_reuses_stable_original_files(self):
+        self.execute(r'''
+$view=New-FixtureView
+$beta=Join-Path $env:FIXTURE 'beta-runtime'
+$view.State.Runtimes['beta']=$beta
+$view.State.Track='beta'
+$view.State.Runtime=$beta
+$script:Calls=@()
+function New-NHPlayerProcess($Runtime,$Script,$Arguments,$LocalData){
+    $script:Calls+=[PSCustomObject]@{Runtime=$Runtime;Script=$Script;Arguments=(@($Arguments) -join '|');LocalData=$LocalData}
+    $p=[PSCustomObject]@{}
+    $p|Add-Member ScriptMethod Dispose {}
+    return $p
+}
+function Wait-NHPlayerProcess { return 0 }
+$betaLocal=Join-Path $env:LOCALAPPDATA 'NewHorizons-Beta'
+Invoke-NHPlayerGame $view $false
+$stableContent=Join-Path $env:LOCALAPPDATA 'HeroesIII-NewHorizons\content'
+$null=[IO.Directory]::CreateDirectory($stableContent)
+[IO.File]::WriteAllText((Join-Path $stableContent '.nh-assets.json'),'{}')
+Invoke-NHPlayerGame $view $false
+Invoke-NHPlayerGame $view $true
+$own=Join-Path $betaLocal 'HeroesIII-NewHorizons\content'
+$null=[IO.Directory]::CreateDirectory($own)
+[IO.File]::WriteAllText((Join-Path $own '.nh-assets.json'),'{}')
+Invoke-NHPlayerGame $view $false
+$view.State.Runtime=$null
+Invoke-NHPlayerGame $view $false
+Require ($view.Status.Text.Contains('No beta is installed') -and $view.State.ExitCode -eq 1) 'Empty beta played'
+Invoke-NHPlayerGame $view $true
+$view.State.Track='stable'
+$view.State.Runtime=$runtime
+Invoke-NHPlayerGame $view $false
+Require ($script:Calls.Count -eq 6) ('Wrong launches: ' + $script:Calls.Count)
+foreach ($call in $script:Calls[0..4]) { Require ($call.LocalData -ceq $betaLocal) 'Beta shared the stable profile' }
+Require ($script:Calls[0].Script -ceq (Join-Path $beta 'Start-New-Horizons.ps1') -and $script:Calls[0].Arguments -ceq '') 'Beta without game files'
+Require ($script:Calls[1].Arguments -ceq ('-AssetsPath|' + $stableContent)) 'Stable game files not reused'
+Require ($script:Calls[2].Arguments -ceq '-SelectAssets|-SetupOnly') 'Beta chooser reused stable files'
+Require ($script:Calls[3].Arguments -ceq '') 'Beta own files replaced'
+Require ($script:Calls[4].Runtime -ceq $runtime -and $script:Calls[4].Arguments -ceq '-SelectAssets|-SetupOnly') 'Empty beta chooser'
+Require ($script:Calls[5].LocalData -ceq '' -and $script:Calls[5].Runtime -ceq $runtime) 'Stable profile moved'
+''')
+
+    def test_track_switch_rechecks_empty_beta_and_never_plays_the_original_for_it(self):
+        self.execute(r'''
+$view=New-FixtureView
+$script:Checks=0
+function Invoke-NHPlayerUpdate($View,$Original,$Install){ $script:Checks++; Require (-not $Install) 'Track switch installed' }
+Set-NHPlayerTrack $view $runtime 1
+Require ($view.State.Track -ceq 'beta' -and $null -eq $view.State.Runtime -and -not $view.Play.Enabled) 'Empty beta playable'
+Require ($script:Checks -eq 1) 'Empty beta did not check'
+Require ($view.Version.Text -ceq 'No beta installed yet. Check for updates to find one.') 'Wrong empty beta label'
+Require ($view.Status.Text -ceq 'Beta builds try experimental changes and keep their own saves and settings.') 'Wrong beta status'
+Set-NHPlayerBusy $view $true
+Require (-not $view.Track.Enabled -and -not $view.Check.Enabled) 'Track enabled while busy'
+$view.Track.SelectedIndex=0
+Set-NHPlayerTrack $view $runtime 0
+Require ($view.State.Track -ceq 'beta' -and $view.Track.SelectedIndex -eq 1) 'Busy launcher changed track'
+Set-NHPlayerBusy $view $false
+$view.State.Runtimes['beta']=$runtime
+Set-NHPlayerTrack $view $runtime 0
+Require ($view.State.Track -ceq 'stable' -and $view.Play.Enabled -and $view.Status.Text -ceq 'Ready to play.') 'Stable not restored'
+Require ($view.Version.Text -ceq 'Installed version: 0.92.3') 'Wrong stable label'
+Set-NHPlayerTrack $view $runtime 1
+Require ($script:Checks -eq 1 -and $view.Play.Enabled) 'Installed beta was not playable'
+Require ($view.Version.Text -ceq ('Beta 0.92.3 ' + [char]0x00B7 + ' separate saves')) 'Wrong installed beta label'
 ''')
 
     def test_install_requires_explicit_offer_and_busy_prevents_reentry(self):
@@ -207,6 +312,27 @@ Require (Test-NHLauncherAutoCheck) 'Opt in ignored'
         selector = (ROOT / 'tools/windows/Portable-Release-Launcher.ps1').read_text()
         read_only = selector[selector.index('function Select-NHPortableRelease'):]
         self.assertNotIn('Install-NHRequestedRelease', read_only)
+
+
+class PlayerLauncherHandOverSourceTest(unittest.TestCase):
+    def test_original_entry_hands_over_once_to_the_self_tested_selected_launcher(self):
+        source = (ROOT / 'tools/windows/Start-New-Horizons.ps1').read_text()
+        ui = source[source.index("$env:NH_WINDOWS_BOOTSTRAP_UI -eq '1' -and $gameArguments.Count -eq 0"):]
+        ui = ui[:ui.index('$selectedRelease = Select-NHPortableRelease')]
+        # The delegated flag is consumed before any routing, so a copy never hands over again.
+        self.assertLess(source.index('$env:NH_WINDOWS_LAUNCHER_DELEGATED = $null'), source.index('if (-not $portableChild)'))
+        self.assertIn('$launcherOriginal = Resolve-NHLauncherOriginal $packageRoot $delegatedOriginal', ui)
+        handover = ui[ui.index('if ($launcherOriginal -ceq $packageRoot)'):ui.index('$playerLauncher =')]
+        self.assertIn('$newerLauncher = Get-NHNewerLauncher $packageRoot', handover)
+        self.assertIn('$env:NH_WINDOWS_LAUNCHER_DELEGATED = $packageRoot', handover)
+        # Same owned process: no new child outlives the bootstrap's exact wait.
+        self.assertIn('& $newerLauncher', handover)
+        self.assertNotIn('Process]::Start', handover)
+        self.assertIn('exit (Show-NHPlayerLauncher $launcherOriginal $packageRoot)', ui)
+        launcher = (ROOT / 'tools/windows/Player-Launcher.ps1').read_text()
+        self.assertIn("Join-Path $View.State.Code 'Player-Launcher-Operation.ps1'", launcher)
+        operation = (ROOT / 'tools/windows/Player-Launcher-Operation.ps1').read_text()
+        self.assertIn('Install-NHPlayerOffer $Original $Request $StatusPath $PSScriptRoot', operation)
 
 
 if __name__ == '__main__':

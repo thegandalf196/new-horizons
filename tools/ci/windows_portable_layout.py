@@ -137,7 +137,7 @@ def stage_frontend(root, helpers, package):
     for filename in ('Play-New-Horizons.cmd', 'Start-New-Horizons.ps1', 'Launch-Process.ps1',
                      'Setup-Progress.ps1', 'Complete-Assets.ps1', 'Player-Launcher.ps1',
                      'Player-Launcher-Operation.ps1',
-                     'Portable-Release-Launcher.ps1', 'Prepare-NHReleaseUpdate.ps1',
+                     'Portable-Release-Launcher.ps1', 'Prepare-NHReleaseUpdate.ps1', 'Release-Metadata.ps1',
                      'README-New-Horizons.txt', 'dirs.json'):
         source = helpers / filename
         destination = package / (Path('config/dirs.json') if filename == 'dirs.json' else filename)
