@@ -52,7 +52,7 @@ bool BattleActionProcessor::doHeroCommandAction(const CBattleInfoCallback & batt
 			message.lines.push_back(std::move(holdFastText));
 		}
 		gameHandler->sendAndApply(message);
-		castPassiveDivineMandate(battle, ba.side, *state);
+		castPassiveDivineMandate(battle, ba, *state);
 		return true;
 	}
 	if(ba.command == HeroCommand::FOCUS_FIRE)

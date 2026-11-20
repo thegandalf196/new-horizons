@@ -332,8 +332,9 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_SORCERY_RETIREMENT = 1162, // incompatible retired spell/state removal
 	NEW_HORIZONS_SHARED_CAPTURED_RULES = 1163, // immutable world-local captured rules table
 	NEW_HORIZONS_CONSECRATED_ARMS = 1164, // prayer/shield state and replacement faction perk identities
+	NEW_HORIZONS_DOUBLE_CAST_CHOSEN_PRAYERS = 1165, // Double Cast offer/use state and chosen prayer action fields
 	MINIMAL = NEW_HORIZONS_CONSECRATED_ARMS,
-	CURRENT = NEW_HORIZONS_CONSECRATED_ARMS,
+	CURRENT = NEW_HORIZONS_DOUBLE_CAST_CHOSEN_PRAYERS,
 };
 
 static_assert(ESerializationVersion::NEW_HORIZONS_COMMAND_AUTHORITY > ESerializationVersion::NEW_HORIZONS_NATIVE_RULES_REDESIGN,

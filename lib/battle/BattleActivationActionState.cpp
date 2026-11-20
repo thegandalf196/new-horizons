@@ -5,6 +5,7 @@
 #include "StdInc.h"
 #include "BattleInfo.h"
 #include "NewHorizonsOffense.h"
+#include "MetamagicDoubleCast.h"
 #include "../CStack.h"
 #include "../mapObjects/CGHeroInstance.h"
 void BattleInfo::beginActivationActionState(CStack & stack, uint32_t unitId, BattleUnitTurnReason reason)
@@ -25,6 +26,7 @@ void BattleInfo::beginActivationActionState(CStack & stack, uint32_t unitId, Bat
 	st->dreadCavalryState = {};
 	st->luckyOwnAttackSequence = false;
 	st->setRangedFollowUpDamagePercent(0);
+	metamagicDoubleCast::expireOnActivation(*this); // "Immediately after" ends with the activation.
 	const auto side = playerToSide(battleGetOwner(st));
 	const bool ordinaryCreature = st->alive() && !st->isGhost() && !st->isTurret()
 		&& !st->hasBonusOfType(BonusType::SIEGE_WEAPON)

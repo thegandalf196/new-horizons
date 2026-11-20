@@ -8,6 +8,7 @@
 #include "HeroActionTiming.h"
 #include "HeroOrderCandidateRules.h"
 #include "../../lib/battle/BattleAction.h"
+#include "../../lib/battle/ConsecratedArmsChoice.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/callback/CBattleCallback.h"
 #include "../../lib/spells/CSpell.h"
@@ -32,10 +33,11 @@ bool BattleEvaluator::submitHeroAction(const PossibleSpellcast & castToPerform,
 			const auto targetId = castToPerform.focusFire.value().targetUnitId;
 			if(!cb->getBattle(battleID)->battleCanConfirmHeroCommand(side, castToPerform.command, targetId))
 				return false;
+			auto action = BattleAction::makeTargetedHeroCommand(side, castToPerform.command, targetId);
+			consecratedArms::applyProvisionalDefaultChoice(*cb->getBattle(battleID), action); // TEMPORARY until phase 6
 			decisionBaseOpen = false;
 	heroActionTiming::SubmitScope submit(timing);
-			cb->battleMakeSpellAction(battleID,
-				BattleAction::makeTargetedHeroCommand(side, castToPerform.command, targetId));
+			cb->battleMakeSpellAction(battleID, action);
 		}
 		else
 		{
@@ -48,6 +50,7 @@ bool BattleEvaluator::submitHeroAction(const PossibleSpellcast & castToPerform,
 					castToPerform.commandTargets.front(), castToPerform.commandTargets.back());
 			else
 				action = BattleAction::makeHeroCommand(side, castToPerform.command);
+			consecratedArms::applyProvisionalDefaultChoice(*cb->getBattle(battleID), action); // TEMPORARY until phase 6
 			decisionBaseOpen = false;
 	heroActionTiming::SubmitScope submit(timing);
 			cb->battleMakeSpellAction(battleID, action);

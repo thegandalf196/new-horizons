@@ -40,4 +40,6 @@ DLL_LINKAGE std::optional<DoubleCastPolicy> doubleCastPolicy(const JsonNode & ru
 /// True for any document that claims version 7, so admission never falls
 /// through to the historical marks/points validation.
 DLL_LINKAGE bool claimsDoubleCastPolicy(const JsonNode & rules);
+/// Captured Metamagic 7 or Consecrated Arms 4 rules need format 1165 or later.
+DLL_LINKAGE bool requiresDoubleCastFormat(const JsonNode & rules);
 }

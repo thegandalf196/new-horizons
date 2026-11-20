@@ -244,6 +244,8 @@ set(lib_MAIN_SRCS
 	battle/ConsecratedArmsCombat.cpp
 	battle/ConsecratedArmsEffects.cpp
 	battle/ConsecratedArmsOrder.cpp
+	battle/ConsecratedArmsChoice.cpp
+	battle/MetamagicDoubleCast.cpp
 	battle/UnitShieldState.cpp
 	battle/UnitShieldSerialization.cpp
 	battle/UnitShieldPreview.cpp
@@ -1032,6 +1034,7 @@ set(lib_MAIN_SRCS
 	spells/NewHorizonsSorceryRevision.cpp
 	spells/NewHorizonsMetamagicResolution.cpp
 	spells/NewHorizonsMetamagicDoubleCast.cpp
+	spells/NewHorizonsPolicyFormat.cpp
 	spells/NewHorizonsMetamagicCompletion.cpp
 	spells/NewHorizonsMagicalMemory.cpp
 	spells/NewHorizonsSorcerySpells.cpp
@@ -1390,6 +1393,9 @@ set(lib_MAIN_HEADERS
 	battle/ConsecratedArms.h
 	battle/ConsecratedArmsCombat.h
 	battle/ConsecratedArmsOrder.h
+	battle/ConsecratedArmsChoice.h
+	battle/MetamagicDoubleCast.h
+	battle/MetamagicDoubleCastState.h
 	battle/UnitShieldState.h
 	battle/CreatureAbility.h
 	battle/RedemptionEvent.h

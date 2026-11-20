@@ -7,10 +7,12 @@ namespace newHorizonsMetamagic
 {
 namespace
 {
+using PolicyMember = decltype(&DoubleCastPolicy::halonAdditionalUses);
+
 struct Field
 {
 	const char * key;
-	int32_t DoubleCastPolicy::* member;
+	PolicyMember member;
 	int32_t minimum;
 	int32_t maximum;
 };

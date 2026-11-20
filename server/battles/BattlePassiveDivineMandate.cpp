@@ -6,6 +6,7 @@
 #include "../../lib/GameLibrary.h"
 #include "../../lib/battle/CBattleInfoCallback.h"
 #include "../../lib/battle/IBattleState.h"
+#include "../../lib/battle/ConsecratedArmsChoice.h"
 #include "../../lib/battle/ConsecratedArmsOrder.h"
 #include "../../lib/battle/PassiveDivineMandateSpellPool.h"
 #include "../../lib/battle/HeroOrderRecipients.h"
@@ -21,7 +22,7 @@ namespace
 {
 void presentPrayerGrant(CGameHandler & handler, const CBattleInfoCallback & battle,
 	const SetStackEffect & effects, const std::vector<consecratedArms::Prayer> & prayers,
-	const consecratedArms::Policy & policy, int faith)
+	const consecratedArms::Policy & policy, int faith, std::optional<uint32_t> onlyRecipient)
 {
 	MetaString recipients;
 	BattleAnimationPlayed animation;
@@ -29,7 +30,8 @@ void presentPrayerGrant(CGameHandler & handler, const CBattleInfoCallback & batt
 	for(const auto & [id, bonuses] : effects.toAdd)
 	{
 		const auto * unit = battle.battleGetUnitByID(id);
-		if(!unit || !unit->alive() || unit->isGhost() || bonuses.empty())
+		if(!unit || !unit->alive() || unit->isGhost() || bonuses.empty()
+			|| (onlyRecipient && id != *onlyRecipient))
 			continue;
 		recipients.appendRawString("%d %s");
 		recipients.replaceNumber(unit->getCount());
@@ -70,22 +72,42 @@ void presentPrayerGrant(CGameHandler & handler, const CBattleInfoCallback & batt
 }
 }
 
-void BattleActionProcessor::castPassiveDivineMandate(const CBattleInfoCallback & battle,
-	BattleSide side, const HeroOrderState & order)
+void BattleActionProcessor::grantConsecratedPrayers(const CBattleInfoCallback & battle,
+	const BattleAction & action, const HeroOrderState & order)
 {
+	const auto side = action.side;
 	const auto * issuingHero = battle.battleGetFightingHero(side);
-	const auto prayerPolicy = consecratedArms::capturePolicy(issuingHero);
-	if(prayerPolicy.rank)
+	const auto policy = consecratedArms::capturePolicy(issuingHero);
+	const int faith = consecratedArms::actualFaith(*issuingHero);
+	const auto recipients = heroCommands::recipientIds(battle, side, order);
+	if(policy.chosen)
 	{
-		auto & rng = gameHandler->getRandomGenerator();
-		const int first = rng.nextInt(5);
-		const int second = prayerPolicy.has(consecratedArms::Perk::ANTIPHONAL_PRAYER) ? rng.nextInt(4) : 0;
-		const auto prayers = consecratedArms::selectPrayers(prayerPolicy, first, second);
-		const int faith = consecratedArms::actualFaith(*issuingHero);
-		auto effects = consecratedArms::orderEffects(battle, side,
-			heroCommands::recipientIds(battle, side, order), prayers, prayerPolicy, faith);
+		// Version 4: admitted before StartAction, so no draw. Empty only without a recipient.
+		const auto prayers = consecratedArms::chosenPrayerList(action.prayerChoices);
+		if(prayers.empty())
+			return;
+		auto effects = consecratedArms::chosenOrderEffects(battle, side, recipients,
+			action.prayerRecipient, prayers, policy, faith);
 		gameHandler->sendAndApply(effects);
-		presentPrayerGrant(*gameHandler, battle, effects, prayers, prayerPolicy, faith);
+		presentPrayerGrant(*gameHandler, battle, effects, prayers, policy, faith, action.prayerRecipient);
+		return;
+	}
+	auto & rng = gameHandler->getRandomGenerator();
+	const int first = rng.nextInt(5);
+	const int second = policy.has(consecratedArms::Perk::ANTIPHONAL_PRAYER) ? rng.nextInt(4) : 0;
+	const auto prayers = consecratedArms::selectPrayers(policy, first, second);
+	auto effects = consecratedArms::orderEffects(battle, side, recipients, prayers, policy, faith);
+	gameHandler->sendAndApply(effects);
+	presentPrayerGrant(*gameHandler, battle, effects, prayers, policy, faith, std::nullopt);
+}
+
+void BattleActionProcessor::castPassiveDivineMandate(const CBattleInfoCallback & battle,
+	const BattleAction & issued, const HeroOrderState & order)
+{
+	const auto side = issued.side;
+	if(consecratedArms::capturePolicy(battle.battleGetFightingHero(side)).rank)
+	{
+		grantConsecratedPrayers(battle, issued, order);
 		return;
 	}
 	if(!order.passiveDivineMandate)

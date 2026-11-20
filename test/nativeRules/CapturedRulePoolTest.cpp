@@ -2,6 +2,8 @@
 #include "StdInc.h"
 #include "../../lib/nativeRules/CapturedRuleEnvelope.h"
 #include "../../lib/serializer/CMemorySerializer.h"
+#include "../../lib/spells/NewHorizonsMetamagicDoubleCast.h"
+#include "../OverkillRandomPrayerRules.h"
 
 namespace
 {
@@ -138,11 +140,41 @@ TEST(CapturedRulePool, InvalidTableAdmissionPreservesExistingPool)
 
 TEST(CapturedRulePool, ConsecratedArmsMinimumAndWriterRejectEarlierFormats)
 {
-	EXPECT_EQ(ESerializationVersion::CURRENT, ESerializationVersion::NEW_HORIZONS_CONSECRATED_ARMS);
+	EXPECT_EQ(ESerializationVersion::CURRENT, ESerializationVersion::NEW_HORIZONS_DOUBLE_CAST_CHOSEN_PRAYERS);
+	EXPECT_EQ(static_cast<int>(ESerializationVersion::CURRENT), 1165);
 	EXPECT_EQ(ESerializationVersion::MINIMAL, ESerializationVersion::NEW_HORIZONS_CONSECRATED_ARMS);
 	EXPECT_EQ(static_cast<int>(ESerializationVersion::MINIMAL), 1164);
 	EXPECT_LT(ESerializationVersion::NEW_HORIZONS_SHARED_CAPTURED_RULES, ESerializationVersion::MINIMAL);
 	EXPECT_LT(ESerializationVersion::NEW_HORIZONS_SORCERY_RETIREMENT, ESerializationVersion::MINIMAL);
+}
+
+TEST(CapturedRulePool, DoubleCastAndChosenPrayerRulesRefuseTheConsecratedArmsFormat)
+{
+	const JsonNode current(JsonPath::builtin("config/newHorizonsPerks"));
+	ASSERT_TRUE(newHorizonsMetamagic::requiresDoubleCastFormat(current));
+	EXPECT_FALSE(newHorizonsMetamagic::requiresDoubleCastFormat(overkillRandomPrayerRules()));
+	CapturedRulePool pool;
+	pool.intern(CapturedRuleKind::Perks, current);
+	CMemorySerializer older;
+	older.oser.version = ESerializationVersion::NEW_HORIZONS_CONSECRATED_ARMS;
+	EXPECT_THROW(older.oser & pool, std::runtime_error);
+
+	CMemorySerializer forged;
+	forged.oser.version = ESerializationVersion::NEW_HORIZONS_CONSECRATED_ARMS;
+	forged.iser.version = ESerializationVersion::NEW_HORIZONS_CONSECRATED_ARMS;
+	forged.oser & int64_t{1} & int64_t{static_cast<int64_t>(CapturedRuleKind::Perks)} & current & int64_t{0};
+	CapturedRulePool decoded;
+	EXPECT_THROW(forged.iser & decoded, std::runtime_error);
+
+	CapturedRulePool legacy;
+	legacy.intern(CapturedRuleKind::Perks, overkillRandomPrayerRules());
+	CMemorySerializer stored;
+	stored.oser.version = ESerializationVersion::NEW_HORIZONS_CONSECRATED_ARMS;
+	stored.iser.version = ESerializationVersion::NEW_HORIZONS_CONSECRATED_ARMS;
+	ASSERT_NO_THROW(stored.oser & legacy);
+	CapturedRulePool restored;
+	EXPECT_NO_THROW(stored.iser & restored);
+	EXPECT_EQ(restored.documentCount(), 1u);
 }
 
 TEST(CapturedRulePool, WideAndNegativeWireIdentitiesCannotAliasValidSmallReferences)

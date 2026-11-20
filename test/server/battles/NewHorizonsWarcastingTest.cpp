@@ -5,6 +5,7 @@
 #include "StdInc.h"
 #include "../../PerkTestSetup.h"
 
+#include "../../OverkillRandomPrayerRules.h"
 #include "HeroCommandFixture.h"
 #include "../../../lib/spells/CSpell.h"
 
@@ -69,8 +70,10 @@ protected:
 		HeroCommandFixture::mapLoaded(loaded);
 		auto magicRules = JsonNode(JsonPath::builtin("config/newHorizonsMagic"));
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magicRules);
-		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS,
-			JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+		// Metamagic 5 (policy 6) premise: a passive Metamagic rank grants no additional
+		// action. Metamagic 6's Double Cast offer is covered by MetamagicDoubleCastTest.
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, overkillRandomPrayerRules());
+		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, overkillRandomPrayerHeroes());
 	}
 
 	void acceptPerkThroughOffer(CGHeroInstance * hero, const std::string & skillId,

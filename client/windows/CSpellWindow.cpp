@@ -73,6 +73,7 @@ std::string spellAllowanceSourceName(HeroActionAllowanceState::GrantSource sourc
 		case HeroActionAllowanceState::GrantSource::DOUBLE_COMMAND: return "Double Command";
 		case HeroActionAllowanceState::GrantSource::BATTLE_PLAN: return "Battle Plan";
 		case HeroActionAllowanceState::GrantSource::DIVINE_MANDATE: return "Divine Mandate";
+		case HeroActionAllowanceState::GrantSource::METAMAGIC_DOUBLE_CAST: return "Double Cast";
 	}
 	return "Additional ability";
 }

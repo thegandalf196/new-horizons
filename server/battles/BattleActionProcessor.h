@@ -255,7 +255,8 @@ class BattleActionProcessor : boost::noncopyable
 	bool prepareUnitSpellAction(const CBattleInfoCallback & battle, BattleAction & ba);
 	bool doHeroSpellAction(const CBattleInfoCallback & battle, const BattleAction & ba,
 		spells::AutomaticHeroCastReceipt automatic = spells::AutomaticHeroCastReceipt{});
-	void castPassiveDivineMandate(const CBattleInfoCallback & battle, BattleSide side, const HeroOrderState & order);
+	void castPassiveDivineMandate(const CBattleInfoCallback & battle, const BattleAction & issued, const HeroOrderState & order);
+	void grantConsecratedPrayers(const CBattleInfoCallback & battle, const BattleAction & action, const HeroOrderState & order);
 	void castDivineFury(const CBattleInfoCallback & battle, const battle::Unit * source,
 		const battle::Unit * target, BattleSide issuingSide, bool ordinaryPrimaryCreatureAttack, bool underOrderAtStrike);
 	bool doHeroCommandAction(const CBattleInfoCallback & battle, const BattleAction & ba);

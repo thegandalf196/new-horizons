@@ -6006,296 +6006,292 @@
     "lib/battle/HeroActionAllowanceState.h": {
       "functions": [
         {
-          "end": 110,
-          "start": 75,
+          "end": 118,
+          "start": 77,
           "symbol": "HeroActionAllowanceState::Grant::void serialize(Handler & h)#1"
         },
         {
-          "end": 139,
-          "start": 112,
-          "symbol": "HeroActionAllowanceState::Grant::void validateShape() const#1"
-        },
-        {
-          "end": 203,
-          "start": 191,
+          "end": 184,
+          "start": 172,
           "symbol": "HeroActionAllowanceState::uint32_t grantAllowance(AllowanceKind allowance, GrantSource source, int32_t expiryRound)#1"
         },
         {
-          "end": 213,
-          "start": 207,
+          "end": 194,
+          "start": 188,
           "symbol": "HeroActionAllowanceState::static bool isHeroicSpiritTrigger(const Receipt & receipt)#1"
         },
         {
-          "end": 226,
-          "start": 215,
+          "end": 207,
+          "start": 196,
           "symbol": "HeroActionAllowanceState::bool canResolveHeroicSpirit(const Receipt & receipt) const#1"
         },
         {
-          "end": 225,
-          "start": 222,
+          "end": 206,
+          "start": 203,
           "symbol": "HeroActionAllowanceState::canResolveHeroicSpirit(const Receipt & receipt) const::[&receipt](const Grant & grant)#1"
         },
         {
-          "end": 240,
-          "start": 228,
+          "end": 221,
+          "start": 209,
           "symbol": "HeroActionAllowanceState::bool resolveHeroicSpirit(const Receipt & receipt, bool success)#1"
         },
         {
-          "end": 247,
-          "start": 244,
+          "end": 228,
+          "start": 225,
           "symbol": "HeroActionAllowanceState::std::optional<Selection> eligibleAllowance(ActionKind action, int32_t round) const#1"
         },
         {
-          "end": 246,
-          "start": 246,
+          "end": 227,
+          "start": 227,
           "symbol": "HeroActionAllowanceState::eligibleAllowance(ActionKind action, int32_t round) const::[](const Grant &)#1"
         },
         {
-          "end": 269,
-          "start": 249,
+          "end": 250,
+          "start": 230,
           "symbol": "HeroActionAllowanceState::std::optional<Selection> eligibleAllowance(ActionKind action, int32_t round, const GrantPredicate & grantPredicate) const#1"
         },
         {
-          "end": 276,
-          "start": 273,
+          "end": 257,
+          "start": 254,
           "symbol": "HeroActionAllowanceState::std::optional<Receipt> consumeAllowance(uint32_t grantId, ActionKind action, int32_t round)#1"
         },
         {
-          "end": 275,
-          "start": 275,
+          "end": 256,
+          "start": 256,
           "symbol": "HeroActionAllowanceState::consumeAllowance(uint32_t grantId, ActionKind action, int32_t round)::[](const Grant &)#1"
         },
         {
-          "end": 302,
-          "start": 278,
+          "end": 283,
+          "start": 259,
           "symbol": "HeroActionAllowanceState::std::optional<Receipt> consumeAllowance(uint32_t grantId, ActionKind action, int32_t round, const GrantPredicate & grantPredicate)#1"
         },
         {
-          "end": 294,
-          "start": 291,
+          "end": 275,
+          "start": 272,
           "symbol": "HeroActionAllowanceState::consumeAllowance(uint32_t grantId, ActionKind action, int32_t round, const GrantPredicate & grantPredicate)::[grantId](const Grant & grant)#1"
         },
         {
-          "end": 333,
-          "start": 306,
+          "end": 314,
+          "start": 287,
           "symbol": "HeroActionAllowanceState::Counts remainingCounts(int32_t round) const#1"
         },
         {
-          "end": 401,
-          "start": 337,
+          "end": 382,
+          "start": 318,
           "symbol": "HeroActionAllowanceState::void serialize(Handler & h)#1"
         },
         {
-          "end": 342,
-          "start": 341,
+          "end": 323,
+          "start": 322,
           "symbol": "HeroActionAllowanceState::serialize(Handler & h)::[](const Grant & grant)#1"
         },
         {
-          "end": 349,
-          "start": 346,
+          "end": 330,
+          "start": 327,
           "symbol": "HeroActionAllowanceState::serialize(Handler & h)::[](const Grant & grant)#2"
         },
         {
-          "end": 355,
-          "start": 352,
+          "end": 336,
+          "start": 333,
           "symbol": "HeroActionAllowanceState::serialize(Handler & h)::[](const Grant & grant)#3"
         },
         {
-          "end": 361,
-          "start": 358,
+          "end": 342,
+          "start": 339,
           "symbol": "HeroActionAllowanceState::serialize(Handler & h)::[](const Grant & grant)#4"
         },
         {
-          "end": 376,
-          "start": 373,
+          "end": 357,
+          "start": 354,
           "symbol": "HeroActionAllowanceState::serialize(Handler & h)::[](const Grant & grant)#5"
         },
         {
-          "end": 388,
-          "start": 387,
+          "end": 369,
+          "start": 368,
           "symbol": "HeroActionAllowanceState::serialize(Handler & h)::[](const Grant & grant)#6"
         },
         {
-          "end": 411,
-          "start": 403,
+          "end": 392,
+          "start": 384,
           "symbol": "HeroActionAllowanceState::void validateHeroicSpiritSerialization(Handler & h) const#1"
         },
         {
-          "end": 409,
-          "start": 408,
+          "end": 390,
+          "start": 389,
           "symbol": "HeroActionAllowanceState::validateHeroicSpiritSerialization(Handler & h) const::[](const Grant & grant)#1"
         },
         {
-          "end": 423,
-          "start": 413,
+          "end": 404,
+          "start": 394,
           "symbol": "HeroActionAllowanceState::void validateSharedPurposeSerialization(Handler & h) const#1"
         },
         {
-          "end": 421,
-          "start": 418,
+          "end": 402,
+          "start": 399,
           "symbol": "HeroActionAllowanceState::validateSharedPurposeSerialization(Handler & h) const::[](const Grant & grant)#1"
         },
         {
-          "end": 436,
-          "start": 425,
+          "end": 417,
+          "start": 406,
           "symbol": "HeroActionAllowanceState::uint32_t countDoubleCommandOrderGrants(int32_t round) const#1"
         },
         {
-          "end": 435,
-          "start": 430,
+          "end": 416,
+          "start": 411,
           "symbol": "HeroActionAllowanceState::countDoubleCommandOrderGrants(int32_t round) const::[round](const Grant & grant)#1"
         },
         {
-          "end": 449,
-          "start": 438,
+          "end": 430,
+          "start": 419,
           "symbol": "HeroActionAllowanceState::uint32_t countBattlePlanOrderGrants(int32_t round) const#1"
         },
         {
-          "end": 448,
-          "start": 443,
+          "end": 429,
+          "start": 424,
           "symbol": "HeroActionAllowanceState::countBattlePlanOrderGrants(int32_t round) const::[round](const Grant & grant)#1"
         },
         {
-          "end": 456,
-          "start": 453,
+          "end": 437,
+          "start": 434,
           "symbol": "HeroActionAllowanceState::static bool grantAllowedForSpell(const Grant & grant, bool isLightSpell)#1"
         },
         {
-          "end": 462,
-          "start": 459,
+          "end": 443,
+          "start": 440,
           "symbol": "HeroActionAllowanceState::static bool isValid(ActionKind value)#1"
         },
         {
-          "end": 467,
-          "start": 464,
+          "end": 448,
+          "start": 445,
           "symbol": "HeroActionAllowanceState::static bool isValid(AllowanceKind value)#1"
         },
         {
-          "end": 476,
-          "start": 469,
+          "end": 457,
+          "start": 450,
           "symbol": "HeroActionAllowanceState::static bool isValid(GrantSource value)#1"
         },
         {
-          "end": 483,
-          "start": 478,
+          "end": 464,
+          "start": 459,
           "symbol": "HeroActionAllowanceState::static bool canPay(AllowanceKind allowance, ActionKind action)#1"
         },
         {
-          "end": 492,
-          "start": 485,
+          "end": 473,
+          "start": 466,
           "symbol": "HeroActionAllowanceState::static std::tuple<uint8_t, int32_t, uint32_t> selectionKey(const Grant & grant, ActionKind action)#1"
         },
         {
-          "end": 498,
-          "start": 494,
+          "end": 479,
+          "start": 475,
           "symbol": "HeroActionAllowanceState::static void validateQuery(ActionKind action, int32_t round)#1"
         },
         {
-          "end": 514,
-          "start": 500,
+          "end": 495,
+          "start": 481,
           "symbol": "HeroActionAllowanceState::uint32_t appendGrant(AllowanceKind allowance, GrantSource source, int32_t expiryRound)#1"
         },
         {
-          "end": 579,
-          "start": 522,
+          "end": 560,
+          "start": 503,
           "symbol": "DivineMandateTransition::static std::vector<uint32_t> applyAcceptedAction(HeroActionAllowanceState & ledger, const HeroActionAllowanceState::Receipt & receipt, int32_t round, bool isLightSpell, uint8_t maximumPairs, const std::vector<uint32_t> & recipients = {})#1"
         },
         {
-          "end": 568,
-          "start": 565,
+          "end": 549,
+          "start": 546,
           "symbol": "DivineMandateTransition::applyAcceptedAction(HeroActionAllowanceState & ledger, const HeroActionAllowanceState::Receipt & receipt, int32_t round, bool isLightSpell, uint8_t maximumPairs, const std::vector<uint32_t> & recipients = {})::[](const auto & grant)#1"
         },
         {
-          "end": 604,
-          "start": 604,
+          "end": 585,
+          "start": 585,
           "symbol": "DoubleCommandState::bool orderPending() const#1"
         },
         {
-          "end": 605,
-          "start": 605,
+          "end": 586,
+          "start": 586,
           "symbol": "DoubleCommandState::bool secondWindReady() const#1"
         },
         {
-          "end": 635,
-          "start": 611,
+          "end": 616,
+          "start": 592,
           "symbol": "DoubleCommandState::bool begin( const HeroActionAllowanceState::Receipt & receipt, bool activePerk, HeroCommand order, int32_t round, uint32_t anchor, uint32_t deferredSecondWindTarget = INVALID_UNIT_ID)#1"
         },
         {
-          "end": 650,
-          "start": 639,
+          "end": 631,
+          "start": 620,
           "symbol": "DoubleCommandState::void completeFollowup(HeroCommand secondOrder)#1"
         },
         {
-          "end": 663,
-          "start": 653,
+          "end": 644,
+          "start": 634,
           "symbol": "DoubleCommandState::void exhaustPendingOrder()#1"
         },
         {
-          "end": 675,
-          "start": 666,
+          "end": 656,
+          "start": 647,
           "symbol": "DoubleCommandState::std::optional<uint32_t> consumeSecondWindContinuation()#1"
         },
         {
-          "end": 701,
-          "start": 677,
+          "end": 682,
+          "start": 658,
           "symbol": "DoubleCommandState::void validateShape() const#1"
         },
         {
-          "end": 725,
-          "start": 705,
+          "end": 706,
+          "start": 686,
           "symbol": "DoubleCommandState::void validateTransitionFrom(const DoubleCommandState & previous) const#1"
         },
         {
-          "end": 747,
-          "start": 727,
+          "end": 728,
+          "start": 708,
           "symbol": "DoubleCommandState::void serialize(Handler & h)#1"
         },
         {
-          "end": 757,
-          "start": 750,
+          "end": 738,
+          "start": 731,
           "symbol": "DoubleCommandState::void clearContext()#1"
         },
         {
-          "end": 780,
-          "start": 780,
+          "end": 761,
+          "start": 761,
           "symbol": "PreCombatOrderState::bool orderPending() const#1"
         },
         {
-          "end": 781,
-          "start": 781,
+          "end": 762,
+          "start": 762,
           "symbol": "PreCombatOrderState::bool isUnresolved() const#1"
         },
         {
-          "end": 792,
-          "start": 783,
+          "end": 773,
+          "start": 764,
           "symbol": "PreCombatOrderState::void beginOrderRequired(int32_t round, uint32_t anchor)#1"
         },
         {
-          "end": 803,
-          "start": 794,
+          "end": 784,
+          "start": 775,
           "symbol": "PreCombatOrderState::void complete()#1"
         },
         {
-          "end": 817,
-          "start": 805,
+          "end": 798,
+          "start": 786,
           "symbol": "PreCombatOrderState::void validateShape() const#1"
         },
         {
-          "end": 847,
-          "start": 819,
+          "end": 828,
+          "start": 800,
           "symbol": "PreCombatOrderState::void validateTransitionFrom(const PreCombatOrderState & previous) const#1"
         },
         {
-          "end": 866,
-          "start": 849,
+          "end": 847,
+          "start": 830,
           "symbol": "PreCombatOrderState::void serialize(Handler & h)#1"
         }
       ],
       "rationale": "Complete exact-file callable inventory: 57 body-bearing definitions/macros (previous 62; 54 exact body-span bytes retained from the independently reviewed HEAD preimage). Named current spans include nested lambdas and all inline/template bodies; removed/added identities are separately reconciled. Recovery contexts: line524: bool isLightSpell, uint8_t maximumPairs, const std::vector<uint32_t> & recipients = {}). These coverage spans are not size exceptions, parser/gate exclusions, native acceptance or future-content approval.",
-      "review": "IR-NH092-ORG-3E82D142-20261116",
+      "review": "CLAUDE-0925-DOUBLECAST-CHOSEN-PRAYERS-PHASE23-20261120",
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "d5b4b4f5eeeea717bec0fd2d2ddb3372f8b96bccc1211f7182c46ae637ec137e"
+      "sha256": "8f1be7c82e92aeeba3a96cb08b3d699dbca22ae5450e717ec922b3d3022f5376",
+      "previous_review": "IR-NH092-ORG-3E82D142-20261116"
     },
     "lib/battle/IBattleInfoCallback.h": {
       "functions": [
@@ -22266,16 +22262,16 @@
     "client/windows/CSpellWindow.cpp": {
       "deferral": "Owner: UI developer. Interface/acceptance: Extract cost-stage label formatting to a focused formatter; test every existing stage and exact breakdown ordering/text, with native spellbook rendering before acceptance. Preserve inherited spellbook state/casting/help/resize requirements. Next substantive selection change extracts context/admission stages with current-only cost/target/action tests; actual current-policy spellbook click/render evidence remains separately recorded.",
       "kind": "exception",
-      "lines": 942,
+      "lines": 943,
       "owner": "ui_developer",
       "previous_exact_review": "IR-SPELLBOOK-FULL75-V21-EXACT-SOURCE-20261030",
-      "previous_review": "IR-CURRENT225-CLIENT-EXACT-SOURCEORG-20261103",
+      "previous_review": "IR-NH0922-STARTING-BOOK-PRAYER-PRESENTATION-20261118",
       "proposal_predecessor_review": "PROPOSED-CLIENT225-BOUNDED-20261103",
-      "rationale": "Exact1241 to942-line shrinking scope: bookmark creation/navigation and informational Prayer catalogue route through focused208-line owner; unchanged spell-area interaction moves into258-line owner. Constructor227 to133; moved spell click remains117 lines with existing admission/query-lifetime deferral preserved. No new magic school or prayer cast callback; rendered navigation and selection acceptance remain separate.",
-      "review": "IR-NH0922-STARTING-BOOK-PRAYER-PRESENTATION-20261118",
+      "rationale": "Exact successor for Metamagic 6 Double Cast / Consecrated Arms 4 phases 2-3: one-line calls, includes, version-gated fields or registrations only; the new behavior lives in focused MetamagicDoubleCast and ConsecratedArmsChoice units. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-0925-DOUBLECAST-CHOSEN-PRAYERS-PHASE23-20261120",
       "review_scope": "Exact source organization and bounded correctness review only; no compilation, rendered acceptance or future growth approval.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_REVIEW_NATIVE_UNRUN",
-      "sha256": "6072ccec3c3340dee9b71a7b0fe1da610f6f40c4f82414b8b10e8f0b4e83dd49"
+      "sha256": "4db685147fb197099f476175b06c36296124026923e641f310c96506c3d99902"
     },
     "client/windows/CSpellWindow.cpp::CSpellWindow::CSpellWindow(const CGHeroInstance * _myHero, CPlayerInterface * _myInt, bool openOnBattleSpells, const std::function<void(SpellID)> & onSpellSelect): CWindowObject(PLAYER_COLORED | (settings[\"gameTweaks\"][\"enableLargeSpellbook\"].Bool() ? BORDERED : 0)), battleSpellsOnly(openOnBattleSpells), selectedTab(SpellSchool::ANY), currentPage(0), myHero(_myHero), myInt(_myInt), openOnBattleSpells(openOnBattleSpells), onSpellSelect(onSpellSelect), isBigSpellbook(settings[\"gameTweaks\"][\"enableLargeSpellbook\"].Bool()), spellsPerPage(24), offL(-11), offR(195), offRM(110), offT(-37), offB(56)#1": {
       "kind": "legacy",
@@ -23466,9 +23462,9 @@
       "inherited_a1_health_deferral": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.",
       "inherited_deferral": "Exact source-list bound only. Before substantive build logic, extract a cohesive target configuration section. Verify source/link membership once and retain no duplicate translation units. Prior stricter obligations remain in inherited_deferral, where present.",
       "kind": "exception",
-      "lines": 2149,
+      "lines": 2155,
       "owner": "engine_engineer",
-      "previous_review": "IR-A7-NHART-FINAL-UNC-AND-DEEP-GATE-20261119",
+      "previous_review": "CLAUDE-0925-METAMAGIC6-PHASE1-20261120",
       "prior_a1_health_scope": {
         "kind": "exception",
         "lines": 2063,
@@ -23477,11 +23473,11 @@
         "sha256": "7058cdef35cfce13214572d190c4accfdf5721e6c144af3cdfca9f53bb68c2a0"
       },
       "prior_deferral": "Exact mechanical source/header registration only. Before substantive CMake target policy growth, extract a cohesive configuration section while verifying translation-unit membership and facade linkage. No future file growth allowance. Prior stricter obligations remain in inherited_deferral, where present.\n\nKeep registrations in their current coherent tables. Extract any future conditional target/control logic rather than growing this registry into a build framework.",
-      "rationale": "Exact 2147 to 2149-line mechanical registry successor: registers NewHorizonsMetamagicDoubleCast.cpp/.h (Metamagic 6 policy-7 decoder) adjacent to NewHorizonsMetamagicResolution; no target/link/compiler logic and no duplicated member. Existing extraction deferrals retained; no future growth credit.",
-      "review": "CLAUDE-0925-METAMAGIC6-PHASE1-20261120",
+      "rationale": "Exact successor for Metamagic 6 Double Cast / Consecrated Arms 4 phases 2-3: one-line calls, includes, version-gated fields or registrations only; the new behavior lives in focused MetamagicDoubleCast and ConsecratedArmsChoice units. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-0925-DOUBLECAST-CHOSEN-PRAYERS-PHASE23-20261120",
       "review_scope": "Exact frozen A7 production/routing source only; no compiler, Windows path runtime, recovery, timing, release or future-growth acceptance.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NATIVE_WINDOWS_PENDING",
-      "sha256": "31934162ec5271b1f4b1a792131b970cc4d4e617e7366caf75dc5d3e0553a592",
+      "sha256": "480b870441be464cb7967721b14891769919f3717ba7ebb4e958c908294f54fd",
       "inherited_deferral_step2": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.\n\nExact shared-facade source/header registration only. Before conditional target/control policy growth, extract the next coherent configuration section; preserve one translation unit per implementation and consumer linkage through vcmi. No future registry-size growth credit."
     },
     "lib/CSkillHandler.cpp::std::shared_ptr<CSkill> CSkillHandler::loadFromJson(const std::string & scope, const JsonNode & json, const std::string & identifier, size_t index)#1": {
@@ -23583,14 +23579,14 @@
     "lib/battle/BattleAction.h::BattleAction::void serialize(Handler & h)#1": {
       "deferral": "Before further action-codec growth, extract the next cohesive non-writing admission or request declaration stage; preserve closed selector/version gates, direct/enclosing empty-prefix rejection, historical resets and exact supported field order. No general growth allowance.",
       "kind": "review",
-      "lines": 104,
+      "lines": 97,
       "owner": "gameplay_engineer",
-      "previous_review": "IR-EXTENDED-CURE-1152-COMPOSED-20261030",
-      "rationale": "Exact 132 to 104-line scope. Shared battle/bonus admission and deterministic value transitions integrate typed captures, current effect receipts and finite presence projection. Preserve external validation, source identity, branch isolation and ordered lifecycle behavior.",
-      "review": "IR-NH092-ORG-3E82D142-20261116",
+      "previous_review": "IR-NH092-ORG-3E82D142-20261116",
+      "rationale": "Exact successor for Metamagic 6 Double Cast / Consecrated Arms 4 phases 2-3: one-line calls, includes, version-gated fields or registrations only; the new behavior lives in focused MetamagicDoubleCast and ConsecratedArmsChoice units. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-0925-DOUBLECAST-CHOSEN-PRAYERS-PHASE23-20261120",
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "e6b9bbc73b53c56e4be60c6854b07e8622c1fc598be58cdf1e84c8b9f068f3fc"
+      "sha256": "027fec5bb8aae43915b83c99e6556df8b14b6c5ceded1882417c14a829f61cca"
     },
     "lib/battle/BattleActivation.cpp::void BattleInfo::nextTurn(uint32_t unitId, BattleUnitTurnReason reason)#1": {
       "deferral": "Owner: engine_engineer with gameplay_engineer review. Before further faction activation-routing growth, extract the next ordered activation-start value transition in the existing BattleActivation domain with explicit unit/reason, pre-clear defend/Wait observations and side-state outputs. Keep authoritative queue and resource ownership local; preserve Time Stop, Morale/reactivation, wait/defend clearing and state/packet order. Require current/absent-policy activation and native/projected parity. Exact88-line existing-hotspot renewal below150, no general ceiling allowance. Before further affected expansion, owning engine/gameplay specialist must extract the next cohesive healing/provider/selection or ordered-transition responsibility, retaining query/mutation/serialization order and historical behavior. No raised ceiling, pending-baseline escape, runtime approval or later-growth permission. Preserve ALL inherited deferrals and exact prior shrinking baselines. Further growth must extract a cohesive domain owner before expansion; no future growth credit or limit increase.",
@@ -23609,7 +23605,7 @@
       "inherited_a1_health_deferral": "Before further battle-state execution growth, extract the next touched cohesive deterministic state/query family with explicit side/unit inputs. Retain ownership, action/round ordering and RNG receipts. Sampling stays in focused owner with positive ordered input guards, exact floored mean and identical draw-sequence tests; exact2223-line remaining legacy bound only. Prior stricter obligations remain in inherited_deferral, where present.",
       "inherited_deferral": "Before next substantive round expansion, extract round-owned effect expiry stage receiving IBattleState&, nextRound, keeping query preconditions/reset/expiry/Meta/ordinary timed effects order, TimeStop exemption and retained charge semantics.",
       "kind": "exception",
-      "lines": 2098,
+      "lines": 2099,
       "organization_acceptance": "Characterize round zero/one, Time Stop, paused forms and competing wide-stack restorations with exact state/packet order and unchanged RNG. Retain separate exchange stale-endpoint and all-or-nothing preparation checks. These are requirements for a future extraction, not executed evidence here.",
       "organization_interface": "A focused round-effects operation with explicit BattleInfo/state access, first-round flag, captured magic rules and next round; ordered unit IDs for form restoration. No global event bus or new state ledger.",
       "organization_invariants": [
@@ -23627,7 +23623,7 @@
       "pre_legacy_freeze_review_scope": "Exact frozen production patch only. Conditional on root serialized engine/AI/UI/content/test composition; no future growth, old-save matrix, native/render/runtime proof or adoption authorization.",
       "pre_legacy_freeze_review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_RENDERED_UNRUN",
       "pre_legacy_freeze_sha256": "2aace4a137c3df9033dafd30126f7bf86f9dc41cbb82a6047a21051c67608b79",
-      "previous_review": "IR-LEADERSHIP-DAMAGE-INTEGER-20261113-UNITS",
+      "previous_review": "IR-PERFORMANCE-THROUGH-STEP4-ORG-V1",
       "prior_a1_health_scope": {
         "kind": "exception",
         "lines": 2100,
@@ -23635,11 +23631,11 @@
         "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
         "sha256": "5a8d7dab07dc481069be4744123ff166820216ec204aaff6a70d15037027a04a"
       },
-      "rationale": "Exact bounded 2103to2098 physical-line successor. Existing five-line getHeroOrderStates definition moves byte-identically to focused22-line BattleOrderPresence owner alongside the new12-line conservative environmental presence query. Untouched399-line setupBattle remains exactly unchanged. No future growth credit or performance claim.",
-      "review": "IR-PERFORMANCE-THROUGH-STEP4-ORG-V1",
+      "rationale": "Exact successor for Metamagic 6 Double Cast / Consecrated Arms 4 phases 2-3: one-line calls, includes, version-gated fields or registrations only; the new behavior lives in focused MetamagicDoubleCast and ConsecratedArmsChoice units. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-0925-DOUBLECAST-CHOSEN-PRAYERS-PHASE23-20261120",
       "review_scope": "Exact recorded C14 source hash, physical span and organization delta only. No future growth, whole-mechanic, compiler, native, rendered, performance, save-resume, publication or promotion acceptance.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_REVIEW_NATIVE_UNRUN",
-      "sha256": "9aae572d79951aef3e85671046b9ed87ab69b13e53b11c55d4cd013e9b42e4e3"
+      "sha256": "c2c9e7c47a24d95c685ae1b0c0f4e8dabe6a68e20ce3bc2bd705f69f359ec184"
     },
     "lib/battle/BattleInfo.cpp::std::unique_ptr<BattleInfo> BattleInfo::setupBattle(IGameInfoCallback *cb, const int3 & tile, TerrainId terrain, const BattleField & battlefieldType, BattleSideArray<const CArmedInstance *> armies, BattleSideArray<const CGHeroInstance *> heroes, const BattleLayout & layout, const CGTownInstance * town)#1": {
       "deferral": "Extract the next touched captured creature-line/specialty initialization stage behind an explicit hero plus captured-policy initialization helper, preserving authored override\u2192producer refresh\u2192secondary bonus order, removals and level-one meaning; return declared assignments/refresh outcome rather than expose all hero internals. Required characterization: Current versus absent capture, explicit override/zero, old hero specialties/starting perks, level-one/no retroactive growth, real gained-level primary state and no extra RNG. Trigger: Before the next substantive expansion of this affected responsibility. Existing stronger invariant/deferral obligations remain; this approval covers only the pinned finite batch. Current setupBattle-specific obligation (the inherited specialty-init wording above is retained, not used as the rationale for this battle boundary): gameplay_engineer must extract the next touched captured faction battle-start configuration stage behind explicit hero, side and captured-policy inputs before further substantive setup expansion. Keep native startup ordering, absent-policy fallback, side independence, obstacle/placement RNG and exact initialized faction-state characterization; the helper must not own stack placement or world mutation. Before further affected expansion, owning engine/gameplay specialist must extract the next cohesive healing/provider/selection or ordered-transition responsibility, retaining query/mutation/serialization order and historical behavior. No raised ceiling, pending-baseline escape, runtime approval or later-growth permission. Preserve ALL inherited deferrals and exact prior shrinking baselines. Further growth must extract a cohesive domain owner before expansion; no future growth credit or limit increase. Owning gameplay/engine specialist: before further substantive expansion of this touched rule/transition, extract the next coherent affected policy or ordered stage into a focused owner. Preserve callback visibility, original recipient/caster identity, rejection atomicity and packet/RNG order; characterization must compare exact state and emitted packets. This is no future growth credit.",
@@ -24111,14 +24107,14 @@
         "sha256": "8ac927b30c92d4a5061114a5b967af05586d7b1d54caa46511bd4a453c7ebbfc"
       },
       "kind": "legacy",
-      "lines": 867,
+      "lines": 848,
       "owner": "gameplay_engineer",
-      "previous_review": "IR-COMMAND-AUTHORITY-SCOPED-ORGANIZATION-20261109-UNITS",
-      "rationale": "Exact 1074 to 867-line scope. Shared battle/bonus admission and deterministic value transitions integrate typed captures, current effect receipts and finite presence projection. Preserve external validation, source identity, branch isolation and ordered lifecycle behavior.",
-      "review": "IR-NH092-ORG-3E82D142-20261116",
+      "previous_review": "IR-NH092-ORG-3E82D142-20261116",
+      "rationale": "Exact successor for Metamagic 6 Double Cast / Consecrated Arms 4 phases 2-3: one-line calls, includes, version-gated fields or registrations only; the new behavior lives in focused MetamagicDoubleCast and ConsecratedArmsChoice units. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-0925-DOUBLECAST-CHOSEN-PRAYERS-PHASE23-20261120",
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "d5b4b4f5eeeea717bec0fd2d2ddb3372f8b96bccc1211f7182c46ae637ec137e"
+      "sha256": "8f1be7c82e92aeeba3a96cb08b3d699dbca22ae5450e717ec922b3d3022f5376"
     },
     "lib/battle/HeroCommand.cpp::heroCommands::void validateOrdersOnlyRules(const JsonNode & rules)#1": {
       "deferral": "Gameplay engineer: keep historical schema validation separate from current Warfare rules; any future split must preserve exact invalid-field/version/target-policy rejection.",
@@ -24280,14 +24276,14 @@
       "deferral": "Before further side/battle codec growth, extract the next ordered nonwriting side-policy validation traversal. Preserve contiguous fields, unsupported absence/refusal and active-battle/owned-branch roundtrip; exact current serializer bound only. Prior stricter obligations remain in inherited_deferral, where present.",
       "inherited_deferral": "Engine engineer: next substantive side-state expansion should extract the cohesive Demon Gate pending/gated value types into a focused header and continue using existing typed passive/point/Wisdom owners. Preserve member defaults, exact current1156 payload order, temporary-versus-owned reserve distinction, and branch value-copy/reset behavior. Minimum checks: current battle roundtrip, invalid temporary provenance rejection, no Endless Legion restoration of temporary troops, reused reads and unchanged action/Wisdom/point histories. Current exact Command/Authority scope: Engine: factor side-owned Command envelope preflight into a typed const helper; preserve guard order before the first side prefix and compare complete side packet streams.",
       "kind": "exception",
-      "lines": 829,
+      "lines": 832,
       "owner": "engine_engineer",
-      "previous_review": "IR-LEADERSHIP-1159-INDEPENDENT-20261113-V1-UNITS",
-      "rationale": "Exact 931 to 829-line scope. Shared battle/bonus admission and deterministic value transitions integrate typed captures, current effect receipts and finite presence projection. Preserve external validation, source identity, branch isolation and ordered lifecycle behavior.",
-      "review": "IR-NH092-ORG-3E82D142-20261116",
+      "previous_review": "IR-NH092-ORG-3E82D142-20261116",
+      "rationale": "Exact successor for Metamagic 6 Double Cast / Consecrated Arms 4 phases 2-3: one-line calls, includes, version-gated fields or registrations only; the new behavior lives in focused MetamagicDoubleCast and ConsecratedArmsChoice units. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-0925-DOUBLECAST-CHOSEN-PRAYERS-PHASE23-20261120",
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "a7cce17ce168d5151099c208dc1e6bd5d975807c2f566631d3591ffad8cce25f"
+      "sha256": "d8da84eaa108993455bd44f8778ba30986668cb43b2b87374445b3fc7b428399"
     },
     "lib/battle/SideInBattle.h::SideInBattle::void serialize(Handler &h)#1": {
       "completed_p_predecessor": {
@@ -24300,14 +24296,14 @@
       "deferral": "Before further side/battle codec growth, extract the next ordered nonwriting side-policy validation traversal. Preserve contiguous fields, unsupported absence/refusal and active-battle/owned-branch roundtrip; exact current serializer bound only. Prior stricter obligations remain in inherited_deferral, where present.",
       "inherited_deferral": "Next substantive serialization expansion should extract cohesive current side-owned passive state group, preserving ordered fields/current1156 roundtrip and native/AI reset semantics; no old-save matrix. Current exact Command/Authority scope: Engine: factor side-owned Command envelope preflight into a typed const helper; preserve guard order before the first side prefix and compare complete side packet streams.",
       "kind": "exception",
-      "lines": 393,
+      "lines": 394,
       "owner": "engine_engineer",
-      "previous_review": "IR-LEADERSHIP-1159-INDEPENDENT-20261113-V1-UNITS",
-      "rationale": "Exact 452 to 393-line scope. Shared battle/bonus admission and deterministic value transitions integrate typed captures, current effect receipts and finite presence projection. Preserve external validation, source identity, branch isolation and ordered lifecycle behavior.",
-      "review": "IR-NH092-ORG-3E82D142-20261116",
+      "previous_review": "IR-NH092-ORG-3E82D142-20261116",
+      "rationale": "Exact successor for Metamagic 6 Double Cast / Consecrated Arms 4 phases 2-3: one-line calls, includes, version-gated fields or registrations only; the new behavior lives in focused MetamagicDoubleCast and ConsecratedArmsChoice units. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-0925-DOUBLECAST-CHOSEN-PRAYERS-PHASE23-20261120",
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "fe1f0bf119dfa544bc443bffbedbfc02119e9ec87f6add02e4dc8b7e370614be"
+      "sha256": "cf9a47d7a92117fee677c5eab3bf571553200d4a708a23eab4bf547331b63a85"
     },
     "lib/battle/SylvanLuckState.h::SylvanLuckState::void serialize(Handler & h)#1": {
       "kind": "review",
@@ -25050,14 +25046,14 @@
       "deferral": "Before further recruitment visitor growth, extract the next deterministic batch admission step into existing training rules. Preserve source/count receipts, mutation order, duplicate rejection and server/client conservation; exact file freeze only. Prior stricter obligations remain recorded in inherited_deferral, where present.",
       "inherited_deferral": "Before next substantive visitor expansion extract accepted action/history stages using validated packet and explicit BattleInfo/side refs; preserve all validation-before-mutation, typed allowance, Wisdom epoch/count, packet/RNG order and rejection atomicity. Before further substantive expansion, owning engine/gameplay/UI specialist must extract the next coherent touched policy, ordered stage, codec family or widget responsibility into a focused owner, preserving callback visibility, rejection atomicity, serialized field order, payment and RNG/packet order. This exact bounded migration/registry/validation routing gives no future growth credit.",
       "kind": "exception",
-      "lines": 3772,
+      "lines": 3769,
       "owner": "engine_engineer",
-      "previous_review": "PROPOSED-0920-EXACT-SOURCE-ORGANIZATION",
-      "rationale": "Exact3782\u21923772 shrinking authority scope. Order payment now consumes the exact selection admitted by the shared callback instead of repeating divergent policy filters; staged allowance copy and validated transition/commit ordering remain. No packet/wire change. Preserve inherited stronger extraction obligations; no future growth credit.",
-      "review": "IR-MANDATE-HISTORICAL-ALLOWANCE-794806-20261119",
+      "previous_review": "IR-MANDATE-HISTORICAL-ALLOWANCE-794806-20261119",
+      "rationale": "Exact successor for Metamagic 6 Double Cast / Consecrated Arms 4 phases 2-3: one-line calls, includes, version-gated fields or registrations only; the new behavior lives in focused MetamagicDoubleCast and ConsecratedArmsChoice units. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-0925-DOUBLECAST-CHOSEN-PRAYERS-PHASE23-20261120",
       "review_scope": "Exact organization and source-policy review only; no native/rendered acceptance, future growth approval or publication authorization.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_REVIEWED_NATIVE_UNRUN",
-      "sha256": "2fc60c75086cfa8f76085f5f79e893372aa3140735e6d39fae7d165e54232543"
+      "sha256": "1d1c26a41728170e4ebae37a81556ccf02c04dd4c7417db05af1ab8f55fd9f6a"
     },
     "lib/gameState/GameStatePackVisitor.cpp::void BattleStatePackVisitor::visitBattleHeroOrderStateChanged(BattleHeroOrderStateChanged & pack)#1": {
       "kind": "legacy",
@@ -25160,14 +25156,14 @@
       },
       "deferral": "Before next substantive visitor expansion extract accepted action/history stages using validated packet and explicit BattleInfo/side refs; preserve all validation-before-mutation, typed allowance, Wisdom epoch/count, packet/RNG order and rejection atomicity.",
       "kind": "legacy",
-      "lines": 364,
+      "lines": 360,
       "owner": "engine_engineer",
-      "previous_review": "IR-COMMAND-AUTHORITY-SCOPED-ORGANIZATION-20261109-UNITS",
-      "rationale": "Exact374\u2192364 shrinking inherited action visitor. Removed duplicate grant-policy filter and consumes exact shared callback selection with allowance/source/expiry agreement before receipt-driven Mandate transition and eventual ledger commit. Retain prior bounded extraction deferral before any future expansion.",
-      "review": "IR-MANDATE-HISTORICAL-ALLOWANCE-794806-20261119",
+      "previous_review": "IR-MANDATE-HISTORICAL-ALLOWANCE-794806-20261119",
+      "rationale": "Exact successor for Metamagic 6 Double Cast / Consecrated Arms 4 phases 2-3: one-line calls, includes, version-gated fields or registrations only; the new behavior lives in focused MetamagicDoubleCast and ConsecratedArmsChoice units. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-0925-DOUBLECAST-CHOSEN-PRAYERS-PHASE23-20261120",
       "review_scope": "Exact organization and source-policy review only; no native/rendered acceptance, future growth approval or publication authorization.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_REVIEWED_NATIVE_UNRUN",
-      "sha256": "a4b1c5731d016b2f1ca36b9fa62636c17390a20202fe2a94b5d92ee6f68cf39d"
+      "sha256": "c5514e37cea906939e9c368f17474b30aabb2e2850fa97440a78a24b7daf026a"
     },
     "lib/gameState/GameStatePackVisitor.cpp::void GameStatePackVisitor::visitTryMoveHero(TryMoveHero & pack)#1": {
       "deferral": "Keep this exact ordered registry/serialization/authoritative-routing seam for Fly integration. Owning gameplay/engine specialist should separately extract cohesive validation or movement stages with prefix/rejection/wire/state parity before future expansion; no blanket ceiling allowance.",
@@ -26828,15 +26824,15 @@
       "deferral": "Exact enum bound only. Future format changes require independent serialized ownership and file-loader/connection compatibility evidence. Prior stricter obligations remain in inherited_deferral, where present.",
       "inherited_deferral": "Preserve append-only feature values, historical aliases and explicit read/write capability tests; do not place runtime mechanics in this registry. Owner: engine_engineer. Before further serialization-family growth, extract cohesive non-writing capability preflight with explicit wire-stage boundaries; retain direct/enclosing prefix rejection, exact enum/field order, historical clear defaults and malformed-input rejection. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance. Fafner bounded follow-up: Keep append-only feature values/aliases and direct/enclosing capability tests; do not add runtime mechanics to the feature registry. Keep the stable version registry coherent. Bound growth to six physical lines and this one capability; remove old versions only in a separate reviewed minimum-version migration with native historical fixtures. No future numeric ceiling increase. Future1146 hold: Root must first qualify the current1145/first19 cohort, preserve BATTLE_WIDE and all13 selected artwork bindings on rebase, review final coherent composition and execute the full direct/enclosing/history matrix including hero/map/pool/world and captured identity/default-absence controls. The nine authored central cases and two retargeted zero cases remain UNCOMPILED/UNRUN and do not discharge those obligations. Neutral start-option follow-up: retain host/NEW_GAME scope, absent map/default preservation, historical reused-read clearing, direct/enclosing zero-prefix admission, and no rescaling on load. Require native and rendered acceptance before delivery; preserve every inherited extraction and historical-policy obligation. 1148 bounded follow-up: Continue separate captured JSON and exact-marker codec admission; retain old13/four/neutral domains, no implicit policy repair, and prove direct/enclosing old-prefix rejection plus current full snapshot identity. Exact bounded1151 change only. Exact651to656 appends named1151 plus static boundary assertions and CURRENT alias update. All prior numeric values/aliases exceptCURRENT remain exact; capability facts are nonserialized and no payload field changes. No ceiling increase, coverage exclusion or unrelated/future growth allowance. Engine: preserve explicit known wire-to-Bonus profile mapping, zero-prefix policy refusal and current/default separation. Quarantine indistinguishable obsolete private experiments by provenance; no universal rejection or migration claim. Before delivery require fresh coherent2/Bonus1 native andgenuinefirstwriter/save/resave/replay/rendered acceptance plus1151historical/refusal controls. No automaticpromotion or futureformat approval. Engine engineer: retain one intended registration per target and platform/facade linkage parity; any new target-configuration algorithm needs its own focused component. Exact current registry only, with no implementation or future size allowance. Current exact Command/Authority scope: Engine: split only the Command registration/source/visitTyped subgroup into a focused registry owner on the next edit; preserve IDs310-313, no duplicate/omitted registration, same source-target linkage and dispatch order. Exception is exact current bytes/size only; build/native acceptance remains pending.",
       "kind": "exception",
-      "lines": 689,
+      "lines": 690,
       "neutral_predecessor_review": "IR-EXTENDED-CURE-1152-COMPOSED-20261030",
       "owner": "engine_engineer",
-      "previous_review": "PROPOSED-0920-EXACT-SOURCE-ORGANIZATION",
-      "rationale": "Exact 686 to 688-line scope. Existing state/content/serialization responsibility integrates current captured rules and explicit native routing. Preserve independent captures, validation boundaries, deterministic order, existing ownership and saved absence.\n\nIndependently reviewed C14 scope (688 to 689 physical lines): The explicit1164 enum value and current/minimum aliases are mechanical format declarations; the rest of the historical version table is unchanged. This bounds only the recorded hash and measured span; all inherited deferrals, ratchets and runtime holds remain binding, with no future growth allowance.",
-      "review": "IR-NH0921-C14-1164-CODEORG-20261117",
+      "previous_review": "IR-NH0921-C14-1164-CODEORG-20261117",
+      "rationale": "Exact successor for Metamagic 6 Double Cast / Consecrated Arms 4 phases 2-3: one-line calls, includes, version-gated fields or registrations only; the new behavior lives in focused MetamagicDoubleCast and ConsecratedArmsChoice units. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-0925-DOUBLECAST-CHOSEN-PRAYERS-PHASE23-20261120",
       "review_scope": "Exact recorded C14 source hash, physical span and organization delta only. No future growth, whole-mechanic, compiler, native, rendered, performance, save-resume, publication or promotion acceptance.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN",
-      "sha256": "7d157c291508a9b0109d763f3938ae1013a07bac3e45c84c96b3d223aead504a"
+      "sha256": "8b57932e8bcf3aab594c5eb93e34990fd09dfff4d730585603be108e736a2d25"
     },
     "lib/serializer/JsonSerializeFormat.h": {
       "kind": "legacy",
@@ -28328,11 +28324,11 @@
       "legacy_freeze_predecessor_review_scope": "Exact frozen production patch only. Conditional on root serialized engine/AI/UI/content/test composition; no future growth, old-save matrix, native/render/runtime proof or adoption authorization.",
       "legacy_freeze_predecessor_review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_RENDERED_UNRUN",
       "legacy_freeze_predecessor_sha256": "9db9f76d8952f4ac1f77ed074dae2ef1e7ff4a9de3841e44f86f4294f1d646e5",
-      "lines": 4736,
+      "lines": 4739,
       "next_bounded_extraction": "Gameplay with Engine: honor the inherited first extraction, the ordered primary aftermath publication stage3956-3966 after BattleAttack. Pass authority, battle, prepared primary/frozen/Mana contexts and typed Reprisal receipts; retain packet-first, PetrifyingBlood, Dread, primary aftermath, once-only Reprisal, Fury, Mana and Frozen order. Characterize complete packets/state/RNG, lethal/LastStand, automatic, retaliation, multihit and secondary cases before any further substantive makeAttack growth. Ground-movement or validation work must extract its own touched bounded phase; do not relocate the entire hub.",
       "owner": "gameplay_engineer",
       "previous_exact_review": "ACTUAL-NHOFF-DIVINE-IDENTITY-PRIVATE-20261031",
-      "previous_review": "IR-0911-INTEGRATION-SOURCE-ORGANIZATION",
+      "previous_review": "IR-GHOST-HARVEST-GROWTH-PRESENTATION-20261119",
       "prior_group_d_review": "IR-1145-GP-CONSUMERS-EXACT-9DB40B96-20261030",
       "protected_invariants": [
         "Simulation-thread command authority, current-controller versus physical-side identity and visible callback boundaries",
@@ -28341,7 +28337,7 @@
         "Packet/RNG draw order; primary versus SECONDARY/spell-like damage; health/shield/casualty provenance",
         "No callback/unit use after battle retirement; local movement provenance guard restores on every exit; no asynchronous extraction"
       ],
-      "rationale": "Shrinks processor4739to4736 and makeAttack1094to1091. Existing grant result is returned by finishStrike after its unchanged afterAttack callback and retained as a localbool until accepted primary packet publication. The existing9-line hostile-kill accumulator moves into83to122-line kill-rewards owner with exact predicate/order/arithmetic. Primary BattleAttack is still applied first, then one Resurrection/DRAINLIF presentation for actual successful SoulHarvest growth; no duplicate eligibility/JSON decode/casualty scan is introduced. Remaining primary aftermath and RNG/damage paths remain ordered. All inherited phase-extraction obligations and exact-source ceiling exception remain binding, with no future growth allowance.",
+      "rationale": "Exact successor for Metamagic 6 Double Cast / Consecrated Arms 4 phases 2-3: one-line calls, includes, version-gated fields or registrations only; the new behavior lives in focused MetamagicDoubleCast and ConsecratedArmsChoice units. Existing extraction deferrals retained; no future growth credit.",
       "responsibility_spans": [
         "102-681 targeting/deployment, Divine judgment, logs and spell-placement helpers",
         "683-1144 action basics and validated Hero spell execution",
@@ -28354,10 +28350,10 @@
         "4737-4883 stable-priority captured event reactions"
       ],
       "responsibleSourcePhase": "GP_FROZEN_C7C191B0_AND_REQUIRED_CD088EB5_PARTITION",
-      "review": "IR-GHOST-HARVEST-GROWTH-PRESENTATION-20261119",
+      "review": "CLAUDE-0925-DOUBLECAST-CHOSEN-PRAYERS-PHASE23-20261120",
       "review_scope": "Exact accepted Ghost Soul Harvest grant-result presentation and cohesive hostile-kill accumulator extraction only. Source review and pinned parser measurements; no build, native, rendered, sound, performance, or publication acceptance.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_REVIEWED_NATIVE_RENDERED_UNRUN",
-      "sha256": "bc7791f8e374573478a544a7fd4e13ba7b9eb71e32a61fa957570d1fbfe1edf2"
+      "sha256": "174bdb6c3ec7a94f4a2832138e9d921881124803d7abdb9122dc055dc3bd943c"
     },
     "server/battles/BattleActionProcessor.cpp::BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest, bool voluntary)#1": {
       "deferral": "Owner: engine_engineer. Before further movement-preflight growth, route the stored continuation cap through its existing movement admission owner; preserve legal zero-move attacks, exact movement/obstacle/Overwatch costs and callback order, ground/flying paths and malformed-action refusal. Exact528 exception only. Before further affected expansion, owning engine/gameplay specialist must extract the next cohesive healing/provider/selection or ordered-transition responsibility, retaining query/mutation/serialization order and historical behavior. No raised ceiling, pending-baseline escape, runtime approval or later-growth permission. Preserve ALL inherited deferrals and exact prior shrinking baselines. Further growth must extract a cohesive domain owner before expansion; no future growth credit or limit increase.",
@@ -28436,10 +28432,10 @@
       "legacy_freeze_predecessor_review_scope": "Only exact current source organization, measured span/hash and stated responsibility. Excludes the two identified structural blockers, behavior/save/AI/rendered/platform acceptance and publication authorization.",
       "legacy_freeze_predecessor_review_status": "INDEPENDENT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
       "legacy_freeze_predecessor_sha256": "bb047359248fe60019a534b31ffb071ba92cd52541e375c4a3bc834ab1b72352",
-      "lines": 474,
+      "lines": 475,
       "next_bounded_extraction": "Engine with Gameplay: extract2292-2397 prepared Order construction into a nonpublishing transition helper taking battle and immutable action, returning explicit FocusFire/Order/DoubleCommand/precombat optionals or a typed rejection. Reuse OrderActionTransition and shared preparation rather than new rules. Leave Hero RNG/finalization and wrappers in the coordinator. Characterize refusal state/packets/RNG and accepted snapshot equality, concealed presentation and exact dispatch/completion order; preserve inherited packet-installation extraction.",
       "owner": "gameplay_engineer",
-      "previous_review": "IR-F86-ENGINE-COMPLETE-LEGACY-FREEZE-20261110",
+      "previous_review": "IR-NH0921-C14-1164-CODEORG-20261117",
       "protected_invariants": [
         "RAII restoration of voluntaryMovementAction, output continuation initialized false",
         "Invalid action/forged target/Wait/charge/Metamagic rejection before StartAction where currently guarded",
@@ -28447,7 +28443,7 @@
         "Hero Luck/Morale only after preparation; concealed mines/Quicksand stripped only from presentation",
         "StartAction then dispatch then EndAction; no new genuine activation on continuation; final obstacle placement retained"
       ],
-      "rationale": "Exact 515 to 469-line scope. Authoritative execution integrates current spell/action receipts and validated captured data while retiring incompatible handlers. Preserve validated requests, rejection atomicity, ordered effects/packets and RNG.\n\nIndependently reviewed C14 scope (469 to 474 physical lines): The reviewed Consecrated typed-context, completed-action and prepare/record/apply/complete routes remain at their original authority stages. The additional five lines only stamp SKILL Poison provenance after successful Toxic Spines application and before detached-state save. No new target, RNG draw, attack branch or formula is added to this hotspot. This bounds only the recorded hash and measured span; all inherited deferrals, ratchets and runtime holds remain binding, with no future growth allowance.",
+      "rationale": "Exact successor for Metamagic 6 Double Cast / Consecrated Arms 4 phases 2-3: one-line calls, includes, version-gated fields or registrations only; the new behavior lives in focused MetamagicDoubleCast and ConsecratedArmsChoice units. Existing extraction deferrals retained; no future growth credit.",
       "responsibility_spans": [
         "2057-2188 scoped movement provenance, deployment and pending Order guards",
         "2189-2291 attack/Metamagic/shared budget admission",
@@ -28456,10 +28452,10 @@
         "2451-2486 Order receipt projection, Hero RNG and snapshot finalization",
         "2488-2567 accepted wrappers, execution and completion"
       ],
-      "review": "IR-NH0921-C14-1164-CODEORG-20261117",
+      "review": "CLAUDE-0925-DOUBLECAST-CHOSEN-PRAYERS-PHASE23-20261120",
       "review_scope": "Exact recorded C14 source hash, physical span and organization delta only. No future growth, whole-mechanic, compiler, native, rendered, performance, save-resume, publication or promotion acceptance.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN",
-      "sha256": "bdfed70978a4faaced3fa6f7332e7474c98b4019cfe419998e4111ce5a180e63"
+      "sha256": "1626ca868fbc52f3116b70a8a71621816d7c4efba77584c03e772fd6d2d9cff7"
     },
     "server/battles/BattleActionProcessor.cpp::bool BattleActionProcessor::makePlayerBattleAction(const CBattleInfoCallback & battle, PlayerColor player, const BattleAction &ba, BattleAction * effectiveActionOut, bool * masterGateActivationContinuationOut)#1": {
       "kind": "legacy",

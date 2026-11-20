@@ -2,6 +2,7 @@
 #pragma once
 
 #include "CapturedRuleSet.h"
+#include "../spells/NewHorizonsMetamagicDoubleCast.h"
 #include <vector>
 #include <map>
 #include "../constants/EntityIdentifiers.h"
@@ -49,12 +50,19 @@ public:
 			if(wireKind < 0 || wireKind > static_cast<int64_t>(CapturedRuleKind::WorldMagic))
 				throw std::runtime_error("Unknown captured rule document kind");
 			const auto kind = static_cast<CapturedRuleKind>(wireKind);
+			const bool currentPolicies = h.hasFeature(Handler::Version::NEW_HORIZONS_DOUBLE_CAST_CHOSEN_PRAYERS);
 			if(h.saving)
+			{
+				if(!currentPolicies && newHorizonsMetamagic::requiresDoubleCastFormat(documents[index]->document()))
+					throw std::runtime_error("Cannot write Double Cast or Chosen Prayers rules to an older format");
 				h & documents[index]->document();
+			}
 			else
 			{
 				JsonNode decoded;
 				h & decoded;
+				if(!currentPolicies && newHorizonsMetamagic::requiresDoubleCastFormat(decoded))
+					throw std::runtime_error("Older format claims Double Cast or Chosen Prayers rules");
 				if(candidate.intern(kind, decoded) != index + 1)
 					throw std::runtime_error("Duplicate captured rules document identity");
 			}

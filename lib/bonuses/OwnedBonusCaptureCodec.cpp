@@ -50,6 +50,7 @@ OwnedBonusCaptureCodec OwnedBonusCaptureCodec::fromSourceEpoch(ESerializationVer
 		profile = Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY;
 		break;
 	case Version::NEW_HORIZONS_CONSECRATED_ARMS:
+	case Version::NEW_HORIZONS_DOUBLE_CAST_CHOSEN_PRAYERS: // Battle state and action fields only.
 		profile = Version::NEW_HORIZONS_CONSECRATED_ARMS;
 		break;
 	default:

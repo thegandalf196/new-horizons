@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "ConsecratedArmsOrder.h"
+#include "MetamagicDoubleCast.h"
 #include "TimedEffectValueTransitions.h"
 #include "BattleRecallAnchors.h"
 #include "NewHorizonsCommandResources.h"
@@ -1375,8 +1376,7 @@ void BattleInfo::nextRound()
 			? HeroCommand::NONE : sides.at(i).orderStates.back().command;
 		if(!sides.at(i).findOrder(HeroCommand::FOCUS_FIRE))
 			sides.at(i).focusFire.reset();
-		// Unspent round-long Metamagic Spell grants expire below; the per-combat
-		// Metamagic and Grand/Formula budgets remain.
+		// Round-long Spell grants (including Double Cast offers) expire below.
 		vstd::amax(--sides.at(i).enchanterCounter, 0);
 	}
 	// first round starts right after pre-battle effects (built-in enchants, OPENING_BATTLE_SPELL)
@@ -1393,6 +1393,7 @@ void BattleInfo::nextRound()
 		if(heroCommands::supportedByRules(heroCommandRules, HeroCommand::CHARGE))
 			sides.at(side).heroActionAllowances.resetForRound(round);
 	}
+	metamagicDoubleCast::startRound(*this, round);
 
 	const auto roundTimedEffects = battle::roundTimedBonuses(magicRules);
 	std::vector<uint32_t> expiringBattleForms;

@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../../OverkillRandomPrayerRules.h"
 #include "HeroCommandFixture.h"
 #include "../../../lib/battle/ConsecratedArmsOrder.h"
 #include "../../../lib/battle/NewHorizonsWarfare.h"
@@ -23,6 +24,13 @@ using namespace consecratedArms;
 class ConsecratedArmsOrderTest : public HeroCommandFixture
 {
 protected:
+	// Consecrated Arms 3 (random prayers on every recipient); version 4 is ConsecratedArmsChoiceTest.
+	void mapLoaded(CMap * map) override
+	{
+		HeroCommandFixture::mapLoaded(map);
+		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, overkillRandomPrayerRules());
+		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, overkillRandomPrayerHeroes());
+	}
 	void prepare()
 	{
 		useRevisedOrders = true;

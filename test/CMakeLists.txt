@@ -146,9 +146,12 @@ set(test_SRCS
 		battle/PassiveDivineMandatePolicyTest.cpp
 		battle/ConsecratedArmsRulesTest.cpp
 		battle/UnitShieldStateTest.cpp
+		battle/MetamagicDoubleCastStateTest.cpp
 		bonus/CreatureAbilitySerializationTest.cpp
 		server/battles/CreatureAbilityApplicationTest.cpp
 		server/battles/ConsecratedArmsOrderTest.cpp
+		server/battles/ConsecratedArmsChoiceTest.cpp
+		server/battles/MetamagicDoubleCastTest.cpp
 		server/battles/ConsecratedArmsLastStandTest.cpp
 		server/battles/ConsecratedArmsBurnMarkTest.cpp
 		server/battles/CreatureBurnRedemptionTest.cpp
@@ -1211,6 +1214,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/ForecastAcceptedAttackIntegrationTest.cpp
 		battleAI/ArcaneOverflowValueTest.cpp
 		battleAI/ArcaneOverflowProjectionTest.cpp
+		battleAI/MetamagicDoubleCastAITest.cpp
 		battleAI/LeadershipProjectionTest.cpp
 		battleAI/LeadershipDamageCacheTest.cpp
 		${BATTLE_AI_TEST_SRCS}

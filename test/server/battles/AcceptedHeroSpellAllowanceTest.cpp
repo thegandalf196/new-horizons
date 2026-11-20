@@ -81,9 +81,13 @@ TEST_F(AcceptedHeroSpellAllowanceTest, OrdinaryStageCommitsOnlyAllowanceBeforeCa
 	EXPECT_EQ(side.heroCommandUsed, before.heroCommandUsed);
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), manaBefore);
 	EXPECT_EQ(rng(), randomBefore);
-	EXPECT_FALSE(side.heroActionAllowances.eligibleAllowance(
-		HeroActionAllowanceState::ActionKind::SPELL, battle()->getRound()));
-	expectRejected(packet(), "Accepted Hero spell has no eligible action allowance");
+	// Metamagic 6: the Hero Action spell opens a Double Cast offer for a different spell.
+	const auto followUp = side.heroActionAllowances.eligibleAllowance(
+		HeroActionAllowanceState::ActionKind::SPELL, battle()->getRound());
+	ASSERT_TRUE(followUp);
+	EXPECT_EQ(followUp->source, HeroActionAllowanceState::GrantSource::METAMAGIC_DOUBLE_CAST);
+	EXPECT_EQ(side.metamagicDoubleCast.firstSpell, SpellID(SpellID::HASTE));
+	expectRejected(packet(), "Double Cast follow-up repeats the first spell");
 }
 
 TEST_F(AcceptedHeroSpellAllowanceTest, AutomaticProvenanceRejectsBeforeCapacityOrAllowanceMutation)

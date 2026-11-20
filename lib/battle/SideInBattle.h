@@ -31,6 +31,7 @@
 #include "ReducedExtraActivationState.h"
 #include "NewHorizonsRapidResponse.h"
 #include "HeroActionAllowanceState.h"
+#include "MetamagicDoubleCastState.h"
 #include "RelentlessAssaultState.h"
 #include "SpellResponseState.h"
 #include "WisdomCombatState.h"
@@ -249,6 +250,7 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	uint8_t passiveDivineMandateUses = 0;
 	WisdomCombatState wisdomCombatState;
 	newHorizonsHeroes::LeadershipComposition leadershipComposition;
+	MetamagicDoubleCastState metamagicDoubleCast; // Metamagic 6 offer and per-combat uses
 	void validatePassiveFactionSerialization(bool supported) const;
 	void validateManaLeechesSerialization(bool supported) const;
 	void validateRecoverySpecialtySerialization(bool supported) const;
@@ -824,6 +826,7 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 			validatePassiveFactionSerialization(true);
 		h & wisdomCombatState;
 		h & leadershipComposition;
+		h & metamagicDoubleCast; // Version-gated by the state itself.
 	}
 
 };

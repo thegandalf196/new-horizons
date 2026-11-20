@@ -22,6 +22,37 @@ void HeroActionAllowanceState::resetForRound(int32_t round)
 	*this = std::move(next);
 }
 
+void HeroActionAllowanceState::Grant::validateShape() const
+{
+	if((!divineMandateRecipients.empty() && source != GrantSource::DIVINE_MANDATE)
+		|| !std::is_sorted(divineMandateRecipients.begin(), divineMandateRecipients.end())
+		|| std::adjacent_find(divineMandateRecipients.begin(), divineMandateRecipients.end()) != divineMandateRecipients.end()
+		|| std::find(divineMandateRecipients.begin(), divineMandateRecipients.end(),
+			HeroOrderState::INVALID_UNIT_ID) != divineMandateRecipients.end())
+		throw std::runtime_error("Invalid Divine Mandate recipient receipt");
+	if(source == GrantSource::DOUBLE_COMMAND || source == GrantSource::BATTLE_PLAN
+		|| source == GrantSource::CRISIS_COMMAND || source == GrantSource::HEROIC_SPIRIT)
+		throw std::runtime_error("Retired extra Order allowance in current rules");
+	if(id == 0 || !isValid(allowance) || !isValid(source)
+		|| grantedRound < 0 || expiryRound < grantedRound
+		|| (source == GrantSource::ROUND
+			&& (allowance != AllowanceKind::HERO || expiryRound != grantedRound))
+		|| (source == GrantSource::DOUBLE_COMMAND
+			&& (allowance != AllowanceKind::ORDER || expiryRound != grantedRound))
+		|| (source == GrantSource::CRISIS_COMMAND
+			&& (allowance != AllowanceKind::ORDER || expiryRound != grantedRound))
+		|| (source == GrantSource::HEROIC_SPIRIT
+			&& (allowance != AllowanceKind::ORDER || expiryRound != grantedRound))
+		|| (source == GrantSource::BATTLE_PLAN
+			&& (allowance != AllowanceKind::ORDER || grantedRound != 1 || expiryRound != 1))
+		|| (source == GrantSource::DIVINE_MANDATE
+			&& ((allowance != AllowanceKind::SPELL && allowance != AllowanceKind::ORDER)
+				|| expiryRound != grantedRound))
+		|| (source == GrantSource::METAMAGIC_DOUBLE_CAST
+			&& (allowance != AllowanceKind::SPELL || expiryRound != grantedRound)))
+		throw std::runtime_error("Invalid Hero Action allowance grant shape");
+}
+
 void HeroActionAllowanceState::validateShape() const
 {
 	if(currentRound < -1 || nextGrantId == 0 || (currentRound == -1 && (!grants.empty() || orderIssuedThisCombat)))
@@ -45,6 +76,7 @@ void HeroActionAllowanceState::validateShape() const
 	uint32_t currentRoundBaseGrants = 0;
 	uint32_t divineMandateGrants = 0;
 	uint32_t heroicSpiritGrants = 0;
+	uint32_t doubleCastGrants = 0;
 	for(const auto & grant : grants)
 	{
 		grant.validateShape();
@@ -58,11 +90,15 @@ void HeroActionAllowanceState::validateShape() const
 			++divineMandateGrants;
 		if(grant.source == GrantSource::HEROIC_SPIRIT)
 			++heroicSpiritGrants;
+		if(grant.source == GrantSource::METAMAGIC_DOUBLE_CAST)
+			++doubleCastGrants;
 	}
 	if(currentRoundBaseGrants > 1)
 		throw std::runtime_error("Duplicate base Hero Action allowance");
 	if(divineMandateGrants > 1)
 		throw std::runtime_error("Duplicate Divine Mandate follow-up allowance");
+	if(doubleCastGrants > 1)
+		throw std::runtime_error("Duplicate Double Cast follow-up allowance");
 	if(heroicSpiritGrants > heroicSpiritProcessedReceipts.size())
 		throw std::runtime_error("Heroic Spirit allowance lacks a processed Order receipt");
 }

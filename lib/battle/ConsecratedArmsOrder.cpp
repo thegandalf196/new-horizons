@@ -61,28 +61,60 @@ void appendRecipient(SetStackEffect & result, const battle::Unit & unit,
 	if(!additions.empty())
 		result.toAdd.emplace_back(unit.unitId(), std::move(additions));
 }
+
+
+void validateSelection(const std::vector<Prayer> & selected, const Policy & policy)
+{
+	policy.validate();
+	if(!policy.rank || selected.empty() || selected.size() > 2
+		|| (selected.size() == 2 && selected[0] == selected[1]))
+		throw std::runtime_error("Invalid Consecrated Arms accepted Order result");
+}
+}
+
+std::vector<uint32_t> prayerHolders(const CBattleInfoCallback & battle, BattleSide side,
+	const std::vector<uint32_t> & candidates)
+{
+	auto unique = candidates;
+	std::sort(unique.begin(), unique.end());
+	unique.erase(std::unique(unique.begin(), unique.end()), unique.end());
+	std::erase_if(unique, [&battle, side](uint32_t id)
+	{
+		const auto * unit = battle.battleGetUnitByID(id);
+		return !unit || !unit->alive() || unit->isGhost() || unit->isTurret()
+			|| unit->hasBonusOfType(BonusType::SIEGE_WEAPON)
+			|| battle.battleGetOwner(unit) != battle.sideToPlayer(side);
+	});
+	return unique;
 }
 
 SetStackEffect orderEffects(const CBattleInfoCallback & battle, BattleSide side,
 	const std::vector<uint32_t> & recipients, const std::vector<Prayer> & selected,
 	const Policy & policy, int faith)
 {
-	policy.validate();
-	if(!policy.rank || selected.empty() || selected.size() > 2
-		|| (selected.size() == 2 && selected[0] == selected[1]))
-		throw std::runtime_error("Invalid Consecrated Arms accepted Order result");
+	validateSelection(selected, policy);
 	SetStackEffect result;
 	result.battleID = battle.getBattle()->getBattleID();
-	auto unique = recipients;
-	std::sort(unique.begin(), unique.end());
-	unique.erase(std::unique(unique.begin(), unique.end()), unique.end());
-	for(const auto id : unique)
+	for(const auto id : prayerHolders(battle, side, recipients))
+		appendRecipient(result, *battle.battleGetUnitByID(id), selected, policy, faith);
+	return result;
+}
+
+SetStackEffect chosenOrderEffects(const CBattleInfoCallback & battle, BattleSide side,
+	const std::vector<uint32_t> & recipients, uint32_t chosenRecipient, const std::vector<Prayer> & selected,
+	const Policy & policy, int faith)
+{
+	validateSelection(selected, policy);
+	if(!policy.chosen)
+		throw std::runtime_error("Chosen prayers require captured Consecrated Arms version 4");
+	SetStackEffect result;
+	result.battleID = battle.getBattle()->getBattleID();
+	for(const auto id : prayerHolders(battle, side, recipients))
 	{
-		const auto * unit = battle.battleGetUnitByID(id);
-		if(unit && unit->alive() && !unit->isGhost() && !unit->isTurret()
-			&& !unit->hasBonusOfType(BonusType::SIEGE_WEAPON)
-			&& battle.battleGetOwner(unit) == battle.sideToPlayer(side))
-			appendRecipient(result, *unit, selected, policy, faith);
+		if(id == chosenRecipient)
+			appendRecipient(result, *battle.battleGetUnitByID(id), selected, policy, faith);
+		else if(policy.has(Perk::LIVING_LITURGY))
+			appendRecipient(result, *battle.battleGetUnitByID(id), {}, policy, faith);
 	}
 	return result;
 }

@@ -17,6 +17,7 @@
 #include "../../lib/GameLibrary.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/battle/HeroActionAllowanceState.h"
+#include "../../lib/battle/MetamagicDoubleCast.h"
 #include "../../lib/callback/CBattleCallback.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/spells/CSpellHandler.h"
@@ -30,6 +31,9 @@ std::vector<BattleEvaluator::SpellOption> BattleEvaluator::collectCastableHeroSp
 {
 	std::vector<SpellOption> possibleSpells;
 	if(admission) admission->requireSupportedContext(mandatoryOrder, divineMandateStatus.pendingFollowup.has_value());
+	// TEMPORARY (Metamagic 6, phase 6 adds follow-up scoring): decline the Double Cast
+	// offer. Any other action forfeits it at no cost, so the AI never repeats a spell.
+	if(metamagicDoubleCast::offerGranted(battleView->getBattle()->getHeroActionAllowances(side))) return possibleSpells;
 
 	for(auto const & s : LIBRARY->spellh->objects)
 	{

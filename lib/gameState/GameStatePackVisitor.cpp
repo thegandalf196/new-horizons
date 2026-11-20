@@ -37,6 +37,7 @@
 #include "GameStatePackVisitor.h"
 #include "CombatDestructionAftermath.h"
 #include "AcceptedHeroSpellAllowance.h"
+#include "../battle/MetamagicDoubleCast.h"
 #include "../battle/GraveDustBodyCleanup.h"
 #include "../mapObjects/NewHorizonsRecruitersContacts.h"
 #include "../spells/NewHorizonsCrossSchoolFormula.h"
@@ -2617,11 +2618,7 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 		if(!expected || expected != pack.focusFire)
 			throw std::runtime_error("Invalid targeted StartAction snapshot");
 	}
-	if(pack.ba.side == BattleSide::ATTACKER || pack.ba.side == BattleSide::DEFENDER)
-	{
-		auto * battle = gs.getBattle(pack.battleID);
-
-	}
+	metamagicDoubleCast::forfeitOnStartAction(*gs.getBattle(pack.battleID), pack.ba); // Validated above.
 	if(pack.ba.actionType == EActionType::HERO_COMMAND)
 	{
 		if(heroCommands::isDoctrine(pack.ba.command)

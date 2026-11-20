@@ -92,6 +92,8 @@
 #include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/spells/NewHorizonsDivineRetribution.h"
 #include "../../lib/spells/NewHorizonsPurify.h"
+#include "../../lib/battle/ConsecratedArmsChoice.h"
+#include "../../lib/battle/MetamagicDoubleCast.h"
 #include "../../lib/spells/NewHorizonsSorcery.h"
 #include "../../lib/spells/Problem.h"
 #include "../../lib/spells/CSpell.h"
@@ -2275,6 +2277,7 @@ bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & bat
 			}
 		}
 	}
+	if(auto refusal = metamagicDoubleCast::actionRefusal(battle, ba); refusal || (refusal = consecratedArms::choiceRefusal(battle, ba, preparedOrderState))) { gameHandler->complain(*refusal); return false; }
 	// Hero spell mechanics validate their final target inside the dispatcher.
 	// Run the same pure validation before StartAction so an invalid request
 	// cannot release Time Stop (or advance the flow) merely by reaching the

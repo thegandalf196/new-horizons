@@ -2,6 +2,7 @@
 #include "StdInc.h"
 #include "AcceptedHeroSpellAllowance.h"
 #include "../battle/BattleInfo.h"
+#include "../battle/MetamagicDoubleCast.h"
 #include "../battle/NewHorizonsDivineMandate.h"
 #include "../mapObjects/CGHeroInstance.h"
 #include "../networkPacks/PacksForClientBattle.h"
@@ -53,7 +54,10 @@ AcceptedHeroSpellAllowanceResult prepareAndCommitAcceptedHeroSpellAllowance(
 			: std::vector<uint32_t>{};
 		DivineMandateTransition::applyAcceptedAction(nextAllowances, *transition,
 			battle.getRound(), isLightSpell, mandate.maximumPairs, recipients);
+		auto doubleCast = metamagicDoubleCast::acceptHeroSpell(battle, pack.side, hero, pack.spellID,
+			pack.affectedCres, nextAllowances, *transition);
 		casterSide.heroActionAllowances = std::move(nextAllowances);
+		casterSide.metamagicDoubleCast = std::move(doubleCast);
 		spellTransition = std::move(*transition);
 	}
 	const bool spendsHeroAllowance = !automaticHeroCast && (spellTransition

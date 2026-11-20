@@ -64,6 +64,11 @@ public:
 	/// Marks a Skirmisher move-and-shoot command, distinct from ordinary melee
 	/// WALK_AND_ATTACK so the server can validate the selected firing hex.
 	bool archerySkirmisherAttack = false;
+	/// Consecrated Arms 4: chosen prayer ordinals (one, or two with Antiphonal
+	/// Prayer) and their single recipient among the Order's recipients.
+	static constexpr uint32_t NO_PRAYER_RECIPIENT = std::numeric_limits<uint32_t>::max();
+	std::vector<uint8_t> prayerChoices;
+	uint32_t prayerRecipient = NO_PRAYER_RECIPIENT;
 
 	BattleAction();
 	bool operator==(const BattleAction &) const = default;
@@ -143,6 +148,9 @@ public:
 		if(h.saving && archerySkirmisherAttack
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_ARCHERY_SKIRMISHER))
 			throw std::runtime_error("Cannot serialize Skirmisher attack metadata to an older protocol");
+		if(h.saving && (!prayerChoices.empty() || prayerRecipient != NO_PRAYER_RECIPIENT)
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_DOUBLE_CAST_CHOSEN_PRAYERS))
+			throw std::runtime_error("Cannot serialize chosen prayers to an older protocol");
 		if(h.saving && spellShadowGiftSacrificePercent != 0
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_SHADOW_GIFT))
 			throw std::runtime_error("Cannot serialize Shadow Gift choice to an older protocol");
@@ -150,6 +158,23 @@ public:
 			&& spellShadowGiftSacrificePercent != 10 && spellShadowGiftSacrificePercent != 20
 			&& spellShadowGiftSacrificePercent != 30)
 			throw std::runtime_error("Invalid Shadow Gift sacrifice choice");
+	}
+
+	template <typename Handler> void serializePrayerChoices(Handler & h)
+	{
+		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_DOUBLE_CAST_CHOSEN_PRAYERS))
+		{
+			if(!h.saving)
+			{
+				prayerChoices.clear();
+				prayerRecipient = NO_PRAYER_RECIPIENT;
+			}
+			return;
+		}
+		h & prayerChoices;
+		h & prayerRecipient;
+		if(!h.saving && prayerChoices.size() > 2)
+			throw std::runtime_error("Too many chosen prayers");
 	}
 
 	template <typename Handler> void serialize(Handler & h)
@@ -166,21 +191,13 @@ public:
 		else if(!h.saving)
 			perfectMoment = false;
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_MAGIC_ARROW_OVERCHARGE))
-		{
 			h & spellOvercharge;
-		}
 		else if(!h.saving)
-		{
 			spellOvercharge = 0;
-		}
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_SELECTIVE_DISPEL))
-		{
 			h & spellSelectiveDispel;
-		}
 		else if(!h.saving)
-		{
 			spellSelectiveDispel = false;
-		}
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_CURE_AFFLICTION))
 		{
 			h & spellCureAffliction;
@@ -235,6 +252,7 @@ public:
 			h & spellCurePhysicalAffliction;
 		else if(!h.saving)
 			spellCurePhysicalAffliction.clear();
+		serializePrayerChoices(h);
 		if(!h.saving && !spellCurePhysicalAffliction.empty())
 			validatePhysicalCureSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_FROZEN),
 				h.hasFeature(Handler::Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES));

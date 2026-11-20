@@ -57,7 +57,9 @@ struct DLL_LINKAGE HeroActionAllowanceState
 		BATTLE_PLAN,
 		DIVINE_MANDATE,
 		CRISIS_COMMAND,
-		HEROIC_SPIRIT
+		HEROIC_SPIRIT,
+		/// Metamagic 6 follow-up spell, granted only by an accepted Hero Action spell.
+		METAMAGIC_DOUBLE_CAST
 	};
 
 	struct DLL_LINKAGE Grant
@@ -90,6 +92,9 @@ struct DLL_LINKAGE HeroActionAllowanceState
 			if(h.saving && source == GrantSource::DIVINE_MANDATE
 				&& !h.hasFeature(Handler::Version::NEW_HORIZONS_DIVINE_MANDATE))
 				throw std::runtime_error("Cannot discard Divine Mandate allowance grant");
+			if(source == GrantSource::METAMAGIC_DOUBLE_CAST
+				&& !h.hasFeature(Handler::Version::NEW_HORIZONS_DOUBLE_CAST_CHOSEN_PRAYERS))
+				throw std::runtime_error("Double Cast allowance requires its save format");
 			if(h.saving)
 				validateShape();
 			h & id;
@@ -99,6 +104,9 @@ struct DLL_LINKAGE HeroActionAllowanceState
 				throw std::runtime_error("Old-format raw allowance contains Heroic Spirit");
 			if(source == GrantSource::CRISIS_COMMAND && !h.hasFeature(Handler::Version::NEW_HORIZONS_CRISIS_COMMAND))
 				throw std::runtime_error("Old-format raw allowance contains Crisis Command");
+			if(source == GrantSource::METAMAGIC_DOUBLE_CAST
+				&& !h.hasFeature(Handler::Version::NEW_HORIZONS_DOUBLE_CAST_CHOSEN_PRAYERS))
+				throw std::runtime_error("Old-format raw allowance contains Double Cast");
 			h & grantedRound;
 			h & expiryRound;
 			if(h.hasFeature(Handler::Version::NEW_HORIZONS_SHARED_PURPOSE))
@@ -109,34 +117,7 @@ struct DLL_LINKAGE HeroActionAllowanceState
 				validateShape();
 		}
 
-		void validateShape() const
-		{
-			if((!divineMandateRecipients.empty() && source != GrantSource::DIVINE_MANDATE)
-				|| !std::is_sorted(divineMandateRecipients.begin(), divineMandateRecipients.end())
-				|| std::adjacent_find(divineMandateRecipients.begin(), divineMandateRecipients.end()) != divineMandateRecipients.end()
-				|| std::find(divineMandateRecipients.begin(), divineMandateRecipients.end(),
-					HeroOrderState::INVALID_UNIT_ID) != divineMandateRecipients.end())
-				throw std::runtime_error("Invalid Divine Mandate recipient receipt");
-			if(source == GrantSource::DOUBLE_COMMAND || source == GrantSource::BATTLE_PLAN
-				|| source == GrantSource::CRISIS_COMMAND || source == GrantSource::HEROIC_SPIRIT)
-				throw std::runtime_error("Retired extra Order allowance in current rules");
-			if(id == 0 || !isValid(allowance) || !isValid(source)
-				|| grantedRound < 0 || expiryRound < grantedRound
-				|| (source == GrantSource::ROUND
-					&& (allowance != AllowanceKind::HERO || expiryRound != grantedRound))
-				|| (source == GrantSource::DOUBLE_COMMAND
-					&& (allowance != AllowanceKind::ORDER || expiryRound != grantedRound))
-				|| (source == GrantSource::CRISIS_COMMAND
-					&& (allowance != AllowanceKind::ORDER || expiryRound != grantedRound))
-				|| (source == GrantSource::HEROIC_SPIRIT
-					&& (allowance != AllowanceKind::ORDER || expiryRound != grantedRound))
-				|| (source == GrantSource::BATTLE_PLAN
-					&& (allowance != AllowanceKind::ORDER || grantedRound != 1 || expiryRound != 1))
-				|| (source == GrantSource::DIVINE_MANDATE
-					&& ((allowance != AllowanceKind::SPELL && allowance != AllowanceKind::ORDER)
-						|| expiryRound != grantedRound)))
-				throw std::runtime_error("Invalid Hero Action allowance grant shape");
-		}
+		void validateShape() const;
 	};
 
 	struct DLL_LINKAGE Selection
@@ -472,7 +453,7 @@ private:
 			|| value == GrantSource::ARTIFACT || value == GrantSource::OTHER
 			|| value == GrantSource::DOUBLE_COMMAND || value == GrantSource::BATTLE_PLAN
 			|| value == GrantSource::DIVINE_MANDATE || value == GrantSource::CRISIS_COMMAND
-			|| value == GrantSource::HEROIC_SPIRIT;
+			|| value == GrantSource::HEROIC_SPIRIT || value == GrantSource::METAMAGIC_DOUBLE_CAST;
 	}
 
 	static bool canPay(AllowanceKind allowance, ActionKind action)
