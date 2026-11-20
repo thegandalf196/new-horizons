@@ -7,6 +7,14 @@ and revisions as the game develops.
 For individual perk effects, spell formulas, creature statistics and Order rules,
 read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 
+## 0.92.7 Early Access
+
+- Installations made before 0.92.6 now pick up the current launcher: after one
+  game started from the updated version, the next start shows the Version track
+  (Stable or Beta). The previous launcher is kept as a backup, and the game
+  starts normally if the launcher cannot be replaced.
+- No gameplay changes.
+
 ## 0.92.6 Early Access
 
 - The Windows and Linux launchers have a Version track: Stable or Beta. Beta

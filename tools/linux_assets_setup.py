@@ -160,7 +160,17 @@ def parse_args(argv):
     return args
 
 
+def upgrade_launcher(resources):
+    """Let an installation's pre-0.92.6 launcher pick up the selected update's launcher."""
+    try:
+        from PortableLauncherUpgrade import upgrade_original
+    except ImportError:
+        return
+    upgrade_original(resources)
+
+
 def run(args):
+    upgrade_launcher(args.resources)
     inputs = [args.resources, args.client.parent]
     separated(args.profile, inputs)
     separated(state_file(args.profile).parent, inputs)
