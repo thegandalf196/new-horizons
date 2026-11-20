@@ -50,10 +50,10 @@
     },
     ".github/workflows/new-horizons-windows.yml": {
       "functions": [],
-      "sha256": "7a5bed8bafbb2c3a1cd435e006602ef86efcffc44ab0d3325c49e43c0526c074",
-      "review": "IR-OWNER-UNITY-DEFAULT-20261119",
+      "sha256": "cf7a74604af48353234f79748b7aedbbef8f09d9a29490098ffaa9beee5ca197",
+      "review": "CLAUDE-RELEASE-TAG-BUILD-20261120",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_FINAL_WINDOWS_GATE_PENDING",
-      "rationale": "Exact 579-line YAML callable inventory is empty. All 28 run bodies match the prior reviewed workflow. The Unity description and default are the only changes.",
+      "rationale": "Exact 579-line YAML callable inventory is empty. All run bodies match the prior reviewed workflow. The only change is the job gate, which also admits dispatched release tags (refs/tags/v*); the workflow has no push trigger.",
       "review_scope": "Exact source review of the Unity default. The latest-commit Windows build provides release acceptance."
     },
     ".github/workflows/qt_translation_update.yml": {
@@ -17617,10 +17617,10 @@
       "owner": "engine_engineer",
       "prior_deferral": "Existing engine engineer ownership remains. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral. This exception covers only the exact542-line official source URL/comment correction with all transport, size, digest and cache admission controls unchanged. No future growth, numerical ceiling change or coverage exclusion is authorized. This separate review permits only the exact547-line explicit-interpreter successor. Before further expansion, engine_engineer must extract the affected dependency/preflight/package stage into a focused script or shared action, preserving source/cache, CRT/notices, dispatch and artifact contract checks and lowering the orchestration baseline. No future growth, default ceiling increase or exclusion is granted. This separate urgent-correctness review covers only the exact556-line early-bootstrap-smoke ordering successor. Existing extraction obligations and all ceilings remain unchanged; no future growth is authorized.",
       "rationale": "The owner enabled Unity with the existing batch size of eight. The workflow stays at 579 lines. Job count, PCH, cache controls, packaging, and both native artwork recovery gates retain their settings. Existing extraction deferrals apply.",
-      "review": "IR-OWNER-UNITY-DEFAULT-20261119",
+      "review": "CLAUDE-RELEASE-TAG-BUILD-20261120",
       "review_scope": "Exact source review of the Unity default. The latest-commit Windows build provides release acceptance.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_FINAL_WINDOWS_GATE_PENDING",
-      "sha256": "7a5bed8bafbb2c3a1cd435e006602ef86efcffc44ab0d3325c49e43c0526c074",
+      "sha256": "cf7a74604af48353234f79748b7aedbbef8f09d9a29490098ffaa9beee5ca197",
       "inherited_deferral_step2": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count."
     },
     "AI/BattleAI/AttackPossibility.cpp": {
