@@ -16,4 +16,20 @@ Product version, VCMI engine revision, save-schema version and Git commit are se
 
 Before 1.0 use `0.MINOR.PATCH`: meaningful player capability checkpoints increase MINOR/reset PATCH; fixes/compatibility/packaging increase PATCH. Reserve 1.0 for explicit scope and delivery acceptance, not the value alone. The menu label uses native small yellow text anchored within the loaded menu background.
 
+## Stable and Beta tracks
+
+Stable releases are ordinary GitHub releases; the launchers' Stable track only
+accepts the official latest release. Beta releases are GitHub prereleases built
+from `main`, numbered like any other release: while stable continues on
+`0.MINOR.PATCH`, betas use the next MINOR (for example 0.93.x beside 0.92.x).
+The Beta track offers the newest published release of either kind that is newer
+than both installed tracks, installs it beside the stable version, and plays it
+with a separate profile. A stable release promotes a beta that held up; do not
+cut a stable release from `main` while an experiment is still in beta. An urgent
+stable fix during a beta may use a temporary branch from the stable tag.
+
+From 0.92.6 the launcher extracted by the player hands over to the launcher in
+the selected stable update after a self-test, so launcher changes reach existing
+installations through ordinary updates.
+
 Isolated diagnostic exporter identities are not live product releases and do not replace this authority. Read [release scope](NH_VERSION_1_0_SCOPE.md), [phase evidence](NH_PHASE1_EXIT_AUDIT.md) and [delivery contract](NH_DELIVERY_PIPELINE.md).

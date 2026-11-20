@@ -13,6 +13,13 @@ Once the installed version changes, choose Play. Keep the extracted directory
 writable for updates. The selected Heroes III data path, settings and saves
 stay in the same managed profile.
 
+Version track chooses between Stable and Beta. Beta installs experimental
+releases (GitHub prereleases) beside the stable version; Play then starts the
+beta. Beta keeps its own profile, new-horizons-play-beta, so its saves and
+settings never mix with stable ones. It uses your stable Heroes III folder
+until you choose another one for beta with Original game files. Switch back to
+Stable at any time; the stable version and its saves are unchanged.
+
 The declared SDL3/image/mixer/ttf providers are included beside the executable
 under their incoming SONAME filenames. BUILD-IDENTITY.json records their exact
 bytes and source origins. Other system libraries and optional drivers remain
@@ -71,9 +78,8 @@ profiles outside both the extracted package and the original installation.
 Saves are stored in <profile>/data/new-horizons/Saves. Earlier releases used
 <profile>/data/vcmi/Saves; those files are not moved or deleted.
 
-SAVE COMPATIBILITY — 0.91.1 Early Access
-Start a new game, including when upgrading from 0.90 or earlier. The current and
-minimum accepted save format is 1159. Earlier saves are rejected before payload
+SAVE COMPATIBILITY
+The current and minimum accepted save format is 1164. Earlier saves are rejected before payload
 loading, not converted, rewritten or deleted. Keep your old save files and backups;
 use the matching older version to continue those games. Copying an old save into
 the new directory does not make it compatible.
