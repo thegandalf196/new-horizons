@@ -185,6 +185,16 @@ try {
     # Set only while an original launcher hands its window over to this copy.
     $delegatedOriginal = $env:NH_WINDOWS_LAUNCHER_DELEGATED
     $env:NH_WINDOWS_LAUNCHER_DELEGATED = $null
+    if ($portableChild) {
+        # Launchers older than the hand-over run only this script from an update.
+        $originalUpgrade = Join-Path $packageRoot 'Update-NHOriginalLauncher.ps1'
+        try {
+            if ([IO.File]::Exists($originalUpgrade)) {
+                . $originalUpgrade
+                Update-NHOriginalLauncher $packageRoot
+            }
+        } catch { [Console]::Error.WriteLine('New Horizons: The launcher upgrade was skipped: ' + $_.Exception.Message) }
+    }
     if (-not $portableChild) {
         $updateLauncher = Join-Path $packageRoot 'Portable-Release-Launcher.ps1'
         if (Test-Path -LiteralPath $updateLauncher -PathType Leaf) {

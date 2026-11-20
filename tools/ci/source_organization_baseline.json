@@ -16615,11 +16615,11 @@
       "rationale": "Complete exact83-line PowerShell callable inventory independently re-parsed with actual PowerShell7.5.4 AST: all6 FunctionDefinitionAst and executable ScriptBlockExpressionAst bodies, including nested callbacks. Inspected command/param/control-flow blocks and quoted script data are not invented callable definitions. Exact bytes match previously independently reviewed IR-PLAYER-LAUNCHER-FINAL-SOURCE-V1. Largest function is below80 lines; no numeric waiver or missing callback. Parser syntax success on Linux does not establish Windows5.1/WinForms/native readiness execution."
     },
     "tools/windows/Start-New-Horizons.ps1": {
-      "sha256": "2d16dfe8bcfc3832248760a29e6e18e4b3281c9583bf54cad370ecb53e8b2a58",
-      "review": "CLAUDE-BETA-TRACK-WINDOWS-20261120",
-      "review_scope": "Exact source organization and code review of the Windows Beta track port; no Windows 5.1/WinForms execution.",
+      "sha256": "7e96baaef3e1c7d0c8be754f28a1ffd25b12ba90572e7d4ac5e6fd2fe5206ca5",
+      "review": "CLAUDE-LAUNCHER-BOOTSTRAP-WINDOWS-20261120",
+      "review_scope": "Exact source organization and code review of the Windows original-launcher bootstrap upgrade; no Windows 5.1/WinForms execution.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
-      "rationale": "Complete 444-line PowerShell callable inventory generated with the PowerShell 7.5.0 AST (all FunctionDefinitionAst and ScriptBlockExpressionAst spans); the generator reproduces every previously reviewed Windows inventory exactly. Largest callable is 30 lines, below 80. Reviewed by the integrator, not the author. Linux parsing does not establish Windows PowerShell 5.1 or WinForms behaviour.",
+      "rationale": "Complete 454-line PowerShell callable inventory generated with the PowerShell 7.5.0 AST (all FunctionDefinitionAst and ScriptBlockExpressionAst spans); the generator reproduces every previously reviewed Windows inventory exactly. Largest callable is 30 lines, below 80. Linux parsing does not establish Windows PowerShell 5.1 or WinForms behaviour.",
       "functions": [
         {
           "symbol": "function Test-ReportableGameExit#1",
@@ -16663,18 +16663,87 @@
         },
         {
           "symbol": "<script>::<scriptblock>#1",
-          "start": 313,
-          "end": 313
+          "start": 323,
+          "end": 323
         },
         {
           "symbol": "<script>::<scriptblock>#2",
-          "start": 314,
-          "end": 314
+          "start": 324,
+          "end": 324
         },
         {
           "symbol": "<script>::<scriptblock>#3",
-          "start": 386,
-          "end": 389
+          "start": 396,
+          "end": 399
+        }
+      ]
+    },
+    "tools/windows/Update-NHOriginalLauncher.ps1": {
+      "sha256": "4d7c2c3fe6ab8c3ee599171ac49f4ac8420c5662dc84f118eeaa8e558ec1c163",
+      "review": "CLAUDE-LAUNCHER-BOOTSTRAP-WINDOWS-20261120",
+      "review_scope": "Exact source organization and code review of the Windows original-launcher bootstrap upgrade; no Windows 5.1/WinForms execution.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
+      "rationale": "Complete 171-line PowerShell callable inventory generated with the PowerShell 7.5.0 AST (all FunctionDefinitionAst and ScriptBlockExpressionAst spans); the generator reproduces every previously reviewed Windows inventory exactly. Largest callable is 22 lines, below 80. Linux parsing does not establish Windows PowerShell 5.1 or WinForms behaviour.",
+      "functions": [
+        {
+          "symbol": "function Resolve-NHExistingPathCase#1",
+          "start": 16,
+          "end": 27
+        },
+        {
+          "symbol": "function Resolve-NHExistingPathCase::<scriptblock>#1",
+          "start": 24,
+          "end": 24
+        },
+        {
+          "symbol": "function Get-NHUpdateChildOriginal#1",
+          "start": 29,
+          "end": 50
+        },
+        {
+          "symbol": "function Test-NHOriginalLauncherCurrent#1",
+          "start": 52,
+          "end": 58
+        },
+        {
+          "symbol": "function Assert-NHUpdateChildSelected#1",
+          "start": 60,
+          "end": 74
+        },
+        {
+          "symbol": "function Get-NHLauncherUpgradeFiles#1",
+          "start": 76,
+          "end": 91
+        },
+        {
+          "symbol": "function Backup-NHOriginalLauncher#1",
+          "start": 93,
+          "end": 101
+        },
+        {
+          "symbol": "function Backup-NHOriginalLauncher::<scriptblock>#1",
+          "start": 99,
+          "end": 99
+        },
+        {
+          "symbol": "function Restore-NHOriginalLauncher#1",
+          "start": 103,
+          "end": 111
+        },
+        {
+          "symbol": "function Install-NHOriginalLauncherFiles#1",
+          "start": 113,
+          "end": 129
+        },
+        {
+          "symbol": "function Update-NHOriginalLauncherFiles#1",
+          "start": 131,
+          "end": 148
+        },
+        {
+          "symbol": "function Update-NHOriginalLauncher#1",
+          "start": 150,
+          "end": 171
         }
       ]
     },
@@ -16720,11 +16789,11 @@
       "sha256": "c24cd2fda1562f11a62162607c92e05eb78e698bda113be9562ee6a980398a0e"
     },
     "tools/windows/tests/Setup-Smoke.ps1": {
-      "sha256": "41e92171829fc651c6cccb624c3ed97ae74af9d445e51aa1ac99e2936c4240bb",
-      "review": "CLAUDE-BETA-TRACK-WINDOWS-20261120",
-      "review_scope": "Exact source organization and code review of the Windows Beta track port; no Windows 5.1/WinForms execution.",
+      "sha256": "855e62268771d80394ab374fac51546e0f7af4c6e296f688b66cc53b46042b11",
+      "review": "CLAUDE-LAUNCHER-BOOTSTRAP-WINDOWS-20261120",
+      "review_scope": "Exact source organization and code review of the Windows original-launcher bootstrap upgrade; no Windows 5.1/WinForms execution.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
-      "rationale": "Complete 309-line PowerShell callable inventory generated with the PowerShell 7.5.0 AST (all FunctionDefinitionAst and ScriptBlockExpressionAst spans); the generator reproduces every previously reviewed Windows inventory exactly. Largest callable is 34 lines, below 80. Reviewed by the integrator, not the author. Linux parsing does not establish Windows PowerShell 5.1 or WinForms behaviour.",
+      "rationale": "Complete 309-line PowerShell callable inventory generated with the PowerShell 7.5.0 AST (all FunctionDefinitionAst and ScriptBlockExpressionAst spans); the generator reproduces every previously reviewed Windows inventory exactly. Largest callable is 34 lines, below 80. Linux parsing does not establish Windows PowerShell 5.1 or WinForms behaviour.",
       "functions": [
         {
           "symbol": "function Assert-Check#1",
@@ -29872,14 +29941,14 @@
       "deferral": "Before further substantive native cache expansion, extract stage payload population behind a focused helper while retaining locking, complete verification and atomic publication order in prepareCache; future lock/protocol growth must retain the no-follow Directory boundary and process-death/Windows sharing coverage. No broad growth allowance. A7 narrow urgent correction only: before further cache platform-I/O/protocol growth, engine_engineer must extract the coherent native Directory/File access boundary or existing stage-payload population behind a small interface, keeping handle lifetime, exact share/no-reparse flags, locking and publish ordering; characterize Windows short/deep kill/recovery and POSIX parity before changing that boundary. This +9 allowance is not a relaxed ceiling."
     },
     "tools/ci/stage_linux_client.py::main#1": {
-      "lines": 89,
-      "sha256": "467eed6e2f0620069c6120b8f16e39b5935dbc11793ef63d54bcdcbc816fca2c",
+      "lines": 87,
+      "sha256": "13722db45fefdde23715735a9d444cbff720c779784ddbeb1910fc8803cd4d4b",
       "kind": "exception",
       "owner": "engine_engineer",
-      "review": "IR-NEXT-BUILD-FROZEN-PLAYER-LAUNCHER-ORG-20261119",
+      "review": "CLAUDE-LAUNCHER-BOOTSTRAP-LINUX-20261120",
       "review_scope": "Exact independent source organization and reused prior source review only; no native compilation, GUI, Windows execution, performance, promotion or future growth permission.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
-      "rationale": "Exact72 to89-line staging orchestration, file157 to174. Adds explicit player/default versus legacy diagnostic route, four small launcher support artifacts, and optional invocation of focused60-line authenticated archive writer. Source/archive/license/runtime admission remains in existing helpers; archive implementation is not inlined. Coherent below150-line orchestration reviewed at80-line trigger, no generic expansion permission.",
+      "rationale": "Exact72 to89-line staging orchestration, file157 to174. Adds explicit player/default versus legacy diagnostic route, four small launcher support artifacts, and optional invocation of focused60-line authenticated archive writer. Source/archive/license/runtime admission remains in existing helpers; archive implementation is not inlined. Coherent below150-line orchestration reviewed at80-line trigger, no generic expansion permission. 2026-11-20: the launcher module list moved to the module-level PORTABLE_LAUNCHER_MODULES constant (adds PortableLauncherUpgrade.py); main shrinks 89 to 87 lines with no new policy.",
       "deferral": "Before further staging orchestration growth, extract the player-support copy plan and optional archive dispatch into a focused helper with exact artifact membership and byte-identity tests; no extra policy in main."
     }
   }

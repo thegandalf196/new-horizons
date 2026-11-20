@@ -35,13 +35,13 @@ class LinuxStageTest(unittest.TestCase):
             self.assertEqual(len(staged['source_archives']), 3)
             self.assertEqual((self.root / 'BUILD-IDENTITY.json').read_bytes(), data)
 
-    def test_default_player_stage_copies_all_four_modules_from_packaging_revision(self):
+    def test_default_player_stage_copies_all_launcher_modules_from_packaging_revision(self):
         with tempfile.TemporaryDirectory() as temporary:
             fixture = StageFixture(Path(temporary), self.root, providers=())
             fixture.run(main, git_payload=lambda command: command[-1].encode())
             package = fixture.arguments['output'] / 'New-Horizons-Linux-x64'
             for name in ('PortableReleaseLauncher.py', 'PortableReleaseUpdate.py',
-                         'PortableLauncherWindow.py', 'PortableLauncherProcess.py'):
+                         'PortableLauncherWindow.py', 'PortableLauncherProcess.py', 'PortableLauncherUpgrade.py'):
                 self.assertEqual((package / name).read_bytes(), f'packaging-revision:tools/linux/{name}'.encode())
             verify_candidate(package)
 

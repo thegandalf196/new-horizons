@@ -51,7 +51,8 @@ class PortableLayoutTest(unittest.TestCase):
         frontend.mkdir()
         layout.stage_frontend(repository, helpers, frontend)
         for name in ('Player-Launcher.ps1', 'Player-Launcher-Operation.ps1',
-                     'Portable-Release-Launcher.ps1', 'Prepare-NHReleaseUpdate.ps1', 'Release-Metadata.ps1'):
+                     'Portable-Release-Launcher.ps1', 'Prepare-NHReleaseUpdate.ps1', 'Release-Metadata.ps1',
+                     'Update-NHOriginalLauncher.ps1'):
             self.assertEqual((frontend / name).read_bytes(), (helpers / name).read_bytes())
 
     def test_release_path_budget_counts_real_deep_member_relative_to_installed_root(self):

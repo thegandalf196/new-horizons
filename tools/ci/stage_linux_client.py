@@ -17,6 +17,11 @@ from linux_snapshot_binaries import SETUP_NAME, setup_metadata, admit_setup_evid
 from stage_runtime_libraries import admit_runtime_libraries, relocate_runtime_evidence, runtime_records
 
 
+# Desktop launcher modules copied into player packages that update themselves.
+PORTABLE_LAUNCHER_MODULES = ('PortableReleaseLauncher.py', 'PortableReleaseUpdate.py', 'PortableLauncherWindow.py',
+                             'PortableLauncherProcess.py', 'PortableLauncherUpgrade.py')
+
+
 def sha256(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -129,9 +134,7 @@ def main():
                          ('tools/linux/LEGAL-New-Horizons.txt', 'LEGAL-New-Horizons.txt'),
                          ('tools/linux/BUILDING-New-Horizons.txt', 'BUILDING-New-Horizons.txt')]
     if args.portable_updates:
-        player_files.extend((f'tools/linux/{name}', name) for name in
-                            ('PortableReleaseLauncher.py', 'PortableReleaseUpdate.py',
-                             'PortableLauncherWindow.py', 'PortableLauncherProcess.py'))
+        player_files.extend((f'tools/linux/{name}', name) for name in PORTABLE_LAUNCHER_MODULES)
     for source, name in player_files:
         data = subprocess.check_output(['git', '-C', str(root), 'show', args.packaging_revision + ':' + source])
         if (package / name).exists():
