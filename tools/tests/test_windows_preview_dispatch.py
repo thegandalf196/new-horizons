@@ -53,10 +53,11 @@ class WindowsPreviewDispatchTest(unittest.TestCase):
                 self.assertFalse(report.exists())
             return result, summary.read_text() if summary.exists() else ''
 
-    def test_only_main_and_exact_manual_branch_are_admitted(self):
+    def test_only_main_release_tags_and_exact_manual_branch_are_admitted(self):
         self.assertEqual(' '.join(self.job['if'].split()),
                          "github.repository == 'thegandalf196/new-horizons' && "
                          "(github.ref == 'refs/heads/main' || "
+                         "(github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/tags/v')) || "
                          "(github.event_name == 'workflow_dispatch' && github.ref == '" + BRANCH + "'))")
         self.assertEqual(self.steps['Validate matched performance preview controls']['if'], "github.ref == '" + BRANCH + "'")
         self.assertEqual(self.workflow['permissions'], {'contents': 'read', 'actions': 'read'})
