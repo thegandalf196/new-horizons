@@ -118,9 +118,11 @@ function New-NHPlayerProcess($Runtime,$Script,$Arguments,$LocalData){
     return $p
 }
 function Wait-NHPlayerProcess { return 0 }
-$betaLocal=Join-Path $env:LOCALAPPDATA 'NewHorizons-Beta'
+# The launcher normalizes LOCALAPPDATA; CI temp folders use 8.3 short names.
+$localFull=[IO.Path]::GetFullPath($env:LOCALAPPDATA)
+$betaLocal=Join-Path $localFull 'NewHorizons-Beta'
 Invoke-NHPlayerGame $view $false
-$stableContent=Join-Path $env:LOCALAPPDATA 'HeroesIII-NewHorizons\content'
+$stableContent=Join-Path $localFull 'HeroesIII-NewHorizons\content'
 $null=[IO.Directory]::CreateDirectory($stableContent)
 [IO.File]::WriteAllText((Join-Path $stableContent '.nh-assets.json'),'{}')
 Invoke-NHPlayerGame $view $false
