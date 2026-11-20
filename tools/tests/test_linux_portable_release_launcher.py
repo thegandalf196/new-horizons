@@ -249,7 +249,7 @@ class LinuxPortableReleaseLauncherTest(unittest.TestCase):
     def test_desktop_game_status_waits_for_stdout_marker_and_sets_owned_environment(self):
         import PortableLauncherWindow as desktop
         statuses, environment = [], {}
-        state = SimpleNamespace(package=self.original, ready=threading.Event(), cancel=threading.Event(),
+        state = SimpleNamespace(package=self.original, channel='stable', ready=threading.Event(), cancel=threading.Event(),
                                 cancel_button=unittest.mock.Mock(),
                                 status=unittest.mock.Mock(), status_changed=statuses.append)
         state.begin = lambda kind, operation, finished: finished(operation())
@@ -270,6 +270,92 @@ class LinuxPortableReleaseLauncherTest(unittest.TestCase):
         self.assertEqual(environment['NH_LAUNCHER_MANAGES_UPDATES'], '1')
         self.assertNotIn('NH_PORTABLE_UPDATE_REQUEST', environment)
         state.status.set_text.assert_called_with('Game closed.')
+
+    def release(self, version, prerelease=False, draft=False):
+        name = 'New-Horizons-Linux-x64-abcdef123456.tar.gz'
+        root = 'https://github.com/thegandalf196/new-horizons/releases/'
+        return {'draft': draft, 'prerelease': prerelease, 'tag_name': 'v' + version,
+                'html_url': root + 'tag/v' + version, 'published_at': '2026-11-21T12:00:00Z',
+                'assets': [{'name': name, 'state': 'uploaded', 'size': 1000, 'digest': 'sha256:' + self.SHA256,
+                            'browser_download_url': root + 'download/v' + version + '/' + name}]}
+
+    def test_beta_check_offers_newest_published_release_including_prereleases(self):
+        releases = [self.release('0.92.5'), self.release('0.93.1', draft=True),
+                    self.release('0.93.0', prerelease=True), {'tag_name': 'nonsense'}, 'not a release']
+        with patch.object(launcher, 'recent_releases', return_value=releases) as listed:
+            offer = launcher.check_release(self.original, channel='beta')
+        self.assertEqual(listed.call_args.kwargs['timeout'], 5)
+        self.assertEqual((offer['version'], offer['channel'], offer['format']), ('0.93.0', 'beta', 2))
+        with patch.object(launcher, 'latest_release', return_value=self.release('0.93.0', prerelease=True)):
+            with self.assertRaises(ValueError):
+                launcher.check_release(self.original)
+        with patch.object(launcher, 'recent_releases', return_value=[self.release('0.92.3', prerelease=True)]):
+            self.assertIsNone(launcher.check_release(self.original, channel='beta'))
+
+    def test_beta_install_selects_only_the_beta_track(self):
+        offer = dict(self.accept('0.93.0'), channel='beta')
+        self.make_package(self.updated, '0.93.0')
+        self.assertIsNone(launcher.choose_runtime(self.original, 'beta'))
+        self.assertEqual(launcher.install_release(self.original, offer), self.updated)
+        self.assertFalse(self.selection.exists())
+        self.assertEqual(launcher.choose_runtime(self.original), self.original)
+        self.assertEqual(launcher.choose_runtime(self.original, 'beta'), self.updated)
+        self.assertEqual(launcher.track_baseline(self.original, 'beta'), self.updated)
+        self.assertEqual(launcher.track_baseline(self.original, 'stable'), self.original)
+        with self.assertRaises(ValueError):
+            launcher.install_release(self.original, dict(offer, channel='nightly'))
+
+    def test_beta_plays_with_separate_profile_and_reuses_stable_original_files(self):
+        players = self.root / 'players'
+        def remember(profile, assets):
+            setup = players / (profile + '.setup')
+            setup.mkdir(mode=0o700, parents=True, exist_ok=True)
+            (setup / 'original-assets.json').write_text(json.dumps({'version': 1, 'assets': assets}))
+        with patch.dict('os.environ', {'XDG_DATA_HOME': str(players)}):
+            self.assertNotIn('--assets', launcher.setup_command(self.original, channel='beta'))
+            remember('new-horizons-play', '/games/heroes3')
+            stable = launcher.setup_command(self.original)
+            beta = launcher.setup_command(self.original, ('--x',), 'beta')
+            chooser = launcher.setup_command(self.original, ('--select-assets', '--setup-only'), 'beta')
+            remember('new-horizons-play-beta', '/games/other')
+            own = launcher.setup_command(self.original, channel='beta')
+        self.assertEqual(stable[-2:], ['--profile', str(players / 'new-horizons-play')])
+        self.assertEqual(beta[-5:], ['--profile', str(players / 'new-horizons-play-beta'),
+                                     '--assets', '/games/heroes3', '--x'])
+        self.assertNotIn('--assets', chooser)
+        self.assertNotIn('--assets', own)
+
+    def test_launcher_hands_over_to_the_selected_stable_launcher_after_its_self_test(self):
+        self.assertIsNone(launcher.newer_launcher(self.original))
+        offer = self.accept()
+        self.make_package(self.updated, '0.92.4')
+        launcher.install_release(self.original, offer)
+        code = self.updated / 'PortableReleaseLauncher.py'
+        code.write_text(f'print({launcher.SELF_TEST!r})\n')
+        self.assertEqual(launcher.newer_launcher(self.original), code)
+        for broken in ('raise SystemExit(3)\n', 'print("something else")\n', 'import time\ntime.sleep(30)\n'):
+            code.write_text(broken)
+            with patch.object(launcher.subprocess, 'run', wraps=launcher.subprocess.run) as run:
+                if 'sleep' in broken:
+                    run.side_effect = launcher.subprocess.TimeoutExpired('launcher', 10)
+                self.assertIsNone(launcher.newer_launcher(self.original))
+
+    def test_original_launcher_hands_over_once_and_delegated_launcher_runs_its_own_code(self):
+        self.addCleanup(setattr, launcher, 'CODE_ROOT', None)
+        offer = self.accept()
+        self.make_package(self.updated, '0.92.4')
+        launcher.install_release(self.original, offer)
+        newer = self.updated / 'PortableReleaseLauncher.py'
+        with patch.object(launcher, 'newer_launcher', return_value=newer), \
+                patch.object(launcher.os, 'execve') as execute:
+            launcher.main(['--package', str(self.original), '--', '--verify-only'])
+        self.assertEqual(execute.call_args_list[0].args[1][2:],
+                         [str(newer), '--package', str(self.original), '--delegated', '--', '--verify-only'])
+        with patch.object(launcher, 'newer_launcher') as newer_check, patch.object(launcher.os, 'execve') as execute:
+            launcher.main(['--package', str(self.original), '--delegated', '--', '--verify-only'])
+        newer_check.assert_not_called()
+        self.assertEqual(execute.call_args.args[1][1], str(self.updated / 'linux_assets_setup.py'))
+        self.assertEqual(launcher.CODE_ROOT, ROOT / 'tools/linux')
 
     def test_desktop_completion_releases_application_even_on_bad_finish_callback(self):
         import PortableLauncherWindow as desktop

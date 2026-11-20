@@ -22,6 +22,10 @@ button { background: #42372a; color: #f0e3c3; border: 1px solid #8c7446; padding
 button:hover { background: #594832; }
 button:disabled { color: #8a8273; border-color: #504839; }
 .play { background: #665126; font-weight: bold; }
+.beta { color: #9fc6d6; }
+popover > contents { background: #2b231b; color: #e9dfcc; border: 1px solid #8c7446; }
+popover listview, popover row { background: transparent; color: #e9dfcc; }
+popover row:hover, popover row:selected { background: #594832; }
 progressbar trough { background: #342b21; }
 progressbar progress { background: #c6a357; }
 '''
@@ -30,11 +34,12 @@ progressbar progress { background: #c6a357; }
 class LauncherWindow(Gtk.ApplicationWindow):
     def __init__(self, application, original, package):
         super().__init__(application=application, title='New Horizons')
-        self.original, self.package = original, package
+        self.original, self.package, self.channel = original, package, 'stable'
+        self.packages = {'stable': package, 'beta': release.choose_runtime(original, 'beta')}
         self.offer, self.busy, self.closed = None, False, False
         self.kind, self.cancel, self.ready = '', threading.Event(), threading.Event()
         self.game_cancel = StartupCancellation()
-        self.set_default_size(560, 330)
+        self.set_default_size(560, 370)
         self.set_resizable(False)
         self.connect('close-request', self.close_requested)
         css = Gtk.CssProvider()
@@ -47,6 +52,13 @@ class LauncherWindow(Gtk.ApplicationWindow):
         title = Gtk.Label(label='NEW HORIZONS', xalign=0)
         title.add_css_class('title')
         panel.append(title)
+        track = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        track.append(Gtk.Label(label='Version track', xalign=0))
+        self.track = Gtk.DropDown.new_from_strings(['Stable', 'Beta (experimental, separate saves)'])
+        self.track.set_hexpand(True)
+        self.track.connect('notify::selected', self.track_changed)
+        track.append(self.track)
+        panel.append(track)
         self.version_label = Gtk.Label(xalign=0)
         self.version_label.add_css_class('version')
         panel.append(self.version_label)
@@ -77,12 +89,34 @@ class LauncherWindow(Gtk.ApplicationWindow):
         return button
 
     def refresh_version(self):
-        self.version_label.set_text('Installed version ' + '.'.join(map(str, release.version(self.package))))
+        package = self.packages[self.channel]
+        if self.channel == 'stable':
+            self.version_label.set_text('Installed version ' + '.'.join(map(str, release.version(package))))
+            self.version_label.remove_css_class('beta')
+            return
+        self.version_label.add_css_class('beta')
+        self.version_label.set_text('Beta ' + '.'.join(map(str, release.version(package))) + ' · separate saves'
+                                    if package else 'No beta installed yet. Check for updates to find one.')
+
+    def track_changed(self, dropdown, parameter):
+        if self.busy:
+            dropdown.set_selected(0 if self.channel == 'stable' else 1)
+            return
+        self.channel = 'beta' if dropdown.get_selected() == 1 else 'stable'
+        self.package, self.offer = self.packages[self.channel], None
+        self.refresh_version()
+        self.set_busy(False)
+        self.status.set_text('Beta builds try experimental changes and keep their own saves and settings.'
+                             if self.channel == 'beta' else 'Ready to play.')
+        if self.channel == 'beta' and self.package is None:
+            self.check_clicked(None)
 
     def set_busy(self, busy):
         self.busy = busy
-        for button in (self.play, self.check, self.assets):
+        for button in (self.check, self.assets):
             button.set_sensitive(not busy)
+        self.play.set_sensitive(not busy and self.package is not None)
+        self.track.set_sensitive(not busy)
         self.install.set_sensitive(not busy and self.offer is not None)
         self.cancel_button.set_visible(busy and self.kind in ('game', 'install', 'assets')
                                        and not (self.kind == 'game' and self.ready.is_set()))
@@ -126,12 +160,21 @@ class LauncherWindow(Gtk.ApplicationWindow):
     def check_clicked(self, button):
         if self.busy:
             return False
-        self.status.set_text('Checking the official release…')
+        channel = self.channel
+        self.status.set_text('Checking for a beta release…' if channel == 'beta' else 'Checking the official release…')
+        baseline = release.track_baseline(self.original, channel)
         def checked(offer):
+            if channel != self.channel:
+                return
             self.offer = offer
             self.install.set_sensitive(offer is not None)
-            self.status.set_text('Version ' + offer['version'] + ' is available.' if offer else 'You have the latest version.')
-        self.begin('check', lambda: release.check_release_bounded(self.package, self.cancel), checked)
+            if offer:
+                self.status.set_text(('Beta ' if channel == 'beta' else 'Version ') + offer['version'] + ' is available.')
+            elif channel == 'beta':
+                self.status.set_text('No beta newer than your installed versions is available right now.')
+            else:
+                self.status.set_text('You have the latest version.')
+        self.begin('check', lambda: release.check_release_bounded(baseline, self.cancel, channel), checked)
         return False
 
     def update_progress(self, value):
@@ -149,8 +192,12 @@ class LauncherWindow(Gtk.ApplicationWindow):
         if self.offer is None or self.busy:
             return
         self.status.set_text('Preparing the selected update…')
+        channel = self.offer.get('channel', 'stable')
         def installed(package):
-            self.package, self.offer = package, None
+            self.packages[channel] = package
+            if channel == self.channel:
+                self.package = package
+            self.offer = None
             self.refresh_version()
             self.status.set_text('Update installed. Ready to play.')
         self.begin('install', lambda: release.install_release(self.original, self.offer, self.update_progress, self.cancel), installed)
@@ -161,10 +208,14 @@ class LauncherWindow(Gtk.ApplicationWindow):
             if result.returncode:
                 raise RuntimeError(result.stderr[-1500:] or 'Original game file selection failed')
             self.status.set_text('Original game file selection completed.')
-        self.begin('assets', lambda: run_process(release.setup_command(self.package, ('--select-assets', '--setup-only')),
+        package, channel = self.package or self.packages['stable'], self.channel
+        self.begin('assets', lambda: run_process(release.setup_command(package, ('--select-assets', '--setup-only'), channel),
                                                cancel=self.cancel), selected)
 
     def play_clicked(self, button):
+        if self.package is None:
+            return
+        package, channel = self.package, self.channel
         self.game_cancel = StartupCancellation()
         self.ready = self.game_cancel.ready
         self.status.set_text('Checking original game files…')
@@ -184,7 +235,7 @@ class LauncherWindow(Gtk.ApplicationWindow):
                 self.status.set_text('Game exited with code ' + str(result.returncode) + '.\n' + result.stderr[-1000:])
             else:
                 self.status.set_text('Game closed.' if self.ready.is_set() else 'Launch cancelled before the game opened.')
-        self.begin('game', lambda: run_process(release.setup_command(self.package), environment,
+        self.begin('game', lambda: run_process(release.setup_command(package, channel=channel), environment,
                                              on_stdout=output, cancel=self.game_cancel), finished)
 
     def cancel_clicked(self, button):

@@ -293,6 +293,33 @@ class LinuxPortableUpdateTest(unittest.TestCase):
         self.metadata['assets'] *= 2
         self.rejected()
 
+    def test_beta_request_revalidates_its_own_tag_and_accepts_a_prerelease(self):
+        self.request = self.write_request(format=2, channel='beta')
+        self.metadata = dict(self.latest(), prerelease=True)
+        tag = update.tag_url('0.93.0')
+        def transport(request, timeout):
+            if request.full_url == tag:
+                self.calls.append(request.full_url)
+                return Response(json.dumps(self.metadata).encode(), tag)
+            self.assertNotEqual(request.full_url, update.LATEST_URL)
+            return self.transport(request, timeout)
+        result = update.prepare_update(self.store, self.request_path, transport)
+        self.assertEqual((result['version'], self.calls[0]), ('0.93.0', tag))
+        self.metadata['draft'] = True
+        with self.assertRaises(ValueError):
+            update.prepare_update(self.store, self.request_path, transport)
+
+    def test_track_requests_cannot_mix_formats_name_unknown_tracks_or_take_a_stable_prerelease(self):
+        for change in ({'format': 1, 'channel': 'beta'}, {'format': 2}, {'format': 2, 'channel': 'nightly'}):
+            with self.subTest(change=change):
+                self.request = self.write_request(**change)
+                self.rejected()
+        self.request = self.write_request(format=2, channel='stable')
+        self.metadata = dict(self.latest(), prerelease=True)
+        self.rejected()
+        with self.assertRaises(ValueError):
+            update.tag_url('0.93.0/../latest')
+
     def test_requests_require_exact_owned_private_file_and_fields(self):
         for change in ({'format': True}, {'version': '01.2.3'}, {'bytes': 2 ** 31 + 1}, {'bytes': -1},
                        {'extra': 'ignored'}, {'sha256': 'F' * 64}, {'url': 'http://github.com/payload'},

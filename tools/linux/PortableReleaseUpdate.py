@@ -21,7 +21,11 @@ from urllib.parse import urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 
-LATEST_URL = 'https://api.github.com/repos/thegandalf196/new-horizons/releases/latest'
+API_ROOT = 'https://api.github.com/repos/thegandalf196/new-horizons/releases'
+LATEST_URL = API_ROOT + '/latest'
+# Beta releases are ordinary GitHub prereleases; their track lists recent releases.
+LIST_URL = API_ROOT + '?per_page=30'
+CHANNELS = ('stable', 'beta')
 RELEASE_ROOT = 'https://github.com/thegandalf196/new-horizons/releases/'
 PACKAGE_ROOT = 'New-Horizons-Linux-x64'
 MAX_ARCHIVE_BYTES = 2 * 1024 ** 3
@@ -79,11 +83,17 @@ class ReleaseRedirects(HTTPRedirectHandler):
         return super().redirect_request(request, response, code, message, headers, new_url)
 
 
+def tag_url(version):
+    require(isinstance(version, str) and VERSION.fullmatch(version), 'Invalid release version')
+    return API_ROOT + '/tags/v' + version
+
+
 def open_https(url, opener, timeout=30):
-    hosts = frozenset(('api.github.com',)) if url == LATEST_URL else DOWNLOAD_HOSTS
+    api = url == LIST_URL or url == LATEST_URL or url.startswith(API_ROOT + '/tags/v')
+    hosts = frozenset(('api.github.com',)) if api else DOWNLOAD_HOSTS
     checked_url(url, hosts)
     response = opener(Request(url, headers={'User-Agent': 'New-Horizons-Portable-Updater',
-                                          'Accept': 'application/vnd.github+json' if url == LATEST_URL else 'application/octet-stream',
+                                          'Accept': 'application/vnd.github+json' if api else 'application/octet-stream',
                                           'Cache-Control': 'no-cache'}), timeout=timeout)
     try:
         require(response.status == 200, 'Release request failed')
@@ -103,9 +113,14 @@ def request_data(path):
                 and not info.st_mode & 0o022 and info.st_size <= MAX_JSON_BYTES,
                 'Update request is not a private regular file')
         request = decode_json(stream.read(MAX_JSON_BYTES + 1))
-    require(isinstance(request, dict) and set(request) == {'format', 'version', 'name', 'url', 'bytes', 'sha256'},
+    fields = {'format', 'version', 'name', 'url', 'bytes', 'sha256'}
+    require(isinstance(request, dict) and set(request) in (fields, fields | {'channel'}),
             'Invalid update request fields')
-    require(type(request['format']) is int and request['format'] == 1, 'Unsupported update request')
+    # Format 1 requests predate tracks and always name the stable release.
+    require(type(request['format']) is int and request['format'] == (2 if 'channel' in request else 1),
+            'Unsupported update request')
+    request.setdefault('channel', 'stable')
+    require(request['channel'] in CHANNELS, 'Unknown release track')
     require(isinstance(request['version'], str) and len(request['version']) <= 32
             and VERSION.fullmatch(request['version']), 'Invalid release version')
     require(isinstance(request['name'], str) and ASSET_NAME.fullmatch(request['name']), 'Invalid Linux release name')
@@ -116,16 +131,28 @@ def request_data(path):
     return request
 
 
-def latest_release(opener, timeout=30):
-    with open_https(LATEST_URL, opener, timeout=timeout) as response:
+def release_metadata(url, opener, timeout=30):
+    with open_https(url, opener, timeout=timeout) as response:
         payload = response.read(MAX_JSON_BYTES + 1)
     require(len(payload) <= MAX_JSON_BYTES, 'Release metadata exceeds limit')
     return decode_json(payload)
 
 
+def latest_release(opener, timeout=30):
+    return release_metadata(LATEST_URL, opener, timeout)
+
+
+def recent_releases(opener, timeout=30):
+    releases = release_metadata(LIST_URL, opener, timeout)
+    require(isinstance(releases, list) and len(releases) <= 100, 'Invalid release list')
+    return releases
+
+
 def validate_release_metadata(request, release):
-    require(isinstance(release, dict) and release.get('draft') is False and release.get('prerelease') is False,
-            'Expected a published stable release')
+    beta = request.get('channel', 'stable') == 'beta'
+    require(isinstance(release, dict) and release.get('draft') is False
+            and isinstance(release.get('prerelease'), bool) and (beta or release['prerelease'] is False),
+            'Expected a published stable release' if not beta else 'Expected a published release')
     tag = 'v' + request['version']
     require(release.get('tag_name') == tag and release.get('html_url') == RELEASE_ROOT + 'tag/' + tag,
             'Selected release is no longer the official latest version')
@@ -145,7 +172,10 @@ def validate_release_metadata(request, release):
 
 
 def revalidate_release(request, opener):
-    validate_release_metadata(request, latest_release(opener))
+    # Stable updates must still be the official latest release; a beta must
+    # still be published under its own tag.
+    url = tag_url(request['version']) if request['channel'] == 'beta' else LATEST_URL
+    validate_release_metadata(request, release_metadata(url, opener))
 
 
 def private_directory(path):
