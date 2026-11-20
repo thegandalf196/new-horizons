@@ -7,6 +7,23 @@ and revisions as the game develops.
 For individual perk effects, spell formulas, creature statistics and Order rules,
 read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 
+## 0.92.5 Early Access
+
+- The creature inspector shows Elemental Attunement damage beside base damage,
+  for example 7 - 10 (8.4 - 12), with per-creature help.
+- A Leadership Efficiency row below Leadership Cost explains full-damage
+  capacity and the damage contributed by creatures beyond it. The hero's
+  Leadership tooltip uses the same wording.
+- Repeated Spell Vulnerability, Hatred, Spell Immunity and on-hit spell
+  abilities share one card each.
+- Active effects beyond the eighth icon appear behind a +N slot instead of
+  being hidden. Spell help lists the effect's actual current values.
+- Every ability card has full right-click text. Creature spell uses read as
+  Casts, and shots and casts show remaining/total.
+- Sylvan Tactics statuses show their perk icons and timing.
+- Mercenary Captain training names the recruiting hero and remaining combats.
+- The Recent-turn replay option no longer overlaps the pause-menu buttons.
+
 ## 0.92.4 Early Access
 
 - The Windows and Linux launchers show first-run setup and artwork preparation
