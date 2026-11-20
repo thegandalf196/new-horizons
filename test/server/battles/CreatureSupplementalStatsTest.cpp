@@ -79,8 +79,12 @@ TEST(CreatureStatLayout, SupplementalRowsFollowInitiativeWithoutChangingLegacyRo
 	EXPECT_EQ(row(Stat::MANA, false), 7u);
 	EXPECT_EQ(row(Stat::LEADERSHIP, false), 8u);
 	EXPECT_EQ(row(Stat::RANK, false), 9u);
-	EXPECT_EQ(panelHeight(true, true) - panelHeight(false, true), 5 * ROW_HEIGHT);
-	EXPECT_EQ(panelHeight(true, true), 320);
+	// Five supplemental rows plus Leadership Efficiency below Leadership Cost
+	// (canon game-design.md #efficiency-presentation); classic rows are unchanged.
+	EXPECT_EQ(row(Stat::LEADERSHIP_EFFICIENCY, true), row(Stat::LEADERSHIP, true) + 1);
+	EXPECT_EQ(row(Stat::RANK, true), row(Stat::LEADERSHIP_EFFICIENCY, true) + 1);
+	EXPECT_EQ(panelHeight(true, true) - panelHeight(false, true), 6 * ROW_HEIGHT);
+	EXPECT_EQ(panelHeight(true, true), 339);
 	EXPECT_LT(iconY(Stat::RANK, true) + 20, panelHeight(true, true));
 }
 
