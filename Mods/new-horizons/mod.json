@@ -3989,7 +3989,7 @@
 						"core:halon": [
 							{
 								"skill": "new-horizons:metamagic",
-								"perk": "new-horizons:metamagic.unravelingMagic"
+								"perk": "new-horizons:metamagic.formulaRecovery"
 							}
 						],
 						"core:rissa": [
@@ -6927,44 +6927,37 @@
 				"estatesPolicyVersion": 1,
 				"sylvanTacticsPolicy": 3,
 				"metamagicPolicy": {
-					"version": 6,
-					"removalChancePercent": [
+					"version": 7,
+					"usesPerCombatByRank": [
 						0,
-						20,
-						30,
-						40
+						1,
+						2,
+						3
 					],
-					"damagePerMana": 10,
-					"restorationPerMana": 15,
-					"halonRemovalChanceBonusPercent": 5,
-					"arcaneOverflowPercentByRank": [
-						0,
-						30,
-						45,
-						60
-					],
-					"friendlyDamageReductionPercentByRank": [
-						0,
-						30,
-						45,
-						60
-					],
-					"debuffRetryChancePercentByRank": [
-						0,
-						30,
-						45,
-						60
-					]
+					"followUpMustDiffer": true,
+					"halonAdditionalUses": 1,
+					"arcaneWardSpellPowerMultiplier": 5,
+					"manaSiphonMana": 4,
+					"deepReservesAdditionalUses": 1,
+					"formulaReserveMana": 3,
+					"arcaneCycleRoundInterval": 3,
+					"afterglowAdditionalRounds": 1,
+					"crescendoSpellPowerPerSpentUse": 5,
+					"cleansingWeaveEffects": 1,
+					"grandWeavingAdditionalUses": 2,
+					"spellstormManaReductionPercent": 25,
+					"spellstormDoubleCastThreshold": 3
 				},
 				"divineMandatePolicy": {
-					"version": 3,
+					"version": 4,
 					"potencyFaithBonusByRank": [
 						0,
 						0,
 						50,
 						100
 					],
-					"ferventInvocationAdditionalFaith": 100
+					"ferventInvocationAdditionalFaith": 100,
+					"chosen": true
 				},
 				"demonicGatingPolicy": {
 					"version": 2
@@ -10367,29 +10360,29 @@
 						"name": "Consecrated Arms",
 						"domain": "Faction",
 						"availability": "Castle heroes only",
-						"description": "Each committed Order grants one uniformly random prayer to its recipients. Faith is Spell Power plus Knowledge; rank adds potency Faith only. Different prayers coexist; repeat prayers refresh without stacking or refilling shields.",
+						"description": "Each committed Order grants one chosen prayer to one chosen recipient stack. Faith is Spell Power plus Knowledge; rank adds potency Faith only. Different prayers coexist; repeat prayers refresh without stacking or refilling shields.",
 						"ranks": {
 							"basic": {
-								"description": "Each committed Order grants one uniformly random prayer. Prayer potency uses Spell Power + Knowledge + 0 Faith; duration uses actual Spell Power + Knowledge: min(4, 2 + floor(Faith / 150)) rounds.",
+								"description": "Each committed Order grants one chosen prayer to one chosen recipient. Prayer potency uses Spell Power + Knowledge + 0 Faith; duration uses actual Spell Power + Knowledge: min(4, 2 + floor(Faith / 150)) rounds.",
 								"effect": {
 									"status": "active",
-									"description": "Each committed Order grants one uniformly random prayer. Prayer potency uses Spell Power + Knowledge + 0 Faith; duration uses actual Spell Power + Knowledge: min(4, 2 + floor(Faith / 150)) rounds."
+									"description": "Each committed Order grants one chosen prayer to one chosen recipient. Prayer potency uses Spell Power + Knowledge + 0 Faith; duration uses actual Spell Power + Knowledge: min(4, 2 + floor(Faith / 150)) rounds."
 								},
 								"details": "Six prayers: Divine Purpose grants Morale/Luck/Speed; Dauntless Assault reduces provoked retaliation damage; Steadfast Soul resists non-damaging hostile spells; Vicarious Redemption converts actual casualties into a finite physical-and-magical shield; Unbroken Vow caps casualties per attack or damaging spell; Heaven's Judgment adds magical attack and retaliation damage. No Light spell, charge pool or additional Order attribute scaling. Reapplication refreshes without duplicate strength or shield refill."
 							},
 							"advanced": {
-								"description": "Each committed Order grants one uniformly random prayer. Prayer potency uses Spell Power + Knowledge + 50 Faith; duration uses actual Spell Power + Knowledge: min(4, 2 + floor(Faith / 150)) rounds.",
+								"description": "Each committed Order grants one chosen prayer to one chosen recipient. Prayer potency uses Spell Power + Knowledge + 50 Faith; duration uses actual Spell Power + Knowledge: min(4, 2 + floor(Faith / 150)) rounds.",
 								"effect": {
 									"status": "active",
-									"description": "Each committed Order grants one uniformly random prayer. Prayer potency uses Spell Power + Knowledge + 50 Faith; duration uses actual Spell Power + Knowledge: min(4, 2 + floor(Faith / 150)) rounds."
+									"description": "Each committed Order grants one chosen prayer to one chosen recipient. Prayer potency uses Spell Power + Knowledge + 50 Faith; duration uses actual Spell Power + Knowledge: min(4, 2 + floor(Faith / 150)) rounds."
 								},
 								"details": "Six prayers: Divine Purpose grants Morale/Luck/Speed; Dauntless Assault reduces provoked retaliation damage; Steadfast Soul resists non-damaging hostile spells; Vicarious Redemption converts actual casualties into a finite physical-and-magical shield; Unbroken Vow caps casualties per attack or damaging spell; Heaven's Judgment adds magical attack and retaliation damage. No Light spell, charge pool or additional Order attribute scaling. Reapplication refreshes without duplicate strength or shield refill."
 							},
 							"expert": {
-								"description": "Each committed Order grants one uniformly random prayer. Prayer potency uses Spell Power + Knowledge + 100 Faith; duration uses actual Spell Power + Knowledge: min(4, 2 + floor(Faith / 150)) rounds.",
+								"description": "Each committed Order grants one chosen prayer to one chosen recipient. Prayer potency uses Spell Power + Knowledge + 100 Faith; duration uses actual Spell Power + Knowledge: min(4, 2 + floor(Faith / 150)) rounds.",
 								"effect": {
 									"status": "active",
-									"description": "Each committed Order grants one uniformly random prayer. Prayer potency uses Spell Power + Knowledge + 100 Faith; duration uses actual Spell Power + Knowledge: min(4, 2 + floor(Faith / 150)) rounds."
+									"description": "Each committed Order grants one chosen prayer to one chosen recipient. Prayer potency uses Spell Power + Knowledge + 100 Faith; duration uses actual Spell Power + Knowledge: min(4, 2 + floor(Faith / 150)) rounds."
 								},
 								"details": "Six prayers: Divine Purpose grants Morale/Luck/Speed; Dauntless Assault reduces provoked retaliation damage; Steadfast Soul resists non-damaging hostile spells; Vicarious Redemption converts actual casualties into a finite physical-and-magical shield; Unbroken Vow caps casualties per attack or damaging spell; Heaven's Judgment adds magical attack and retaliation damage. No Light spell, charge pool or additional Order attribute scaling. Reapplication refreshes without duplicate strength or shield refill."
 							}
@@ -10487,12 +10480,12 @@
 								"id": "new-horizons:divineMandate.antiphonalPrayer",
 								"name": "Antiphonal Prayer",
 								"requires": "expert",
-								"description": "Each Order grants two different uniformly random prayers instead of one.",
+								"description": "Each Order grants two different chosen prayers to the chosen stack instead of one.",
 								"effect": {
 									"status": "active",
-									"description": "Each Order grants two different uniformly random prayers instead of one."
+									"description": "Each Order grants two different chosen prayers to the chosen stack instead of one."
 								},
-								"details": "Sample without replacement; no usefulness filtering, reroll loop or dependency on Common Devotion."
+								"details": "Both prayers go to the same chosen recipient; repeating one prayer is not allowed."
 							},
 							{
 								"id": "new-horizons:divineMandate.livingLiturgy",
@@ -10659,143 +10652,139 @@
 						"name": "Metamagic",
 						"domain": "Faction",
 						"availability": "Tower heroes only",
-						"description": "Single-target spell overkill spills to the nearest enemy. Own area, chain and global friendly damage is reduced; resisted single-target debuffs can retry once. Optional perks unravel or reconstitute magic.",
+						"description": "After casting a spell with the Hero Action, the hero may immediately cast one more combat spell at its normal Mana cost: a double cast. Declining forfeits the offer without spending a use.",
 						"ranks": {
 							"basic": {
-								"description": "Arcane Overflow transfers 30% of primary single-target spell overkill to the nearest other enemy. Own area, chain and global spells deal 70% friendly damage. Resisted single-target debuffs have a 30% chance to retry once with normal resistance.",
+								"description": "After casting a spell with the Hero Action, immediately cast one more combat spell at its normal Mana cost. 1 double-cast use per combat.",
 								"effect": {
 									"status": "active",
-									"description": "Arcane Overflow transfers 30% of primary single-target spell overkill to the nearest other enemy. Own area, chain and global spells deal 70% friendly damage. Resisted single-target debuffs have a 30% chance to retry once with normal resistance."
+									"description": "After casting a spell with the Hero Action, immediately cast one more combat spell at its normal Mana cost. 1 double-cast use per combat."
 								},
-								"details": "Overflow is damage only and cannot recurse. Each secondary keeps normal magical defenses; immunity is not a resisted debuff. No extra Mana, Hero Action or manual secondary target. Unraveling and reconstitution require their respective perks."
+								"details": "The offer exists only right after the first spell resolves; declining or taking any other action forfeits it without spending a use. The follow-up uses ordinary targeting and legality, cannot issue an Order and cannot trigger another double cast. A double cast is complete once the follow-up spell resolves."
 							},
 							"advanced": {
-								"description": "Arcane Overflow transfers 45% of primary single-target spell overkill to the nearest other enemy. Own area, chain and global spells deal 55% friendly damage. Resisted single-target debuffs have a 45% chance to retry once with normal resistance.",
+								"description": "After casting a spell with the Hero Action, immediately cast one more combat spell at its normal Mana cost. 2 double-cast uses per combat.",
 								"effect": {
 									"status": "active",
-									"description": "Arcane Overflow transfers 45% of primary single-target spell overkill to the nearest other enemy. Own area, chain and global spells deal 55% friendly damage. Resisted single-target debuffs have a 45% chance to retry once with normal resistance."
+									"description": "After casting a spell with the Hero Action, immediately cast one more combat spell at its normal Mana cost. 2 double-cast uses per combat."
 								},
-								"details": "Overflow is damage only and cannot recurse. Each secondary keeps normal magical defenses; immunity is not a resisted debuff. No extra Mana, Hero Action or manual secondary target. Unraveling and reconstitution require their respective perks."
+								"details": "The offer exists only right after the first spell resolves; declining or taking any other action forfeits it without spending a use. The follow-up uses ordinary targeting and legality, cannot issue an Order and cannot trigger another double cast. A double cast is complete once the follow-up spell resolves."
 							},
 							"expert": {
-								"description": "Arcane Overflow transfers 60% of primary single-target spell overkill to the nearest other enemy. Own area, chain and global spells deal 40% friendly damage. Resisted single-target debuffs have a 60% chance to retry once with normal resistance.",
+								"description": "After casting a spell with the Hero Action, immediately cast one more combat spell at its normal Mana cost. 3 double-cast uses per combat.",
 								"effect": {
 									"status": "active",
-									"description": "Arcane Overflow transfers 60% of primary single-target spell overkill to the nearest other enemy. Own area, chain and global spells deal 40% friendly damage. Resisted single-target debuffs have a 60% chance to retry once with normal resistance."
+									"description": "After casting a spell with the Hero Action, immediately cast one more combat spell at its normal Mana cost. 3 double-cast uses per combat."
 								},
-								"details": "Overflow is damage only and cannot recurse. Each secondary keeps normal magical defenses; immunity is not a resisted debuff. No extra Mana, Hero Action or manual secondary target. Unraveling and reconstitution require their respective perks."
+								"details": "The offer exists only right after the first spell resolves; declining or taking any other action forfeits it without spending a use. The follow-up uses ordinary targeting and legality, cannot issue an Order and cannot trigger another double cast. A double cast is complete once the follow-up spell resolves."
 							}
 						},
 						"perks": [
 							{
-								"id": "new-horizons:metamagic.conservedFormula",
-								"name": "Conserved Formula",
+								"id": "new-horizons:metamagic.arcaneWard",
+								"name": "Arcane Ward",
 								"requires": "basic",
-								"description": "Refund 100% of actual Mana paid when a valid single-target spell ultimately fails through full resistance, after any debuff retry. The Hero Action remains spent.",
+								"description": "After each double cast, every friendly stack gains a shield absorbing Spell Power × 5 damage until this hero's next round.",
 								"effect": {
 									"status": "active",
-									"description": "Refund 100% of actual Mana paid when a valid single-target spell ultimately fails through full resistance, after any debuff retry. The Hero Action remains spent."
+									"description": "After each double cast, every friendly stack gains a shield absorbing Spell Power × 5 damage until this hero's next round."
 								},
-								"details": "No refund for cancellation, invalid targets, immunity rejection, absorption or ordinary damage reduced to zero."
+								"details": "Does not stack: a later double cast refreshes the shield instead of adding to it."
 							},
 							{
-								"id": "new-horizons:metamagic.disruptiveCasting",
-								"name": "Disruptive Casting",
+								"id": "new-horizons:metamagic.manaSiphon",
+								"name": "Mana Siphon",
 								"requires": "basic",
-								"description": "Destroy three shots from each enemy stack actually damaged by the original hero spell, once per stack per cast.",
+								"description": "Each double cast drains 4 Mana from the enemy hero to this hero.",
 								"effect": {
 									"status": "active",
-									"description": "Destroy three shots from each enemy stack actually damaged by the original hero spell, once per stack per cast."
+									"description": "Each double cast drains 4 Mana from the enemy hero to this hero."
 								},
-								"details": "Does not remove Defend, retaliation or Creature Activations. Multiple damage packets do not repeat the ammunition loss."
+								"details": "Limited to the enemy hero's available Mana. No enemy hero means no drain."
 							},
 							{
-								"id": "new-horizons:metamagic.unravelingMagic",
-								"name": "Unraveling Magic",
+								"id": "new-horizons:metamagic.deepReserves",
+								"name": "Deep Reserves",
 								"requires": "basic",
-								"description": "Damaging hero spells attempt to remove enemy enchantments at 20/30/40%. Each normalized removed Mana deals 10 magical damage.",
+								"description": "+1 Metamagic use per combat.",
 								"effect": {
 									"status": "active",
-									"description": "Damaging hero spells attempt to remove enemy enchantments at 20/30/40%. Each normalized removed Mana deals 10 magical damage."
-								},
-								"details": "Damaging hero spells have a 20/30/40% chance per eligible temporary enemy enchantment to remove it after original damage. Each normalized removed Mana deals 10 magical damage. One attempt per original cast, recipient and logical effect; no attempts from rejected or fully resisted casts, overflow, ongoing damage or triggered damage. Normalize mass costs to their single-target family; Orders, traits, equipment and physical afflictions provide no energy."
+									"description": "+1 Metamagic use per combat."
+								}
 							},
 							{
-								"id": "new-horizons:metamagic.reconstitutingMagic",
-								"name": "Reconstituting Magic",
+								"id": "new-horizons:metamagic.formulaRecovery",
+								"name": "Formula Reserve",
 								"requires": "basic",
-								"description": "Successful buffs attempt to remove hostile magical debuffs at 20/30/40%. Each normalized removed Mana provides 15 shared healing and resurrection HP.",
+								"description": "Restore 3 Mana after each double cast.",
 								"effect": {
 									"status": "active",
-									"description": "Successful buffs attempt to remove hostile magical debuffs at 20/30/40%. Each normalized removed Mana provides 15 shared healing and resurrection HP."
+									"description": "Restore 3 Mana after each double cast."
 								},
-								"details": "Successful buffs have a 20/30/40% chance per hostile magical debuff to remove it from surviving friendly recipients. Each normalized removed Mana provides 15 shared healing and resurrection HP. Works on creature bodies including Golems and Gargoyles, up to original strength. No destroyed remains, corpse retargeting, permanent summoned recruits or energy from friendly-origin curses. Count logical effects once and normalize mass costs."
+								"details": "Never above the hero's maximum Mana."
 							},
 							{
-								"id": "new-horizons:metamagic.spellSculpting",
-								"name": "Spell Sculpting",
+								"id": "new-horizons:metamagic.arcaneCycle",
+								"name": "Arcane Cycle",
 								"requires": "advanced",
-								"description": "Your damaging hero spells deal no damage to friendly creatures, replacing the core friendly-fire reduction.",
+								"description": "At the start of every third round, regain one spent Metamagic use.",
 								"effect": {
 									"status": "active",
-									"description": "Your damaging hero spells deal no damage to friendly creatures, replacing the core friendly-fire reduction."
+									"description": "At the start of every third round, regain one spent Metamagic use."
 								},
-								"details": "Applies regardless of spell geometry, including owned spell-created hazards. Enemy spells, ordinary creature attacks and unrelated terrain are unchanged."
+								"details": "Never above the combat maximum."
 							},
 							{
-								"id": "new-horizons:metamagic.widenSpells",
-								"name": "Widen Spells",
+								"id": "new-horizons:metamagic.afterglow",
+								"name": "Afterglow",
 								"requires": "advanced",
-								"description": "Eligible conventional aimed area spells gain one extra hex ring, without additional Mana cost.",
+								"description": "Spells cast as part of a double cast last one additional round.",
 								"effect": {
 									"status": "active",
-									"description": "Eligible conventional aimed area spells gain one extra hex ring, without additional Mana cost."
+									"description": "Spells cast as part of a double cast last one additional round."
 								},
-								"details": "Single-target, chain, global, mass, line, cone and persistent-field spells keep their geometry. Force Lance remains single-target."
+								"details": "Affects only spells with a duration."
 							},
 							{
-								"id": "new-horizons:metamagic.levitation",
-								"name": "Levitation",
+								"id": "new-horizons:metamagic.crescendo",
+								"name": "Crescendo",
 								"requires": "advanced",
-								"description": "Your beneficial enchantments also grant Flying for their own duration.",
+								"description": "Each spent Metamagic use grants +5 Spell Power for the rest of the combat.",
 								"effect": {
 									"status": "active",
-									"description": "Your beneficial enchantments also grant Flying for their own duration."
-								},
-								"details": "Instant healing and spells without an enchantment lifetime grant no flight. Original spell-specific target restrictions remain."
+									"description": "Each spent Metamagic use grants +5 Spell Power for the rest of the combat."
+								}
 							},
 							{
-								"id": "new-horizons:metamagic.arcaneBallistics",
-								"name": "Arcane Ballistics",
+								"id": "new-horizons:metamagic.cleansingWeave",
+								"name": "Cleansing Weave",
 								"requires": "advanced",
-								"description": "Creatures carrying your enchantments can shoot while engaged by adjacent enemies.",
+								"description": "Each double cast removes one negative magical effect from every friendly stack.",
 								"effect": {
 									"status": "active",
-									"description": "Creatures carrying your enchantments can shoot while engaged by adjacent enemies."
-								},
-								"details": "Normal ammunition and other shooting penalties remain. Includes Focus Magic converted shooters; does not grant shooting to otherwise unenchanted nonshooters, extra attacks or creature spellcasting."
+									"description": "Each double cast removes one negative magical effect from every friendly stack."
+								}
 							},
 							{
-								"id": "new-horizons:metamagic.arcaneCascade",
-								"name": "Arcane Cascade",
+								"id": "new-horizons:metamagic.grandWeaving",
+								"name": "Grand Weaving",
 								"requires": "expert",
-								"description": "Arcane Overflow strikes the two nearest distinct other enemies simultaneously. Each receives the full spill amount before its normal magical defenses.",
+								"description": "+2 Metamagic uses per combat.",
 								"effect": {
 									"status": "active",
-									"description": "Arcane Overflow strikes the two nearest distinct other enemies simultaneously. Each receives the full spill amount before its normal magical defenses."
-								},
-								"details": "One remaining secondary receives the spill once. Damage only: no division, revisits, further jumps, pin, debuffs, destroyed-remains propagation or secondary unraveling attempts."
+									"description": "+2 Metamagic uses per combat."
+								}
 							},
 							{
-								"id": "new-horizons:metamagic.empoweredSpells",
-								"name": "Empowered Spells",
+								"id": "new-horizons:metamagic.spellstorm",
+								"name": "Spellstorm",
 								"requires": "expert",
-								"description": "Your single-target damaging hero spells cannot be resisted. Magical immunity, protection and damage reduction still apply.",
+								"description": "After the third double cast in a combat, this hero's spells cost 25% less Mana for the rest of that combat.",
 								"effect": {
 									"status": "active",
-									"description": "Your single-target damaging hero spells cannot be resisted. Magical immunity, protection and damage reduction still apply."
+									"description": "After the third double cast in a combat, this hero's spells cost 25% less Mana for the rest of that combat."
 								},
-								"details": "Debuffs, Forced Recall, area, chain and global spells retain normal resistance and applicable retry rules. Force Lance retains its separate stronger bypass and exactly one-round pin."
+								"details": "Ordinary Mana rounding applies."
 							}
 						]
 					},
@@ -13128,7 +13117,7 @@
 				"magic": 0
 			},
 			"basic": {
-				"description": "Each committed Order grants one uniformly random prayer. Prayer potency uses Spell Power + Knowledge + 0 Faith; duration uses actual Spell Power + Knowledge: min(4, 2 + floor(Faith / 150)) rounds.",
+				"description": "Each committed Order grants one chosen prayer to one chosen recipient. Prayer potency uses Spell Power + Knowledge + 0 Faith; duration uses actual Spell Power + Knowledge: min(4, 2 + floor(Faith / 150)) rounds.",
 				"images": {
 					"small": "NH_divineMandate_rankart_v2_basic_small.png",
 					"medium": "NH_divineMandate_rankart_v2_basic_medium.png",
@@ -13138,7 +13127,7 @@
 				"effects": {}
 			},
 			"advanced": {
-				"description": "Each committed Order grants one uniformly random prayer. Prayer potency uses Spell Power + Knowledge + 50 Faith; duration uses actual Spell Power + Knowledge: min(4, 2 + floor(Faith / 150)) rounds.",
+				"description": "Each committed Order grants one chosen prayer to one chosen recipient. Prayer potency uses Spell Power + Knowledge + 50 Faith; duration uses actual Spell Power + Knowledge: min(4, 2 + floor(Faith / 150)) rounds.",
 				"images": {
 					"small": "NH_divineMandate_rankart_v2_advanced_small.png",
 					"medium": "NH_divineMandate_rankart_v2_advanced_medium.png",
@@ -13148,7 +13137,7 @@
 				"effects": {}
 			},
 			"expert": {
-				"description": "Each committed Order grants one uniformly random prayer. Prayer potency uses Spell Power + Knowledge + 100 Faith; duration uses actual Spell Power + Knowledge: min(4, 2 + floor(Faith / 150)) rounds.",
+				"description": "Each committed Order grants one chosen prayer to one chosen recipient. Prayer potency uses Spell Power + Knowledge + 100 Faith; duration uses actual Spell Power + Knowledge: min(4, 2 + floor(Faith / 150)) rounds.",
 				"images": {
 					"small": "NH_divineMandate_rankart_v2_expert_small.png",
 					"medium": "NH_divineMandate_rankart_v2_expert_medium.png",
@@ -13228,7 +13217,7 @@
 				"magic": 0
 			},
 			"basic": {
-				"description": "Arcane Overflow transfers 30% of primary single-target spell overkill to the nearest other enemy. Own area, chain and global spells deal 70% friendly damage. Resisted single-target debuffs have a 30% chance to retry once with normal resistance.",
+				"description": "After casting a spell with the Hero Action, immediately cast one more combat spell at its normal Mana cost. 1 double-cast use per combat.",
 				"images": {
 					"small": "NH_metamagic_handcasting_basic_small.png",
 					"medium": "NH_metamagic_handcasting_basic_medium.png",
@@ -13238,7 +13227,7 @@
 				"effects": {}
 			},
 			"advanced": {
-				"description": "Arcane Overflow transfers 45% of primary single-target spell overkill to the nearest other enemy. Own area, chain and global spells deal 55% friendly damage. Resisted single-target debuffs have a 45% chance to retry once with normal resistance.",
+				"description": "After casting a spell with the Hero Action, immediately cast one more combat spell at its normal Mana cost. 2 double-cast uses per combat.",
 				"images": {
 					"small": "NH_metamagic_handcasting_advanced_small.png",
 					"medium": "NH_metamagic_handcasting_advanced_medium.png",
@@ -13248,7 +13237,7 @@
 				"effects": {}
 			},
 			"expert": {
-				"description": "Arcane Overflow transfers 60% of primary single-target spell overkill to the nearest other enemy. Own area, chain and global spells deal 40% friendly damage. Resisted single-target debuffs have a 60% chance to retry once with normal resistance.",
+				"description": "After casting a spell with the Hero Action, immediately cast one more combat spell at its normal Mana cost. 3 double-cast uses per combat.",
 				"images": {
 					"small": "NH_metamagic_handcasting_expert_small.png",
 					"medium": "NH_metamagic_handcasting_expert_medium.png",

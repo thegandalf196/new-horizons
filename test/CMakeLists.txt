@@ -580,6 +580,7 @@ set(test_SRCS
 		server/battles/NewHorizonsForceLanceAdmissionTest.cpp
 		battleAI/FocusMagicProjectionTest.cpp
 		spells/NewHorizonsMetamagicResolutionTest.cpp
+		spells/NewHorizonsMetamagicDoubleCastTest.cpp
 		server/battles/NewHorizonsMetamagicCompletionTest.cpp
 		spells/effects/NewHorizonsSorceryEffectsTest.cpp
 		PerkStateFixture.h
@@ -1111,6 +1112,7 @@ set(test_SRCS
 
 set(test_HEADERS
 		HistoricalFactionPerkRules.h
+		OverkillRandomPrayerRules.h
 		scripting/HistoricalTimedScript.h
 		scripting/HistoricalLifeDrainScript.h
 		scripting/HistoricalDamageCalculatorScript.h

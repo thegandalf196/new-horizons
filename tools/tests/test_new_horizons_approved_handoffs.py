@@ -23,10 +23,9 @@ class ApprovedFactionHandoffsTest(unittest.TestCase):
 
     def test_exact_replacement_rosters_and_strict_tiers(self):
         expected = {
-            'metamagic': ('conservedFormula', 'disruptiveCasting', 'unravelingMagic',
-                          'reconstitutingMagic', 'spellSculpting', 'widenSpells',
-                          'levitation', 'arcaneBallistics', 'arcaneCascade',
-                          'empoweredSpells'),
+            'metamagic': ('arcaneWard', 'manaSiphon', 'deepReserves', 'formulaRecovery',
+                          'arcaneCycle', 'afterglow', 'crescendo', 'cleansingWeave',
+                          'grandWeaving', 'spellstorm'),
             'divineMandate': ('enduringPrayer', 'joyfulDevotion', 'fearlessAdvance',
                              'unshakableFaith', 'communionOfSaints',
                              'righteousSentence', 'ferventInvocation', 'sacredAccord',
@@ -46,15 +45,17 @@ class ApprovedFactionHandoffsTest(unittest.TestCase):
     def test_rank_policies_capture_exact_approved_values(self):
         self.validator.validate(self.rules)
         self.assertEqual(self.rules['divineMandatePolicy'], {
-            'version': 3, 'potencyFaithBonusByRank': [0, 0, 50, 100],
-            'ferventInvocationAdditionalFaith': 100})
+            'version': 4, 'potencyFaithBonusByRank': [0, 0, 50, 100],
+            'ferventInvocationAdditionalFaith': 100, 'chosen': True})
         self.assertEqual(self.rules['metamagicPolicy'], {
-            'version': 6, 'removalChancePercent': [0, 20, 30, 40],
-            'damagePerMana': 10, 'restorationPerMana': 15,
-            'halonRemovalChanceBonusPercent': 5,
-            'arcaneOverflowPercentByRank': [0, 30, 45, 60],
-            'friendlyDamageReductionPercentByRank': [0, 30, 45, 60],
-            'debuffRetryChancePercentByRank': [0, 30, 45, 60]})
+            'version': 7, 'usesPerCombatByRank': [0, 1, 2, 3], 'followUpMustDiffer': True,
+            'halonAdditionalUses': 1,
+            'arcaneWardSpellPowerMultiplier': 5, 'manaSiphonMana': 4,
+            'deepReservesAdditionalUses': 1, 'formulaReserveMana': 3,
+            'arcaneCycleRoundInterval': 3, 'afterglowAdditionalRounds': 1,
+            'crescendoSpellPowerPerSpentUse': 5, 'cleansingWeaveEffects': 1,
+            'grandWeavingAdditionalUses': 2, 'spellstormManaReductionPercent': 25,
+            'spellstormDoubleCastThreshold': 3})
 
     def test_policy_contract_rejects_missing_extra_and_misranked_values(self):
         for name in ('metamagicPolicy', 'divineMandatePolicy'):
@@ -64,6 +65,8 @@ class ApprovedFactionHandoffsTest(unittest.TestCase):
                 with self.subTest(policy=name, missing=field):
                     self.assertTrue(list(self.validator.iter_errors(rules)))
                 for invalid in (True, None, '100', [0, 30, 45], [0, 30, 45, 61]):
+                    if invalid is value:
+                        continue
                     rules = copy.deepcopy(self.rules)
                     rules[name][field] = invalid
                     with self.subTest(policy=name, field=field, invalid=invalid):

@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OverkillRandomPrayerRules.h"
 #include "../../lib/nativeRules/CompiledMetamagicRules.h"
 #include "../../lib/nativeRules/CapturedPerkRules.h"
 #include "../../lib/entities/hero/NewHorizonsPerkRules.h"
@@ -19,7 +20,9 @@
 namespace
 {
 using namespace nativeRules;
-JsonNode perks() { return JsonNode(JsonPath::builtin("config/newHorizonsPerks")); }
+// Policies 4/5/6 are captured-only since Double Cast; pin the last policy-6 roster.
+JsonNode perks() { return overkillRandomPrayerRules(); }
+JsonNode installedPerks() { return JsonNode(JsonPath::builtin("config/newHorizonsPerks")); }
 JsonNode magic() { return JsonNode(JsonPath::builtin("config/newHorizonsMagic")); }
 
 // Pin the complete v4 roster rather than relabeling installed v6 perks.
@@ -631,4 +634,67 @@ TEST(CompiledMetamagicRules, ColdSpellClassificationSeparatesDamageDebuffsAndDis
 	const auto count = energy->sourceResolutionCount();
 	for(int query = 0; query < 100; ++query) EXPECT_EQ(energy->identity(SpellID::SLOW), slow);
 	EXPECT_EQ(energy->sourceResolutionCount(), count);
+}
+
+TEST(CompiledMetamagicRules, DoubleCastBindsOnlyItsOwnRosterAndCapturedValues)
+{
+	const auto owner = CapturedPerkRules::compile(installedPerks());
+	const auto & rules = owner->metamagic();
+	ASSERT_NE(rules.doubleCastPolicy(), nullptr);
+	EXPECT_EQ(rules.policy(), nullptr);
+	for(size_t key = 0; key < static_cast<size_t>(MetamagicPerk::Count); ++key)
+		EXPECT_FALSE(rules.supports(static_cast<MetamagicPerk>(key))) << key;
+	for(size_t key = 0; key < static_cast<size_t>(DoubleCastPerk::Count); ++key)
+	{
+		const auto perk = static_cast<DoubleCastPerk>(key);
+		EXPECT_TRUE(rules.supports(perk)) << key;
+		const auto * definition = owner->catalogue().definition(rules.perk(perk));
+		ASSERT_NE(definition, nullptr) << key;
+		EXPECT_EQ(definition->requiredRank, key < 4 ? 1 : key < 8 ? 2 : 3);
+	}
+	EXPECT_THROW(rules.perk(DoubleCastPerk::Count), std::out_of_range);
+	EXPECT_TRUE(rules.followUpMustDiffer());
+	const auto all = static_cast<DoubleCastPerkSet>((1u << static_cast<unsigned>(DoubleCastPerk::Count)) - 1);
+	const auto bit = [](DoubleCastPerk perk) { return doubleCastPerkBit(perk); };
+	EXPECT_EQ(rules.maxUses(0, all, true), 0);
+	EXPECT_EQ(rules.maxUses(4, all, true), 0);
+	EXPECT_EQ(rules.maxUses(1, 0, false), 1);
+	EXPECT_EQ(rules.maxUses(2, 0, false), 2);
+	EXPECT_EQ(rules.maxUses(3, 0, true), 4);
+	EXPECT_EQ(rules.maxUses(1, bit(DoubleCastPerk::DeepReserves), false), 2);
+	EXPECT_EQ(rules.maxUses(3, bit(DoubleCastPerk::GrandWeaving), false), 5);
+	EXPECT_EQ(rules.maxUses(3, bit(DoubleCastPerk::DeepReserves) | bit(DoubleCastPerk::GrandWeaving), true), 7);
+	EXPECT_EQ(rules.arcaneWardShield(12, bit(DoubleCastPerk::ArcaneWard)), 60);
+	EXPECT_EQ(rules.arcaneWardShield(12, 0), 0);
+	EXPECT_EQ(rules.arcaneWardShield(std::numeric_limits<int>::max(), all), std::numeric_limits<int>::max());
+	EXPECT_EQ(rules.manaSiphonMana(bit(DoubleCastPerk::ManaSiphon)), 4);
+	EXPECT_EQ(rules.formulaReserveMana(bit(DoubleCastPerk::FormulaReserve)), 3);
+	EXPECT_EQ(rules.formulaReserveMana(bit(DoubleCastPerk::ManaSiphon)), 0);
+	for(const auto & [round, restores] : std::vector<std::pair<int, bool>>{{0, false}, {1, false}, {2, false}, {3, true}, {4, false}, {6, true}})
+		EXPECT_EQ(rules.arcaneCycleRestores(round, bit(DoubleCastPerk::ArcaneCycle)), restores) << round;
+	EXPECT_FALSE(rules.arcaneCycleRestores(3, 0));
+	EXPECT_EQ(rules.afterglowAdditionalRounds(bit(DoubleCastPerk::Afterglow)), 1);
+	EXPECT_EQ(rules.crescendoSpellPower(0, all), 0);
+	EXPECT_EQ(rules.crescendoSpellPower(3, bit(DoubleCastPerk::Crescendo)), 15);
+	EXPECT_EQ(rules.cleansingWeaveEffects(bit(DoubleCastPerk::CleansingWeave)), 1);
+	EXPECT_EQ(rules.spellstormManaReductionPercent(2, bit(DoubleCastPerk::Spellstorm)), 0);
+	EXPECT_EQ(rules.spellstormManaReductionPercent(3, bit(DoubleCastPerk::Spellstorm)), 25);
+	EXPECT_EQ(rules.spellstormManaReductionPercent(9, 0), 0);
+}
+
+TEST(CompiledMetamagicRules, CapturedOverkillProfilesNeverExecuteDoubleCast)
+{
+	const auto owner = CapturedPerkRules::compile(perks());
+	const auto & rules = owner->metamagic();
+	ASSERT_NE(rules.policy(), nullptr);
+	EXPECT_EQ(rules.doubleCastPolicy(), nullptr);
+	EXPECT_FALSE(rules.followUpMustDiffer());
+	const auto all = static_cast<DoubleCastPerkSet>((1u << static_cast<unsigned>(DoubleCastPerk::Count)) - 1);
+	for(int rank = 0; rank <= 3; ++rank)
+		EXPECT_EQ(rules.maxUses(rank, all, true), 0);
+	for(size_t key = 0; key < static_cast<size_t>(DoubleCastPerk::Count); ++key)
+		EXPECT_FALSE(rules.supports(static_cast<DoubleCastPerk>(key))) << key;
+	EXPECT_EQ(rules.arcaneWardShield(10, all), 0);
+	EXPECT_EQ(rules.spellstormManaReductionPercent(5, all), 0);
+	EXPECT_EQ(rules.removalChance(3, HeroTypeID::NONE), 40);
 }

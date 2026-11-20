@@ -32,7 +32,13 @@ bool enabled(const JsonNode & rules)
 {
 	const auto & policy = rules["divineMandatePolicy"];
 	return policy.isStruct() && policy["version"].getType() == JsonNode::JsonType::DATA_INTEGER
-		&& policy["version"].Integer() == 3;
+		&& (policy["version"].Integer() == 3 || policy["version"].Integer() == 4);
+}
+
+bool chosenPrayers(const JsonNode & rules)
+{
+	const auto & policy = rules["divineMandatePolicy"];
+	return enabled(rules) && policy["version"].Integer() == 4 && policy["chosen"].isBool() && policy["chosen"].Bool();
 }
 
 Policy capturePolicy(const CGHeroInstance * hero)
@@ -44,6 +50,7 @@ Policy capturePolicy(const CGHeroInstance * hero)
 	const auto & authored = hero->getPerkState().getRules()["divineMandatePolicy"];
 	result.rankFaithBonus = static_cast<int>(authored["potencyFaithBonusByRank"].Vector().at(result.rank).Integer());
 	result.ferventAdditionalFaith = static_cast<int>(authored["ferventInvocationAdditionalFaith"].Integer());
+	result.chosen = chosenPrayers(hero->getPerkState().getRules());
 	static constexpr std::array<const char *, 10> keys = {
 		"enduringPrayer", "joyfulDevotion", "fearlessAdvance", "unshakableFaith",
 		"communionOfSaints", "righteousSentence", "ferventInvocation", "sacredAccord",

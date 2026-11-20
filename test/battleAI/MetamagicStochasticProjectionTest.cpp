@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OverkillRandomPrayerRules.h"
 #include "HeroQueueSelectorFixture.h"
 #include "../../AI/BattleAI/HeroActionSelection.h"
 #include "../../AI/BattleAI/HeroSpellOutcomeValue.h"
@@ -36,6 +37,13 @@ class MetamagicStochasticProjectionTest : public HeroQueueSelectorTest
 {
 protected:
 	SpellID spell;
+	void mapLoaded(CMap * map) override
+	{
+		HeroQueueSelectorTest::mapLoaded(map);
+		// Debuff retry and removal projections belong to captured policy 6.
+		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, overkillRandomPrayerRules());
+		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, overkillRandomPrayerHeroes());
+	}
 	void prepare()
 	{
 		useRevisedOrders = true;

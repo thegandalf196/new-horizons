@@ -34,6 +34,9 @@ struct DLL_LINKAGE Policy
 	uint16_t perks = 0;
 	int rankFaithBonus = 0;
 	int ferventAdditionalFaith = 0;
+	/// Captured version 4: the commander picks the prayer and its one recipient.
+	/// Version 3 keeps its uniformly random prayers for every Order recipient.
+	bool chosen = false;
 	bool has(Perk perk) const;
 	void validate() const;
 };
@@ -54,7 +57,9 @@ struct DLL_LINKAGE ActivePrayer
 	int remainingRounds = 0;
 	Policy policy;
 };
+/// Captured versions 3 (random prayers) and 4 (chosen prayers).
 DLL_LINKAGE bool enabled(const JsonNode & rules);
+DLL_LINKAGE bool chosenPrayers(const JsonNode & rules);
 DLL_LINKAGE Policy capturePolicy(const CGHeroInstance * hero);
 DLL_LINKAGE int actualFaith(const CGHeroInstance & hero);
 DLL_LINKAGE int potencyFaith(int actualFaith, const Policy & policy);

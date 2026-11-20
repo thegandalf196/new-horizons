@@ -24,7 +24,8 @@
 #include "../../lib/modding/CModHandler.h"
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
-#include "../../lib/spells/NewHorizonsMetamagicResolution.h"
+#include "../../lib/spells/NewHorizonsMetamagicDoubleCast.h"
+#include "../../lib/nativeRules/CompiledMetamagicRules.h"
 #include "../../lib/spells/NewHorizonsSpellAvailability.h"
 
 namespace
@@ -65,7 +66,7 @@ protected:
 	}
 };
 
-TEST_F(NewHorizonsHalonInitializationTest, FreshHalonUsesUnravelerWithTwoBasicSkillsAndNoStartingPerks)
+TEST_F(NewHorizonsHalonInitializationTest, FreshHalonUsesSpellweaverWithFormulaReserveFromHisAuthoredProfile)
 {
 	TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
 	builder.size(36, false).playerActive(PlayerColor(0))
@@ -75,29 +76,37 @@ TEST_F(NewHorizonsHalonInitializationTest, FreshHalonUsesUnravelerWithTwoBasicSk
 	const auto * halon = findHeroAt({5, 5, 0});
 	ASSERT_NE(halon, nullptr);
 
+	// The authored starting-development profile replaces the hero type's
+	// Metamagic + Spellcraft default with Metamagic + Warcasting and one perk.
 	const auto metamagic = scopedSkill("new-horizons:metamagic");
-	const auto spellcraft = scopedSkill("new-horizons:spellcraft");
 	ASSERT_EQ(halon->secSkills.size(), 2u);
 	EXPECT_EQ(halon->getSecSkillLevel(metamagic), MasteryLevel::BASIC);
-	EXPECT_EQ(halon->getSecSkillLevel(spellcraft), MasteryLevel::BASIC);
-	EXPECT_EQ(halon->getSecSkillLevel(scopedSkill("new-horizons:warcasting")), MasteryLevel::NONE);
-	EXPECT_TRUE(halon->getPerkState().getSelected().empty());
+	EXPECT_EQ(halon->getSecSkillLevel(scopedSkill("new-horizons:warcasting")), MasteryLevel::BASIC);
+	EXPECT_EQ(halon->getSecSkillLevel(scopedSkill("new-horizons:spellcraft")), MasteryLevel::NONE);
+	ASSERT_EQ(halon->getPerkState().getSelected().size(), 1u);
+	EXPECT_TRUE(halon->hasActivePerk("new-horizons:metamagic", "new-horizons:metamagic.formulaRecovery"));
+	EXPECT_FALSE(halon->hasActivePerk("new-horizons:metamagic", "new-horizons:metamagic.unravelingMagic"));
 	EXPECT_EQ(halon->getSecSkillLevel(SecondarySkill::WISDOM), MasteryLevel::NONE);
 	EXPECT_EQ(halon->getSecSkillLevel(SecondarySkill::MYSTICISM), MasteryLevel::NONE);
 
-	// Unraveler is selected by original Hero identity, not a resource or action bonus.
+	// Spellweaver is selected by original Hero identity, not a resource or action bonus.
 	EXPECT_TRUE(halon->getHeroType()->specialty.empty());
 	for(const auto & bonus : halon->getExportedBonusList())
 		EXPECT_NE(bonus->source, BonusSource::HERO_SPECIAL);
-	const auto policy = newHorizonsMetamagic::resolutionPolicy(halon->getPerkState().getRules());
+	const auto policy = newHorizonsMetamagic::doubleCastPolicy(halon->getPerkState().getRules());
 	ASSERT_TRUE(policy);
-	EXPECT_EQ(policy->halonChanceBonus, 5);
-	EXPECT_EQ(newHorizonsMetamagic::removalChancePercent(*policy,
-		halon->getSecSkillLevel(metamagic), halon->getHeroType()->getJsonKey() == "core:halon"), 25);
-	EXPECT_EQ(newHorizonsMetamagic::removalChancePercent(*policy, MasteryLevel::BASIC, false), 20);
-	EXPECT_EQ(halon->getHeroType()->getSpecialtyNameTranslated(), "Unraveler");
+	EXPECT_EQ(policy->halonAdditionalUses, 1);
+	const auto * rules = nativeRules::metamagicRules(halon);
+	ASSERT_NE(rules, nullptr);
+	ASSERT_TRUE(rules->isHalon(halon->getHeroTypeID()));
+	const auto perks = nativeRules::doubleCastPerks(halon);
+	EXPECT_EQ(perks, nativeRules::doubleCastPerkBit(nativeRules::DoubleCastPerk::FormulaReserve));
+	EXPECT_EQ(rules->maxUses(nativeRules::metamagicSkillRank(halon), perks, true), 2);
+	EXPECT_EQ(rules->maxUses(MasteryLevel::BASIC, perks, false), 1);
+	EXPECT_EQ(rules->formulaReserveMana(perks), 3);
+	EXPECT_EQ(halon->getHeroType()->getSpecialtyNameTranslated(), "Spellweaver");
 	EXPECT_EQ(halon->getHeroType()->getSpecialtyDescriptionTranslated(),
-		"Halon has +5 percentage points to Metamagic removal chance: 25% at Basic, 35% at Advanced and 45% at Expert.");
+		"Halon has one additional Metamagic use per combat: 2 at Basic, 3 at Advanced and 4 at Expert.");
 }
 
 TEST_F(NewHorizonsHalonInitializationTest, FreshBrissaUsesFocusMagicAndSoftLeadershipWithoutSlotLocks)

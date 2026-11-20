@@ -11,7 +11,7 @@ from unittest import mock
 
 from .nhart_source_transitions import source_records, historical_source, read_historical_source
 from .nhart_sorcery_config_transition import CONFIG, before_sorcery, transition_record
-from .nhart_current_faction_perk_art import BINDINGS
+from .nhart_current_faction_perk_art import BINDINGS, CURRENT_BINDINGS, RETIRED_METAMAGIC5_IDS
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -44,9 +44,14 @@ class ArtSourceTransitionTest(unittest.TestCase):
         roster = json.loads((ROOT / 'config/newHorizonsPerks.json').read_text())
         ids = {row['id'] for row in roster['skills']['new-horizons:metamagic']['perks']}
         self.assertEqual(len(ids), 10)
-        self.assertEqual({identity for identity in bindings if identity.startswith('new-horizons:metamagic.')}, ids)
+        self.assertEqual({identity for identity in bindings if identity.startswith('new-horizons:metamagic.')},
+                         ids | RETIRED_METAMAGIC5_IDS)
+        self.assertFalse(ids & RETIRED_METAMAGIC5_IDS)
         self.assertEqual({identity: bindings[identity] for identity in ids},
-                         {identity: BINDINGS[identity] for identity in ids})
+                         {identity: CURRENT_BINDINGS[identity] for identity in ids})
+        # Retired Metamagic 5 rows keep their selected wave art for captured games.
+        self.assertEqual({identity: bindings[identity] for identity in RETIRED_METAMAGIC5_IDS},
+                         {identity: BINDINGS[identity] for identity in RETIRED_METAMAGIC5_IDS})
         with (ROOT / 'docs/NH_UI_ASSET_INVENTORY.csv').open() as stream:
             inventory = list(csv.DictReader(stream))
         for identity in ids:

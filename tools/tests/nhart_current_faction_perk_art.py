@@ -23,6 +23,28 @@ BINDINGS = {
 }
 
 
+# Metamagic 5 identities stay bound to their selected wave art for captured
+# policy-6 games; they are retired from the current roster.
+RETIRED_METAMAGIC5_IDS = frozenset(identity for identity in BINDINGS
+                                   if identity.startswith('new-horizons:metamagic.'))
+
+# Metamagic 6 provisional stand-ins: selected historical paintings reused until
+# purpose-made art is approved. They add no artwork wave or selected bytes.
+METAMAGIC6_STANDINS = {
+    'new-horizons:metamagic.arcaneWard': 'NH_perk_spell_buffer',
+    'new-horizons:metamagic.manaSiphon': 'NH_perk_focused_pairing',
+    'new-horizons:metamagic.deepReserves': 'NH_perk_arcane_reservoir',
+    'new-horizons:metamagic.formulaRecovery': 'NH_perk_formula_reserve',
+    'new-horizons:metamagic.arcaneCycle': 'NH_perk_spell_sequencing',
+    'new-horizons:metamagic.afterglow': 'NH_perk_echoed_duration',
+    'new-horizons:metamagic.crescendo': 'NH_perk_perfect_sequence',
+    'new-horizons:metamagic.cleansingWeave': 'NH_perk_metamagic_reconstituting_magic',
+    'new-horizons:metamagic.grandWeaving': 'NH_perk_grand_metamagic',
+    'new-horizons:metamagic.spellstorm': 'NH_perk_arcane_economy',
+}
+CURRENT_BINDINGS = {**{identity: icon for identity, icon in BINDINGS.items()
+                       if identity not in RETIRED_METAMAGIC5_IDS}, **METAMAGIC6_STANDINS}
+
 def current_faction_perk_wave(wave):
     """Recognize only the complete twenty-perk selected artwork wave."""
     records = wave['perks']

@@ -273,19 +273,15 @@ class NewHorizonsSkillEntitiesTest(unittest.TestCase):
         skill = self.skills["metamagic"]
         self.assertNotIn("combatStatus", skill)
         policy = self.perks["metamagicPolicy"]
-        self.assertEqual(policy["version"], 6)
-        for field in ("arcaneOverflowPercentByRank", "friendlyDamageReductionPercentByRank",
-                      "debuffRetryChancePercentByRank"):
-            self.assertEqual(policy[field], [0, 30, 45, 60])
-        # Removal remains an optional perk path, not the skill's core rank effect.
-        self.assertEqual(policy["removalChancePercent"], [0, 20, 30, 40])
-        for rank, chance in zip(RANKS, (30, 45, 60)):
+        self.assertEqual(policy["version"], 7)
+        # Double-cast uses come from the captured policy, never a skill bonus.
+        self.assertEqual(policy["usesPerCombatByRank"], [0, 1, 2, 3])
+        for rank, uses in zip(RANKS, ("1 double-cast use", "2 double-cast uses", "3 double-cast uses")):
             self.assertEqual(skill[rank]["effects"], {})
             description = skill[rank]["description"]
-            self.assertIn(f"Arcane Overflow transfers {chance}% of primary single-target spell overkill", description)
-            self.assertIn(f"Own area, chain and global spells deal {100 - chance}% friendly damage", description)
-            self.assertIn(f"Resisted single-target debuffs have a {chance}% chance to retry once with normal resistance", description)
-            self.assertNotIn("chance per temporary magical effect", description)
+            self.assertIn("immediately cast one more combat spell at its normal Mana cost", description)
+            self.assertIn(f"{uses} per combat", description)
+            self.assertNotIn("Arcane Overflow", description)
             self.assertEqual(skill[rank]["description"], self.perks["skills"]
                              ["new-horizons:metamagic"]["ranks"][rank]["description"])
         providers = load("config/schemas/skill.json")["properties"]["combatStatus"]
@@ -295,14 +291,15 @@ class NewHorizonsSkillEntitiesTest(unittest.TestCase):
         skill = self.skills["divineMandate"]
         self.assertEqual(skill["name"], "Consecrated Arms")
         self.assertEqual(self.perks["divineMandatePolicy"], {
-            "version": 3,
+            "version": 4,
             "potencyFaithBonusByRank": [0, 0, 50, 100],
             "ferventInvocationAdditionalFaith": 100,
+            "chosen": True,
         })
         for rank, faith in zip(RANKS, (0, 50, 100)):
             self.assertEqual(skill[rank]["effects"], {})
             description = skill[rank]["description"]
-            self.assertIn("Each committed Order grants one uniformly random prayer", description)
+            self.assertIn("Each committed Order grants one chosen prayer to one chosen recipient", description)
             self.assertIn(f"Prayer potency uses Spell Power + Knowledge + {faith} Faith", description)
             self.assertIn("duration uses actual Spell Power + Knowledge: min(4, 2 + floor(Faith / 150)) rounds", description)
             canonical = self.perks["skills"]["new-horizons:divineMandate"]["ranks"][rank]

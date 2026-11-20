@@ -1125,9 +1125,9 @@ class NewHorizonsContentTest(unittest.TestCase):
         self.assertIsNone(patch['specialty']['bonuses']['mysticismExtra'])
         self.assertIsNone(patch['specialty']['bonuses']['metamagicUses'])
         self.assertEqual(patch['texts']['specialty'], {
-            'name': 'Unraveler',
-            'tooltip': '+5 percentage points to Metamagic removal chance',
-            'description': 'Halon has +5 percentage points to Metamagic removal chance: 25% at Basic, 35% at Advanced and 45% at Expert.',
+            'name': 'Spellweaver',
+            'tooltip': '+1 Metamagic use per combat',
+            'description': 'Halon has one additional Metamagic use per combat: 2 at Basic, 3 at Advanced and 4 at Expert.',
         })
         module = load('Mods/new-horizons/mod.json')
         self.assertEqual(module['heroes'].count('config/heroes/halon.json'), 1)

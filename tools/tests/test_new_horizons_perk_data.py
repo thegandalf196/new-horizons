@@ -25,9 +25,9 @@ ACTIVE_PERKS = {
         "officerCorps", "missileCommand", "regimentalOrganization", "combinedArms",
         "grandMarshal", "masterOfLegions")},
     *{"new-horizons:metamagic." + key for key in (
-        "conservedFormula", "disruptiveCasting", "unravelingMagic",
-        "reconstitutingMagic", "spellSculpting", "widenSpells", "levitation",
-        "arcaneBallistics", "arcaneCascade", "empoweredSpells")},
+        "arcaneWard", "manaSiphon", "deepReserves", "formulaRecovery",
+        "arcaneCycle", "afterglow", "crescendo", "cleansingWeave",
+        "grandWeaving", "spellstorm")},
     *{"new-horizons:divineMandate." + key for key in (
         "enduringPrayer", "joyfulDevotion", "fearlessAdvance", "unshakableFaith",
         "communionOfSaints", "righteousSentence", "ferventInvocation",
@@ -810,15 +810,14 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
     def test_current_faction_policies_are_strict(self):
         validator = Draft4Validator(self.schema)
         for key, expected in (
-            ('metamagicPolicy', {'version': 6, 'removalChancePercent': [0, 20, 30, 40],
-                                 'damagePerMana': 10, 'restorationPerMana': 15,
-                                 'halonRemovalChanceBonusPercent': 5,
-                                 'arcaneOverflowPercentByRank': [0, 30, 45, 60],
-                                 'friendlyDamageReductionPercentByRank': [0, 30, 45, 60],
-                                 'debuffRetryChancePercentByRank': [0, 30, 45, 60]}),
-            ('divineMandatePolicy', {'version': 3,
-                                     'potencyFaithBonusByRank': [0, 0, 50, 100],
-                                     'ferventInvocationAdditionalFaith': 100}),
+            ('metamagicPolicy', {
+                'version': 7, 'usesPerCombatByRank': [0, 1, 2, 3], 'followUpMustDiffer': True, 'halonAdditionalUses': 1,
+                'arcaneWardSpellPowerMultiplier': 5, 'manaSiphonMana': 4, 'deepReservesAdditionalUses': 1,
+                'formulaReserveMana': 3, 'arcaneCycleRoundInterval': 3, 'afterglowAdditionalRounds': 1,
+                'crescendoSpellPowerPerSpentUse': 5, 'cleansingWeaveEffects': 1, 'grandWeavingAdditionalUses': 2,
+                'spellstormManaReductionPercent': 25, 'spellstormDoubleCastThreshold': 3}),
+            ('divineMandatePolicy', {'version': 4, 'potencyFaithBonusByRank': [0, 0, 50, 100],
+                                     'ferventInvocationAdditionalFaith': 100, 'chosen': True}),
             ('demonicGatingPolicy', {'version': 2}),
         ):
             with self.subTest(policy=key):
@@ -835,74 +834,6 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
                         {'version': 3, 'adeptAdditionalPoints': 1.5}):
             self.assertTrue(list(validator.iter_errors({**self.rules, 'metamagicPolicy': invalid})))
 
-    def test_metamagic_overflow_policy_preserves_captured_countermagic(self):
-        validator = Draft4Validator(self.schema)
-        current = self.rules['metamagicPolicy']
-        historical = {
-            'version': 4, 'removalChancePercent': [0, 20, 30, 40],
-            'damagePerMana': 10, 'restorationPerMana': 15,
-            'halonRemovalChanceBonusPercent': 5,
-        }
-        overflow = {
-            'version': 5, 'removalChancePercent': [0, 20, 30, 40],
-            'damagePerMana': 10, 'restorationPerMana': 15,
-            'halonRemovalChanceBonusPercent': 5,
-            'arcaneOverflowPercentByRank': [0, 25, 50, 75],
-        }
-        for policy in (historical, overflow):
-            validator.validate({**self.rules, 'metamagicPolicy': policy})
-        for policy in (historical, overflow):
-            for field in ('friendlyDamageReductionPercentByRank',
-                          'debuffRetryChancePercentByRank'):
-                invalid_policy = {**policy, field: [0, 30, 45, 60]}
-                self.assertTrue(list(validator.iter_errors(
-                    {**self.rules, 'metamagicPolicy': invalid_policy})))
-        invalid = (
-            {**historical, 'arcaneOverflowPercentByRank': [0, 25, 50, 75]},
-            {**historical, 'version': 5},
-            *({**policy, 'arcaneOverflowPercentByRank': values}
-              for policy in (overflow, current)
-              for values in ([0, 25, 50, 100], [0, True, 50, 75], [0, 25, 50])),
-        )
-        for policy in invalid:
-            with self.subTest(policy=policy):
-                self.assertTrue(list(validator.iter_errors({**self.rules, 'metamagicPolicy': policy})))
-
-    def test_current_metamagic_describes_three_core_channels_and_ten_perks(self):
-        skill = self.rules['skills']['new-horizons:metamagic']
-        entities = load('config/newHorizonsSkills.json')['metamagic']
-        for rank, percent, friendly in zip(RANKS, (30, 45, 60), (70, 55, 40)):
-            row = skill['ranks'][rank]
-            self.assertIn(f'Arcane Overflow transfers {percent}%', row['description'])
-            self.assertIn('primary single-target spell overkill', row['description'])
-            self.assertIn('nearest other enemy', row['description'])
-            self.assertIn(f'area, chain and global spells deal {friendly}% friendly damage',
-                          row['description'])
-            self.assertIn(f'single-target debuffs have a {percent}% chance to retry once',
-                          row['description'])
-            self.assertIn('normal resistance', row['description'])
-            self.assertEqual(row['description'], row['effect']['description'])
-            self.assertEqual(row['description'], entities[rank]['description'])
-            self.assertIn('damage only and cannot recurse', row['details'])
-            self.assertIn('Each secondary keeps normal magical defenses', row['details'])
-            self.assertIn('immunity is not a resisted debuff', row['details'])
-            self.assertIn('No extra Mana, Hero Action or manual secondary target', row['details'])
-            self.assertIn('Unraveling and reconstitution require their respective perks',
-                          row['details'])
-        template = load('config/newHorizonsCombatTexts.json')['new-horizons.metamagic.arcaneOverflow.preview']
-        self.assertEqual(template, ' | Arcane Overflow: %s, %s potential damage')
-        self.assertEqual(tuple(p['id'].split('.')[-1] for p in skill['perks']), (
-            'conservedFormula', 'disruptiveCasting', 'unravelingMagic',
-            'reconstitutingMagic', 'spellSculpting', 'widenSpells', 'levitation',
-            'arcaneBallistics', 'arcaneCascade', 'empoweredSpells'))
-        perks = {p['id'].split('.')[-1]: p for p in skill['perks']}
-        for key in ('unravelingMagic', 'reconstitutingMagic'):
-            self.assertEqual(perks[key]['requires'], 'basic')
-            self.assertIn('20/30/40%', perks[key]['description'])
-        self.assertIn('10 magical damage', perks['unravelingMagic']['description'])
-        self.assertIn('15 shared healing and resurrection HP',
-                      perks['reconstitutingMagic']['description'])
-
     def test_current_dungeon_and_conflux_replacements_keep_other_perks(self):
         expected = {
             'shroudOfMalassa': ('shadowHex', 'exposedWeakness', 'ambusher', 'nightProwler'),
@@ -917,16 +848,17 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
             self.assertEqual(len(pool), 10)
             self.assertEqual([sum(p['requires'] == rank for p in pool.values()) for rank in RANKS], [4, 4, 2])
 
-    def test_current_consecrated_arms_describes_random_prayers_and_faith(self):
+    def test_current_consecrated_arms_describes_chosen_prayers_and_faith(self):
         skill = self.rules['skills']['new-horizons:divineMandate']
         entities = load('config/newHorizonsSkills.json')['divineMandate']
         self.assertEqual(skill['name'], 'Consecrated Arms')
-        self.assertIn('Each committed Order grants one uniformly random prayer',
+        self.assertIn('Each committed Order grants one chosen prayer to one chosen recipient stack',
                       skill['description'])
+        self.assertNotIn('random', json.dumps(skill))
         self.assertIn('Faith is Spell Power plus Knowledge', skill['description'])
         for rank, faith in zip(RANKS, (0, 50, 100)):
             row = skill['ranks'][rank]
-            self.assertIn('one uniformly random prayer', row['description'])
+            self.assertIn('one chosen prayer to one chosen recipient', row['description'])
             self.assertIn(f'Prayer potency uses Spell Power + Knowledge + {faith} Faith',
                           row['description'])
             self.assertIn('duration uses actual Spell Power + Knowledge', row['description'])
@@ -948,9 +880,9 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
         self.assertIn('100 additional Faith', perks['ferventInvocation']['description'])
         self.assertIn('Duration still uses actual Spell Power plus Knowledge',
                       perks['ferventInvocation']['details'])
-        self.assertIn('two different uniformly random prayers',
+        self.assertIn('two different chosen prayers to the chosen stack',
                       perks['antiphonalPrayer']['description'])
-        self.assertIn('Sample without replacement', perks['antiphonalPrayer']['details'])
+        self.assertIn('same chosen recipient', perks['antiphonalPrayer']['details'])
         self.assertIn('refreshes all existing Consecrated Arms prayers',
                       perks['livingLiturgy']['description'])
         self.assertIn('Preserve existing Redemption shield without refill',

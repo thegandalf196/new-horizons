@@ -19,9 +19,9 @@
 		},
 		"texts": {
 			"specialty": {
-				"name": "Unraveler",
-				"tooltip": "+5 percentage points to Metamagic removal chance",
-				"description": "Halon has +5 percentage points to Metamagic removal chance: 25% at Basic, 35% at Advanced and 45% at Expert."
+				"name": "Spellweaver",
+				"tooltip": "+1 Metamagic use per combat",
+				"description": "Halon has one additional Metamagic use per combat: 2 at Basic, 3 at Advanced and 4 at Expert."
 			}
 		},
 		"specialty": {
@@ -73,7 +73,7 @@
 			"specialty": {
 				"name": "Metamagic",
 				"tooltip": "Faction skill: Metamagic",
-				"description": "Damaging spells may unravel enemy enchantments; successful buffs may cleanse enemy curses from allies. Removed magic becomes damage or healing and resurrection."
+				"description": "After casting a spell with the Hero Action, the hero may immediately cast one more combat spell a limited number of times per combat."
 			}
 		},
 		"specialty": {

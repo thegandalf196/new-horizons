@@ -1,10 +1,12 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OverkillRandomPrayerRules.h"
 #include "../PerkStateFixture.h"
 #include "../server/battles/FullGameSnapshotTypes.h"
 #include "../../lib/GameSettings.h"
 #include "../../lib/entities/hero/NewHorizonsPerkState.h"
 #include "../../lib/serializer/CMemorySerializer.h"
+#include <functional>
 #include <string_view>
 
 namespace
@@ -160,4 +162,31 @@ TEST(NewHorizonsPassiveFactionPolicy, ForgedOldReaderPreservesExistingSettingsAn
 		EXPECT_THROW(settings.serialize(forgedSettings.iser), std::runtime_error);
 		EXPECT_EQ(settingsBytes(settings), before);
 	}
+}
+
+TEST(NewHorizonsPassiveFactionPolicy, DoubleCastAndChosenPrayersAdmitBesideTheirCapturedPredecessors)
+{
+	const JsonNode installed(JsonPath::builtin("config/newHorizonsPerks"));
+	ASSERT_EQ(installed["metamagicPolicy"]["version"].Integer(), 7);
+	ASSERT_EQ(installed["divineMandatePolicy"]["version"].Integer(), 4);
+	EXPECT_NO_THROW(newHorizonsHeroes::validatePassiveFactionPolicies(installed));
+	EXPECT_NO_THROW(newHorizonsHeroes::validatePassiveFactionPolicies(overkillRandomPrayerRules()));
+	const auto rejects = [&](const char * key, const std::function<void(JsonNode &)> & mutate)
+	{
+		auto rules = installed;
+		mutate(rules[key]);
+		EXPECT_THROW(newHorizonsHeroes::validatePassiveFactionPolicies(rules), std::runtime_error)
+			<< key << rules[key].toCompactString();
+	};
+	rejects("metamagicPolicy", [](JsonNode & p) { p.Struct().erase("halonAdditionalUses"); });
+	rejects("metamagicPolicy", [](JsonNode & p) { p["removalChancePercent"].Vector() = {JsonNode(0)}; });
+	rejects("metamagicPolicy", [](JsonNode & p) { p["usesPerCombatByRank"].Vector()[2].Integer() = 0; });
+	rejects("divineMandatePolicy", [](JsonNode & p) { p.Struct().erase("chosen"); });
+	rejects("divineMandatePolicy", [](JsonNode & p) { p["chosen"].Bool() = false; });
+	rejects("divineMandatePolicy", [](JsonNode & p) { p["chosen"].Integer() = 1; });
+	rejects("divineMandatePolicy", [](JsonNode & p) { p["version"].Integer() = 3; });
+	rejects("divineMandatePolicy", [](JsonNode & p) { p["version"].Integer() = 5; });
+	auto random = overkillRandomPrayerRules();
+	random["divineMandatePolicy"]["chosen"].Bool() = true;
+	EXPECT_THROW(newHorizonsHeroes::validatePassiveFactionPolicies(random), std::runtime_error);
 }

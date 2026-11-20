@@ -8,7 +8,7 @@ import re
 import sys
 import unittest
 from .nhart_source_transitions import read_historical_source
-from .nhart_current_faction_perk_art import current_faction_perk_wave
+from .nhart_current_faction_perk_art import current_faction_perk_wave, RETIRED_METAMAGIC5_IDS
 from .nhart_sorcery_config_transition import before_sorcery
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'tools'))
@@ -364,7 +364,7 @@ class ArtAdditionsTest(unittest.TestCase):
                 self.assertEqual(declared, set(wave['resources']))
             for row in wave['perks']:
                 current_id = WAVE_CURRENT_IDS.get(row['id'], row['id'])
-                if current_id in RETIRED_DIVINE_IDS:
+                if current_id in RETIRED_DIVINE_IDS or current_id in RETIRED_METAMAGIC5_IDS:
                     self.assertNotIn(current_id, current_ids)
                 else:
                     self.assertIn(current_id, current_ids)

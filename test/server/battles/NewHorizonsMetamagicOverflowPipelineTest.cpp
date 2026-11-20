@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt and AUTHORS. */
 #include "StdInc.h"
+#include "../../OverkillRandomPrayerRules.h"
 #include "HeroCommandFixture.h"
 #include "../../battleAI/ProjectedTargetHitFixture.h"
 #include "../../../lib/spells/NewHorizonsMetamagicOverflow.h"
@@ -53,7 +54,7 @@ protected:
 	void mapLoaded(CMap * map) override
 	{
 		HeroCommandFixture::mapLoaded(map);
-		auto perks = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
+		auto perks = overkillRandomPrayerRules(); // captured policy 6
 		// Characterize the retained policy-five contract, independently of the
 		// current policy-six catalogue. The strict decoder rejects mixed profiles.
 		if(!currentPolicy)
@@ -65,6 +66,7 @@ protected:
 		}
 		perks.setOverrideFlag(true);
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
+		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, overkillRandomPrayerHeroes());
 		map->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 	}
 	void prepare(int rank = 1)

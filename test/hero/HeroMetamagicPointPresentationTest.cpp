@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OverkillRandomPrayerRules.h"
 #include "../../client/battle/CurrentFactionSkillPresentation.h"
 #include "../../lib/nativeRules/CapturedPerkRules.h"
 #include "../../lib/nativeRules/CompiledMetamagicRules.h"
@@ -9,7 +10,7 @@ using namespace passiveFactionSkillPresentation;
 
 TEST(HeroMetamagicPresentation, OptionalUnravelReadoutUsesCapturedChanceWithoutRetiredPointBenefits)
 {
-	const auto owner = nativeRules::CapturedPerkRules::compile(JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+	const auto owner = nativeRules::CapturedPerkRules::compile(overkillRandomPrayerRules());
 	const auto & rules = owner->metamagic();
 	const int rank = 2;
 	const auto status = metamagicText({rank, rules.overflowPercent(rank), rules.friendlyReductionPercent(rank),
@@ -25,7 +26,7 @@ TEST(HeroMetamagicPresentation, OptionalUnravelReadoutUsesCapturedChanceWithoutR
 
 TEST(HeroMetamagicPresentation, ReconstitutingAndCascadeDescribeTheirOwnSelectedEffects)
 {
-	const auto owner = nativeRules::CapturedPerkRules::compile(JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+	const auto owner = nativeRules::CapturedPerkRules::compile(overkillRandomPrayerRules());
 	const auto & rules = owner->metamagic();
 	const int rank = 3;
 	const auto status = metamagicText({rank, rules.overflowPercent(rank), 100,

@@ -9,9 +9,9 @@ from jsonschema import Draft4Validator
 from .test_new_horizons_content import load, validate_rules
 
 ROOT = Path(__file__).resolve().parents[2]
-PERKS = ('conservedFormula', 'disruptiveCasting', 'unravelingMagic',
-         'reconstitutingMagic', 'spellSculpting', 'widenSpells', 'levitation',
-         'arcaneBallistics', 'arcaneCascade', 'empoweredSpells')
+PERKS = ('arcaneWard', 'manaSiphon', 'deepReserves', 'formulaRecovery',
+         'arcaneCycle', 'afterglow', 'crescendo', 'cleansingWeave',
+         'grandWeaving', 'spellstorm')
 
 
 class SorceryRevisionDataTest(unittest.TestCase):
@@ -71,13 +71,9 @@ class SorceryRevisionDataTest(unittest.TestCase):
         self.assertEqual([p['id'] for p in pool], ['new-horizons:metamagic.' + p for p in PERKS])
         self.assertEqual([p['requires'] for p in pool], ['basic'] * 4 + ['advanced'] * 4 + ['expert'] * 2)
         self.assertNotIn('Metamagic point', json.dumps(skill))
-        self.assertEqual(rules['metamagicPolicy'], {
-            'version': 6, 'removalChancePercent': [0, 20, 30, 40],
-            'damagePerMana': 10, 'restorationPerMana': 15,
-            'halonRemovalChanceBonusPercent': 5,
-            'arcaneOverflowPercentByRank': [0, 30, 45, 60],
-            'friendlyDamageReductionPercentByRank': [0, 30, 45, 60],
-            'debuffRetryChancePercentByRank': [0, 30, 45, 60]})
+        self.assertEqual(rules['metamagicPolicy']['version'], 7)
+        self.assertEqual(rules['metamagicPolicy']['usesPerCombatByRank'], [0, 1, 2, 3])
+        self.assertEqual(rules['metamagicPolicy']['halonAdditionalUses'], 1)
         Draft4Validator(load('config/schemas/newHorizonsPerks.json')).validate(rules)
     def test_current_data_requires_ordered_one_per_tier_policy(self):
         rules = load('config/newHorizonsPerks.json')
@@ -99,17 +95,17 @@ class SorceryRevisionDataTest(unittest.TestCase):
                 'type': 'SPECIAL_SPELL_LEV', 'subtype': 'new-horizons:focusMagic',
                 'val': 10, 'valueType': 'BASE_NUMBER'})
 
-    def test_halon_fresh_start_matches_his_unraveler_specialty(self):
+    def test_halon_fresh_start_matches_his_spellweaver_specialty(self):
         starts = load('config/newHorizonsHeroes.json')['startingSkills']
         self.assertEqual(starts['startingDevelopmentProfiles']['core:halon']['skills'], [
             {'skill': 'new-horizons:metamagic', 'rank': 1},
             {'skill': 'new-horizons:warcasting', 'rank': 1}])
         self.assertEqual(starts['startingPerkProfiles']['core:halon'], [{
             'skill': 'new-horizons:metamagic',
-            'perk': 'new-horizons:metamagic.unravelingMagic'}])
+            'perk': 'new-horizons:metamagic.formulaRecovery'}])
         halon = load('Mods/new-horizons/Content/config/heroes/halon.json')['core:halon']
         self.assertEqual(halon['spellbook'], ['core:dispel'])
-        self.assertEqual(halon['texts']['specialty']['name'], 'Unraveler')
+        self.assertEqual(halon['texts']['specialty']['name'], 'Spellweaver')
 
 
 if __name__ == '__main__':

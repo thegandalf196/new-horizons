@@ -23466,9 +23466,9 @@
       "inherited_a1_health_deferral": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.",
       "inherited_deferral": "Exact source-list bound only. Before substantive build logic, extract a cohesive target configuration section. Verify source/link membership once and retain no duplicate translation units. Prior stricter obligations remain in inherited_deferral, where present.",
       "kind": "exception",
-      "lines": 2147,
+      "lines": 2149,
       "owner": "engine_engineer",
-      "previous_review": "PROPOSED-0920-EXACT-SOURCE-ORGANIZATION",
+      "previous_review": "IR-A7-NHART-FINAL-UNC-AND-DEEP-GATE-20261119",
       "prior_a1_health_scope": {
         "kind": "exception",
         "lines": 2063,
@@ -23477,11 +23477,11 @@
         "sha256": "7058cdef35cfce13214572d190c4accfdf5721e6c144af3cdfca9f53bb68c2a0"
       },
       "prior_deferral": "Exact mechanical source/header registration only. Before substantive CMake target policy growth, extract a cohesive configuration section while verifying translation-unit membership and facade linkage. No future file growth allowance. Prior stricter obligations remain in inherited_deferral, where present.\n\nKeep registrations in their current coherent tables. Extract any future conditional target/control logic rather than growing this registry into a build framework.",
-      "rationale": "Exact2146to2147-line mechanical registry successor: one NhArtNativePath.h header registered adjacent to existing NHART cache headers, no new TU or target/link/compiler/default logic, no duplicated member. Existing table/extraction deferrals retained; no future growth credit.",
-      "review": "IR-A7-NHART-FINAL-UNC-AND-DEEP-GATE-20261119",
+      "rationale": "Exact 2147 to 2149-line mechanical registry successor: registers NewHorizonsMetamagicDoubleCast.cpp/.h (Metamagic 6 policy-7 decoder) adjacent to NewHorizonsMetamagicResolution; no target/link/compiler logic and no duplicated member. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-0925-METAMAGIC6-PHASE1-20261120",
       "review_scope": "Exact frozen A7 production/routing source only; no compiler, Windows path runtime, recovery, timing, release or future-growth acceptance.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NATIVE_WINDOWS_PENDING",
-      "sha256": "288450505b5694e1de21ef5d28bd80a8c3cde500e17896fbda3aa5fad241a800",
+      "sha256": "31934162ec5271b1f4b1a792131b970cc4d4e617e7366caf75dc5d3e0553a592",
       "inherited_deferral_step2": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.\n\nExact shared-facade source/header registration only. Before conditional target/control policy growth, extract the next coherent configuration section; preserve one translation unit per implementation and consumer linkage through vcmi. No future registry-size growth credit."
     },
     "lib/CSkillHandler.cpp::std::shared_ptr<CSkill> CSkillHandler::loadFromJson(const std::string & scope, const JsonNode & json, const std::string & identifier, size_t index)#1": {

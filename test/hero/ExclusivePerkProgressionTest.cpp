@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OverkillRandomPrayerRules.h"
 #include "../PerkStateFixture.h"
 #include "../../lib/entities/hero/NewHorizonsFourOfferProgression.h"
 #include "../../lib/entities/hero/NewHorizonsPerkOperation.h"
@@ -12,10 +13,9 @@ namespace
 using namespace newHorizonsHeroes;
 constexpr const char * SKILL = "new-horizons:offense";
 
-PerkState state()
+PerkState state(JsonNode rules = JsonNode(JsonPath::builtin("config/newHorizonsPerks")))
 {
 	PerkState result;
-	auto rules = JsonNode(JsonPath::builtin("config/newHorizonsPerks"));
 	rules.Struct().erase("unifiedSkillProgressionVersion");
 	rules["fourOfferProgressionVersion"].Integer() = 1;
 	rules["perkProgressionPolicyVersion"].Integer() = 2;
@@ -299,9 +299,9 @@ TEST(ExclusivePerkProgression, MetamagicV4RequiresExactCompleteCapturedProfile)
 	EXPECT_THROW(validatePassiveFactionPolicies(wrong), std::runtime_error);
 }
 
-TEST(ExclusivePerkProgression, InstalledMetamagicV6RequiresItsCompleteCurrentProfile)
+TEST(ExclusivePerkProgression, CapturedMetamagicV6RequiresItsCompleteProfile)
 {
-	const auto current = state();
+	const auto current = state(overkillRandomPrayerRules());
 	const auto & profile = current.getRules()["metamagicPolicy"];
 	ASSERT_EQ(profile["version"].Integer(), 6);
 	EXPECT_EQ(profile.Struct().size(), 8u);

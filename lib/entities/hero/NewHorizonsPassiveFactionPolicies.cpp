@@ -2,6 +2,7 @@
 #include "StdInc.h"
 #include "NewHorizonsPerkRules.h"
 #include "NewHorizonsRuleValidation.h"
+#include "../../spells/NewHorizonsMetamagicDoubleCast.h"
 #include "../../spells/NewHorizonsMetamagicResolution.h"
 #include <array>
 
@@ -15,7 +16,15 @@ using detail::require;
 
 void validateConsecratedArms(const JsonNode & policy)
 {
-	fields(policy, {"version", "potencyFaithBonusByRank", "ferventInvocationAdditionalFaith"});
+	// Version 4 (Chosen Prayers) differs only by its explicit chosen-prayer marker.
+	if(policy["version"].Integer() == 4)
+	{
+		fields(policy, {"version", "potencyFaithBonusByRank", "ferventInvocationAdditionalFaith", "chosen"});
+		require(policy["chosen"].isBool() && policy["chosen"].Bool(),
+			"Consecrated Arms version 4 requires chosen prayers");
+	}
+	else
+		fields(policy, {"version", "potencyFaithBonusByRank", "ferventInvocationAdditionalFaith"});
 	const auto & ranks = policy["potencyFaithBonusByRank"];
 	static constexpr std::array<int, 4> expected = {0, 0, 50, 100};
 	require(ranks.isVector() && ranks.Vector().size() == expected.size(),
@@ -49,9 +58,15 @@ void validatePassiveFactionPolicies(const JsonNode & rules)
 				"Metamagic requires its complete supported captured profile");
 			continue;
 		}
+		if(metamagic && newHorizonsMetamagic::claimsDoubleCastPolicy(rules))
+		{
+			require(newHorizonsMetamagic::doubleCastPolicy(rules).has_value(),
+				"Metamagic requires its complete supported Double Cast profile");
+			continue;
+		}
 		if(std::string_view(key) == "divineMandatePolicy"
 			&& policy["version"].getType() == JsonNode::JsonType::DATA_INTEGER
-			&& policy["version"].Integer() == 3)
+			&& (policy["version"].Integer() == 3 || policy["version"].Integer() == 4))
 		{
 			validateConsecratedArms(policy);
 			continue;

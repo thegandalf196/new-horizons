@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../OverkillRandomPrayerRules.h"
 #include "HeroQueueSelectorFixture.h"
 #include "../../AI/BattleAI/ArcaneOverflowValue.h"
 #include "../../AI/BattleAI/HeroActionAdmission.h"
@@ -29,7 +30,7 @@ protected:
 	void mapLoaded(CMap * map) override
 	{
 		HeroQueueSelectorTest::mapLoaded(map);
-		JsonNode perks(JsonPath::builtin("config/newHorizonsPerks"));
+		auto perks = overkillRandomPrayerRules(); // captured policy 6 roster
 		perks["metamagicPolicy"]["version"].Integer() = policyVersion;
 		perks["metamagicPolicy"].Struct().erase("friendlyDamageReductionPercentByRank");
 		perks["metamagicPolicy"].Struct().erase("debuffRetryChancePercentByRank");
@@ -40,6 +41,7 @@ protected:
 		// This is a complete captured profile; missing historical fields must stay absent.
 		perks.setOverrideFlag(true);
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
+		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, overkillRandomPrayerHeroes());
 	}
 	void prepare(int rank = 3, bool lethal = true, bool secondEnemy = true)
 	{

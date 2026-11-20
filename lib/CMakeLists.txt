@@ -1031,6 +1031,7 @@ set(lib_MAIN_SRCS
 	spells/MagicalDamageReduction.cpp
 	spells/NewHorizonsSorceryRevision.cpp
 	spells/NewHorizonsMetamagicResolution.cpp
+	spells/NewHorizonsMetamagicDoubleCast.cpp
 	spells/NewHorizonsMetamagicCompletion.cpp
 	spells/NewHorizonsMagicalMemory.cpp
 	spells/NewHorizonsSorcerySpells.cpp
@@ -1965,6 +1966,7 @@ set(lib_MAIN_HEADERS
 	spells/IncomingMagicalDamage.h
 	spells/NewHorizonsSorceryRevision.h
 	spells/NewHorizonsMetamagicResolution.h
+	spells/NewHorizonsMetamagicDoubleCast.h
 	spells/NewHorizonsMetamagicCompletion.h
 	spells/NewHorizonsMagicalMemory.h
 	spells/NewHorizonsSorcerySpells.h

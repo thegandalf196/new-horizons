@@ -166,10 +166,11 @@ protected:
 			EXPECT_EQ(nativeRules::metamagicSkillRank(attackerSideHero), 1);
 			const auto * policy = nativeRules::metamagicRules(attackerSideHero);
 			ASSERT_NE(policy, nullptr);
-			ASSERT_NE(policy->policy(), nullptr);
-			EXPECT_TRUE(policy->policy()->optionalRemoval);
-			EXPECT_EQ(policy->overflowPercent(1), 30);
-			EXPECT_EQ(policy->removalChance(1, attackerSideHero->getHeroTypeID()), 25);
+			// Installed Double Cast: Spellweaver adds one use to the Basic rank's one.
+			ASSERT_NE(policy->doubleCastPolicy(), nullptr);
+			EXPECT_EQ(policy->policy(), nullptr);
+			EXPECT_EQ(policy->maxUses(1, nativeRules::doubleCastPerks(attackerSideHero),
+				policy->isHalon(attackerSideHero->getHeroTypeID())), 2);
 			return;
 		}
 		ASSERT_EQ(type->nonDamageSpellSpecialtyProducers.size(), 1);
@@ -338,7 +339,7 @@ TEST_P(NewHorizonsRemainingStartTest, WorldRoundtripAndSavedReinitPreserveBookAn
 		EXPECT_EQ(nativeRules::metamagicSkillRank(loaded), 1);
 		const auto * policy = nativeRules::metamagicRules(loaded);
 		ASSERT_NE(policy, nullptr);
-		EXPECT_EQ(policy->removalChance(1, loaded->getHeroTypeID()), 25);
+		EXPECT_EQ(policy->maxUses(1, nativeRules::doubleCastPerks(loaded), policy->isHalon(loaded->getHeroTypeID())), 2);
 	}
 }
 

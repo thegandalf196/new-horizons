@@ -14,6 +14,7 @@
 #include "../mapObjects/CGHeroInstance.h"
 #include <stdexcept>
 #include <cmath>
+#include <limits>
 
 namespace nativeRules
 {
@@ -23,6 +24,23 @@ constexpr std::array<const char *, static_cast<size_t>(MetamagicPerk::Count)> na
 	"conservedFormula", "manaRecycling", "disruptiveCasting", "purgingFormula",
 	"spellSculpting", "hexWeaving", "widenSpell", "matterbreaker", "magicalMemory", "arcaneRupture",
 	"unravelingMagic", "reconstitutingMagic", "widenSpells", "levitation", "arcaneBallistics", "arcaneCascade", "empoweredSpells"};
+// New stable identities: no retired Metamagic perk ID is reused (Formula Reserve
+// is formulaRecovery because metamagic.formulaReserve meant the point-era perk).
+constexpr std::array<const char *, static_cast<size_t>(DoubleCastPerk::Count)> doubleCastNames{
+	"arcaneWard", "manaSiphon", "deepReserves", "formulaRecovery",
+	"arcaneCycle", "afterglow", "crescendo", "cleansingWeave", "grandWeaving", "spellstorm"};
+
+template<size_t Count>
+void bindPerks(const CapturedPerkRules & owner, const std::array<const char *, Count> & keys,
+	std::array<newHorizonsHeroes::PerkId, Count> & ids, std::array<bool, Count> & admitted)
+{
+	for(size_t entry = 0; entry < Count; ++entry)
+	{
+		ids[entry] = owner.catalogue().find("new-horizons:metamagic", std::string("new-horizons:metamagic.") + keys[entry]);
+		const auto * definition = owner.catalogue().definition(ids[entry]);
+		admitted[entry] = definition && definition->active;
+	}
+}
 
 MetamagicTargetShape cardinality(const JsonNode & node)
 {
@@ -88,22 +106,21 @@ size_t index(MetamagicPerk key)
 
 CompiledMetamagicRules::CompiledMetamagicRules(const CapturedPerkRules & owner)
 	: capturedPolicy(newHorizonsMetamagic::resolutionPolicy(owner.document()))
+	, capturedDoubleCast(newHorizonsMetamagic::doubleCastPolicy(owner.document()))
 	, capturedSkill(owner.catalogue().skill("new-horizons:metamagic"))
 {
 	NH_CAPTURE_RULE_WORK(MetamagicAdmission);
-	if(!capturedPolicy)
+	if(!capturedPolicy && !capturedDoubleCast)
 		return;
 	// Numeric registry identities are resolved once, after capture admission.
 	// An unavailable external registry cannot confer a specialty by default.
 	try { halon = HeroTypeID(HeroTypeID::decode("core:halon")); }
 	catch(const std::exception &) { halon = HeroTypeID::NONE; }
-	for(size_t entry = 0; entry < names.size(); ++entry)
-	{
-		perks[entry] = owner.catalogue().find("new-horizons:metamagic",
-			std::string("new-horizons:metamagic.") + names[entry]);
-		const auto * definition = owner.catalogue().definition(perks[entry]);
-		available[entry] = definition && definition->active;
-	}
+	// A capture binds exactly one roster: historical keys never execute under policy 7.
+	if(capturedPolicy)
+		bindPerks(owner, names, perks, available);
+	if(capturedDoubleCast)
+		bindPerks(owner, doubleCastNames, doubleCastPerkIds, doubleCastAvailable);
 }
 
 const newHorizonsMetamagic::ResolutionPolicy * CompiledMetamagicRules::policy() const
@@ -165,6 +182,94 @@ int32_t CompiledMetamagicRules::conservedRefund(bool currentlySelected, int32_t 
 	return currentlySelected && supports(MetamagicPerk::ConservedFormula)
 		? newHorizonsMetamagic::conservedFormulaRefund(actualPaid, alreadyRefunded, capacityRoom,
 			validSingleTarget, completelyResisted) : 0;
+}
+
+const newHorizonsMetamagic::DoubleCastPolicy * CompiledMetamagicRules::doubleCastPolicy() const
+{
+	return capturedDoubleCast ? &*capturedDoubleCast : nullptr;
+}
+
+const newHorizonsHeroes::PerkId & CompiledMetamagicRules::perk(DoubleCastPerk key) const
+{
+	const auto value = static_cast<size_t>(key);
+	if(value >= doubleCastNames.size())
+		throw std::out_of_range("Invalid compiled Double Cast perk key");
+	return doubleCastPerkIds[value];
+}
+
+bool CompiledMetamagicRules::supports(DoubleCastPerk key) const
+{
+	const auto value = static_cast<size_t>(key);
+	if(value >= doubleCastNames.size())
+		throw std::out_of_range("Invalid compiled Double Cast perk key");
+	return capturedDoubleCast && doubleCastAvailable[value];
+}
+
+bool CompiledMetamagicRules::active(DoubleCastPerkSet heroPerks, DoubleCastPerk key) const
+{
+	return supports(key) && (heroPerks & doubleCastPerkBit(key)) != 0;
+}
+
+int CompiledMetamagicRules::maxUses(int metamagicRank, DoubleCastPerkSet heroPerks, bool halonCaster) const
+{
+	if(!capturedDoubleCast || metamagicRank < 1 || metamagicRank > 3)
+		return 0;
+	const auto & value = *capturedDoubleCast;
+	return value.usesPerCombatByRank[metamagicRank] + (halonCaster ? value.halonAdditionalUses : 0)
+		+ (active(heroPerks, DoubleCastPerk::DeepReserves) ? value.deepReservesAdditionalUses : 0)
+		+ (active(heroPerks, DoubleCastPerk::GrandWeaving) ? value.grandWeavingAdditionalUses : 0);
+}
+
+bool CompiledMetamagicRules::followUpMustDiffer() const
+{
+	return capturedDoubleCast && capturedDoubleCast->followUpMustDiffer;
+}
+
+int CompiledMetamagicRules::arcaneWardShield(int spellPower, DoubleCastPerkSet heroPerks) const
+{
+	if(!active(heroPerks, DoubleCastPerk::ArcaneWard) || spellPower <= 0)
+		return 0;
+	return static_cast<int>(std::min<int64_t>(std::numeric_limits<int>::max(),
+		int64_t{spellPower} * capturedDoubleCast->arcaneWardSpellPowerMultiplier));
+}
+
+int CompiledMetamagicRules::manaSiphonMana(DoubleCastPerkSet heroPerks) const
+{
+	return active(heroPerks, DoubleCastPerk::ManaSiphon) ? capturedDoubleCast->manaSiphonMana : 0;
+}
+
+int CompiledMetamagicRules::formulaReserveMana(DoubleCastPerkSet heroPerks) const
+{
+	return active(heroPerks, DoubleCastPerk::FormulaReserve) ? capturedDoubleCast->formulaReserveMana : 0;
+}
+
+bool CompiledMetamagicRules::arcaneCycleRestores(int round, DoubleCastPerkSet heroPerks) const
+{
+	return active(heroPerks, DoubleCastPerk::ArcaneCycle) && round > 0
+		&& round % capturedDoubleCast->arcaneCycleRoundInterval == 0;
+}
+
+int CompiledMetamagicRules::afterglowAdditionalRounds(DoubleCastPerkSet heroPerks) const
+{
+	return active(heroPerks, DoubleCastPerk::Afterglow) ? capturedDoubleCast->afterglowAdditionalRounds : 0;
+}
+
+int CompiledMetamagicRules::crescendoSpellPower(int spentUses, DoubleCastPerkSet heroPerks) const
+{
+	return active(heroPerks, DoubleCastPerk::Crescendo) && spentUses > 0
+		? std::min(spentUses, 1000) * capturedDoubleCast->crescendoSpellPowerPerSpentUse : 0;
+}
+
+int CompiledMetamagicRules::cleansingWeaveEffects(DoubleCastPerkSet heroPerks) const
+{
+	return active(heroPerks, DoubleCastPerk::CleansingWeave) ? capturedDoubleCast->cleansingWeaveEffects : 0;
+}
+
+int CompiledMetamagicRules::spellstormManaReductionPercent(int completedDoubleCasts, DoubleCastPerkSet heroPerks) const
+{
+	return active(heroPerks, DoubleCastPerk::Spellstorm)
+		&& completedDoubleCasts >= capturedDoubleCast->spellstormDoubleCastThreshold
+		? capturedDoubleCast->spellstormManaReductionPercent : 0;
 }
 
 CompiledMetamagicEnergy::CompiledMetamagicEnergy(const JsonNode & admittedMagic)
@@ -264,6 +369,21 @@ bool hasMetamagicPerk(const CGHeroInstance * hero, MetamagicPerk perk)
 {
 	const auto * compiled = metamagicRules(hero);
 	return compiled && compiled->supports(perk) && hero->hasActivePerk(compiled->perk(perk));
+}
+
+DoubleCastPerkSet doubleCastPerks(const CGHeroInstance * hero)
+{
+	const auto * compiled = metamagicRules(hero);
+	DoubleCastPerkSet result = 0;
+	if(!compiled || !compiled->doubleCastPolicy())
+		return result;
+	for(size_t entry = 0; entry < static_cast<size_t>(DoubleCastPerk::Count); ++entry)
+	{
+		const auto key = static_cast<DoubleCastPerk>(entry);
+		if(compiled->supports(key) && hero->hasActivePerk(compiled->perk(key)))
+			result |= doubleCastPerkBit(key);
+	}
+	return result;
 }
 
 std::shared_ptr<const CompiledMetamagicEnergy> captureMetamagicEnergy(const IBattleInfo & battle)

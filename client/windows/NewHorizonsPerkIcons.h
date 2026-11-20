@@ -41,6 +41,19 @@ inline constexpr std::pair<const char *, const char *> newHorizonsPerkIconBindin
 		{"new-horizons:metamagic.arcaneBallistics", "NH_perk_metamagic_arcane_ballistics"},
 		{"new-horizons:metamagic.arcaneCascade", "NH_perk_metamagic_arcane_cascade"},
 		{"new-horizons:metamagic.empoweredSpells", "NH_perk_metamagic_empowered_spells"},
+		// Metamagic 6 (Double Cast) provisional stand-ins reuse selected historical
+		// paintings until purpose-made art is approved; the Metamagic 5 rows above
+		// stay bound for games that captured policy 6.
+		{"new-horizons:metamagic.arcaneWard", "NH_perk_spell_buffer"},
+		{"new-horizons:metamagic.manaSiphon", "NH_perk_focused_pairing"},
+		{"new-horizons:metamagic.deepReserves", "NH_perk_arcane_reservoir"},
+		{"new-horizons:metamagic.formulaRecovery", "NH_perk_formula_reserve"},
+		{"new-horizons:metamagic.arcaneCycle", "NH_perk_spell_sequencing"},
+		{"new-horizons:metamagic.afterglow", "NH_perk_echoed_duration"},
+		{"new-horizons:metamagic.crescendo", "NH_perk_perfect_sequence"},
+		{"new-horizons:metamagic.cleansingWeave", "NH_perk_metamagic_reconstituting_magic"},
+		{"new-horizons:metamagic.grandWeaving", "NH_perk_grand_metamagic"},
+		{"new-horizons:metamagic.spellstorm", "NH_perk_arcane_economy"},
 		{"new-horizons:divineMandate.enduringPrayer", "NH_perk_consecrated_arms_enduring_prayer"},
 		{"new-horizons:divineMandate.joyfulDevotion", "NH_perk_consecrated_arms_joyful_devotion"},
 		{"new-horizons:divineMandate.fearlessAdvance", "NH_perk_consecrated_arms_fearless_advance"},
