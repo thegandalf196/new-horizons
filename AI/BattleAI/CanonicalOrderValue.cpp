@@ -21,6 +21,7 @@
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/battle/NewHorizonsArchery.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
+#include "../../lib/entities/hero/NewHorizonsCastleSpecialties.h"
 
 namespace heroOrderValue
 {
@@ -135,6 +136,7 @@ float CanonicalOrderValue::focusFire(std::optional<int> focusFireSnapshotPercent
 		static_cast<int>(coefficient("focusFire", "rangedDamagePercent")));
 	const auto combinedArmsMeleePercent = combinedArmsEnabled
 		? static_cast<float>(heroCommands::combinedArmsFocusFirePercent(rangedPercent, *hero)) : 0.0f;
+	const int volleyPercent = newHorizonsHeroes::volleyCommandDamagePercent(hero);
 	float potential = 0.0f;
 	for(const auto * unit : ownUnits)
 	{
@@ -155,6 +157,12 @@ float CanonicalOrderValue::focusFire(std::optional<int> focusFireSnapshotPercent
 		// can also make a melee attack, value the better Focus Fire benefit rather
 		// than counting the same stack twice.
 		potential += std::max(rangedValue, meleeValue);
+		// Orrin's Volley Command: each ready shooter also fires one immediate
+		// reduced shot at the target, with the Order's ranged bonus. Issuing
+		// early in the round, before shooters act, keeps this value.
+		if(volleyPercent > 0 && canReceiveRangedBonus && newHorizonsArchery::isOrdinaryPhysicalShooter(unit))
+			potential += anyDamage(unit, target) * static_cast<float>(volleyPercent)
+				* static_cast<float>(100 + rangedPercent) / 10000.0f;
 	}
 	return potential;
 }

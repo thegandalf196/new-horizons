@@ -118,6 +118,29 @@ protected:
 };
 }
 
+TEST_F(CastleSpecialtyAITest, OrrinIssuesFocusFireWhileHisShootersAreReady)
+{
+	ASSERT_NO_FATAL_FAILURE(specialist("core:orrin", 10));
+	ASSERT_NO_FATAL_FAILURE(emptyField());
+	active = place(ATTACKER, "core:pikeman", BattleHex(2, 5), 5, 1000);
+	auto * archers = place(ATTACKER, "core:archer", BattleHex(1, 3), 40, 800);
+	auto * marksmen = place(ATTACKER, "core:marksman", BattleHex(1, 7), 40, 700);
+	enemy = place(DEFENDER, "core:swordsman", BattleHex(14, 5), 60, 600);
+	ASSERT_TRUE(active && archers && marksmen && enemy);
+	ASSERT_NO_FATAL_FAILURE(beginCombat());
+	ASSERT_NO_FATAL_FAILURE(activate(active));
+	const auto health = enemy->getAvailableHealth();
+	const auto shots = archers->shots.available();
+	const auto action = acceptedChoice();
+	ASSERT_EQ(action.actionType, EActionType::HERO_COMMAND);
+	EXPECT_EQ(action.command, HeroCommand::FOCUS_FIRE);
+	if(action.command == HeroCommand::FOCUS_FIRE)
+	{
+		EXPECT_LT(enemy->getAvailableHealth(), health) << "The volley fires at once";
+		EXPECT_EQ(archers->shots.available(), shots - 1);
+	}
+}
+
 TEST_F(CastleSpecialtyAITest, AdelaValuesBlessMoreForBenedictionAndHerBlessIsAccepted)
 {
 	ASSERT_NO_FATAL_FAILURE(specialist("core:adela", 10));
@@ -154,5 +177,58 @@ TEST_F(CastleSpecialtyAITest, LoynisValuesHisLightSpellsAndCastsThemWithAChosenS
 	const auto * recipient = battle()->battleGetUnitByID(bless.prayerRecipient);
 	ASSERT_NE(recipient, nullptr);
 	EXPECT_TRUE(consecratedArms::activePrayer(*recipient, static_cast<consecratedArms::Prayer>(bless.prayerChoices.front())));
+}
+
+TEST_F(CastleSpecialtyAITest, EdricBattleAIActionsAreAcceptedWhileGriffinsCounterShots)
+{
+	ASSERT_NO_FATAL_FAILURE(specialist("core:edric", 10));
+	ASSERT_NO_FATAL_FAILURE(emptyField());
+	auto * griffins = place(ATTACKER, "core:griffin", BattleHex(1, 5), 30, 100);
+	ASSERT_NE(place(ATTACKER, "core:pikeman", BattleHex(2, 2), 10, 200), nullptr);
+	auto * archers = place(DEFENDER, "core:archer", BattleHex(15, 3), 30, 900);
+	auto * marksmen = place(DEFENDER, "core:marksman", BattleHex(15, 7), 20, 800);
+	ASSERT_TRUE(griffins && archers && marksmen);
+	ASSERT_NO_FATAL_FAILURE(beginCombat());
+	const auto shooterHealth = archers->getAvailableHealth() + marksmen->getAvailableHealth();
+	for(int activation = 0; activation < 16 && !decided(); ++activation)
+	{
+		const auto * unit = battle()->battleActiveUnit();
+		ASSERT_NE(unit, nullptr);
+		const auto side = unit->unitSide();
+		const auto player = battle()->sideToPlayer(side);
+		auto queue = std::make_shared<heroQueueTest::QueueCallback>();
+		queue->onBattleStarted(battle());
+		auto world = std::make_shared<heroQueueTest::QueueEnvironment>(gameState());
+		const auto * stack = battle()->battleGetStackByID(unit->unitId());
+		ASSERT_NE(stack, nullptr);
+		BattleAction action;
+		{
+			BattleEvaluator evaluator(world, queue, stack, player, BattleID(0), side, 1.0f, 2);
+			ASSERT_NO_THROW(action = evaluator.selectStackAction(stack));
+		}
+		ASSERT_TRUE(submit(action, player)) << "activation " << activation << " action " << static_cast<int>(action.actionType);
+	}
+	const auto after = (archers->alive() ? archers->getAvailableHealth() : 0) + (marksmen->alive() ? marksmen->getAvailableHealth() : 0);
+	EXPECT_LT(after, shooterHealth) << "Shots at the Griffins are answered by flying counters";
+}
+TEST_F(CastleSpecialtyAITest, OrrinsVolleyIsWorthMoreBeforeHisShootersAct)
+{
+	ASSERT_NO_FATAL_FAILURE(specialist("core:orrin", 10));
+	ASSERT_NO_FATAL_FAILURE(emptyField());
+	active = place(ATTACKER, "core:pikeman", BattleHex(2, 5), 5, 1000);
+	auto * archers = place(ATTACKER, "core:archer", BattleHex(1, 3), 40, 800);
+	enemy = place(DEFENDER, "core:swordsman", BattleHex(14, 5), 60, 600);
+	ASSERT_TRUE(active && archers && enemy);
+	ASSERT_NO_FATAL_FAILURE(beginCombat());
+	ASSERT_NO_FATAL_FAILURE(activate(active));
+	ASSERT_NO_FATAL_FAILURE(board());
+	const auto ready = castleSpecialtyAI::volleyValue(*live, parent, ATTACKER, enemy->unitId(), 10, cache);
+	EXPECT_GT(ready, 0.0f);
+	// Once the archers have shot, issuing Focus Fire! brings no volley.
+	ASSERT_NO_FATAL_FAILURE(activate(archers));
+	ASSERT_TRUE(submit(BattleAction::makeShotAttack(archers, enemy)));
+	ASSERT_NO_FATAL_FAILURE(activate(active));
+	ASSERT_NO_FATAL_FAILURE(board());
+	EXPECT_EQ(castleSpecialtyAI::volleyValue(*live, parent, ATTACKER, enemy->unitId(), 10, cache), 0.0f);
 }
 #endif

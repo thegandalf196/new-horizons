@@ -50,6 +50,8 @@ struct DLL_LINKAGE BattleAttackInfo
 	/// Separate damage coefficient for an explicitly reduced-strength ranged
 	/// attack (Skirmisher, Counterfire or Battlecraft Overwatch).
 	int archeryRangedDamageMultiplierPercent = 100;
+	/// Revised Aerial Supremacy counter damage bonus (Edric); ephemeral, not serialized.
+	int aerialCounterDamagePercent = 0;
 	bool luckyStrike   = false;
 	bool unluckyStrike = false;
 	bool deathBlow     = false;

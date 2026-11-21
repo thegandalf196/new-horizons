@@ -6,6 +6,7 @@
 #include "BattleExchangeVariant.h"
 #include "ParalyzingGazeProjection.h"
 #include "../../lib/entities/hero/NewHorizonsAerialSupremacy.h"
+#include "../../lib/entities/hero/NewHorizonsCastleSpecialties.h"
 #include "../../lib/battle/NewHorizonsFrozen.h"
 namespace aerialRetaliationAI
 {
@@ -124,6 +125,8 @@ void project(AttackPossibility & outer, const std::shared_ptr<HypotheticBattle> 
 	const auto target = admitted->getForUpdate(shooterId);
 	BattleAttackInfo attack(actor.get(), target.get(), 0, false);
 	attack.retaliation = true;
+	attack.aerialCounterDamagePercent = newHorizonsHeroes::aerialCounterDamagePercent(
+		branch->battleGetFightingHero(griffin->unitSide()));
 	attack.attackerPos = excursion->origin;
 	attack.defenderPos = excursion->target;
 	AttackPossibility counter(excursion->origin, excursion->target, attack);

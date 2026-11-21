@@ -97,6 +97,7 @@
 #include "../../lib/spells/NewHorizonsSorcery.h"
 #include "../../lib/spells/Problem.h"
 #include "../../lib/spells/CSpell.h"
+#include "../../lib/entities/hero/NewHorizonsCastleSpecialties.h"
 
 #include <vstd/RNG.h>
 
@@ -4204,7 +4205,7 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 	const auto & counterfireRules = battle.getBattle()->getMagicRules();
 	const bool elementalPrimaryCounterfire = newHorizonsMagic::rulesActive(counterfireRules)
 		&& counterfireRules["rulesetVersion"].Integer() >= 3;
-	if(attacker && attack.ranged && !attack.counter && !attack.brace && !attack.cleaveFollowup
+	if(attacker && attack.ranged && !attack.counter && !attack.brace && !attack.cleaveFollowup && !attack.heroVolley
 		&& (!bat.spellLike() || elementalPrimaryCounterfire) && attacker->alive()
 		&& newHorizonsCombatSkills::isOrdinaryCreatureAttacker(attacker))
 	{
@@ -4336,6 +4337,9 @@ DamageEstimation BattleActionProcessor::applyBattleEffects(const CBattleInfoCall
 	bai.relentlessAssaultDamagePercent = relentlessAssaultDamagePercent;
 	bai.archeryRangedDamageMultiplierPercent = archeryRangedDamageMultiplierPercent;
 	bai.protectIntercepted = protectIntercepted;
+	if(attack.aerialExcursion)
+		bai.aerialCounterDamagePercent = newHorizonsHeroes::aerialCounterDamagePercent(
+			battle.battleGetFightingHero(attackerState->unitSide()));
 	// Preserve BattleAttackInfo's ranged SPELL_LIKE_ATTACK classification even
 	// when the presentation flag has not yet been marked on the attack packet.
 	bai.physicalDamage = bai.physicalDamage && !bat.spellLike();

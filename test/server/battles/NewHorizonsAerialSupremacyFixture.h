@@ -17,6 +17,7 @@ class NewHorizonsAerialSupremacyBattleTest : public BattleTestFixture
 {
 protected:
 	bool captured = true;
+	bool revised = false;
 	CStack * griffin = nullptr;
 	CStack * shooter = nullptr;
 	void mapLoaded(CMap * map) override
@@ -24,6 +25,9 @@ protected:
 		BattleTestFixture::mapLoaded(map);
 		JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
 		if(!captured) rules["additionalSpecialties"].Struct().erase("aerialSupremacy");
+		// These characterize the first (movement-range, once-per-round) rule;
+		// CastleCommandSpecialtyTest covers the revised 1166 row.
+		if(!revised) rules["revisedSpecialties"].Struct().erase("aerialSupremacy");
 		rules.setOverrideFlag(true);
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, rules);
 		for(const auto & object : map->objects)

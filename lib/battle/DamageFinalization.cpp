@@ -95,6 +95,9 @@ void CBattleInfoCallback::finalizeDamagePayload(const BattleAttackInfo & info,
 			* newHorizonsAttackControllers::ballistaPhysicalDamagePercent(*this, *info.attacker) / 100;
 	payload.ordinaryCreatureSpecialtyDamagePercent = payload.ordinaryCreatureSpecialtyDamagePercent
 		* (100 + newHorizonsPrismaticVanguard::activeDamagePercent(info)) / 100;
+	if(info.retaliation && info.aerialCounterDamagePercent > 0)
+		payload.ordinaryCreatureSpecialtyDamagePercent = payload.ordinaryCreatureSpecialtyDamagePercent
+			* (100 + info.aerialCounterDamagePercent) / 100;
 	payload.deathBlow = info.deathBlow;
 	payload.doubleDamage = info.doubleDamage;
 	if(!info.attacker->hasBonusOfType(BonusType::SIEGE_WEAPON))

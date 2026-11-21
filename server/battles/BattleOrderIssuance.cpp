@@ -53,10 +53,16 @@ bool BattleActionProcessor::doHeroCommandAction(const CBattleInfoCallback & batt
 		}
 		gameHandler->sendAndApply(message);
 		castPassiveDivineMandate(battle, ba, *state);
+		if(ba.command == HeroCommand::FOCUS_FIRE)
+			performVolleyCommand(battle, ba.side);
 		return true;
 	}
 	if(ba.command == HeroCommand::FOCUS_FIRE)
-		return true; // Validated contextual state was published atomically by StartAction.
+	{
+		// Validated contextual state was published atomically by StartAction.
+		performVolleyCommand(battle, ba.side);
+		return true;
+	}
 	const auto * hero = battle.battleGetFightingHero(ba.side);
 	if(!hero || heroCommands::isDoctrine(ba.command)
 		|| !heroCommands::supportedByRules(battle.getBattle()->getHeroCommandRules(), ba.command))

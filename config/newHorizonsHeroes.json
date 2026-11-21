@@ -71,6 +71,8 @@
 		"version": 1,
 		"lordOfTheCrypts": {"skeletonGrowthPerLevel": 1},
 		"levelScaling": {"percentOfBasePerLevel": 3},
+		"volleyCommand": {"damagePercent": 30, "damagePercentPerLevel": 1, "maximumDamagePercent": 50},
+		"aerialSupremacy": {"counterDamagePercentPerLevel": 2, "maximumCounterDamagePercent": 40},
 		"benedictionOfArms": {"potencyPercentPerLevel": 3, "maximumPotencyPercent": 60},
 		"sermon": {"potencyPercentPerLevel": 3, "maximumPotencyPercent": 60}
 	},

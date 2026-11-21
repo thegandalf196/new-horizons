@@ -168,6 +168,7 @@ class BattleActionProcessor : boost::noncopyable
 		int dreadCavalryDamagePercent = 100;
 		int defenderVoluntaryTravelDistance = 0; // Matching ordinary retaliation only.
 		int64_t * hostileCreatureKills = nullptr; // Action-local normal-sequence receipt, never passed to Barrage.
+		bool heroVolley = false; // Orrin's Volley Command shot: never provokes Counterfire.
 	};
 
 	/// Action-local accounting for Rain of Arrows. The original primary footprint
@@ -271,6 +272,8 @@ class BattleActionProcessor : boost::noncopyable
 	/// Adela's next Order also grants its chosen prayer(s) to her Blessed stack, then clears the mark.
 	void grantBenediction(const CBattleInfoCallback & battle, const BattleAction & ba,
 		const std::vector<uint8_t> & prayerChoices);
+	/// Orrin's Volley Command after an accepted Focus Fire!; no-op for every other commander.
+	void performVolleyCommand(const CBattleInfoCallback & battle, BattleSide side);
 	void castPassiveDivineMandate(const CBattleInfoCallback & battle, const BattleAction & issued, const HeroOrderState & order);
 	void grantConsecratedPrayers(const CBattleInfoCallback & battle, const BattleAction & action, const HeroOrderState & order);
 	void castDivineFury(const CBattleInfoCallback & battle, const battle::Unit * source,

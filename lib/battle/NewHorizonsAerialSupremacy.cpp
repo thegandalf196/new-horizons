@@ -11,6 +11,7 @@
 #include "NewHorizonsCombatSkills.h"
 #include "NewHorizonsCreatureAbilitySuppression.h"
 #include "../entities/hero/NewHorizonsAerialSupremacy.h"
+#include "../entities/hero/NewHorizonsCastleSpecialties.h"
 #include "../json/JsonNode.h"
 #include <limits>
 #include <stdexcept>
@@ -40,6 +41,36 @@ bool hasRoundState(const JsonNode & snapshot)
 	return value.Integer() >= 0;
 }
 
+namespace
+{
+/// Revised rule (captured 1166): any range and no round limit; the retaliation
+/// count is the only budget. Fails only when no free hex next to the shooter
+/// admits the melee strike. Nearest landing to the Griffin, then board order.
+std::optional<Excursion> anyRangeExcursion(const CBattleInfoCallback & battle,
+	const battle::Unit * actor, const battle::Unit * opponent)
+{
+	const auto accessibility = battle.getAccessibility(actor);
+	BattleHex selected;
+	uint32_t best = ReachabilityInfo::INFINITE_DIST;
+	for(int index = 0; index < GameConstants::BFIELD_SIZE; ++index)
+	{
+		const BattleHex hex(index);
+		if(!hex.isAvailable())
+			continue;
+		const auto distance = static_cast<uint32_t>(BattleHex::getDistance(actor->getPosition(), hex));
+		if(distance >= best || !accessibility.accessibleForMovementEndpoint(hex, actor->doubleWide(), actor->unitSide())
+			|| !battle.isMeleeAttackPossible(actor, opponent, hex))
+			continue;
+		selected = hex;
+		best = distance;
+	}
+	if(!selected.isValid())
+		return std::nullopt;
+	return Excursion{actor->unitId(), opponent->unitId(), actor->getPosition(), selected,
+		opponent->getPosition(), battle.battleGetRound()};
+}
+}
+
 std::optional<Excursion> prepare(const CBattleInfoCallback & battle,
 	const battle::Unit * actor, const battle::Unit * opponent)
 {
@@ -60,11 +91,15 @@ std::optional<Excursion> prepare(const CBattleInfoCallback & battle,
 	if(actor->creatureId() != griffin && actor->creatureId() != royal)
 		return std::nullopt;
 	const auto side = battle.playerToSide(battle.battleGetOwner(actor));
-	if(!newHorizonsHeroes::aerialSupremacyEnabled(battle.battleGetFightingHero(side)))
+	const auto * hero = battle.battleGetFightingHero(side);
+	if(!newHorizonsHeroes::aerialSupremacyEnabled(hero))
 		return std::nullopt;
 	const auto * state = dynamic_cast<const battle::CUnitState *>(actor);
-	if(!state || (actor->creatureId() == griffin
-		&& state->aerialRetaliationRound == battle.battleGetRound()))
+	if(!state)
+		return std::nullopt;
+	if(newHorizonsHeroes::revisedAerialSupremacyRule(hero))
+		return anyRangeExcursion(battle, actor, opponent);
+	if(actor->creatureId() == griffin && state->aerialRetaliationRound == battle.battleGetRound())
 		return std::nullopt;
 	const auto allowance = actor->getMovementRange(0);
 	uint32_t shooterDistance = ReachabilityInfo::INFINITE_DIST;
