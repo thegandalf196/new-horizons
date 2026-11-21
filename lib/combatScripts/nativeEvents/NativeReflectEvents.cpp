@@ -4,6 +4,7 @@
 #include "../../bonuses/BonusFilter.h"
 #include "../../bonuses/BonusList.h"
 #include "../../spells/CSpell.h"
+#include "../../battle/NewHorizonsFrostMantle.h"
 #include <cmath>
 
 namespace nativeEvents
@@ -52,6 +53,34 @@ void fireShield(const Context & context)
 	animation(context, bearer, "C05SPF0", "FIRESHIE", 1.0, true);
 	const auto result = damage(context, *attacker, amount, &bearer, true);
 	spellDamageLog(context, *sourceSpell, attacker, result.first, result.second);
+}
+
+/// Adelaide's Frost Mantle: a melee hit on the cloaked stack returns part of its
+/// damage as Frost Ring (Water) damage and chills the attacker's Initiative.
+void frostMantle(const Context & context)
+{
+	const auto * attacker = context.other;
+	const auto & bearer = *context.self;
+	if(context.payload.ranged || !attacker || !attacker->alive() || bearer.isClone()
+		|| attacker->unitSide() == bearer.unitSide() || !context.battle.isMeleeAttackPossible(attacker, &bearer))
+		return;
+	const auto entry = std::find_if(context.payload.targets.begin(), context.payload.targets.end(), [&](const auto & target)
+		{ return target.unit && target.unit->unitId() == bearer.unitId(); });
+	if(entry == context.payload.targets.end()) return;
+	const auto * sourceSpell = spell("core:frostRing");
+	if(!sourceSpell) throw std::runtime_error("Unknown Frost Ring spell");
+	const double reflectable = std::min(static_cast<double>(entry->healthBeforeAttack), static_cast<double>(entry->damageBeforeDefense));
+	const auto amount = adjustDamage(context, *sourceSpell, bearer, *attacker,
+		static_cast<int64_t>(std::floor(reflectable * number(context.parameters, "val") / 100)));
+	if(amount > 0)
+	{
+		animation(context, *attacker, "C07SPW", "FROSTING", 1.0, true);
+		const auto result = damage(context, *attacker, amount, &bearer, true);
+		spellDamageLog(context, *sourceSpell, attacker, result.first, result.second);
+	}
+	if(!attacker->alive()) return;
+	if(const auto chill = newHorizonsFrostMantle::chill(context.battle.battleGetFightingHero(bearer.unitSide())))
+		addBonus(context, *attacker, *chill, false); // Refreshes an existing chill instead of stacking.
 }
 
 const battle::Unit * sourceOnSide(const Context & context, bool includeBearer)
@@ -111,6 +140,7 @@ void shadowGift(const Context & context)
 std::shared_ptr<ICombatEventScript> reflectEvent(const std::string & path)
 {
 	if(path == "combat/fireShield") return event(fireShield, {CombatEventType::AFTER_ATTACKED});
+	if(path == "combat/frostMantle") return event(frostMantle, {CombatEventType::AFTER_ATTACKED});
 	if(path == "combat/hexOfPain") return event(hexOfPain, {CombatEventType::AFTER_ATTACK}, CombatEventForecastImplementation::CANONICAL_HEX_OF_PAIN);
 	if(path == "combat/shadowGift") return event(shadowGift, {CombatEventType::AFTER_ATTACK});
 	return nullptr;

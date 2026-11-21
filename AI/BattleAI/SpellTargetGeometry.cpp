@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "CastleSpecialtyValue.h"
 #include "PhysicalCleanseValue.h"
 #include "CreatureActivationValue.h"
 #include "../../lib/battle/NewHorizonsStun.h"
@@ -253,6 +254,12 @@ std::vector<Target> SpellTargetEvaluator::theBestLocationCasts(const spells::Mec
 			}
 		}
 
+		// Adelaide's Frost Mantle cloaks a friendly centre, so such a centre is not
+		// equal to an empty one that reaches the same stacks.
+		for(const auto & cast : allCasts)
+			if(castleSpecialtyAI::keepsFrostMantleCentre(*spellMechanics, cast.first) && !bestCasts.contains(cast.first)
+				&& !isCastHarmful(spellMechanics, cast.second, budget))
+				bestCasts.insert(cast);
 		for(const auto & cast : bestCasts)
 		{
 			battleSearch::require(budget, battleSearch::WorkKind::Generation);

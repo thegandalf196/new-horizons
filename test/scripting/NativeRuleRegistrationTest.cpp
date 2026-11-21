@@ -28,7 +28,8 @@ constexpr CatalogueFile catalogueFiles[] = {
 	{"config/scriptsSpells.json", "core", 40},
 	{"config/scriptsCombat.json", "core", 17},
 	{"Mods/new-horizons/Content/config/scripts/cabirRepair.json", "new-horizons", 1},
-	{"Mods/new-horizons/Content/config/scripts/genieLuck.json", "new-horizons", 1}};
+	{"Mods/new-horizons/Content/config/scripts/genieLuck.json", "new-horizons", 1},
+	{"Mods/new-horizons/Content/config/scripts/frostMantle.json", "new-horizons", 1}};
 
 ScriptKind declaredKind(const std::string & value)
 {

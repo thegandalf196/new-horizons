@@ -194,7 +194,7 @@ def base_metadata(settings, schools, skills, module_version):
                       'config/artifacts/manaRegeneration.json'],
         'factions': faction_patch_files,
         'objects': ['config/objects/magicSpring.json', 'config/objects/primaryRewards.json'],
-        'scripts': ['config/scripts/cabirRepair.json', 'config/scripts/genieLuck.json'],
+        'scripts': ['config/scripts/cabirRepair.json', 'config/scripts/genieLuck.json', 'config/scripts/frostMantle.json'],
         'spells': [
             'config/spells/newHorizons.json',
             'config/spells/summonLivingArmor.json',

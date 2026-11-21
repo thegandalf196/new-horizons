@@ -337,6 +337,7 @@ set(lib_MAIN_SRCS
 	battle/NewHorizonsOrdinaryRangedSpecialtyRules.cpp
 	battle/NewHorizonsParalyzingGaze.cpp
 	battle/NewHorizonsAerialSupremacy.cpp
+	battle/NewHorizonsFrostMantle.cpp
 	battle/BattleInfoUnitUpdate.cpp
 	battle/PhysicalAffliction.cpp
 	battle/NewHorizonsFrozen.cpp
@@ -1375,6 +1376,7 @@ set(lib_MAIN_HEADERS
 	battle/NewHorizonsOrdinaryRangedSpecialtyRules.h
 	battle/NewHorizonsParalyzingGaze.h
 	battle/NewHorizonsAerialSupremacy.h
+	battle/NewHorizonsFrostMantle.h
 	battle/BattleDeploymentState.h
 	battle/PhysicalAffliction.h
 	battle/NewHorizonsBloodrage.h

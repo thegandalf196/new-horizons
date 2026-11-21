@@ -8,6 +8,7 @@
 #include "../../lib/battle/CastleSpecialtyPrayers.h"
 #include "../../lib/battle/ConsecratedArmsChoice.h"
 #include "../../lib/battle/ConsecratedArmsOrder.h"
+#include "../../lib/battle/NewHorizonsFrostMantle.h"
 #include "../../lib/battle/Unit.h"
 #include "../../lib/bonuses/BonusList.h"
 #include "../../lib/entities/hero/NewHorizonsCastleSpecialties.h"
@@ -99,6 +100,22 @@ void BattleActionProcessor::completeCastleSpecialtyCast(const CBattleInfoCallbac
 			&& blessed->hasBonusFrom(BonusSource::SPELL_EFFECT, BonusSourceID(SpellID(SpellID::BLESS)));
 		if(friendly)
 			replaceBenediction(*gameHandler, battle, side, blessed->unitId(), hero);
+	}
+	// Frost Mantle: cloak a friendly centre stack, or only chill an enemy one.
+	if(spell.getId() == SpellID::FROST_RING && context.centre)
+	{
+		const auto * centre = battle.battleGetUnitByID(*context.centre);
+		const auto effect = !centre || !centre->alive() ? std::nullopt
+			: centre->unitSide() == side ? newHorizonsFrostMantle::cloak(&hero) : newHorizonsFrostMantle::chill(&hero);
+		if(effect)
+		{
+			SetStackEffect update;
+			update.battleID = battle.getBattle()->getBattleID();
+			update.toUpdate.emplace_back(centre->unitId(), std::vector<Bonus>{*effect});
+			gameHandler->sendAndApply(update);
+			logLine(*gameHandler, battle, centre->unitSide() == side
+				? "Frost Mantle cloaks %d %s." : "Frost Mantle chills %d %s.", centre);
+		}
 	}
 	// Sermon: the Light spell's chosen prayer, admitted before StartAction.
 	if(castleSpecialtyPrayers::sermonCast(battle, ba) && ba.prayerRecipient != BattleAction::NO_PRAYER_RECIPIENT)

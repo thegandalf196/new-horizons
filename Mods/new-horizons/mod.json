@@ -3174,6 +3174,14 @@
 						"shadowPowerPercentPerLevel": 5,
 						"maximumShadowPowerPercent": 100
 					},
+					"frostMantle": {
+						"rounds": 2,
+						"returnedPercent": 10,
+						"returnedPercentPerLevel": 1,
+						"maximumReturnedPercent": 40,
+						"initiativePenaltyPercent": 20,
+						"chillRounds": 1
+					},
 					"sermon": {
 						"potencyPercentPerLevel": 3,
 						"maximumPotencyPercent": 60
@@ -11721,7 +11729,8 @@
 	],
 	"scripts": [
 		"config/scripts/cabirRepair.json",
-		"config/scripts/genieLuck.json"
+		"config/scripts/genieLuck.json",
+		"config/scripts/frostMantle.json"
 	],
 	"spells": [
 		"config/spells/newHorizons.json",

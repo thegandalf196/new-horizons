@@ -1,0 +1,13 @@
+{
+	"frostMantle": {
+		"implements": "combatEvent",
+		"script": "combat/frostMantle",
+		"patches": [],
+		"priority": 50,
+		"description": "Frost Mantle: melee hits return ${val}% of their damage as cold damage and chill the attacker's Initiative.",
+		"schema": {
+			"properties": {},
+			"additionalProperties": false
+		}
+	}
+}

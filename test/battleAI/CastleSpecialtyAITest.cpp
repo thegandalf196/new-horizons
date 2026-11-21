@@ -3,6 +3,7 @@
 #if ENABLE_BATTLE_AI
 #include "../server/battles/CastleSpecialtyFixture.h"
 #include "../../lib/battle/CastleSpecialtyPrayers.h"
+#include "../../lib/battle/NewHorizonsFrostMantle.h"
 #include "../../lib/spells/CSpell.h"
 #include "../../AI/BattleAI/AttackPossibility.h"
 #include "../../AI/BattleAI/CastleSpecialtyValue.h"
@@ -179,6 +180,23 @@ TEST_F(CastleSpecialtyAITest, LoynisValuesHisLightSpellsAndCastsThemWithAChosenS
 	EXPECT_TRUE(consecratedArms::activePrayer(*recipient, static_cast<consecratedArms::Prayer>(bless.prayerChoices.front())));
 }
 
+TEST_F(CastleSpecialtyAITest, AdelaideRingsAFriendlyStackInFrostMantle)
+{
+	ASSERT_NO_FATAL_FAILURE(specialist("core:adelaide", 10, false));
+	ASSERT_NO_FATAL_FAILURE(book(attackerSideHero, SpellID::FROST_RING, "new-horizons:havocMagic"));
+	ASSERT_NO_FATAL_FAILURE(spellArena());
+	const auto action = acceptedChoice();
+	ASSERT_EQ(action.actionType, EActionType::HERO_SPELL) << "command " << static_cast<int>(action.command);
+	EXPECT_EQ(action.spell, SpellID(SpellID::FROST_RING));
+	const auto target = action.getTarget(battle());
+	ASSERT_FALSE(target.empty());
+	const auto * centre = battle()->battleGetUnitByPos(target.front().hexValue, true);
+	ASSERT_NE(centre, nullptr) << "The ring is centred on a stack";
+	EXPECT_EQ(centre->unitSide(), ATTACKER) << "A friendly centre is safe and gains the cloak";
+	EXPECT_TRUE(centre->hasBonus(CSelector([](const Bonus * bonus)
+		{ return bonus->stacking == newHorizonsFrostMantle::CLOAK_STACKING; })));
+}
+
 TEST_F(CastleSpecialtyAITest, CuthbertCastsHisStrengthenedShadowSpell)
 {
 	ASSERT_NO_FATAL_FAILURE(specialist("core:cuthbert", 10, false));
@@ -222,6 +240,28 @@ TEST_F(CastleSpecialtyAITest, EdricBattleAIActionsAreAcceptedWhileGriffinsCounte
 	const auto after = (archers->alive() ? archers->getAvailableHealth() : 0) + (marksmen->alive() ? marksmen->getAvailableHealth() : 0);
 	EXPECT_LT(after, shooterHealth) << "Shots at the Griffins are answered by flying counters";
 }
+TEST_F(CastleSpecialtyAITest, SpecialtyRidersValueTheirTargetsAndOnlyForTheirHero)
+{
+	ASSERT_NO_FATAL_FAILURE(specialist("core:adela", 10));
+	ASSERT_NO_FATAL_FAILURE(spellArena());
+	ASSERT_NO_FATAL_FAILURE(board());
+	// Benediction: the engaged Crusaders gain more from a later prayer than the idle Swordsmen.
+	const auto engaged = castleSpecialtyAI::benedictionValue(*live, parent, ATTACKER, actor->unitId(), cache);
+	const auto idle = castleSpecialtyAI::benedictionValue(*live, parent, ATTACKER, waiter->unitId(), cache);
+	EXPECT_GT(engaged, 0.0f);
+	EXPECT_GT(idle, 0.0f);
+	EXPECT_EQ(castleSpecialtyAI::sermonValue(*live, parent, ATTACKER, cache), 0.0f) << "Sermon is Loynis's";
+	EXPECT_EQ(castleSpecialtyAI::frostMantleValue(*live, parent, ATTACKER, actor->unitId(), cache), 0.0f);
+	EXPECT_EQ(castleSpecialtyAI::volleyValue(*live, parent, ATTACKER, enemy->unitId(), 10, cache), 0.0f);
+	attackerSideHero->setHeroType(HeroTypeID(HeroTypeID::decode("core:loynis")));
+	EXPECT_GT(castleSpecialtyAI::sermonValue(*live, parent, ATTACKER, cache), 0.0f);
+	EXPECT_EQ(castleSpecialtyAI::benedictionValue(*live, parent, ATTACKER, actor->unitId(), cache), 0.0f);
+	attackerSideHero->setHeroType(HeroTypeID(HeroTypeID::decode("core:adelaide")));
+	EXPECT_GT(castleSpecialtyAI::frostMantleValue(*live, parent, ATTACKER, actor->unitId(), cache), 0.0f)
+		<< "The Halberdiers will strike the cloaked Crusaders";
+	EXPECT_EQ(castleSpecialtyAI::frostMantleValue(*live, parent, ATTACKER, enemy->unitId(), cache), 0.0f);
+}
+
 TEST_F(CastleSpecialtyAITest, OrrinsVolleyIsWorthMoreBeforeHisShootersAct)
 {
 	ASSERT_NO_FATAL_FAILURE(specialist("core:orrin", 10));
