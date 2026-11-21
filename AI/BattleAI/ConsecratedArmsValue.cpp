@@ -240,13 +240,17 @@ void applyChosenPrayers(const CBattleInfoCallback & live, const std::shared_ptr<
 	if(!request.prayers || request.recipients.empty())
 		return;
 	const auto * hero = live.battleGetFightingHero(action.side);
+	// A Sermon grants one prayer even with Antiphonal Prayer.
+	auto policy = request.policy;
+	if(request.prayers == 1)
+		policy.perks &= ~static_cast<uint16_t>(consecratedArms::Perk::ANTIPHONAL_PRAYER);
 	std::optional<Choice> choice;
 	if(hero && state)
 	{
 		try
 		{
 			const auto measured = measureRecipients(state, action.side, request.recipients, damage);
-			choice = bestChoice(request.policy, consecratedArms::actualFaith(*hero), measured);
+			choice = bestChoice(policy, consecratedArms::actualFaith(*hero), measured);
 		}
 		catch(const battleSearch::BudgetExhausted &)
 		{

@@ -30,6 +30,8 @@ class CBattleInfoCallback;
 class BattleHex;
 class CStack;
 class PlayerColor;
+class CSpell;
+class CGHeroInstance;
 enum class BonusType : uint16_t;
 
 namespace battle
@@ -255,6 +257,20 @@ class BattleActionProcessor : boost::noncopyable
 	bool prepareUnitSpellAction(const CBattleInfoCallback & battle, BattleAction & ba);
 	bool doHeroSpellAction(const CBattleInfoCallback & battle, const BattleAction & ba,
 		spells::AutomaticHeroCastReceipt automatic = spells::AutomaticHeroCastReceipt{});
+	/// Units a hero spell aims at, captured before the cast for the Castle specialties.
+	struct CastleCastContext
+	{
+		std::optional<uint32_t> centre; // Frost Ring centre unit
+		std::optional<uint32_t> unitTarget; // single-unit target (Bless)
+	};
+	CastleCastContext prepareCastleSpecialtyCast(const CBattleInfoCallback & battle, const CSpell & spell,
+		const battle::Target & target) const;
+	/// Benediction of Arms marker, Frost Mantle and Sermon after an accepted hero cast.
+	void completeCastleSpecialtyCast(const CBattleInfoCallback & battle, const BattleAction & ba,
+		const CGHeroInstance & hero, const CSpell & spell, const CastleCastContext & context);
+	/// Adela's next Order also grants its chosen prayer(s) to her Blessed stack, then clears the mark.
+	void grantBenediction(const CBattleInfoCallback & battle, const BattleAction & ba,
+		const std::vector<uint8_t> & prayerChoices);
 	void castPassiveDivineMandate(const CBattleInfoCallback & battle, const BattleAction & issued, const HeroOrderState & order);
 	void grantConsecratedPrayers(const CBattleInfoCallback & battle, const BattleAction & action, const HeroOrderState & order);
 	void castDivineFury(const CBattleInfoCallback & battle, const battle::Unit * source,

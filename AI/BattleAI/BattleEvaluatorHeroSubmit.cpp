@@ -89,6 +89,8 @@ bool BattleEvaluator::submitHeroAction(const PossibleSpellcast & castToPerform,
 		spellcast.setTarget(castToPerform.dest);
 	spellcast.side = side;
 	spellcast.stackNumber = -1;
+	// Loynis's Sermon: a Light spell carries its chosen prayer like an Order.
+	consecratedArmsAI::applyChosenPrayers(*cb->getBattle(battleID), hb, damageCache, spellcast);
 	{
 		decisionBaseOpen = false;
 	heroActionTiming::SubmitScope submit(timing);

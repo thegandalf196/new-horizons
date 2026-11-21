@@ -2,6 +2,7 @@
 #include "StdInc.h"
 #include "ConsecratedArmsChoice.h"
 #include "ConsecratedArmsOrder.h"
+#include "CastleSpecialtyPrayers.h"
 #include "BattleAction.h"
 #include "CBattleInfoCallback.h"
 #include "HeroOrderEffects.h"
@@ -19,18 +20,17 @@ bool hasChoiceFields(const BattleAction & action)
 	return !action.prayerChoices.empty() || action.prayerRecipient != BattleAction::NO_PRAYER_RECIPIENT;
 }
 
-std::optional<std::string> chosenRefusal(const CBattleInfoCallback & battle, const BattleAction & action,
-	const HeroOrderState & prepared, const Policy & policy)
+std::optional<std::string> chosenRefusal(const BattleAction & action,
+	const std::vector<uint32_t> & eligible, size_t required)
 {
-	const auto eligible = eligiblePrayerRecipients(battle, action.side, prepared);
 	if(eligible.empty())
 	{
 		if(hasChoiceFields(action))
 			return std::string("This Order has no eligible prayer recipient to choose");
 		return std::nullopt;
 	}
-	if(action.prayerChoices.size() != requiredPrayerChoices(policy))
-		return std::string(policy.has(Perk::ANTIPHONAL_PRAYER)
+	if(action.prayerChoices.size() != required)
+		return std::string(required == 2
 			? "Antiphonal Prayer requires two different chosen prayers"
 			: "Consecrated Arms requires exactly one chosen prayer");
 	for(size_t index = 0; index < action.prayerChoices.size(); ++index)
@@ -44,6 +44,9 @@ std::optional<std::string> chosenRefusal(const CBattleInfoCallback & battle, con
 		return std::string("The prayer recipient must be one of this Order's recipients");
 	return std::nullopt;
 }
+
+/// Sermon grants exactly one chosen prayer, whatever the Order perks.
+constexpr size_t SERMON_PRAYERS = 1;
 }
 
 std::vector<uint32_t> eligiblePrayerRecipients(const CBattleInfoCallback & battle,
@@ -74,6 +77,8 @@ std::vector<Prayer> chosenPrayerList(const std::vector<uint8_t> & choices)
 std::optional<std::string> choiceRefusal(const CBattleInfoCallback & battle,
 	const BattleAction & action, const std::optional<HeroOrderState> & prepared)
 {
+	if(castleSpecialtyPrayers::sermonCast(battle, action))
+		return chosenRefusal(action, castleSpecialtyPrayers::sermonRecipients(battle, action.side), SERMON_PRAYERS);
 	const bool order = action.actionType == EActionType::HERO_COMMAND;
 	const bool sideOk = action.side == BattleSide::ATTACKER || action.side == BattleSide::DEFENDER;
 	const auto policy = order && sideOk && prepared
@@ -84,12 +89,20 @@ std::optional<std::string> choiceRefusal(const CBattleInfoCallback & battle,
 			return std::string("Prayer choices are valid only for Chosen Prayers Orders");
 		return std::nullopt;
 	}
-	return chosenRefusal(battle, action, *prepared, policy);
+	return chosenRefusal(action, eligiblePrayerRecipients(battle, action.side, *prepared),
+		requiredPrayerChoices(policy));
 }
 
 ChoiceRequest choiceRequest(const CBattleInfoCallback & battle, const BattleAction & action)
 {
 	ChoiceRequest result;
+	if(castleSpecialtyPrayers::sermonCast(battle, action))
+	{
+		result.policy = capturePolicy(battle.battleGetFightingHero(action.side));
+		result.recipients = castleSpecialtyPrayers::sermonRecipients(battle, action.side);
+		result.prayers = result.recipients.empty() ? 0 : SERMON_PRAYERS;
+		return result;
+	}
 	if(action.actionType != EActionType::HERO_COMMAND
 		|| (action.side != BattleSide::ATTACKER && action.side != BattleSide::DEFENDER))
 		return result;

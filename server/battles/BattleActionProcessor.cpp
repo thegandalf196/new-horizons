@@ -1044,7 +1044,9 @@ bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle
 			&& spells::heroLuckDamageEligible(*s, battle.getBattle()->getMagicRules())))
 		if(const auto luck = gameHandler->randomizer->rollHeroLuck(h->id, h->luckVal()))
 			parameters.setHeroLuck(*luck);
+	const auto castleCast = prepareCastleSpecialtyCast(battle, *s, target);
 	parameters.cast(gameHandler->spellcastEnvironment(), target);
+	completeCastleSpecialtyCast(battle, ba, *h, *s, castleCast);
 	if(s->getId() == newHorizonsPurify::spellID())
 		completeHeroPurifyAction(*gameHandler, battle, ba, h, purifyingMandate,
 			automatic, sharedPurposePurifyAction);

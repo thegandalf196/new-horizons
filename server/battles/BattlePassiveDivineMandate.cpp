@@ -85,11 +85,15 @@ void BattleActionProcessor::grantConsecratedPrayers(const CBattleInfoCallback & 
 		// Version 4: admitted before StartAction, so no draw. Empty only without a recipient.
 		const auto prayers = consecratedArms::chosenPrayerList(action.prayerChoices);
 		if(prayers.empty())
+		{
+			grantBenediction(battle, action, {}); // Still Adela's next Order: the mark lapses.
 			return;
+		}
 		auto effects = consecratedArms::chosenOrderEffects(battle, side, recipients,
 			action.prayerRecipient, prayers, policy, faith);
 		gameHandler->sendAndApply(effects);
 		presentPrayerGrant(*gameHandler, battle, effects, prayers, policy, faith, action.prayerRecipient);
+		grantBenediction(battle, action, action.prayerChoices);
 		return;
 	}
 	auto & rng = gameHandler->getRandomGenerator();

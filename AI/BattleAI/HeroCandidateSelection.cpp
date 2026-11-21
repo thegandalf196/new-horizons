@@ -2,6 +2,7 @@
 #include "StdInc.h"
 #include "BattleEvaluator.h"
 #include "DoubleCastFollowUp.h"
+#include "CastleSpecialtyValue.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/callback/CBattleCallback.h"
 #include "HeroActionSelection.h"
@@ -12,6 +13,8 @@ bool BattleEvaluator::finishHeroSelection(std::vector<PossibleSpellcast> & possi
 	heroActionTiming::Summary * timing)
 {
 	doubleCastAI::addCompletionValue(possibleCasts, *cb->getBattle(battleID), hb, side, noCastBaseline,
+		damageCache, scoreEvaluator.getPositiveEffectMultiplier());
+	castleSpecialtyAI::addSpecialtyValue(possibleCasts, *cb->getBattle(battleID), hb, side,
 		damageCache, scoreEvaluator.getPositiveEffectMultiplier());
 	const auto selection = heroActionSelection::choose(possibleCasts, noCastBaseline, mandatoryOrder, observer);
 	if(!selection)

@@ -4,6 +4,7 @@
 #include "../windows/CWindowObject.h"
 #include "../../lib/battle/BattleAction.h"
 
+#include <functional>
 #include <memory>
 #include <vector>
 
@@ -21,6 +22,10 @@ namespace consecratedArmsPrayerUI
 /// window; every other Order is sent unchanged. Both paths use the ordinary
 /// validated hero-action request; nothing here mutates battle state.
 void submitOrder(const std::shared_ptr<BattleInterface> & owner, const BattleAction & order);
+using HeroSpellSender = std::function<void(const BattleAction &)>;
+/// Hero spell submission: Loynis's Sermon Light spell first opens the same
+/// prayer and recipient picker; `send` submits the completed, unchanged-path action.
+void submitHeroSpell(const std::shared_ptr<BattleInterface> & owner, const BattleAction & spell, HeroSpellSender send);
 }
 
 /// Prayer choice, then recipient choice, for one already selected Order.
@@ -34,6 +39,7 @@ private:
 	std::weak_ptr<BattleInterface> battle;
 	BattleAction order;
 	std::shared_ptr<Selection> selection;
+	consecratedArmsPrayerUI::HeroSpellSender sender;
 	bool submitted = false;
 	std::vector<std::shared_ptr<CIntObject>> decoration;
 	std::vector<std::shared_ptr<CIntObject>> prayerCards;
@@ -50,7 +56,7 @@ private:
 
 public:
 	ConsecratedArmsPrayerWindow(const std::shared_ptr<BattleInterface> & owner, const BattleAction & order,
-		std::shared_ptr<Selection> selection);
+		std::shared_ptr<Selection> selection, consecratedArmsPrayerUI::HeroSpellSender sender = {});
 	void show(Canvas & to) override;
 	void showAll(Canvas & to) override;
 };

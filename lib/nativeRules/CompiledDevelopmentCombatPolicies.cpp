@@ -39,7 +39,10 @@ void CompiledDevelopmentRules::compileCombatPolicies(const JsonNode & rules)
 			const HeroTypeID hero(HeroTypeID::decode(key));
 			if(!hero.hasValue()) continue;
 			chosenDuration.emplace(std::pair(hero, chosen), newHorizonsHeroes::chosenSpecialtyDurationBonus(rules, key, chosen));
-			chosenDiscount.emplace(std::pair(hero, chosen), newHorizonsHeroes::chosenSpecialtyManaDiscount(rules, key, chosen));
+			// Sermon replaces Loynis's Anointed Champions discount.
+			const bool retired = std::string_view(key) == "core:loynis" && castleSpecialties.sermon;
+			chosenDiscount.emplace(std::pair(hero, chosen),
+				retired ? 0 : newHorizonsHeroes::chosenSpecialtyManaDiscount(rules, key, chosen));
 		}
 }
 int CompiledDevelopmentRules::chosenDurationBonus(HeroTypeID hero, SpellID spell) const

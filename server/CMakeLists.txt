@@ -40,6 +40,7 @@ set(vcmiservercommon_SRCS
 	battles/BattleSpecialtyAttackControllers.h
 	battles/BattleRangedAttack.cpp
 	battles/BattleRelentlessBarrage.cpp
+	battles/BattleCastleSpecialtyCasts.cpp
 	battles/BattlePrimaryAttackCasting.cpp
 	battles/BattleStunActivation.cpp
 	battles/BattleActivationDispatch.cpp

@@ -244,6 +244,7 @@ set(lib_MAIN_SRCS
 	battle/ConsecratedArmsCombat.cpp
 	battle/ConsecratedArmsEffects.cpp
 	battle/ConsecratedArmsOrder.cpp
+	battle/CastleSpecialtyPrayers.cpp
 	battle/ConsecratedArmsChoice.cpp
 	battle/MetamagicDoubleCast.cpp
 	battle/UnitShieldState.cpp
@@ -1400,6 +1401,7 @@ set(lib_MAIN_HEADERS
 	battle/ConsecratedArms.h
 	battle/ConsecratedArmsCombat.h
 	battle/ConsecratedArmsOrder.h
+	battle/CastleSpecialtyPrayers.h
 	battle/ConsecratedArmsChoice.h
 	battle/MetamagicDoubleCast.h
 	battle/MetamagicDoubleCastState.h

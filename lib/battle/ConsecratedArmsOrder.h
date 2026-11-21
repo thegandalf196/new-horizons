@@ -21,6 +21,10 @@ DLL_LINKAGE std::vector<uint32_t> prayerHolders(const CBattleInfoCallback & batt
 DLL_LINKAGE SetStackEffect chosenOrderEffects(const CBattleInfoCallback & battle, BattleSide side,
 	const std::vector<uint32_t> & recipients, uint32_t chosenRecipient, const std::vector<Prayer> & selected,
 	const Policy & policy, int actualFaith);
+/// Specialty grants (Benediction of Arms, Sermon): the chosen prayer(s) reach one
+/// holder with an explicit potency Faith; duration still follows actual Faith.
+DLL_LINKAGE SetStackEffect specialtyPrayerEffects(const CBattleInfoCallback & battle, BattleSide side,
+	uint32_t recipient, const std::vector<Prayer> & selected, const Policy & policy, int actualFaith, int potencyFaith);
 /// Rebuilds only materialized Divine Purpose components after a prayer expires.
 DLL_LINKAGE void refreshDivinePurpose(IBattleState & state, const battle::Unit & unit);
 }

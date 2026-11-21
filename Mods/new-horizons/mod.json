@@ -3155,6 +3155,14 @@
 					},
 					"levelScaling": {
 						"percentOfBasePerLevel": 3
+					},
+					"benedictionOfArms": {
+						"potencyPercentPerLevel": 3,
+						"maximumPotencyPercent": 60
+					},
+					"sermon": {
+						"potencyPercentPerLevel": 3,
+						"maximumPotencyPercent": 60
 					}
 				},
 				"creatureLineSpecialties": {

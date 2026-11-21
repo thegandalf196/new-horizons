@@ -152,6 +152,7 @@ set(test_SRCS
 		server/battles/CreatureAbilityApplicationTest.cpp
 		server/battles/ConsecratedArmsOrderTest.cpp
 		server/battles/ConsecratedArmsChoiceTest.cpp
+		server/battles/CastlePrayerSpecialtyTest.cpp
 		server/battles/MetamagicDoubleCastTest.cpp
 		server/battles/MetamagicDoubleCastPerksTest.cpp
 		server/battles/ConsecratedArmsLastStandTest.cpp
@@ -1303,6 +1304,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/BattleAIDiagnosticAdmissionTest.cpp
 		battleAI/OrdinaryStrikeEvaluatorIntegrationTest.cpp
 		battleAI/ActivatedOrdinarySpecialtyAITest.cpp
+		battleAI/CastleSpecialtyAITest.cpp
 		battleAI/DamageFinalizationParityTest.cpp
 		battleAI/PrimaryFortuneProducerTest.cpp
 		battleAI/AppliedStrikeFactsTest.cpp

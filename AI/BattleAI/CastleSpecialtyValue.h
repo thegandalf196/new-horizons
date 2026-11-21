@@ -1,0 +1,38 @@
+/* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
+#pragma once
+
+#include "PossibleSpellcast.h"
+#include "../../lib/battle/BattleSide.h"
+#include <memory>
+#include <vector>
+
+class CPlayerBattleCallback;
+class HypotheticBattle;
+class DamageCache;
+class BattleHex;
+namespace spells { class Mechanics; }
+
+/// Battle AI riders for the revised Castle specialties that a spell candidate's
+/// own forecast cannot see: Loynis's Sermon prayer on his Light spells, Adela's
+/// Benediction of Arms on her Bless target and Adelaide's Frost Mantle on a
+/// friendly-centred Frost Ring. Heuristic exposure terms only; no search.
+namespace castleSpecialtyAI
+{
+DLL_LINKAGE void addSpecialtyValue(std::vector<PossibleSpellcast> & candidates, const CPlayerBattleCallback & battle,
+	const std::shared_ptr<HypotheticBattle> & board, BattleSide side, DamageCache & damage, float positive);
+/// Expected Sermon prayer value for one of Loynis's Light spells (0 when inactive).
+DLL_LINKAGE float sermonValue(const CPlayerBattleCallback & battle, const std::shared_ptr<HypotheticBattle> & board,
+	BattleSide side, DamageCache & damage);
+/// Value of Adela's future Benediction prayer on a Blessed friendly stack.
+DLL_LINKAGE float benedictionValue(const CPlayerBattleCallback & battle, const std::shared_ptr<HypotheticBattle> & board,
+	BattleSide side, uint32_t blessed, DamageCache & damage);
+/// Orrin's Volley Command: immediate reduced shots of every ready shooter at
+/// the Focus Fire! target, with the Order's ranged bonus (0 when inactive).
+DLL_LINKAGE float volleyValue(const CPlayerBattleCallback & battle, const std::shared_ptr<HypotheticBattle> & board,
+	BattleSide side, uint32_t target, int focusFirePercent, DamageCache & damage);
+/// Adelaide's Frost Ring centred on a friendly stack is a distinct candidate.
+DLL_LINKAGE bool keepsFrostMantleCentre(const spells::Mechanics & mechanics, BattleHex centre);
+/// Value of Frost Mantle cloaking a friendly Frost Ring centre stack.
+DLL_LINKAGE float frostMantleValue(const CPlayerBattleCallback & battle, const std::shared_ptr<HypotheticBattle> & board,
+	BattleSide side, uint32_t centre, DamageCache & damage);
+}

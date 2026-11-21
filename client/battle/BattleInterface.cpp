@@ -36,6 +36,7 @@
 #include "TemporalFieldWindow.h"
 
 #include "../CPlayerInterface.h"
+#include "ConsecratedArmsPrayerWindow.h"
 #include "../GameEngine.h"
 #include "../CServerHandler.h"
 #include "../GameInstance.h"
@@ -447,7 +448,12 @@ void BattleInterface::installPurifyUI()
 			action.target.clear();
 			action.aimToHex(center);
 			action.spellPurifyChoices = std::move(*accepted);
-			curInt->cb->battleMakeSpellAction(localBattleID, action);
+			consecratedArmsPrayerUI::submitHeroSpell(CPlayerInterface::battleInt, action,
+				[this, localBattleID](const BattleAction & action)
+				{
+					if(curInt && curInt->cb)
+						curInt->cb->battleMakeSpellAction(localBattleID, action);
+				});
 			actionsController->endCastingSpell();
 			return true;
 		};
@@ -953,6 +959,13 @@ void BattleInterface::giveCommand(EActionType action, const std::vector<BattleHe
 		ba.aimToHex(tile);
 	ba.spell = spell;
 
+	if(action == EActionType::HERO_SPELL)
+	{
+		// Mass Light spells (Mass Bless, Heavenly Gale) reach Sermon's picker here.
+		consecratedArmsPrayerUI::submitHeroSpell(CPlayerInterface::battleInt, ba,
+			[this](const BattleAction & completed) { sendCommand(completed, nullptr); });
+		return;
+	}
 	sendCommand(ba, actor);
 }
 

@@ -25,6 +25,7 @@
 #include "../../lib/CCreatureHandler.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/battle/Unit.h"
+#include "../../lib/spells/CSpell.h"
 #include "../../lib/callback/CCallback.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 
@@ -262,11 +263,24 @@ void submitOrder(const std::shared_ptr<BattleInterface> & owner, const BattleAct
 	auto selection = std::make_shared<Selection>(request.prayers, request.recipients);
 	ENGINE->windows().createAndPushWindow<ConsecratedArmsPrayerWindow>(owner, order, std::move(selection));
 }
+
+void submitHeroSpell(const std::shared_ptr<BattleInterface> & owner, const BattleAction & spell, HeroSpellSender send)
+{
+	const auto request = owner && owner->getBattle() ? consecratedArms::choiceRequest(*owner->getBattle(), spell)
+		: consecratedArms::ChoiceRequest{};
+	if(!request.prayers)
+	{
+		send(spell);
+		return;
+	}
+	auto selection = std::make_shared<Selection>(request.prayers, request.recipients);
+	ENGINE->windows().createAndPushWindow<ConsecratedArmsPrayerWindow>(owner, spell, std::move(selection), std::move(send));
+}
 }
 
 ConsecratedArmsPrayerWindow::ConsecratedArmsPrayerWindow(const std::shared_ptr<BattleInterface> & owner,
-	const BattleAction & order_, std::shared_ptr<Selection> selection_)
-	: CWindowObject(BORDERED), battle(owner), order(order_), selection(std::move(selection_))
+	const BattleAction & order_, std::shared_ptr<Selection> selection_, consecratedArmsPrayerUI::HeroSpellSender sender_)
+	: CWindowObject(BORDERED), battle(owner), order(order_), selection(std::move(selection_)), sender(std::move(sender_))
 {
 	pos.w = WINDOW_WIDTH;
 	pos.h = WINDOW_HEIGHT;
@@ -280,7 +294,9 @@ ConsecratedArmsPrayerWindow::ConsecratedArmsPrayerWindow(const std::shared_ptr<B
 	const auto values = prayerValues(*owner, order.side);
 	const bool two = selection->requiredPrayers() == 2;
 	decoration.push_back(std::make_shared<CLabel>(WINDOW_WIDTH / 2, 19, FONT_MEDIUM, ETextAlignment::CENTER,
-		Colors::YELLOW, "Consecrated Arms: " + HeroCommandUI::name(order.command)));
+		Colors::YELLOW, order.actionType == EActionType::HERO_SPELL && order.spell.toSpell()
+			? "Sermon: " + order.spell.toSpell()->getNameTranslated()
+			: "Consecrated Arms: " + HeroCommandUI::name(order.command)));
 	decoration.push_back(std::make_shared<CLabel>(WINDOW_WIDTH / 2, 40, FONT_TINY, ETextAlignment::CENTER, Colors::WHITE,
 		two ? "Choose two different prayers, then the Order recipient that receives both."
 			: "Choose a prayer, then the Order recipient that receives it."));
@@ -383,8 +399,12 @@ void ConsecratedArmsPrayerWindow::confirm()
 	submitted = true; // Local duplicate-submit latch, not the authoritative action budget.
 	const auto battleID = owner->getBattleID();
 	auto playerCallback = owner->curInt->cb;
+	const auto send = sender;
 	close();
-	playerCallback->battleMakeSpellAction(battleID, action);
+	if(send)
+		send(action);
+	else
+		playerCallback->battleMakeSpellAction(battleID, action);
 }
 
 void ConsecratedArmsPrayerWindow::show(Canvas & to)

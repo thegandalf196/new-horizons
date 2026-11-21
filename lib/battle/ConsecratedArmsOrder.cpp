@@ -27,7 +27,7 @@ std::vector<Bonus> existingBonuses(const battle::Unit & unit, Prayer prayer)
 }
 
 void appendRecipient(SetStackEffect & result, const battle::Unit & unit,
-	const std::vector<Prayer> & selected, const Policy & policy, int faith)
+	const std::vector<Prayer> & selected, const Policy & policy, int faith, int potency)
 {
 	auto prayers = activePrayers(unit);
 	int count = 0;
@@ -36,7 +36,7 @@ void appendRecipient(SetStackEffect & result, const battle::Unit & unit,
 		const auto prayer = static_cast<Prayer>(index);
 		const bool selectedPrayer = std::ranges::find(selected, prayer) != selected.end();
 		if(selectedPrayer)
-			prayers[index] = ActivePrayer{prayer, potencyFaith(faith, policy), duration(faith, policy), policy};
+			prayers[index] = ActivePrayer{prayer, potency, duration(faith, policy), policy};
 		else if(prayers[index] && policy.has(Perk::LIVING_LITURGY))
 			prayers[index]->remainingRounds = duration(faith, policy);
 		count += prayers[index].has_value();
@@ -96,7 +96,7 @@ SetStackEffect orderEffects(const CBattleInfoCallback & battle, BattleSide side,
 	SetStackEffect result;
 	result.battleID = battle.getBattle()->getBattleID();
 	for(const auto id : prayerHolders(battle, side, recipients))
-		appendRecipient(result, *battle.battleGetUnitByID(id), selected, policy, faith);
+		appendRecipient(result, *battle.battleGetUnitByID(id), selected, policy, faith, potencyFaith(faith, policy));
 	return result;
 }
 
@@ -112,10 +112,21 @@ SetStackEffect chosenOrderEffects(const CBattleInfoCallback & battle, BattleSide
 	for(const auto id : prayerHolders(battle, side, recipients))
 	{
 		if(id == chosenRecipient)
-			appendRecipient(result, *battle.battleGetUnitByID(id), selected, policy, faith);
+			appendRecipient(result, *battle.battleGetUnitByID(id), selected, policy, faith, potencyFaith(faith, policy));
 		else if(policy.has(Perk::LIVING_LITURGY))
-			appendRecipient(result, *battle.battleGetUnitByID(id), {}, policy, faith);
+			appendRecipient(result, *battle.battleGetUnitByID(id), {}, policy, faith, potencyFaith(faith, policy));
 	}
+	return result;
+}
+
+SetStackEffect specialtyPrayerEffects(const CBattleInfoCallback & battle, BattleSide side, uint32_t recipient,
+	const std::vector<Prayer> & selected, const Policy & policy, int faith, int potency)
+{
+	validateSelection(selected, policy);
+	SetStackEffect result;
+	result.battleID = battle.getBattle()->getBattleID();
+	for(const auto id : prayerHolders(battle, side, {recipient}))
+		appendRecipient(result, *battle.battleGetUnitByID(id), selected, policy, faith, potency);
 	return result;
 }
 

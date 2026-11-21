@@ -70,7 +70,9 @@
 	"revisedSpecialties": {
 		"version": 1,
 		"lordOfTheCrypts": {"skeletonGrowthPerLevel": 1},
-		"levelScaling": {"percentOfBasePerLevel": 3}
+		"levelScaling": {"percentOfBasePerLevel": 3},
+		"benedictionOfArms": {"potencyPercentPerLevel": 3, "maximumPotencyPercent": 60},
+		"sermon": {"potencyPercentPerLevel": 3, "maximumPotencyPercent": 60}
 	},
 	"creatureLineSpecialties": {
 		"version": 1,

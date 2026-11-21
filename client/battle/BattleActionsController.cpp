@@ -663,7 +663,12 @@ bool BattleActionsController::submitHeroSpellAction(const BattleAction & action)
 	const auto preview = buildFriendlyFirePreview(owner, action, castingSession);
 	if(!preview || (preview->recipients.empty() && preview->pandemoniumText.empty()))
 	{
-		owner.curInt->cb->battleMakeSpellAction(owner.getBattleID(), action);
+		// Loynis's Sermon Light spell picks its prayer first; any other spell is sent at once.
+		consecratedArmsPrayerUI::submitHeroSpell(CPlayerInterface::battleInt, action, [this](const BattleAction & action)
+		{
+			if(owner.curInt && owner.curInt->cb)
+				owner.curInt->cb->battleMakeSpellAction(owner.getBattleID(), action);
+		});
 		return true;
 	}
 

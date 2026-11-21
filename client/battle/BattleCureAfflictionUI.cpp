@@ -14,6 +14,7 @@
 #include "CureAfflictionPresenter.h"
 
 #include "../CPlayerInterface.h"
+#include "ConsecratedArmsPrayerWindow.h"
 #include "../GameEngine.h"
 #include "../gui/WindowHandler.h"
 #include "../windows/GUIClasses.h"
@@ -123,7 +124,12 @@ void BattleInterface::installCureAfflictionUI()
 				action.aimToUnit(target);
 				action.spellCureAffliction = removePhysical ? SpellID(SpellID::NONE) : choices[selected];
 				action.spellCurePhysicalAffliction = physicalKind;
-				owner.curInt->cb->battleMakeSpellAction(localBattleID, action);
+				consecratedArmsPrayerUI::submitHeroSpell(CPlayerInterface::battleInt, action,
+					[&owner, localBattleID](const BattleAction & action)
+					{
+						if(owner.curInt && owner.curInt->cb)
+							owner.curInt->cb->battleMakeSpellAction(localBattleID, action);
+					});
 			});
 		};
 		auto cancel = [session]
