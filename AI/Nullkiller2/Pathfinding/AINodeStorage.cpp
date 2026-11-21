@@ -1253,9 +1253,8 @@ void AINodeStorage::calculateObjectTeleportations(
 		&& sourceTown->getOwner() == srcNode->actor->hero->getOwner()
 		&& sourceTown->getFactionID() == FactionID::INFERNO
 		&& sourceTown->hasBuilt(BuildingSubID::CASTLE_GATE);
-	const auto ownedTowns = newHorizonsCastleGateSource
-		? aiNk->cc->getPlayerState(srcNode->actor->hero->tempOwner)->getTowns()
-		: std::vector<const CGTownInstance *>{};
+	const auto * gateOwner = newHorizonsCastleGateSource ? aiNk->cc->getPlayerState(sourceTown->getOwner(), false) : nullptr;
+	const auto ownedTowns = gateOwner ? gateOwner->getTowns() : std::vector<const CGTownInstance *>{}; // Enemy rosters are private.
 
 	auto accessibleExits = pathfinderHelper->getTeleportExits(source);
 

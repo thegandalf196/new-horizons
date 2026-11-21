@@ -16,9 +16,11 @@
 #include "lib/GameConstants.h"
 #include "lib/GameLibrary.h"
 #include "lib/IGameSettings.h"
+#include "lib/callback/CCallback.h"
 #include "lib/callback/IClient.h"
 #include "lib/mapObjects/CGHeroInstance.h"
 #include "lib/mapObjects/CGTownInstance.h"
+#include "lib/logging/CLogger.h"
 #include "lib/modding/CModHandler.h"
 #include "lib/networkPacks/PacksForServer.h"
 #include "lib/serializer/CMemorySerializer.h"
@@ -28,6 +30,7 @@
 #include "mock/TinyH3MBuilder.h"
 #include "nullkiller2/NullkillerTest.h"
 #include "server/CGameHandler.h"
+#include <atomic>
 
 namespace
 {
@@ -73,6 +76,30 @@ public:
 		return lastRequestId;
 	}
 };
+
+class DeniedPlayerLogTarget final : public ILogTarget
+{
+	std::weak_ptr<std::atomic_size_t> count;
+
+public:
+	explicit DeniedPlayerLogTarget(std::weak_ptr<std::atomic_size_t> count) : count(std::move(count)) {}
+	void write(const LogRecord & record) override
+	{
+		if(record.level == ELogLevel::ERROR && record.message == "Cannot access player 0 info!")
+		{
+			if(const auto counter = count.lock())
+				counter->fetch_add(1);
+		}
+	}
+};
+
+bool hasCastleGateAction(const AIPath & path)
+{
+	return std::ranges::any_of(path.nodes, [](const AIPathNodeInfo & node)
+	{
+		return node.specialAction && dynamic_cast<const AIPathfinding::CastleGateAction *>(node.specialAction.get());
+	});
+}
 
 BuildingID castleGateBuilding(const CGTownInstance & town)
 {
@@ -259,4 +286,22 @@ TEST_F(CastleGateActionTest, AIPathUsesOwnedInfernoGateAndExecutesAuthoritativeT
 				&& dynamic_cast<const AIPathfinding::CastleGateAction *>(node.specialAction.get());
 		});
 	})) << "an already-used Castle Gate must not be planned again today";
+}
+
+TEST_F(CastleGateActionTest, EnemyThreatForecastDoesNotReadPrivateGateTownRoster)
+{
+	startGateMap();
+	revealMap(OTHER_PLAYER);
+	// An enemy observer forecasts this hero's threat from its gated Inferno town.
+	auto gateway = makeGateway(OTHER_PLAYER);
+	ASSERT_EQ(gateway->nullkiller->cc->getPlayerState(PLAYER, false), nullptr);
+	ASSERT_EQ(gateway->nullkiller->cc->getObj(hero->id, false), hero);
+	auto errors = std::make_shared<std::atomic_size_t>(0);
+	CLogger::getGlobalLogger()->addTarget(std::make_unique<DeniedPlayerLogTarget>(errors));
+
+	const auto paths = pathsTo(*gateway, destinationTown->visitablePos());
+	EXPECT_EQ(errors->load(), 0u) << "the forecast must not request the enemy's private player state";
+	EXPECT_FALSE(paths.empty()) << "ordinary enemy movement must remain forecastable";
+	EXPECT_FALSE(std::ranges::any_of(paths, hasCastleGateAction))
+		<< "an enemy town roster is private, so its Castle Gate exits are not inferred";
 }

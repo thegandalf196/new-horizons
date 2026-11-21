@@ -1450,255 +1450,255 @@
           "symbol": "NK2AI::bool AINodeStorage::isObjectTeleportation(const CGPathNode * destination) const#1"
         },
         {
-          "end": 1315,
+          "end": 1314,
           "start": 1239,
           "symbol": "NK2AI::void AINodeStorage::calculateObjectTeleportations( std::vector<CGPathNode *> & neighbours, const PathNodeInfo & source, const CPathfinderHelper * pathfinderHelper, const AIPathNode * srcNode)#1"
         },
         {
-          "end": 1271,
-          "start": 1268,
+          "end": 1270,
+          "start": 1267,
           "symbol": "NK2AI::AINodeStorage::calculateObjectTeleportations( std::vector<CGPathNode *> & neighbours, const PathNodeInfo & source, const CPathfinderHelper * pathfinderHelper, const AIPathNode * srcNode)::[&](const CGTownInstance * town)#1"
         },
         {
-          "end": 1328,
-          "start": 1317,
+          "end": 1327,
+          "start": 1316,
           "symbol": "NK2AI::bool AINodeStorage::canCalculateDimensionDoorTeleportations( const PathNodeInfo & source, const PathfinderConfig * pathfinderConfig, const AIPathNode * srcNode) const#1"
         },
         {
-          "end": 1347,
-          "start": 1330,
+          "end": 1346,
+          "start": 1329,
           "symbol": "NK2AI::void AINodeStorage::calculateDimensionDoorTeleportations( std::vector<CGPathNode *> & neighbours, const PathNodeInfo & source, const CPathfinderHelper * pathfinderHelper, const AIPathNode * srcNode)#1"
         },
         {
-          "end": 1374,
-          "start": 1349,
+          "end": 1373,
+          "start": 1348,
           "symbol": "NK2AI::const std::vector<AINodeStorage::DimensionDoorCapability> & AINodeStorage::getDimensionDoorCapabilities( const CGHeroInstance * hero)#1"
         },
         {
-          "end": 1371,
-          "start": 1358,
+          "end": 1370,
+          "start": 1357,
           "symbol": "NK2AI::& AINodeStorage::getDimensionDoorCapabilities( const CGHeroInstance * hero)::[&](const CSpell * spell, const auto & mechanics, const DimensionDoorEffect * effect)#1"
         },
         {
-          "end": 1425,
-          "start": 1376,
+          "end": 1424,
+          "start": 1375,
           "symbol": "NK2AI::std::optional<AINodeStorage::DimensionDoorSpellPlan> AINodeStorage::getDimensionDoorSpellPlan( const PathNodeInfo & source, const CPathfinderHelper * pathfinderHelper, const AIPathNode * srcNode, const CGHeroInstance * hero, const DimensionDoorCapability & capability) const#1"
         },
         {
-          "end": 1457,
-          "start": 1427,
+          "end": 1456,
+          "start": 1426,
           "symbol": "NK2AI::void AINodeStorage::calculateDimensionDoorTeleportationsForSpell( std::vector<CGPathNode *> & neighbours, const PathNodeInfo & source, const AIPathNode * srcNode, const DimensionDoorSpellPlan & plan)#1"
         },
         {
-          "end": 1467,
-          "start": 1459,
+          "end": 1466,
+          "start": 1458,
           "symbol": "NK2AI::bool AINodeStorage::isDimensionDoorDestinationValid( const PathNodeInfo & source, const CGHeroInstance * hero, const int3 & destination, const DimensionDoorSpellPlan & plan) const#1"
         },
         {
-          "end": 1499,
-          "start": 1469,
+          "end": 1498,
+          "start": 1468,
           "symbol": "NK2AI::AINodeStorage::DimensionDoorLandingInfo AINodeStorage::getDimensionDoorLandingInfo( const AIPathNode * srcNode, const CGHeroInstance * hero, const int3 & destination) const#1"
         },
         {
-          "end": 1548,
-          "start": 1501,
+          "end": 1547,
+          "start": 1500,
           "symbol": "NK2AI::void AINodeStorage::addDimensionDoorTeleportation( std::vector<CGPathNode *> & neighbours, const PathNodeInfo & source, const AIPathNode * srcNode, const int3 & destination, const DimensionDoorSpellPlan & plan, const DimensionDoorLandingInfo & landing)#1"
         },
         {
-          "end": 1577,
-          "start": 1564,
+          "end": 1576,
+          "start": 1563,
           "symbol": "NK2AI::TownPortalFinder::TownPortalFinder(const ChainActor * actor, const std::vector<CGPathNode *> & initialNodes, const std::vector<const CGTownInstance *> & targetTowns, AINodeStorage * nodeStorage, SpellID spellID) : initialNodes(initialNodes) , actor(actor) , hero(actor->hero) , targetTowns(targetTowns) , nodeStorage(nodeStorage) , townPortal(spellID.toSpell()) , spellID(spellID) , usesSharedDailyOpportunity(newHorizonsMagic::isAdventureSpell(hero->getMagicRules(), spellID))#1"
         },
         {
-          "end": 1582,
-          "start": 1579,
+          "end": 1581,
+          "start": 1578,
           "symbol": "NK2AI::TownPortalFinder::bool actorCanCastTownPortal()#1"
         },
         {
-          "end": 1613,
-          "start": 1584,
+          "end": 1612,
+          "start": 1583,
           "symbol": "NK2AI::TownPortalFinder::CGPathNode * getBestInitialNodeForTownPortal(const CGTownInstance * targetTown)#1"
         },
         {
-          "end": 1665,
-          "start": 1615,
+          "end": 1664,
+          "start": 1614,
           "symbol": "NK2AI::TownPortalFinder::std::optional<AIPathNode *> createTownPortalNode(const CGTownInstance * targetTown)#1"
         },
         {
-          "end": 1741,
-          "start": 1668,
+          "end": 1740,
+          "start": 1667,
           "symbol": "NK2AI::void AINodeStorage::calculateTownPortal( const ChainActor * actor, const HeroMap<int> & maskMap, const std::vector<CGPathNode *> & initialNodes, TVector & output)#1"
         },
         {
-          "end": 1680,
-          "start": 1677,
+          "end": 1679,
+          "start": 1676,
           "symbol": "NK2AI::AINodeStorage::calculateTownPortal( const ChainActor * actor, const HeroMap<int> & maskMap, const std::vector<CGPathNode *> & initialNodes, TVector & output)::[&](const CGTownInstance * t) -> bool#1"
         },
         {
-          "end": 1791,
-          "start": 1743,
+          "end": 1790,
+          "start": 1742,
           "symbol": "NK2AI::void AINodeStorage::calculateTownPortalTeleportations(std::vector<CGPathNode *> & initialNodes)#1"
         },
         {
-          "end": 1779,
-          "start": 1773,
+          "end": 1778,
+          "start": 1772,
           "symbol": "NK2AI::AINodeStorage::calculateTownPortalTeleportations(std::vector<CGPathNode *> & initialNodes)::[&](const tbb::blocked_range<size_t> & r)#1"
         },
         {
-          "end": 1798,
-          "start": 1793,
+          "end": 1797,
+          "start": 1792,
           "symbol": "NK2AI::bool AINodeStorage::hasBetterChain(const PathNodeInfo & source, CDestinationNodeInfo & destination) const#1"
         },
         {
-          "end": 1811,
-          "start": 1800,
+          "end": 1810,
+          "start": 1799,
           "symbol": "NK2AI::bool AINodeStorage::hasBetterChain( const CGPathNode * source, const AIPathNode & candidateNode) const#1"
         },
         {
-          "end": 1810,
-          "start": 1807,
+          "end": 1809,
+          "start": 1806,
           "symbol": "NK2AI::AINodeStorage::hasBetterChain( const CGPathNode * source, const AIPathNode & candidateNode) const::[this, &source, candidateNode](const AIPathNode & node) -> bool#1"
         },
         {
-          "end": 1826,
-          "start": 1813,
+          "end": 1825,
+          "start": 1812,
           "symbol": "NK2AI::bool AINodeStorage::hasBetterChain( const CGPathNode * source, const AIPathNode & candidateNode, const NodeRange & nodes) const#1"
         },
         {
-          "end": 1916,
-          "start": 1828,
+          "end": 1915,
+          "start": 1827,
           "symbol": "NK2AI::bool AINodeStorage::isOtherChainBetter( const CGPathNode * source, const AIPathNode & candidateNode, const AIPathNode & other) const#1"
         },
         {
-          "end": 1934,
-          "start": 1918,
+          "end": 1933,
+          "start": 1917,
           "symbol": "NK2AI::bool AINodeStorage::isTileAccessible(const HeroPtr & heroPtr, const int3 & pos, const EPathfindingLayer layer) const#1"
         },
         {
-          "end": 1942,
-          "start": 1936,
+          "end": 1941,
+          "start": 1935,
           "symbol": "NK2AI::bool AINodeStorage::hasCurrentNodes(const int3 & pos) const#1"
         },
         {
-          "end": 1956,
-          "start": 1944,
+          "end": 1955,
+          "start": 1943,
           "symbol": "NK2AI::void AINodeStorage::calculateChainInfo(std::vector<AIPath> & paths, const int3 & pos, const bool isOnLand) const#1"
         },
         {
-          "end": 2001,
-          "start": 1958,
+          "end": 2000,
+          "start": 1957,
           "symbol": "NK2AI::void AINodeStorage::calculatePathSummaries( std::vector<AIPathSummary> & summaries, const int3 & pos, const bool isOnLand) const#1"
         },
         {
-          "end": 2014,
-          "start": 2003,
+          "end": 2013,
+          "start": 2002,
           "symbol": "NK2AI::bool AINodeStorage::calculatePathInfo(AIPath & path, const AIPathSummary & summary) const#1"
         },
         {
-          "end": 2088,
-          "start": 2016,
+          "end": 2087,
+          "start": 2015,
           "symbol": "NK2AI::bool AINodeStorage::calculatePathInfo(AIPath & path, const AIPathNode * node) const#1"
         },
         {
-          "end": 2225,
-          "start": 2090,
+          "end": 2224,
+          "start": 2089,
           "symbol": "NK2AI::bool AINodeStorage::tryReconstructChainInfo(const AIPathNode * node, AIPath & path, int & parentIndex, RealMoveMasksByHero & realMoveMasks) const#1"
         },
         {
-          "end": 2116,
-          "start": 2099,
+          "end": 2115,
+          "start": 2098,
           "symbol": "NK2AI::AINodeStorage::tryReconstructChainInfo(const AIPathNode * node, AIPath & path, int & parentIndex, RealMoveMasksByHero & realMoveMasks) const::[](const AIPathNode * exchangeNode, const AIPathNode * predecessor) -> std::optional<ExchangeMaskTransition>#1"
         },
         {
-          "end": 2222,
-          "start": 2118,
+          "end": 2221,
+          "start": 2117,
           "symbol": "NK2AI::AINodeStorage::tryReconstructChainInfo(const AIPathNode * node, AIPath & path, int & parentIndex, RealMoveMasksByHero & realMoveMasks) const::[this, &getVerifiedExchangeTransition](auto && self, const AIPathNode * spineRoot, AIPath & candidatePath, int & candidateParentIndex, RealMoveMasksByHero & candidateMasks) -> bool#1"
         },
         {
-          "end": 2183,
-          "start": 2128,
+          "end": 2182,
+          "start": 2127,
           "symbol": "NK2AI::AINodeStorage::tryReconstructChainInfo(const AIPathNode * node, AIPath & path, int & parentIndex, RealMoveMasksByHero & realMoveMasks) const::(auto && self, const AIPathNode * spineRoot, AIPath & candidatePath, int & candidateParentIndex, RealMoveMasksByHero & candidateMasks) -> bool::[this, spineRoot, &currentMasks, &expectedTransition]( const AIPathNode * node, AIPath & pathToAppend, int parent, RealMoveMasksByHero & masks) -> std::optional<int>#1"
         },
         {
-          "end": 2173,
-          "start": 2170,
+          "end": 2172,
+          "start": 2169,
           "symbol": "NK2AI::AINodeStorage::tryReconstructChainInfo(const AIPathNode * node, AIPath & path, int & parentIndex, RealMoveMasksByHero & realMoveMasks) const::(auto && self, const AIPathNode * spineRoot, AIPath & candidatePath, int & candidateParentIndex, RealMoveMasksByHero & candidateMasks) -> bool::( const AIPathNode * node, AIPath & pathToAppend, int parent, RealMoveMasksByHero & masks) -> std::optional<int>::[spineRoot, nodeMask](const RealMoveMaskCommitment & commitment)#1"
         },
         {
-          "end": 2230,
-          "start": 2227,
+          "end": 2229,
+          "start": 2226,
           "symbol": "NK2AI::AIPath::AIPath() : nodes({})#1"
         },
         {
-          "end": 2241,
-          "start": 2232,
+          "end": 2240,
+          "start": 2231,
           "symbol": "NK2AI::std::shared_ptr<const SpecialAction> AIPath::getFirstBlockedAction() const#1"
         },
         {
-          "end": 2251,
-          "start": 2243,
+          "end": 2250,
+          "start": 2242,
           "symbol": "NK2AI::int3 AIPath::firstTileToGet() const#1"
         },
         {
-          "end": 2261,
-          "start": 2253,
+          "end": 2260,
+          "start": 2252,
           "symbol": "NK2AI::int3 AIPath::targetTile() const#1"
         },
         {
-          "end": 2266,
-          "start": 2263,
+          "end": 2265,
+          "start": 2262,
           "symbol": "NK2AI::const AIPathNodeInfo & AIPath::firstNode() const#1"
         },
         {
-          "end": 2285,
-          "start": 2268,
+          "end": 2284,
+          "start": 2267,
           "symbol": "NK2AI::const AIPathNodeInfo & AIPath::targetNode() const#1"
         },
         {
-          "end": 2293,
-          "start": 2287,
+          "end": 2292,
+          "start": 2286,
           "symbol": "NK2AI::uint64_t AIPath::getPathDanger() const#1"
         },
         {
-          "end": 2301,
-          "start": 2295,
+          "end": 2300,
+          "start": 2294,
           "symbol": "NK2AI::float AIPath::movementCost() const#1"
         },
         {
-          "end": 2309,
-          "start": 2303,
+          "end": 2308,
+          "start": 2302,
           "symbol": "NK2AI::uint8_t AIPath::turn() const#1"
         },
         {
-          "end": 2315,
-          "start": 2311,
+          "end": 2314,
+          "start": 2310,
           "symbol": "NK2AI::uint64_t AIPath::getHeroStrength() const#1"
         },
         {
-          "end": 2323,
-          "start": 2317,
+          "end": 2322,
+          "start": 2316,
           "symbol": "NK2AI::uint64_t AIPath::getTotalDanger() const#1"
         },
         {
-          "end": 2337,
-          "start": 2325,
+          "end": 2336,
+          "start": 2324,
           "symbol": "NK2AI::bool AIPath::containsHero(const CGHeroInstance * hero) const#1"
         },
         {
-          "end": 2342,
-          "start": 2339,
+          "end": 2341,
+          "start": 2338,
           "symbol": "NK2AI::uint64_t AIPath::getTotalArmyLoss() const#1"
         },
         {
-          "end": 2353,
-          "start": 2344,
+          "end": 2352,
+          "start": 2343,
           "symbol": "NK2AI::std::string AIPath::toString() const#1"
         }
       ],
-      "rationale": "Complete exact 2355-line source inventory after cohesive native path-node export extraction: 102 body-bearing callables (82 functions/methods and 20 lambdas), same symbols/order as the prior complete inventory. Every existing callable except reconstruction and its two nested lambdas remains byte-identical; their native field materialization moves to AIPathNodeExport.cpp, preserving caller position and ordering. Updated physical spans account for one include and extraction. Sole inherited disabled-preprocessor else recovery moves 1782 to 1783; its surrounding method and disabled callback remain fully inventoried. Defaulted destructor and declarations remain excluded by the maintained body-required convention. No newly hidden callable or unresolved inventory gap; this is source coverage only. Reconstruction ratchets 152 to136 and nested lambda121 to105, both below150 but still above80 review trigger. Three other function debt records remain exact; header at500 retires its obsolete above500 entry. Existing Town Portal component-extraction deferral remains in the owning-file record.",
-      "review": "IR-WAITING-RECEIVER-EXPORT-EXTRACTION-20261024",
+      "rationale": "Complete exact 2354-line source inventory: same 102 body-bearing callables, symbols and order as the prior complete inventory. Only calculateObjectTeleportations changes (two-line null-checked Castle Gate roster read replaces a three-line dereference); spans after line 1257 shift up by one. Source coverage only.",
+      "review": "CLAUDE-AI0931-CRASH6",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "sha256": "c705da60d5b8c6203a6549613dddf9a0890fddd4e64093de354b12e8f2e2b8f6"
+      "sha256": "2c44c6f5928b38fc74852199881b16122c1b5b3c68fe1296ede5ceb1003befe9"
     },
     "CI/NSIS.template.in": {
       "functions": [
@@ -19950,13 +19950,14 @@
     "AI/Nullkiller2/Pathfinding/AINodeStorage.cpp": {
       "deferral": "AI engineer: extract TownPortalFinder and calculateTownPortal/calculateTownPortalTeleportations into one cohesive Town Portal path-generation component before further expansion in this area. Preserve actor/node ordering, initial-node input/output, callback full-roster capability, nearest/tie/occupied-town and movement/mana semantics; verify denied/own/allied forecasts and exact world/RNG preservation. The next structural change must reduce AINodeStorage; this six-line exception gives no unrelated regrowth credit.",
       "kind": "exception",
-      "lines": 2355,
+      "lines": 2354,
       "owner": "ai_engineer",
-      "rationale": "Cohesive native path-node materialization/type extraction reduces this oversized file from2370 to2355 physical lines; no renewed growth allowance. AIPathNodeExport.cpp/header own the moved field-copy boundary. Existing Town Portal admission behavior and all other callable bodies remain unchanged except reconstruction and its nested callbacks shrinking152 to136,121 to105 and72 to56. Keep remaining debt/deferral and independent-review requirement; source measurement is not native/runtime acceptance.",
-      "review": "IR-WAITING-RECEIVER-EXPORT-EXTRACTION-20261024",
+      "rationale": "Exact 2355 to 2354 physical lines: calculateObjectTeleportations (77 to 76) reads the Castle Gate source owner's town roster with a non-verbose, null-checked callback query instead of dereferencing the result, so an enemy observer's threat forecast omits private gate exits instead of crashing (headless Arrogance segfault after 'Cannot access player 6 info!'). No other callable changes. Existing Town Portal extraction deferral retained; no future growth credit.",
+      "review": "CLAUDE-AI0931-CRASH6",
       "review_scope": "exact-source-only-cohesive-native-export-extraction-shrinking-ratchet",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "sha256": "c705da60d5b8c6203a6549613dddf9a0890fddd4e64093de354b12e8f2e2b8f6"
+      "sha256": "2c44c6f5928b38fc74852199881b16122c1b5b3c68fe1296ede5ceb1003befe9",
+      "previous_review": "IR-WAITING-RECEIVER-EXPORT-EXTRACTION-20261024"
     },
     "AI/Nullkiller2/Pathfinding/AINodeStorage.cpp::NK2AI::AINodeStorage::tryReconstructChainInfo(const AIPathNode * node, AIPath & path, int & parentIndex, RealMoveMasksByHero & realMoveMasks) const::[this, &getVerifiedExchangeTransition](auto && self, const AIPathNode * spineRoot, AIPath & candidatePath, int & candidateParentIndex, RealMoveMasksByHero & candidateMasks) -> bool#1": {
       "kind": "legacy",
