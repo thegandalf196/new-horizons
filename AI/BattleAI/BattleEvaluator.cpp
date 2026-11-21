@@ -73,7 +73,7 @@
 #include "../../lib/spells/NewHorizonsDivineRetribution.h"
 #include "../../lib/spells/NewHorizonsPandemonium.h"
 #include "../../lib/spells/effects/BattleForm.h"
-#include "../../lib/spells/NewHorizonsSpellAvailability.h"
+#include "DispelValue.h"
 #include "../../lib/spells/NewHorizonsSorcery.h"
 #include "../../lib/battle/BattleStateInfoForRetreat.h"
 #include "../../lib/battle/CUnitState.h"
@@ -3546,8 +3546,8 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 				const auto convergenceElemental = isCanonicalElementalConvergence(ps.spell)
 					? newHorizonsElementalTerrain::primaryElemental(*state) : std::nullopt;
 				const bool verdantPrison = isCanonicalVerdantPrison(ps.spell);
-				const bool slowFamily = ps.spell
-					&& newHorizonsMagic::spellVariantBase(state->getMagicRules(), ps.spell->getId()) == SpellID::SLOW;
+				const bool initiativeSpell = ps.spell && (dispelAI::removesSpellEffects(ps.spell) // Removed Slow/Haste.
+					|| newHorizonsMagic::spellVariantBase(state->getMagicRules(), ps.spell->getId()) == SpellID::SLOW);
 
 				auto needFullEval = ps.command != HeroCommand::NONE
 					|| state->hasObstacleChanges() || state->hasWallChanges()
@@ -3558,7 +3558,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 							|| heroSpellVariants::activationForfeitChanged(*original, *u)
 							|| (u->hasBonusOfType(BonusType::ATTACKS_NEAREST_CREATURE)
 								!= original->hasBonusOfType(BonusType::ATTACKS_NEAREST_CREATURE))
-							|| (slowFamily
+							|| (initiativeSpell
 								&& u->getInitiative() != original->getInitiative())
 							|| (theChosenValue::isTheChosen(ps.spell)
 								&& u->hasBonusOfType(BonusType::FLYING) != original->hasBonusOfType(BonusType::FLYING))
@@ -3794,7 +3794,7 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 								/ static_cast<float>(maxHealth);
 						}
 					}
-					if(slowFamily
+					if(initiativeSpell
 						&& original && original->alive() && unit->alive())
 					{
 						const int oldInitiative = std::max(1, original->getInitiative());
@@ -3886,6 +3886,8 @@ bool BattleEvaluator::attemptCastingSpell(const CStack * activeStack, bool allow
 					}
 				}
 				damageToHostilesScore += projectedDebuffScore * scoreEvaluator.getPositiveEffectMultiplier();
+				damageToHostilesScore += dispelAI::removedEffectValue(ps.spell, *cb->getBattle(battleID), state, playerID,
+					scoreEvaluator.getPositiveEffectMultiplier(), scoreEvaluator.getNegativeEffectMultiplier());
 				damageToHostilesScore += projectedCrusadeBonusScore
 					* scoreEvaluator.getPositiveEffectMultiplier();
 

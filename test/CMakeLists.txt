@@ -1229,6 +1229,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/PassiveDivineMandateAITest.cpp
 		battleAI/ConsecratedArmsValueTest.cpp
 		battleAI/ConsecratedArmsChoiceAITest.cpp
+		battleAI/DispelValueTest.cpp
 		server/battles/NewHorizonsAvatarOfRageTest.cpp
 		server/battles/NewHorizonsBloodrageDeathPerksTest.cpp
 		server/battles/NewHorizonsVeteranCohesionTest.cpp

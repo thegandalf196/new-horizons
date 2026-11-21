@@ -165,6 +165,7 @@ set(battleAI_SRCS
 		PassiveDivineMandateProjection.cpp
 		PassiveDivineMandateValue.cpp
 		ConsecratedArmsValue.cpp
+		DispelValue.cpp
 		ConsecratedStrikeProjection.cpp
 		SpellApplicationChance.cpp
 		TemporaryGatingAI.cpp
@@ -385,6 +386,7 @@ set(battleAI_HEADERS
 		PassiveDivineMandateProjection.h
 		PassiveDivineMandateValue.h
 		ConsecratedArmsValue.h
+		DispelValue.h
 		ConsecratedStrikeProjection.h
 		TemporaryGatingAI.h
 		TemporaryGatingProjection.h
