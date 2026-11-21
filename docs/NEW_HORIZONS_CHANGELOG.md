@@ -29,6 +29,14 @@ it beside the stable game, with its own saves and settings.
   gave their hero a level.
 - Games saved in 0.92.x load and keep their original rules.
 
+## 0.92.8 Early Access
+
+- Fixed computer opponents occasionally freezing the game after a battle that
+  gave their hero a level.
+- Linux: after installing a first Beta, the launcher now enables Play right
+  away instead of requiring the Version track to be switched off and on.
+- No gameplay changes.
+
 ## 0.92.7 Early Access
 
 - Installations made before 0.92.6 now pick up the current launcher: after one
