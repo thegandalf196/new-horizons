@@ -23,8 +23,8 @@ int32_t CGTownInstance::getStewardGoldBeforeHandicap() const
 {
 	if(!getOwner().isValidPlayer())
 		return 0;
-	if(newHorizonsEstates::townSteward(*this))
-		return 1000;
+	if(const auto * steward = newHorizonsEstates::townSteward(*this))
+		return newHorizonsEstates::stewardGold(*steward);
 	constexpr int32_t goldPerHero = 250;
 	const auto qualifies = [this](const CGHeroInstance * hero)
 	{

@@ -23,7 +23,7 @@ bool CGameHandler::assignTownSteward(ObjectInstanceID townID, ObjectInstanceID h
 	if(!state)
 		return false;
 	if(heroID != ObjectInstanceID::NONE && (!hero || hero->getOwner() != player
-		|| !newHorizonsEstates::hasRevisedPerk(hero, "new-horizons:estates.stewardship")
+		|| !newHorizonsEstates::eligibleSteward(hero)
 		|| !vstd::contains(state->getHeroes(), hero)))
 	{
 		complain("The selected hero is not an eligible active steward");

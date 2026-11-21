@@ -17,6 +17,10 @@ inline JsonNode overkillRandomPrayerRules(JsonNode rules)
 		rules["skills"][skill] = pinned["skills"][skill];
 	for(const auto * policy : {"metamagicPolicy", "divineMandatePolicy"})
 		rules[policy] = pinned[policy];
+	// Those captures also predate core Stewardship and Spellcraft policy 2 (format 1166).
+	rules.Struct().erase("spellcraftPolicyVersion");
+	if(rules.Struct().contains("estatesPolicyVersion"))
+		rules["estatesPolicyVersion"].Integer() = 1;
 	// A complete captured registry: never merge the pinned policies into installed ones.
 	rules.setOverrideFlag(true);
 	return rules;
@@ -34,6 +38,7 @@ inline JsonNode overkillRandomPrayerHeroes(JsonNode heroes)
 	for(auto & entry : heroes["startingSkills"]["startingPerkProfiles"]["core:halon"].Vector())
 		if(entry["perk"].String() == "new-horizons:metamagic.formulaRecovery")
 			entry["perk"].String() = "new-horizons:metamagic.unravelingMagic";
+	heroes.Struct().erase("revisedSpecialties"); // Revised specialties require format 1166.
 	heroes.setOverrideFlag(true);
 	return heroes;
 }

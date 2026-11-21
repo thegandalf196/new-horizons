@@ -15,7 +15,13 @@ namespace newHorizonsEstates
 bool usesRevisedPolicy(const JsonNode & rules)
 {
 	return rules["estatesPolicyVersion"].getType() == JsonNode::JsonType::DATA_INTEGER
-		&& rules["estatesPolicyVersion"].Integer() == 1;
+		&& (rules["estatesPolicyVersion"].Integer() == 1 || rules["estatesPolicyVersion"].Integer() == 2);
+}
+
+bool usesCoreStewardship(const JsonNode & rules)
+{
+	return rules["estatesPolicyVersion"].getType() == JsonNode::JsonType::DATA_INTEGER
+		&& rules["estatesPolicyVersion"].Integer() == 2;
 }
 
 void validateRevisedPolicy(const JsonNode & rules)

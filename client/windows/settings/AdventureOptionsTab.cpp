@@ -103,6 +103,10 @@ AdventureOptionsTab::AdventureOptionsTab()
 	{
 		return setBoolSetting("adventure", "heroReminder", value);
 	});
+	addCallback("stewardReminderChanged", [](bool value)
+	{
+		return setBoolSetting("adventure", "stewardReminder", value);
+	});
 	addCallback("quickCombatChanged", [](bool value)
 	{
 		return setBoolSetting("adventure", "quickCombat", value);
@@ -186,6 +190,9 @@ AdventureOptionsTab::AdventureOptionsTab()
 
 	std::shared_ptr<CToggleButton> heroReminderCheckbox = widget<CToggleButton>("heroReminderCheckbox");
 	heroReminderCheckbox->setSelected(settings["adventure"]["heroReminder"].Bool());
+
+	if(auto stewardReminderCheckbox = widget<CToggleButton>("stewardReminderCheckbox"))
+		stewardReminderCheckbox->setSelected(settings["adventure"]["stewardReminder"].Bool());
 
 	std::shared_ptr<CToggleButton> quickCombatCheckbox = widget<CToggleButton>("quickCombatCheckbox");
 	quickCombatCheckbox->setSelected(settings["adventure"]["quickCombat"].Bool());

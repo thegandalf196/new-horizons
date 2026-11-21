@@ -51,6 +51,7 @@ OwnedBonusCaptureCodec OwnedBonusCaptureCodec::fromSourceEpoch(ESerializationVer
 		break;
 	case Version::NEW_HORIZONS_CONSECRATED_ARMS:
 	case Version::NEW_HORIZONS_DOUBLE_CAST_CHOSEN_PRAYERS: // Battle state and action fields only.
+	case Version::NEW_HORIZONS_REVISED_SPECIALTIES: // Captured rule documents only.
 		profile = Version::NEW_HORIZONS_CONSECRATED_ARMS;
 		break;
 	default:

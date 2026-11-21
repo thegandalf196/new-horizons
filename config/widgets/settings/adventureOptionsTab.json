@@ -406,6 +406,9 @@
 				{
 					"text": "vcmi.adventureOptions.rightButtonDrag.hover",
 					"created" : "keyboardMouse"
+				},
+				{
+					"text": "new-horizons.economy.stewardship.reminderOption.hover"
 				}
 			]
 		},
@@ -469,6 +472,11 @@
 					"help": "vcmi.adventureOptions.rightButtonDrag",
 					"callback": "rightButtonDragChanged",
 					"created" : "keyboardMouse"
+				},
+				{
+					"name": "stewardReminderCheckbox",
+					"help": "new-horizons.economy.stewardship.reminderOption",
+					"callback": "stewardReminderChanged"
 				}
 			]
 		}

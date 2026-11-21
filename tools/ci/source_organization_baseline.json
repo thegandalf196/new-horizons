@@ -19387,11 +19387,11 @@
       },
       "deferral": "Before substantive gateway growth, extract the touched object-specific purchase/interaction stage, passing callback, hero, destination and authoritative quote. Preserve visible-state checks, native command order, actual buyer and once-only reservations.\n\nBefore any further gateway or turn-error growth, extract the turn-completion/error boundary into the existing turn-execution owner with explicit callback, player and interruption/termination outcome. Retain the shared read lease during state reads and turn completion/recovery. Release and reacquire it only through the synchronous request wait guard. Preserve no endTurn on planner cancellation/termination, original authoritative command order and at-most-once fallback; characterize normal, thrown-error and shutdown routes before extraction. Retain all prior purchase/interaction extraction obligations.",
       "kind": "exception",
-      "lines": 2428,
+      "lines": 2430,
       "owner": "ai_engineer",
-      "previous_review": "PROPOSED-0920-EXACT-SOURCE-ORGANIZATION",
-      "rationale": "Exact 2428 to 2428-line scope. Adventure decision and progression routing uses validated captures and the current authored acquisition policy. Preserve visible callbacks, exact legal inputs, RNG and existing search/valuation ordering.",
-      "review": "IR-NH092-ORG-3E82D142-20261116",
+      "previous_review": "IR-NH092-ORG-3E82D142-20261116",
+      "rationale": "Exact successor for 0.93.1 beta step 1 (Precise Casting resistance halving, core Stewardship and Lord of the Crypts, +3%/level specialty scaling, activation of unchanged extended ordinary specialties): bounded routing hooks and focused owners only. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-SPECIALTIES-0931",
       "review_history": [
         {
           "deferral": "AI engineer owns extraction of current-node special-action dispatch/current-day execution boundary into a focused executor before any further affected-area growth. Preserve parent dependencies, composite and DimensionDoor stale recovery, current-day approaches, exact request/wait/ack ordering, exceptions and captured historical behavior; characterize them with focused native tests. Gateway file remains capped at2861 until shrinking extraction.",
@@ -19442,7 +19442,7 @@
       ],
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "3952d72ab69b0c2e17b8104b6bebd619f818483ae68943e8843b3c084e30a522"
+      "sha256": "d13b19a143ffc2ccff22b4fce7d2961196ee709c5ff8eca371d68b13a5ed6b10"
     },
     "AI/Nullkiller2/AIGateway.cpp::NK2AI::AIGateway::pickBestArtifacts(const std::shared_ptr<CCallback> & cc, const CGHeroInstance * h, const CGHeroInstance * other)::[cc](const CGHeroInstance * h, const CGHeroInstance * otherh, bool giveStuffToFirstHero) -> void#1": {
       "kind": "legacy",
@@ -20204,18 +20204,18 @@
       "hybrid_predecessor_review": "IR-0911-BOUNDED-DIRECT-MAP-COMPOSITION-V3",
       "inherited_deferral": "Owner: ui_developer / gameplay_engineer. Bounded exception for Major System Rework: Leadership attribute restoration, square-root damage scaling, and hero UI panel integration. Hotspots remain subject to ongoing shrinking and modularization policy.\nExact source-list bound only. Before substantive build logic, extract a cohesive target configuration section. Verify source/link membership once and retain no duplicate translation units. Prior stricter obligations remain in inherited_deferral, where present.\n\nBefore introducing conditional build logic, extract a cohesive target helper; retain exact source/link membership, one registration per translation unit and existing inherited obligations.",
       "kind": "exception",
-      "lines": 779,
+      "lines": 781,
       "owner": "ui_developer",
       "previous_exact_review": "IR-PERFORMANCE-STEP2-BUILD-ORG-V1",
       "previous_proposal_review": "PROPOSED-EXACT-REGISTRY-SIX-SOURCE-20261103",
-      "previous_review": "PROPOSED-0920-EXACT-SOURCE-ORGANIZATION",
+      "previous_review": "CLAUDE-METAMAGIC6-PHASE5-20261120",
       "prior_deferral": "Before substantive build-control growth, extract a cohesive target helper; retain all inherited deferrals and one registration per translation unit.",
       "proposal_predecessor_review": "PROPOSED-CLIENT225-BOUNDED-20261103",
-      "rationale": "Exact source-list successor: registers CreatureActiveEffectsSection.cpp only; no build logic.\n\nCLAUDE-METAMAGIC6-PHASE5-20261120 (supersedes CLAUDE-0925-CREATURE-INSPECTOR-20261119): Registers the focused ConsecratedArmsPrayerWindow and DoubleCastCue client units (five source-list lines); no build logic. Inherited deferrals remain binding; no future growth credit.",
-      "review": "CLAUDE-METAMAGIC6-PHASE5-20261120",
+      "rationale": "Exact successor for 0.93.1 beta step 1 (Precise Casting resistance halving, core Stewardship and Lord of the Crypts, +3%/level specialty scaling, activation of unchanged extended ordinary specialties): bounded routing hooks and focused owners only. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-SPECIALTIES-0931",
       "review_scope": "Exact bounded source organization and failure-path review only; native/rendered acceptance and future growth unapproved.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_ONLY",
-      "sha256": "1841a1097fe8d710a83e2a9986b75df6cf88a992313bcf2b34f67817600d9e50",
+      "sha256": "c44129c7c27c3e322eab102afc2303d53ffcff78673298a6f90e181f367540e2",
       "inherited_deferral_step2": "Exact current size only. Retain all prior obligations below; further renderer/cache expansion must extract its specific presentation or map-cache policy behind a focused interface and verify clipping, zoom, wrap, retained ownership, both backends and guarded scene/quit behavior before accepting it."
     },
     "client/CPlayerInterface.cpp": {
@@ -20394,14 +20394,14 @@
     "client/adventureMap/AdventureMapShortcuts.cpp": {
       "deferral": "Before further substantive expansion, extract the next touched coherent responsibility into a focused owner while preserving authority, packet/RNG order, lifetime and historical wire behavior. This exact mechanical or bounded routing proposal grants no future growth allowance.",
       "kind": "exception",
-      "lines": 807,
+      "lines": 811,
       "owner": "ui_developer",
-      "previous_review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "rationale": "Two existing menu callbacks now stop when endGameplay reports superseded retirement. Both one-line guard replacements preserve size and route all lifecycle work to the existing teardown owner. Exact measured unit only; no future growth credit.",
-      "review": "PROPOSED-0920-EXACT-SOURCE-ORGANIZATION",
+      "previous_review": "PROPOSED-0920-EXACT-SOURCE-ORGANIZATION",
+      "rationale": "Exact successor for 0.93.1 beta step 1 (Precise Casting resistance halving, core Stewardship and Lord of the Crypts, +3%/level specialty scaling, activation of unchanged extended ordinary specialties): bounded routing hooks and focused owners only. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-SPECIALTIES-0931",
       "review_scope": "Proposed source organization and exact bound only; native/rendered/runtime acceptance remains separate.",
       "review_status": "PROPOSED_AWAITING_INDEPENDENT_REVIEW",
-      "sha256": "716319600cb8952e9a41078ecb46da0e495bbec94e6ee91d97bfe7aca41c550d"
+      "sha256": "c054d172c748d23be84bd00dda8c38eb24afb254774131f47ac4db87f1abe483"
     },
     "client/adventureMap/AdventureMapShortcuts.cpp::void AdventureMapShortcuts::search(bool next)#1": {
       "kind": "legacy",
@@ -22768,13 +22768,15 @@
       "sha256": "7dd6780be248a2a2c1876d1e2955cbd3984eb8e945df54b5b64e71e5cb1f6945"
     },
     "client/windows/settings/AdventureOptionsTab.cpp::AdventureOptionsTab::AdventureOptionsTab() : InterfaceObjectConfigurable()#1": {
-      "kind": "legacy",
-      "lines": 198,
+      "kind": "exception",
+      "lines": 205,
       "owner": "ui_developer",
-      "rationale": "Existing function owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 198 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "rationale": "Exact successor for 0.93.1 beta step 1 (Precise Casting resistance halving, core Stewardship and Lord of the Crypts, +3%/level specialty scaling, activation of unchanged extended ordinary specialties): bounded routing hooks and focused owners only. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-SPECIALTIES-0931",
       "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "bdd6019173488fb70769ef0026061eea5d10c5e3533f7e6556ae870f3f5a159a"
+      "sha256": "71616c9af8fc23b9767712cf738b2c4aa431637fb855e6c77d167e3461239733",
+      "previous_review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "deferral": "Before further substantive expansion, extract the next cohesive touched stage into its focused owner; preserve packet/RNG order, serialization field order and rejection atomicity. No future growth credit."
     },
     "client/windows/settings/BattleOptionsTab.cpp::BattleOptionsTab::BattleOptionsTab(BattleInterface * owner)#1": {
       "completed_p_predecessor": {
@@ -23654,9 +23656,9 @@
       "inherited_a1_health_deferral": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.",
       "inherited_deferral": "Exact source-list bound only. Before substantive build logic, extract a cohesive target configuration section. Verify source/link membership once and retain no duplicate translation units. Prior stricter obligations remain in inherited_deferral, where present.",
       "kind": "exception",
-      "lines": 2159,
+      "lines": 2161,
       "owner": "engine_engineer",
-      "previous_review": "CLAUDE-METAMAGIC6-PHASE4-20261120",
+      "previous_review": "CLAUDE-SYLVAN41-20261120",
       "prior_a1_health_scope": {
         "kind": "exception",
         "lines": 2063,
@@ -23665,11 +23667,11 @@
         "sha256": "7058cdef35cfce13214572d190c4accfdf5721e6c144af3cdfca9f53bb68c2a0"
       },
       "prior_deferral": "Exact mechanical source/header registration only. Before substantive CMake target policy growth, extract a cohesive configuration section while verifying translation-unit membership and facade linkage. No future file growth allowance. Prior stricter obligations remain in inherited_deferral, where present.\n\nKeep registrations in their current coherent tables. Extract any future conditional target/control logic rather than growing this registry into a build framework.",
-      "rationale": "Exact successor for Sylvan Tactics 4.1: one-line hooks (segment distance passed to the shared voluntary-movement receipt) and one source registration only; the revised Dappled Cover, Quick Redeployment and Hunting Pack rules live in the focused NewHorizonsSylvanTacticsRevision unit. Existing extraction deferrals retained; no future growth credit.",
-      "review": "CLAUDE-SYLVAN41-20261120",
+      "rationale": "Exact successor for 0.93.1 beta step 1 (Precise Casting resistance halving, core Stewardship and Lord of the Crypts, +3%/level specialty scaling, activation of unchanged extended ordinary specialties): bounded routing hooks and focused owners only. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-SPECIALTIES-0931",
       "review_scope": "Exact frozen A7 production/routing source only; no compiler, Windows path runtime, recovery, timing, release or future-growth acceptance.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NATIVE_WINDOWS_PENDING",
-      "sha256": "4e1b47045607f62d0f863ae4b36fcd38810090fe0987ba9b8ea227b32a100946",
+      "sha256": "d6d0d520abd4dbfb74d964fda3b5e036cdd10655b90eb767e3db3d4d0fab56af",
       "inherited_deferral_step2": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.\n\nExact shared-facade source/header registration only. Before conditional target/control policy growth, extract the next coherent configuration section; preserve one translation unit per implementation and consumer linkage through vcmi. No future registry-size growth credit."
     },
     "lib/CSkillHandler.cpp::std::shared_ptr<CSkill> CSkillHandler::loadFromJson(const std::string & scope, const JsonNode & json, const std::string & identifier, size_t index)#1": {
@@ -24841,7 +24843,7 @@
       "kind": "exception",
       "lines": 781,
       "owner": "engine_engineer",
-      "previous_review": "IR-TAMIKA-FINAL-ORDERED-NATIVE-ACTIVATION-20261029",
+      "previous_review": "IR-NH092-ORG-E8CD1819-20261116",
       "prior_a1_health_scope": {
         "kind": "exception",
         "lines": 779,
@@ -24850,11 +24852,11 @@
         "sha256": "1352330b5da9beb0f13b36514a2de735aa1a2eef895cba15bdc390c5024a278a"
       },
       "prior_deferral": "Owner: Gameplay engineer. Interface/acceptance: Extract captured optional specialty clause dispatch with stable validation errors and historical absence; test resolved/unresolved rules, fresh initialization and old saves without installing defaults.",
-      "rationale": "Exact 779 to 781-line integrated scope. Bounded const typed-owner forwarding, immutable capture/WorldMagic table admission, compiled-out audit hook or source registration only; substantive definition/lookup implementations live in focused new nativeRules units. No broad numerical growth allowance, mutable cache or gameplay rebalance.",
-      "review": "IR-NH092-ORG-E8CD1819-20261116",
+      "rationale": "Exact successor for 0.93.1 beta step 1 (Precise Casting resistance halving, core Stewardship and Lord of the Crypts, +3%/level specialty scaling, activation of unchanged extended ordinary specialties): bounded routing hooks and focused owners only. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-SPECIALTIES-0931",
       "review_scope": "Exact source organization hash/count/span only; no runtime, performance, rendered or future-growth approval.",
       "review_status": "APPROVED_EXACT_ORGANIZATION_METADATA",
-      "sha256": "fe3181bb2a2504158c0a24f1091bbec8b906e9804137cd347f8477d440d94d6e"
+      "sha256": "f0f6c07706d10f9bdf6359ac08a521e104d2d832196d5b5ec6d70b72ba4b513f"
     },
     "lib/entities/hero/NewHorizonsLeadership.cpp::newHorizonsHeroes::bool canMergeArmies(const CCreatureSet * source, const CCreatureSet * destination, const CGHeroInstance * hero)#1": {
       "completed_p_predecessor": {
@@ -24962,15 +24964,15 @@
     },
     "lib/entities/hero/NewHorizonsSpecialtyPresentation.cpp::newHorizonsHeroes::bool resolveIndividualPresentation(const CHero & hero, const JsonNode & development, const JsonNode & magic, const CGHeroInstance * capturedHero, SpecialtyPresentation & result)#1": {
       "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact source and size only; no future growth or runtime-acceptance allowance. Gameplay/UI owner should route later individual identities to focused captured-policy presentation resolvers rather than adding hero branches to this dispatcher; preserve historical fallback and exact runtime math. Remaining-four composition: preserve this inherited extraction obligation; exact current size is the ceiling for this finite registry/admission/template integration. Family preflight, primary-skill and Necromancy/Scholar delivery owners are extracted; require independent review and further extraction before subsequent growth. Fafner bounded follow-up: Before further individual-family dispatch growth, extract a cohesive captured-policy presentation resolver preserving enabled/disabled/absent behavior, identity, icons, text and historical fallback.",
-      "kind": "review",
-      "lines": 110,
+      "kind": "exception",
+      "lines": 111,
       "owner": "gameplay_engineer",
-      "previous_review": "IR-COMPOSED-FEATURE-NUMERIC-EXACT-20261029",
-      "rationale": "Exact 146 to 110 physical lines. Druid explanation construction moves into a dedicated subroutine and individual resolver shrinks146 to110; summaries are added without moving mechanics into presentation. Main resolver146 stays below150.",
-      "review": "IR-SHARED84-CURRENT225-EXACT-SOURCE-20261103",
+      "previous_review": "IR-SHARED84-CURRENT225-EXACT-SOURCE-20261103",
+      "rationale": "Exact successor for 0.93.1 beta step 1 (Precise Casting resistance halving, core Stewardship and Lord of the Crypts, +3%/level specialty scaling, activation of unchanged extended ordinary specialties): bounded routing hooks and focused owners only. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-SPECIALTIES-0931",
       "review_scope": "Only exact current source organization, measured span/hash and stated responsibility. Excludes the two identified structural blockers, behavior/save/AI/rendered/platform acceptance and publication authorization.",
       "review_status": "INDEPENDENT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
-      "sha256": "4c55233d81abaf04ba4a17547d62b231e68f52c10bb4297fc51efd857c130509"
+      "sha256": "411e04a0727affb63e797c193adadfe7a7bbd2a0def153df22dac684fa242c0b"
     },
     "lib/entities/hero/NewHorizonsStartingDevelopment.cpp::newHorizonsHeroes::std::optional<StartingDevelopmentProfile> startingDevelopmentProfile( const JsonNode & rules, const PerkState & perkState, HeroTypeID hero, HeroClassID heroClass)#1": {
       "deferral": "Before further starting-profile variants, extract historical explicit perk resolution from the common two-Basic-Skill identity admission; preserve authored precedence and zero invented perks. Cap this renewal to the recorded exact size and hash; independent review and relevant runtime validation remain required.",
@@ -25575,10 +25577,10 @@
       "deferral": "Next substantive hero Learning expansion must use focused Learning state/transition owners with explicit owner/partner/round-week/rules inputs; preserve source/map/School eligibility, no duplicate event, current-save and Normal resource semantics. Before further substantive expansion, owning engine/gameplay/UI specialist must extract the next coherent touched policy, ordered stage, codec family or widget responsibility into a focused owner, preserving callback visibility, rejection atomicity, serialized field order, payment and RNG/packet order. This exact bounded migration/registry/validation routing gives no future growth credit.",
       "inherited_a1_health_deferral": "Next substantive hero Learning expansion must use focused Learning state/transition owners with explicit owner/partner/round-week/rules inputs; preserve source/map/School eligibility, no duplicate event, current-save and Normal resource semantics. Before further substantive expansion, owning engine/gameplay/UI specialist must extract the next coherent touched policy, ordered stage, codec family or widget responsibility into a focused owner, preserving callback visibility, rejection atomicity, serialized field order, payment and RNG/packet order. This exact bounded migration/registry/validation routing gives no future growth credit.",
       "kind": "exception",
-      "lines": 3066,
+      "lines": 3069,
       "owner": "gameplay_engineer",
       "preceding_review": "IR-COMPOSED-FEATURE-NUMERIC-EXACT-20261029",
-      "previous_review": "PROPOSED-0920-EXACT-SOURCE-ORGANIZATION",
+      "previous_review": "IR-NEXT-BUILD-LIFETIME-NHART-REVERT-20261119",
       "prior_a1_health_scope": {
         "kind": "exception",
         "lines": 3100,
@@ -25586,11 +25588,11 @@
         "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
         "sha256": "450543a3563b69fd683ee866089caeddd601609193e8a442ea477703f6021856"
       },
-      "rationale": "Urgent C++20 shared-owner lifetime fix only:3066 to3066 lines; five range initializers retain their queried lists, including getSourcesForSpell2259-2361. No new policy or responsibility, no query duplication, unchanged loop bodies and order. Retain all inherited extraction obligations; no future growth credit.",
-      "review": "IR-NEXT-BUILD-LIFETIME-NHART-REVERT-20261119",
+      "rationale": "Exact successor for 0.93.1 beta step 1 (Precise Casting resistance halving, core Stewardship and Lord of the Crypts, +3%/level specialty scaling, activation of unchanged extended ordinary specialties): bounded routing hooks and focused owners only. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-SPECIALTIES-0931",
       "review_scope": "Exact independent source/organization only; no compilation, runtime, rendering, timing, publication or future-growth acceptance.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
-      "sha256": "31ff194c8a5585dfc686d3afae31e95ca1a0a412d35f62da5340715c27f1148f"
+      "sha256": "faba21bddae1a7eca65fe6e20e85e88e663b649dd49c4b8a98be3165d7265bc6"
     },
     "lib/mapObjects/CGHeroInstance.cpp::CStackBasicDescriptor CGHeroInstance::calculateNecromancy (const BattleResult &battleResult) const#1": {
       "kind": "legacy",
@@ -25623,9 +25625,9 @@
       "deferral": "Owner: Gameplay engineer. Interface/acceptance: Extract starting specialty producer conversion and hero cost composition behind captured-rule helpers; preserve explicit authored overrides, default starting projections, old policy absence and battle/spellbook cost parity. Owner: gameplay_engineer. Before further specialty producer growth, extract cohesive captured creature-line producer selection; preserve initialization order, explicit zero/absence, removal identities and existing saved-rule behavior. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance. Fafner bounded follow-up: Before further producer selection growth, extract the captured creature-line conversion owner while preserving authored initialization order, zero/absence, removal identity, hero-cost composition and old-save behavior. Extract the next touched captured creature-line/specialty initialization stage behind an explicit hero plus captured-policy initialization helper, preserving authored override\u2192producer refresh\u2192secondary bonus order, removals and level-one meaning; return declared assignments/refresh outcome rather than expose all hero internals. Required characterization: Current versus absent capture, explicit override/zero, old hero specialties/starting perks, level-one/no retroactive growth, real gained-level primary state and no extra RNG. Trigger: Before the next substantive expansion of this affected responsibility. Existing stronger invariant/deferral obligations remain; this approval covers only the pinned finite batch. Retain existing scoped decomposition obligations for the next affected substantive growth; this removal ratchets the exact baseline down and grants no regrowth credit.\n\nBefore any further substantive expansion, extract the next cohesive touched policy, callback/read adapter or ordered admission stage into its focused owner. Preserve exact capture metadata, source visibility, schema rejection, RNG/packet ordering and standalone/world wire identity; no future growth credit from this exception.",
       "inherited_a1_health_deferral": "Owner: Gameplay engineer. Interface/acceptance: Extract starting specialty producer conversion and hero cost composition behind captured-rule helpers; preserve explicit authored overrides, default starting projections, old policy absence and battle/spellbook cost parity. Owner: gameplay_engineer. Before further specialty producer growth, extract cohesive captured creature-line producer selection; preserve initialization order, explicit zero/absence, removal identities and existing saved-rule behavior. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance. Fafner bounded follow-up: Before further producer selection growth, extract the captured creature-line conversion owner while preserving authored initialization order, zero/absence, removal identity, hero-cost composition and old-save behavior. Extract the next touched captured creature-line/specialty initialization stage behind an explicit hero plus captured-policy initialization helper, preserving authored override\u2192producer refresh\u2192secondary bonus order, removals and level-one meaning; return declared assignments/refresh outcome rather than expose all hero internals. Required characterization: Current versus absent capture, explicit override/zero, old hero specialties/starting perks, level-one/no retroactive growth, real gained-level primary state and no extra RNG. Trigger: Before the next substantive expansion of this affected responsibility. Existing stronger invariant/deferral obligations remain; this approval covers only the pinned finite batch. Retain existing scoped decomposition obligations for the next affected substantive growth; this removal ratchets the exact baseline down and grants no regrowth credit.",
       "kind": "exception",
-      "lines": 346,
+      "lines": 348,
       "owner": "gameplay_engineer",
-      "previous_review": "IR-0911-INTEGRATION-SOURCE-ORGANIZATION",
+      "previous_review": "IR-NH0921-CART-INERT-METADATA-20261117",
       "prior_a1_health_scope": {
         "kind": "exception",
         "lines": 346,
@@ -25633,11 +25635,11 @@
         "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
         "sha256": "56b0ebeb208919d1c5d349befad3ab0268df96b986a1e8d14cbc4a29c31f6863"
       },
-      "rationale": "Exact 346 to 346-line routing-only change: two skill-specialty marker construction calls use the extracted shared lib helper. Initialization order, captured-policy decisions, saved marker identity and RNG/packet order remain unchanged. All inherited extraction obligations remain; no future growth credit.",
-      "review": "IR-NH0921-CART-INERT-METADATA-20261117",
+      "rationale": "Exact successor for 0.93.1 beta step 1 (Precise Casting resistance halving, core Stewardship and Lord of the Crypts, +3%/level specialty scaling, activation of unchanged extended ordinary specialties): bounded routing hooks and focused owners only. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-SPECIALTIES-0931",
       "review_scope": "Only exact346-line initHero hash and two identifier-only marker-helper call substitutions. Existing oversized-function exception and stronger deferrals remain; no unrelated scope, runtime, rendered or future-growth approval.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN",
-      "sha256": "a86f45e60d82e74d9ae2ff897ad5ddec61d196ebe303896109704df6af4b5f5a"
+      "sha256": "92265cb7ef89e4473077188fa6cdcee9084592822b6d2f06b03b8866154f4f81"
     },
     "lib/mapObjects/CGHeroInstance.cpp::void CGHeroInstance::serializeCommonOptions(JsonSerializeFormat & handler)#1": {
       "deferral": "Exact source and size only. Gameplay owner should extract the next touched hero creation or common-options serialization stage behind a focused typed interface, preserving equipment intent, startup RNG/slot order, captured absence and JSON/binary compatibility before further central growth.",
@@ -25717,14 +25719,14 @@
     "lib/mapObjects/CGTownInstance.cpp": {
       "deferral": "Owner: engine_engineer. After focused town JSON/default initialization characterization, extract the cohesive building LIC/default-marker serialization stage into a focused town JSON owner with explicit CGTownInstance and JsonSerializeFormat inputs. Preserve empty/default/fort/custom/forbidden layout bytes, decoder ordering and initial RNG/building policy; shrink the central file and106-line method baseline after extraction. This exact1594-file/116-method urgent correctness exception grants no future growth. Before further substantive expansion, owning engine/gameplay/UI specialist must extract the next coherent touched policy, ordered stage, codec family or widget responsibility into a focused owner, preserving callback visibility, rejection atomicity, serialized field order, payment and RNG/packet order. This exact bounded migration/registry/validation routing gives no future growth credit.",
       "kind": "exception",
-      "lines": 1375,
+      "lines": 1381,
       "owner": "engine_engineer",
-      "previous_review": "PROPOSED-0920-EXACT-SOURCE-ORGANIZATION",
-      "rationale": "Exact 1436 to 1375-line scope. Existing state/content/serialization responsibility integrates current captured rules and explicit native routing. Preserve independent captures, validation boundaries, deterministic order, existing ownership and saved absence.",
-      "review": "IR-NH092-ORG-3E82D142-20261116",
+      "previous_review": "IR-NH092-ORG-3E82D142-20261116",
+      "rationale": "Exact successor for 0.93.1 beta step 1 (Precise Casting resistance halving, core Stewardship and Lord of the Crypts, +3%/level specialty scaling, activation of unchanged extended ordinary specialties): bounded routing hooks and focused owners only. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-SPECIALTIES-0931",
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "3ea32dcc6b7ae7616f6429acf59c0210d3c491cb5c7ea8f2f7b9b7a267901573"
+      "sha256": "a0af178747994b1a3db989b2d490d1e931af6e895e0ad70878937055890030df"
     },
     "lib/mapObjects/CGTownInstance.cpp::void CGTownInstance::serializeJsonOptions(JsonSerializeFormat & handler)#1": {
       "deferral": "Owner: engine_engineer. After focused town JSON/default initialization characterization, extract the cohesive building LIC/default-marker serialization stage into a focused town JSON owner with explicit CGTownInstance and JsonSerializeFormat inputs. Preserve empty/default/fort/custom/forbidden layout bytes, decoder ordering and initial RNG/building policy; shrink the central file and106-line method baseline after extraction. This exact1594-file/116-method urgent correctness exception grants no future growth.",
@@ -27016,15 +27018,15 @@
       "deferral": "Exact enum bound only. Future format changes require independent serialized ownership and file-loader/connection compatibility evidence. Prior stricter obligations remain in inherited_deferral, where present.",
       "inherited_deferral": "Preserve append-only feature values, historical aliases and explicit read/write capability tests; do not place runtime mechanics in this registry. Owner: engine_engineer. Before further serialization-family growth, extract cohesive non-writing capability preflight with explicit wire-stage boundaries; retain direct/enclosing prefix rejection, exact enum/field order, historical clear defaults and malformed-input rejection. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance. Fafner bounded follow-up: Keep append-only feature values/aliases and direct/enclosing capability tests; do not add runtime mechanics to the feature registry. Keep the stable version registry coherent. Bound growth to six physical lines and this one capability; remove old versions only in a separate reviewed minimum-version migration with native historical fixtures. No future numeric ceiling increase. Future1146 hold: Root must first qualify the current1145/first19 cohort, preserve BATTLE_WIDE and all13 selected artwork bindings on rebase, review final coherent composition and execute the full direct/enclosing/history matrix including hero/map/pool/world and captured identity/default-absence controls. The nine authored central cases and two retargeted zero cases remain UNCOMPILED/UNRUN and do not discharge those obligations. Neutral start-option follow-up: retain host/NEW_GAME scope, absent map/default preservation, historical reused-read clearing, direct/enclosing zero-prefix admission, and no rescaling on load. Require native and rendered acceptance before delivery; preserve every inherited extraction and historical-policy obligation. 1148 bounded follow-up: Continue separate captured JSON and exact-marker codec admission; retain old13/four/neutral domains, no implicit policy repair, and prove direct/enclosing old-prefix rejection plus current full snapshot identity. Exact bounded1151 change only. Exact651to656 appends named1151 plus static boundary assertions and CURRENT alias update. All prior numeric values/aliases exceptCURRENT remain exact; capability facts are nonserialized and no payload field changes. No ceiling increase, coverage exclusion or unrelated/future growth allowance. Engine: preserve explicit known wire-to-Bonus profile mapping, zero-prefix policy refusal and current/default separation. Quarantine indistinguishable obsolete private experiments by provenance; no universal rejection or migration claim. Before delivery require fresh coherent2/Bonus1 native andgenuinefirstwriter/save/resave/replay/rendered acceptance plus1151historical/refusal controls. No automaticpromotion or futureformat approval. Engine engineer: retain one intended registration per target and platform/facade linkage parity; any new target-configuration algorithm needs its own focused component. Exact current registry only, with no implementation or future size allowance. Current exact Command/Authority scope: Engine: split only the Command registration/source/visitTyped subgroup into a focused registry owner on the next edit; preserve IDs310-313, no duplicate/omitted registration, same source-target linkage and dispatch order. Exception is exact current bytes/size only; build/native acceptance remains pending.",
       "kind": "exception",
-      "lines": 690,
+      "lines": 691,
       "neutral_predecessor_review": "IR-EXTENDED-CURE-1152-COMPOSED-20261030",
       "owner": "engine_engineer",
-      "previous_review": "IR-NH0921-C14-1164-CODEORG-20261117",
-      "rationale": "Exact successor for Metamagic 6 Double Cast / Consecrated Arms 4 phases 2-3: one-line calls, includes, version-gated fields or registrations only; the new behavior lives in focused MetamagicDoubleCast and ConsecratedArmsChoice units. Existing extraction deferrals retained; no future growth credit.",
-      "review": "CLAUDE-0925-DOUBLECAST-CHOSEN-PRAYERS-PHASE23-20261120",
+      "previous_review": "CLAUDE-0925-DOUBLECAST-CHOSEN-PRAYERS-PHASE23-20261120",
+      "rationale": "Exact successor for 0.93.1 beta step 1 (Precise Casting resistance halving, core Stewardship and Lord of the Crypts, +3%/level specialty scaling, activation of unchanged extended ordinary specialties): bounded routing hooks and focused owners only. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-SPECIALTIES-0931",
       "review_scope": "Exact recorded C14 source hash, physical span and organization delta only. No future growth, whole-mechanic, compiler, native, rendered, performance, save-resume, publication or promotion acceptance.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN",
-      "sha256": "8b57932e8bcf3aab594c5eb93e34990fd09dfff4d730585603be108e736a2d25"
+      "sha256": "ff9519e5acd2db893473fd7688e9b3cf4d2e621946f64318eb458731b0a5b2bb"
     },
     "lib/serializer/JsonSerializeFormat.h": {
       "kind": "legacy",

@@ -3148,6 +3148,12 @@
 					"inteusDurationBonus": 1,
 					"loynisManaDiscountPercent": 20
 				},
+				"revisedSpecialties": {
+					"version": 1,
+					"lordOfTheCrypts": {
+						"skeletonGrowthPerLevel": 1
+					}
+				},
 				"creatureLineSpecialties": {
 					"version": 1,
 					"speed": 1,
@@ -6924,7 +6930,7 @@
 				"offerWeightPolicyVersion": 2,
 				"perkProgressionPolicyVersion": 2,
 				"fourOfferProgressionVersion": 1,
-				"estatesPolicyVersion": 1,
+				"estatesPolicyVersion": 2,
 				"spellcraftPolicyVersion": 2,
 				"sylvanTacticsPolicy": 4,
 				"metamagicPolicy": {
@@ -9968,12 +9974,12 @@
 								"id": "new-horizons:estates.stewardship",
 								"name": "Stewardship",
 								"requires": "advanced",
-								"description": "Remotely administer one owned town, granting it 1,000 additional Gold daily.",
+								"description": "As a steward, this hero adds 1,000 Gold daily to the town instead of 500.",
 								"effect": {
 									"status": "active",
-									"description": "Remotely administer one owned town, granting it 1,000 additional Gold daily."
+									"description": "As a steward, this hero adds 1,000 Gold daily to the town instead of 500."
 								},
-								"details": "Appoint this hero remotely to one owned town for 1,000 additional Gold through normal daily production. One hero may administer one town, and each town may have one steward. The hero may continue adventuring. Reassignment grants no immediate income. Capture, hero loss or lost qualification ends the assignment."
+								"details": "Any hero may be appointed remotely as steward of one owned town for 500 additional Gold through normal daily production; this hero adds 1,000 instead. One hero may administer one town, and each town may have one steward. The hero may continue adventuring. Reassignment grants no immediate income. Capture, hero loss or loss of control ends the assignment."
 							},
 							{
 								"id": "new-horizons:estates.conscription",
@@ -14156,6 +14162,10 @@
 		"new-horizons.economy.stewardship.total": "Projected town income: %d Gold/day (after income handicap)",
 		"new-horizons.economy.stewardship.contribution": "Stewardship: +%d Gold/day before income handicap. Already included in the projected total.",
 		"new-horizons.economy.stewardship.help": "Each Stewardship holder who ends the day visiting or garrisoned in this owned town contributes +250 Gold on the next day. Two distinct holders contribute +500. This preview uses current residents; moving them before the day ends changes the next day's income.",
+		"new-horizons.economy.stewardship.lordOfTheCrypts": "Lord of the Crypts (steward)",
+		"new-horizons.economy.stewardship.endTurnReminder": "%s has no steward, and %s is free to be one. End the turn anyway?",
+		"new-horizons.economy.stewardship.reminderOption.hover": "Steward reminder",
+		"new-horizons.economy.stewardship.reminderOption.help": "{Steward reminder}\n\nWhen ending the turn, warn if an owned town has no steward while one of your heroes stewards no town.",
 		"new-horizons.bank.pendingCreatures": "Troops remaining. Visit to collect:",
 		"new-horizons.economy.mercenaryCompany.pending": "Mercenary Company: %d Rogues await room in this mine’s garrison.",
 		"core.heroClass.alchemist.name": "Battle Mage",

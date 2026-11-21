@@ -1061,6 +1061,7 @@ set(test_SRCS
 		hero/FourOfferProgressionTest.cpp
 		server/EstatesHoarderQuoteTest.cpp
 		server/EstatesTransactionsTest.cpp
+		server/CoreStewardshipTest.cpp
 		server/FourOfferHeroProgressionTest.cpp
 		server/LegacyEstatesCapture.h
 		server/RevisedEstatesFixture.h

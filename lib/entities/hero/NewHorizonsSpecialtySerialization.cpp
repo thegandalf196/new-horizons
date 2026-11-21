@@ -23,6 +23,7 @@
 #include "NewHorizonsLivingInferno.h"
 #include "NewHorizonsAerialSupremacy.h"
 #include "NewHorizonsDreadCavalry.h"
+#include "NewHorizonsRevisedSpecialties.h"
 
 namespace newHorizonsHeroes
 {
@@ -65,6 +66,7 @@ void validateCapturedSpecialtiesSerialization(const JsonNode & development,
 	validateAerialSupremacySerialization(development, context.aerialSupremacy);
 	validateDreadCavalrySerialization(development, context.dreadCavalry);
 	validateGenieSageSerialization(development, context.genieSage);
+	validateRevisedSpecialtiesSerialization(development);
 	validateOrdinaryCreatureSpecialtiesSerialization(development, context.ordinaryCreatureSpecialties);
 	validatePassiveSpecialtySerialization(development, context.nativeRulesRedesign);
 	validateOrdinaryCreatureExtensionsSerialization(development, context.adjacencyFilters);
@@ -112,7 +114,8 @@ void copyCapturedIndividualSpecialties(JsonNode & target, const JsonNode & sourc
 {
 	for(const auto key : {"individualSpecialties", "schoolSpellcraftSpecialties", "additionalSpecialties",
 		"chosenSpecialties", "recoverySpecialties", "learningExchangeSpecialties", "swampSeerSpecialty",
-		"reclamationSpecialty", "ghostSpecialty", "petrifyingBloodSpecialty", "livingInfernoSpecialty", "dreadCavalrySpecialty", "genieSageSpecialties"})
+		"reclamationSpecialty", "ghostSpecialty", "petrifyingBloodSpecialty", "livingInfernoSpecialty", "dreadCavalrySpecialty", "genieSageSpecialties",
+		"revisedSpecialties"})
 		if(source.Struct().contains(key))
 			target[key] = source[key];
 }

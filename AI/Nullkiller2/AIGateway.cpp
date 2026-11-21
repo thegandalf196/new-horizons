@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "EstatesAdministration.h"
 #include "../../lib/battle/NewHorizonsDemonicGating.h"
 #include "../../lib/entities/hero/NewHorizonsDiplomacy.h"
 #include "../../lib/entities/hero/NewHorizonsHeroRules.h"
@@ -994,6 +995,7 @@ void AIGateway::makeTurn()
 
 		const auto start = std::chrono::high_resolution_clock::now();
 		upgradeGhosts();
+		appointAvailableStewards(*cc, playerID);
 		nullkiller->makeTurn();
 		const auto timeElapsedMs = timeElapsed(start);
 		if(timeElapsedMs > 5000)

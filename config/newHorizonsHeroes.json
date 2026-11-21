@@ -67,6 +67,10 @@
 	],
 	"genieSageSpecialties": {"version": 1},
 	"chosenSpecialties": {"version": 1, "inteusDurationBonus": 1, "loynisManaDiscountPercent": 20},
+	"revisedSpecialties": {
+		"version": 1,
+		"lordOfTheCrypts": {"skeletonGrowthPerLevel": 1}
+	},
 	"creatureLineSpecialties": {
 		"version": 1,
 		"speed": 1,

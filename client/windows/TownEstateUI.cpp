@@ -54,25 +54,30 @@ std::vector<const CGHeroInstance *> eligibleStewards()
 {
 	std::vector<const CGHeroInstance *> result;
 	for(const auto * hero : GAME->interface()->cb->getHeroesInfo())
-		if(newHorizonsEstates::hasRevisedPerk(hero, "new-horizons:estates.stewardship"))
+		if(newHorizonsEstates::eligibleSteward(hero))
 			result.push_back(hero);
 	return result;
 }
 
 std::string assignedTownName(const CGHeroInstance & hero)
 {
-	const auto * player = hero.cb->getPlayerState(hero.getOwner());
-	if(!player)
-		return {};
-	for(const auto & [townID, heroID] : player->estates.stewards)
+	const auto * town = newHorizonsEstates::stewardedTown(hero);
+	return town ? GAME->translator().translate(town->getNameTextID()) : std::string();
+}
+
+std::string goldText(int32_t gold)
+{
+	return gold >= 1000 ? std::to_string(gold / 1000) + "," + std::to_string(1000 + gold % 1000).substr(1)
+		: std::to_string(gold);
+}
+
+bool coreStewardship()
+{
+	const auto heroes = GAME->interface()->cb->getHeroesInfo();
+	return std::any_of(heroes.begin(), heroes.end(), [](const auto * hero)
 	{
-		if(heroID != hero.id)
-			continue;
-		const auto * town = hero.cb->getTown(townID);
-		if(town && newHorizonsEstates::townSteward(*town) == &hero)
-			return GAME->translator().translate(town->getNameTextID());
-	}
-	return {};
+		return newHorizonsEstates::usesCoreStewardship(hero->getPerkState().getRules());
+	});
 }
 
 void showStewards(ObjectInstanceID townID)
@@ -91,7 +96,8 @@ void showStewards(ObjectInstanceID townID)
 	for(const auto * hero : eligibleStewards())
 	{
 		candidates.push_back(hero->id);
-		auto name = GAME->translator().translate(hero->getNameTextID());
+		auto name = GAME->translator().translate(hero->getNameTextID())
+			+ " (+" + goldText(newHorizonsEstates::stewardGold(*hero)) + ")";
 		const auto assigned = assignedTownName(*hero);
 		if(!assigned.empty())
 			name += " — " + assigned;
@@ -99,7 +105,8 @@ void showStewards(ObjectInstanceID townID)
 	}
 	if(candidates.empty())
 	{
-		GAME->interface()->showInfoDialog("No active hero has Stewardship. Learn Stewardship to appoint a town steward.");
+		GAME->interface()->showInfoDialog(coreStewardship() ? "You have no hero to appoint as steward."
+			: "No active hero has Stewardship. Learn Stewardship to appoint a town steward.");
 		return;
 	}
 	auto select = [callback, townID, candidates](int index) {
@@ -110,7 +117,8 @@ void showStewards(ObjectInstanceID townID)
 	// Income and assignment readbacks change only with the accepted state pack.
 	auto icon = std::make_shared<CAnimImage>(AnimationPath::builtin("NH_perk_steward"), 0);
 	auto window = std::make_shared<CObjectListWindow>(labels, icon, "Town Steward",
-		"Adds 1,000 Gold daily.", std::move(select));
+		coreStewardship() ? "A steward adds 500 Gold daily, or 1,000 with Stewardship." : "Adds 1,000 Gold daily.",
+		std::move(select));
 	window->onPopup = [candidates](int index) {
 		if(index < 0 || static_cast<size_t>(index) >= candidates.size())
 			return;
@@ -118,7 +126,8 @@ void showStewards(ObjectInstanceID townID)
 			: GAME->interface()->cb->getHero(candidates[index]);
 		const auto help = hero ? GAME->translator().translate(hero->getNameTextID())
 			+ " administers one owned town from any location. Appointing this hero replaces their previous assignment. "
-			  "Movement, exploration and combat remain available. The town earns 1,000 additional Gold at the next daily income."
+			  "Movement, exploration and combat remain available. The town earns "
+			+ goldText(newHorizonsEstates::stewardGold(*hero)) + " additional Gold at the next daily income."
 			: "Dismiss this town's steward. Future daily income no longer receives the Stewardship bonus.";
 		CRClickPopup::createAndPush(help);
 	};
@@ -161,7 +170,11 @@ std::string incomeHelp(const CGTownInstance & town)
 		help = GAME->translator().translate("new-horizons.economy.stewardship.help");
 	else if(const auto * hero = newHorizonsEstates::townSteward(town))
 		help = "Steward: " + GAME->translator().translate(hero->getNameTextID())
-			+ ". This hero adds 1,000 Gold daily from any location. Manage the appointment through the Gold display or press S.";
+			+ ". This hero adds " + goldText(newHorizonsEstates::stewardGold(*hero))
+			+ " Gold daily from any location. Manage the appointment through the Gold display or press S.";
+	else if(std::any_of(heroes.begin(), heroes.end(), [](const auto * hero) {
+			return newHorizonsEstates::usesCoreStewardship(hero->getPerkState().getRules()); }))
+		help = "Appoint any hero as steward through the Gold display or press S to add 500 Gold daily, or 1,000 with Stewardship. The hero need not remain in town.";
 	else
 		help = "Appoint a hero with Stewardship through the Gold display or press S to add 1,000 Gold daily. The hero need not remain in town.";
 	return CInfoWindow::genText(total.toString(&GAME->translator()),

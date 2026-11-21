@@ -282,6 +282,7 @@ set(lib_MAIN_SRCS
 		battle/DreadCavalryQueries.cpp
 		battle/BattleActivationActionState.cpp
 		entities/hero/NewHorizonsDreadCavalry.cpp
+		entities/hero/NewHorizonsRevisedSpecialties.cpp
 		entities/hero/NewHorizonsGenieSage.cpp
 		entities/hero/NewHorizonsGenieAbilities.cpp
 	battle/NewHorizonsSoulHarvest.cpp
@@ -1360,6 +1361,7 @@ set(lib_MAIN_HEADERS
 		battle/DreadCavalryState.h
 		battle/NewHorizonsDreadCavalry.h
 		entities/hero/NewHorizonsDreadCavalry.h
+		entities/hero/NewHorizonsRevisedSpecialties.h
 		entities/hero/NewHorizonsGenieSage.h
 	battle/NewHorizonsSoulHarvest.h
 	battle/NewHorizonsOrdinaryStrike.h

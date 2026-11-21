@@ -31,6 +31,7 @@
 #include "AdventureMapInterface.h"
 #include "AdventureOptions.h"
 #include "AdventureState.h"
+#include "StewardReminder.h"
 
 #include "../replay/GameplayReplayer.h"
 #include "../replay/ReplaySelectionWindow.h"
@@ -297,11 +298,14 @@ void AdventureMapShortcuts::endTurn()
 	if(!GAME->interface()->makingTurn)
 		return;
 
-	auto showMoveReminderDialog = [this]()
+	// The steward reminder follows any accepted movement reminder.
+	auto endWithStewardReminder = [this]() { stewardReminder::confirmEndTurn([this](){ owner.hotkeyEndingTurn(); }); };
+
+	auto showMoveReminderDialog = [endWithStewardReminder]()
 	{
 		GAME->interface()->showYesNoDialog(
 			LIBRARY->generaltexth->allTexts[55],
-			[this](){ owner.hotkeyEndingTurn(); },
+			endWithStewardReminder,
 			nullptr
 		);
 	};
@@ -332,7 +336,7 @@ void AdventureMapShortcuts::endTurn()
 			}
 		}
 	}
-	owner.hotkeyEndingTurn();
+	endWithStewardReminder();
 }
 
 void AdventureMapShortcuts::showThievesGuild()

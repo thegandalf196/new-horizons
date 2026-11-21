@@ -26,6 +26,7 @@
 #include "NewHorizonsRetainedSpecialtyArtwork.h"
 #include "HeroStartingProjection.h"
 #include "NewHorizonsChosenSpecialties.h"
+#include "NewHorizonsRevisedSpecialties.h"
 #include "CHero.h"
 #include "../../mapObjects/CGHeroInstance.h"
 #include "../../CSkillHandler.h"
@@ -152,7 +153,8 @@ bool resolveIndividualPresentation(const CHero & hero,
 	const JsonNode & development, const JsonNode & magic, const CGHeroInstance * capturedHero,
 	SpecialtyPresentation & result)
 {
-	if(resolveParalyzingGazePresentation(hero, development, result))
+	if(resolveRevisedSpecialtyPresentation(hero, development, capturedHero, result)
+		|| resolveParalyzingGazePresentation(hero, development, result))
 		return true;
 	if(hero.getJsonKey() == "core:fafner")
 		if(const auto enabled = serpentsEmbracePolicy(development))

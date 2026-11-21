@@ -3,6 +3,7 @@
 
 #include "CapturedRuleSet.h"
 #include "../spells/NewHorizonsMetamagicDoubleCast.h"
+#include "../entities/hero/NewHorizonsRevisedSpecialties.h"
 #include <vector>
 #include <map>
 #include "../constants/EntityIdentifiers.h"
@@ -51,10 +52,13 @@ public:
 				throw std::runtime_error("Unknown captured rule document kind");
 			const auto kind = static_cast<CapturedRuleKind>(wireKind);
 			const bool currentPolicies = h.hasFeature(Handler::Version::NEW_HORIZONS_DOUBLE_CAST_CHOSEN_PRAYERS);
+			const bool revisedSpecialties = h.hasFeature(Handler::Version::NEW_HORIZONS_REVISED_SPECIALTIES);
 			if(h.saving)
 			{
 				if(!currentPolicies && newHorizonsMetamagic::requiresDoubleCastFormat(documents[index]->document()))
 					throw std::runtime_error("Cannot write Double Cast or Chosen Prayers rules to an older format");
+				if(!revisedSpecialties && newHorizonsHeroes::requiresRevisedSpecialtyFormat(documents[index]->document()))
+					throw std::runtime_error("Cannot write revised specialty rules to an older format");
 				h & documents[index]->document();
 			}
 			else
@@ -63,6 +67,8 @@ public:
 				h & decoded;
 				if(!currentPolicies && newHorizonsMetamagic::requiresDoubleCastFormat(decoded))
 					throw std::runtime_error("Older format claims Double Cast or Chosen Prayers rules");
+				if(!revisedSpecialties && newHorizonsHeroes::requiresRevisedSpecialtyFormat(decoded))
+					throw std::runtime_error("Older format claims revised specialty rules");
 				if(candidate.intern(kind, decoded) != index + 1)
 					throw std::runtime_error("Duplicate captured rules document identity");
 			}

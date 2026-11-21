@@ -52,13 +52,21 @@ class EstatesPolicyContentTest(unittest.TestCase):
                 row['requires'] = 'advanced'
         self.assertFalse(self.validator.is_valid(current))
 
+    def test_core_stewardship_marker_uses_the_revised_catalogue(self):
+        current = revised(self.rules)
+        current['estatesPolicyVersion'] = 2
+        self.validator.validate(current)
+        candidate = copy.deepcopy(self.rules)
+        candidate['estatesPolicyVersion'] = 2
+        self.assertFalse(self.validator.is_valid(candidate))
+
     def test_marker_cannot_relabel_the_old_catalogue(self):
         candidate = copy.deepcopy(self.rules)
         candidate['estatesPolicyVersion'] = 1
         self.assertFalse(self.validator.is_valid(candidate))
 
     def test_unknown_or_wrong_typed_markers_are_rejected(self):
-        for version in (None, False, True, 0, 2, 1.5, '1', {}, []):
+        for version in (None, False, True, 0, 3, 1.5, '1', {}, []):
             with self.subTest(version=version):
                 candidate = revised(self.rules)
                 candidate['estatesPolicyVersion'] = version

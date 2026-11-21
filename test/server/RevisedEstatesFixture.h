@@ -5,11 +5,13 @@
 
 namespace estatesTest
 {
-inline void prepareRevisedEstatesCatalogue(JsonNode & perks)
+/// Policy 1 keeps perk-only remote stewards; policy 2 is core Stewardship.
+inline void prepareRevisedEstatesCatalogue(JsonNode & perks, int version = 1)
 {
-	if(newHorizonsEstates::usesRevisedPolicy(perks))
+	const bool revised = newHorizonsEstates::usesRevisedPolicy(perks);
+	perks["estatesPolicyVersion"].Integer() = version;
+	if(revised)
 		return;
-	perks["estatesPolicyVersion"].Integer() = 1;
 	for(auto & row : perks["skills"][ESTATES]["perks"].Vector())
 	{
 		auto & identity = row["id"].String();
@@ -23,6 +25,8 @@ inline void prepareRevisedEstatesCatalogue(JsonNode & perks)
 class RevisedFixture : public Fixture
 {
 protected:
+	int estatesPolicyVersion = 1;
+
 	void startGame()
 	{
 		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
@@ -48,7 +52,7 @@ protected:
 	{
 		Fixture::mapLoaded(loaded);
 		JsonNode perks(JsonPath::builtin("config/newHorizonsPerks"));
-		prepareRevisedEstatesCatalogue(perks);
+		prepareRevisedEstatesCatalogue(perks, estatesPolicyVersion);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, std::move(perks));
 		JsonNode heroes(JsonPath::builtin("config/newHorizonsHeroes"));
 		auto replace = [](JsonNode & rows)
@@ -61,7 +65,8 @@ protected:
 		for(auto & [hero, rows] : heroes["startingSkills"]["startingPerkProfiles"].Struct())
 			replace(rows);
 		for(auto & [hero, profile] : heroes["startingSkills"]["startingDevelopmentProfiles"].Struct())
-			replace(profile["startingPerks"]);
+			if(profile.Struct().contains("startingPerks")) // Do not create absent optional rows.
+				replace(profile["startingPerks"]);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, std::move(heroes));
 	}
 };

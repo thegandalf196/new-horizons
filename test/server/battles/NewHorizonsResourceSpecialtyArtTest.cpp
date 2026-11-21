@@ -93,6 +93,15 @@ protected:
 			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, JsonNode());
 			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, JsonNode());
 		}
+		else
+		{
+			// These rows characterize the income specialties captured before the
+			// 2026-11-20 revision, which replaces some of them for new games.
+			JsonNode heroes(JsonPath::builtin("config/newHorizonsHeroes"));
+			heroes.Struct().erase("revisedSpecialties");
+			heroes.setOverrideFlag(true); // Replace, rather than merge over, the installed rules.
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, std::move(heroes));
+		}
 	}
 
 	void prepare()

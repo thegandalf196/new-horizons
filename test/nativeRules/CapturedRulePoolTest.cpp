@@ -3,6 +3,7 @@
 #include "../../lib/nativeRules/CapturedRuleEnvelope.h"
 #include "../../lib/serializer/CMemorySerializer.h"
 #include "../../lib/spells/NewHorizonsMetamagicDoubleCast.h"
+#include "../../lib/entities/hero/NewHorizonsRevisedSpecialties.h"
 #include "../OverkillRandomPrayerRules.h"
 
 namespace
@@ -140,8 +141,9 @@ TEST(CapturedRulePool, InvalidTableAdmissionPreservesExistingPool)
 
 TEST(CapturedRulePool, ConsecratedArmsMinimumAndWriterRejectEarlierFormats)
 {
-	EXPECT_EQ(ESerializationVersion::CURRENT, ESerializationVersion::NEW_HORIZONS_DOUBLE_CAST_CHOSEN_PRAYERS);
-	EXPECT_EQ(static_cast<int>(ESerializationVersion::CURRENT), 1165);
+	EXPECT_EQ(ESerializationVersion::CURRENT, ESerializationVersion::NEW_HORIZONS_REVISED_SPECIALTIES);
+	EXPECT_EQ(static_cast<int>(ESerializationVersion::CURRENT), 1166);
+	EXPECT_EQ(static_cast<int>(ESerializationVersion::NEW_HORIZONS_DOUBLE_CAST_CHOSEN_PRAYERS), 1165);
 	EXPECT_EQ(ESerializationVersion::MINIMAL, ESerializationVersion::NEW_HORIZONS_CONSECRATED_ARMS);
 	EXPECT_EQ(static_cast<int>(ESerializationVersion::MINIMAL), 1164);
 	EXPECT_LT(ESerializationVersion::NEW_HORIZONS_SHARED_CAPTURED_RULES, ESerializationVersion::MINIMAL);
@@ -175,6 +177,34 @@ TEST(CapturedRulePool, DoubleCastAndChosenPrayerRulesRefuseTheConsecratedArmsFor
 	CapturedRulePool restored;
 	EXPECT_NO_THROW(stored.iser & restored);
 	EXPECT_EQ(restored.documentCount(), 1u);
+}
+
+TEST(CapturedRulePool, RevisedSpecialtyRulesRefuseTheDoubleCastFormat)
+{
+	const JsonNode perks(JsonPath::builtin("config/newHorizonsPerks"));
+	const JsonNode heroes(JsonPath::builtin("config/newHorizonsHeroes"));
+	ASSERT_TRUE(newHorizonsHeroes::requiresRevisedSpecialtyFormat(perks));
+	ASSERT_TRUE(newHorizonsHeroes::requiresRevisedSpecialtyFormat(heroes));
+	EXPECT_FALSE(newHorizonsHeroes::requiresRevisedSpecialtyFormat(overkillRandomPrayerRules()));
+	EXPECT_FALSE(newHorizonsHeroes::requiresRevisedSpecialtyFormat(overkillRandomPrayerHeroes()));
+	for(const auto & [kind, document] : {std::pair{CapturedRuleKind::Perks, perks}})
+	{
+		CapturedRulePool pool;
+		pool.intern(kind, document);
+		CMemorySerializer older;
+		older.oser.version = ESerializationVersion::NEW_HORIZONS_DOUBLE_CAST_CHOSEN_PRAYERS;
+		EXPECT_THROW(older.oser & pool, std::runtime_error);
+		CMemorySerializer forged;
+		forged.oser.version = ESerializationVersion::NEW_HORIZONS_DOUBLE_CAST_CHOSEN_PRAYERS;
+		forged.iser.version = ESerializationVersion::NEW_HORIZONS_DOUBLE_CAST_CHOSEN_PRAYERS;
+		forged.oser & int64_t{1} & int64_t{static_cast<int64_t>(kind)} & document & int64_t{0};
+		CapturedRulePool decoded;
+		EXPECT_THROW(forged.iser & decoded, std::runtime_error);
+		CMemorySerializer current;
+		ASSERT_NO_THROW(current.oser & pool);
+		CapturedRulePool restored;
+		EXPECT_NO_THROW(current.iser & restored);
+	}
 }
 
 TEST(CapturedRulePool, WideAndNegativeWireIdentitiesCannotAliasValidSmallReferences)

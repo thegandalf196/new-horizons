@@ -10,6 +10,7 @@ set(vcmiclientcommon_SRCS
 
 	adventureMap/AdventureMapInterface.cpp
 	adventureMap/AdventureMapShortcuts.cpp
+	adventureMap/StewardReminder.cpp
 	adventureMap/AdventureMapWidget.cpp
 	adventureMap/AdventureMapButtons.cpp
 	adventureMap/AdventureOptions.cpp
@@ -351,6 +352,7 @@ set(vcmiclientcommon_HEADERS
 
 	adventureMap/AdventureMapInterface.h
 	adventureMap/AdventureMapShortcuts.h
+	adventureMap/StewardReminder.h
 	adventureMap/AdventureMapWidget.h
 	adventureMap/AdventureState.h
 	adventureMap/AdventureOptions.h

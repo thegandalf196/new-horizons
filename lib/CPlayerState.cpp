@@ -11,6 +11,7 @@
 
 #include "CPlayerState.h"
 #include "mapObjects/NewHorizonsEstatesPolicy.h"
+#include "mapObjects/EstatesStewardship.h"
 #include "GameLibrary.h"
 #include "callback/IGameInfoCallback.h"
 #include "mapObjects/CGHeroInstance.h"
@@ -179,7 +180,7 @@ bool PlayerState::validStewardAssignments(const newHorizonsEstates::KingdomState
 		const auto town = std::find_if(towns.begin(), towns.end(), [townID](const auto * value) { return value->id == townID; });
 		const auto hero = std::find_if(heroes.begin(), heroes.end(), [heroID](const auto * value) { return value->id == heroID; });
 		if(town == towns.end() || hero == heroes.end() || (*town)->getOwner() != color || (*hero)->getOwner() != color
-			|| !newHorizonsEstates::hasRevisedPerk(*hero, "new-horizons:estates.stewardship"))
+			|| !newHorizonsEstates::eligibleSteward(*hero))
 			return false;
 	}
 	return true;

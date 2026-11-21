@@ -36,6 +36,8 @@
 #include "../entities/faction/CTownHandler.h"
 #include "../entities/hero/NewHorizonsCapabilityRules.h"
 #include "../entities/hero/NewHorizonsHeroRules.h"
+#include "../entities/hero/NewHorizonsRevisedSpecialties.h"
+#include "EstatesStewardship.h"
 #include "../entities/ResourceTypeHandler.h"
 #include "../mapObjectConstructors/AObjectTypeHandler.h"
 #include "../mapObjectConstructors/CObjectClassesHandler.h"
@@ -268,6 +270,10 @@ GrowthInfo CGTownInstance::getGrowthInfo(int level) const
 	}
 	if(dwellingBonus)
 		ret.entries.emplace_back(LIBRARY->generaltexth->allTexts[591], dwellingBonus); // \nExternal dwellings %+d
+
+	if(const auto * steward = newHorizonsEstates::townSteward(*this))
+		if(const int crypts = newHorizonsHeroes::lordOfTheCryptsGrowth(*steward, *this, level))
+			ret.entries.emplace_back(crypts, "\n" + LIBRARY->generaltexth->translate("new-horizons.economy.stewardship.lordOfTheCrypts") + " +" + std::to_string(crypts));
 
 	if(hasBuilt(BuildingID::GRAIL)) //grail - +50% to ALL (so far added) growth
 		ret.entries.emplace_back(subID, BuildingID::GRAIL, ret.totalGrowth() / 2);

@@ -79,6 +79,19 @@ replace retired starting choices explicitly; saved selections are not renamed.
 `NEW_HORIZONS_ESTATES` (1161) protects the new policy and transaction state.
 Resource rewards, production, market counts, recruitment and construction use
 shared quotes or eligibility rules for previews and authoritative commits.
+`estatesPolicyVersion: 2` keeps that catalogue and makes stewardship a core
+rule: any owned map hero may steward one owned town for 500 Gold daily, or 1,000
+with the Stewardship perk. Policy 1 saves keep perk-only stewards at 1,000 Gold.
+The shared eligibility and income helpers live in `lib/mapObjects/EstatesStewardship`.
+
+`spellcraftPolicyVersion: 2` makes Precise Casting halve the target's resistance
+chance. Without the marker, saves keep the historical friendly area-centre
+protection.
+
+`revisedSpecialties` in the hero rules captures specialties revised on
+2026-11-20, one child row per hero. Absence keeps every historical specialty;
+`lib/entities/hero/NewHorizonsRevisedSpecialties` owns validation, effects and
+presentation.
 
 ### Historical perk-offer policy2
 

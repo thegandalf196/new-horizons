@@ -33,7 +33,7 @@ class EstatesDataTest(unittest.TestCase):
         cls.heroes = load('config/newHorizonsHeroes.json')
 
     def test_exact_active_roster_tiers_and_schema(self):
-        self.assertEqual(self.rules['estatesPolicyVersion'], 1)
+        self.assertEqual(self.rules['estatesPolicyVersion'], 2)
         self.assertEqual([(p['id'].removeprefix(PREFIX), p['name'], p['requires'])
                           for p in self.skill['perks']], list(ROSTER))
         self.assertEqual(len(self.perks), 10)
@@ -64,7 +64,7 @@ class EstatesDataTest(unittest.TestCase):
             'taxCollector': ('50%', 'rounded down separately', 'only chosen Gold', 'refunds'),
             'supervisor': ('Sawmills and Ore Pits', 'one extra', 'do not stack', 'scenario modifiers'),
             'merchantPrince': ('two additional Marketplaces', 'regardless', 'do not stack', 'fixed market rates'),
-            'stewardship': ('remotely', '1,000', 'one town', 'no immediate income', 'Capture'),
+            'stewardship': ('remotely', 'Any hero', '500', '1,000', 'one town', 'no immediate income', 'Capture'),
             'hoarder': ('first successful eligible', 'rounded up', 'normal prices', 'no Gold cost'),
             'decentralization': ('two Capitols instead of one', 'do not stack', 'does not destroy'),
             'alchemist': ('weekly production', '3 Mercury', 'do not stack', 'no daily output'),

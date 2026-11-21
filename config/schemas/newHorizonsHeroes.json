@@ -76,6 +76,18 @@
 						"loynisManaDiscountPercent": {"type": "integer", "minimum": 0, "maximum": 100}
 					}
 				},
+				"revisedSpecialties": {
+					"type": "object", "additionalProperties": false,
+					"required": ["version"],
+					"description": "Hero specialties revised on 2026-11-20; absence keeps every historical specialty.",
+					"properties": {
+						"version": {"enum": [1]},
+						"lordOfTheCrypts": {
+							"type": "object", "additionalProperties": false, "required": ["skeletonGrowthPerLevel"],
+							"properties": {"skeletonGrowthPerLevel": {"type": "integer", "minimum": 1, "maximum": 10}}
+						}
+					}
+				},
 				"skillSpecialties": {"$ref": "#/definitions/skillSpecialties"},
 				"schoolSpellcraftSpecialties": {"$ref": "#/definitions/schoolSpellcraftSpecialties"},
 				"additionalSpecialties": {"$ref": "#/definitions/additionalSpecialties"},

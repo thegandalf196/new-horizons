@@ -14,6 +14,7 @@
 #include "../entities/hero/NewHorizonsPetrifyingBlood.h"
 #include "../entities/hero/NewHorizonsDreadCavalry.h"
 #include "../entities/hero/NewHorizonsChosenSpecialties.h"
+#include "../entities/hero/NewHorizonsRevisedSpecialties.h"
 #include "../pathfinder/NewHorizonsProtectedMobility.h"
 #include "../pathfinder/NewHorizonsMovement.h"
 #include "../battle/HeroCommand.h"
@@ -873,6 +874,8 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 		&& getSkillSpecialtyCoreBonusPercent(heroType->secondarySkillSpecialtyAlias->skill) > 0;
 	for(const std::shared_ptr<Bonus> & b : heroType->specialty)
 	{
+		if(newHorizonsHeroes::retiresSpecialtyBonus(*this, *b))
+			continue;
 		if(hasNavigationSpecialty && b == heroType->navigationSpecialtyProducer
 			&& getSkillSpecialtyCoreBonusPercent(SecondarySkill(SecondarySkill::LOGISTICS)) > 0)
 		{

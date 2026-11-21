@@ -446,6 +446,10 @@
 					"type" : "boolean",
 					"default" : true
 				},
+				"stewardReminder" : {
+					"type" : "boolean",
+					"default" : true
+				},
 				"quickCombat" : {
 					"type" : "boolean",
 					"default" : false

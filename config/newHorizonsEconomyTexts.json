@@ -6,6 +6,10 @@
 	"new-horizons.economy.stewardship.total": "Projected town income: %d Gold/day (after income handicap)",
 	"new-horizons.economy.stewardship.contribution": "Stewardship: +%d Gold/day before income handicap. Already included in the projected total.",
 	"new-horizons.economy.stewardship.help": "Each Stewardship holder who ends the day visiting or garrisoned in this owned town contributes +250 Gold on the next day. Two distinct holders contribute +500. This preview uses current residents; moving them before the day ends changes the next day's income.",
+	"new-horizons.economy.stewardship.lordOfTheCrypts": "Lord of the Crypts (steward)",
+	"new-horizons.economy.stewardship.endTurnReminder": "%s has no steward, and %s is free to be one. End the turn anyway?",
+	"new-horizons.economy.stewardship.reminderOption.hover": "Steward reminder",
+	"new-horizons.economy.stewardship.reminderOption.help": "{Steward reminder}\n\nWhen ending the turn, warn if an owned town has no steward while one of your heroes stewards no town.",
 	"new-horizons.bank.pendingCreatures": "Troops remaining. Visit to collect:",
 	"new-horizons.economy.mercenaryCompany.pending": "Mercenary Company: %d Rogues await room in this mine’s garrison."
 }

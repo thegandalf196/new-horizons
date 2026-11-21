@@ -14,6 +14,9 @@ namespace newHorizonsEstates
 {
 /// Absence preserves the complete historical Estates catalogue and effects.
 DLL_LINKAGE bool usesRevisedPolicy(const JsonNode & rules);
+/// Revised policy 2: every owned map hero may be a steward (500 Gold, or
+/// 1,000 with the Stewardship perk). Policy 1 keeps perk-only stewards.
+DLL_LINKAGE bool usesCoreStewardship(const JsonNode & rules);
 DLL_LINKAGE void validateRevisedPolicy(const JsonNode & rules);
 DLL_LINKAGE void validateRevisedSerialization(const JsonNode & rules, bool supported);
 DLL_LINKAGE bool hasRevisedPerk(const CGHeroInstance * hero, const char * perk);
