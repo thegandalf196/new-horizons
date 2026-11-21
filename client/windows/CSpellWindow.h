@@ -42,6 +42,7 @@ class CSpellWindow : public CWindowObject, public IVideoHolder
 		int schoolLevel; //range: 0 none, 3 - expert
 		bool schoolLocked;
 		bool divineMandateLocked = false;
+		bool doubleCastLocked = false;
 		std::string schoolRequirementText;
 		std::string divineMandateRequirementText;
 		CSpellWindow * owner;
@@ -167,6 +168,10 @@ class CSpellWindow : public CWindowObject, public IVideoHolder
 	bool canUseSpellForCurrentDivineMandateFollowup(SpellID spell) const;
 	std::string currentDivineMandateFollowupText() const;
 	std::string spellActionOpportunityText(SpellID spell) const;
+	/// Double Cast: the open follow-up offer cannot repeat its first spell.
+	bool repeatsDoubleCastSpell(SpellID spell) const;
+	/// Why the current follow-up cannot pay for this spell; empty when it can.
+	std::string followUpRefusalText(SpellID spell) const;
 
 	void setSchoolImages(SpellSchool school);
 

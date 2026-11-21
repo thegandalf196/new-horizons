@@ -54,6 +54,11 @@ DLL_LINKAGE int crescendoSpellPower(const CGHeroInstance & hero, const CBattleIn
 /// Spellstorm: percent removed from this side hero's combat spell costs; 0 before the threshold.
 DLL_LINKAGE int spellstormReductionPercent(const CBattleInfoCallback & battle, const CGHeroInstance & hero);
 
+/// True when `spell` would be paid by this side's open offer but repeats its first
+/// spell under rules that require a different one. Frontends use it to keep the
+/// repeat unselectable; the authority still refuses it in actionRefusal.
+DLL_LINKAGE bool followUpRepeatsFirstSpell(const CBattleInfoCallback & battle, BattleSide side, SpellID spell);
+
 /// Authority pre-StartAction admission. Returns a refusal reason, or nothing.
 DLL_LINKAGE std::optional<std::string> actionRefusal(const CBattleInfoCallback & battle, const BattleAction & action);
 }

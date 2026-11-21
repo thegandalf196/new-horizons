@@ -30,6 +30,13 @@ Readout read(const CBattleInfoCallback & battle, BattleSide side);
 std::string offerText(const Readout & readout, const std::string & heroName, const std::string & firstSpellName);
 /// Spellbook button help while the offer is open.
 std::string spellButtonHelp(const Readout & readout);
+/// True when the open offer would pay for `spell` but it repeats the first spell.
+/// The spellbook, quick-spell bar and its shortcuts keep that spell unselectable;
+/// a missing or ended battle answers false and the authority still decides.
+bool repeatsFirstSpell(const CBattleInfoCallback * battle, SpellID spell);
+/// Short unavailable hint (status bar, quick-spell bar) and its full explanation.
+std::string differentSpellHint();
+std::string differentSpellHelp(SpellID firstSpell);
 /// Hero status row: compact value and details.
 std::string statusValue(const Readout & readout);
 std::string statusDetails(const Readout & readout);

@@ -6,6 +6,7 @@
 #include "../GameEngine.h"
 #include "../GameInstance.h"
 #include "../battle/BattleInterface.h"
+#include "../battle/DoubleCastCue.h"
 #include "../widgets/TextControls.h"
 #include "render/IFont.h"
 #include "render/IRenderHandler.h"
@@ -24,11 +25,12 @@ SpellCostBreakdown CSpellWindow::SpellArea::refreshReadout()
 	divineMandateLocked = !owner->canUseSpellForCurrentDivineMandateFollowup(mySpell->getId());
 	divineMandateRequirementText = divineMandateLocked
 		? LIBRARY->generaltexth->translate("new-horizons.spellbook.lightFollowupOnly") : "";
+	doubleCastLocked = owner->repeatsDoubleCastSpell(mySpell->getId());
 	const auto breakdown = owner->myInt->cb->getSpellCostBreakdown(mySpell, owner->myHero);
 	const auto battle = owner->myInt->battleInt ? owner->myInt->battleInt->getBattle() : nullptr;
 	effectPreview = newHorizonsMagic::spellEffectPreview(*owner->myHero, *mySpell, battle.get());
 	const int selectionCost = breakdown.finalCost;
-	const bool unavailable = divineMandateLocked || owner->isAdventureSpellUsedToday(mySpell->id)
+	const bool unavailable = divineMandateLocked || doubleCastLocked || owner->isAdventureSpellUsedToday(mySpell->id)
 		|| ((selectionCost > owner->myHero->getManaAvailable() || schoolLocked) && !owner->onSpellSelect);
 	name->color = unavailable ? ColorRGBA(62, 52, 44) : ColorRGBA(40, 24, 12);
 	cost->color = effect->color = unavailable ? ColorRGBA(90, 24, 14) : ColorRGBA(56, 34, 18);
@@ -38,4 +40,26 @@ SpellCostBreakdown CSpellWindow::SpellArea::refreshReadout()
 	cost->setText(spellbookPresentation::costLine(breakdown, GAME->translator(), width));
 	effect->setText(spellbookPresentation::effectLine(effectPreview, GAME->translator(), width));
 	return breakdown;
+}
+
+bool CSpellWindow::repeatsDoubleCastSpell(SpellID spell) const
+{
+	// Choosing a quick-spell slot is configuration, not a cast.
+	if(!battleSpellsOnly || onSpellSelect || !myInt->battleInt)
+		return false;
+	try
+	{
+		return doubleCastCue::repeatsFirstSpell(myInt->battleInt->getBattle().get(), spell);
+	}
+	catch(const std::runtime_error &)
+	{
+		return false; // The battle ended while this view is closing; the authority still decides.
+	}
+}
+
+std::string CSpellWindow::followUpRefusalText(SpellID spell) const
+{
+	if(!canUseSpellForCurrentDivineMandateFollowup(spell))
+		return currentDivineMandateFollowupText() + "\nThis Spell cannot use that follow-up.";
+	return repeatsDoubleCastSpell(spell) ? doubleCastCue::differentSpellHelp(spell) : std::string();
 }

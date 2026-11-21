@@ -21052,14 +21052,14 @@
       },
       "deferral": "Owner: ui_developer. Before further continuation control binding, move its cohesive button/help/shortcut planning into existing CreatureContinuationUI, retaining ordinary and Master Gunner priority, read-only authoritative callbacks, actual output/budget help and rendered enabled/disabled/cancel/reopen evidence. Exact1583 exception only. Exact bounded API/readback migration only: no new rule decisions in this hotspot. UI owner must extract the next touched ShadowGift chooser, temporary-status widget renderer, or hero-status assembly into a cohesive owner before further substantive growth, preserving callback lifetime, current query/ownership, cached-before-redraw ordering and guarded native rendering. Existing obligations remain binding.",
       "kind": "exception",
-      "lines": 1378,
+      "lines": 1376,
       "owner": "ui_developer",
-      "previous_review": "PROPOSED-0920-EXACT-SOURCE-ORGANIZATION",
-      "rationale": "Exact 1374 to 1374-line scope. Client presentation/input routing integrates current spell/action receipts and validated captured views. Preserve command submission, session/teardown ownership, native layout and ordinary input behavior; no direct gameplay mutation is introduced.\n\nIndependently reviewed C14 scope (1374 to 1376 physical lines): Only immutable displayed-shield snapshots are passed to the existing side panels and refresh entry point. New rendering and tooltip logic is kept outside the central window. This bounds only the recorded hash and measured span; all inherited deferrals, ratchets and runtime holds remain binding, with no future growth allowance.\n\nCLAUDE-METAMAGIC6-PHASE5-20261120 (supersedes IR-NH0921-C14-1164-CODEORG-20261117): Two one-line calls to the Double Cast cue, implemented in the focused DoubleCastCue unit. Inherited deferrals remain binding; no future growth credit.",
-      "review": "CLAUDE-METAMAGIC6-PHASE5-20261120",
+      "previous_review": "CLAUDE-METAMAGIC6-PHASE5-20261120",
+      "rationale": "Exact 1374 to 1374-line scope. Client presentation/input routing integrates current spell/action receipts and validated captured views. Preserve command submission, session/teardown ownership, native layout and ordinary input behavior; no direct gameplay mutation is introduced.\n\nIndependently reviewed C14 scope (1374 to 1376 physical lines): Only immutable displayed-shield snapshots are passed to the existing side panels and refresh entry point. New rendering and tooltip logic is kept outside the central window. This bounds only the recorded hash and measured span; all inherited deferrals, ratchets and runtime holds remain binding, with no future growth allowance.\n\nCLAUDE-METAMAGIC6-PHASE5-20261120 (supersedes IR-NH0921-C14-1164-CODEORG-20261117): Two one-line calls to the Double Cast cue, implemented in the focused DoubleCastCue unit. Inherited deferrals remain binding; no future growth credit.\n\nCLAUDE-DOUBLECAST-SAME (supersedes CLAUDE-METAMAGIC6-PHASE5-20261120): The quick-spell shortcut asks the focused QuickSpellPanel::canCastNow helper (castable and not the repeat an open Double Cast offer refuses); the unit shrinks by two lines. Inherited deferrals remain binding; no future growth credit.",
+      "review": "CLAUDE-DOUBLECAST-SAME",
       "review_scope": "Exact recorded C14 source hash, physical span and organization delta only. No future growth, whole-mechanic, compiler, native, rendered, performance, save-resume, publication or promotion acceptance.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN",
-      "sha256": "c1e935ea63f8b5cb3bf33890444f39de61a3bf8714f366fa36d560eb650c3240"
+      "sha256": "1d807f521062c22a45b7d4c0a0cc40f228e61181bc8714c98cd29b57edc6bb28"
     },
     "client/battle/BattleWindow.cpp::BattleWindow::BattleWindow(BattleInterface & Owner) : owner(Owner)#1": {
       "completed_p_predecessor": {
@@ -22486,15 +22486,15 @@
     "client/windows/CSpellWindowSpellArea.cpp::void CSpellWindow::SpellArea::clickPressed(const Point & cursorPosition)#1": {
       "deferral": "Before further selection-flow growth extract context/admission and informational-help branches into cohesive spellbook owners, preserving current Singularity affordability, shared Hero Action, callback/query lifetime and targeting. Keep actual spellbook click/render acceptance separately recorded; this structural exception does not claim runtime verification.",
       "kind": "exception",
-      "lines": 117,
+      "lines": 116,
       "owner": "ui_developer",
-      "previous_review": "IR-CURRENT225-CLIENT-EXACT-SOURCEORG-20261103",
+      "previous_review": "IR-NH0922-STARTING-BOOK-PRAYER-PRESENTATION-20261118",
       "proposal_predecessor_review": "PROPOSED-CLIENT225-BOUNDED-20261103",
-      "rationale": "Exact byte-identical117-line SpellArea click moves from the1241-line spellbook implementation into the258-line focused spell-area owner. This is file-responsibility extraction, not function decomposition: existing context/admission/help deferral remains binding. Same SHA256 preserves cost checks, Singularity interaction, callback/query closure and cast/target dispatch order; rendered current-policy selection not claimed.",
-      "review": "IR-NH0922-STARTING-BOOK-PRAYER-PRESENTATION-20261118",
+      "rationale": "Exact byte-identical117-line SpellArea click moves from the1241-line spellbook implementation into the258-line focused spell-area owner. This is file-responsibility extraction, not function decomposition: existing context/admission/help deferral remains binding. Same SHA256 preserves cost checks, Singularity interaction, callback/query closure and cast/target dispatch order; rendered current-policy selection not claimed.\n\nCLAUDE-DOUBLECAST-SAME (supersedes IR-NH0922-STARTING-BOOK-PRAYER-PRESENTATION-20261118): The Divine Mandate follow-up refusal and the Double Cast different-spell refusal share one followUpRefusalText helper in SpellbookReadout.cpp; the function shrinks by one line and its dispatch order is unchanged. Inherited deferrals remain binding; no future growth credit.",
+      "review": "CLAUDE-DOUBLECAST-SAME",
       "review_scope": "Exact source organization and bounded correctness review only; no compilation, rendered acceptance or future growth approval.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_REVIEW_NATIVE_UNRUN",
-      "sha256": "5ac14d88d343305ac74f5aa3f27292b64ad4321938feb11648bbdd28a2c319c1"
+      "sha256": "91cd1872f2287507b913f2e3ac14a66841ecedc76f7f51aeeeea0d0934a19999"
     },
     "client/windows/CStackExperienceDetailsWindow.cpp": {
       "kind": "legacy",

@@ -18,6 +18,7 @@ class CButton;
 class CLabel;
 class BattleInterface;
 class CPlayerBattleCallback;
+class CGHeroInstance;
 
 class QuickSpellPanel : public CIntObject
 {
@@ -41,6 +42,8 @@ public:
 	void create();
 
 	std::vector<std::tuple<SpellID, bool>> getSpells() const;
+	/// Slot shortcut readiness: castable now and not the repeat an open Double Cast offer refuses.
+	static bool canCastNow(const CPlayerBattleCallback * battle, const CGHeroInstance * hero, SpellID id);
 
 	void show(Canvas & to) override;
 	void inputModeChanged(InputMode modi) override;

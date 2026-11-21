@@ -65,6 +65,37 @@ TEST_F(MetamagicDoubleCastTest, SameSpellFollowUpIsRejectedAndKeepsTheOffer)
 	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
 }
 
+TEST_F(MetamagicDoubleCastTest, RepeatPredicateMatchesTheAuthorityRefusal)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(1));
+	EXPECT_FALSE(metamagicDoubleCast::followUpRepeatsFirstSpell(*battle(), ATTACKER, SpellID::BLESS)) << "No offer yet";
+	ASSERT_TRUE(cast(SpellID::BLESS));
+	ASSERT_TRUE(offered());
+	BattleAction request;
+	request.actionType = EActionType::HERO_SPELL;
+	request.side = ATTACKER;
+	for(const auto spell : {SpellID::BLESS, SpellID::CURSE, SpellID::SLOW})
+	{
+		request.spell = SpellID(spell);
+		const bool repeats = metamagicDoubleCast::followUpRepeatsFirstSpell(*battle(), ATTACKER, SpellID(spell));
+		EXPECT_EQ(repeats, spell == SpellID::BLESS) << SpellID(spell).toSpell()->getJsonKey();
+		// The frontends' predicate and the authority's admission agree on every spell.
+		EXPECT_EQ(repeats, metamagicDoubleCast::actionRefusal(*battle(), request).has_value());
+	}
+	EXPECT_FALSE(metamagicDoubleCast::followUpRepeatsFirstSpell(*battle(), BattleSide::DEFENDER, SpellID::BLESS));
+	EXPECT_FALSE(metamagicDoubleCast::followUpRepeatsFirstSpell(*battle(), BattleSide::NONE, SpellID::BLESS));
+	ASSERT_TRUE(cast(SpellID::CURSE));
+	EXPECT_FALSE(metamagicDoubleCast::followUpRepeatsFirstSpell(*battle(), ATTACKER, SpellID::BLESS)) << "Offer consumed";
+}
+
+TEST_F(MetamagicDoubleCastTest, RepeatPredicateNeedsAnOpenOffer)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(0));
+	ASSERT_TRUE(cast(SpellID::BLESS));
+	ASSERT_FALSE(offered());
+	EXPECT_FALSE(metamagicDoubleCast::followUpRepeatsFirstSpell(*battle(), ATTACKER, SpellID::BLESS));
+}
+
 TEST_F(MetamagicDoubleCastTest, OrderCannotBePaidFromTheFollowUpGrant)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare(1));

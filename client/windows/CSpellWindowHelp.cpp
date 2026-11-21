@@ -6,6 +6,7 @@
 #include "../CPlayerInterface.h"
 #include "../GameInstance.h"
 #include "../battle/BattleInterface.h"
+#include "../battle/DoubleCastCue.h"
 #include "../widgets/CComponent.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/callback/CCallback.h"
@@ -84,7 +85,9 @@ void CSpellWindow::SpellArea::showPopupWindow(const Point & cursorPosition)
 			requirements += "\n\n" + schoolRequirementText;
 		if(divineMandateLocked)
 			requirements += "\n\n" + divineMandateRequirementText;
-		const auto followup = owner->spellActionOpportunityText(mySpell->id);
+		if(doubleCastLocked)
+			requirements += "\n\n" + doubleCastCue::differentSpellHelp(mySpell->id);
+		const auto followup = doubleCastLocked ? std::string() : owner->spellActionOpportunityText(mySpell->id);
 		const auto followupInfo = followup.empty() ? std::string() : "\n\n" + followup;
 		std::string costInfo;
 		if(!army && newHorizonsMagic::rulesActive(owner->myHero->getMagicRules()))

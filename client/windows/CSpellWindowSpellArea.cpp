@@ -10,6 +10,7 @@
 #include "../GameInstance.h"
 #include "../battle/BattleInterface.h"
 #include "../battle/BattleActionsController.h"
+#include "../battle/DoubleCastCue.h"
 #include "../adventureMap/AdventureMapInterface.h"
 #include "../gui/WindowHandler.h"
 #include "../widgets/CComponent.h"
@@ -66,10 +67,9 @@ void CSpellWindow::SpellArea::clickPressed(const Point & cursorPosition)
 			GAME->interface()->showInfoDialog(schoolRequirementText);
 			return;
 		}
-		if(!owner->canUseSpellForCurrentDivineMandateFollowup(mySpell->id))
+		if(const auto refusal = owner->followUpRefusalText(mySpell->id); !refusal.empty())
 		{
-			GAME->interface()->showInfoDialog(owner->currentDivineMandateFollowupText()
-				+ "\nThis Spell cannot use that follow-up.");
+			GAME->interface()->showInfoDialog(refusal);
 			return;
 		}
 
@@ -188,7 +188,9 @@ void CSpellWindow::SpellArea::hover(bool on)
 			else
 				message.replaceTextID("vcmi.spellBook.zero_level.hint");
 			auto statusText = message.toString(&GAME->translator());
-			const auto followup = owner->spellActionOpportunityText(mySpell->id);
+			// The open offer's grant would pay for the repeat, so do not advertise it.
+			const auto followup = doubleCastLocked ? doubleCastCue::differentSpellHint()
+				: owner->spellActionOpportunityText(mySpell->id);
 			if(!followup.empty())
 				statusText += " — " + followup;
 			owner->statusBar->write(statusText);
@@ -203,6 +205,7 @@ void CSpellWindow::SpellArea::setSpell(const CSpell * spell)
 	schoolBorder.reset();
 	schoolLocked = false;
 	divineMandateLocked = false;
+	doubleCastLocked = false;
 	schoolRequirementText.clear();
 	divineMandateRequirementText.clear();
 	image->visible = false;

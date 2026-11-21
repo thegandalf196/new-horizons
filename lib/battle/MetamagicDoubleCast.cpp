@@ -210,6 +210,20 @@ int spellstormReductionPercent(const CBattleInfoCallback & battle, const CGHeroI
 		battle.getBattle()->getMetamagicDoubleCastState(*side).completedDoubleCasts, perks) : 0;
 }
 
+bool followUpRepeatsFirstSpell(const CBattleInfoCallback & battle, BattleSide side, SpellID spell)
+{
+	const auto * info = battle.getBattle();
+	if(!info || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		|| !offerGranted(info->getHeroActionAllowances(side)))
+		return false;
+	const auto & offer = info->getMetamagicDoubleCastState(side);
+	const auto * rules = doubleCastRules(info->getSideHero(side));
+	if(!offer.offerOpen() || spell != offer.firstSpell || !rules || !rules->followUpMustDiffer())
+		return false;
+	const auto selected = battle.battleGetSpellActionAllowance(side, spell);
+	return selected && selected->source == Source::METAMAGIC_DOUBLE_CAST;
+}
+
 std::optional<std::string> actionRefusal(const CBattleInfoCallback & battle, const BattleAction & action)
 {
 	if((action.side != BattleSide::ATTACKER && action.side != BattleSide::DEFENDER) || !battle.getBattle())

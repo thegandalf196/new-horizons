@@ -477,10 +477,8 @@ void BattleWindow::useSpellIfPossible(int slot)
 	const auto id = std::get<0>(quickSpells[slot]);
 	const auto * hero = owner.currentHero();
 
-	if(id.hasValue() && hero && id.toSpell()->canBeCast(owner.getBattle().get(), spells::Mode::HERO, hero))
-	{
+	if(QuickSpellPanel::canCastNow(owner.getBattle().get(), hero, id))
 		owner.castThisSpell(id);
-	}
 };
 
 void BattleWindow::toggleQueueVisibility()

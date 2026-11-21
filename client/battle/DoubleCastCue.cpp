@@ -65,6 +65,32 @@ std::string spellButtonHelp(const Readout & readout)
 	return translated(uses("new-horizons.doubleCast.spellButton.help", readout));
 }
 
+bool repeatsFirstSpell(const CBattleInfoCallback * battle, SpellID spell)
+{
+	try
+	{
+		return battle && battle->getBattle()
+			&& metamagicDoubleCast::followUpRepeatsFirstSpell(*battle, battle->battleGetMySide(), spell);
+	}
+	catch(const std::runtime_error &)
+	{
+		return false; // The callback registry may already have removed an ended battle.
+	}
+}
+
+std::string differentSpellHint()
+{
+	return translated(MetaString::createFromTextID("new-horizons.doubleCast.differentSpell"));
+}
+
+std::string differentSpellHelp(SpellID firstSpell)
+{
+	auto text = MetaString::createFromTextID("new-horizons.doubleCast.differentSpell.help");
+	const auto * spell = firstSpell.toSpell();
+	text.replaceRawString(spell ? spell->getNameTranslated() : std::string());
+	return translated(text);
+}
+
 std::string statusValue(const Readout & readout)
 {
 	return std::to_string(readout.remaining) + "/" + std::to_string(readout.maximum);
