@@ -184,3 +184,19 @@ TEST_F(SpellbookNativeFontPresentationTest, HugeLifeDrainRetainsBothDamageAndHea
 	EXPECT_NE(detail.find("9223000000000000000"), std::string::npos);
 	EXPECT_NE(detail.find("75% of damage"), std::string::npos);
 }
+
+TEST_F(SpellbookNativeFontPresentationTest, LongBlessDurationsKeepTheirRoundCountAtNativeWidth)
+{
+	// Cast extensions and specialties can push Bless past nine rounds.
+	for(const int64_t rounds : {9, 10, 13, 99, 999})
+	{
+		const newHorizonsMagic::SpellEffectPreview preview{
+			"new-horizons.spellbook.effect.bless","new-horizons.spellbook.effect.bless.short",
+			newHorizonsMagic::SpellEffectPreview::Quantity{rounds,1,"new-horizons.spellbook.unit.number"},
+			{},{},"new-horizons.spellbook.effect.bless.short.narrow"};
+		const auto text = line(preview);
+		EXPECT_NE(text,"!") << rounds;
+		EXPECT_LE(width(text),78) << text;
+		EXPECT_NE(text.find(std::to_string(rounds)),std::string::npos) << text;
+	}
+}
