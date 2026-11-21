@@ -485,6 +485,9 @@ protected:
 			if(std::string_view(currentExpectedArt(resolvedArtCases.at(GetParam())).policy) == "ordinaryCreatureSpecialties")
 				development["additionalSpecialties"].Struct().erase("ordinaryCreatureSpecialties");
 			development.Struct().erase(std::string(policy));
+			// Revised Castle adventure specialties replace the skill specialty they retire.
+			for(const auto * revised : {"forcedMarch", "wellConnected", "almsOfTheFaithful"})
+				development["revisedSpecialties"].Struct().erase(revised);
 			// Remove dependent opt-ins too, retaining a valid historical context.
 			if(policy == "creatureLineSpecialties")
 				development.Struct().erase("defaultCreatureLineReplacements");

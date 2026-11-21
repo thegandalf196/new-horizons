@@ -1070,9 +1070,11 @@ set(test_SRCS
 		server/EstatesHoarderQuoteTest.cpp
 		server/EstatesTransactionsTest.cpp
 		server/CoreStewardshipTest.cpp
+		server/ForcedMarchSpecialtyTest.cpp
 		server/FourOfferHeroProgressionTest.cpp
 		server/LegacyEstatesCapture.h
 		server/RevisedEstatesFixture.h
+		server/CastleAdventureSpecialtyFixture.h
 		server/NewHorizonsEstatesPolicyTest.cpp
 		server/EstatesRecruitmentQuoteTest.cpp
 		server/NewHorizonsFourSkillUIFixtureExportTest.cpp

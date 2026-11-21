@@ -140,6 +140,17 @@
 								"maximumSpellPowerPercent": {"type": "integer", "minimum": 0, "maximum": 100},
 								"secondUseLevel": {"type": "integer", "minimum": 1, "maximum": 100}
 							}
+						},
+						"forcedMarch": {
+							"type": "object", "additionalProperties": false,
+							"description": "Sylvia: extra Movement on the first day of each week, then a Morale penalty in her next combat.",
+							"required": ["movementPercent", "movementPercentPerLevel", "maximumMovementPercent", "moralePenalty"],
+							"properties": {
+								"movementPercent": {"type": "integer", "minimum": 1, "maximum": 500},
+								"movementPercentPerLevel": {"type": "integer", "minimum": 0, "maximum": 500},
+								"maximumMovementPercent": {"type": "integer", "minimum": 1, "maximum": 500},
+								"moralePenalty": {"type": "integer", "minimum": 0, "maximum": 3}
+							}
 						}
 					}
 				},

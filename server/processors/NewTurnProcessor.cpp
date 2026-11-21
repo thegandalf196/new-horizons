@@ -11,6 +11,7 @@
 #include "NewTurnProcessor.h"
 
 #include "HeroPoolProcessor.h"
+#include "ForcedMarchWeek.h"
 
 #include "../CGameHandler.h"
 
@@ -650,6 +651,8 @@ void NewTurnProcessor::onNewTurn()
 		grantWeeklyMineDefenders(newHorizonsMuster::absoluteWeek(n.day, calendar.getDaysInWeek()));
 	// The NewTurn pack expires prior-day ONE_DAY bonuses and refills regular Movement first.
 	grantNewHorizonsCastleStablesBonus();
+	if(newWeek)
+		newHorizonsForcedMarch::grantWeeklyMoralePenalties(*gameHandler);
 
 	if (newWeek)
 	{

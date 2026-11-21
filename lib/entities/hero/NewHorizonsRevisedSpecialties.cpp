@@ -4,6 +4,7 @@
  */
 #include "StdInc.h"
 #include "NewHorizonsRevisedSpecialties.h"
+#include "NewHorizonsCastleAdventureSpecialties.h"
 #include "NewHorizonsHeroRules.h"
 #include "NewHorizonsRuleValidation.h"
 #include "CHero.h"
@@ -91,7 +92,7 @@ void validateRevisedSpecialtiesSerialization(const JsonNode & development)
 		return;
 	const auto & row = development[ROW];
 	detail::fields(row, {"version", "lordOfTheCrypts", "levelScaling", "volleyCommand", "aerialSupremacy",
-		"benedictionOfArms", "pariah", "frostMantle", "quickStudy", "sermon"});
+		"benedictionOfArms", "pariah", "frostMantle", "quickStudy", "sermon", "forcedMarch"});
 	detail::require(detail::integer(row["version"], 1, 1), "revised specialty version");
 	if(row.Struct().contains("levelScaling"))
 	{
@@ -106,6 +107,7 @@ void validateRevisedSpecialtiesSerialization(const JsonNode & development)
 		detail::require(detail::integer(crypts["skeletonGrowthPerLevel"], 1, 10), "Lord of the Crypts growth per level");
 	}
 	validateCastleSpecialtyRows(row);
+	validateCastleAdventureSpecialties(row);
 }
 
 bool requiresRevisedSpecialtyFormat(const JsonNode & document)
@@ -245,7 +247,7 @@ int lordOfTheCryptsGrowth(const CGHeroInstance & steward, const CGTownInstance &
 bool retiresSpecialtyBonus(const CGHeroInstance & hero, const Bonus & bonus)
 {
 	// Revised Castle specialties replace these heroes' whole historical specialty.
-	if(castleSpecialtyRetiresHistorical(hero))
+	if(castleSpecialtyRetiresHistorical(hero) || retiresHistoricalCastleSpecialty(hero))
 		return true;
 	// Lord of the Crypts replaces Clavius's flat daily Gold.
 	return bonus.type == BonusType::GENERATE_RESOURCE && isHero(hero, CLAVIUS)
@@ -260,7 +262,8 @@ bool benefitsFromStewardship(const CGHeroInstance & hero, const CGTownInstance &
 bool resolveRevisedSpecialtyPresentation(const CHero & hero, const JsonNode & development,
 	const CGHeroInstance * capturedHero, SpecialtyPresentation & result)
 {
-	if(resolveCastleSpecialtyPresentation(hero, development, capturedHero, result))
+	if(resolveCastleSpecialtyPresentation(hero, development, capturedHero, result)
+		|| resolveCastleAdventurePresentation(hero, development, capturedHero, result))
 		return true;
 	if(hero.getJsonKey() != CLAVIUS)
 		return false;

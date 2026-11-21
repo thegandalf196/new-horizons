@@ -23665,9 +23665,9 @@
       "inherited_a1_health_deferral": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.",
       "inherited_deferral": "Exact source-list bound only. Before substantive build logic, extract a cohesive target configuration section. Verify source/link membership once and retain no duplicate translation units. Prior stricter obligations remain in inherited_deferral, where present.",
       "kind": "exception",
-      "lines": 2171,
+      "lines": 2173,
       "owner": "engine_engineer",
-      "previous_review": "CLAUDE-SPECIALTIES-0931",
+      "previous_review": "CLAUDE-CASTLE-COMBAT-0931",
       "prior_a1_health_scope": {
         "kind": "exception",
         "lines": 2063,
@@ -23676,11 +23676,11 @@
         "sha256": "7058cdef35cfce13214572d190c4accfdf5721e6c144af3cdfca9f53bb68c2a0"
       },
       "prior_deferral": "Exact mechanical source/header registration only. Before substantive CMake target policy growth, extract a cohesive configuration section while verifying translation-unit membership and facade linkage. No future file growth allowance. Prior stricter obligations remain in inherited_deferral, where present.\n\nKeep registrations in their current coherent tables. Extract any future conditional target/control logic rather than growing this registry into a build framework.",
-      "rationale": "Exact successor for 0.93.1 Castle combat specialties (Volley Command, revised Aerial Supremacy, Benediction of Arms, Pariah, Frost Mantle, Quick Study, Sermon): bounded routing hooks into focused new owners only. Existing extraction deferrals retained; no future growth credit.",
-      "review": "CLAUDE-CASTLE-COMBAT-0931",
+      "rationale": "Exact successor for 0.93.1 Castle adventure specialties and starts (Forced March, Well Connected, Alms of the Faithful, Cuthbert and Loynis starts): bounded routing hooks into focused owners only. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-CASTLE-ADVENTURE-0931",
       "review_scope": "Exact frozen A7 production/routing source only; no compiler, Windows path runtime, recovery, timing, release or future-growth acceptance.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NATIVE_WINDOWS_PENDING",
-      "sha256": "03c35edd918e19200aff3edc2a4704fdf892a2bc72961ff4304a32bd15a1a1bf",
+      "sha256": "a059a4f5afb01f5dd4445cedccfca6a173a95fbb291072ad7cd84658efd4fb33",
       "inherited_deferral_step2": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.\n\nExact shared-facade source/header registration only. Before conditional target/control policy growth, extract the next coherent configuration section; preserve one translation unit per implementation and consumer linkage through vcmi. No future registry-size growth credit."
     },
     "lib/CSkillHandler.cpp::std::shared_ptr<CSkill> CSkillHandler::loadFromJson(const std::string & scope, const JsonNode & json, const std::string & identifier, size_t index)#1": {
@@ -25586,10 +25586,10 @@
       "deferral": "Next substantive hero Learning expansion must use focused Learning state/transition owners with explicit owner/partner/round-week/rules inputs; preserve source/map/School eligibility, no duplicate event, current-save and Normal resource semantics. Before further substantive expansion, owning engine/gameplay/UI specialist must extract the next coherent touched policy, ordered stage, codec family or widget responsibility into a focused owner, preserving callback visibility, rejection atomicity, serialized field order, payment and RNG/packet order. This exact bounded migration/registry/validation routing gives no future growth credit.",
       "inherited_a1_health_deferral": "Next substantive hero Learning expansion must use focused Learning state/transition owners with explicit owner/partner/round-week/rules inputs; preserve source/map/School eligibility, no duplicate event, current-save and Normal resource semantics. Before further substantive expansion, owning engine/gameplay/UI specialist must extract the next coherent touched policy, ordered stage, codec family or widget responsibility into a focused owner, preserving callback visibility, rejection atomicity, serialized field order, payment and RNG/packet order. This exact bounded migration/registry/validation routing gives no future growth credit.",
       "kind": "exception",
-      "lines": 3077,
+      "lines": 3080,
       "owner": "gameplay_engineer",
       "preceding_review": "IR-COMPOSED-FEATURE-NUMERIC-EXACT-20261029",
-      "previous_review": "CLAUDE-SPECIALTIES-0931",
+      "previous_review": "CLAUDE-CASTLE-COMBAT-0931",
       "prior_a1_health_scope": {
         "kind": "exception",
         "lines": 3100,
@@ -25597,11 +25597,11 @@
         "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
         "sha256": "450543a3563b69fd683ee866089caeddd601609193e8a442ea477703f6021856"
       },
-      "rationale": "Exact successor for 0.93.1 Castle combat specialties (Volley Command, revised Aerial Supremacy, Benediction of Arms, Pariah, Frost Mantle, Quick Study, Sermon): bounded routing hooks into focused new owners only. Existing extraction deferrals retained; no future growth credit.",
-      "review": "CLAUDE-CASTLE-COMBAT-0931",
+      "rationale": "Exact successor for 0.93.1 Castle adventure specialties and starts (Forced March, Well Connected, Alms of the Faithful, Cuthbert and Loynis starts): bounded routing hooks into focused owners only. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-CASTLE-ADVENTURE-0931",
       "review_scope": "Exact independent source/organization only; no compilation, runtime, rendering, timing, publication or future-growth acceptance.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
-      "sha256": "c6903fbaf90be4899555de94ef6a8e01e723c3320146d6d0737407d6bf2813ae"
+      "sha256": "e1a42cb86baff108ab1e2299dee7a0e4c85e026c2a93d7e46a76363afcee333e"
     },
     "lib/mapObjects/CGHeroInstance.cpp::CStackBasicDescriptor CGHeroInstance::calculateNecromancy (const BattleResult &battleResult) const#1": {
       "kind": "legacy",
@@ -25634,9 +25634,9 @@
       "deferral": "Owner: Gameplay engineer. Interface/acceptance: Extract starting specialty producer conversion and hero cost composition behind captured-rule helpers; preserve explicit authored overrides, default starting projections, old policy absence and battle/spellbook cost parity. Owner: gameplay_engineer. Before further specialty producer growth, extract cohesive captured creature-line producer selection; preserve initialization order, explicit zero/absence, removal identities and existing saved-rule behavior. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance. Fafner bounded follow-up: Before further producer selection growth, extract the captured creature-line conversion owner while preserving authored initialization order, zero/absence, removal identity, hero-cost composition and old-save behavior. Extract the next touched captured creature-line/specialty initialization stage behind an explicit hero plus captured-policy initialization helper, preserving authored override\u2192producer refresh\u2192secondary bonus order, removals and level-one meaning; return declared assignments/refresh outcome rather than expose all hero internals. Required characterization: Current versus absent capture, explicit override/zero, old hero specialties/starting perks, level-one/no retroactive growth, real gained-level primary state and no extra RNG. Trigger: Before the next substantive expansion of this affected responsibility. Existing stronger invariant/deferral obligations remain; this approval covers only the pinned finite batch. Retain existing scoped decomposition obligations for the next affected substantive growth; this removal ratchets the exact baseline down and grants no regrowth credit.\n\nBefore any further substantive expansion, extract the next cohesive touched policy, callback/read adapter or ordered admission stage into its focused owner. Preserve exact capture metadata, source visibility, schema rejection, RNG/packet ordering and standalone/world wire identity; no future growth credit from this exception.",
       "inherited_a1_health_deferral": "Owner: Gameplay engineer. Interface/acceptance: Extract starting specialty producer conversion and hero cost composition behind captured-rule helpers; preserve explicit authored overrides, default starting projections, old policy absence and battle/spellbook cost parity. Owner: gameplay_engineer. Before further specialty producer growth, extract cohesive captured creature-line producer selection; preserve initialization order, explicit zero/absence, removal identities and existing saved-rule behavior. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance. Fafner bounded follow-up: Before further producer selection growth, extract the captured creature-line conversion owner while preserving authored initialization order, zero/absence, removal identity, hero-cost composition and old-save behavior. Extract the next touched captured creature-line/specialty initialization stage behind an explicit hero plus captured-policy initialization helper, preserving authored override\u2192producer refresh\u2192secondary bonus order, removals and level-one meaning; return declared assignments/refresh outcome rather than expose all hero internals. Required characterization: Current versus absent capture, explicit override/zero, old hero specialties/starting perks, level-one/no retroactive growth, real gained-level primary state and no extra RNG. Trigger: Before the next substantive expansion of this affected responsibility. Existing stronger invariant/deferral obligations remain; this approval covers only the pinned finite batch. Retain existing scoped decomposition obligations for the next affected substantive growth; this removal ratchets the exact baseline down and grants no regrowth credit.",
       "kind": "exception",
-      "lines": 353,
+      "lines": 355,
       "owner": "gameplay_engineer",
-      "previous_review": "CLAUDE-SPECIALTIES-0931",
+      "previous_review": "CLAUDE-CASTLE-COMBAT-0931",
       "prior_a1_health_scope": {
         "kind": "exception",
         "lines": 346,
@@ -25644,11 +25644,11 @@
         "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
         "sha256": "56b0ebeb208919d1c5d349befad3ab0268df96b986a1e8d14cbc4a29c31f6863"
       },
-      "rationale": "Exact successor for 0.93.1 Castle combat specialties (Volley Command, revised Aerial Supremacy, Benediction of Arms, Pariah, Frost Mantle, Quick Study, Sermon): bounded routing hooks into focused new owners only. Existing extraction deferrals retained; no future growth credit.",
-      "review": "CLAUDE-CASTLE-COMBAT-0931",
+      "rationale": "Exact successor for 0.93.1 Castle adventure specialties and starts (Forced March, Well Connected, Alms of the Faithful, Cuthbert and Loynis starts): bounded routing hooks into focused owners only. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-CASTLE-ADVENTURE-0931",
       "review_scope": "Only exact346-line initHero hash and two identifier-only marker-helper call substitutions. Existing oversized-function exception and stronger deferrals remain; no unrelated scope, runtime, rendered or future-growth approval.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN",
-      "sha256": "0a8fd400e7cd4f7116a0e8a629b4a7cace67682e99194840e3e4c8cf3d2a7a84"
+      "sha256": "8d9146cb349eb3f6030b3bc390482800a645a35b844a2a83d72a5da37a4bfe03"
     },
     "lib/mapObjects/CGHeroInstance.cpp::void CGHeroInstance::serializeCommonOptions(JsonSerializeFormat & handler)#1": {
       "deferral": "Exact source and size only. Gameplay owner should extract the next touched hero creation or common-options serialization stage behind a focused typed interface, preserving equipment intent, startup RNG/slot order, captured absence and JSON/binary compatibility before further central growth.",
@@ -29229,14 +29229,14 @@
     "server/processors/NewTurnProcessor.cpp": {
       "deferral": "Keep this reduced legacy-file ceiling; extract the next touched turn-processing responsibility before expansion and retain deterministic calendar, ownership and RNG comparisons.",
       "kind": "exception",
-      "lines": 734,
+      "lines": 737,
       "owner": "engine_engineer",
-      "previous_review": "IR-ESTATES-GP-UI-EXACT-SOURCE-20261103",
-      "rationale": "Urgent C++20 shared-owner lifetime fix only:734 to734 lines; pickWeekType341-415 retains the DEITYOFFIRE list in its loop initializer. Query/body/RNG/publication order unchanged. Keep inherited extraction obligations; no future growth credit.",
-      "review": "IR-NEXT-BUILD-LIFETIME-NHART-REVERT-20261119",
+      "previous_review": "IR-NEXT-BUILD-LIFETIME-NHART-REVERT-20261119",
+      "rationale": "Exact successor for 0.93.1 Castle adventure specialties and starts (Forced March, Well Connected, Alms of the Faithful, Cuthbert and Loynis starts): bounded routing hooks into focused owners only. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-CASTLE-ADVENTURE-0931",
       "review_scope": "Exact independent source/organization only; no compilation, runtime, rendering, timing, publication or future-growth acceptance.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
-      "sha256": "a25a7f09b74636f9b3235c47af70e8a78f559624ad3effb540b5be0a5fe5e289"
+      "sha256": "47264365f1411f8d1e9ba1538da5dd8d3b80f84d942e80f1f44c6da4c4343436"
     },
     "server/processors/NewTurnProcessor.cpp::NewTurn NewTurnProcessor::generateNewTurnPack()#1": {
       "kind": "review",

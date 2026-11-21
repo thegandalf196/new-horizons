@@ -8,6 +8,7 @@
 #include "NewHorizonsLighthouse.h"
 #include "../bonuses/BonusList.h"
 #include "../mapObjects/CGHeroInstance.h"
+#include "../entities/hero/NewHorizonsCastleAdventureSpecialties.h"
 #include <array>
 #include <cstdint>
 #include <limits>
@@ -279,9 +280,15 @@ DailyMovementLimits dailyMovementLimits(const CGHeroInstance & hero,
 	const TConstBonusListPtr & landBonuses, const TConstBonusListPtr & seaBonuses, const int turn)
 {
 	const CSelector daySelector = Selector::days(turn);
-	const auto landModifiers = getNewHorizonsMovementModifiers(landBonuses, daySelector, &hero);
+	auto landModifiers = getNewHorizonsMovementModifiers(landBonuses, daySelector, &hero);
 	const auto waterBonuses = newHorizonsWaterBonuses(landBonuses, seaBonuses);
 	auto waterModifiers = getNewHorizonsMovementModifiers(waterBonuses, daySelector, &hero);
+	// Sylvia's Forced March raises her whole daily maximum on the first day of each week.
+	if(const int forcedMarch = newHorizonsHeroes::forcedMarchMovementPercent(hero, turn))
+	{
+		landModifiers.percentageToAll = saturatingAdd(landModifiers.percentageToAll, forcedMarch);
+		waterModifiers.percentageToAll = saturatingAdd(waterModifiers.percentageToAll, forcedMarch);
+	}
 	if(hero.hasActivePerk("new-horizons:logistics", "new-horizons:logistics.navigation"))
 		waterModifiers.percentageToBase = saturatingAdd(waterModifiers.percentageToBase, 25);
 

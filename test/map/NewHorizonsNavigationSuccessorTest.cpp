@@ -68,6 +68,9 @@ protected:
 		ASSERT_TRUE(rules["startingSkills"]["startingDevelopmentProfiles"].Struct().contains("core:sylvia"));
 		ASSERT_TRUE(rules["startingSkills"]["startingDevelopmentProfiles"].Struct().contains("core:voy"));
 		rules.Struct().erase("defaultCreatureLineReplacements");
+		// Sylvia's revised Forced March retires this conversion; keep testing the historical capture.
+		if(rules.Struct().contains("revisedSpecialties"))
+			rules["revisedSpecialties"].Struct().erase("forcedMarch");
 		if(absent) rules["skillSpecialties"].Struct().erase("navigationStartReplacements");
 		if(disabled) rules["skillSpecialties"]["navigationStartReplacements"].Bool() = false;
 		if(legacy) rules = JsonNode();

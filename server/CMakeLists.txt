@@ -80,6 +80,7 @@ set(vcmiservercommon_SRCS
 		queries/QueriesProcessor.cpp
 
 		processors/HeroPoolProcessor.cpp
+		processors/ForcedMarchWeek.cpp
 		processors/NewTurnProcessor.cpp
 		processors/TownRecruitmentGrowth.cpp
 		processors/DwellingRecruitmentGrowth.cpp
@@ -165,6 +166,7 @@ set(vcmiservercommon_HEADERS
 		queries/IQueryStackListener.h
 
 		processors/HeroPoolProcessor.h
+		processors/ForcedMarchWeek.h
 		processors/NewTurnProcessor.h
 		processors/PlayerMessageProcessor.h
 		processors/TurnOrderProcessor.h

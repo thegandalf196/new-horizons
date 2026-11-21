@@ -17,6 +17,7 @@
 #include "../entities/hero/NewHorizonsRevisedSpecialties.h"
 #include "../entities/hero/NewHorizonsCastleSpecialties.h"
 #include "../entities/hero/NewHorizonsPariahLearning.h"
+#include "../entities/hero/NewHorizonsCastleAdventureSpecialties.h"
 #include "../pathfinder/NewHorizonsProtectedMobility.h"
 #include "../pathfinder/NewHorizonsMovement.h"
 #include "../battle/HeroCommand.h"
@@ -756,7 +757,9 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 			getHeroClass()->isMagicHero(), getFactionID(), secSkills);
 	}
 	const CHero * heroType = getHeroType();
-	const auto skillSpecialties = compiledDevelopment()->skillSpecialty;
+	// A revised Castle adventure specialty replaces the converted skill specialty.
+	const auto skillSpecialties = newHorizonsHeroes::retiresHistoricalCastleSpecialty(*this)
+		? std::nullopt : compiledDevelopment()->skillSpecialty;
 	const bool hasNavigationSpecialty = skillSpecialties && heroType->navigationSpecialtyProducer
 		&& compiledDevelopment()->usesNavigationStartReplacement()
 		&& std::ranges::find(skillSpecialties->skills, SecondarySkill(SecondarySkill::LOGISTICS)) != skillSpecialties->skills.end();
