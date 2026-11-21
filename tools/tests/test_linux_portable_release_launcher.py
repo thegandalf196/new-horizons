@@ -360,7 +360,7 @@ class LinuxPortableReleaseLauncherTest(unittest.TestCase):
     def test_desktop_completion_releases_application_even_on_bad_finish_callback(self):
         import PortableLauncherWindow as desktop
         application = unittest.mock.Mock()
-        state = SimpleNamespace(set_busy=unittest.mock.Mock(), status=unittest.mock.Mock(), closed=True,
+        state = SimpleNamespace(busy=False, set_busy=unittest.mock.Mock(), status=unittest.mock.Mock(), closed=True,
                                 get_application=lambda: application)
         def fail(result):
             raise RuntimeError('startup verification failed')

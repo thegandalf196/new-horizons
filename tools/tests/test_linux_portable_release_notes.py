@@ -261,6 +261,27 @@ class WindowNotesTest(unittest.TestCase):
         Window.set_busy(state, False)
         widgets['notes'].set_sensitive.assert_called_with(True)
 
+    def test_first_beta_install_enables_play_and_disables_install(self):
+        Window = self.desktop.LauncherWindow
+        widgets = {name: Mock() for name in ('check', 'assets', 'notes', 'play', 'track', 'install',
+                                             'cancel_button', 'progress', 'status')}
+        state = SimpleNamespace(busy=False, channel='beta', package=None, packages={'stable': self.package, 'beta': None},
+                                offer={'version': '0.93.0', 'channel': 'beta'}, kind=None, ready=threading.Event(),
+                                cancel=threading.Event(), closed=False, original=self.package,
+                                get_application=Mock(), refresh_version=Mock(), update_progress=Mock(), **widgets)
+        for name in ('set_busy', 'complete', 'install_clicked'):
+            setattr(state, name, getattr(Window, name).__get__(state))
+        def begin(kind, operation, finished):
+            state.kind = kind
+            state.set_busy(True)
+            state.complete(operation(), None, finished)
+        state.begin = begin
+        with patch.object(self.desktop.release, 'install_release', return_value=self.package):
+            state.install_clicked(None)
+        self.assertIs(state.package, self.package)
+        widgets['play'].set_sensitive.assert_called_with(True)
+        widgets['install'].set_sensitive.assert_called_with(False)
+
     def test_notes_window_uses_plain_buffer_text(self):
         source = (ROOT / 'tools/linux/PortableLauncherWindow.py').read_text()
         window = source[source.index('class NotesWindow'):source.index('def run_window')]

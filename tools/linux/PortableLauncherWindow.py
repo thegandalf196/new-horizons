@@ -157,6 +157,9 @@ class LauncherWindow(Gtk.ApplicationWindow):
                 finished(result)
         except Exception as caught:
             self.status.set_text(str(caught))
+        if not self.busy:
+            # The handler may have changed the package or offer the buttons depend on.
+            self.set_busy(False)
         application = self.get_application()
         application.release()
         if self.closed:
