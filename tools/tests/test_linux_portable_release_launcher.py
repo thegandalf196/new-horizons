@@ -360,7 +360,7 @@ class LinuxPortableReleaseLauncherTest(unittest.TestCase):
     def test_desktop_completion_releases_application_even_on_bad_finish_callback(self):
         import PortableLauncherWindow as desktop
         application = unittest.mock.Mock()
-        state = SimpleNamespace(set_busy=unittest.mock.Mock(), status=unittest.mock.Mock(), closed=True,
+        state = SimpleNamespace(busy=False, set_busy=unittest.mock.Mock(), status=unittest.mock.Mock(), closed=True,
                                 get_application=lambda: application)
         def fail(result):
             raise RuntimeError('startup verification failed')
@@ -369,6 +369,34 @@ class LinuxPortableReleaseLauncherTest(unittest.TestCase):
         application.quit.assert_called_once()
         state.status.set_text.assert_called_with('startup verification failed')
 
+
+    def test_first_beta_install_enables_play_and_disables_install(self):
+        try:
+            import PortableLauncherWindow as desktop
+        except (ImportError, ValueError) as error:
+            self.skipTest(f'GTK 4 bindings unavailable: {error}')
+        Window = desktop.LauncherWindow
+        widgets = {name: unittest.mock.Mock() for name in ('check', 'assets', 'play', 'track', 'install',
+                                                           'cancel_button', 'progress', 'status')}
+        package = Path(tempfile.mkdtemp())
+        self.addCleanup(lambda: __import__('shutil').rmtree(package, ignore_errors=True))
+        state = SimpleNamespace(busy=False, channel='beta', package=None, packages={'stable': package, 'beta': None},
+                                offer={'version': '0.93.0', 'channel': 'beta'}, kind=None, ready=threading.Event(),
+                                cancel=threading.Event(), closed=False, original=package,
+                                get_application=unittest.mock.Mock(), refresh_version=unittest.mock.Mock(),
+                                update_progress=unittest.mock.Mock(), **widgets)
+        for name in ('set_busy', 'complete', 'install_clicked'):
+            setattr(state, name, getattr(Window, name).__get__(state))
+        def begin(kind, operation, finished):
+            state.kind = kind
+            state.set_busy(True)
+            state.complete(operation(), None, finished)
+        state.begin = begin
+        with patch.object(desktop.release, 'install_release', return_value=package):
+            state.install_clicked(None)
+        self.assertIs(state.package, package)
+        widgets['play'].set_sensitive.assert_called_with(True)
+        widgets['install'].set_sensitive.assert_called_with(False)
 
 if __name__ == '__main__':
     unittest.main()

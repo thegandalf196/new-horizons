@@ -11,6 +11,8 @@ read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 
 - Fixed computer opponents occasionally freezing the game after a battle that
   gave their hero a level.
+- Linux: after installing a first Beta, the launcher now enables Play right
+  away instead of requiring the Version track to be switched off and on.
 - No gameplay changes.
 
 ## 0.92.7 Early Access
