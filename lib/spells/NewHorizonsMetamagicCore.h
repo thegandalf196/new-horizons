@@ -21,6 +21,8 @@ DLL_LINKAGE bool retryResistance(bool resisted, int retryPercent, int resistance
 DLL_LINKAGE bool explicitlyIrresistible(const spells::Mechanics &);
 DLL_LINKAGE bool hasResistibleCreatureAffliction(const spells::Mechanics &);
 DLL_LINKAGE int normalResistanceBasisPoints(const spells::Mechanics &, const battle::Unit *);
+/// Precise Casting (Spellcraft policy 2) halving of a combined resistance chance.
+DLL_LINKAGE int halvedResistanceBasisPoints(int resistanceBP);
 DLL_LINKAGE bool retryResistanceBasisPoints(bool resisted, int retryPercent, int resistanceBP,
 	const std::function<int(int)> & sample);
 DLL_LINKAGE double resistanceFailureProbabilityBasisPoints(int resistanceBP, int retryPercent, double initialFailureProbability);

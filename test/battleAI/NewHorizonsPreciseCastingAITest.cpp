@@ -43,6 +43,9 @@ protected:
 		loaded->overrideGameSetting(EGameSettings::MAGIC_NEW_HORIZONS, magicRules);
 
 		JsonNode perkRules(JsonPath::builtin("config/newHorizonsPerks"));
+		// These cases cover the historical centre-protection capture.
+		perkRules.Struct().erase("spellcraftPolicyVersion");
+		perkRules.setOverrideFlag(true);
 		bool foundPreciseCasting = false;
 		for(auto & perk : perkRules["skills"][spellcraftSkill]["perks"].Vector())
 			if(perk["id"].String() == preciseCastingPerk)

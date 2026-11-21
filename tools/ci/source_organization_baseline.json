@@ -24924,16 +24924,16 @@
       "deferral": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.",
       "inherited_deferral": "Gameplay engineer: further policy-version growth should factor the captured policy-header/coherence stage into a pure validator before the unchanged skill iteration; preserve rejection before prepared-rule installation and strict historical readers. Current111-line schema traversal is a normal review-trigger unit.",
       "kind": "exception",
-      "lines": 119,
+      "lines": 120,
       "owner": "engine_engineer",
-      "previous_review": "PROPOSED-0920-EXACT-SOURCE-ORGANIZATION",
+      "previous_review": "IR-NH092-ORG-3E82D142-20261116",
       "prior_deferral": "Before further unified shape growth, extract a named policy validator. Preserve required/null/version controls and strict captured tier identity. Prior stricter obligations remain in inherited_deferral, where present.",
-      "rationale": "Exact 118 to 119-line scope. Existing state/content/serialization responsibility integrates current captured rules and explicit native routing. Preserve independent captures, validation boundaries, deterministic order, existing ownership and saved absence.",
-      "review": "IR-NH092-ORG-3E82D142-20261116",
+      "rationale": "Precise Casting moves to captured Spellcraft policy 2: one added validation call and allowed-field token in the perk validator, and one gated condition in the shared area-centre query; the resistance halving lives in the focused resistance helper. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-SPECIALTIES-20261120",
       "review_category": "ordinary-function-review",
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "6eb41102fc0c54f93a163060414037d38ac5843fd73ae4e8b3d1fd9911a36a6e"
+      "sha256": "5ad0011ebb2d8e8538ad4c0afd5c2949c9f1e6d466c942f40a97504b59f55f9b"
     },
     "lib/entities/hero/NewHorizonsPerkState.cpp::newHorizonsHeroes::std::vector<PerkOfferCandidate> PerkState::prepareOffer( const std::function<int(const std::string &)> & rankLookup, uint64_t seed, const OfferWeightContext & weightContext) const#1": {
       "deferral": "Before any further prepareOffer edit, extract the historical weighted sampler cohesively. Preserve captured semantics, exact RNG draws/weights and current early delegation; exact84 method bound only. Prior stricter obligations remain in inherited_deferral, where present. Current scope: 84 physical lines, SHA256 a6263a3f16f89ea1b860c980f842bd9a6dd9236ebbe123c5d87f25551708a5fc; this renewal grants no future growth. The current getRules accessor substitution does not perform the inherited historical weighted-sampler extraction; that extraction remains due before any subsequent prepareOffer edit.",
@@ -27389,7 +27389,7 @@
     },
     "lib/spells/NewHorizonsMagic.cpp": {
       "deferral": "Owner: Gameplay engineer. Interface/acceptance: Extract captured spell-clause dispatch into a dedicated validator preserving accepted rows, validation errors and historical profile behavior. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split. Owning gameplay/engine specialist: before further substantive expansion of this touched rule/transition, extract the next coherent affected policy or ordered stage into a focused owner. Preserve callback visibility, original recipient/caster identity, rejection atomicity and packet/RNG order; characterization must compare exact state and emitted packets. This is no future growth credit. Before further substantive expansion, engine/gameplay owner must extract the next touched coherent formula-family, typed validation or presentation/registry group with a narrow interface and exact unchanged state/packet/RNG ordering. This approval permits only the exact deletion/signature/text migration; no future growth credit.",
-      "kind": "legacy",
+      "kind": "exception",
       "lines": 1972,
       "organization_acceptance": "Equivalent accepted/rejected captured-rule corpus with exact first-error order, absent/present-null and historical profiles, entity resolution/completeness, formula endpoint/rounding and callback visibility controls. This review adds none of the deferred native/save evidence.",
       "organization_interface": "Const captured rules, canonical scoped row identity/data and explicit resolved version/allowed-school/entity context; return normally or the same first validation error, without mutating rules or consuming RNG.",
@@ -27408,12 +27408,12 @@
       "pre_legacy_freeze_review_scope": "Exact source organization only; conditional on exact frozen afterimage. The original two bounded review findings are resolved in this exact successor. No native/rendered acceptance or source adoption/publication authorization.",
       "pre_legacy_freeze_review_status": "INDEPENDENT_ORGANIZATION_ONLY_NATIVE_RENDERED_UNRUN",
       "pre_legacy_freeze_sha256": "edb3e2a80bd608aed7b3cfd4ec1286145f2f171adbbae706e13a564fa2ed366a",
-      "previous_review": "IR-F86-BATTLE-LIB-COMPLETE-ORGANIZATION-FREEZE-20261110",
-      "rationale": "Exact 1986 to 1972-line scope. Shared spell dispatch/presentation and current duration/scaling/effect policy remain in their existing owners. Preserve captured absence, exact native ordering, raw-input validation and current action/resource semantics.",
-      "review": "IR-NH092-ORG-3E82D142-20261116",
+      "previous_review": "IR-NH092-ORG-3E82D142-20261116",
+      "rationale": "Precise Casting moves to captured Spellcraft policy 2: one added validation call and allowed-field token in the perk validator, and one gated condition in the shared area-centre query; the resistance halving lives in the focused resistance helper. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-SPECIALTIES-20261120",
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "9d2fff768a5e518ad8d1063d58c5b31715eb70d102d803aad6b88dcf07c46b71"
+      "sha256": "70f23c4a020753105be33d696556937ccf9f809603181f39a65a22011fba9a21"
     },
     "lib/spells/NewHorizonsMagic.cpp::newHorizonsMagic::void validateRules(const JsonNode & rules)#1": {
       "deferral": "Owner: Gameplay engineer. Interface/acceptance: Extract captured spell-clause dispatch into a dedicated validator preserving accepted rows, validation errors and historical profile behavior. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split. Before further substantive expansion, engine/gameplay owner must extract the next touched coherent formula-family, typed validation or presentation/registry group with a narrow interface and exact unchanged state/packet/RNG ordering. This approval permits only the exact deletion/signature/text migration; no future growth credit.",
@@ -27695,12 +27695,12 @@
       "kind": "exception",
       "lines": 275,
       "owner": "gameplay_engineer",
-      "previous_review": "IR-WARCASTING-SCALAR-REMOVAL-EXACT-ORGANIZATION-20261103",
-      "rationale": "Exact 278 to 275-line scope. Existing state/content/serialization responsibility integrates current captured rules and explicit native routing. Preserve independent captures, validation boundaries, deterministic order, existing ownership and saved absence.",
-      "review": "IR-NH092-ORG-3E82D142-20261116",
+      "previous_review": "IR-NH092-ORG-3E82D142-20261116",
+      "rationale": "Precise Casting moves to captured Spellcraft policy 2: one added validation call and allowed-field token in the perk validator, and one gated condition in the shared area-centre query; the resistance halving lives in the focused resistance helper. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-SPECIALTIES-20261120",
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "cc5e624964b4778ebbb0d8fb4d1d288c073d6ca0aba3baafe170b9f52d5330a9"
+      "sha256": "4f20b59f1d61e719baee7f5d83192ba4e442e2f8a0b30da21ddb818c68c9b83b"
     },
     "mapeditor/Animation.cpp": {
       "kind": "legacy",

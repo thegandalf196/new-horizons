@@ -1943,8 +1943,8 @@ bool isProtectedAreaCenter(const CBattleInfoCallback & callback, const CGHeroIns
 	const bool preciseSpell = blastSpell || key == "core:frostRing" || key == "new-horizons:purify";
 	const bool controlledBlast = !preciseCastingOnly && blastSpell && hero->hasActivePerk(std::string(HAVOC_MAGIC_SKILL),
 		"new-horizons:havocMagic.controlledBlast");
-	const bool preciseCasting = preciseSpell && hero->hasActivePerk(std::string(SPELLCRAFT_SKILL),
-		std::string(SPELLCRAFT_PRECISE_CASTING));
+	const bool preciseCasting = preciseSpell && !newHorizonsHeroes::usesResistancePreciseCasting(hero->getPerkState().getRules())
+		&& hero->hasActivePerk(std::string(SPELLCRAFT_SKILL), std::string(SPELLCRAFT_PRECISE_CASTING));
 	if(!controlledBlast && !preciseCasting)
 		return false;
 	const auto * centerUnit = callback.battleGetUnitByPos(center, true);

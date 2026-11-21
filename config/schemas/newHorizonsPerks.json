@@ -68,6 +68,7 @@
 	],
 	"properties": {
 		"fourOfferProgressionVersion": {"type": "integer", "enum": [1], "description": "Four fixed weighted groups offer a Skill or a perk using raw class weights. Perk progression policy 2 requires one Basic, one Advanced and one Expert perk in order. Historical policy 1 retains its original tier eligibility."},
+		"spellcraftPolicyVersion": {"type": "integer", "enum": [2], "description": "Captured2 makes Precise Casting halve the target's resistance chance; absence retains the historical friendly area-centre protection."},
 		"estatesPolicyVersion": {"type": "integer", "enum": [1], "description": "Revised Estates catalogue and captured economy effects; absence retains the entire historical catalogue and effects."},
 		"commandAuthorityPolicy": {"$ref": "#/definitions/commandAuthorityPolicy"},
 		"warfarePolicyVersion": {"type": "integer", "enum": [1]},

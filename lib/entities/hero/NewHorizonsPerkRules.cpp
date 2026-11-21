@@ -237,6 +237,14 @@ std::optional<int> quickStudyRerollInterval(const JsonNode & rules)
 	return 1;
 }
 
+bool usesResistancePreciseCasting(const JsonNode & rules)
+{
+	if(!rules.isStruct() || !rules.Struct().contains("spellcraftPolicyVersion"))
+		return false;
+	require(integer(rules["spellcraftPolicyVersion"], 2, 2), "spellcraftPolicyVersion");
+	return true;
+}
+
 
 static void validatePerkRulesImpl(const JsonNode & rules, nativeRules::PreparedPilotPerks * collector);
 void validatePerkRules(const JsonNode & rules)
@@ -258,7 +266,8 @@ static void validatePerkRulesImpl(const JsonNode & rules, nativeRules::PreparedP
 	fields(rules, {"schemaVersion", "rulesetVersion", "sourceDocument", "sourceSha256",
 		"maxSkillChoices", "maxPerkChoices", "maxPerksPerSkill", "skills", "offerWeightPolicyVersion",
 		"perkOfferNormalization", "perkProgressionPolicyVersion", "necromancyPolicy", "sylvanTacticsPolicy", "commandPolicyVersion", "elementalAttunementPolicy", "connoisseurPolicy",
-		"metamagicPolicy", "divineMandatePolicy", "demonicGatingPolicy", "bloodragePolicy", "commandAuthorityPolicy", "warfarePolicyVersion", "unifiedSkillProgressionVersion", "fourOfferProgressionVersion", "estatesPolicyVersion"});
+		"metamagicPolicy", "divineMandatePolicy", "demonicGatingPolicy", "bloodragePolicy", "commandAuthorityPolicy", "warfarePolicyVersion", "unifiedSkillProgressionVersion", "fourOfferProgressionVersion", "estatesPolicyVersion", "spellcraftPolicyVersion"});
+	usesResistancePreciseCasting(rules);
 	newHorizonsEstates::validateRevisedPolicy(rules);
 	validatePassiveFactionPolicies(rules);
 	newHorizonsWarfare::validatePolicy(rules);

@@ -92,9 +92,10 @@ bool hasResistibleCreatureAffliction(const spells::Mechanics & mechanics)
 		&& mechanics.getSpell() && !mechanics.getSpell()->isDamage();
 }
 
-int normalResistanceBasisPoints(const spells::Mechanics & mechanics, const battle::Unit * recipient)
+namespace
 {
-	if(!recipient || !mechanics.battle() || explicitlyIrresistible(mechanics)) return 0;
+int combinedResistanceBasisPoints(const spells::Mechanics & mechanics, const battle::Unit * recipient)
+{
 	const auto * callback = mechanics.battle();
 	const int base = std::clamp(callback->battleGetMagicResistance(recipient), 0, 100) * 100;
 	const auto * spell = mechanics.getSpell();
@@ -110,6 +111,36 @@ int normalResistanceBasisPoints(const spells::Mechanics & mechanics, const battl
 		|| callback->battleGetOwner(recipient) == callback->sideToPlayer(mechanics.getEffectCasterSide())) return base;
 	const auto prayer = consecratedArms::prayerValues(*recipient, consecratedArms::Prayer::STEADFAST_SOUL);
 	return prayer.resistanceBP > 0 && base < 7500 ? std::min(7500, base + prayer.resistanceBP) : base;
+}
+
+/// Spellcraft policy 2 Precise Casting: the caster's own hostile hero spells halve the
+/// single combined resistance chance. A complete resistance remains a targeting ban.
+bool halvedByPreciseCasting(const spells::Mechanics & mechanics, const battle::Unit & recipient)
+{
+	const auto * hero = mechanics.getHeroCaster();
+	const auto * spell = mechanics.getSpell();
+	return hero && spell && !spell->isCreatureAbility() && mechanics.isGenuineHeroCast()
+		&& !mechanics.isRunicReflectionShare()
+		&& mechanics.battle()->battleGetOwner(&recipient) != mechanics.battle()->sideToPlayer(mechanics.getEffectCasterSide())
+		&& newHorizonsHeroes::usesResistancePreciseCasting(hero->getPerkState().getRules())
+		&& hero->hasActivePerk(std::string(newHorizonsMagic::SPELLCRAFT_SKILL),
+			std::string(newHorizonsMagic::SPELLCRAFT_PRECISE_CASTING));
+}
+}
+
+int halvedResistanceBasisPoints(int resistanceBP)
+{
+	if(resistanceBP <= 0 || resistanceBP >= 10000) return resistanceBP;
+	// Whole-percent chances stay whole percents so the ordinary d100 roll and
+	// Runic reflection bands keep their native granularity; halves round down.
+	return resistanceBP % 100 == 0 ? resistanceBP / 200 * 100 : resistanceBP / 2;
+}
+
+int normalResistanceBasisPoints(const spells::Mechanics & mechanics, const battle::Unit * recipient)
+{
+	if(!recipient || !mechanics.battle() || explicitlyIrresistible(mechanics)) return 0;
+	const int combined = combinedResistanceBasisPoints(mechanics, recipient);
+	return halvedByPreciseCasting(mechanics, *recipient) ? halvedResistanceBasisPoints(combined) : combined;
 }
 
 int normalResistancePercent(const spells::Mechanics & mechanics, const battle::Unit * recipient)

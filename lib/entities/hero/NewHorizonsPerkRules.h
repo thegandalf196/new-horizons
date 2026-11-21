@@ -106,6 +106,9 @@ DLL_LINKAGE bool usesSylvanTacticsV3(const JsonNode & rules);
 /// Revised Dappled Cover, Quick Redeployment and Hunting Pack.
 DLL_LINKAGE bool usesSylvanTacticsV4(const JsonNode & rules);
 DLL_LINKAGE void validateSylvanTacticsSerialization(const JsonNode & rules, bool supported);
+/// Captured Spellcraft policy 2: Precise Casting halves hostile resistance instead of
+/// protecting a friendly area centre. Absence keeps the historical effect.
+DLL_LINKAGE bool usesResistancePreciseCasting(const JsonNode & rules);
 
 DLL_LINKAGE bool usesPerkRules(const JsonNode & rules);
 DLL_LINKAGE bool usesUnifiedSkillProgression(const JsonNode & rules);

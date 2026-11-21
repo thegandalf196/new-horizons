@@ -25,6 +25,7 @@
 #include "../../../lib/spells/CSpell.h"
 #include "../../../lib/spells/ISpellMechanics.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
+#include "../../../lib/spells/NewHorizonsMetamagicCore.h"
 #include "../../../lib/spells/NewHorizonsPurify.h"
 #include "../../../lib/spells/BattleSpellMechanics.h"
 #include "../../../lib/ObstacleHandler.h"
@@ -77,6 +78,8 @@ class NewHorizonsPreciseCastingTest : public HeroCommandFixture
 {
 protected:
 	const CSpell * spell = nullptr;
+	/// Most cases below characterize the historical centre-protection capture.
+	bool historicalPreciseCasting = true;
 
 	void SetUp() override
 	{
@@ -93,6 +96,11 @@ protected:
 			JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 
 		JsonNode perkRules(JsonPath::builtin("config/newHorizonsPerks"));
+		if(historicalPreciseCasting)
+		{
+			perkRules.Struct().erase("spellcraftPolicyVersion");
+			perkRules.setOverrideFlag(true); // Replace, rather than merge over, the installed rules.
+		}
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, std::move(perkRules));
 		captureLegacyPerkOfferPolicy(*loaded);
 	}
@@ -636,4 +644,135 @@ TEST_F(NewHorizonsPreciseCastingTest, ControlledBlastOnlyKeepsThreeSpellScopeAnd
 	ON_CALL(server, getRNG()).WillByDefault(testing::Return(&random));
 	EXPECT_CALL(random, nextInt(0, 99)).Times(2).WillRepeatedly(testing::Return(99));
 	mechanics->cast(&server, {spells::Destination(aim)});
+}
+
+namespace
+{
+/// Spellcraft policy 2, captured by the shipped rules: Precise Casting halves resistance.
+class NewHorizonsPreciseCastingResistanceTest : public NewHorizonsPreciseCastingTest
+{
+protected:
+	NewHorizonsPreciseCastingResistanceTest()
+	{
+		historicalPreciseCasting = false;
+		useRevisedOrders = true; // Current Order rules; resistance does not depend on them.
+	}
+
+	int resistanceAgainst(const CStack * recipient) const
+	{
+		spells::BattleCast event(battle(), attackerSideHero, spells::Mode::HERO, spell);
+		const auto mechanics = spell->battleMechanics(&event);
+		return newHorizonsMetamagic::normalResistanceBasisPoints(*mechanics, recipient);
+	}
+};
+}
+
+TEST(NewHorizonsPreciseCastingHalving, HalvesWholePercentsDownAndKeepsCompleteResistance)
+{
+	EXPECT_EQ(newHorizonsMetamagic::halvedResistanceBasisPoints(0), 0);
+	EXPECT_EQ(newHorizonsMetamagic::halvedResistanceBasisPoints(2000), 1000);
+	EXPECT_EQ(newHorizonsMetamagic::halvedResistanceBasisPoints(2500), 1200);
+	EXPECT_EQ(newHorizonsMetamagic::halvedResistanceBasisPoints(7500), 3700);
+	EXPECT_EQ(newHorizonsMetamagic::halvedResistanceBasisPoints(1250), 625);
+	EXPECT_EQ(newHorizonsMetamagic::halvedResistanceBasisPoints(10000), 10000);
+}
+
+TEST(NewHorizonsPreciseCastingPolicy, OnlyCapturedPolicyTwoSelectsResistanceEffect)
+{
+	JsonNode rules(JsonPath::builtin("config/newHorizonsPerks"));
+	EXPECT_TRUE(newHorizonsHeroes::usesResistancePreciseCasting(rules));
+	EXPECT_NO_THROW(newHorizonsHeroes::validatePerkRules(rules));
+	rules.Struct().erase("spellcraftPolicyVersion");
+	EXPECT_FALSE(newHorizonsHeroes::usesResistancePreciseCasting(rules));
+	EXPECT_NO_THROW(newHorizonsHeroes::validatePerkRules(rules));
+	for(const int version : {1, 3})
+	{
+		rules["spellcraftPolicyVersion"].Integer() = version;
+		EXPECT_THROW(newHorizonsHeroes::validatePerkRules(rules), std::runtime_error);
+	}
+}
+
+TEST_F(NewHorizonsPreciseCastingResistanceTest, PolicyTwoNoLongerProtectsAnyFriendlyAreaCentre)
+{
+	prepare("core:fireball");
+	auto * center = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(8, 5), 1000);
+	addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(12, 5), 1000);
+	for(const auto * key : {"core:fireball", "core:inferno", "core:meteorShower", "core:frostRing", "new-horizons:purify"})
+		EXPECT_FALSE(newHorizonsMagic::isProtectedAreaCenter(*battle(), attackerSideHero, spellNamed(key),
+			*center, center->getPosition(), BattleSide::ATTACKER)) << key;
+}
+
+TEST_F(NewHorizonsPreciseCastingResistanceTest, PolicyTwoKeepsControlledBlastCentreProtection)
+{
+	prepare("core:fireball");
+	const auto havoc = SecondarySkill(SecondarySkill::decode("new-horizons:havocMagic"));
+	attackerSideHero->setSecSkillLevel(havoc, MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({"new-horizons:havocMagic", "new-horizons:havocMagic.pyromancer"});
+	attackerSideHero->setSecSkillLevel(havoc, MasteryLevel::ADVANCED, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->applyPerkSelection({"new-horizons:havocMagic", "new-horizons:havocMagic.controlledBlast"});
+	auto * center = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(8, 5), 1000);
+	EXPECT_TRUE(newHorizonsMagic::isProtectedAreaCenter(*battle(), attackerSideHero, spell->getId(),
+		*center, center->getPosition(), BattleSide::ATTACKER));
+	for(const auto * key : {"core:frostRing", "new-horizons:purify"})
+		EXPECT_FALSE(newHorizonsMagic::isProtectedAreaCenter(*battle(), attackerSideHero, spellNamed(key),
+			*center, center->getPosition(), BattleSide::ATTACKER)) << key;
+}
+
+TEST_F(NewHorizonsPreciseCastingResistanceTest, HalvesNativeResistanceOfEnemiesOnly)
+{
+	prepare("core:slow");
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:battleDwarf"), BattleHex(12, 5), 10);
+	auto * ally = addStack(BattleSide::ATTACKER, creatureByName("core:battleDwarf"), BattleHex(2, 5), 10);
+	beginScenarioCombat();
+	const int native = std::clamp(battle()->battleGetMagicResistance(enemy), 0, 100) * 100;
+	ASSERT_GT(native, 0);
+	EXPECT_EQ(resistanceAgainst(enemy), newHorizonsMetamagic::halvedResistanceBasisPoints(native));
+	EXPECT_LT(resistanceAgainst(enemy), native);
+	EXPECT_EQ(resistanceAgainst(ally), std::clamp(battle()->battleGetMagicResistance(ally), 0, 100) * 100);
+}
+
+TEST_F(NewHorizonsPreciseCastingResistanceTest, HalvesDamageSpellResistanceToo)
+{
+	prepare("core:magicArrow");
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:dwarf"), BattleHex(12, 5), 10);
+	addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(2, 5), 10);
+	beginScenarioCombat();
+	const int native = std::clamp(battle()->battleGetMagicResistance(enemy), 0, 100) * 100;
+	ASSERT_GT(native, 0);
+	EXPECT_EQ(resistanceAgainst(enemy), newHorizonsMetamagic::halvedResistanceBasisPoints(native));
+}
+
+TEST_F(NewHorizonsPreciseCastingResistanceTest, WithoutThePerkResistanceIsUnchanged)
+{
+	prepare("core:slow", false);
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:battleDwarf"), BattleHex(12, 5), 10);
+	addStack(BattleSide::ATTACKER, creatureByName("core:archangel"), BattleHex(2, 5), 10);
+	beginScenarioCombat();
+	EXPECT_EQ(resistanceAgainst(enemy), std::clamp(battle()->battleGetMagicResistance(enemy), 0, 100) * 100);
+}
+
+namespace
+{
+class NewHorizonsPreciseCastingHistoricalResistanceTest : public NewHorizonsPreciseCastingResistanceTest
+{
+protected:
+	NewHorizonsPreciseCastingHistoricalResistanceTest()
+	{
+		historicalPreciseCasting = true;
+	}
+};
+}
+
+TEST_F(NewHorizonsPreciseCastingHistoricalResistanceTest, HistoricalCaptureKeepsFullResistanceAndCentreProtection)
+{
+	prepare("core:slow");
+	auto * enemy = addStack(BattleSide::DEFENDER, creatureByName("core:battleDwarf"), BattleHex(12, 5), 10);
+	auto * center = addStack(BattleSide::ATTACKER, creatureByName("core:archangel"), BattleHex(8, 5), 10);
+	beginScenarioCombat();
+	spells::BattleCast event(battle(), attackerSideHero, spells::Mode::HERO, spell);
+	const auto mechanics = spell->battleMechanics(&event);
+	EXPECT_EQ(newHorizonsMetamagic::normalResistanceBasisPoints(*mechanics, enemy),
+		std::clamp(battle()->battleGetMagicResistance(enemy), 0, 100) * 100);
+	EXPECT_TRUE(newHorizonsMagic::isProtectedAreaCenter(*battle(), attackerSideHero, spellNamed("core:frostRing"),
+		*center, center->getPosition(), BattleSide::ATTACKER));
 }

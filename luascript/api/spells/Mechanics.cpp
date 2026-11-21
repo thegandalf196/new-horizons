@@ -444,7 +444,7 @@ void MechanicsProxy::registerMethods(MethodRegistrar & R)
 	R.function<&MechanicsProxy::isProtectedAreaCenter>("isProtectedAreaCenter",
 		{{"unit", "Unit whose identity is compared with the original area center."},
 		 {"centerHex", "Original targeted hex used to resolve the area center."}}, {},
-		"True for the protected friendly center stack: Controlled Blast covers Fireball/Inferno/Meteor Shower; Precise Casting also covers Frost Ring/Purify.");
+		"True for the protected friendly center stack: Controlled Blast covers Fireball/Inferno/Meteor Shower; historical Precise Casting captures also cover Frost Ring/Purify.");
 	R.function<&MechanicsProxy::getEffectSpell>("getEffectSpell", {},
 		"Returns the saved-rules spell family used for effect formulas and source grouping. The actual cast Spell remains available from getSpell().");
 	R.function<&MechanicsProxy::ignoresTeleportInterveningBarriers>("ignoresTeleportInterveningBarriers", {},

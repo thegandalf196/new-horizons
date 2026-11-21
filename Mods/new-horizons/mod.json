@@ -6925,6 +6925,7 @@
 				"perkProgressionPolicyVersion": 2,
 				"fourOfferProgressionVersion": 1,
 				"estatesPolicyVersion": 1,
+				"spellcraftPolicyVersion": 2,
 				"sylvanTacticsPolicy": 4,
 				"metamagicPolicy": {
 					"version": 7,
@@ -9280,12 +9281,12 @@
 								"id": "new-horizons:spellcraft.preciseCasting",
 								"name": "Precise Casting",
 								"requires": "advanced",
-								"description": "Friendly stacks at the center of your conventional area spells are unaffected; indiscriminate spells such as Armageddon are excluded.",
+								"description": "Your hostile spells halve the target's chance to resist them.",
 								"effect": {
 									"status": "active",
-									"description": "Friendly stacks at the center of your conventional area spells are unaffected; indiscriminate spells such as Armageddon are excluded."
+									"description": "Your hostile spells halve the target's chance to resist them."
 								},
-								"details": "When a conventional area spell with a selected central hex is centered on a hex occupied by a friendly stack, that stack is excluded from the spell's effect. Spells explicitly defined as indiscriminate, such as Armageddon, cannot benefit."
+								"details": "Halves the total chance of an enemy stack to resist your hostile spells, including native Magic Resistance, resistance auras and prayers. Spell immunities are unaffected, and Magic Mirror reflection keeps its own chance."
 							},
 							{
 								"id": "new-horizons:spellcraft.empowerSpell",
