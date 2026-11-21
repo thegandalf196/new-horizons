@@ -409,3 +409,26 @@ TEST_F(InitialAutofightTaskTest, EveryIssuedIdMustBeRealizedNotOnlyTheLast)
 	ASSERT_TRUE(client.acknowledge(player, client.requestIds.front(), false));
 	EXPECT_TRUE(owner.peekCompletion()->stillAwaitingInput());
 }
+
+TEST(PendingRequestTermination, RequestQueuedAfterTerminationReleasesItsWaiter)
+{
+	// An AI query answer can be sent just after gameplay teardown terminated the
+	// pending-request queue; its waiter must not block the AI task join forever.
+	ThreadSafeVector<int> waiting;
+	waiting.requestTermination();
+	waiting.pushBack(77);
+	auto waiter = std::async(std::launch::async, [&waiting] { waiting.waitWhileContains(77); });
+	ASSERT_EQ(waiter.wait_for(10s), std::future_status::ready);
+	EXPECT_THROW(waiter.get(), TerminationRequestedException);
+}
+
+TEST(PendingRequestTermination, TerminationReleasesAnEarlierWaiter)
+{
+	ThreadSafeVector<int> waiting;
+	waiting.pushBack(76);
+	auto waiter = std::async(std::launch::async, [&waiting] { waiting.waitWhileContains(76); });
+	EXPECT_EQ(waiter.wait_for(50ms), std::future_status::timeout);
+	waiting.requestTermination();
+	ASSERT_EQ(waiter.wait_for(10s), std::future_status::ready);
+	EXPECT_THROW(waiter.get(), TerminationRequestedException);
+}

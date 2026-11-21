@@ -52,8 +52,10 @@ class ThreadSafeVector
 public:
 	void requestTermination()
 	{
+		TLock lock(mx);
 		isTerminating = true;
-		clear();
+		items.clear();
+		cond.notify_all();
 	}
 
 	void clear()
@@ -63,11 +65,14 @@ public:
 		cond.notify_all();
 	}
 
+	/// A request queued after termination (e.g. an AI query answer racing
+	/// gameplay teardown) is not stored: its waiter must be released, not block
+	/// teardown forever.
 	void pushBack(const T & item)
 	{
-		assert(!isTerminating);
-
 		TLock lock(mx);
+		if(isTerminating)
+			return;
 		items.push_back(item);
 		cond.notify_all();
 	}
@@ -75,7 +80,7 @@ public:
 	void waitWhileContains(const T & item)
 	{
 		TLock lock(mx);
-		cond.wait(lock, [this, &item](){ return !vstd::contains(items, item);});
+		cond.wait(lock, [this, &item](){ return isTerminating || !vstd::contains(items, item);});
 
 		if (isTerminating)
 			throw TerminationRequestedException();
