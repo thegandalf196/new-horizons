@@ -144,6 +144,8 @@ bool resolveManaLeechesPresentation(const CHero & hero, const JsonNode & develop
 			result.creature = CreatureID(CreatureID::IMP);
 			result.description = "Imp and Familiar damaging primary melee attack sequences steal up to "
 				+ std::to_string(*amount) + " enemy hero Mana, including retaliation. Familiars also restore the actual stolen amount to their hero's Normal Mana, up to capacity. Familiar spell channeling is unchanged.";
+			if(specialtyLevelScaling(development))
+				result.description += " Each hit steals 1 more Mana for every 10 hero levels.";
 			return true;
 		}
 	return false;

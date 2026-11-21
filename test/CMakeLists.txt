@@ -436,6 +436,7 @@ set(test_SRCS
 		hero/NewHorizonsMasteryRulesTest.cpp
 		hero/NewHorizonsMasteryStateTest.cpp
 		hero/NewHorizonsPerkRulesTest.cpp
+		hero/RevisedSpecialtyLevelScalingTest.cpp
 	hero/NewHorizonsValidatedPerkRulesTest.cpp
 	hero/NewHorizonsPerkOperationTest.cpp
 	hero/PerkInitializationReference.cpp

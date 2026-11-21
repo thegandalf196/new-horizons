@@ -12,6 +12,7 @@
 #include "../CCreatureHandler.h"
 #include "../entities/hero/CHero.h"
 #include "../entities/hero/NewHorizonsOrdinaryCreatureSpecialties.h"
+#include "../entities/hero/NewHorizonsRevisedSpecialties.h"
 #include "../mapObjects/CGHeroInstance.h"
 #include <algorithm>
 #include <stdexcept>
@@ -83,7 +84,8 @@ std::vector<std::shared_ptr<Bonus>> preparedBonuses(const CGHeroInstance & hero)
 		if(!creature.hasValue())
 			throw std::runtime_error("Native resistance reflection family is not registered");
 		auto bonus = std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::NATIVE_RESISTANCE_REFLECTION,
-			BonusSource::HERO_SPECIAL, percent, BonusSourceID(hero.getHeroTypeID()));
+			BonusSource::HERO_SPECIAL, newHorizonsHeroes::levelScaledOrdinaryValue(hero, "runicReflectionChancePercent", percent),
+			BonusSourceID(hero.getHeroTypeID()));
 		bonus->limiter = std::make_shared<CCreatureTypeLimiter>(*creature.toCreature(), true);
 		// The upgraded creature matches both family limiters. These markers
 		// describe one native source, so only the strongest applicable one counts.

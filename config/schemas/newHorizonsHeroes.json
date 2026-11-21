@@ -85,6 +85,10 @@
 						"lordOfTheCrypts": {
 							"type": "object", "additionalProperties": false, "required": ["skeletonGrowthPerLevel"],
 							"properties": {"skeletonGrowthPerLevel": {"type": "integer", "minimum": 1, "maximum": 10}}
+						},
+						"levelScaling": {
+							"type": "object", "additionalProperties": false, "required": ["percentOfBasePerLevel"],
+							"properties": {"percentOfBasePerLevel": {"type": "integer", "minimum": 1, "maximum": 10}}
 						}
 					}
 				},

@@ -13,6 +13,7 @@
 #include "../../battle/NewHorizonsRangefinder.h"
 #include "NewHorizonsHeroRules.h"
 #include "NewHorizonsRuleValidation.h"
+#include "NewHorizonsRevisedSpecialties.h"
 #include "CHero.h"
 #include "../../mapObjects/CGHeroInstance.h"
 #include "../../bonuses/Bonus.h"
@@ -59,9 +60,14 @@ int valueForIdentity(const CGHeroInstance * hero, std::string_view expectedIdent
 {
 	if(!hero || !hero->getHeroType() || hero->getHeroType()->getJsonKey() != expectedIdentity)
 		return 0;
-	if(const auto * prepared = hero->getPreparedCreatureMechanics()) return prepared->bonus().val;
+	if(const auto * prepared = hero->getPreparedCreatureMechanics())
+	{
+		const auto * identity = hero->compiledDevelopment()->ordinary(hero->getHeroTypeID(), true);
+		return identity ? levelScaledOrdinaryValue(*hero, identity->coefficient, prepared->bonus().val) : prepared->bonus().val;
+	}
 	const auto * row = hero->compiledDevelopment()->ordinary(hero->getHeroTypeID());
-	return row ? hero->compiledDevelopment()->ordinaryValue(hero->getHeroTypeID()) : 0;
+	return row ? levelScaledOrdinaryValue(*hero, row->coefficient,
+		hero->compiledDevelopment()->ordinaryValue(hero->getHeroTypeID())) : 0;
 }
 }
 void validateOrdinaryCreatureSpecialtiesSerialization(const JsonNode & development, bool supported)
@@ -235,7 +241,14 @@ int ordinaryCreatureSpecialtyValue(const CBattleInfoCallback & battle, const bat
 }
 std::shared_ptr<Bonus> ordinaryCreatureSpecialtyBonus(const CGHeroInstance & hero)
 {
-	if(const auto * prepared = hero.getPreparedCreatureMechanics()) return prepared->attach();
+	if(const auto * prepared = hero.getPreparedCreatureMechanics())
+	{
+		// Level-scaled values are refreshed on level-up for captures with the level rule.
+		auto attached = prepared->attach();
+		if(const auto * identity = hero.compiledDevelopment()->ordinary(hero.getHeroTypeID(), true))
+			attached->val = levelScaledOrdinaryValue(hero, identity->coefficient, attached->val);
+		return attached;
+	}
 	if(!hero.getHeroType())
 		return nullptr;
 	const auto * row = hero.compiledDevelopment()->ordinary(hero.getHeroTypeID());
@@ -245,7 +258,7 @@ std::shared_ptr<Bonus> ordinaryCreatureSpecialtyBonus(const CGHeroInstance & her
 	if(!creature.hasValue() || !creature.toCreature())
 		throw std::runtime_error("Ordinary creature specialty family is not registered");
 	auto bonus = std::make_shared<Bonus>(BonusDuration::PERMANENT, row->type, BonusSource::HERO_SPECIAL,
-		hero.compiledDevelopment()->ordinaryValue(hero.getHeroTypeID()),
+		levelScaledOrdinaryValue(hero, row->coefficient, hero.compiledDevelopment()->ordinaryValue(hero.getHeroTypeID())),
 		BonusSourceID(hero.getHeroTypeID()));
 	bonus->valType = row->valueType;
 	bonus->stacking = std::string(ordinaryPrefix) + row->hero;
@@ -336,7 +349,7 @@ int ordinaryCreatureProtectionPercent(const CBattleInfoCallback & battle, const 
 	const auto family = CreatureID(CreatureID::decode("core:stoneGargoyle"));
 	const auto creature = attack.defender->creatureId();
 	return identity && (creature == family || family.toCreature()->isMyDirectOrIndirectUpgrade(creature.toCreature()))
-		? hero->compiledDevelopment()->ordinaryValue(hero->getHeroTypeID()) : 0;
+		? levelScaledOrdinaryValue(*hero, identity->coefficient, hero->compiledDevelopment()->ordinaryValue(hero->getHeroTypeID())) : 0;
 }
 
 std::shared_ptr<Bonus> ordinaryCreatureStrikeBonus(const CGHeroInstance *, const BattleAttackInfo &)
@@ -400,6 +413,13 @@ bool resolveOrdinaryCreatureSpecialtyPresentation(const CHero & hero, const Json
 		if(const auto summaryPlaceholder = result.summary.find("%VALUE%"); summaryPlaceholder != std::string::npos)
 			result.summary.replace(summaryPlaceholder, 7, std::to_string(displayed));
 	}
+	if(const auto scaling = specialtyLevelScaling(development))
+		if(const auto rule = levelScalingDescription(*scaling, row->coefficient); !rule.empty())
+		{
+			result.description += " " + rule;
+			if(!result.summary.empty())
+				result.summary += " " + rule;
+		}
 	return true;
 }
 

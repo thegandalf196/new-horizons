@@ -7,6 +7,7 @@
 #include "CBattleInfoCallback.h"
 #include "Unit.h"
 #include "../entities/hero/NewHorizonsManaLeeches.h"
+#include "../entities/hero/NewHorizonsRevisedSpecialties.h"
 #include "../mapObjects/CGHeroInstance.h"
 namespace newHorizonsManaLeeches
 {
@@ -27,7 +28,7 @@ Entitlement entitlement(const CBattleInfoCallback & battle, const battle::Unit *
 	const auto enemySide = battle.otherSide(side);
 	if(!battle.battleGetFightingHero(enemySide))
 		return {};
-	return {side, enemySide, *hero->compiledDevelopment()->manaLeeches,
+	return {side, enemySide, newHorizonsHeroes::levelScaledManaLeeches(*hero, *hero->compiledDevelopment()->manaLeeches),
 		source->creatureId() == CreatureID::FAMILIAR};
 }
 Transfer transfer(const Entitlement & rule, int64_t primaryDamage, bool sequenceSpent,

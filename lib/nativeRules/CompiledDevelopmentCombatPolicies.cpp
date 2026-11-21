@@ -19,6 +19,7 @@ void CompiledDevelopmentRules::compileCombatPolicies(const JsonNode & rules)
 	forestAmbush = newHorizonsHeroes::forestAmbushPolicy(rules);
 	aerialSupremacy = newHorizonsHeroes::aerialSupremacyPolicy(rules);
 	dreadCavalry = newHorizonsHeroes::dreadCavalryDamagePercent(rules);
+	levelScaling = newHorizonsHeroes::specialtyLevelScaling(rules);
 	manaLeeches = newHorizonsHeroes::manaLeechesAmount(rules);
 	livingInferno = newHorizonsHeroes::livingInfernoRules(rules);
 	herbalSurgeon = newHorizonsHeroes::herbalSurgeonRules(rules);

@@ -7,6 +7,7 @@
 #include "CUnitState.h"
 #include "../CCreatureHandler.h"
 #include "../entities/hero/NewHorizonsOrdinaryCreatureSpecialties.h"
+#include "../entities/hero/NewHorizonsRevisedSpecialties.h"
 #include "../entities/hero/CHero.h"
 #include "../mapObjects/CGHeroInstance.h"
 #include <array>
@@ -43,6 +44,6 @@ int coefficient(const CBattleInfoCallback & battle, const battle::Unit & unit,
 	const auto * hero = visible.kind() == VisibleHeroPolicy::Knowledge::VISIBLE_HERO ? visible.legacyHero() : nullptr;
 	if(!hero || !hero->getHeroType() || hero->getHeroType()->getJsonKey() != heroIdentity)
 		return 0;
-	return hero->compiledDevelopment()->ordinaryValue(key);
+	return newHorizonsHeroes::levelScaledOrdinaryValue(*hero, key, hero->compiledDevelopment()->ordinaryValue(key));
 }
 }

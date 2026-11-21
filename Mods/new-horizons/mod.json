@@ -3152,6 +3152,9 @@
 					"version": 1,
 					"lordOfTheCrypts": {
 						"skeletonGrowthPerLevel": 1
+					},
+					"levelScaling": {
+						"percentOfBasePerLevel": 3
 					}
 				},
 				"creatureLineSpecialties": {

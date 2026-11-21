@@ -8,6 +8,7 @@
 #include "../CCreatureHandler.h"
 #include "../bonuses/BonusList.h"
 #include "../entities/hero/NewHorizonsOrdinaryCreatureSpecialties.h"
+#include "../entities/hero/NewHorizonsRevisedSpecialties.h"
 #include "../entities/hero/CHero.h"
 #include "../mapObjects/CGHeroInstance.h"
 #include <stdexcept>
@@ -41,7 +42,8 @@ int solidarityCapturedPercent(const CGHeroInstance * hero)
 	if(!hero || !hero->getHeroType() || hero->getHeroType()->getJsonKey() != "core:marius"
 		|| !newHorizonsHeroes::hasOrdinaryCreatureSpecialty(hero))
 		return 0;
-	return hero->compiledDevelopment()->ordinaryValue("demonicSolidarityReductionPercent");
+	return newHorizonsHeroes::levelScaledOrdinaryValue(*hero, "demonicSolidarityReductionPercent",
+		hero->compiledDevelopment()->ordinaryValue("demonicSolidarityReductionPercent"));
 }
 int solidarityConfiguredPercent(const CBattleInfoCallback & battle, BattleSide side)
 {

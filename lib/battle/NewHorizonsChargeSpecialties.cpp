@@ -10,6 +10,7 @@
 #include "../GameConstants.h"
 #include "../bonuses/BonusList.h"
 #include "../entities/hero/NewHorizonsOrdinaryCreatureSpecialties.h"
+#include "../entities/hero/NewHorizonsRevisedSpecialties.h"
 #include "../mapObjects/CGHeroInstance.h"
 #include "../entities/hero/CHero.h"
 #include <stdexcept>
@@ -48,7 +49,7 @@ int companion(const CBattleInfoCallback & battle, const battle::Unit & actor, co
 	const int value = hero->compiledDevelopment()->ordinaryValue(key);
 	if(value < 1 || value > maximum)
 		throw std::runtime_error("Invalid captured charge-specialty companion coefficient");
-	return value;
+	return std::min(maximum, newHorizonsHeroes::levelScaledOrdinaryValue(*hero, key, value));
 }
 }
 bool requiresChargeMovementPreview(const CBattleInfoCallback & battle,

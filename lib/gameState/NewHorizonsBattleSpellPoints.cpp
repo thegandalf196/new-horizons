@@ -7,6 +7,7 @@
 #include "CGameState.h"
 #include "../entities/hero/NewHorizonsRecoverySpecialties.h"
 #include "../entities/hero/NewHorizonsManaLeeches.h"
+#include "../entities/hero/NewHorizonsRevisedSpecialties.h"
 #include "../battle/BattleInfo.h"
 #include "../spells/NewHorizonsMagic.h"
 #include "../mapObjects/CGHeroInstance.h"
@@ -16,7 +17,8 @@ namespace newHorizonsHeroes
 {
 void applyManaLeechRecovery(CGHeroInstance & hero, SideInBattle * side, int32_t amount)
 {
-	const auto policy = hasManaLeeches(&hero) ? hero.compiledDevelopment()->manaLeeches.value_or(0) : 0;
+	const auto policy = hasManaLeeches(&hero)
+		? levelScaledManaLeeches(hero, hero.compiledDevelopment()->manaLeeches.value_or(0)) : 0;
 	if(!side || side->heroID != hero.id || policy <= 0 || amount < 0 || amount > policy)
 		throw std::runtime_error("Mana Leeches recovery requires an entitled active battle hero");
 	side->validateManaLeechesSerialization(true);

@@ -2672,6 +2672,7 @@ void CGHeroInstance::levelUp(const std::array<int, GameConstants::PRIMARY_SKILLS
 	lastPrimaryGains = gains;
 	++level;
 	refreshCreatureLineSpecialtyBonuses(false);
+	newHorizonsHeroes::refreshLevelScaledSpecialtyBonus(*this);
 	refreshFortuneChildSpecialtyBonus();
 	//update specialty and other bonuses that scale with level
 	nodeHasChanged();

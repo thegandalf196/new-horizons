@@ -4,6 +4,7 @@
  */
 #include "StdInc.h"
 #include "NewHorizonsDreadCavalry.h"
+#include "NewHorizonsRevisedSpecialties.h"
 #include "NewHorizonsHeroRules.h"
 #include "NewHorizonsRuleValidation.h"
 #include "CHero.h"
@@ -52,6 +53,9 @@ bool resolveDreadCavalryPresentation(const CHero & hero,
 		+ "% damage, moving with their remaining movement. The normal attack sequence, Luck, Death Blow "
 		"and enemy retaliation apply. This grants no new activation, movement refill, Charge ability, "
 		"Hero Action or Mana. The charge may be declined; separately earned Pursuit movement remains available.";
+	if(const auto scaling = specialtyLevelScaling(rules))
+		result.description += " The follow-up damage applies at hero level 1 and grows by "
+			+ std::to_string(scaling->percentOfBasePerLevel) + "% of itself per further level, up to 100%.";
 	return true;
 }
 }

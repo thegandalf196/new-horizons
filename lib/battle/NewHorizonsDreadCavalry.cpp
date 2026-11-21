@@ -11,6 +11,7 @@
 #include "NewHorizonsFrozen.h"
 #include "../CCreatureHandler.h"
 #include "../entities/hero/NewHorizonsDreadCavalry.h"
+#include "../entities/hero/NewHorizonsRevisedSpecialties.h"
 #include "../mapObjects/CGHeroInstance.h"
 namespace newHorizonsDreadCavalry
 {
@@ -71,8 +72,9 @@ std::optional<int> entitlement(const CBattleInfoCallback & battle, const battle:
 		|| state->armorerLastStandEndedActivation)
 		return std::nullopt;
 	const auto * hero = battle.battleGetOwnerHero(source);
-	return newHorizonsHeroes::hasDreadCavalry(hero)
-		? hero->compiledDevelopment()->dreadCavalry : std::nullopt;
+	if(!newHorizonsHeroes::hasDreadCavalry(hero))
+		return std::nullopt;
+	return newHorizonsHeroes::levelScaledDreadCavalryPercent(*hero, *hero->compiledDevelopment()->dreadCavalry);
 }
 bool hasRawPending(const battle::Unit * source)
 {
