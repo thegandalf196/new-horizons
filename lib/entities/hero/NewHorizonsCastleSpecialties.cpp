@@ -313,12 +313,11 @@ bool castleSpecialtyRetiresHistorical(const CGHeroInstance & hero)
 		|| (key == SANYA && castle.quickStudy) || (key == LOYNIS && castle.sermon);
 }
 
-bool resolveCastleSpecialtyPresentation(const CHero & hero, const JsonNode & development,
+namespace
+{
+bool commandPresentation(const std::string & key, const CastleSpecialtyRules & rules, int level,
 	const CGHeroInstance * capturedHero, SpecialtyPresentation & result)
 {
-	const auto rules = castleSpecialtyRules(development);
-	const auto & key = hero.getJsonKey();
-	const int level = capturedHero ? heroLevel(capturedHero) : 1;
 	if(key == ORRIN && rules.volleyCommand)
 	{
 		result.name = "Volley Command";
@@ -356,6 +355,22 @@ bool resolveCastleSpecialtyPresentation(const CHero & hero, const JsonNode & dev
 			+ currentText(capturedHero, rules.benedictionOfArms->permilleAt(level));
 		return true;
 	}
+	if(key == LOYNIS && rules.sermon)
+	{
+		result.name = "Sermon";
+		result.artwork = "newHorizons/heroSpecialties/LoynisCrusade";
+		result.summary = "Each Light spell this hero casts also grants a chosen Consecrated Arms prayer to a friendly stack.";
+		result.description = "Each Light spell this hero casts also grants one chosen Consecrated Arms prayer to a friendly "
+			"stack, as an Order does, with the same Faith. " + scalingText(*rules.sermon, "Prayer potency bonus")
+			+ currentText(capturedHero, rules.sermon->permilleAt(level));
+		return true;
+	}
+		return false;
+}
+
+bool magicPresentation(const std::string & key, const CastleSpecialtyRules & rules, int level,
+	const CGHeroInstance * capturedHero, SpecialtyPresentation & result)
+{
 	if(key == CUTHBERT && rules.pariah)
 	{
 		result.name = "Pariah";
@@ -396,16 +411,17 @@ bool resolveCastleSpecialtyPresentation(const CHero & hero, const JsonNode & dev
 			+ currentText(capturedHero, study.spellPower.permilleAt(level));
 		return true;
 	}
-	if(key == LOYNIS && rules.sermon)
-	{
-		result.name = "Sermon";
-		result.artwork = "newHorizons/heroSpecialties/LoynisCrusade";
-		result.summary = "Each Light spell this hero casts also grants a chosen Consecrated Arms prayer to a friendly stack.";
-		result.description = "Each Light spell this hero casts also grants one chosen Consecrated Arms prayer to a friendly "
-			"stack, as an Order does, with the same Faith. " + scalingText(*rules.sermon, "Prayer potency bonus")
-			+ currentText(capturedHero, rules.sermon->permilleAt(level));
-		return true;
-	}
 	return false;
+}
+}
+
+bool resolveCastleSpecialtyPresentation(const CHero & hero, const JsonNode & development,
+	const CGHeroInstance * capturedHero, SpecialtyPresentation & result)
+{
+	const auto rules = castleSpecialtyRules(development);
+	const auto & key = hero.getJsonKey();
+	const int level = capturedHero ? heroLevel(capturedHero) : 1;
+	return commandPresentation(key, rules, level, capturedHero, result)
+		|| magicPresentation(key, rules, level, capturedHero, result);
 }
 }

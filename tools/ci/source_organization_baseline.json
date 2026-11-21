@@ -11221,21 +11221,22 @@
     "server/CGameHandler.h": {
       "functions": [
         {
-          "end": 106,
-          "start": 106,
+          "end": 107,
+          "start": 107,
           "symbol": "CGameHandler::const CGameState & gameState() const#1"
         },
         {
-          "end": 346,
-          "start": 315,
+          "end": 347,
+          "start": 316,
           "symbol": "CGameHandler::void serialize(Handler &h)#1"
         }
       ],
       "rationale": "Complete two-body header inventory: gameState accessor and pending-progression serializer. The serializer adds one early feature admission call; new economy/progression methods are declarations only. Recovery is a braced declaration default.",
-      "review": "PROPOSED-0920-EXACT-CALLABLE-COVERAGE",
+      "review": "CLAUDE-CASTLE-COMBAT-0931",
       "review_scope": "Complete callable measurement proposal only; not compiler, gameplay, native, rendered or publication acceptance.",
       "review_status": "PROPOSED_AWAITING_INDEPENDENT_REVIEW",
-      "sha256": "302ced0a402b376076ae0c69a4422a6a973a5236bc9cc588e7b895e050e5335a"
+      "sha256": "2cd6f52fbe478b751fcff0082a28864981ed6bbcf6c631a520006b32f330a440",
+      "previous_review": "PROPOSED-0920-EXACT-CALLABLE-COVERAGE"
     },
     "server/CVCMIServer.h": {
       "functions": [
@@ -17719,6 +17720,12 @@
           "end": 222
         }
       ]
+    },
+    "client/battle/ConsecratedArmsPrayerWindow.h": {
+      "functions": [],
+      "rationale": "Declaration-only header: the window constructor gains a braced default argument for the Sermon sender (consecratedArmsPrayerUI::HeroSpellSender sender = {}) and a HeroSpellSender alias. No inline named function, lambda or other implementation body.",
+      "review": "CLAUDE-CASTLE-COMBAT-0931",
+      "sha256": "c4f86bbb045ef9e553ca0a214c3684363539c22d218780889e3730f85812101f"
     }
   },
   "schema": 1,
@@ -18796,14 +18803,14 @@
       "deferral": "Exact hash/size only. Preserve prior narrower extraction, ownership, registration, state/RNG and lifecycle obligations below; next substantive affected expansion must extract a cohesive responsibility and lower the retained bound. Owner ai_engineer.\nBefore further projection constructor/header growth, extract the next side-state capture group. Preserve capture order, historical absence and parent/child/sibling isolation. Prior stricter obligations remain in inherited_deferral, where present. Current exact-scope addendum: AI/engine owner extracts root/child capture-construction boundary into a focused preparation component after source-lifetime differential tests; preserve Sidev3 ownership, fortification, raw program and observer ordering.",
       "inherited_deferral": "Only this exact native migration content/hash/size is proposed; no future growth allowance. Owner: ai_engineer. Next substantive edit must extract the affected calculation/query/forecast routing into the existing dedicated component with exact state, packet/RNG, action-choice and lifecycle regressions; preserve any narrower inherited deferral below. Further branch-state growth should use a focused value transition owner with explicit side/round/receipt, preserving constructor copying, live/child/sibling separation, callback ownership and current point/Wisdom/action identity.",
       "kind": "exception",
-      "lines": 685,
+      "lines": 686,
       "owner": "ai_engineer",
-      "previous_review": "IR-LEADERSHIP-1159-INDEPENDENT-20261113-V1-UNITS",
-      "rationale": "Exact bounded 699to685 physical-line successor. Two existing Order-state lease getters move unchanged with the new environmental presence proof into88-line HypotheticHeroActionSnapshot; the constructor adds one immutable policy capture. No lifecycle/order/RNG or ownership ordering changes. No future growth credit or performance claim.",
-      "review": "IR-PERFORMANCE-THROUGH-STEP4-ORG-V1",
+      "previous_review": "IR-PERFORMANCE-THROUGH-STEP4-ORG-V1",
+      "rationale": "Exact successor for 0.93.1 Castle combat specialties (Volley Command, revised Aerial Supremacy, Benediction of Arms, Pariah, Frost Mantle, Quick Study, Sermon): bounded routing hooks into focused new owners only. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-CASTLE-COMBAT-0931",
       "review_scope": "Exact recorded composed4 physical size and content hash only; no future growth credit or relaxed ceiling. All inherited technical requirements, extraction triggers and runtime holds remain. Source organization review does not establish compilation, functional/native/rendered acceptance, timing, balance or publication authority.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_REVIEW_NATIVE_UNRUN",
-      "sha256": "d27729c09b10cda250c9ba9525c729166b7cde6060c12a4ef5bf49b943afe73a",
+      "sha256": "1918006d86f75951ad42d2aadc6a8ee6d14824b54330db649b960a4ef078c499",
       "inherited_exact_source_review": {
         "review": "IR-NH092-ORG-M4-SIX-20261116",
         "sha256": "e4d54f754400977a083ff423876dc4b71f8d653ddb5f9f24b73f21a9bf5a7105",
@@ -20463,8 +20470,8 @@
     },
     "client/battle/BattleActionsController.cpp": {
       "deferral": "Preserve ALL inherited deferrals and exact prior shrinking baselines. Further growth must extract a cohesive domain owner before expansion; no future growth credit or limit increase. Optional UI includes a pure ordered selection extraction into the existing picker/model; actual session/stale-choice/native-resolution journeys remain required, no gameplay mutation or new layout acceptance.\n\nNext bounded extraction (ui_developer; gameplay_engineer retains spell rules, spans [[1157, 1468], [2862, 2934], [3174, 3194]]): Before the next substantive Storm targeting change, extract that single ordered selection session and preview builder; reduce the controller to start/hover/select/undo/confirm/cancel routing, rather than moving all selectors into another giant file. Interface: Explicit battle/hero/player/round/casting-session identity plus ordered unit IDs; synchronous read-only mechanics queries return value previews and an optional complete BattleAction. Widget/statusbar/command dispatch remains with the current UI owner. Invariants: Ordered distinct IDs and complete-vector legality are re-read before submission; Friendly-fire confirmation and weak callback lifetime remain on the existing path; Cancel/reset invalidates preview and session before redraw or input reentry; Paint getters do not evaluate mechanics, draw authoritative RNG or mutate gameplay; Continuation/action-controller identity and shared command validation remain unchanged. Acceptance: Characterize moved/dead/stale targets, primary order, undo/cancel/reopen, Autofight/tactics/side changes and late callbacks; compare submitted action fields and preview order. Ratchet controller and affected functions down, inventory destination units, and later obtain guarded rendered input/transition evidence. Existing stronger deferrals remain.",
-      "kind": "legacy",
-      "lines": 5167,
+      "kind": "exception",
+      "lines": 5172,
       "next_bounded_extraction": {
         "acceptance": "Characterize moved/dead/stale targets, primary order, undo/cancel/reopen, Autofight/tactics/side changes and late callbacks; compare submitted action fields and preview order. Ratchet controller and affected functions down, inventory destination units, and later obtain guarded rendered input/transition evidence. Existing stronger deferrals remain.",
         "interface": "Explicit battle/hero/player/round/casting-session identity plus ordered unit IDs; synchronous read-only mechanics queries return value previews and an optional complete BattleAction. Widget/statusbar/command dispatch remains with the current UI owner.",
@@ -20493,9 +20500,9 @@
         ]
       },
       "owner": "ui_developer",
-      "previous_review": "IR-F86-CLIENT-LAUNCHER-SOURCE-ORGANIZATION-20261110",
-      "rationale": "Exact 5225 to 5168-line scope. Client presentation/input routing integrates current spell/action receipts and validated captured views. Preserve command submission, session/teardown ownership, native layout and ordinary input behavior; no direct gameplay mutation is introduced.\n\nCLAUDE-METAMAGIC6-PHASE5-20261120 (supersedes IR-NH092-ORG-3E82D142-20261116): Targeted Orders route their completed action through consecratedArmsPrayerUI::submitOrder instead of sending it directly (one line shorter); the picker lives in its own unit. Inherited deferrals remain binding; no future growth credit.",
-      "review": "CLAUDE-METAMAGIC6-PHASE5-20261120",
+      "previous_review": "CLAUDE-METAMAGIC6-PHASE5-20261120",
+      "rationale": "Exact successor for 0.93.1 Castle combat specialties (Volley Command, revised Aerial Supremacy, Benediction of Arms, Pariah, Frost Mantle, Quick Study, Sermon): bounded routing hooks into focused new owners only. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-CASTLE-COMBAT-0931",
       "review_history": [
         {
           "kind": "exception",
@@ -20508,7 +20515,7 @@
       ],
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "2e0f54918429398c635536b779a5913328ca27534a846ec997509d41529f8529"
+      "sha256": "b16099eecb99e8d7cf444c83052db2351004634be5e0e8e68136db0aba896f96"
     },
     "client/battle/BattleActionsController.cpp::StormOfDaggersSelectionPreview BattleActionsController::getStormOfDaggersSelectionPreview() const#1": {
       "kind": "legacy",
@@ -20719,7 +20726,7 @@
     "client/battle/BattleInterface.cpp": {
       "deferral": "UI owner must extract complete full-stack active-effect row construction, priority and slot admission before further expansion, preserving captured battle context, physical-first eight-slot limit, ordinary spell order, help and current status; lower file/function baselines and verify right-click, reopen, Cure and expiry. BattleInterface owner must retain focused presentation routing before substantive expansion; no teardown/restart/state mutation enlargement. Retain the Cure weak canonical-session admission and command-validation/same-thread teardown contract; remaining independent modal factories still require bounded decomposition before expansion. Order cue follow-up: retain presentation-specific handle cleanup before controller destruction, normal barrier completion and public accepted-receipt routing. General teardown/restart/state-authority enlargement remains forbidden; before further presentation growth keep typed receipt admission, resource selection and transient cue lifetime focused, with reject/duplicate/hidden-side/frozen/restart characterization. Preserve ALL inherited deferrals and exact prior shrinking baselines. Further growth must extract a cohesive domain owner before expansion; no future growth credit or limit increase. Optional UI includes a pure ordered selection extraction into the existing picker/model; actual session/stale-choice/native-resolution journeys remain required, no gameplay mutation or new layout acceptance. Exact bounded API/readback migration only: no new rule decisions in this hotspot. UI owner must extract the next touched ShadowGift chooser, temporary-status widget renderer, or hero-status assembly into a cohesive owner before further substantive growth, preserving callback lifetime, current query/ownership, cached-before-redraw ordering and guarded native rendering. Existing obligations remain binding.\n\nNext bounded extraction (ui_developer; engine_engineer retains thread/scene teardown ownership, spans [[325, 465]]): Extract the Purify picker context/session adapter into a focused presentation owner before additional modal behavior; retain the existing distinct ShadowGift/Cure/Temporal obligations. Interface: Install a typed picker receiving pending BattleAction and center; synchronously build PurifyContext values and use identity-bound confirm/cancel callbacks through the current command gateway. No unrestricted event bus or generic context owner. Invariants: Hero/battle/side/session and current eligible choices are rechecked; No UI mutation of canonical effects, Mana or allowances; Owned gesture is released before borrowed animation/controller targets; Ordered stages drain presentation-only work and release interface mutex while waiting; Restart detaches/stops waiters/clears GUI/releases battle in the documented ownership order; GUI thread owns deferred layer clearing. Acceptance: Characterize modal stale-choice/cancel/reopen/teardown and unchanged emitted actions; preserve animation/result ordering. Any later thread/lifetime change requires its own bounded design and restart source/native/rendered evidence; this review supplies none of that runtime acceptance.\n\nBefore further affected growth, extract the accepted active-stack presentation refresh adapter (typed current battle/active stack and existing redraw/mouse refresh, no authoritative mutations) into an existing focused controller. Characterize stationary bonus add/remove, inactive stacks, blocked/normal/Reach cursor transitions and resize/DND; preserve all prior modal/teardown extraction obligations.",
       "kind": "exception",
-      "lines": 1705,
+      "lines": 1718,
       "next_bounded_extraction": {
         "acceptance": "Characterize modal stale-choice/cancel/reopen/teardown and unchanged emitted actions; preserve animation/result ordering. Any later thread/lifetime change requires its own bounded design and restart source/native/rendered evidence; this review supplies none of that runtime acceptance.",
         "interface": "Install a typed picker receiving pending BattleAction and center; synchronously build PurifyContext values and use identity-bound confirm/cancel callbacks through the current command gateway. No unrestricted event bus or generic context owner.",
@@ -20740,9 +20747,9 @@
         ]
       },
       "owner": "ui_developer",
-      "previous_review": "PROPOSED-0920-EXACT-SOURCE-ORGANIZATION",
-      "rationale": "Exact1703 to1705-line two-call routing exception: begin manual Overflow receipt at existing StartAction and clear it only after EndAction drains animation stages. All receipt matching, flight construction and callback ownership live in the focused132-line OverflowSpellPresentation owner, maximum28-line function. No new rule/action decisions or altered teardown order in this hotspot. Preserve all existing extraction obligations, including next active-stack refresh/Purify adapters; no future growth credit.",
-      "review": "IR-NH0923-OVERFLOW-LIFETIME-ESTATE-SOURCE-20261118",
+      "previous_review": "IR-NH0923-OVERFLOW-LIFETIME-ESTATE-SOURCE-20261118",
+      "rationale": "Exact successor for 0.93.1 Castle combat specialties (Volley Command, revised Aerial Supremacy, Benediction of Arms, Pariah, Frost Mantle, Quick Study, Sermon): bounded routing hooks into focused new owners only. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-CASTLE-COMBAT-0931",
       "review_history": [
         {
           "kind": "exception",
@@ -20755,12 +20762,12 @@
       ],
       "review_scope": "Exact source organization and bounded state/lifetime review only. No compile, rendered acceptance, publication or future growth allowance.",
       "review_status": "INDEPENDENT_SOURCE_REVIEW_NATIVE_RENDERED_UNRUN",
-      "sha256": "a942f79405403354c1234aa6590397c07da4735f4c4daff6001b58bb69594bfe"
+      "sha256": "68b4c2e69ce5da2c7094223c7b2262b9dc0821d721eacd35987329d5d66ab61e"
     },
     "client/battle/BattleInterface.cpp::BattleInterface::installPurifyUI()::[this](const BattleAction & pending, const BattleHex & center)#1": {
       "deferral": "Preserve ALL inherited deferrals and exact prior shrinking baselines. Further growth must extract a cohesive domain owner before expansion; no future growth credit or limit increase. Optional UI includes a pure ordered selection extraction into the existing picker/model; actual session/stale-choice/native-resolution journeys remain required, no gameplay mutation or new layout acceptance.\n\nNext bounded extraction (ui_developer, spans [[347, 388]]): Extract pure eligible-stack to PurifyStackChoices/context-value mapping within the focused picker adapter before adding another effect choice. Interface: Ordered shared eligible records plus visible names and maximum-choice/automatic-clear facts return owned display rows; no retained CStack pointer, callback or widget in the mapping result. Invariants: Automatic poison/grave-dust/stun/cripple clearing stays distinct from selected spell groups; Shared eligibleStacks and validatedPurifyChoices remain authoritative query helpers; Confirm rechecks session, hero, side, live eligibility and mechanics before one submission; Cancel performs no resource/effect mutation. Acceptance: Compare row order/names/counts and empty/automatic-only cases; stale session or choices must preserve current rejection/submission behavior. Reduce this lambda and C07 without duplicating the nested callback inventory.",
-      "kind": "legacy",
-      "lines": 134,
+      "kind": "exception",
+      "lines": 139,
       "next_bounded_extraction": {
         "acceptance": "Compare row order/names/counts and empty/automatic-only cases; stale session or choices must preserve current rejection/submission behavior. Reduce this lambda and C07 without duplicating the nested callback inventory.",
         "interface": "Ordered shared eligible records plus visible names and maximum-choice/automatic-clear facts return owned display rows; no retained CStack pointer, callback or widget in the mapping result.",
@@ -20780,9 +20787,9 @@
         ]
       },
       "owner": "ui_developer",
-      "previous_review": "IR-F86-CLIENT-LAUNCHER-SOURCE-ORGANIZATION-20261110",
-      "rationale": "Exact 135 to 134-line scope. Client presentation/input routing integrates current spell/action receipts and validated captured views. Preserve command submission, session/teardown ownership, native layout and ordinary input behavior; no direct gameplay mutation is introduced.",
-      "review": "IR-NH092-ORG-3E82D142-20261116",
+      "previous_review": "IR-NH092-ORG-3E82D142-20261116",
+      "rationale": "Exact successor for 0.93.1 Castle combat specialties (Volley Command, revised Aerial Supremacy, Benediction of Arms, Pariah, Frost Mantle, Quick Study, Sermon): bounded routing hooks into focused new owners only. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-CASTLE-COMBAT-0931",
       "review_history": [
         {
           "kind": "review",
@@ -20795,7 +20802,7 @@
       ],
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "3439dc34ef29bd33e5d02170f7221c1e65c9e73b060881d8817c203bb55847c6"
+      "sha256": "c2dee29085bc1cfe5bf7bb30be9ead8293082a6913f8ee3738bc8dff2604acb3"
     },
     "client/battle/BattleInterface.cpp::BattleInterface::installShadowGiftUI()::[this](const BattleAction & pending, const BattleHex &, const CStack * initialTarget) -> std::optional<ShadowGiftContext>#1": {
       "deferral": "UI owner: before any substantive Shadow Gift chooser expansion, extract a focused BattleShadowGiftUI owner analogous to existing spell-choice UI. Pass existing context/build/selection callbacks explicitly; preserve target legality, captured immutable spell profile, receiving-window lifetime, cancel/reopen behavior and native rendered chooser. Current exact unchanged-length API deletion only; no further size allowance.",
@@ -20823,8 +20830,8 @@
     },
     "client/battle/BattleInterface.cpp::void BattleInterface::installPurifyUI()#1": {
       "deferral": "Preserve ALL inherited deferrals and exact prior shrinking baselines. Further growth must extract a cohesive domain owner before expansion; no future growth credit or limit increase. Optional UI includes a pure ordered selection extraction into the existing picker/model; actual session/stale-choice/native-resolution journeys remain required, no gameplay mutation or new layout acceptance.\n\nNext bounded extraction (ui_developer, spans [[325, 465]]): Move the cohesive Purify adapter into a focused picker owner and leave guarded installation routing in BattleInterface before substantive expansion. Interface: Typed pending-action/center input and PurifyContext/identity-bound confirmation output using existing actionsController installation; preserve current same-thread lifetime contract. Invariants: No controller dereference before installation guard; Modal values derive from current saved rules, not installed defaults; Confirm/cancel retains current session and validated-command boundaries; Window and callbacks cannot acquire simulation ownership. Acceptance: Characterize initial invalid context, no choices, automatic-only clearing, valid/stale confirmation, cancel and teardown; report both reduced method/lambda spans and destination sizes. Runtime modal/transition evidence remains required separately.",
-      "kind": "legacy",
-      "lines": 140,
+      "kind": "exception",
+      "lines": 145,
       "next_bounded_extraction": {
         "acceptance": "Characterize initial invalid context, no choices, automatic-only clearing, valid/stale confirmation, cancel and teardown; report both reduced method/lambda spans and destination sizes. Runtime modal/transition evidence remains required separately.",
         "interface": "Typed pending-action/center input and PurifyContext/identity-bound confirmation output using existing actionsController installation; preserve current same-thread lifetime contract.",
@@ -20844,9 +20851,9 @@
         ]
       },
       "owner": "ui_developer",
-      "previous_review": "IR-F86-CLIENT-LAUNCHER-SOURCE-ORGANIZATION-20261110",
-      "rationale": "Exact 141 to 140-line scope. Client presentation/input routing integrates current spell/action receipts and validated captured views. Preserve command submission, session/teardown ownership, native layout and ordinary input behavior; no direct gameplay mutation is introduced.",
-      "review": "IR-NH092-ORG-3E82D142-20261116",
+      "previous_review": "IR-NH092-ORG-3E82D142-20261116",
+      "rationale": "Exact successor for 0.93.1 Castle combat specialties (Volley Command, revised Aerial Supremacy, Benediction of Arms, Pariah, Frost Mantle, Quick Study, Sermon): bounded routing hooks into focused new owners only. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-CASTLE-COMBAT-0931",
       "review_history": [
         {
           "kind": "review",
@@ -20859,7 +20866,7 @@
       ],
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "4364f0706251628c6aaa75b01252ee487420b6616b688750919e89d3e5ab6e0c"
+      "sha256": "e2ec13bad07a5607b2afc66e3e3aaa3a974b524e36f789440305874440ac5eb6"
     },
     "client/battle/BattleInterface.cpp::void BattleInterface::installShadowGiftUI()#1": {
       "deferral": "UI owner: before any substantive Shadow Gift chooser expansion, extract a focused BattleShadowGiftUI owner analogous to existing spell-choice UI. Pass existing context/build/selection callbacks explicitly; preserve target legality, captured immutable spell profile, receiving-window lifetime, cancel/reopen behavior and native rendered chooser. Current exact unchanged-length API deletion only; no further size allowance.",
@@ -22454,16 +22461,16 @@
     "client/windows/CSpellWindow.cpp": {
       "deferral": "Owner: UI developer. Interface/acceptance: Extract cost-stage label formatting to a focused formatter; test every existing stage and exact breakdown ordering/text, with native spellbook rendering before acceptance. Preserve inherited spellbook state/casting/help/resize requirements. Next substantive selection change extracts context/admission stages with current-only cost/target/action tests; actual current-policy spellbook click/render evidence remains separately recorded.",
       "kind": "exception",
-      "lines": 943,
+      "lines": 949,
       "owner": "ui_developer",
       "previous_exact_review": "IR-SPELLBOOK-FULL75-V21-EXACT-SOURCE-20261030",
-      "previous_review": "IR-NH0922-STARTING-BOOK-PRAYER-PRESENTATION-20261118",
+      "previous_review": "CLAUDE-0925-DOUBLECAST-CHOSEN-PRAYERS-PHASE23-20261120",
       "proposal_predecessor_review": "PROPOSED-CLIENT225-BOUNDED-20261103",
-      "rationale": "Exact successor for Metamagic 6 Double Cast / Consecrated Arms 4 phases 2-3: one-line calls, includes, version-gated fields or registrations only; the new behavior lives in focused MetamagicDoubleCast and ConsecratedArmsChoice units. Existing extraction deferrals retained; no future growth credit.",
-      "review": "CLAUDE-0925-DOUBLECAST-CHOSEN-PRAYERS-PHASE23-20261120",
+      "rationale": "Exact successor for 0.93.1 Castle combat specialties (Volley Command, revised Aerial Supremacy, Benediction of Arms, Pariah, Frost Mantle, Quick Study, Sermon): bounded routing hooks into focused new owners only. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-CASTLE-COMBAT-0931",
       "review_scope": "Exact source organization and bounded correctness review only; no compilation, rendered acceptance or future growth approval.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_REVIEW_NATIVE_UNRUN",
-      "sha256": "4db685147fb197099f476175b06c36296124026923e641f310c96506c3d99902"
+      "sha256": "b931bd1f83b8d625a51d24cb3bb8b8aea62736c1af098ae86eef482c286b520d"
     },
     "client/windows/CSpellWindow.cpp::CSpellWindow::CSpellWindow(const CGHeroInstance * _myHero, CPlayerInterface * _myInt, bool openOnBattleSpells, const std::function<void(SpellID)> & onSpellSelect): CWindowObject(PLAYER_COLORED | (settings[\"gameTweaks\"][\"enableLargeSpellbook\"].Bool() ? BORDERED : 0)), battleSpellsOnly(openOnBattleSpells), selectedTab(SpellSchool::ANY), currentPage(0), myHero(_myHero), myInt(_myInt), openOnBattleSpells(openOnBattleSpells), onSpellSelect(onSpellSelect), isBigSpellbook(settings[\"gameTweaks\"][\"enableLargeSpellbook\"].Bool()), spellsPerPage(24), offL(-11), offR(195), offRM(110), offT(-37), offB(56)#1": {
       "kind": "legacy",
@@ -22476,13 +22483,15 @@
       "review_status": "INDEPENDENT_EXACT_SOURCE_REVIEW_NATIVE_UNRUN"
     },
     "client/windows/CSpellWindow.cpp::void CSpellWindow::processSpells()#1": {
-      "kind": "legacy",
-      "lines": 87,
+      "kind": "exception",
+      "lines": 92,
       "owner": "ui_developer",
-      "rationale": "Existing function owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 87 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "rationale": "Exact successor for 0.93.1 Castle combat specialties (Volley Command, revised Aerial Supremacy, Benediction of Arms, Pariah, Frost Mantle, Quick Study, Sermon): bounded routing hooks into focused new owners only. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-CASTLE-COMBAT-0931",
       "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "1689e92e01669f61fafa92147143374e43926c272ee9f18cc2cb10f62ab70562"
+      "sha256": "2e6effd4f997c57ae45764429c71861595a2054e96b061578370e789af84cdff",
+      "previous_review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "deferral": "Before further substantive expansion, extract the next cohesive touched stage into its focused owner; preserve packet/RNG order, serialization field order and rejection atomicity. No future growth credit."
     },
     "client/windows/CSpellWindowSpellArea.cpp::void CSpellWindow::SpellArea::clickPressed(const Point & cursorPosition)#1": {
       "deferral": "Before further selection-flow growth extract context/admission and informational-help branches into cohesive spellbook owners, preserving current Singularity affordability, shared Hero Action, callback/query lifetime and targeting. Keep actual spellbook click/render acceptance separately recorded; this structural exception does not claim runtime verification.",
@@ -23656,9 +23665,9 @@
       "inherited_a1_health_deferral": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.",
       "inherited_deferral": "Exact source-list bound only. Before substantive build logic, extract a cohesive target configuration section. Verify source/link membership once and retain no duplicate translation units. Prior stricter obligations remain in inherited_deferral, where present.",
       "kind": "exception",
-      "lines": 2161,
+      "lines": 2171,
       "owner": "engine_engineer",
-      "previous_review": "CLAUDE-SYLVAN41-20261120",
+      "previous_review": "CLAUDE-SPECIALTIES-0931",
       "prior_a1_health_scope": {
         "kind": "exception",
         "lines": 2063,
@@ -23667,11 +23676,11 @@
         "sha256": "7058cdef35cfce13214572d190c4accfdf5721e6c144af3cdfca9f53bb68c2a0"
       },
       "prior_deferral": "Exact mechanical source/header registration only. Before substantive CMake target policy growth, extract a cohesive configuration section while verifying translation-unit membership and facade linkage. No future file growth allowance. Prior stricter obligations remain in inherited_deferral, where present.\n\nKeep registrations in their current coherent tables. Extract any future conditional target/control logic rather than growing this registry into a build framework.",
-      "rationale": "Exact successor for 0.93.1 beta step 1 (Precise Casting resistance halving, core Stewardship and Lord of the Crypts, +3%/level specialty scaling, activation of unchanged extended ordinary specialties): bounded routing hooks and focused owners only. Existing extraction deferrals retained; no future growth credit.",
-      "review": "CLAUDE-SPECIALTIES-0931",
+      "rationale": "Exact successor for 0.93.1 Castle combat specialties (Volley Command, revised Aerial Supremacy, Benediction of Arms, Pariah, Frost Mantle, Quick Study, Sermon): bounded routing hooks into focused new owners only. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-CASTLE-COMBAT-0931",
       "review_scope": "Exact frozen A7 production/routing source only; no compiler, Windows path runtime, recovery, timing, release or future-growth acceptance.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NATIVE_WINDOWS_PENDING",
-      "sha256": "d6d0d520abd4dbfb74d964fda3b5e036cdd10655b90eb767e3db3d4d0fab56af",
+      "sha256": "03c35edd918e19200aff3edc2a4704fdf892a2bc72961ff4304a32bd15a1a1bf",
       "inherited_deferral_step2": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.\n\nExact shared-facade source/header registration only. Before conditional target/control policy growth, extract the next coherent configuration section; preserve one translation unit per implementation and consumer linkage through vcmi. No future registry-size growth credit."
     },
     "lib/CSkillHandler.cpp::std::shared_ptr<CSkill> CSkillHandler::loadFromJson(const std::string & scope, const JsonNode & json, const std::string & identifier, size_t index)#1": {
@@ -24229,15 +24238,15 @@
       "composition_predecessor_review": "IR-COMMON-NATIVE48-AI71-CLEANSING-UI-FINITE-E3-20261031",
       "inherited_deferral": "Owner: ui_developer / gameplay_engineer. Bounded exception for Major System Rework: Leadership attribute restoration, square-root damage scaling, and hero UI panel integration. Hotspots remain subject to ongoing shrinking and modularization policy.",
       "kind": "exception",
-      "lines": 116,
+      "lines": 119,
       "owner": "engine_engineer",
-      "previous_review": "IR-LEADERSHIP-1159-INDEPENDENT-20261113-V1-UNITS",
-      "rationale": "Uses certified prepared Leadership efficiency only if finite and within[0,1]; otherwise exact native current-count readout fallback. Shared Leadership curve and remaining damage pipeline unchanged.",
-      "review": "IR-NH0921-COMPOSED4-CODEORG-20261117",
+      "previous_review": "IR-NH0921-COMPOSED4-CODEORG-20261117",
+      "rationale": "Exact successor for 0.93.1 Castle combat specialties (Volley Command, revised Aerial Supremacy, Benediction of Arms, Pariah, Frost Mantle, Quick Study, Sermon): bounded routing hooks into focused new owners only. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-CASTLE-COMBAT-0931",
       "review_category": "ordinary-function-review",
       "review_scope": "Exact recorded composed4 physical size and content hash only; no future growth credit or relaxed ceiling. All inherited technical requirements, extraction triggers and runtime holds remain. Source organization review does not establish compilation, functional/native/rendered acceptance, timing, balance or publication authority.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN",
-      "sha256": "ab3985b1a5823ce7aede22c664bf575e0508199adbd3ba83f14d6df0ac01875b",
+      "sha256": "0cece630d548526c98792f8188e005c8973f9fb9bbc69800b4e81b2b34b72439",
       "deferral": " Current exact-scope addendum: engine/AI owner extracts prepared Leadership input validation (finite[0,1] or shared native readout) from finalizeDamagePayload after casualty/resurrection/cap-crossing, HP-unchanged, owner-identity and damage-parity characterization.",
       "inherited_exact_source_review": {
         "review": "IR-NH092-ORG-3E82D142-20261116",
@@ -24953,14 +24962,14 @@
     "lib/entities/hero/NewHorizonsSpecialtyPresentation.cpp::newHorizonsHeroes::SpecialtyPresentation resolveSpecialtyPresentation(const CHero & hero, const JsonNode & development, const JsonNode & magic, std::optional<CreatureID> target, const CGHeroInstance * capturedHero)#1": {
       "deferral": "Owner: ui_developer. Before further individual-specialty dispatch growth, move hero-family presentation into cohesive captured-policy resolvers returning the existing presentation contract; preserve historical icon/text/identity and fallback behavior. Owning presentation/content specialist: before further substantive presentation branching, extract a coherent summary/description family using the existing typed presentation result. Preserve captured absence and summary/details values; keep future helpers below ceilings and verify actual rendered text separately.",
       "kind": "exception",
-      "lines": 145,
+      "lines": 146,
       "owner": "gameplay_engineer",
-      "previous_review": "IR-SHARED84-CURRENT225-EXACT-SOURCE-20261103",
-      "rationale": "Exact 146 to 145-line scope. Existing state/content/serialization responsibility integrates current captured rules and explicit native routing. Preserve independent captures, validation boundaries, deterministic order, existing ownership and saved absence.",
-      "review": "IR-NH092-ORG-3E82D142-20261116",
+      "previous_review": "IR-NH092-ORG-3E82D142-20261116",
+      "rationale": "Exact successor for 0.93.1 Castle combat specialties (Volley Command, revised Aerial Supremacy, Benediction of Arms, Pariah, Frost Mantle, Quick Study, Sermon): bounded routing hooks into focused new owners only. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-CASTLE-COMBAT-0931",
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "66fdce649816f913aba21a1d48f2a36c29b10cd37cad1bd54d4e7dab5949758d"
+      "sha256": "c72e6e9e56431cf349816a53a6da0e23fbec3f71cd69794113fb26c85dfebf1f"
     },
     "lib/entities/hero/NewHorizonsSpecialtyPresentation.cpp::newHorizonsHeroes::bool resolveIndividualPresentation(const CHero & hero, const JsonNode & development, const JsonNode & magic, const CGHeroInstance * capturedHero, SpecialtyPresentation & result)#1": {
       "deferral": "Exact candidate scope and measured bound only. Before further substantive growth, assigned owner must extract the next touched coherent policy/preflight or execution family into a focused typed non-writing validation or rules owner, preserving direct/enclosing prefix rejection, historical absence, actual recovery receipts, original caster, callback ownership and field/wire order. No future growth or runtime acceptance. Exact source and size only; no future growth or runtime-acceptance allowance. Gameplay/UI owner should route later individual identities to focused captured-policy presentation resolvers rather than adding hero branches to this dispatcher; preserve historical fallback and exact runtime math. Remaining-four composition: preserve this inherited extraction obligation; exact current size is the ceiling for this finite registry/admission/template integration. Family preflight, primary-skill and Necromancy/Scholar delivery owners are extracted; require independent review and further extraction before subsequent growth. Fafner bounded follow-up: Before further individual-family dispatch growth, extract a cohesive captured-policy presentation resolver preserving enabled/disabled/absent behavior, identity, icons, text and historical fallback.",
@@ -25577,10 +25586,10 @@
       "deferral": "Next substantive hero Learning expansion must use focused Learning state/transition owners with explicit owner/partner/round-week/rules inputs; preserve source/map/School eligibility, no duplicate event, current-save and Normal resource semantics. Before further substantive expansion, owning engine/gameplay/UI specialist must extract the next coherent touched policy, ordered stage, codec family or widget responsibility into a focused owner, preserving callback visibility, rejection atomicity, serialized field order, payment and RNG/packet order. This exact bounded migration/registry/validation routing gives no future growth credit.",
       "inherited_a1_health_deferral": "Next substantive hero Learning expansion must use focused Learning state/transition owners with explicit owner/partner/round-week/rules inputs; preserve source/map/School eligibility, no duplicate event, current-save and Normal resource semantics. Before further substantive expansion, owning engine/gameplay/UI specialist must extract the next coherent touched policy, ordered stage, codec family or widget responsibility into a focused owner, preserving callback visibility, rejection atomicity, serialized field order, payment and RNG/packet order. This exact bounded migration/registry/validation routing gives no future growth credit.",
       "kind": "exception",
-      "lines": 3070,
+      "lines": 3077,
       "owner": "gameplay_engineer",
       "preceding_review": "IR-COMPOSED-FEATURE-NUMERIC-EXACT-20261029",
-      "previous_review": "IR-NEXT-BUILD-LIFETIME-NHART-REVERT-20261119",
+      "previous_review": "CLAUDE-SPECIALTIES-0931",
       "prior_a1_health_scope": {
         "kind": "exception",
         "lines": 3100,
@@ -25588,11 +25597,11 @@
         "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
         "sha256": "450543a3563b69fd683ee866089caeddd601609193e8a442ea477703f6021856"
       },
-      "rationale": "Exact successor for 0.93.1 beta step 1 (Precise Casting resistance halving, core Stewardship and Lord of the Crypts, +3%/level specialty scaling, activation of unchanged extended ordinary specialties): bounded routing hooks and focused owners only. Existing extraction deferrals retained; no future growth credit.",
-      "review": "CLAUDE-SPECIALTIES-0931",
+      "rationale": "Exact successor for 0.93.1 Castle combat specialties (Volley Command, revised Aerial Supremacy, Benediction of Arms, Pariah, Frost Mantle, Quick Study, Sermon): bounded routing hooks into focused new owners only. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-CASTLE-COMBAT-0931",
       "review_scope": "Exact independent source/organization only; no compilation, runtime, rendering, timing, publication or future-growth acceptance.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
-      "sha256": "8c3c02fca0cca10e008c4f36d65d82bec110785f128c4a2ab262d0148074f381"
+      "sha256": "c6903fbaf90be4899555de94ef6a8e01e723c3320146d6d0737407d6bf2813ae"
     },
     "lib/mapObjects/CGHeroInstance.cpp::CStackBasicDescriptor CGHeroInstance::calculateNecromancy (const BattleResult &battleResult) const#1": {
       "kind": "legacy",
@@ -25625,9 +25634,9 @@
       "deferral": "Owner: Gameplay engineer. Interface/acceptance: Extract starting specialty producer conversion and hero cost composition behind captured-rule helpers; preserve explicit authored overrides, default starting projections, old policy absence and battle/spellbook cost parity. Owner: gameplay_engineer. Before further specialty producer growth, extract cohesive captured creature-line producer selection; preserve initialization order, explicit zero/absence, removal identities and existing saved-rule behavior. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance. Fafner bounded follow-up: Before further producer selection growth, extract the captured creature-line conversion owner while preserving authored initialization order, zero/absence, removal identity, hero-cost composition and old-save behavior. Extract the next touched captured creature-line/specialty initialization stage behind an explicit hero plus captured-policy initialization helper, preserving authored override\u2192producer refresh\u2192secondary bonus order, removals and level-one meaning; return declared assignments/refresh outcome rather than expose all hero internals. Required characterization: Current versus absent capture, explicit override/zero, old hero specialties/starting perks, level-one/no retroactive growth, real gained-level primary state and no extra RNG. Trigger: Before the next substantive expansion of this affected responsibility. Existing stronger invariant/deferral obligations remain; this approval covers only the pinned finite batch. Retain existing scoped decomposition obligations for the next affected substantive growth; this removal ratchets the exact baseline down and grants no regrowth credit.\n\nBefore any further substantive expansion, extract the next cohesive touched policy, callback/read adapter or ordered admission stage into its focused owner. Preserve exact capture metadata, source visibility, schema rejection, RNG/packet ordering and standalone/world wire identity; no future growth credit from this exception.",
       "inherited_a1_health_deferral": "Owner: Gameplay engineer. Interface/acceptance: Extract starting specialty producer conversion and hero cost composition behind captured-rule helpers; preserve explicit authored overrides, default starting projections, old policy absence and battle/spellbook cost parity. Owner: gameplay_engineer. Before further specialty producer growth, extract cohesive captured creature-line producer selection; preserve initialization order, explicit zero/absence, removal identities and existing saved-rule behavior. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance. Fafner bounded follow-up: Before further producer selection growth, extract the captured creature-line conversion owner while preserving authored initialization order, zero/absence, removal identity, hero-cost composition and old-save behavior. Extract the next touched captured creature-line/specialty initialization stage behind an explicit hero plus captured-policy initialization helper, preserving authored override\u2192producer refresh\u2192secondary bonus order, removals and level-one meaning; return declared assignments/refresh outcome rather than expose all hero internals. Required characterization: Current versus absent capture, explicit override/zero, old hero specialties/starting perks, level-one/no retroactive growth, real gained-level primary state and no extra RNG. Trigger: Before the next substantive expansion of this affected responsibility. Existing stronger invariant/deferral obligations remain; this approval covers only the pinned finite batch. Retain existing scoped decomposition obligations for the next affected substantive growth; this removal ratchets the exact baseline down and grants no regrowth credit.",
       "kind": "exception",
-      "lines": 348,
+      "lines": 353,
       "owner": "gameplay_engineer",
-      "previous_review": "IR-NH0921-CART-INERT-METADATA-20261117",
+      "previous_review": "CLAUDE-SPECIALTIES-0931",
       "prior_a1_health_scope": {
         "kind": "exception",
         "lines": 346,
@@ -25635,11 +25644,11 @@
         "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
         "sha256": "56b0ebeb208919d1c5d349befad3ab0268df96b986a1e8d14cbc4a29c31f6863"
       },
-      "rationale": "Exact successor for 0.93.1 beta step 1 (Precise Casting resistance halving, core Stewardship and Lord of the Crypts, +3%/level specialty scaling, activation of unchanged extended ordinary specialties): bounded routing hooks and focused owners only. Existing extraction deferrals retained; no future growth credit.",
-      "review": "CLAUDE-SPECIALTIES-0931",
+      "rationale": "Exact successor for 0.93.1 Castle combat specialties (Volley Command, revised Aerial Supremacy, Benediction of Arms, Pariah, Frost Mantle, Quick Study, Sermon): bounded routing hooks into focused new owners only. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-CASTLE-COMBAT-0931",
       "review_scope": "Only exact346-line initHero hash and two identifier-only marker-helper call substitutions. Existing oversized-function exception and stronger deferrals remain; no unrelated scope, runtime, rendered or future-growth approval.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN",
-      "sha256": "92265cb7ef89e4473077188fa6cdcee9084592822b6d2f06b03b8866154f4f81"
+      "sha256": "0a8fd400e7cd4f7116a0e8a629b4a7cace67682e99194840e3e4c8cf3d2a7a84"
     },
     "lib/mapObjects/CGHeroInstance.cpp::void CGHeroInstance::serializeCommonOptions(JsonSerializeFormat & handler)#1": {
       "deferral": "Exact source and size only. Gameplay owner should extract the next touched hero creation or common-options serialization stage behind a focused typed interface, preserving equipment intent, startup RNG/slot order, captured absence and JSON/binary compatibility before further central growth.",
@@ -27060,7 +27069,7 @@
       "deferral": "Further castEval growth requires focused posteffects receipt dispatch taking Mechanics/recorder/ServerCallback, preserving certification last, no duplicate completion and native injury/packet/RNG order. Native controls: Hero/creatureorigin, shields/sourceidentity/history/actions. No general ceilingwaiver.\n\nBefore any further substantive expansion, extract the next cohesive touched policy, callback/read adapter or ordered admission stage into its focused owner. Preserve exact capture metadata, source visibility, schema rejection, RNG/packet ordering and standalone/world wire identity; no future growth credit from this exception. Current exact-scope addendum: Gameplay owner extracts accepted-original completion and spell-evaluation transaction phases after native live/castEval/AI parity; preserve ticket entry/delegation/cost, effect ordering, one Overflow completion and RNG/reflection routing.",
       "inherited_a1_health_deferral": "Further castEval growth requires focused posteffects receipt dispatch taking Mechanics/recorder/ServerCallback, preserving certification last, no duplicate completion and native injury/packet/RNG order. Native controls: Hero/creatureorigin, shields/sourceidentity/history/actions. No general ceilingwaiver.",
       "kind": "exception",
-      "lines": 2639,
+      "lines": 2641,
       "organization_acceptance": "Packet/state/RNG characterization for original/reflected/automatic/delayed casts, no-op remove/add refresh, healing/creation/death, source family and hypothetical branch isolation. Native, reflection, save and rendered behavior remain unapproved.",
       "organization_interface": "ServerCallback delegate, const callback/Mechanics, original/effective spell IDs and caster owner, explicit capture flags; expose owned injury/healing/creation/status/recipient receipts after synchronous apply, without owning the delegate or state.",
       "organization_invariants": [
@@ -27078,7 +27087,7 @@
       "pre_legacy_freeze_review_scope": "Exact frozen production patch only. Conditional on root serialized engine/AI/UI/content/test composition; no future growth, old-save matrix, native/render/runtime proof or adoption authorization.",
       "pre_legacy_freeze_review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_RENDERED_UNRUN",
       "pre_legacy_freeze_sha256": "35ad59c7acec04e3a9c596ee3ec1c9c543f930c1bf2deaa049a2731f616bdcb4",
-      "previous_review": "IR-NH0923-OVERFLOW-LIFETIME-ESTATE-SOURCE-20261118",
+      "previous_review": "CLAUDE-METAMAGIC6-PHASE4-20261120",
       "prior_a1_health_scope": {
         "kind": "exception",
         "lines": 2629,
@@ -27086,11 +27095,11 @@
         "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
         "sha256": "6968fdebcb529086a26a2f47f6a8a9cf3f61744918663ebea9b0aabb260ac9fc"
       },
-      "rationale": "Exact successor for Metamagic 6 Double Cast phase 4 (perk effects): one-line hooks, includes, accessor overrides, registrations or Arcane Ward unit-state plumbing only; the completion effects live in the focused MetamagicDoubleCastCompletion unit and the derived Crescendo/Spellstorm terms in MetamagicDoubleCast. Existing extraction deferrals retained; no future growth credit.",
-      "review": "CLAUDE-METAMAGIC6-PHASE4-20261120",
+      "rationale": "Exact successor for 0.93.1 Castle combat specialties (Volley Command, revised Aerial Supremacy, Benediction of Arms, Pariah, Frost Mantle, Quick Study, Sermon): bounded routing hooks into focused new owners only. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-CASTLE-COMBAT-0931",
       "review_scope": "Exact source organization and bounded state/lifetime review only. No compile, rendered acceptance, publication or future growth allowance.",
       "review_status": "INDEPENDENT_SOURCE_REVIEW_NATIVE_RENDERED_UNRUN",
-      "sha256": "59232908b1da375c39fc2577384e980ae3d532f34c4df58efbaa92bfbcd6fa6e",
+      "sha256": "c64140c68afa9c8f9d4add4f4bf6e363ebddd21f226636048f7ab5843d3ff8f3",
       "inherited_exact_source_review": {
         "review": "IR-NH092-ORG-E8CD1819-20261116",
         "sha256": "73d7bd0d10820a15e4dc23747dac42909864ddb1c4e6362c4fb36a52f237bc2e",
@@ -27100,8 +27109,8 @@
     },
     "lib/spells/BattleSpellMechanics.cpp::spells::bool BattleSpellMechanics::canBeCast(Problem & problem) const#1": {
       "deferral": "Before further growth, extract the affected compound targeting/accepted-effect transaction into cohesive validated helpers; preserve identity, owner, rejection/action/payment/RNG order and reduce this exact baseline. Existing Cure extraction obligation remains. Before further affected expansion, owning engine/gameplay specialist must extract the next cohesive healing/provider/selection or ordered-transition responsibility, retaining query/mutation/serialization order and historical behavior. No raised ceiling, pending-baseline escape, runtime approval or later-growth permission. Preserve ALL inherited deferrals and exact prior shrinking baselines. Further growth must extract a cohesive domain owner before expansion; no future growth credit or limit increase. Owning gameplay/engine specialist: before further substantive expansion of this touched rule/transition, extract the next coherent affected policy or ordered stage into a focused owner. Preserve callback visibility, original recipient/caster identity, rejection atomicity and packet/RNG order; characterization must compare exact state and emitted packets. This is no future growth credit.",
-      "kind": "legacy",
-      "lines": 281,
+      "kind": "exception",
+      "lines": 282,
       "organization_acceptance": "Identical availability and first Problem across manual/automatic/creature, legacy/current/absent profiles, stray Cure/charge/Dispel/Slow options, typed Light allowance and unavailable recipients; no state, packets or RNG changes.",
       "organization_interface": "Const Mechanics/callback, captured rules, original cast mode/caster and submitted options; return existing Problem/rejection without resource mutation, target substitution or RNG.",
       "organization_invariants": [
@@ -27119,12 +27128,12 @@
       "pre_legacy_freeze_review_scope": "Only exact current source organization, measured span/hash and stated responsibility. Excludes the two identified structural blockers, behavior/save/AI/rendered/platform acceptance and publication authorization.",
       "pre_legacy_freeze_review_status": "INDEPENDENT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
       "pre_legacy_freeze_sha256": "49facc24c6e4299d52abe015b6b02b075b747240617f0600a7005e062c261432",
-      "previous_review": "IR-F86-BATTLE-LIB-COMPLETE-ORGANIZATION-FREEZE-20261110",
-      "rationale": "Exact 297 to 281-line scope. Shared spell dispatch/presentation and current duration/scaling/effect policy remain in their existing owners. Preserve captured absence, exact native ordering, raw-input validation and current action/resource semantics.",
-      "review": "IR-NH092-ORG-3E82D142-20261116",
+      "previous_review": "IR-NH092-ORG-3E82D142-20261116",
+      "rationale": "Exact successor for 0.93.1 Castle combat specialties (Volley Command, revised Aerial Supremacy, Benediction of Arms, Pariah, Frost Mantle, Quick Study, Sermon): bounded routing hooks into focused new owners only. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-CASTLE-COMBAT-0931",
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "d652a110dc5ebb6e64491e9a07381a4ab860b6abe5960ab7fd79c89610e6f4ce"
+      "sha256": "a1ffba075850103231fd369d2181050b2cb6a063360427915a8ebdf04e6b8d62"
     },
     "lib/spells/BattleSpellMechanics.cpp::spells::bool BattleSpellMechanics::canBeCastAt(const Target & target, Problem & problem) const#1": {
       "deferral": "Before further growth, extract the existing Cure eligibility and selector block into a shared validator, preserving canonical hex lookup, explicit identity refusal, owner/receptivity/rules/selection and pre-cost ordering. Characterize refusal atomicity and existing authoritative Cure/Dispel/Frozen behavior, retain modal lifecycle checks, and ratchet this function baseline down. Before further growth, extract the affected compound targeting/accepted-effect transaction into cohesive validated helpers; preserve identity, owner, rejection/action/payment/RNG order and reduce this exact baseline. Existing Cure extraction obligation remains. Fafner bounded follow-up: Before further target-legality growth, extract the affected shared voluntary-movement policy without bypassing canBeCastAt; preserve rejection atomicity, mana/action accounting, target/controller visibility and historical spell behavior. Before further Cure/Poison target-validator growth, extract cohesive shared living-recipient eligibility/hex-only resolution with current callback, original aim and transformed destination. Never redirect an explicit unit identity. Acceptance: Shrink current function/file baselines; retain human hex and explicit unit equivalence, corpse overlap/refusal, friendly/empty/undead/nonliving/immune rejection, mana/action/RNG atomicity, authoritative Cure/Poison/Dispel/Frozen, canonical/unknown script and rendered click/hover acceptance. Before further affected expansion, owning engine/gameplay specialist must extract the next cohesive healing/provider/selection or ordered-transition responsibility, retaining query/mutation/serialization order and historical behavior. No raised ceiling, pending-baseline escape, runtime approval or later-growth permission. Preserve ALL inherited deferrals and exact prior shrinking baselines. Further growth must extract a cohesive domain owner before expansion; no future growth credit or limit increase. Owning gameplay/engine specialist: before further substantive expansion of this touched rule/transition, extract the next coherent affected policy or ordered stage into a focused owner. Preserve callback visibility, original recipient/caster identity, rejection atomicity and packet/RNG order; characterization must compare exact state and emitted packets. This is no future growth credit.",
@@ -27302,7 +27311,7 @@
     "lib/spells/ISpellMechanics.cpp": {
       "deferral": "Next substantive constructor expansion should extract immutable hero-cast profile capture with explicit event/caster/battle/rules inputs; retain pre-receipt snapshot timing and no live mutation. Numerical damage/heal/status consumers must use one additive percentage floor/cap, including corrected delayed snapshots. Before further substantive expansion, engine/gameplay owner must extract the next touched coherent formula-family, typed validation or presentation/registry group with a narrow interface and exact unchanged state/packet/RNG ordering. This approval permits only the exact deletion/signature/text migration; no future growth credit.",
       "kind": "exception",
-      "lines": 1645,
+      "lines": 1649,
       "organization_acceptance": "Exact values and query order across explicit zero/absent overrides, delayed snapshots, concentration, current/legacy coefficients, duration families and factory fallback. Assert branch/state/RNG purity of capture; retain earlier numerical parity obligations.",
       "organization_interface": "Explicit event overrides, captured spell/caster/side/battle profile, resolved power/mastery/coefficient facts and extension eligibility; return a duration value without accepting a cast, spending a grant or writing state.",
       "organization_invariants": [
@@ -27320,17 +27329,17 @@
       "pre_legacy_freeze_review_scope": "Exact source organization only; conditional on exact frozen afterimage. The original two bounded review findings are resolved in this exact successor. No native/rendered acceptance or source adoption/publication authorization.",
       "pre_legacy_freeze_review_status": "INDEPENDENT_ORGANIZATION_ONLY_NATIVE_RENDERED_UNRUN",
       "pre_legacy_freeze_sha256": "e57280dd7c6efd03781d37a25470032f9baa1ae8d2f6dcfdf756d31921d95a07",
-      "previous_review": "IR-NH0921-C14-1164-CODEORG-20261117",
-      "rationale": "Exact successor for Metamagic 6 Double Cast phase 4 (perk effects): one-line hooks, includes, accessor overrides, registrations or Arcane Ward unit-state plumbing only; the completion effects live in the focused MetamagicDoubleCastCompletion unit and the derived Crescendo/Spellstorm terms in MetamagicDoubleCast. Existing extraction deferrals retained; no future growth credit.",
-      "review": "CLAUDE-METAMAGIC6-PHASE4-20261120",
+      "previous_review": "CLAUDE-METAMAGIC6-PHASE4-20261120",
+      "rationale": "Exact successor for 0.93.1 Castle combat specialties (Volley Command, revised Aerial Supremacy, Benediction of Arms, Pariah, Frost Mantle, Quick Study, Sermon): bounded routing hooks into focused new owners only. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-CASTLE-COMBAT-0931",
       "review_scope": "Exact recorded C14 source hash, physical span and organization delta only. No future growth, whole-mechanic, compiler, native, rendered, performance, save-resume, publication or promotion acceptance.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN",
-      "sha256": "c32d7efca54232571f50619753a298ba1f8d464a2f81495c270b59f774f0062d"
+      "sha256": "f9f4aeb12b54431c08497804d9b99798fff2b5476e9e785fd0ff4a50bb63d2ea"
     },
     "lib/spells/ISpellMechanics.cpp::spells::BaseMechanics::BaseMechanics(const IBattleCast * event): owner(event->getSpell()), mode(event->getMode()), forceMassive(event->isForceMassive()), cb(event->getBattle())#1": {
       "deferral": "Next substantive constructor expansion should extract immutable hero-cast profile capture with explicit event/caster/battle/rules inputs; retain pre-receipt snapshot timing and no live mutation. Numerical damage/heal/status consumers must use one additive percentage floor/cap, including corrected delayed snapshots. Before further substantive expansion, engine/gameplay owner must extract the next touched coherent formula-family, typed validation or presentation/registry group with a narrow interface and exact unchanged state/packet/RNG ordering. This approval permits only the exact deletion/signature/text migration; no future growth credit.",
       "kind": "exception",
-      "lines": 217,
+      "lines": 220,
       "organization_acceptance": "Exact construction results/query sequence for explicit/absent duration and effect values, Slow/Bless/Haste, defending Inferno, Re-animate, charged Magic Arrow, follow-up pairing, automatic/delayed and concentration inputs, including overflow/clamp endpoints.",
       "organization_interface": "Typed immutable duration inputs: event optional duration, resolved effect level/power, original caster/side and saved rules, captured coefficient/specialty/extension facts. Return clamped duration without Mechanics self-recursion or mutation.",
       "organization_invariants": [
@@ -27348,12 +27357,12 @@
       "pre_legacy_freeze_review_scope": "Exact source organization only; conditional on exact frozen afterimage. The original two bounded review findings are resolved in this exact successor. No native/rendered acceptance or source adoption/publication authorization.",
       "pre_legacy_freeze_review_status": "INDEPENDENT_ORGANIZATION_ONLY_NATIVE_RENDERED_UNRUN",
       "pre_legacy_freeze_sha256": "0168207f98a48ffb832da026e38870026410c84ed7c9ee350d2e3cd17c77c05d",
-      "previous_review": "IR-NH0921-C14-1164-CODEORG-20261117",
-      "rationale": "Exact successor for Metamagic 6 Double Cast phase 4 (perk effects): one-line hooks, includes, accessor overrides, registrations or Arcane Ward unit-state plumbing only; the completion effects live in the focused MetamagicDoubleCastCompletion unit and the derived Crescendo/Spellstorm terms in MetamagicDoubleCast. Existing extraction deferrals retained; no future growth credit.",
-      "review": "CLAUDE-METAMAGIC6-PHASE4-20261120",
+      "previous_review": "CLAUDE-METAMAGIC6-PHASE4-20261120",
+      "rationale": "Exact successor for 0.93.1 Castle combat specialties (Volley Command, revised Aerial Supremacy, Benediction of Arms, Pariah, Frost Mantle, Quick Study, Sermon): bounded routing hooks into focused new owners only. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-CASTLE-COMBAT-0931",
       "review_scope": "Exact recorded C14 source hash, physical span and organization delta only. No future growth, whole-mechanic, compiler, native, rendered, performance, save-resume, publication or promotion acceptance.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN",
-      "sha256": "968beb244c3cdca48e8594f371b3091ca52835623abad2aec2f6dcc20679561c"
+      "sha256": "ca76e0f8a19cad0042b97e8231701755d7ce2371b23f8370261814dbc484ec52"
     },
     "lib/spells/ISpellMechanics.h": {
       "deferral": "Engine/gameplay owner: before another context/query family expands this facade, extract immutable numerical/cast input value types behind a narrow value-context boundary while preserving DLL linkage, existing virtual/default behavior and HERO versus PASSIVE provenance. Minimum checks: target-free and recipient output ordering, one floor/cap, delayed captured values, automatic versus manual receipts, rejection purity and no additional completed-cast notification for triggers. Current exact-scope addendum: Gameplay owner moves opaque cast-local projection receipt declarations into focused shared receipt types after ABI consumers stabilize; preserve virtual/default API behavior and DLL linkage.",
@@ -28225,14 +28234,14 @@
       "deferral": "Extend the focused progression owner before further routing. Before substantive handler growth, extract the next lifecycle command group with removed/covered/transferred query, callback suppression and conservation coverage; exact6058 only. Prior stricter obligations remain in inherited_deferral, where present.",
       "inherited_deferral": "Only this exact native migration content/hash/size is proposed; no future growth allowance. Owner: engine_engineer. Next substantive edit must extract the affected calculation/query/forecast routing into the existing dedicated component with exact state, packet/RNG, action-choice and lifecycle regressions; preserve any narrower inherited deferral below. Before further substantive query/progression growth keep admission, single-card draw and ordinary progression in focused owners; preserve owner/top/stale/index/once/RNG rejection atomicity, normal queue/mastery choices, raw XP offset, native caps and specialty growth. Before further substantive expansion, owning engine/gameplay/UI specialist must extract the next coherent touched policy, ordered stage, codec family or widget responsibility into a focused owner, preserving callback visibility, rejection atomicity, serialized field order, payment and RNG/packet order. This exact bounded migration/registry/validation routing gives no future growth credit.",
       "kind": "exception",
-      "lines": 5735,
+      "lines": 5750,
       "owner": "gameplay_engineer",
-      "previous_review": "PROPOSED-0920-EXACT-SOURCE-ORGANIZATION",
-      "rationale": "Exact 5729 to 5735-line scope. Authoritative execution integrates current spell/action receipts and validated captured data while retiring incompatible handlers. Preserve validated requests, rejection atomicity, ordered effects/packets and RNG.",
-      "review": "IR-NH092-ORG-3E82D142-20261116",
+      "previous_review": "IR-NH092-ORG-3E82D142-20261116",
+      "rationale": "Exact successor for 0.93.1 Castle combat specialties (Volley Command, revised Aerial Supremacy, Benediction of Arms, Pariah, Frost Mantle, Quick Study, Sermon): bounded routing hooks into focused new owners only. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-CASTLE-COMBAT-0931",
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "dd7f493a4db0944a1436ae4ea6b8c6822268837053c8ad3cff67b6c0928aa823"
+      "sha256": "725b0c420af32a811292a67ae2296eed05c4505ff31b9b1f7a556ef301fadfa8"
     },
     "server/CGameHandler.cpp::bool CGameHandler::buildStructure(ObjectInstanceID tid, BuildingID requestedID, bool force)#1": {
       "kind": "review",
@@ -28401,15 +28410,15 @@
     },
     "server/CGameHandler.cpp::void CGameHandler::sendAndApply(CPackForClient & pack)#1": {
       "deferral": "Owner: engine_engineer. Preserve all existing packet ordering, command validation and RNG invariants. Before further substantive growth, extract the next touched cohesive prepublication/admission or reaction orchestration into its existing domain owner with explicit world/context inputs; characterize zero publication on rejection, direct GS receiver rejection, original apply/aftermath order and exception/state/RNG parity. This exact3-line shared-policy routing correction may precede that broader extraction. Owning gameplay/engine specialist: before further substantive expansion of this touched rule/transition, extract the next coherent affected policy or ordered stage into a focused owner. Preserve callback visibility, original recipient/caster identity, rejection atomicity and packet/RNG order; characterization must compare exact state and emitted packets. This is no future growth credit. Exact frozen-unit obligation: Engine engineer: next hook edit must extract typed pre-publication snapshot and post-publication reaction stages while preserving applyPack position, reaction order, echo nonrecursion and authoritative RNG/receipt comparisons.",
-      "kind": "legacy",
-      "lines": 290,
+      "kind": "exception",
+      "lines": 295,
       "owner": "gameplay_engineer",
-      "previous_review": "IR-BLOODRAGE-ORIGINAL-PREDICATE-AND-PUBLICATION-EXACT-20261103",
-      "rationale": "Bounded publication-contract metadata repair of exact unchanged f86 bytes only. Unchanged290-line authoritative publication hook: preflight and event snapshots occur before applyPack, then receipt-derived follow-up packets. Echo re-entry is bounded by explicit spell tagging; RNG remains authoritative. No approval of new growth, whole legacy design or unrelated backlog units.",
-      "review": "IR-COMMAND-AUTHORITY-EXPANDED-BOUNDARY-20261109-F86-REPAIR",
+      "previous_review": "IR-COMMAND-AUTHORITY-EXPANDED-BOUNDARY-20261109-F86-REPAIR",
+      "rationale": "Exact successor for 0.93.1 Castle combat specialties (Volley Command, revised Aerial Supremacy, Benediction of Arms, Pariah, Frost Mantle, Quick Study, Sermon): bounded routing hooks into focused new owners only. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-CASTLE-COMBAT-0931",
       "review_scope": "Only exact current source organization, measured span/hash and stated responsibility. Excludes the two identified structural blockers, behavior/save/AI/rendered/platform acceptance and publication authorization.",
       "review_status": "INDEPENDENT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
-      "sha256": "29c6fc5223760e0abd10a7dfe167dbffd130d0ffafa58ebf63d2e707ee14fb3f"
+      "sha256": "728ac78dd4a5f1f72541fb8ee810e21769cd5958824574f92651c3b32edf398e"
     },
     "server/CGameHandler.cpp::void CGameHandler::useScholarSkill(ObjectInstanceID fromHero, ObjectInstanceID toHero)#1": {
       "kind": "legacy",
@@ -28518,11 +28527,11 @@
       "legacy_freeze_predecessor_review_scope": "Exact frozen production patch only. Conditional on root serialized engine/AI/UI/content/test composition; no future growth, old-save matrix, native/render/runtime proof or adoption authorization.",
       "legacy_freeze_predecessor_review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_RENDERED_UNRUN",
       "legacy_freeze_predecessor_sha256": "9db9f76d8952f4ac1f77ed074dae2ef1e7ff4a9de3841e44f86f4294f1d646e5",
-      "lines": 4739,
+      "lines": 4745,
       "next_bounded_extraction": "Gameplay with Engine: honor the inherited first extraction, the ordered primary aftermath publication stage3956-3966 after BattleAttack. Pass authority, battle, prepared primary/frozen/Mana contexts and typed Reprisal receipts; retain packet-first, PetrifyingBlood, Dread, primary aftermath, once-only Reprisal, Fury, Mana and Frozen order. Characterize complete packets/state/RNG, lethal/LastStand, automatic, retaliation, multihit and secondary cases before any further substantive makeAttack growth. Ground-movement or validation work must extract its own touched bounded phase; do not relocate the entire hub.",
       "owner": "gameplay_engineer",
       "previous_exact_review": "ACTUAL-NHOFF-DIVINE-IDENTITY-PRIVATE-20261031",
-      "previous_review": "CLAUDE-0925-DOUBLECAST-CHOSEN-PRAYERS-PHASE23-20261120",
+      "previous_review": "CLAUDE-SYLVAN41-20261120",
       "prior_group_d_review": "IR-1145-GP-CONSUMERS-EXACT-9DB40B96-20261030",
       "protected_invariants": [
         "Simulation-thread command authority, current-controller versus physical-side identity and visible callback boundaries",
@@ -28531,7 +28540,7 @@
         "Packet/RNG draw order; primary versus SECONDARY/spell-like damage; health/shield/casualty provenance",
         "No callback/unit use after battle retirement; local movement provenance guard restores on every exit; no asynchronous extraction"
       ],
-      "rationale": "Exact successor for Sylvan Tactics 4.1: one-line hooks (segment distance passed to the shared voluntary-movement receipt) and one source registration only; the revised Dappled Cover, Quick Redeployment and Hunting Pack rules live in the focused NewHorizonsSylvanTacticsRevision unit. Existing extraction deferrals retained; no future growth credit.",
+      "rationale": "Exact successor for 0.93.1 Castle combat specialties (Volley Command, revised Aerial Supremacy, Benediction of Arms, Pariah, Frost Mantle, Quick Study, Sermon): bounded routing hooks into focused new owners only. Existing extraction deferrals retained; no future growth credit.",
       "responsibility_spans": [
         "102-681 targeting/deployment, Divine judgment, logs and spell-placement helpers",
         "683-1144 action basics and validated Hero spell execution",
@@ -28544,10 +28553,10 @@
         "4737-4883 stable-priority captured event reactions"
       ],
       "responsibleSourcePhase": "GP_FROZEN_C7C191B0_AND_REQUIRED_CD088EB5_PARTITION",
-      "review": "CLAUDE-SYLVAN41-20261120",
+      "review": "CLAUDE-CASTLE-COMBAT-0931",
       "review_scope": "Exact accepted Ghost Soul Harvest grant-result presentation and cohesive hostile-kill accumulator extraction only. Source review and pinned parser measurements; no build, native, rendered, sound, performance, or publication acceptance.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_REVIEWED_NATIVE_RENDERED_UNRUN",
-      "sha256": "135b5fbadb5d816602cbfba270125abec6cb2b819c8b3a0038bf5d72f58e9b7e"
+      "sha256": "2e74834fe1d4d12162bd2571aa9cd67ebcc92c0f8d594f37214cb6dd0cbf4f44"
     },
     "server/battles/BattleActionProcessor.cpp::BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest, bool voluntary)#1": {
       "deferral": "Owner: engine_engineer. Before further movement-preflight growth, route the stored continuation cap through its existing movement admission owner; preserve legal zero-move attacks, exact movement/obstacle/Overwatch costs and callback order, ground/flying paths and malformed-action refusal. Exact528 exception only. Before further affected expansion, owning engine/gameplay specialist must extract the next cohesive healing/provider/selection or ordered-transition responsibility, retaining query/mutation/serialization order and historical behavior. No raised ceiling, pending-baseline escape, runtime approval or later-growth permission. Preserve ALL inherited deferrals and exact prior shrinking baselines. Further growth must extract a cohesive domain owner before expansion; no future growth credit or limit increase.",
@@ -28605,16 +28614,16 @@
     },
     "server/battles/BattleActionProcessor.cpp::bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle, const BattleAction & ba, spells::AutomaticHeroCastReceipt automatic)#1": {
       "deferral": "Retain all inherited enclosing BattleActionProcessor file extraction and ordering/lifetime obligations. Before further substantive growth, isolate the affected cohesive Hero-spell admission or ordered completion stage in its focused owner; preserve synchronous receipt/snapshot lifetimes, rejection and packet/RNG order. No future growth allowance.",
-      "kind": "review",
-      "lines": 97,
+      "kind": "exception",
+      "lines": 99,
       "owner": "engine_engineer",
       "previous_exact_review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "previous_review": "PROPOSED-EXACT-HERO-SPELL-31-20261103",
-      "rationale": "Exact 145 to 97-line scope. Authoritative execution integrates current spell/action receipts and validated captured data while retiring incompatible handlers. Preserve validated requests, rejection atomicity, ordered effects/packets and RNG.",
-      "review": "IR-NH092-ORG-3E82D142-20261116",
+      "previous_review": "IR-NH092-ORG-3E82D142-20261116",
+      "rationale": "Exact successor for 0.93.1 Castle combat specialties (Volley Command, revised Aerial Supremacy, Benediction of Arms, Pariah, Frost Mantle, Quick Study, Sermon): bounded routing hooks into focused new owners only. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-CASTLE-COMBAT-0931",
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "c929c9d1f370ddc431513b6e3a4d58cd067a6e9d28a0b5b3dae7627dd0391681"
+      "sha256": "ebaff49e09f744be8ba2c596e40c4e30530de697ad6f223083b24b66821bf0e3"
     },
     "server/battles/BattleActionProcessor.cpp::bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & battle, const BattleAction &ba, bool * masterGateActivationContinuationOut, bool voluntary)#1": {
       "deferral": "Owner: Engine engineer. Interface/acceptance: Extract prepared Order effect packet installation and Order StartAction preparation into focused transition helpers; preserve remove/add/log/action/RNG order, rejected-command atomicity and immutable snapshot equality. Owning gameplay/engine specialist: before further substantive expansion of this touched rule/transition, extract the next coherent affected policy or ordered stage into a focused owner. Preserve callback visibility, original recipient/caster identity, rejection atomicity and packet/RNG order; characterization must compare exact state and emitted packets. This is no future growth credit.\n\nEngine with Gameplay: extract2292-2397 prepared Order construction into a nonpublishing transition helper taking battle and immutable action, returning explicit FocusFire/Order/DoubleCommand/precombat optionals or a typed rejection. Reuse OrderActionTransition and shared preparation rather than new rules. Leave Hero RNG/finalization and wrappers in the coordinator. Characterize refusal state/packets/RNG and accepted snapshot equality, concealed presentation and exact dispatch/completion order; preserve inherited packet-installation extraction. Protected invariants: RAII restoration of voluntaryMovementAction, output continuation initialized false; Invalid action/forged target/Wait/charge/Metamagic rejection before StartAction where currently guarded; Named/random creature spell preparation exactly once; effectiveAction used by dispatcher; Hero Luck/Morale only after preparation; concealed mines/Quicksand stripped only from presentation; StartAction then dispatch then EndAction; no new genuine activation on continuation; final obstacle placement retained. Gameplay engineer with engine integration: before further accepted-strike growth, extract physical-hit preparation and ordered aftermath publication behind one focused transaction taking immutable source facts, typed per-recipient quota/event owner and prepared packets. Preserve preapply casualty capture, primary then Judgment then final Redemption payout, LastStand spending, SECONDARY exclusions, source/controller identity, native packet/RNG order and hypothetical sibling parity. Existing stronger phase-extraction obligations remain binding.",
@@ -28706,7 +28715,7 @@
       "lines": 1091,
       "next_bounded_extraction": "Gameplay with Engine: extract only3956-3966 ordered aftermath publication first, using existing typed primary, Frozen, Mana and Reprisal receipts and explicit authority/battle references. Keep BattleAttack publication visible immediately before it. Do not move1080 lines to another owner or introduce unrestricted events. Require full deterministic packet/state/RNG before/after characterization for lethal source, Protect, LastStand, multihit, ordinary/automatic/counter/secondary, plus current codec controls; then ratchet caller and destination. All earlier extraction obligations survive.",
       "owner": "gameplay_engineer",
-      "previous_review": "IR-F86-ENGINE-COMPLETE-LEGACY-FREEZE-20261110",
+      "previous_review": "IR-GHOST-HARVEST-GROWTH-PRESENTATION-20261119",
       "protected_invariants": [
         "Protect consumed/published before recursive reactions; Brace/Bulwark/Battlecraft counters keep independent recursion and retaliation semantics",
         "BEFORE events may kill/replace actors: revalidate before RNG/damage; one strike flag roll shared across targets",
@@ -28714,7 +28723,7 @@
         "BattleAttack precedes PetrifyingBlood, Dread, primary aftermath, Reprisal, Fury, Mana and Frozen; exactly-once original-side/source receipts",
         "Physical versus spell-like/SECONDARY and actual shield/HP damage; LastStand ends activation; Counterfire/Cleave stamps precede recursion"
       ],
-      "rationale": "Shrinks processor4739to4736 and makeAttack1094to1091. Existing grant result is returned by finishStrike after its unchanged afterAttack callback and retained as a localbool until accepted primary packet publication. The existing9-line hostile-kill accumulator moves into83to122-line kill-rewards owner with exact predicate/order/arithmetic. Primary BattleAttack is still applied first, then one Resurrection/DRAINLIF presentation for actual successful SoulHarvest growth; no duplicate eligibility/JSON decode/casualty scan is introduced. Remaining primary aftermath and RNG/damage paths remain ordered. All inherited phase-extraction obligations and exact-source ceiling exception remain binding, with no future growth allowance.",
+      "rationale": "Exact successor for 0.93.1 Castle combat specialties (Volley Command, revised Aerial Supremacy, Benediction of Arms, Pariah, Frost Mantle, Quick Study, Sermon): bounded routing hooks into focused new owners only. Existing extraction deferrals retained; no future growth credit.",
       "responsibility_spans": [
         "3332-3461 admission, Protect, before-cast and preemptive responses",
         "3463-3590 packet/feedback setup, BEFORE events and streak admission",
@@ -28728,10 +28737,10 @@
         "4302-4405 Counterfire then deterministic Cleave"
       ],
       "responsibleSourcePhase": "GP_FROZEN_C7C191B0_AND_REQUIRED_CD088EB5_PARTITION",
-      "review": "IR-GHOST-HARVEST-GROWTH-PRESENTATION-20261119",
+      "review": "CLAUDE-CASTLE-COMBAT-0931",
       "review_scope": "Exact accepted Ghost Soul Harvest grant-result presentation and cohesive hostile-kill accumulator extraction only. Source review and pinned parser measurements; no build, native, rendered, sound, performance, or publication acceptance.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_REVIEWED_NATIVE_RENDERED_UNRUN",
-      "sha256": "987605889271ffba5627190450705286a1747336d189bc60cb1214c0c3448f35"
+      "sha256": "2518a1a175bd4009b9403ae2e69c39736026984e025868db033b2c4494b03237"
     },
     "server/battles/BattleActionProcessor.cpp::void BattleActionProcessor::resolveRainOfArrows(const CBattleInfoCallback & battle, const CStack * attacker, RainOfArrowsAction & action)#1": {
       "kind": "legacy",
@@ -29946,27 +29955,27 @@
       "legacy_freeze_predecessor_review_scope": "Exact frozen production patch only. Conditional on root serialized engine/AI/UI/content/test composition; no future growth, old-save matrix, native/render/runtime proof or adoption authorization.",
       "legacy_freeze_predecessor_review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_RENDERED_UNRUN",
       "legacy_freeze_predecessor_sha256": "690b5a69bdae37d2c7b0d5d4b0bc565325e0cd31baad8792de39838c71ebbc65",
-      "lines": 133,
+      "lines": 136,
       "next_bounded_extraction": "Gameplay: extract4490-4524 defender post-hit receipt staging into a focused function taking battle, immutable attack facts, hit/health-before and mutable prepared defender state, returning changed status. Keep RNG, casualty preparation, Reprisal and hit append at existing stages. Require exact primary/secondary packet/state/RNG, absorbed/lethal/LastStand and before-defense comparisons. The inherited ordered-primary-aftermath extraction remains independently required.",
       "owner": "gameplay_engineer",
-      "previous_review": "IR-CURRENT500-GUARD-NATIVE-PURE-JOINT122-20261031",
+      "previous_review": "IR-NH0921-C14-1164-CODEORG-20261117",
       "protected_invariants": [
         "One damage roll per target after shared forecast; no reroll for before-defense damage",
         "Post-shield/pre-casualty Reprisal capture and still-live source identity",
         "Shared per-attack LastStand expenditure array, target health provenance and final saved state include all staged markers",
         "SECONDARY exclusions and magical ordinary-primary Divine eligibility; packet target order"
       ],
-      "rationale": "Adds shared Sylvan attack-category rules to the existing ordered damage stage; authoritative resource accounting remains in the focused aftermath owner.\n\nIndependently reviewed C14 scope (131 to 133 physical lines): The reviewed Consecrated typed-context, completed-action and prepare/record/apply/complete routes remain at their original authority stages. The additional five lines only stamp SKILL Poison provenance after successful Toxic Spines application and before detached-state save. No new target, RNG draw, attack branch or formula is added to this hotspot. This bounds only the recorded hash and measured span; all inherited deferrals, ratchets and runtime holds remain binding, with no future growth allowance.",
+      "rationale": "Exact successor for 0.93.1 Castle combat specialties (Volley Command, revised Aerial Supremacy, Benediction of Arms, Pariah, Frost Mantle, Quick Study, Sermon): bounded routing hooks into focused new owners only. Existing extraction deferrals retained; no future growth credit.",
       "responsibility_spans": [
         "4415-4448 target and shared damage request",
         "4450-4489 authoritative roll, shield/casualty and retaliation receipts",
         "4490-4526 defender consumption/history",
         "4529-4542 packet hit and event payload"
       ],
-      "review": "IR-NH0921-C14-1164-CODEORG-20261117",
+      "review": "CLAUDE-CASTLE-COMBAT-0931",
       "review_scope": "Exact recorded C14 source hash, physical span and organization delta only. No future growth, whole-mechanic, compiler, native, rendered, performance, save-resume, publication or promotion acceptance.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN",
-      "sha256": "b67ed34853e8729e563cc9d6a49281a9cfeb2ac71c480ae826a9f9bbe3f182ec"
+      "sha256": "6394287fbf55747d0b1f021afc681845698b9d850e6def94b115147d5c1a1079"
     },
     "AI/BattleAI/AttackDamageValue.cpp::float AttackPossibility::calculateDamageReduce( const battle::Unit * attacker, const battle::Unit * defender, uint64_t damageDealt, DamageCache & damageCache, std::shared_ptr<CBattleInfoCallback> state, DamageCacheProbeTiming * timing, OrdinaryDamageObservation * observation)#1": {
       "deferral": "Owner ai_engineer: retain inherited bound and extract the next affected scoring/preparation responsibility before further substantive estimator growth. Characterize ordinary/Phantom/capacity health, callback identity, canonical provider admission and exception fallback; no future growth allowance.\nExtract the capacity-health valuation branch into a typed detached-state scoring helper before extending this estimator. Characterize Phantom threshold, survivor cohorts, capped damage, fallback reference attacker and original-damage cache observations.",
@@ -30075,6 +30084,26 @@
       "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
       "rationale": "Exact72 to89-line staging orchestration, file157 to174. Adds explicit player/default versus legacy diagnostic route, four small launcher support artifacts, and optional invocation of focused60-line authenticated archive writer. Source/archive/license/runtime admission remains in existing helpers; archive implementation is not inlined. Coherent below150-line orchestration reviewed at80-line trigger, no generic expansion permission. 2026-11-20: the launcher module list moved to the module-level PORTABLE_LAUNCHER_MODULES constant (adds PortableLauncherUpgrade.py); main shrinks 89 to 87 lines with no new policy. 2026-11-21: the player support file list moved to the module-level PLAYER_SUPPORT_FILES constant (adds the bundled changelog for the launcher What's new window); main shrinks 87 to 82 lines with no new policy.",
       "deferral": "Before further staging orchestration growth, extract the player-support copy plan and optional archive dispatch into a focused helper with exact artifact membership and byte-identity tests; no extra policy in main."
+    },
+    "AI/BattleAI/BattleEvaluatorHeroSubmit.cpp::bool BattleEvaluator::submitHeroAction(const PossibleSpellcast & castToPerform, heroActionTiming::Summary * timing)#1": {
+      "kind": "exception",
+      "owner": "gameplay_engineer",
+      "previous_review": null,
+      "deferral": "Before further substantive expansion, extract the next cohesive touched stage into its focused owner; preserve packet/RNG order, serialization field order and rejection atomicity. No future growth credit.",
+      "lines": 81,
+      "sha256": "a5524224702b278a6dc1e97f59ed02c07f94817e56b6d13c4da97d52c66d3e4a",
+      "review": "CLAUDE-CASTLE-COMBAT-0931",
+      "rationale": "Exact successor for 0.93.1 Castle combat specialties (Volley Command, revised Aerial Supremacy, Benediction of Arms, Pariah, Frost Mantle, Quick Study, Sermon): bounded routing hooks into focused new owners only. Existing extraction deferrals retained; no future growth credit."
+    },
+    "client/battle/BattleCureAfflictionUI.cpp::void BattleInterface::installCureAfflictionUI()#1": {
+      "kind": "exception",
+      "owner": "gameplay_engineer",
+      "previous_review": null,
+      "deferral": "Before further substantive expansion, extract the next cohesive touched stage into its focused owner; preserve packet/RNG order, serialization field order and rejection atomicity. No future growth credit.",
+      "lines": 84,
+      "sha256": "90d4679d9e661a2964afd2e1771eb49490c6818c693a23bbe8508b1cdf3b6ce7",
+      "review": "CLAUDE-CASTLE-COMBAT-0931",
+      "rationale": "Exact successor for 0.93.1 Castle combat specialties (Volley Command, revised Aerial Supremacy, Benediction of Arms, Pariah, Frost Mantle, Quick Study, Sermon): bounded routing hooks into focused new owners only. Existing extraction deferrals retained; no future growth credit."
     }
   }
 }
