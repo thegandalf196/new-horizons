@@ -91,7 +91,13 @@ protection.
 `revisedSpecialties` in the hero rules captures specialties revised on
 2026-11-20, one child row per hero. Absence keeps every historical specialty;
 `lib/entities/hero/NewHorizonsRevisedSpecialties` owns validation, effects and
-presentation.
+presentation. The Castle combat rows (`volleyCommand`, `aerialSupremacy`,
+`benedictionOfArms`, `pariah`, `frostMantle`, `quickStudy`, `sermon`) are parsed
+by `NewHorizonsCastleSpecialties`; each present row retires that hero's historical
+specialty. Level values are `base + perLevel x level`, capped, so the table's caps
+are reached at hero level 20. Frost Mantle's cloak runs the `new-horizons:frostMantle`
+combat event; Quick Study derives seen spells and spent copies from each side's
+saved completed hero-cast history, so neither adds battle-state fields.
 
 ### Historical perk-offer policy2
 

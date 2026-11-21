@@ -15,6 +15,7 @@
 #include "../entities/hero/NewHorizonsDreadCavalry.h"
 #include "../entities/hero/NewHorizonsChosenSpecialties.h"
 #include "../entities/hero/NewHorizonsRevisedSpecialties.h"
+#include "../entities/hero/NewHorizonsCastleSpecialties.h"
 #include "../pathfinder/NewHorizonsProtectedMobility.h"
 #include "../pathfinder/NewHorizonsMovement.h"
 #include "../battle/HeroCommand.h"
@@ -763,6 +764,7 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 		addNewBonus(newHorizonsHeroes::skillSpecialtyMarker::make(heroType->getId(), SecondarySkill(SecondarySkill::LOGISTICS)));
 	}
 	const bool hasSupportedSkillSpecialty = skillSpecialties.has_value()
+		&& !newHorizonsHeroes::castleSpecialtyRetiresHistorical(*this)
 		&& heroType->secondarySkillSpecialtyAlias
 		&& std::ranges::find(skillSpecialties->skills, heroType->secondarySkillSpecialtyAlias->skill)
 			!= skillSpecialties->skills.end();
@@ -1017,6 +1019,7 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 	if(convertsCreatureLineSpecialty || preparedCreatureMechanics)
 		refreshCreatureLineSpecialtyBonuses(true);
 	newHorizonsHeroes::refreshWheelOfFortune(*this);
+	newHorizonsHeroes::installCastleSpecialtyBonuses(*this);
 
 	//initialize bonuses
 	recreateSecondarySkillsBonuses();

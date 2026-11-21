@@ -13,6 +13,7 @@
 #include "../../nativeRules/CompiledDevelopmentRules.h"
 #include "NewHorizonsOrdinaryCreatureSpecialties.h"
 #include "NewHorizonsPassiveSpecialtyBonuses.h"
+#include "NewHorizonsCastleSpecialties.h"
 #include "../../bonuses/BonusSelector.h"
 
 #include <array>
@@ -89,7 +90,8 @@ void validateRevisedSpecialtiesSerialization(const JsonNode & development)
 	if(!development.isStruct() || !development.Struct().contains(ROW))
 		return;
 	const auto & row = development[ROW];
-	detail::fields(row, {"version", "lordOfTheCrypts", "levelScaling"});
+	detail::fields(row, {"version", "lordOfTheCrypts", "levelScaling", "volleyCommand", "aerialSupremacy",
+		"benedictionOfArms", "pariah", "frostMantle", "quickStudy", "sermon"});
 	detail::require(detail::integer(row["version"], 1, 1), "revised specialty version");
 	if(row.Struct().contains("levelScaling"))
 	{
@@ -103,6 +105,7 @@ void validateRevisedSpecialtiesSerialization(const JsonNode & development)
 		detail::fields(crypts, {"skeletonGrowthPerLevel"});
 		detail::require(detail::integer(crypts["skeletonGrowthPerLevel"], 1, 10), "Lord of the Crypts growth per level");
 	}
+	validateCastleSpecialtyRows(row);
 }
 
 bool requiresRevisedSpecialtyFormat(const JsonNode & document)
@@ -241,6 +244,9 @@ int lordOfTheCryptsGrowth(const CGHeroInstance & steward, const CGTownInstance &
 
 bool retiresSpecialtyBonus(const CGHeroInstance & hero, const Bonus & bonus)
 {
+	// Revised Castle specialties replace these heroes' whole historical specialty.
+	if(castleSpecialtyRetiresHistorical(hero))
+		return true;
 	// Lord of the Crypts replaces Clavius's flat daily Gold.
 	return bonus.type == BonusType::GENERATE_RESOURCE && isHero(hero, CLAVIUS)
 		&& lordOfTheCryptsRules(hero.getPrimaryGrowthRules()).has_value();
@@ -254,6 +260,8 @@ bool benefitsFromStewardship(const CGHeroInstance & hero, const CGTownInstance &
 bool resolveRevisedSpecialtyPresentation(const CHero & hero, const JsonNode & development,
 	const CGHeroInstance * capturedHero, SpecialtyPresentation & result)
 {
+	if(resolveCastleSpecialtyPresentation(hero, development, capturedHero, result))
+		return true;
 	if(hero.getJsonKey() != CLAVIUS)
 		return false;
 	const auto crypts = lordOfTheCryptsRules(development);

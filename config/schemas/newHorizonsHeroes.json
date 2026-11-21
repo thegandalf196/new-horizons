@@ -89,6 +89,56 @@
 						"levelScaling": {
 							"type": "object", "additionalProperties": false, "required": ["percentOfBasePerLevel"],
 							"properties": {"percentOfBasePerLevel": {"type": "integer", "minimum": 1, "maximum": 10}}
+						},
+						"volleyCommand": {
+							"type": "object", "additionalProperties": false, "description": "Orrin: volley shot damage, base + per level, capped.",
+							"required": ["damagePercent", "damagePercentPerLevel", "maximumDamagePercent"],
+							"properties": {
+								"damagePercent": {"type": "integer", "minimum": 0, "maximum": 100},
+								"damagePercentPerLevel": {"type": "integer", "minimum": 0, "maximum": 10},
+								"maximumDamagePercent": {"type": "integer", "minimum": 0, "maximum": 100}
+							}
+						},
+						"aerialSupremacy": {
+							"type": "object", "additionalProperties": false, "description": "Edric: revised any-range aerial counter and its damage bonus.",
+							"required": ["counterDamagePercentPerLevel", "maximumCounterDamagePercent"],
+							"properties": {
+								"counterDamagePercentPerLevel": {"type": "integer", "minimum": 0, "maximum": 10},
+								"maximumCounterDamagePercent": {"type": "integer", "minimum": 0, "maximum": 200}
+							}
+						},
+						"benedictionOfArms": {"$ref": "#/definitions/specialtyPrayerPotency"},
+						"sermon": {"$ref": "#/definitions/specialtyPrayerPotency"},
+						"pariah": {
+							"type": "object", "additionalProperties": false, "description": "Cuthbert: army Morale and Shadow Spell Power term multiplier.",
+							"required": ["morale", "shadowPowerPercentPerLevel", "maximumShadowPowerPercent"],
+							"properties": {
+								"morale": {"type": "integer", "minimum": -3, "maximum": 0},
+								"shadowPowerPercentPerLevel": {"type": "integer", "minimum": 0, "maximum": 10},
+								"maximumShadowPowerPercent": {"type": "integer", "minimum": 0, "maximum": 100}
+							}
+						},
+						"frostMantle": {
+							"type": "object", "additionalProperties": false, "description": "Adelaide: Frost Ring cloak around a friendly stack.",
+							"required": ["rounds", "returnedPercent", "returnedPercentPerLevel", "maximumReturnedPercent", "initiativePenaltyPercent", "chillRounds"],
+							"properties": {
+								"rounds": {"type": "integer", "minimum": 1, "maximum": 5},
+								"returnedPercent": {"type": "integer", "minimum": 0, "maximum": 100},
+								"returnedPercentPerLevel": {"type": "integer", "minimum": 0, "maximum": 10},
+								"maximumReturnedPercent": {"type": "integer", "minimum": 0, "maximum": 100},
+								"initiativePenaltyPercent": {"type": "integer", "minimum": 0, "maximum": 90},
+								"chillRounds": {"type": "integer", "minimum": 1, "maximum": 5}
+							}
+						},
+						"quickStudy": {
+							"type": "object", "additionalProperties": false, "description": "Sanya: copy seen combat spells at reduced Spell Power.",
+							"required": ["spellPowerPercent", "spellPowerPermillePerLevel", "maximumSpellPowerPercent", "secondUseLevel"],
+							"properties": {
+								"spellPowerPercent": {"type": "integer", "minimum": 0, "maximum": 100},
+								"spellPowerPermillePerLevel": {"type": "integer", "minimum": 0, "maximum": 100},
+								"maximumSpellPowerPercent": {"type": "integer", "minimum": 0, "maximum": 100},
+								"secondUseLevel": {"type": "integer", "minimum": 1, "maximum": 100}
+							}
 						}
 					}
 				},
@@ -151,6 +201,15 @@
 		}
 	],
 	"definitions": {
+		"specialtyPrayerPotency": {
+			"description": "Adela's Benediction of Arms or Loynis's Sermon: potency Faith bonus of specialty prayers, per level, capped.",
+			"type": "object", "additionalProperties": false,
+			"required": ["potencyPercentPerLevel", "maximumPotencyPercent"],
+			"properties": {
+				"potencyPercentPerLevel": {"type": "integer", "minimum": 0, "maximum": 10},
+				"maximumPotencyPercent": {"type": "integer", "minimum": 0, "maximum": 200}
+			}
+		},
 		"schoolSpellcraftSpecialties": {
 			"description": "Optional captured school-scoped Spellcraft specialties. Absence preserves the prior context; coefficients are provisional balance values.",
 			"type": "object", "additionalProperties": false, "not": {"type": "null"},

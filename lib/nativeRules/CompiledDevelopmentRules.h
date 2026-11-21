@@ -11,6 +11,7 @@
 #include "../entities/hero/NewHorizonsReclaimer.h"
 #include "../entities/hero/NewHorizonsLearningExchangeSpecialties.h"
 #include "../entities/hero/NewHorizonsRevisedSpecialties.h"
+#include "../entities/hero/NewHorizonsCastleSpecialties.h"
 
 #include <set>
 #include <string_view>
@@ -113,6 +114,7 @@ public:
 	std::optional<bool> aerialSupremacy;
 	std::optional<int> dreadCavalry;
 	std::optional<newHorizonsHeroes::SpecialtyLevelScaling> levelScaling;
+	newHorizonsHeroes::CastleSpecialtyRules castleSpecialties;
 	std::optional<int> manaLeeches;
 	std::optional<newHorizonsHeroes::LivingInfernoRules> livingInferno;
 	std::optional<newHorizonsHeroes::HerbalSurgeonRules> herbalSurgeon;
