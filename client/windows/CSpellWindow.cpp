@@ -13,6 +13,7 @@
 #include "CSpellWindow.h"
 #include "SpellbookPrayers.h"
 
+#include "../../lib/battle/QuickStudySpecialty.h"
 #include "../../lib/ScopeGuard.h"
 #include "../../lib/CSkillHandler.h"
 
@@ -496,6 +497,11 @@ void CSpellWindow::processSpells()
 
 	//initializing castable spells
 	mySpells.reserve(LIBRARY->spellh->objects.size());
+	const auto quickStudyBattle = myInt && myInt->battleInt ? myInt->battleInt->getBattle() : nullptr;
+	const auto quickStudyCopy = [this, &quickStudyBattle](const CSpell & spell)
+	{
+		return quickStudyBattle && quickStudySpecialty::canCopy(*quickStudyBattle, *myHero, spell.getId());
+	};
 	for(auto const & spell : LIBRARY->spellh->objects)
 	{
 		// Show-all can bypass possession, never the originating saved roster.
@@ -517,7 +523,7 @@ void CSpellWindow::processSpells()
 			continue;
 		}
 
-		const bool ownedOrGranted = !myHero->getSourcesForSpell(spell->getId()).empty();
+		const bool ownedOrGranted = !myHero->getSourcesForSpell(spell->getId()).empty() || quickStudyCopy(*spell);
 		if(!spell->isCreatureAbility() && (myHero->canCastThisSpell(spell.get()) || ownedOrGranted) && searchTextFound)
 			mySpells.push_back(spell.get());
 	}

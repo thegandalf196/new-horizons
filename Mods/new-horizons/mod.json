@@ -3182,6 +3182,12 @@
 						"initiativePenaltyPercent": 20,
 						"chillRounds": 1
 					},
+					"quickStudy": {
+						"spellPowerPercent": 50,
+						"spellPowerPermillePerLevel": 25,
+						"maximumSpellPowerPercent": 100,
+						"secondUseLevel": 10
+					},
 					"sermon": {
 						"potencyPercentPerLevel": 3,
 						"maximumPotencyPercent": 60

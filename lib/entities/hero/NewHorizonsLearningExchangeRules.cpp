@@ -7,6 +7,7 @@
 #include "NewHorizonsHeroRules.h"
 #include "NewHorizonsRuleValidation.h"
 #include "../../mapObjects/CGHeroInstance.h"
+#include "../../nativeRules/CompiledDevelopmentRules.h"
 namespace newHorizonsHeroes
 {
 namespace
@@ -60,7 +61,9 @@ std::optional<LearningExchangeSpecialtyRules> learningExchangeSpecialtyRules(con
 {
 	if(!hero)
 		return std::nullopt;
-	if(hero->getHeroTypeID() == HeroTypeID(HeroTypeID::decode("core:sanya")))
+	// Quick Study replaces Sanya's Ecumenical Scholar.
+	if(hero->getHeroTypeID() == HeroTypeID(HeroTypeID::decode("core:sanya"))
+		&& !hero->compiledDevelopment()->castleSpecialties.quickStudy)
 		return hero->compiledDevelopment()->learningExchange.at(static_cast<size_t>(LearningExchangeSpecialtyKind::ECUMENICAL_SCHOLAR));
 	if(hero->getHeroTypeID() == HeroTypeID(HeroTypeID::decode("core:geon")))
 		return hero->compiledDevelopment()->learningExchange.at(static_cast<size_t>(LearningExchangeSpecialtyKind::OCCULT_SCHOLAR));

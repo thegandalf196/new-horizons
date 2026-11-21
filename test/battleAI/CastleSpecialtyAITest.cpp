@@ -4,6 +4,7 @@
 #include "../server/battles/CastleSpecialtyFixture.h"
 #include "../../lib/battle/CastleSpecialtyPrayers.h"
 #include "../../lib/battle/NewHorizonsFrostMantle.h"
+#include "../../lib/battle/QuickStudySpecialty.h"
 #include "../../lib/spells/CSpell.h"
 #include "../../AI/BattleAI/AttackPossibility.h"
 #include "../../AI/BattleAI/CastleSpecialtyValue.h"
@@ -178,6 +179,21 @@ TEST_F(CastleSpecialtyAITest, LoynisValuesHisLightSpellsAndCastsThemWithAChosenS
 	const auto * recipient = battle()->battleGetUnitByID(bless.prayerRecipient);
 	ASSERT_NE(recipient, nullptr);
 	EXPECT_TRUE(consecratedArms::activePrayer(*recipient, static_cast<consecratedArms::Prayer>(bless.prayerChoices.front())));
+}
+
+TEST_F(CastleSpecialtyAITest, SanyaConsidersTheSpellHerOpponentCastAndCanCastIt)
+{
+	ASSERT_NO_FATAL_FAILURE(specialist("core:sanya", 10, false));
+	ASSERT_NO_FATAL_FAILURE(book(defenderSideHero, SpellID::BLESS, "new-horizons:lightMagic"));
+	ASSERT_NO_FATAL_FAILURE(spellArena());
+	EXPECT_EQ(bestSpellValue(SpellID::BLESS), std::numeric_limits<float>::lowest()) << "Not seen yet";
+	ASSERT_NO_FATAL_FAILURE(activate(enemy));
+	ASSERT_TRUE(submit(spellAt(DEFENDER, SpellID::BLESS, enemy), PlayerColor(1)));
+	ASSERT_NO_FATAL_FAILURE(activate(active));
+	EXPECT_GT(bestSpellValue(SpellID::BLESS), std::numeric_limits<float>::lowest() / 2) << "The seen spell is a valued candidate";
+	const auto action = acceptedChoice();
+	if(action.actionType == EActionType::HERO_SPELL && action.spell == SpellID(SpellID::BLESS))
+		EXPECT_EQ(quickStudySpecialty::spentCopies(*battle(), *attackerSideHero), 1);
 }
 
 TEST_F(CastleSpecialtyAITest, AdelaideRingsAFriendlyStackInFrostMantle)

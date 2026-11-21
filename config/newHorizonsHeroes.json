@@ -76,6 +76,7 @@
 		"benedictionOfArms": {"potencyPercentPerLevel": 3, "maximumPotencyPercent": 60},
 		"pariah": {"morale": -2, "shadowPowerPercentPerLevel": 5, "maximumShadowPowerPercent": 100},
 		"frostMantle": {"rounds": 2, "returnedPercent": 10, "returnedPercentPerLevel": 1, "maximumReturnedPercent": 40, "initiativePenaltyPercent": 20, "chillRounds": 1},
+		"quickStudy": {"spellPowerPercent": 50, "spellPowerPermillePerLevel": 25, "maximumSpellPowerPercent": 100, "secondUseLevel": 10},
 		"sermon": {"potencyPercentPerLevel": 3, "maximumPotencyPercent": 60}
 	},
 	"creatureLineSpecialties": {

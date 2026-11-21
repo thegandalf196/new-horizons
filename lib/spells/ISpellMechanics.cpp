@@ -9,6 +9,7 @@
  */
 
 #include "StdInc.h"
+#include "../battle/QuickStudySpecialty.h"
 #include "NewHorizonsWisdom.h"
 #include "NewHorizonsSorceryRevision.h"
 #include "ISpellMechanics.h"
@@ -875,6 +876,9 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 		if(const auto * heroCaster = caster->getHeroCaster())
 			effectPower += newHorizonsMagic::brimstoneSpellPowerBonus(*heroCaster, *cb)
 				+ metamagicDoubleCast::crescendoSpellPower(*heroCaster, *cb);
+		// Sanya's Quick Study: a copied spell uses a fraction of her Spell Power.
+		if(const auto * heroCaster = caster->getHeroCaster(); heroCaster && mode == Mode::HERO && !value)
+			effectPower = quickStudySpecialty::copyEffectPower(*heroCaster, owner->getId(), effectPower);
 	}
 	const auto * extendingHero = dynamic_cast<const CGHeroInstance *>(caster);
 	extendSpellEligible = mode == Mode::HERO && extendingHero && cb

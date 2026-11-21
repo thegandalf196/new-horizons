@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../battle/QuickStudySpecialty.h"
 #include "../battle/NewHorizonsSylvanTacticsV2.h"
 #include "SpellEffectScalingProfile.h"
 #include "SpellBonusProvenance.h"
@@ -1159,7 +1160,8 @@ bool BattleSpellMechanics::canBeCast(Problem & problem) const
 			}
 			else if(!automatic.automatic() && !castingHero->getArt(ArtifactPosition::SPELLBOOK))
 				genProblem = ESpellCastProblem::NO_SPELLBOOK;
-			else if(!automatic.automatic() && !castingHero->canCastThisSpell(owner))
+			else if(!automatic.automatic() && !castingHero->canCastThisSpell(owner)
+				&& !(battle() && quickStudySpecialty::canCopy(*battle(), *castingHero, owner->getId())))
 				genProblem = ESpellCastProblem::HERO_DOESNT_KNOW_SPELL;
 			else
 			{

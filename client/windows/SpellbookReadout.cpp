@@ -11,6 +11,7 @@
 #include "render/IFont.h"
 #include "render/IRenderHandler.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
+#include "../../lib/battle/QuickStudySpecialty.h"
 #include "../../lib/callback/CCallback.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/GameLibrary.h"
@@ -22,12 +23,18 @@ SpellCostBreakdown CSpellWindow::SpellArea::refreshReadout()
 	const auto access = spellbookPresentation::access(*owner->myHero, *mySpell, GAME->translator());
 	schoolLocked = access.schoolLocked;
 	schoolRequirementText = access.requirement;
+	const auto battle = owner->myInt->battleInt ? owner->myInt->battleInt->getBattle() : nullptr;
+	if(schoolLocked && battle && quickStudySpecialty::canCopy(*battle, *owner->myHero, mySpell->getId()))
+	{
+		// Sanya's Quick Study copy needs neither the book nor the school.
+		schoolLocked = false;
+		schoolRequirementText.clear();
+	}
 	divineMandateLocked = !owner->canUseSpellForCurrentDivineMandateFollowup(mySpell->getId());
 	divineMandateRequirementText = divineMandateLocked
 		? LIBRARY->generaltexth->translate("new-horizons.spellbook.lightFollowupOnly") : "";
 	doubleCastLocked = owner->repeatsDoubleCastSpell(mySpell->getId());
 	const auto breakdown = owner->myInt->cb->getSpellCostBreakdown(mySpell, owner->myHero);
-	const auto battle = owner->myInt->battleInt ? owner->myInt->battleInt->getBattle() : nullptr;
 	effectPreview = newHorizonsMagic::spellEffectPreview(*owner->myHero, *mySpell, battle.get());
 	const int selectionCost = breakdown.finalCost;
 	const bool unavailable = divineMandateLocked || doubleCastLocked || owner->isAdventureSpellUsedToday(mySpell->id)

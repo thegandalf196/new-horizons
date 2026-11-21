@@ -654,8 +654,9 @@ int64_t HypotheticBattle::getActualDamage(const DamageRange & damage, int32_t at
 
 std::vector<SpellID> HypotheticBattle::getUsedSpells(BattleSide side) const
 {
-	// TODO
-	return {};
+	// Accepted hero spells are public battlefield history (Quick Study reads
+	// it); projected casts are not added to it.
+	return subject->getBattle()->getUsedSpells(side);
 }
 
 int3 HypotheticBattle::getLocation() const

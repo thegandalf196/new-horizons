@@ -156,6 +156,7 @@ set(test_SRCS
 		server/battles/CastlePrayerSpecialtyTest.cpp
 		server/battles/CastlePariahTest.cpp
 		server/battles/CastleFrostMantleTest.cpp
+		server/battles/CastleQuickStudyTest.cpp
 		server/battles/MetamagicDoubleCastTest.cpp
 		server/battles/MetamagicDoubleCastPerksTest.cpp
 		server/battles/ConsecratedArmsLastStandTest.cpp
@@ -441,6 +442,7 @@ set(test_SRCS
 		hero/NewHorizonsMasteryStateTest.cpp
 		hero/NewHorizonsPerkRulesTest.cpp
 		hero/RevisedSpecialtyLevelScalingTest.cpp
+		hero/CastleSpecialtyRulesTest.cpp
 	hero/NewHorizonsValidatedPerkRulesTest.cpp
 	hero/NewHorizonsPerkOperationTest.cpp
 	hero/PerkInitializationReference.cpp
