@@ -19394,11 +19394,11 @@
       },
       "deferral": "Before substantive gateway growth, extract the touched object-specific purchase/interaction stage, passing callback, hero, destination and authoritative quote. Preserve visible-state checks, native command order, actual buyer and once-only reservations.\n\nBefore any further gateway or turn-error growth, extract the turn-completion/error boundary into the existing turn-execution owner with explicit callback, player and interruption/termination outcome. Retain the shared read lease during state reads and turn completion/recovery. Release and reacquire it only through the synchronous request wait guard. Preserve no endTurn on planner cancellation/termination, original authoritative command order and at-most-once fallback; characterize normal, thrown-error and shutdown routes before extraction. Retain all prior purchase/interaction extraction obligations.",
       "kind": "exception",
-      "lines": 2430,
+      "lines": 2428,
       "owner": "ai_engineer",
-      "previous_review": "IR-NH092-ORG-3E82D142-20261116",
-      "rationale": "Exact successor for 0.93.1 beta step 1 (Precise Casting resistance halving, core Stewardship and Lord of the Crypts, +3%/level specialty scaling, activation of unchanged extended ordinary specialties): bounded routing hooks and focused owners only. Existing extraction deferrals retained; no future growth credit.",
-      "review": "CLAUDE-SPECIALTIES-0931",
+      "previous_review": "CLAUDE-SPECIALTIES-0931",
+      "rationale": "Exact successor for 0.93.1 Castle adventure specialties and starts (Forced March, Well Connected, Alms of the Faithful, Cuthbert and Loynis starts): bounded routing hooks into focused owners only. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-CASTLE-ADVENTURE-0931",
       "review_history": [
         {
           "deferral": "AI engineer owns extraction of current-node special-action dispatch/current-day execution boundary into a focused executor before any further affected-area growth. Preserve parent dependencies, composite and DimensionDoor stale recovery, current-day approaches, exact request/wait/ack ordering, exceptions and captured historical behavior; characterize them with focused native tests. Gateway file remains capped at2861 until shrinking extraction.",
@@ -19449,7 +19449,7 @@
       ],
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "d13b19a143ffc2ccff22b4fce7d2961196ee709c5ff8eca371d68b13a5ed6b10"
+      "sha256": "78eab10c8091c21d5768aebac6c5f787981c0346aa0fadccd3e0813a965682a8"
     },
     "AI/Nullkiller2/AIGateway.cpp::NK2AI::AIGateway::pickBestArtifacts(const std::shared_ptr<CCallback> & cc, const CGHeroInstance * h, const CGHeroInstance * other)::[cc](const CGHeroInstance * h, const CGHeroInstance * otherh, bool giveStuffToFirstHero) -> void#1": {
       "kind": "legacy",
@@ -19543,12 +19543,13 @@
     },
     "AI/Nullkiller2/AIGateway.cpp::NK2AI::void AIGateway::showBlockingDialog(const std::string & text, const std::vector<Component> & components, QueryID askID, const int soundID, bool selection, bool cancel, bool safeToAutoaccept)#1": {
       "kind": "legacy",
-      "lines": 191,
+      "lines": 187,
       "owner": "ai_engineer",
-      "rationale": "Existing function owned for structural review by ai_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 191 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "rationale": "Exact successor for 0.93.1 Castle adventure specialties and starts (Forced March, Well Connected, Alms of the Faithful, Cuthbert and Loynis starts): bounded routing hooks into focused owners only. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-CASTLE-ADVENTURE-0931",
       "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "c408fc3d0c9ca86d5fbbd6104a56fae3584cb44a607eccf0b79ce5c042039be6"
+      "sha256": "cd1c337480dda663dd22b8712d5733cc60c718857e0071efb32f906c3f3602e7",
+      "previous_review": "source-size-legacy-freeze-cf2e62f9-v1"
     },
     "AI/Nullkiller2/AIGatewayLevelUpChoice.cpp::NK2AI::int AIGateway::chooseLevelUpAdvancement(const HeroPtr & heroPtr, const std::vector<SecondarySkill> & skills, const std::vector<newHorizonsHeroes::PerkOfferCandidate> & perks)#1": {
       "deferral": "Extract offered-parent eligibility versus advancement scoring into separate focused helpers before further chooser expansion; preserve current rank/perk prerequisites, offer identity and RNG. Cap this renewal to the recorded exact size and hash; independent review and relevant runtime validation remain required.",
@@ -23665,7 +23666,7 @@
       "inherited_a1_health_deferral": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.",
       "inherited_deferral": "Exact source-list bound only. Before substantive build logic, extract a cohesive target configuration section. Verify source/link membership once and retain no duplicate translation units. Prior stricter obligations remain in inherited_deferral, where present.",
       "kind": "exception",
-      "lines": 2173,
+      "lines": 2175,
       "owner": "engine_engineer",
       "previous_review": "CLAUDE-CASTLE-COMBAT-0931",
       "prior_a1_health_scope": {
@@ -23680,7 +23681,7 @@
       "review": "CLAUDE-CASTLE-ADVENTURE-0931",
       "review_scope": "Exact frozen A7 production/routing source only; no compiler, Windows path runtime, recovery, timing, release or future-growth acceptance.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NATIVE_WINDOWS_PENDING",
-      "sha256": "a059a4f5afb01f5dd4445cedccfca6a173a95fbb291072ad7cd84658efd4fb33",
+      "sha256": "4fa6d5e66444575a58489f497c07b383d79e7f3688a6a98a1314f74b592c2d3d",
       "inherited_deferral_step2": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.\n\nExact shared-facade source/header registration only. Before conditional target/control policy growth, extract the next coherent configuration section; preserve one translation unit per implementation and consumer linkage through vcmi. No future registry-size growth credit."
     },
     "lib/CSkillHandler.cpp::std::shared_ptr<CSkill> CSkillHandler::loadFromJson(const std::string & scope, const JsonNode & json, const std::string & identifier, size_t index)#1": {

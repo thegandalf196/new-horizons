@@ -21,6 +21,7 @@
 #include "../mapObjectConstructors/AObjectTypeHandler.h"
 #include "../mapObjectConstructors/CRewardableConstructor.h"
 #include "CGHeroInstance.h"
+#include "../rewardable/NewHorizonsChestDonation.h"
 #include "../networkPacks/PacksForClient.h"
 #include "../networkPacks/PacksForClientBattle.h"
 #include "../networkPacks/StackLocation.h"
@@ -154,6 +155,8 @@ void CRewardableObject::markAsVisited(IGameEventCallback & gameEvents, const CGH
 void CRewardableObject::grantReward(IGameEventCallback & gameEvents, ui32 rewardID, const CGHeroInstance * hero) const
 {
 	gameEvents.setObjPropertyValue(id, ObjProperty::REWARD_SELECT, rewardID);
+	// Caitlin's donation uses her level before the chest Experience applies.
+	newHorizonsRewardable::grantChestDonation(gameEvents, configuration, rewardID, *hero, ID);
 	grantRewardBeforeLevelup(gameEvents, configuration.info.at(rewardID), hero);
 	
 	// hero is not blocked by levelup dialog - grant remainder immediately

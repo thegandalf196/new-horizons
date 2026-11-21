@@ -810,6 +810,7 @@ set(lib_MAIN_SRCS
 	mapObjects/NewHorizonsEstates.cpp
 	mapObjects/MineCompanyDefense.cpp
 	rewardable/VisitRewardEffects.cpp
+	rewardable/NewHorizonsChestDonation.cpp
 	mapObjects/NewHorizonsEstatesPolicy.cpp
 	mapObjects/EstatesRecruitmentQuote.cpp
 	mapObjects/EstatesStewardship.cpp
@@ -1862,6 +1863,7 @@ set(lib_MAIN_HEADERS
 	rewardable/Info.h
 	rewardable/Interface.h
 	rewardable/Limiter.h
+	rewardable/NewHorizonsChestDonation.h
 	rewardable/Reward.h
 	rewardable/PrimaryAndExperienceReward.h
 

@@ -99,13 +99,15 @@ grows by `perLevel` per further level, within its cap. Frost Mantle's cloak runs
 combat event; Quick Study derives seen spells and spent copies from each side's
 saved completed hero-cast history, so neither adds battle-state fields.
 The Castle adventure-map rows (`forcedMarch` for Sylvia, `wellConnected` for Lord
-Haart) live in
+Haart, `almsOfTheFaithful` for Caitlin) live in
 `lib/entities/hero/NewHorizonsCastleAdventureSpecialties`; a captured row retires that
 hero's historical specialty bonuses and skill-specialty marker. Sylvia's next-combat
 Morale penalty is an ordinary `ONE_BATTLE` hero bonus, so it is saved with the hero.
 Haart's discount is part of the shared recruitment quote
 (`lib/mapObjects/EstatesRecruitmentQuote`) that prices, affordability, AI baskets and
-payment all use; it never advances the Conscription ledger.
+payment all use; it never advances the Conscription ledger. Caitlin's treasure-chest
+donation (`lib/rewardable/NewHorizonsChestDonation`) is paid before the chest Experience,
+from the declined Gold option after Tax Collector.
 
 ### Historical perk-offer policy2
 

@@ -1072,6 +1072,7 @@ set(test_SRCS
 		server/CoreStewardshipTest.cpp
 		server/ForcedMarchSpecialtyTest.cpp
 		server/WellConnectedSpecialtyTest.cpp
+		server/AlmsOfTheFaithfulTest.cpp
 		server/FourOfferHeroProgressionTest.cpp
 		server/LegacyEstatesCapture.h
 		server/RevisedEstatesFixture.h

@@ -3204,6 +3204,11 @@
 						"discountPermillePerLevel": 5,
 						"maximumDiscountPermille": 150,
 						"combinedDiscountCapPercent": 25
+					},
+					"almsOfTheFaithful": {
+						"donationPercent": 20,
+						"donationPercentPerLevel": 2,
+						"maximumDonationPercent": 60
 					}
 				},
 				"creatureLineSpecialties": {
@@ -14224,6 +14229,7 @@
 		"new-horizons.adventure.spellLearning.or": " or ",
 		"new-horizons.economy.spellbook.purchase": "Would you like to purchase a Spellbook for %d Gold?",
 		"new-horizons.economy.taxCollector.bonus": "Tax Collector adds:",
+		"new-horizons.economy.almsOfTheFaithful.donation": "Alms of the Faithful: the faithful donate %d Gold.",
 		"new-horizons.growth.recruitmentModifier": "Before recruitment modifier: %d\nRecruitment growth: %d% (rounded up)\nFinal weekly growth: %d",
 		"new-horizons.lighthouse.departure.help": "Embarking from this owned Castle's port costs no embarkation movement penalty. The departing hero gains +%PERCENT%% sea movement for that day only.",
 		"new-horizons.economy.stewardship.total": "Projected town income: %d Gold/day (after income handicap)",

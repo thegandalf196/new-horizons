@@ -162,6 +162,16 @@
 								"maximumDiscountPermille": {"type": "integer", "minimum": 1, "maximum": 1000},
 								"combinedDiscountCapPercent": {"type": "integer", "minimum": 1, "maximum": 100}
 							}
+						},
+						"almsOfTheFaithful": {
+							"type": "object", "additionalProperties": false,
+							"description": "Caitlin: Gold donated with treasure-chest Experience, in percent of the declined Gold after Tax Collector.",
+							"required": ["donationPercent", "donationPercentPerLevel", "maximumDonationPercent"],
+							"properties": {
+								"donationPercent": {"type": "integer", "minimum": 1, "maximum": 100},
+								"donationPercentPerLevel": {"type": "integer", "minimum": 0, "maximum": 100},
+								"maximumDonationPercent": {"type": "integer", "minimum": 1, "maximum": 100}
+							}
 						}
 					}
 				},

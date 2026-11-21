@@ -92,7 +92,8 @@ void validateRevisedSpecialtiesSerialization(const JsonNode & development)
 		return;
 	const auto & row = development[ROW];
 	detail::fields(row, {"version", "lordOfTheCrypts", "levelScaling", "volleyCommand", "aerialSupremacy",
-		"benedictionOfArms", "pariah", "frostMantle", "quickStudy", "sermon", "forcedMarch", "wellConnected"});
+		"benedictionOfArms", "pariah", "frostMantle", "quickStudy", "sermon", "forcedMarch", "wellConnected",
+		"almsOfTheFaithful"});
 	detail::require(detail::integer(row["version"], 1, 1), "revised specialty version");
 	if(row.Struct().contains("levelScaling"))
 	{

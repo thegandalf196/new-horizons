@@ -36,6 +36,8 @@ struct DLL_LINKAGE CastleAdventureSpecialties
 	/// Lord Haart: recruitment discount in permille of the base price.
 	std::optional<LevelScaledValue> wellConnectedDiscountPermille;
 	int wellConnectedCombinedCapPercent = 0;
+	/// Caitlin: percent of the declined treasure-chest Gold donated with the Experience.
+	std::optional<LevelScaledValue> almsDonationPercent;
 };
 
 DLL_LINKAGE void validateCastleAdventureSpecialties(const JsonNode & revisedRow);
@@ -52,6 +54,11 @@ DLL_LINKAGE bool isForcedMarchMoralePenalty(const Bonus & bonus);
 DLL_LINKAGE int wellConnectedDiscountPermille(const CGHeroInstance * buyer);
 /// Cap on Well Connected plus Conscription, in percent of the base price.
 DLL_LINKAGE int wellConnectedCombinedCapPercent(const CGHeroInstance * buyer);
+
+/// Caitlin's donation percent, or 0 for any other hero.
+DLL_LINKAGE int almsOfTheFaithfulPercent(const CGHeroInstance & hero);
+/// Gold donated when she declines this much Gold (already after Tax Collector); rounded down.
+DLL_LINKAGE int almsOfTheFaithfulDonation(const CGHeroInstance & hero, int declinedGold);
 
 /// True when this hero's captured Castle adventure specialty replaces every prototype
 /// specialty bonus and skill-specialty marker of that hero.

@@ -20,6 +20,7 @@ namespace
 constexpr auto ROW = "revisedSpecialties";
 constexpr auto SYLVIA = "core:sylvia";
 constexpr auto HAART = "core:lordHaart";
+constexpr auto CAITLIN = "core:caitlin";
 constexpr auto FORCED_MARCH_STACKING = "new-horizons:forced-march-specialty";
 
 bool isHero(const CGHeroInstance & hero, const char * key)
@@ -87,6 +88,12 @@ void validateCastleAdventureSpecialties(const JsonNode & revisedRow)
 		requireScaled(row, "discountPermille", "discountPermillePerLevel", "maximumDiscountPermille", 1000, "Well Connected discount");
 		detail::require(detail::integer(row["combinedDiscountCapPercent"], 1, 100), "Well Connected combined cap");
 	}
+	if(revisedRow.Struct().contains("almsOfTheFaithful"))
+	{
+		const auto & row = revisedRow["almsOfTheFaithful"];
+		detail::fields(row, {"donationPercent", "donationPercentPerLevel", "maximumDonationPercent"});
+		requireScaled(row, "donationPercent", "donationPercentPerLevel", "maximumDonationPercent", 100, "Alms of the Faithful donation");
+	}
 }
 
 std::optional<CastleAdventureSpecialties> castleAdventureSpecialties(const JsonNode & development)
@@ -110,7 +117,10 @@ std::optional<CastleAdventureSpecialties> castleAdventureSpecialties(const JsonN
 		result.wellConnectedDiscountPermille = scaled(row, "discountPermille", "discountPermillePerLevel", "maximumDiscountPermille");
 		result.wellConnectedCombinedCapPercent = static_cast<int>(row["combinedDiscountCapPercent"].Integer());
 	}
-	if(!result.forcedMarchMovementPercent && !result.wellConnectedDiscountPermille)
+	if(revised.Struct().contains("almsOfTheFaithful"))
+		result.almsDonationPercent = scaled(revised["almsOfTheFaithful"], "donationPercent", "donationPercentPerLevel",
+			"maximumDonationPercent");
+	if(!result.forcedMarchMovementPercent && !result.wellConnectedDiscountPermille && !result.almsDonationPercent)
 		return std::nullopt;
 	return result;
 }
@@ -159,18 +169,30 @@ int wellConnectedCombinedCapPercent(const CGHeroInstance * buyer)
 	return rules && rules->wellConnectedDiscountPermille ? rules->wellConnectedCombinedCapPercent : 100;
 }
 
+int almsOfTheFaithfulPercent(const CGHeroInstance & hero)
+{
+	const auto * rules = capturedRules(hero);
+	return rules && rules->almsDonationPercent && isHero(hero, CAITLIN) ? rules->almsDonationPercent->at(heroLevel(hero)) : 0;
+}
+
+int almsOfTheFaithfulDonation(const CGHeroInstance & hero, int declinedGold)
+{
+	return declinedGold > 0 ? static_cast<int>(static_cast<int64_t>(declinedGold) * almsOfTheFaithfulPercent(hero) / 100) : 0;
+}
+
 bool retiresHistoricalCastleSpecialty(const CGHeroInstance & hero)
 {
 	const auto * rules = capturedRules(hero);
 	return rules && ((rules->forcedMarchMovementPercent && isHero(hero, SYLVIA))
-		|| (rules->wellConnectedDiscountPermille && isHero(hero, HAART)));
+		|| (rules->wellConnectedDiscountPermille && isHero(hero, HAART))
+		|| (rules->almsDonationPercent && isHero(hero, CAITLIN)));
 }
 
 bool resolveCastleAdventurePresentation(const CHero & hero, const JsonNode & development,
 	const CGHeroInstance * capturedHero, SpecialtyPresentation & result)
 {
 	const auto & key = hero.getJsonKey();
-	if(key != SYLVIA && key != HAART)
+	if(key != SYLVIA && key != HAART && key != CAITLIN)
 		return false;
 	const auto rules = castleAdventureSpecialties(development);
 	if(!rules)
@@ -202,6 +224,18 @@ bool resolveCastleAdventurePresentation(const CHero & hero, const JsonNode & dev
 			+ permilleText(current(value)) + " less Gold and resources" + growthText(value, true)
 			+ ", rounded down for each resource. This adds to Conscription; together they discount at most "
 			+ std::to_string(rules->wellConnectedCombinedCapPercent) + "%. War machines are not discounted.";
+		return true;
+	}
+	if(key == CAITLIN && rules->almsDonationPercent)
+	{
+		const auto & value = *rules->almsDonationPercent;
+		result.name = "Alms of the Faithful";
+		result.artwork = detail::resolvedSpecialtyArtwork(key, detail::SpecialtyArtworkFamily::Resource, "gold");
+		result.summary = "Taking the Experience at a treasure chest also donates " + std::to_string(current(value))
+			+ "% of the declined Gold.";
+		result.description = "When this hero takes the Experience at a treasure chest, the faithful donate Gold equal to "
+			+ std::to_string(current(value)) + "% of the Gold option she declined" + growthText(value)
+			+ ", rounded down. The Gold option is measured after Tax Collector. Experience modifiers such as Historian apply as usual.";
 		return true;
 	}
 	return false;

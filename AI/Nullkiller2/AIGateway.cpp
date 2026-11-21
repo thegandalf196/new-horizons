@@ -47,6 +47,7 @@
 #include "../../lib/battle/BattleInfo.h"
 #include "../../lib/CPlayerState.h"
 #include "../../lib/spells/CSpell.h"
+#include "../../lib/entities/hero/NewHorizonsCastleAdventureSpecialties.h"
 
 #include "AIGateway.h"
 #include "Goals/Goals.h"
@@ -55,6 +56,7 @@
 #include "Helpers/ArmyExchangeExecution.h"
 #include "Helpers/NewHorizonsMuster.h"
 #include "Helpers/NewHorizonsTravelLanding.h"
+#include "Helpers/TreasureChestChoice.h"
 
 #include <algorithm>
 #include <array>
@@ -892,14 +894,10 @@ void AIGateway::showBlockingDialog(const std::string & text, const std::vector<C
 				std::unique_lock mxLock(nullkiller->aiStateMutex);
 
 				// TODO: Find better way to understand it is Chest of Treasures
-				if(heroPtr.isVerified()
-					&& components.size() == 2
-					&& components.front().type == ComponentType::RESOURCE
-					&& (nullkiller->heroManager->getHeroRoleOrDefault(heroPtr) != HeroRole::MAIN
-						|| nullkiller->buildAnalyzer->isGoldPressureOverMax()))
-				{
+				if(heroPtr.isVerified() && components.size() == 2 && components.front().type == ComponentType::RESOURCE
+					&& prefersChestGold(nullkiller->heroManager->getHeroRoleOrDefault(heroPtr) == HeroRole::MAIN,
+						nullkiller->buildAnalyzer->isGoldPressureOverMax(), newHorizonsHeroes::almsOfTheFaithfulPercent(*heroPtr.get())))
 					sel = 1;
-				}
 		}
 
 		answerQuery(askID, sel);

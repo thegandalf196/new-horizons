@@ -79,7 +79,8 @@
 		"quickStudy": {"spellPowerPercent": 50, "spellPowerPermillePerLevel": 25, "maximumSpellPowerPercent": 100, "secondUseLevel": 10},
 		"sermon": {"potencyPercentPerLevel": 3, "maximumPotencyPercent": 60},
 		"forcedMarch": {"movementPercent": 20, "movementPercentPerLevel": 2, "maximumMovementPercent": 60, "moralePenalty": 1},
-		"wellConnected": {"discountPermille": 50, "discountPermillePerLevel": 5, "maximumDiscountPermille": 150, "combinedDiscountCapPercent": 25}
+		"wellConnected": {"discountPermille": 50, "discountPermillePerLevel": 5, "maximumDiscountPermille": 150, "combinedDiscountCapPercent": 25},
+		"almsOfTheFaithful": {"donationPercent": 20, "donationPercentPerLevel": 2, "maximumDonationPercent": 60}
 	},
 	"creatureLineSpecialties": {
 		"version": 1,
