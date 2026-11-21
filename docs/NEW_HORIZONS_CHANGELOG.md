@@ -7,6 +7,12 @@ and revisions as the game develops.
 For individual perk effects, spell formulas, creature statistics and Order rules,
 read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 
+## 0.92.8 Early Access
+
+- Fixed computer opponents occasionally freezing the game after a battle that
+  gave their hero a level.
+- No gameplay changes.
+
 ## 0.92.7 Early Access
 
 - Installations made before 0.92.6 now pick up the current launcher: after one
