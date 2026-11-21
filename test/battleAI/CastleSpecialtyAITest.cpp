@@ -179,6 +179,17 @@ TEST_F(CastleSpecialtyAITest, LoynisValuesHisLightSpellsAndCastsThemWithAChosenS
 	EXPECT_TRUE(consecratedArms::activePrayer(*recipient, static_cast<consecratedArms::Prayer>(bless.prayerChoices.front())));
 }
 
+TEST_F(CastleSpecialtyAITest, CuthbertCastsHisStrengthenedShadowSpell)
+{
+	ASSERT_NO_FATAL_FAILURE(specialist("core:cuthbert", 10, false));
+	ASSERT_NO_FATAL_FAILURE(book(attackerSideHero, SpellID(SpellID::decode("new-horizons:lifeDrain")),
+		"new-horizons:shadowMagic"));
+	ASSERT_NO_FATAL_FAILURE(spellArena());
+	const auto action = acceptedChoice();
+	ASSERT_EQ(action.actionType, EActionType::HERO_SPELL) << "command " << static_cast<int>(action.command);
+	EXPECT_EQ(action.spell, SpellID(SpellID::decode("new-horizons:lifeDrain")));
+}
+
 TEST_F(CastleSpecialtyAITest, EdricBattleAIActionsAreAcceptedWhileGriffinsCounterShots)
 {
 	ASSERT_NO_FATAL_FAILURE(specialist("core:edric", 10));

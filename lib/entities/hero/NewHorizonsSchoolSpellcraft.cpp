@@ -6,6 +6,7 @@
 #include "NewHorizonsSchoolSpellcraft.h"
 #include "NewHorizonsHeroRules.h"
 #include "NewHorizonsRuleValidation.h"
+#include "NewHorizonsCastleSpecialties.h"
 #include "CHero.h"
 #include "CHeroHandler.h"
 #include "../../mapObjects/CGHeroInstance.h"
@@ -24,6 +25,36 @@ constexpr std::array<std::string_view, 4> identities{"core:zydar", "core:sandro"
 constexpr std::array<std::array<std::string_view, 2>, 4> pairs{{
 	{"new-horizons:chaos", "new-horizons:havoc"}, {"new-horizons:shadow", "new-horizons:sorcery"},
 	{"new-horizons:chaos", "new-horizons:nature"}, {"new-horizons:nature", "new-horizons:shadow"}}};
+
+bool commonSavedHeroSpell(const JsonNode & magic, SpellID spell)
+{
+	return newHorizonsMagic::rulesActive(magic)
+		&& magic["rulesetVersion"].Integer() == newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION
+		&& spell.hasValue() && spell.toSpell() && spell.toSpell()->isCommonHeroSpell()
+		&& newHorizonsMagic::spellAllowedBySavedRoster(magic, spell)
+		&& !newHorizonsMagic::isAdventureSpell(magic, spell);
+}
+
+/// Cuthbert's Pariah: his Shadow spells' whole Spell Power term is multiplied by
+/// 1 + the captured level percentage (x2 at most). Fixed bases are unaffected.
+SpellcraftCastContext capturePariahContext(const JsonNode & magic, const CGHeroInstance * hero,
+	SpellID spell, SpellcraftCastContext result)
+{
+	const int bonus = pariahShadowPowerPercent(hero);
+	if(bonus <= 0 || !commonSavedHeroSpell(magic, spell))
+		return result;
+	const auto & schools = magic["spells"][spell.toSpell()->getJsonKey()]["schools"].Vector();
+	if(std::ranges::none_of(schools, [](const JsonNode & school) { return school.String() == "new-horizons:shadow"; }))
+		return result;
+	SpellcraftSpecialtyFactors factors;
+	factors.schoolPercent = newHorizonsMagic::spellPowerCoefficientPercent(magic, hero, spell);
+	factors.ordinaryEfficiencyPercent = newHorizonsMagic::spellcraftEfficiencyPercent(
+		magic, newHorizonsMagic::detail::registeredSpellcraftRank(hero));
+	factors.enhancedEfficiencyBasisPoints = factors.ordinaryEfficiencyPercent * (100 + bonus);
+	factors.scope = SpellcraftSpecialtyScope::NUMERICAL;
+	result.factors = factors;
+	return result;
+}
 
 std::optional<size_t> identityIndex(std::string_view identity)
 {
@@ -75,6 +106,8 @@ SpellcraftCastContext captureSpellcraftContext(const JsonNode & magic, const CGH
 	const auto & identity = LIBRARY->heroh->objects[heroType]->getJsonKey();
 	const auto index = identityIndex(identity);
 	const bool malekith = identity == "core:malekith";
+	if(identity == "core:cuthbert")
+		return capturePariahContext(magic, hero, spell, result);
 	if(!index && !malekith)
 		return result;
 	std::optional<WarlocksFormulaRules> rule;

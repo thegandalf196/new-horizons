@@ -3169,6 +3169,11 @@
 						"potencyPercentPerLevel": 3,
 						"maximumPotencyPercent": 60
 					},
+					"pariah": {
+						"morale": -2,
+						"shadowPowerPercentPerLevel": 5,
+						"maximumShadowPowerPercent": 100
+					},
 					"sermon": {
 						"potencyPercentPerLevel": 3,
 						"maximumPotencyPercent": 60

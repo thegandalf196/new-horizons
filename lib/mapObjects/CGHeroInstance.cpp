@@ -16,6 +16,7 @@
 #include "../entities/hero/NewHorizonsChosenSpecialties.h"
 #include "../entities/hero/NewHorizonsRevisedSpecialties.h"
 #include "../entities/hero/NewHorizonsCastleSpecialties.h"
+#include "../entities/hero/NewHorizonsPariahLearning.h"
 #include "../pathfinder/NewHorizonsProtectedMobility.h"
 #include "../pathfinder/NewHorizonsMovement.h"
 #include "../battle/HeroCommand.h"
@@ -713,6 +714,9 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 	}
 	else //remove placeholder
 		spells -= SpellID::PRESET;
+	if(creationInitialization) // Cuthbert's Pariah mirrors his starting Light spells.
+		for(const auto & mirror : newHorizonsHeroes::pariahMirrorSpells(*this, spells, gameRandomizer.getDefault(), true))
+			spells.insert(mirror);
 
 	initializeBasicStartingEquipment(isFake);
 

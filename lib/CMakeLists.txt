@@ -285,6 +285,7 @@ set(lib_MAIN_SRCS
 		entities/hero/NewHorizonsDreadCavalry.cpp
 		entities/hero/NewHorizonsRevisedSpecialties.cpp
 		entities/hero/NewHorizonsCastleSpecialties.cpp
+		entities/hero/NewHorizonsPariahLearning.cpp
 		entities/hero/NewHorizonsGenieSage.cpp
 		entities/hero/NewHorizonsGenieAbilities.cpp
 	battle/NewHorizonsSoulHarvest.cpp
@@ -1365,6 +1366,7 @@ set(lib_MAIN_HEADERS
 		entities/hero/NewHorizonsDreadCavalry.h
 		entities/hero/NewHorizonsRevisedSpecialties.h
 		entities/hero/NewHorizonsCastleSpecialties.h
+		entities/hero/NewHorizonsPariahLearning.h
 		entities/hero/NewHorizonsGenieSage.h
 	battle/NewHorizonsSoulHarvest.h
 	battle/NewHorizonsOrdinaryStrike.h

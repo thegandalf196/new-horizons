@@ -120,6 +120,7 @@
 
 #include <vstd/RNG.h>
 #include <vstd/CLoggerBase.h>
+#include "../lib/entities/hero/NewHorizonsPariahLearning.h"
 #include <vcmi/events/EventBus.h>
 #include <vcmi/events/GenericEvents.h>
 #include <vcmi/events/AdventureEvents.h>
@@ -1757,8 +1758,22 @@ void CGameHandler::heroExchange(ObjectInstanceID hero1, ObjectInstanceID hero2)
 }
 
 
+void CGameHandler::addPariahMirrors(ChangeSpells & pack)
+{
+	const auto * hero = pack.learn ? gameInfo().getHero(pack.hid) : nullptr;
+	if(!hero)
+		return;
+	for(const auto & spell : newHorizonsHeroes::pariahMirrorSpells(*hero, pack.spells, getRandomGenerator()))
+		pack.spells.insert(spell);
+}
+
 void CGameHandler::sendAndApply(CPackForClient & pack)
 {
+	// Pariah: every learning path reaches the hero through one of these packets.
+	if(auto * learned = dynamic_cast<ChangeSpells *>(&pack))
+		addPariahMirrors(*learned);
+	else if(auto * results = dynamic_cast<BattleResultsApplied *>(&pack))
+		addPariahMirrors(results->learnedSpells);
 	// Validate captured policy before applyPack broadcasts and then applies the packet.
 	if(const auto * start = dynamic_cast<const BattleStart *>(&pack))
 	{

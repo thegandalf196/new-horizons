@@ -154,6 +154,7 @@ set(test_SRCS
 		server/battles/ConsecratedArmsChoiceTest.cpp
 		server/battles/CastleCommandSpecialtyTest.cpp
 		server/battles/CastlePrayerSpecialtyTest.cpp
+		server/battles/CastlePariahTest.cpp
 		server/battles/MetamagicDoubleCastTest.cpp
 		server/battles/MetamagicDoubleCastPerksTest.cpp
 		server/battles/ConsecratedArmsLastStandTest.cpp

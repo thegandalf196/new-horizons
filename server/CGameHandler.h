@@ -39,6 +39,7 @@ struct CGarrisonOperationPack;
 struct SetResources;
 struct NewStructures;
 struct SetStackEffect;
+struct ChangeSpells;
 
 class HeroPoolProcessor;
 class CVCMIServer;
@@ -349,6 +350,8 @@ public:
 	void configureReplayLog(bool gameIsNew);
 
 	void sendAndApply(CPackForClient & pack) override;
+	/// Cuthbert's Pariah adds mirrored Shadow spells to an outgoing learning packet.
+	void addPariahMirrors(ChangeSpells & pack);
 	void sendAndApply(CArtifactOperationPack & pack);
 	void sendAndApply(CGarrisonOperationPack & pack);
 	void sendAndApply(SetResources & pack);
