@@ -102,7 +102,7 @@ file(WRITE "${{CMAKE_BINARY_DIR}}/policy.txt" "${{unity}}\\n${{batch}}\\n${{guar
         self.assertNotIn('--parallel', command)
         workflow = yaml.safe_load((ROOT / '.github/workflows/new-horizons-windows.yml').read_text())
         dispatch = workflow.get('on', workflow.get(True))['workflow_dispatch']['inputs']
-        self.assertIs(dispatch['use_unity_build']['default'], False)
+        self.assertIs(dispatch['use_unity_build']['default'], True)
         steps = {step.get('name'): step for step in workflow['jobs']['build']['steps']}
         expression = "${{ inputs.use_unity_build && 'ON' || 'OFF' }}"
         self.assertIn('--use-unity-build ' + expression, steps['Configure client and internal authority']['run'])
