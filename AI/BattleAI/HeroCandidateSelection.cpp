@@ -1,13 +1,18 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt and AUTHORS. */
 #include "StdInc.h"
 #include "BattleEvaluator.h"
+#include "DoubleCastFollowUp.h"
+#include "../../lib/battle/CPlayerBattleCallback.h"
+#include "../../lib/callback/CBattleCallback.h"
 #include "HeroActionSelection.h"
 #include "HeroActionTiming.h"
 
-bool BattleEvaluator::finishHeroSelection(const std::vector<PossibleSpellcast> & possibleCasts,
+bool BattleEvaluator::finishHeroSelection(std::vector<PossibleSpellcast> & possibleCasts,
 	float noCastBaseline, bool mandatoryOrder, heroActionSelection::Observer * observer,
 	heroActionTiming::Summary * timing)
 {
+	doubleCastAI::addCompletionValue(possibleCasts, *cb->getBattle(battleID), hb, side, noCastBaseline,
+		damageCache, scoreEvaluator.getPositiveEffectMultiplier());
 	const auto selection = heroActionSelection::choose(possibleCasts, noCastBaseline, mandatoryOrder, observer);
 	if(!selection)
 		return false; // Existing nonempty guard above makes this defensive only.

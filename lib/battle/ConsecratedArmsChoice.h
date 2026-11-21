@@ -39,8 +39,4 @@ DLL_LINKAGE ChoiceRequest choiceRequest(const CBattleInfoCallback & battle, cons
 /// snapshot (empty for non-Order actions or non-canonical rules).
 DLL_LINKAGE std::optional<std::string> choiceRefusal(const CBattleInfoCallback & battle,
 	const BattleAction & action, const std::optional<HeroOrderState> & prepared);
-/// TEMPORARY (Consecrated Arms 4, phase 6 replaces it with scored AI choices):
-/// fills an empty version 4 choice with the first eligible recipient and the
-/// lowest-numbered prayer(s) so AI Orders stay legal. A no-op otherwise.
-DLL_LINKAGE void applyProvisionalDefaultChoice(const CBattleInfoCallback & battle, BattleAction & action);
 }

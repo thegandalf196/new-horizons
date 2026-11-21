@@ -109,16 +109,4 @@ ChoiceRequest choiceRequest(const CBattleInfoCallback & battle, const BattleActi
 		result.prayers = required;
 	return result;
 }
-
-void applyProvisionalDefaultChoice(const CBattleInfoCallback & battle, BattleAction & action)
-{
-	if(hasChoiceFields(action))
-		return;
-	const auto request = choiceRequest(battle, action);
-	if(!request.prayers)
-		return;
-	action.prayerRecipient = request.recipients.front();
-	for(size_t index = 0; index < request.prayers; ++index)
-		action.prayerChoices.push_back(static_cast<uint8_t>(index));
-}
 }

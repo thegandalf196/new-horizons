@@ -8,7 +8,7 @@
 #include "HeroActionTiming.h"
 #include "HeroOrderCandidateRules.h"
 #include "../../lib/battle/BattleAction.h"
-#include "../../lib/battle/ConsecratedArmsChoice.h"
+#include "ConsecratedArmsValue.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/callback/CBattleCallback.h"
 #include "../../lib/spells/CSpell.h"
@@ -34,7 +34,7 @@ bool BattleEvaluator::submitHeroAction(const PossibleSpellcast & castToPerform,
 			if(!cb->getBattle(battleID)->battleCanConfirmHeroCommand(side, castToPerform.command, targetId))
 				return false;
 			auto action = BattleAction::makeTargetedHeroCommand(side, castToPerform.command, targetId);
-			consecratedArms::applyProvisionalDefaultChoice(*cb->getBattle(battleID), action); // TEMPORARY until phase 6
+			consecratedArmsAI::applyChosenPrayers(*cb->getBattle(battleID), hb, damageCache, action);
 			decisionBaseOpen = false;
 	heroActionTiming::SubmitScope submit(timing);
 			cb->battleMakeSpellAction(battleID, action);
@@ -50,7 +50,7 @@ bool BattleEvaluator::submitHeroAction(const PossibleSpellcast & castToPerform,
 					castToPerform.commandTargets.front(), castToPerform.commandTargets.back());
 			else
 				action = BattleAction::makeHeroCommand(side, castToPerform.command);
-			consecratedArms::applyProvisionalDefaultChoice(*cb->getBattle(battleID), action); // TEMPORARY until phase 6
+			consecratedArmsAI::applyChosenPrayers(*cb->getBattle(battleID), hb, damageCache, action);
 			decisionBaseOpen = false;
 	heroActionTiming::SubmitScope submit(timing);
 			cb->battleMakeSpellAction(battleID, action);

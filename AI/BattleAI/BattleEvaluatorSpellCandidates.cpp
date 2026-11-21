@@ -13,11 +13,11 @@
 #include "HeroOrderCandidateRules.h"
 #include "../../lib/battle/NewHorizonsCommandResources.h"
 #include "BattleAIDiagnosticAdmission.h"
+#include "DoubleCastFollowUp.h"
 
 #include "../../lib/GameLibrary.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/battle/HeroActionAllowanceState.h"
-#include "../../lib/battle/MetamagicDoubleCast.h"
 #include "../../lib/callback/CBattleCallback.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/spells/CSpellHandler.h"
@@ -31,9 +31,8 @@ std::vector<BattleEvaluator::SpellOption> BattleEvaluator::collectCastableHeroSp
 {
 	std::vector<SpellOption> possibleSpells;
 	if(admission) admission->requireSupportedContext(mandatoryOrder, divineMandateStatus.pendingFollowup.has_value());
-	// TEMPORARY (Metamagic 6, phase 6 adds follow-up scoring): decline the Double Cast
-	// offer. Any other action forfeits it at no cost, so the AI never repeats a spell.
-	if(metamagicDoubleCast::offerGranted(battleView->getBattle()->getHeroActionAllowances(side))) return possibleSpells;
+	// An open Double Cast offer is scored like any hero spell; declining stays free.
+	const doubleCastAI::FollowUpFilter followUp(*battleView, side, hero);
 
 	for(auto const & s : LIBRARY->spellh->objects)
 	{
@@ -49,8 +48,17 @@ std::vector<BattleEvaluator::SpellOption> BattleEvaluator::collectCastableHeroSp
 			divineMandateFollowup = divineMandateStatus.pendingFollowup
 				&& selection->grantId == divineMandateStatus.pendingFollowup->id;
 		}
+		if(followUp.refuses(s->getId())) continue;
 		if(s->canBeCast(battleView.get(), spells::Mode::HERO, hero))
 			possibleSpells.push_back({s.get(), divineMandateFollowup});
+	}
+	if(followUp.offerOpen())
+	{
+		std::vector<const CSpell *> spells;
+		for(const auto & option : possibleSpells) spells.push_back(option.spell);
+		const auto dropped = followUp.overCap(spells);
+		std::erase_if(possibleSpells, [&](const SpellOption & option)
+		{ return std::ranges::find(dropped, option.spell->getId()) != dropped.end(); });
 	}
 	return possibleSpells;
 }

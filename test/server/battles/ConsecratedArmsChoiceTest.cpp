@@ -4,6 +4,8 @@
 #include "HeroCommandFixture.h"
 #include "../../../lib/GameLibrary.h"
 #include "../../../lib/battle/ConsecratedArmsChoice.h"
+#include "../../../AI/BattleAI/ConsecratedArmsValue.h"
+#include "../../../AI/BattleAI/AttackPossibility.h"
 #include "../../../client/battle/ConsecratedArmsPrayerChoice.h"
 #include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
@@ -133,11 +135,11 @@ TEST_F(ConsecratedArmsChoiceTest, AntiphonalAppliesTwoDifferentChosenPrayers)
 	EXPECT_EQ(prayerTotal(), 2);
 }
 
-TEST_F(ConsecratedArmsChoiceTest, ProvisionalAiChoiceKeepsOrdersLegal)
+TEST_F(ConsecratedArmsChoiceTest, AiFallbackChoiceWithoutABoardKeepsOrdersLegal)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	auto action = BattleAction::makeHeroCommand(ATTACKER, HeroCommand::CHARGE);
-	applyProvisionalDefaultChoice(*battle(), action);
+	consecratedArmsAI::applyChosenPrayers(*battle(), nullptr, {}, action);
 	ASSERT_EQ(action.prayerChoices, std::vector<uint8_t>{0});
 	ASSERT_NE(action.prayerRecipient, BattleAction::NO_PRAYER_RECIPIENT);
 	ASSERT_TRUE(submit(action));
@@ -191,7 +193,7 @@ TEST_F(ConsecratedArmsChoiceTest, HeroWithoutTheSkillCarriesNoChoice)
 	auto action = BattleAction::makeHeroCommand(ATTACKER, HeroCommand::CHARGE);
 	EXPECT_EQ(choiceRequest(*battle(), action).prayers, 0u);
 	EXPECT_TRUE(choiceRequest(*battle(), action).recipients.empty());
-	applyProvisionalDefaultChoice(*battle(), action);
+	consecratedArmsAI::applyChosenPrayers(*battle(), nullptr, {}, action);
 	EXPECT_TRUE(action.prayerChoices.empty());
 	EXPECT_TRUE(submit(action));
 	EXPECT_EQ(prayerTotal(), 0);
@@ -205,7 +207,7 @@ TEST_F(ConsecratedArmsChoiceTest, VersionThreeRejectsChoiceFieldsAndStaysRandom)
 	expectRejected(charge({0}, friendly.front()->unitId()));
 	auto action = BattleAction::makeHeroCommand(ATTACKER, HeroCommand::CHARGE);
 	EXPECT_EQ(choiceRequest(*battle(), action).prayers, 0u); // Random prayers open no picker.
-	applyProvisionalDefaultChoice(*battle(), action);
+	consecratedArmsAI::applyChosenPrayers(*battle(), nullptr, {}, action);
 	EXPECT_TRUE(action.prayerChoices.empty());
 	ASSERT_TRUE(submit(action));
 	// Version 3 draws one random prayer for every recipient of the Order.

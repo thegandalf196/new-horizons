@@ -121,6 +121,82 @@ TEST(ConsecratedArmsValueTest, LivingLiturgyCreditsExistingPrayerDurationWithout
 	const auto ordinary = consecratedArmsAI::expectedRecipientValue(Policy{3}, 200, before, exposure);
 	EXPECT_GT(consecratedArmsAI::expectedRecipientValue(current, 200, before, exposure), ordinary);
 }
+Policy chosen(uint16_t perks = 0)
+{
+	Policy result;
+	result.rank = perks ? 3 : 1;
+	result.perks = perks;
+	result.chosen = true;
+	return result;
+}
+consecratedArmsAI::RecipientExposure recipient(uint32_t id, double outgoing, double incoming, int64_t count = 10)
+{
+	consecratedArmsAI::RecipientExposure result;
+	result.recipient = id;
+	result.exposure.outgoing = outgoing;
+	result.exposure.incoming = incoming;
+	result.exposure.count = count;
+	result.exposure.firstHP = result.exposure.maximumHP = 10;
+	result.exposure.movement = 5;
+	return result;
+}
+TEST(ConsecratedArmsValueTest, ChosenPrayerArgmaxPicksTheStrongAttackerAndAnOffensivePrayer)
+{
+	const std::array recipients{recipient(4, 20, 0), recipient(7, 400, 0), recipient(9, 50, 0)};
+	const auto choice = consecratedArmsAI::bestChoice(chosen(), 200, recipients);
+	ASSERT_TRUE(choice);
+	EXPECT_EQ(choice->recipient, 7u);
+	ASSERT_EQ(choice->prayers.size(), 1u);
+	EXPECT_TRUE(choice->prayers.front() == Prayer::DIVINE_PURPOSE || choice->prayers.front() == Prayer::HEAVENS_JUDGMENT);
+	EXPECT_GT(choice->value, 0);
+}
+TEST(ConsecratedArmsValueTest, ChosenPrayerArgmaxProtectsTheStackAboutToBeMauled)
+{
+	// No damage output, a lethal incoming hit on a 100-creature stack: the Vow caps casualties.
+	const std::array recipients{recipient(3, 0, 1000, 100), recipient(5, 0, 10, 100)};
+	const auto choice = consecratedArmsAI::bestChoice(chosen(), 200, recipients);
+	ASSERT_TRUE(choice);
+	EXPECT_EQ(choice->recipient, 3u);
+	ASSERT_EQ(choice->prayers.size(), 1u);
+	EXPECT_EQ(choice->prayers.front(), Prayer::UNBROKEN_VOW);
+}
+TEST(ConsecratedArmsValueTest, ChosenPrayerArgmaxPricesSteadfastSoulOnlyAgainstEnemyMagic)
+{
+	auto quiet = recipient(2, 100, 0);
+	quiet.exposure.movement = 1000; // Speed is worthless; morale and luck are capped.
+	quiet.exposure.moraleRoom = quiet.exposure.luckRoom = 0;
+	const std::array a{quiet};
+	const auto withoutMagic = consecratedArmsAI::bestChoice(chosen(), 200, a);
+	ASSERT_TRUE(withoutMagic);
+	EXPECT_NE(withoutMagic->prayers.front(), Prayer::STEADFAST_SOUL);
+	auto threatened = quiet;
+	threatened.exposure.enemySpellThreat = 1;
+	const std::array prayers{Prayer::STEADFAST_SOUL};
+	EXPECT_GT(consecratedArmsAI::chosenRecipientValue(chosen(), 200, {}, threatened.exposure, prayers),
+		consecratedArmsAI::chosenRecipientValue(chosen(), 200, {}, quiet.exposure, prayers));
+}
+TEST(ConsecratedArmsValueTest, ChosenPrayerArgmaxIsDeterministicAndBreaksTiesByOrder)
+{
+	const std::array recipients{recipient(11, 100, 100), recipient(12, 100, 100)};
+	const auto first = consecratedArmsAI::bestChoice(chosen(), 200, recipients);
+	const auto again = consecratedArmsAI::bestChoice(chosen(), 200, recipients);
+	ASSERT_TRUE(first && again);
+	EXPECT_EQ(first->recipient, 11u);
+	EXPECT_EQ(first->recipient, again->recipient);
+	EXPECT_EQ(first->prayers, again->prayers);
+	EXPECT_FLOAT_EQ(first->value, again->value);
+}
+TEST(ConsecratedArmsValueTest, ChosenPrayerArgmaxChoosesTwoDifferentPrayersWithAntiphonal)
+{
+	const auto antiphonal = chosen(static_cast<uint16_t>(Perk::ANTIPHONAL_PRAYER));
+	const std::array recipients{recipient(1, 300, 300, 50)};
+	const auto choice = consecratedArmsAI::bestChoice(antiphonal, 200, recipients);
+	ASSERT_TRUE(choice);
+	ASSERT_EQ(choice->prayers.size(), 2u);
+	EXPECT_NE(choice->prayers[0], choice->prayers[1]);
+	EXPECT_FALSE(consecratedArmsAI::bestChoice(Policy{1}, 200, recipients)) << "Random prayers carry no choice";
+	EXPECT_FALSE(consecratedArmsAI::bestChoice(chosen(), 200, {}));
+}
 }
 
 namespace heroQueueTest

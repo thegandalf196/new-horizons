@@ -67,6 +67,20 @@ constexpr NativeFamily families[] = {
 	{"new-horizons:metamagic", "new-horizons:metamagic.arcaneBallistics"},
 	{"new-horizons:metamagic", "new-horizons:metamagic.arcaneCascade"},
 	{"new-horizons:metamagic", "new-horizons:metamagic.empoweredSpells"},
+	// Metamagic 6 (Double Cast): use counts, Crescendo and Spellstorm are native
+	// reads of the battle ledger; Arcane Ward is native unit shield state. The
+	// remaining completion effects run only at an authoritative double cast, which
+	// a forecast never completes; the decision prices them separately.
+	{"new-horizons:metamagic", "new-horizons:metamagic.arcaneWard"},
+	{"new-horizons:metamagic", "new-horizons:metamagic.manaSiphon"},
+	{"new-horizons:metamagic", "new-horizons:metamagic.deepReserves"},
+	{"new-horizons:metamagic", "new-horizons:metamagic.formulaRecovery"},
+	{"new-horizons:metamagic", "new-horizons:metamagic.arcaneCycle"},
+	{"new-horizons:metamagic", "new-horizons:metamagic.afterglow"},
+	{"new-horizons:metamagic", "new-horizons:metamagic.crescendo"},
+	{"new-horizons:metamagic", "new-horizons:metamagic.cleansingWeave"},
+	{"new-horizons:metamagic", "new-horizons:metamagic.grandWeaving"},
+	{"new-horizons:metamagic", "new-horizons:metamagic.spellstorm"},
 	{"new-horizons:offense", "new-horizons:offense.shockAssault"},
 	{"new-horizons:offense", "new-horizons:offense.encirclement"},
 	{"new-horizons:offense", "new-horizons:offense.executioner"},

@@ -233,6 +233,8 @@ set(battleAI_SRCS
 		MetamagicExpectedValue.h
 		MetamagicCompletionValue.cpp
 		MetamagicCompletionValue.h
+		DoubleCastFollowUp.cpp
+		DoubleCastFollowUp.h
 		FocusMagicProjection.cpp
 		FocusMagicProjection.h
 		HypotheticWisdom.cpp

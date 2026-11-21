@@ -67,7 +67,7 @@ class DLL_LINKAGE BattleEvaluator
 	bool activeActionMade = false;
 	BattleAction legalSearchIncumbent(const CStack * stack) const;
 	bool submitHeroAction(const PossibleSpellcast & castToPerform, heroActionTiming::Summary * timing);
-	bool finishHeroSelection(const std::vector<PossibleSpellcast> &, float, bool,
+	bool finishHeroSelection(std::vector<PossibleSpellcast> &, float, bool,
 		heroActionSelection::Observer *, heroActionTiming::Summary *);
 	CachedAttack cachedAttack;
 	void includeSyntheticInspiration(PossibleSpellcast &, const std::shared_ptr<HypotheticBattle> &, uint32_t actorId);

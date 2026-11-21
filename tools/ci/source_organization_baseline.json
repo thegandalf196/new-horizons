@@ -17096,9 +17096,9 @@
       ]
     },
     "AI/BattleAI/BattleEvaluator.h": {
-      "sha256": "1a1fc8856ff7f9d25f04f9247d398b094d2d88e37bff2564dffa67465751788c",
-      "review": "IR-NH0921-COMPOSED4-CODEORG-20261117",
-      "rationale": "Complete exact-content callable inventory independently checked, including definitions, inline bodies, templates, lambdas and function-like macros across both NH_PERF_EXPERIMENTS branches. Original physical spans are retained; parser recovery remains explicit and does not imply empty coverage. Known recovery contexts were inspected; declaration/default-initializer syntax contributes no executable body.",
+      "sha256": "94e91e210556458a41d9c6d90e29600e6a001b7933d66909360228e5adee38d2",
+      "review": "CLAUDE-METAMAGIC6-PHASE6-20261120",
+      "rationale": "Metamagic 6 phase 6 changes only the finishHeroSelection declaration's candidate parameter from const to mutable reference (completion value is added in place); no callable body, span or line count changes. Previous review IR-NH0921-COMPOSED4-CODEORG-20261117: Complete exact-content callable inventory independently checked, including definitions, inline bodies, templates, lambdas and function-like macros across both NH_PERF_EXPERIMENTS branches. Original physical spans are retained; parser recovery remains explicit and does not imply empty coverage. Known recovery contexts were inspected; declaration/default-initializer syntax contributes no executable body.",
       "functions": [
         {
           "symbol": "BattleEvaluator::forecast::Counters takeForecastPreparation() noexcept#1",
