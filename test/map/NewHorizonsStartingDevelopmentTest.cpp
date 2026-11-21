@@ -710,7 +710,8 @@ TEST_F(NewHorizonsStartingDevelopmentTest, AdelaideDefaultCryomancerFeedsOnlyIce
 	const SpellID frost(SpellID::FROST_RING);
 	ASSERT_TRUE(actor()->spellbookContainsSpell(frost));
 	ASSERT_TRUE(actor()->canCastThisSpell(frost.toSpell()));
-	EXPECT_EQ(actor()->getDamageSpellSpecialtyBonusPercent(frost), 15);
+	// Frost Mantle replaces the historical +15% Frost Ring specialty in new games.
+	EXPECT_EQ(actor()->getDamageSpellSpecialtyBonusPercent(frost), 0);
 	EXPECT_EQ(newHorizonsMagic::spellPowerDamagePerkBonusPercent(actor()->getMagicRules(), actor(), frost.toSpell()), 20);
 	EXPECT_EQ(newHorizonsMagic::spellPowerDamagePerkBonusPercent(actor()->getMagicRules(), actor(), SpellID(SpellID::FIREBALL).toSpell()), 0);
 }

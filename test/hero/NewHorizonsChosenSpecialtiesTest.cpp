@@ -90,7 +90,11 @@ TEST(NewHorizonsChosenSpecialties, SeparateRidersNeverScaleChosenAbilitiesOrLega
 	const SpellID crusade(SpellID::decode("new-horizons:crusade"));
 	EXPECT_EQ(chosenSpecialtyDurationBonus(rules, "core:inteus", chosen), 1);
 	EXPECT_EQ(chosenSpecialtyDurationBonus(rules, "core:loynis", chosen), 0);
-	EXPECT_EQ(chosenSpecialtyManaDiscount(rules, "core:loynis", chosen), 20);
+	// Sermon (revisedSpecialties) replaces Loynis's discount; captures without it keep 20%.
+	EXPECT_EQ(chosenSpecialtyManaDiscount(rules, "core:loynis", chosen), 0);
+	auto historical = rules;
+	historical["revisedSpecialties"].Struct().erase("sermon");
+	EXPECT_EQ(chosenSpecialtyManaDiscount(historical, "core:loynis", chosen), 20);
 	EXPECT_EQ(chosenSpecialtyManaDiscount(rules, "core:inteus", chosen), 0);
 	EXPECT_EQ(chosenSpecialtyDurationBonus(rules, "core:inteus", crusade), 0);
 	EXPECT_EQ(chosenSpecialtyManaDiscount(rules, "core:loynis", crusade), 0);

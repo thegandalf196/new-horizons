@@ -5,7 +5,8 @@
 
 TEST_F(ForecastNativeAdapterTest, InertSkillMarkerRequiresExactAuthoredHeroLocalIdentityAndShape)
 {
-	ASSERT_NO_FATAL_FAILURE(prepare(false, false, false, "core:pikeman", false, false, "core:orrin", false, true));
+	ASSERT_NO_FATAL_FAILURE(prepare(false, false, false, "core:pikeman", false, false, "core:mephala", false, true));
+	// Mephala keeps her Armorer skill specialty marker; Volley Command retires Orrin's Archery one.
 	const auto * hero = parent->battleGetVisibleHeroPolicy(BattleSide::ATTACKER).legacyHero();
 	ASSERT_NE(hero, nullptr);
 	const auto skill = hero->getHeroType()->secondarySkillSpecialtyAlias;

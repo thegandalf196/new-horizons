@@ -474,6 +474,11 @@ protected:
 		useRevisedOrders = true;
 		HeroCommandFixture::mapLoaded(loaded);
 		JsonNode development(JsonPath::builtin("config/newHorizonsHeroes"));
+		// These cases bind the selected art of the governing historical policies.
+		// The revised Castle rows replace several of them and own their own art.
+		for(const auto * castle : {"volleyCommand", "aerialSupremacy", "benedictionOfArms", "pariah", "frostMantle",
+			"quickStudy", "sermon"})
+			development["revisedSpecialties"].Struct().erase(castle);
 		if(historical)
 		{
 			const std::string_view policy = resolvedArtCases.at(GetParam()).policy;

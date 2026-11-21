@@ -3,6 +3,7 @@
 	* License: GNU General Public License v2.0 or later; see license.txt
 	*/
 #include "StdInc.h"
+#include "NewHorizonsCastleSpecialties.h"
 #include "NewHorizonsChosenSpecialties.h"
 #include "NewHorizonsHeroRules.h"
 #include "CHero.h"
@@ -84,6 +85,9 @@ int chosenSpecialtyDurationBonus(const JsonNode & development, std::string_view 
 
 int chosenSpecialtyManaDiscount(const JsonNode & development, std::string_view heroKey, SpellID spell)
 {
+	// Sermon replaces Loynis's Anointed Champions discount.
+	if(heroKey == "core:loynis" && castleSpecialtyRules(development).sermon)
+		return 0;
 	const auto rules = chosenSpecialtyRules(development);
 	return rules && heroKey == "core:loynis" && spell.hasValue()
 		&& spell.toSpell()->getJsonKey() == "new-horizons:theChosen" ? rules->loynisManaDiscountPercent : 0;

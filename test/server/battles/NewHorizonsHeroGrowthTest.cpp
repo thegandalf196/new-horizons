@@ -344,10 +344,11 @@ TEST_F(NewHorizonsInstalledSkillGrowthTest, ScopedSkillRanksUseInstalledGrowthMa
 			const auto row = std::find_if(authored.begin(), authored.end(), [&](const auto & entry)
 				{ return entry["skill"].String() == configuredSkills[index].id; });
 			ASSERT_NE(row, authored.end());
-			const int specialty = std::string_view(configuredSkills[index].id) == "new-horizons:archery" ? 20 : 0;
+			// Volley Command (installed revisedSpecialties row) retires Orrin's historical
+			// Archery skill specialty, so no skill earns a specialty growth bonus.
+			const int specialty = 0;
 			EXPECT_EQ(hero->getHeroType()->getJsonKey(), "core:orrin");
-			if(specialty)
-				EXPECT_EQ(hero->getSkillSpecialtyCoreBonusPercent(SecondarySkill(SecondarySkill::ARCHERY)), 20);
+			EXPECT_EQ(hero->getSkillSpecialtyCoreBonusPercent(SecondarySkill(SecondarySkill::ARCHERY)), 0);
 			const int authoredChance = (*row)["chances"].Vector().at(rank).Integer();
 			EXPECT_EQ(view->extraGrowth.front().chancePercent, std::min(100, authoredChance * (100 + specialty) / 100));
 		}
