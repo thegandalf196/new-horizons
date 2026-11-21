@@ -2,9 +2,11 @@
 
 ## Current save boundary
 
-Consecrated Arms and the replacement Metamagic profile require a new game. Both
-the minimum accepted format and the current writer are **1164**,
-`NEW_HORIZONS_CONSECRATED_ARMS`. Format 1163 introduced the shared captured-rule
+Consecrated Arms and the replacement Metamagic profile require a new game. The
+minimum accepted format is **1164**, `NEW_HORIZONS_CONSECRATED_ARMS`; the current
+writer is **1165**, `NEW_HORIZONS_DOUBLE_CAST_CHOSEN_PRAYERS`, which adds Double
+Cast offer/use state and chosen prayer action fields. 1164 saves load with their
+captured rules. Format 1163 introduced the shared captured-rule
 table but predates the replacement faction perk identities and prayer state.
 The unpublished 1162 feature layout is also rejected. `CLoadFile` rejects earlier formats before
 reading their payload. Retired spell and Metamagic state is not converted or

@@ -7,6 +7,28 @@ and revisions as the game develops.
 For individual perk effects, spell formulas, creature statistics and Order rules,
 read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 
+## 0.93.0 Beta
+
+The first Beta release: choose **Beta** as the launcher's Version track to play
+it beside the stable game, with its own saves and settings.
+
+- Academy's Metamagic has Double Cast: after casting with the Hero Action, the
+  hero may cast a second, different combat spell at its normal Mana cost. Uses
+  per combat depend on rank, and all ten Metamagic perks are new. Halon starts
+  with Formula Reserve, and his Spellweaver specialty gives one extra use.
+- Castle's Consecrated Arms Orders grant one prayer you choose to one stack you
+  choose, picked when the Order is issued. Faith is Spell Power plus Knowledge.
+- Sylvan Tactics 4.1: Hunting Pack gives +15% damage against stacks that have
+  not acted this round; Dappled Cover gives 20% ranged protection after moving
+  at least 3 hexes; Quick Redeployment gives +2 Initiative after a retaliation.
+- The AI uses double casts, chooses prayers and accounts for the new Sylvan
+  Tactics effects.
+- The launcher has a **What's new** button showing the notes for the installed
+  and offered versions.
+- Fixed computer opponents occasionally freezing the game after a battle that
+  gave their hero a level.
+- Games saved in 0.92.x load and keep their original rules.
+
 ## 0.92.7 Early Access
 
 - Installations made before 0.92.6 now pick up the current launcher: after one
