@@ -25,7 +25,7 @@ double chosenTerm(const consecratedArms::ActivePrayer & prayer, const consecrate
 	{
 	case consecratedArms::Prayer::HEAVENS_JUDGMENT:
 		// Own attacks plus about half as much retaliation against melee pressure.
-		return duration * (exposure.outgoing + (exposure.retaliation > 0 ? 0.5 * exposure.outgoing : 0))
+		return duration * (exposure.outgoing + (exposure.counterStrikes ? 0.5 * exposure.outgoing : 0))
 			* value.judgmentBP / 10000.0;
 	case consecratedArms::Prayer::VICARIOUS_REDEMPTION:
 		// The shield follows casualties, so only a later hit can use it.
@@ -169,6 +169,19 @@ double enemySpellThreat(const CBattleInfoCallback & battle, BattleSide side, con
 	return std::min(1.0, threat);
 }
 
+/// A shooter with ammunition that is not blocked shoots instead of meleeing.
+bool shoots(const CBattleInfoCallback & battle, const battle::Unit & unit)
+{
+	return unit.canShoot() && (unit.canShootBlocked() || !battle.battleIsUnitBlocked(&unit));
+}
+
+/// Whether `attacker` will melee `defender` and that blow can be retaliated.
+bool retaliatedMelee(const CBattleInfoCallback & battle, const battle::Unit & attacker, const battle::Unit & defender)
+{
+	return !shoots(battle, attacker) && !attacker.hasBonusOfType(BonusType::BLOCKS_RETALIATION)
+		&& !defender.hasBonusOfType(BonusType::NO_RETALIATION);
+}
+
 /// Exposure against the nearest visible enemy; at most two damage-cache queries.
 std::optional<RecipientExposure> measure(const std::shared_ptr<HypotheticBattle> & state, BattleSide side,
 	uint32_t id, const battle::Units & units, DamageCache & cache, double spellThreat)
@@ -189,7 +202,9 @@ std::optional<RecipientExposure> measure(const std::shared_ptr<HypotheticBattle>
 	auto & exposure = result.exposure;
 	exposure.outgoing = std::min<int64_t>(nearest->getAvailableHealth(), cache.getDamage(unit, nearest, state));
 	exposure.incoming = std::min<int64_t>(unit->getAvailableHealth(), cache.getDamage(nearest, unit, state));
-	exposure.retaliation = unit->isMeleeAttacker() && nearest->isMeleeAttacker() ? exposure.incoming : 0;
+	// Dauntless Assault answers only retaliation after the bearer's own melee.
+	exposure.retaliation = retaliatedMelee(*state, *unit, *nearest) ? exposure.incoming : 0;
+	exposure.counterStrikes = retaliatedMelee(*state, *nearest, *unit);
 	exposure.count = unit->getCount(); exposure.firstHP = unit->getFirstHPleft(); exposure.maximumHP = unit->getMaxHealth();
 	exposure.movement = unit->getMovementRange(0); exposure.moraleEligible = !unit->unaffectedByMorale();
 	exposure.enemySpellThreat = spellThreat;
@@ -201,8 +216,9 @@ std::optional<RecipientExposure> measure(const std::shared_ptr<HypotheticBattle>
 		- state->battleGetAttackLuck(unit, nearest, false) + purpose.moraleLuck);
 	return result;
 }
+}
 
-std::vector<RecipientExposure> measureAll(const std::shared_ptr<HypotheticBattle> & state, BattleSide side,
+std::vector<RecipientExposure> measureRecipients(const std::shared_ptr<HypotheticBattle> & state, BattleSide side,
 	const std::vector<uint32_t> & recipients, const DamageCache & damage)
 {
 	DamageCache cache(&damage);
@@ -213,7 +229,6 @@ std::vector<RecipientExposure> measureAll(const std::shared_ptr<HypotheticBattle
 		if(auto measured = measure(state, side, id, units, cache, threat))
 			result.push_back(std::move(*measured));
 	return result;
-}
 }
 
 void applyChosenPrayers(const CBattleInfoCallback & live, const std::shared_ptr<HypotheticBattle> & state,
@@ -230,7 +245,7 @@ void applyChosenPrayers(const CBattleInfoCallback & live, const std::shared_ptr<
 	{
 		try
 		{
-			const auto measured = measureAll(state, action.side, request.recipients, damage);
+			const auto measured = measureRecipients(state, action.side, request.recipients, damage);
 			choice = bestChoice(request.policy, consecratedArms::actualFaith(*hero), measured);
 		}
 		catch(const battleSearch::BudgetExhausted &)
@@ -262,7 +277,7 @@ std::optional<float> projectedValue(const Environment *,
 	if(consecratedArms::requiredPrayerChoices(policy))
 	{
 		// Chosen Prayers: one recipient receives the commander's best choice.
-		const auto measured = measureAll(postOrder, side,
+		const auto measured = measureRecipients(postOrder, side,
 			consecratedArms::eligiblePrayerRecipients(*postOrder, side, order), damage);
 		const auto choice = bestChoice(policy, faith, measured);
 		if(!choice) return 0.0f;
@@ -271,7 +286,7 @@ std::optional<float> projectedValue(const Environment *,
 	const auto recipients = heroCommands::recipientIds(*postOrder, side, order);
 	if(recipients.empty()) return 0.0f;
 	double result = 0;
-	for(const auto & measured : measureAll(postOrder, side, recipients, damage))
+	for(const auto & measured : measureRecipients(postOrder, side, recipients, damage))
 	{
 		const auto value = expectedRecipientValue(policy, faith, measured.before, measured.exposure);
 		result += value * (value >= 0 ? positive : negative);

@@ -18,7 +18,12 @@ namespace consecratedArmsAI
 using OutcomeValue = std::function<std::optional<float>(std::span<const consecratedArms::Prayer>)>;
 struct Exposure
 {
-	double outgoing = 0, incoming = 0, retaliation = 0;
+	double outgoing = 0, incoming = 0;
+	/// Retaliation this stack takes after its own melee attack; zero for a
+	/// shooter that will shoot or an attack the enemy cannot answer.
+	double retaliation = 0;
+	/// The nearest enemy will melee this stack, so it strikes back in retaliation.
+	bool counterStrikes = false;
 	int64_t count = 0, firstHP = 0, maximumHP = 0;
 	int movement = 1;
 	int moraleRoom = 20, luckRoom = 20;
@@ -58,6 +63,9 @@ struct RecipientExposure
 /// values win, so ties keep the lowest recipient order, then the lowest prayers.
 DLL_LINKAGE std::optional<Choice> bestChoice(const consecratedArms::Policy &, int actualFaith,
 	std::span<const RecipientExposure> recipients);
+/// Exposure of each living recipient against its nearest enemy on `state`.
+DLL_LINKAGE std::vector<RecipientExposure> measureRecipients(const std::shared_ptr<HypotheticBattle> & state,
+	BattleSide side, const std::vector<uint32_t> & recipients, const DamageCache & damage);
 /// Fills an empty version 4 choice on an Order action from cheap exposure on
 /// `state` (the decision's current-source board). Falls back to the first
 /// eligible recipient and lowest prayers when no exposure is measurable. No-op
