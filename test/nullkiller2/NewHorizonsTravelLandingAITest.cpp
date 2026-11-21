@@ -13,6 +13,8 @@
 #include "lib/callback/CCallback.h"
 #include "lib/callback/GameRandomizer.h"
 #include "lib/callback/IClient.h"
+#include "lib/entities/hero/CHeroHandler.h"
+#include "lib/entities/hero/NewHorizonsPerkRules.h"
 #include "lib/entities/hero/NewHorizonsPerkState.h"
 #include "lib/mapObjects/CGHeroInstance.h"
 #include "lib/networkPacks/PacksForClient.h"
@@ -25,10 +27,12 @@
 #include "lib/serializer/CMemorySerializer.h"
 #include "lib/spells/CSpell.h"
 #include "server/CGameHandler.h"
+#include "server/queries/QueriesProcessor.h"
 #include "server/processors/TurnOrderProcessor.h"
 
 #include <algorithm>
 #include <functional>
+#include <mutex>
 #include <shared_mutex>
 #include <stdexcept>
 #include <thread>
@@ -86,6 +90,7 @@ public:
 	explicit LandingServer(std::shared_ptr<CGameState> state)
 		: GameHandlerTestServer(std::move(state), PLAYER) {}
 	NK2AI::AIGateway * gateway = nullptr;
+	bool forwardLevelUps = false;
 	std::vector<bool> acknowledgements;
 	void sendPack(CPackForClient & pack, GameConnectionID) override
 	{
@@ -96,6 +101,24 @@ public:
 				gateway->requestRealized(response);
 		}
 	}
+	void applyPack(CPackForClient & pack) override
+	{
+		GameHandlerTestServer::applyPack(pack); // Applied first, like the client.
+		if(auto * levelUp = dynamic_cast<HeroLevelUp *>(&pack); levelUp && gateway && forwardLevelUps)
+			forwardLevelUp(*levelUp);
+	}
+	// Same routing as ApplyClientNetPackVisitor::visitHeroLevelUp.
+	void forwardLevelUp(HeroLevelUp & pack)
+	{
+		const auto * hero = gateway->cc->getHero(pack.heroId);
+		ASSERT_NE(hero, nullptr);
+		if(newHorizonsHeroes::usesFourOfferProgression(hero->getPerkState().getRules()))
+			return gateway->heroGotFourOfferLevel(hero, pack.primskill, pack.fourOffers, pack.queryID,
+				pack.optionalRerollAvailable, pack.replacesQueryID, pack.reachedLevel);
+		auto skills = pack.skills;
+		gateway->heroGotLevelWithReroll(hero, pack.primskill, skills, pack.perks, pack.queryID,
+			pack.optionalRerollAvailable, pack.replacesQueryID, pack.reachedLevel);
+	}
 };
 
 class LandingClient final : public IClient
@@ -104,6 +127,9 @@ class LandingClient final : public IClient
 	int sequence = 0;
 public:
 	explicit LandingClient(CGameHandler & handler) : handler(handler) {}
+	NK2AI::AIGateway * gateway = nullptr;
+	std::mutex transport; // Serializes the AI query worker like one connection.
+	std::vector<QueryReply> replies;
 	std::vector<MoveHero> moves;
 	std::vector<CastAdvSpell> casts;
 	int endTurns = 0;
@@ -114,6 +140,7 @@ public:
 	int sendRequest(const CPackForServer & request, PlayerColor player, bool waits) override
 	{
 		EXPECT_TRUE(waits);
+		std::lock_guard serialized(transport);
 		if(const auto * move = dynamic_cast<const MoveHero *>(&request))
 		{
 			moves.push_back(*move);
@@ -128,11 +155,15 @@ public:
 		}
 		else if(const auto * cast = dynamic_cast<const CastAdvSpell *>(&request))
 			casts.push_back(*cast);
+		else if(const auto * reply = dynamic_cast<const QueryReply *>(&request))
+			replies.push_back(*reply);
 		else
 			throw std::runtime_error("Landing fixture submitted an unsupported request");
 		auto incoming = CMemorySerializer::deepCopy(request);
 		incoming->player = player;
 		incoming->requestID = ++sequence;
+		if(gateway)
+			gateway->requestSent(incoming.get(), sequence);
 		handler.handleReceivedPack(GameConnectionID::FIRST_CONNECTION, *incoming);
 		return sequence;
 	}
@@ -156,6 +187,8 @@ protected:
 	{
 		if(server)
 			server->gateway = nullptr;
+		if(client)
+			client->gateway = nullptr;
 		gateway.reset();
 		callback.reset();
 		client.reset();
@@ -675,4 +708,31 @@ TEST_F(NewHorizonsTravelLandingAITest, AlreadyEarnedForcedMarchDoesNotAnnotateOr
 	EXPECT_EQ(client->moves.size(), plan->steps.size());
 	EXPECT_EQ(client->endTurns, 1);
 	EXPECT_FALSE(gateway->status.haveTurn());
+}
+
+TEST_F(NewHorizonsTravelLandingAITest, LevelUpDeliveredAfterTurnDecisionIsAnsweredBeforeEndTurnRetry)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	server->forwardLevelUps = true;
+	client->gateway = gateway.get();
+	handler->uiReadyForDialogs.insert(PLAYER);
+	const auto level = hero->level;
+	client->beforeEndTurn = [&]()
+	{
+		if(client->endTurns != 1)
+			return;
+		// A won battle issues its deferred level-up after BattleEnded: the AI has
+		// already decided to end its turn, and the authority reads EndTurn second.
+		handler->giveExperience(hero, LIBRARY->heroh->reqExp(level + 1) - hero->exp);
+		EXPECT_NE(handler->queries->topQuery(PLAYER), nullptr);
+	};
+	endTurn();
+	EXPECT_EQ(client->endTurns, 2);
+	EXPECT_EQ(client->replies.size(), 1u);
+	EXPECT_EQ(hero->level, level + 1);
+	EXPECT_EQ(handler->queries->topQuery(PLAYER), nullptr);
+	EXPECT_EQ(gateway->status.getQueriesCount(), 0);
+	EXPECT_FALSE(gateway->status.haveTurn());
+	EXPECT_FALSE(handler->turnOrder->isPlayerMakingTurn(PLAYER));
+	EXPECT_EQ(server->acknowledgements, (std::vector<bool>{false, true, true}));
 }
