@@ -277,8 +277,8 @@
       "sha256": "247cdfe27811667c1d5d4e5987d7e1fcf02f8057b6807f8d7636587248d29123"
     },
     "AI/BattleAI/HypotheticBattle.h": {
-      "sha256": "e96732e4e079ed7a7ba5b2a67a6c0432a91fb2f8cc286a2e04c73d450f897764",
-      "review": "IR-PERFORMANCE-THROUGH-STEP4-ORG-V1",
+      "sha256": "6292df77cf2797205f1272f985d1035c2f60661ccd0f24336c9f006a4da6a6df",
+      "review": "CLAUDE-METAMAGIC6-PHASE4-20261120",
       "rationale": "Complete exact758-line committed header inventory: all64 handwritten callable bodies remap by byte-identical text from reviewed preimage; only a forward declaration, state member or method declarations/optional forwarding arguments change. Known parser recovery is covered by these complete original spans, not waived. No new inline implementation, source-size exclusion or native/runtime acceptance.",
       "functions": [
         {
@@ -459,150 +459,156 @@
         {
           "symbol": "HypotheticBattle::void setCrisisCommandState(const newHorizonsCrisisCommand::State & state) override#1",
           "start": 352,
-          "end": 361
+          "end": 365
         },
         {
-          "symbol": "HypotheticBattle::const DoubleCommandState & getDoubleCommandState(BattleSide side) const override#1",
+          "symbol": "HypotheticBattle::const MetamagicDoubleCastState & getMetamagicDoubleCastState(BattleSide side) const override#1",
           "start": 362,
           "end": 365
         },
         {
-          "symbol": "HypotheticBattle::const PreCombatOrderState & getPreCombatOrderState(BattleSide side) const override#1",
+          "symbol": "HypotheticBattle::const DoubleCommandState & getDoubleCommandState(BattleSide side) const override#1",
           "start": 366,
           "end": 369
         },
         {
-          "symbol": "HypotheticBattle::bool hasCompletedHeroSpellCast(BattleSide side) const override#1",
-          "start": 371,
-          "end": 372
+          "symbol": "HypotheticBattle::const PreCombatOrderState & getPreCombatOrderState(BattleSide side) const override#1",
+          "start": 370,
+          "end": 373
         },
         {
-          "symbol": "HypotheticBattle::int32_t getCastSpells(BattleSide side) const override#1",
-          "start": 374,
+          "symbol": "HypotheticBattle::bool hasCompletedHeroSpellCast(BattleSide side) const override#1",
+          "start": 375,
           "end": 376
         },
         {
+          "symbol": "HypotheticBattle::int32_t getCastSpells(BattleSide side) const override#1",
+          "start": 378,
+          "end": 380
+        },
+        {
           "symbol": "HypotheticBattle::bool getChainGateArmed(BattleSide side) const override#1",
-          "start": 377,
-          "end": 377
+          "start": 381,
+          "end": 381
         },
         {
           "symbol": "HypotheticBattle::bool getMasterGateUsed(BattleSide side) const override#1",
-          "start": 378,
-          "end": 378
+          "start": 382,
+          "end": 382
         },
         {
           "symbol": "HypotheticBattle::uint8_t getPassiveDivineMandateUses(BattleSide side) const override#1",
-          "start": 379,
-          "end": 379
+          "start": 383,
+          "end": 383
         },
         {
           "symbol": "HypotheticBattle::bool hasObstacleChanges() const#1",
-          "start": 440,
-          "end": 440
+          "start": 444,
+          "end": 444
         },
         {
           "symbol": "HypotheticBattle::bool hasWallChanges() const#1",
-          "start": 441,
-          "end": 441
+          "start": 445,
+          "end": 445
         },
         {
           "symbol": "HypotheticBattle::int32_t getMoraleExtraDamagePercent() const override#1",
-          "start": 450,
-          "end": 450
+          "start": 454,
+          "end": 454
         },
         {
           "symbol": "HypotheticBattle::SylvanLuckState getSylvanLuckState(BattleSide side) const override#1",
-          "start": 466,
-          "end": 466
+          "start": 470,
+          "end": 470
         },
         {
           "symbol": "HypotheticBattle::SylvanLuckDamageFlags getSylvanLuckDamageFlags(BattleSide side) const override#1",
-          "start": 467,
-          "end": 467
+          "start": 471,
+          "end": 471
         },
         {
           "symbol": "HypotheticBattle::PerfectFortuneState getPerfectFortuneState(BattleSide side) const override#1",
-          "start": 468,
-          "end": 468
+          "start": 472,
+          "end": 472
         },
         {
           "symbol": "HypotheticBattle::LuckSerendipityState getLuckSerendipityState(BattleSide side) const override#1",
-          "start": 469,
-          "end": 469
+          "start": 473,
+          "end": 473
         },
         {
           "symbol": "HypotheticBattle::void setLuckSerendipityState(BattleSide side, const LuckSerendipityState & state) override#1",
-          "start": 470,
-          "end": 474
+          "start": 474,
+          "end": 478
         },
         {
           "symbol": "HypotheticBattle::void setPerfectFortuneState(BattleSide side, const PerfectFortuneState & state) override#1",
-          "start": 475,
-          "end": 479
+          "start": 479,
+          "end": 483
         },
         {
           "symbol": "HypotheticBattle::void setSylvanLuckState(BattleSide side, const SylvanLuckState & state)#1",
-          "start": 480,
-          "end": 480
-        },
-        {
-          "symbol": "HypotheticBattle::AdverseCombatRerollState getAdverseCombatRerollState(BattleSide side) const override#1",
-          "start": 481,
+          "start": 484,
           "end": 484
         },
         {
-          "symbol": "HypotheticBattle::void setAdverseCombatRerollState(BattleSide side, const AdverseCombatRerollState & state) override#1",
+          "symbol": "HypotheticBattle::AdverseCombatRerollState getAdverseCombatRerollState(BattleSide side) const override#1",
           "start": 485,
-          "end": 490
+          "end": 488
+        },
+        {
+          "symbol": "HypotheticBattle::void setAdverseCombatRerollState(BattleSide side, const AdverseCombatRerollState & state) override#1",
+          "start": 489,
+          "end": 494
         },
         {
           "symbol": "HypotheticBattle::void endFortuneActivation()#1",
-          "start": 491,
-          "end": 501
+          "start": 495,
+          "end": 505
         },
         {
           "symbol": "HypotheticBattle::MoraleSuppressionState getMoraleSuppressionState(BattleSide side) const override#1",
-          "start": 504,
-          "end": 507
+          "start": 508,
+          "end": 511
         },
         {
           "symbol": "HypotheticBattle::void setMoraleSuppressionState(BattleSide side, const MoraleSuppressionState & state) override#1",
-          "start": 508,
-          "end": 512
+          "start": 512,
+          "end": 516
         },
         {
           "symbol": "HypotheticBattle::LuckRollRules getLuckRollRules() const override#1",
-          "start": 517,
-          "end": 517
+          "start": 521,
+          "end": 521
         },
         {
           "symbol": "HypotheticBattle::bool getRawFinalDirectPhysicalLuckPolicy() const override#1",
-          "start": 518,
-          "end": 518
+          "start": 522,
+          "end": 522
         },
         {
           "symbol": "HypotheticBattle::const std::vector<ProjectedPlagueHit> & getProjectedPlagueHits() const#1",
-          "start": 585,
-          "end": 585
+          "start": 589,
+          "end": 589
         },
         {
           "symbol": "HypotheticBattle::void resetActiveUnit()#1",
-          "start": 596,
-          "end": 599
+          "start": 600,
+          "end": 603
         },
         {
           "symbol": "HypotheticBattle::HypotheticServerCallback::void recordExtendSpellCast(BattleSide side) override#1",
-          "start": 703,
-          "end": 703
+          "start": 707,
+          "end": 707
         },
         {
           "symbol": "HypotheticBattle::HypotheticEnvironment::void closeNativeSource() noexcept#1",
-          "start": 733,
-          "end": 733
+          "start": 737,
+          "end": 737
         }
       ],
-      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE"
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
+      "previous_review": "IR-PERFORMANCE-THROUGH-STEP4-ORG-V1"
     },
     "AI/BattleAI/HypotheticBattleTypes.h": {
       "functions": [
@@ -5004,8 +5010,8 @@
       "sha256": "b510e3c2aec7a67625dbc8a06b7b94eca8c790f2bdb63511e118500f47b94f90"
     },
     "lib/CStack.h": {
-      "sha256": "b4e7e67020820199ab7a8ceb103033dcb20a3f2d036b4e83654b5e88217df69b",
-      "review": "IR-NH0921-C14-1164-CODEORG-20261117",
+      "sha256": "c852ee97bdb5bd02c03a1e35416450d7ee29b8dd0508b8d7c75ef06cbf4b5c4a",
+      "review": "CLAUDE-METAMAGIC6-PHASE4-20261120",
       "rationale": "All24 inline/template bodies are included: three ordinary scalar/accessor bodies, the owner accessor,19 codec/preflight methods including the151-line serializer, and the explicit native-width query. The two empty-string default-argument recovery sites are declarations, not missing bodies. Complete original-file callable inventory independently checked against the pinned parser and a syntax-only probe retaining every original body span. Original source and span hashes remain authoritative; this is no diagnostics waiver or content/size/runtime approval.",
       "functions": [
         {
@@ -5128,7 +5134,8 @@
           "start": 364,
           "end": 514
         }
-      ]
+      ],
+      "previous_review": "IR-NH0921-C14-1164-CODEORG-20261117"
     },
     "lib/Color.h": {
       "functions": [
@@ -6336,8 +6343,8 @@
       "sha256": "1ce32da6652ba987cdf6e2b25a88567ba629931b82f1e8a29f070358b0a4ee83"
     },
     "lib/battle/Unit.h": {
-      "sha256": "6498a453bfacb194d703d37fefe64af552eb68c5dffd9b4ff757bb5c36cde450",
-      "review": "IR-NH0921-C14-1164-CODEORG-20261117",
+      "sha256": "d1e93358d78da45227b4ebed1e157b6b47a18f68e3fd5fd6a006b55b56844dd6",
+      "review": "CLAUDE-METAMAGIC6-PHASE4-20261120",
       "rationale": "All31 bodies are included: HealInfo constructor/accumulator, Unit default implementations and helpers, the inline maximum-health helper, and UnitInfo script serializer. Pure virtual declarations, defaulted/deleted members and aggregate declarations have no omitted handwritten body. The empty-string default recovery occurs in the included five-line native-bonus-view method. Complete original-file callable inventory independently checked against the pinned parser and a syntax-only probe retaining every original body span. Original source and span hashes remain authoritative; this is no diagnostics waiver or content/size/runtime approval.",
       "functions": [
         {
@@ -6446,56 +6453,67 @@
           "end": 184
         },
         {
-          "symbol": "battle::Unit::virtual bool hasCompletedActionThisRound() const#1",
-          "start": 185,
-          "end": 185
+          "symbol": "battle::Unit::virtual int64_t getArcaneWardHitPoints() const#1",
+          "start": 186,
+          "end": 186
         },
         {
-          "symbol": "battle::Unit::virtual int32_t getGuardianSpiritRoundsRemaining() const#1",
+          "symbol": "battle::Unit::virtual int64_t getArcaneWardCapacity() const#1",
           "start": 187,
           "end": 187
         },
         {
+          "symbol": "battle::Unit::virtual bool hasCompletedActionThisRound() const#1",
+          "start": 188,
+          "end": 188
+        },
+        {
+          "symbol": "battle::Unit::virtual int32_t getGuardianSpiritRoundsRemaining() const#1",
+          "start": 190,
+          "end": 190
+        },
+        {
           "symbol": "battle::Unit::virtual int64_t getBattleStartMaximumAggregateHP() const#1",
-          "start": 189,
-          "end": 189
+          "start": 192,
+          "end": 192
         },
         {
           "symbol": "battle::Unit::virtual int64_t getRebirthOriginalAggregateHP() const#1",
-          "start": 191,
-          "end": 191
+          "start": 194,
+          "end": 194
         },
         {
           "symbol": "battle::Unit::virtual int32_t getPersonalBloodrageIncrement() const#1",
-          "start": 193,
-          "end": 193
+          "start": 196,
+          "end": 196
         },
         {
           "symbol": "battle::Unit::virtual int getDefenseIgnoringDefensiveStance(bool ranged) const#1",
-          "start": 199,
-          "end": 199
+          "start": 202,
+          "end": 202
         },
         {
           "symbol": "battle::Unit::virtual bool battlecraftWaitBonusAvailable() const#1",
-          "start": 212,
-          "end": 212
+          "start": 215,
+          "end": 215
         },
         {
           "symbol": "battle::Unit::virtual TConstBonusListPtr ownedNativeFormBonuses(const CUnitState &, const CSelector &, bool) const#1",
-          "start": 217,
-          "end": 217
+          "start": 220,
+          "end": 220
         },
         {
           "symbol": "battle::inline int64_t getMaximumHealth(const Unit & unit)#1",
-          "start": 267,
-          "end": 271
+          "start": 270,
+          "end": 274
         },
         {
           "symbol": "battle::UnitInfo::void serializeScript(Serializer & s)#1",
-          "start": 301,
-          "end": 313
+          "start": 304,
+          "end": 316
         }
-      ]
+      ],
+      "previous_review": "IR-NH0921-C14-1164-CODEORG-20261117"
     },
     "lib/bonuses/Bonus.h": {
       "sha256": "0498f3043b82f5b7ac9ebef89cded0143342bb785d918e5cf01edf451649e7c2",
@@ -18700,15 +18718,15 @@
       "deferral": "Exact hash/size only. Preserve prior narrower extraction, ownership, registration, state/RNG and lifecycle obligations below; next substantive affected expansion must extract a cohesive responsibility and lower the retained bound. Owner ai_engineer.\nBefore further projection constructor/header growth, extract the next side-state capture group. Preserve capture order, historical absence and parent/child/sibling isolation. Prior stricter obligations remain in inherited_deferral, where present. Current exact-scope addendum: AI owner splits owned forecast/side/query capability declarations from legacy HypotheticBattle interface after consumers stabilize; preserve one instance/type identity and facade exports, no textual include fragments.",
       "inherited_deferral": "Only this exact native migration content/hash/size is proposed; no future growth allowance. Owner: ai_engineer. Next substantive edit must extract the affected calculation/query/forecast routing into the existing dedicated component with exact state, packet/RNG, action-choice and lifecycle regressions; preserve any narrower inherited deferral below. Before another projected state family expands the header, extract the cohesive completion observation holder. Preserve exact callback lifetime, immutable packet copies, transaction reset and reverse application order. Minimum checks: failed apply has no receipt, core/shock refresh restores prior status, ordinary candidate effects/HP remain, no source/sibling/RNG change. Expanded exact review: AI engineer: subsequent snapshot-family expansion belongs in the existing HypotheticUnitSnapshots/HypotheticUnitEnvironment owners, using explicit captured side values and branch IUnitEnvironment; characterize parent/child/sibling isolation and owned-frame lifetime before adding more header logic.",
       "kind": "exception",
-      "lines": 758,
+      "lines": 762,
       "owner": "ai_engineer",
-      "previous_review": "IR-LEADERSHIP-1159-INDEPENDENT-20261113-V1-UNITS",
-      "rationale": "Exact bounded 756to758 physical-line successor. One optional environmental Order-presence declaration and one immutable captured canonical-policy boolean. All64 retained inline bodies are byte-identical. This transient AI state is not serialized or a save-schema reinterpretation. No future growth credit or performance claim.",
-      "review": "IR-PERFORMANCE-THROUGH-STEP4-ORG-V1",
+      "previous_review": "IR-PERFORMANCE-THROUGH-STEP4-ORG-V1",
+      "rationale": "Exact successor for Metamagic 6 Double Cast phase 4 (perk effects): one-line hooks, includes, accessor overrides, registrations or Arcane Ward unit-state plumbing only; the completion effects live in the focused MetamagicDoubleCastCompletion unit and the derived Crescendo/Spellstorm terms in MetamagicDoubleCast. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-METAMAGIC6-PHASE4-20261120",
       "review_category": "component-interface-review",
       "review_scope": "Exact four-file observation storage repair and756-line header organization/manual coverage only. Preserve inherited obligations and76 unchanged retained bodies across both headers. No compiler/MSVC/native/rendered/performance, save-resume or promotion acceptance.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_REVIEW_NATIVE_UNRUN",
-      "sha256": "e96732e4e079ed7a7ba5b2a67a6c0432a91fb2f8cc286a2e04c73d450f897764",
+      "sha256": "6292df77cf2797205f1272f985d1035c2f60661ccd0f24336c9f006a4da6a6df",
       "inherited_exact_source_review": {
         "review": "IR-NH092-ORG-3E82D142-20261116",
         "sha256": "632547c06df7e99570e3f14c81748c9d323ad2a3cb9f425e85e3289ebce6081d",
@@ -23531,9 +23549,9 @@
       "inherited_a1_health_deferral": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.",
       "inherited_deferral": "Exact source-list bound only. Before substantive build logic, extract a cohesive target configuration section. Verify source/link membership once and retain no duplicate translation units. Prior stricter obligations remain in inherited_deferral, where present.",
       "kind": "exception",
-      "lines": 2155,
+      "lines": 2157,
       "owner": "engine_engineer",
-      "previous_review": "CLAUDE-0925-METAMAGIC6-PHASE1-20261120",
+      "previous_review": "CLAUDE-0925-DOUBLECAST-CHOSEN-PRAYERS-PHASE23-20261120",
       "prior_a1_health_scope": {
         "kind": "exception",
         "lines": 2063,
@@ -23542,11 +23560,11 @@
         "sha256": "7058cdef35cfce13214572d190c4accfdf5721e6c144af3cdfca9f53bb68c2a0"
       },
       "prior_deferral": "Exact mechanical source/header registration only. Before substantive CMake target policy growth, extract a cohesive configuration section while verifying translation-unit membership and facade linkage. No future file growth allowance. Prior stricter obligations remain in inherited_deferral, where present.\n\nKeep registrations in their current coherent tables. Extract any future conditional target/control logic rather than growing this registry into a build framework.",
-      "rationale": "Exact successor for Metamagic 6 Double Cast / Consecrated Arms 4 phases 2-3: one-line calls, includes, version-gated fields or registrations only; the new behavior lives in focused MetamagicDoubleCast and ConsecratedArmsChoice units. Existing extraction deferrals retained; no future growth credit.",
-      "review": "CLAUDE-0925-DOUBLECAST-CHOSEN-PRAYERS-PHASE23-20261120",
+      "rationale": "Exact successor for Metamagic 6 Double Cast phase 4 (perk effects): one-line hooks, includes, accessor overrides, registrations or Arcane Ward unit-state plumbing only; the completion effects live in the focused MetamagicDoubleCastCompletion unit and the derived Crescendo/Spellstorm terms in MetamagicDoubleCast. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-METAMAGIC6-PHASE4-20261120",
       "review_scope": "Exact frozen A7 production/routing source only; no compiler, Windows path runtime, recovery, timing, release or future-growth acceptance.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NATIVE_WINDOWS_PENDING",
-      "sha256": "480b870441be464cb7967721b14891769919f3717ba7ebb4e958c908294f54fd",
+      "sha256": "7f6f23f466c574c3d5de743be53f4ffc2724b90ae4dd3d9a1a9f311f4ffe95ea",
       "inherited_deferral_step2": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.\n\nExact shared-facade source/header registration only. Before conditional target/control policy growth, extract the next coherent configuration section; preserve one translation unit per implementation and consumer linkage through vcmi. No future registry-size growth credit."
     },
     "lib/CSkillHandler.cpp::std::shared_ptr<CSkill> CSkillHandler::loadFromJson(const std::string & scope, const JsonNode & json, const std::string & identifier, size_t index)#1": {
@@ -23591,13 +23609,13 @@
       "kind": "exception",
       "lines": 534,
       "owner": "engine_engineer",
-      "previous_review": "IR-COMMAND-AUTHORITY-EXPANDED-BOUNDARY-20261109",
-      "rationale": "Exact 534 to 518-line scope. Existing state/content/serialization responsibility integrates current captured rules and explicit native routing. Preserve independent captures, validation boundaries, deterministic order, existing ownership and saved absence.\n\nIndependently reviewed C14 scope (518 to 534 physical lines): The serializer adds interleaved version1164 completed-action and immutable Poison provenance receipts in canonical wire order; active Redemption remains rejected because general battle health is not persisted by this descriptor. The151-line mechanical table is accepted only at this exact hash. This bounds only the recorded hash and measured span; all inherited deferrals, ratchets and runtime holds remain binding, with no future growth allowance.",
-      "review": "IR-NH0921-C14-1164-CODEORG-20261117",
+      "previous_review": "IR-NH0921-C14-1164-CODEORG-20261117",
+      "rationale": "Exact successor for Metamagic 6 Double Cast phase 4 (perk effects): one-line hooks, includes, accessor overrides, registrations or Arcane Ward unit-state plumbing only; the completion effects live in the focused MetamagicDoubleCastCompletion unit and the derived Crescendo/Spellstorm terms in MetamagicDoubleCast. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-METAMAGIC6-PHASE4-20261120",
       "review_category": "component-interface-and-prefix-review",
       "review_scope": "Exact recorded C14 source hash, physical span and organization delta only. No future growth, whole-mechanic, compiler, native, rendered, performance, save-resume, publication or promotion acceptance.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN",
-      "sha256": "b4e7e67020820199ab7a8ceb103033dcb20a3f2d036b4e83654b5e88217df69b"
+      "sha256": "c852ee97bdb5bd02c03a1e35416450d7ee29b8dd0508b8d7c75ef06cbf4b5c4a"
     },
     "lib/CStack.h::CStack::void serialize(Handler & h)#1": {
       "completed_p_predecessor": {
@@ -23746,9 +23764,9 @@
       "inherited_a1_health_deferral": "Before further side/battle codec growth, extract the next ordered nonwriting side-policy validation traversal. Preserve contiguous fields, unsupported absence/refusal and active-battle/owned-branch roundtrip; exact current serializer bound only. Prior stricter obligations remain in inherited_deferral, where present.",
       "inherited_deferral": "Next substantive persistence expansion should extract a cohesive current passive-combat serialization group with explicit Handler/state refs; preserve exact ordered layout, current1156 validation, branch state and type IDs. No historical adapter matrix required.",
       "kind": "exception",
-      "lines": 1438,
+      "lines": 1442,
       "owner": "engine_engineer",
-      "previous_review": "IR-LEADERSHIP-1159-INDEPENDENT-20261113-V1-UNITS",
+      "previous_review": "IR-PERFORMANCE-THROUGH-STEP4-ORG-V1",
       "prior_a1_health_scope": {
         "kind": "exception",
         "lines": 1448,
@@ -23756,11 +23774,11 @@
         "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
         "sha256": "2d7d24c20b48746bc66101dd368361d2ef59eef7773d212e0ef605c348876646"
       },
-      "rationale": "Exact bounded 1437to1438 physical-line successor. One optional raw environmental Order-presence virtual override declaration. Existing603-line serialization definition is byte-identical; no save fields, protocol version, order roster or authority mutation changes. No future growth credit or performance claim.",
-      "review": "IR-PERFORMANCE-THROUGH-STEP4-ORG-V1",
+      "rationale": "Exact successor for Metamagic 6 Double Cast phase 4 (perk effects): one-line hooks, includes, accessor overrides, registrations or Arcane Ward unit-state plumbing only; the completion effects live in the focused MetamagicDoubleCastCompletion unit and the derived Crescendo/Spellstorm terms in MetamagicDoubleCast. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-METAMAGIC6-PHASE4-20261120",
       "review_scope": "Exact recorded C14 source hash, physical span and organization delta only. No future growth, whole-mechanic, compiler, native, rendered, performance, save-resume, publication or promotion acceptance.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_REVIEW_NATIVE_UNRUN",
-      "sha256": "4f6621fe27f088e3e2729f231a56add95ee9089514871cb7d70831bbdc16b167"
+      "sha256": "ebf501c95c24568f733034c1428d5a3062bfdf52137049a85ce618518bb45b50"
     },
     "lib/battle/BattleInfo.h::BattleInfo::void serialize(Handler &h)#1": {
       "completed_p_predecessor": {
@@ -23846,9 +23864,9 @@
       "deferral": "Only this exact native migration content/hash/size is proposed; no future growth allowance. Owner: engine_engineer. Next substantive edit must extract the affected calculation/query/forecast routing into the existing dedicated component with exact state, packet/RNG, action-choice and lifecycle regressions; preserve any narrower inherited deferral below. Next substantive damage-routing growth should extract explicit ordinary attack mitigation stages receiving callback, BattleAttackInfo const& and damage bounds, with current owner policy, physical/magical classification, caps and casualty recomputation tests. Coordinate final engine scalar API removal.",
       "inherited_a1_health_deferral": "Only this exact native migration content/hash/size is proposed; no future growth allowance. Owner: engine_engineer. Next substantive edit must extract the affected calculation/query/forecast routing into the existing dedicated component with exact state, packet/RNG, action-choice and lifecycle regressions; preserve any narrower inherited deferral below. Next substantive damage-routing growth should extract explicit ordinary attack mitigation stages receiving callback, BattleAttackInfo const& and damage bounds, with current owner policy, physical/magical classification, caps and casualty recomputation tests. Coordinate final engine scalar API removal.",
       "kind": "exception",
-      "lines": 3649,
+      "lines": 3655,
       "owner": "gameplay_engineer",
-      "previous_review": "IR-0911-INTEGRATION-SOURCE-ORGANIZATION",
+      "previous_review": "IR-NH0921-C14-1164-CODEORG-20261117",
       "prior_a1_health_scope": {
         "kind": "exception",
         "lines": 3648,
@@ -23856,19 +23874,19 @@
         "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
         "sha256": "1e22aa20975e225f08359210d36c892fea8d36c495f574083b59359a9d0e795a"
       },
-      "rationale": "Exact 3648 to 3647-line ratchet. Typed Development/Mastery/Leadership/Metamagic routing or the isolated CHealth value context removes repeated policy work from this existing owner; prior stricter extraction obligations remain. Shared raw adapters, metadata identity, mutable input/RNG order and lifecycle remain governed by focused differential coverage.\n\nIndependently reviewed C14 scope (3647 to 3649 physical lines): One shared retaliation-damage adjustment follows the existing damage script result. Prayer math stays in its focused owner; there is no second damage roll or callback authority. This bounds only the recorded hash and measured span; all inherited deferrals, ratchets and runtime holds remain binding, with no future growth allowance.",
-      "review": "IR-NH0921-C14-1164-CODEORG-20261117",
+      "rationale": "Exact successor for Metamagic 6 Double Cast phase 4 (perk effects): one-line hooks, includes, accessor overrides, registrations or Arcane Ward unit-state plumbing only; the completion effects live in the focused MetamagicDoubleCastCompletion unit and the derived Crescendo/Spellstorm terms in MetamagicDoubleCast. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-METAMAGIC6-PHASE4-20261120",
       "review_scope": "Exact recorded C14 source hash, physical span and organization delta only. No future growth, whole-mechanic, compiler, native, rendered, performance, save-resume, publication or promotion acceptance.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN",
-      "sha256": "c5d5fbb375c0bf86e00a5e9922130084c68307471c7ff794bcae6291c61856ca"
+      "sha256": "cb4b625a439a8f672bc48a9fc2738ada5a107eef41034c519051b2fde46b46fe"
     },
     "lib/battle/CBattleInfoCallback.cpp::int32_t CBattleInfoCallback::calculateBattleSpellCost(const spells::Spell * sp, const CGHeroInstance * caster, int32_t listedCostMultiplier, SpellCostBreakdown * breakdown) const#1": {
       "deferral": "Next substantive cost expansion should extract the staged battle Mana calculation using explicit caster/spell/multiplier/history and current modifiers; retain ordered breakdown, target-aware costs, free automatic behavior and rejected-action atomicity.",
       "inherited_a1_health_deferral": "Next substantive cost expansion should extract the staged battle Mana calculation using explicit caster/spell/multiplier/history and current modifiers; retain ordered breakdown, target-aware costs, free automatic behavior and rejected-action atomicity.",
       "kind": "exception",
-      "lines": 98,
+      "lines": 103,
       "owner": "gameplay_engineer",
-      "previous_review": "IR-0911-INTEGRATION-SOURCE-ORGANIZATION",
+      "previous_review": "IR-NH092-ORG-E8CD1819-20261116",
       "prior_a1_health_scope": {
         "kind": "exception",
         "lines": 99,
@@ -23876,11 +23894,11 @@
         "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
         "sha256": "27683424adbeeeade45036631134c6c2e222be9ba4fc5656dabcfb8d18f47e8b"
       },
-      "rationale": "Exact 99 to 98-line ratchet. Typed Development/Mastery/Leadership/Metamagic routing or the isolated CHealth value context removes repeated policy work from this existing owner; prior stricter extraction obligations remain. Shared raw adapters, metadata identity, mutable input/RNG order and lifecycle remain governed by focused differential coverage.",
-      "review": "IR-NH092-ORG-E8CD1819-20261116",
+      "rationale": "Exact successor for Metamagic 6 Double Cast phase 4 (perk effects): one-line hooks, includes, accessor overrides, registrations or Arcane Ward unit-state plumbing only; the completion effects live in the focused MetamagicDoubleCastCompletion unit and the derived Crescendo/Spellstorm terms in MetamagicDoubleCast. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-METAMAGIC6-PHASE4-20261120",
       "review_scope": "Exact source organization hash/count/span only; no runtime, performance, rendered or future-growth approval.",
       "review_status": "APPROVED_EXACT_ORGANIZATION_METADATA",
-      "sha256": "9cf97789aa493d277eefca6202b21902eec9f97cb3761765a63293be364eeeec"
+      "sha256": "a26b94f56088192361125d1397385cff5ca860ea4d6f2e288c6762f0a5e6c732"
     },
     "lib/battle/CBattleInfoCallback.cpp::std::vector<ForcedAction> CBattleInfoCallback::getBerserkForcedActions(const battle::Unit * berserker) const#1": {
       "deferral": "Engine/gameplay engineer: preserve saved-policy ranged fallback and stable tie order when extracting candidate geometry; authority retains RNG selection.",
@@ -23990,9 +24008,9 @@
       "deferral": "Before further substantive damage growth, extract an ordered prepared-damage result stage using CUnitState&, amount&, destroyRemains/bypass/provenance and optional receipt. Preserve TimeStop/invincible/zero gates, native shield ordering, clone/rebirth/GuardianSpirit, lethal pre-casualty receipt and actual HP/cap output; characterize existing native pipeline first. Current exact-scope addendum: Engine owner extracts existing acquire/acquireState native cloning owner seam after lifetime parity; current default bodies remain unchanged except early optional owning-provider delegation, with no state/wire fields. Engine engineer: before further affected serializer growth, extract CHealth JSON/cohort preflight into CHealthSerialization with its existing public entry points and field order. Separately extract the contiguous original/effective battle-form health envelope into serializeBattleFormHealth at the same position and with unchanged onBattleFormChanged timing, reducing serializeJson178 below150. Compare exact bytes/JSON, owner contexts, cohort/form/temporary/remains/regeneration transitions, before-reset rejection and no-throw snapshot restoration.",
       "inherited_a1_health_deferral": "Before further substantive damage growth, extract an ordered prepared-damage result stage using CUnitState&, amount&, destroyRemains/bypass/provenance and optional receipt. Preserve TimeStop/invincible/zero gates, native shield ordering, clone/rebirth/GuardianSpirit, lethal pre-casualty receipt and actual HP/cap output; characterize existing native pipeline first.",
       "kind": "exception",
-      "lines": 2427,
+      "lines": 2428,
       "owner": "engine_engineer",
-      "previous_review": "IR-DETACHED-NATIVE-COUNT-CONTEXT-SOURCE",
+      "previous_review": "IR-NH0921-C14-1164-CODEORG-20261117",
       "prior_a1_health_scope": {
         "kind": "legacy",
         "lines": 2432,
@@ -24001,11 +24019,11 @@
         "sha256": "b7d821eabfc5959a785751fcabe149c48a5a59888f652bbf4596c3d1ddda1c17"
       },
       "prior_group_d_review": "IR-ORDINARY-RANGED-1148-COMBINED-20261030",
-      "rationale": "Exact 2393 to 2412-line change adds early owning-loan delegation in acquire/acquireState and reuses the shared counter-consumption predicate for CAmmo::canUse, retaining legacy negative preflight and short-circuit order. Native clone bodies and state/wire fields remain unchanged. Coupling full unit-state decomposition to these ownership/predicate seams would enlarge lifetime and state risk.\n\nIndependently reviewed C14 scope (2412 to 2427 physical lines): New typed shield/provenance/receipt work routes through focused helpers. The three additional JSON calls preserve field order, load preflight remains before reset, and the142-line damage body preserves native health/form order with Vow clipping extracted. This bounds only the recorded hash and measured span; all inherited deferrals, ratchets and runtime holds remain binding, with no future growth allowance.",
-      "review": "IR-NH0921-C14-1164-CODEORG-20261117",
+      "rationale": "Exact successor for Metamagic 6 Double Cast phase 4 (perk effects): one-line hooks, includes, accessor overrides, registrations or Arcane Ward unit-state plumbing only; the completion effects live in the focused MetamagicDoubleCastCompletion unit and the derived Crescendo/Spellstorm terms in MetamagicDoubleCast. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-METAMAGIC6-PHASE4-20261120",
       "review_scope": "Exact recorded C14 source hash, physical span and organization delta only. No future growth, whole-mechanic, compiler, native, rendered, performance, save-resume, publication or promotion acceptance.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN",
-      "sha256": "6d998a3d9301297568b45b4c127e183e22f674e1ffbe671f330d4d6997a6c852",
+      "sha256": "1f44cdf7923a5b10e278dd615340a54d94bf480c6abef92aad6d27993e3de980",
       "inherited_exact_source_review": {
         "review": "IR-NH092-ORG-E8CD1819-20261116",
         "sha256": "7a3d7109d6fec1551ebcdeb941c88189cadac032fde24688156ec0610ac6c46c",
@@ -24025,14 +24043,14 @@
     "lib/battle/CUnitState.cpp::battle::void CUnitState::serializeJson(JsonSerializeFormat & handler)#1": {
       "deferral": "Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split. Retain every existing extraction obligation. No general regrowth, large-serializer waiver or factory/injury permission: further codec decisions must use focused coherent value/validation owners, preserve native field order and ABI rebuild; no dynamic frame or hidden-policy import is established. Engine engineer: before further non-mechanical codec/preflight growth in this exact owner, extract the next touched non-writing capability/shape family into a typed domain validator. Keep Handler I/O contiguous, unchanged prefix position, field order and current1156 roundtrip/malformed-input rejection; no new generic context or include fragment. Engine engineer: before further affected serializer growth, extract CHealth JSON/cohort preflight into CHealthSerialization with its existing public entry points and field order. Separately extract the contiguous original/effective battle-form health envelope into serializeBattleFormHealth at the same position and with unchanged onBattleFormChanged timing, reducing serializeJson178 below150. Compare exact bytes/JSON, owner contexts, cohort/form/temporary/remains/regeneration transitions, before-reset rejection and no-throw snapshot restoration.",
       "kind": "exception",
-      "lines": 178,
+      "lines": 179,
       "owner": "engine_engineer",
-      "previous_review": "IR-SHARED84-CURRENT225-EXACT-SOURCE-20261103",
-      "rationale": "Exact 176 to 175-line scope. Shared battle/bonus admission and deterministic value transitions integrate typed captures, current effect receipts and finite presence projection. Preserve external validation, source identity, branch isolation and ordered lifecycle behavior.\n\nIndependently reviewed C14 scope (175 to 178 physical lines): New typed shield/provenance/receipt work routes through focused helpers. The three additional JSON calls preserve field order, load preflight remains before reset, and the142-line damage body preserves native health/form order with Vow clipping extracted. This bounds only the recorded hash and measured span; all inherited deferrals, ratchets and runtime holds remain binding, with no future growth allowance.",
-      "review": "IR-NH0921-C14-1164-CODEORG-20261117",
+      "previous_review": "IR-NH0921-C14-1164-CODEORG-20261117",
+      "rationale": "Exact successor for Metamagic 6 Double Cast phase 4 (perk effects): one-line hooks, includes, accessor overrides, registrations or Arcane Ward unit-state plumbing only; the completion effects live in the focused MetamagicDoubleCastCompletion unit and the derived Crescendo/Spellstorm terms in MetamagicDoubleCast. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-METAMAGIC6-PHASE4-20261120",
       "review_scope": "Exact recorded C14 source hash, physical span and organization delta only. No future growth, whole-mechanic, compiler, native, rendered, performance, save-resume, publication or promotion acceptance.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN",
-      "sha256": "b9519da1785d4effedf1b6781337853bd9e3e77fbfa36ec17af35d132a04bb32"
+      "sha256": "8e364a9e1f8f60c5e0ab2c4755590a6931daa1be8850d48bde374bf5780d1320"
     },
     "lib/battle/CUnitState.h": {
       "completed_p_predecessor": {
@@ -24045,10 +24063,10 @@
       "deferral": "Keep ephemeral reporting within existing native damage authority; future damage interface expansion requires cohesive result context plus shield/casualty/rebirth/current save regression. Expanded exact review: Engine engineer: keep additional combat-stat dispatch/binding bodies in UnitCombatStats, not CUnitState.h; retain explicit bindStateEnvironment and value-only copy/exchange inventory. Require detached/owned state rebind and branch-isolation checks before future dispatch expansion. Before further detached-query interface or cache-field growth, extract its opaque derived cache/key storage behind the existing detached bonus-query owner; preserve count/source/form invalidation, independent acquire/assignment lifetime, native unchanged-count fast path and strict branch-isolation tests. Exact676-line bound only; no future growth allowance.",
       "inherited_a1_health_deferral": "Keep ephemeral reporting within existing native damage authority; future damage interface expansion requires cohesive result context plus shield/casualty/rebirth/current save regression. Expanded exact review: Engine engineer: keep additional combat-stat dispatch/binding bodies in UnitCombatStats, not CUnitState.h; retain explicit bindStateEnvironment and value-only copy/exchange inventory. Require detached/owned state rebind and branch-isolation checks before future dispatch expansion. Before further detached-query interface or cache-field growth, extract its opaque derived cache/key storage behind the existing detached bonus-query owner; preserve count/source/form invalidation, independent acquire/assignment lifetime, native unchanged-count fast path and strict branch-isolation tests. Exact676-line bound only; no future growth allowance.",
       "kind": "exception",
-      "lines": 561,
+      "lines": 564,
       "owner": "engine_engineer",
       "prefix_predecessor_review": "IR-OWNED-COMPOSITION-V5-R2-EXACT-SOURCE-20261101",
-      "previous_review": "IR-DETACHED-NATIVE-COUNT-CONTEXT-SOURCE",
+      "previous_review": "IR-NH0921-C14-1164-CODEORG-20261117",
       "prior_a1_health_scope": {
         "kind": "exception",
         "lines": 669,
@@ -24058,17 +24076,17 @@
       },
       "prior_deferral": "Keep ephemeral reporting within existing native damage authority; future damage interface expansion requires cohesive result context plus shield/casualty/rebirth/current save regression. Expanded exact review: Engine engineer: keep additional combat-stat dispatch/binding bodies in UnitCombatStats, not CUnitState.h; retain explicit bindStateEnvironment and value-only copy/exchange inventory. Require detached/owned state rebind and branch-isolation checks before future dispatch expansion.",
       "proposed_review": "IR-DAMAGE-PREFIX-PAIR-REUSE-R6-SOURCE-20261101",
-      "rationale": "Exact 669 to 544-line ratchet. Typed Development/Mastery/Leadership/Metamagic routing or the isolated CHealth value context removes repeated policy work from this existing owner; prior stricter extraction obligations remain. Shared raw adapters, metadata identity, mutable input/RNG order and lifecycle remain governed by focused differential coverage.\n\nIndependently reviewed C14 scope (544 to 561 physical lines): Only narrow typed damage, shield, completed-action and immutable descriptor declarations/values extend native state. The single canonical value inventory and receiving-owner semantics remain required. This bounds only the recorded hash and measured span; all inherited deferrals, ratchets and runtime holds remain binding, with no future growth allowance.",
-      "review": "IR-NH0921-C14-1164-CODEORG-20261117",
+      "rationale": "Exact successor for Metamagic 6 Double Cast phase 4 (perk effects): one-line hooks, includes, accessor overrides, registrations or Arcane Ward unit-state plumbing only; the completion effects live in the focused MetamagicDoubleCastCompletion unit and the derived Crescendo/Spellstorm terms in MetamagicDoubleCast. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-METAMAGIC6-PHASE4-20261120",
       "review_category": "component-interface-review",
       "review_scope": "Exact recorded C14 source hash, physical span and organization delta only. No future growth, whole-mechanic, compiler, native, rendered, performance, save-resume, publication or promotion acceptance.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN",
-      "sha256": "fbe2a91b6ec8056614c778ec655a0a79338ef1b099b447b2d71b30eba2befce3"
+      "sha256": "63cd7e0cedc50fbf004d36239cf915daf030698d232afac7eff51210bcaf47c8"
     },
     "lib/battle/CUnitStateLifecycle.cpp::battle::void CUnitState::reset()#1": {
       "deferral": "Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split. Owning gameplay/engine specialist: before further substantive expansion of this touched rule/transition, extract the next coherent affected policy or ordered stage into a focused owner. Preserve callback visibility, original recipient/caster identity, rejection atomicity and packet/RNG order; characterization must compare exact state and emitted packets. This is no future growth credit.",
       "kind": "exception",
-      "lines": 94,
+      "lines": 95,
       "organization_acceptance": "Poisoned/formed/Phantom/reused units reset to identical state; environment/ammo binding remains intact; compare first-round, stopped, genuine-turn and ghost/removal controls. No new lifecycle run occurred here.",
       "organization_interface": "A no-RNG reset operation on the existing CUnitState's form/Phantom values and original-health subobject, without rebinding environment or caches.",
       "organization_invariants": [
@@ -24086,12 +24104,12 @@
       "pre_legacy_freeze_review_scope": "Only exact current source organization, measured span/hash and stated responsibility. Excludes the two identified structural blockers, behavior/save/AI/rendered/platform acceptance and publication authorization.",
       "pre_legacy_freeze_review_status": "INDEPENDENT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
       "pre_legacy_freeze_sha256": "bf961dbe34338fc1cedf37f5207f7f03a0e48afb090e8f73ef4bae1e1fa9f6bf",
-      "previous_review": "IR-F86-BATTLE-LIB-COMPLETE-ORGANIZATION-FREEZE-20261110",
-      "rationale": "Exact 94 to 91-line scope. Shared battle/bonus admission and deterministic value transitions integrate typed captures, current effect receipts and finite presence projection. Preserve external validation, source identity, branch isolation and ordered lifecycle behavior.\n\nIndependently reviewed C14 scope (91 to 94 physical lines): The initializer clears three newly owned values in the existing ordered reset table. No new gameplay algorithm or alternate expiry clock is embedded in reset. This bounds only the recorded hash and measured span; all inherited deferrals, ratchets and runtime holds remain binding, with no future growth allowance.",
-      "review": "IR-NH0921-C14-1164-CODEORG-20261117",
+      "previous_review": "IR-NH0921-C14-1164-CODEORG-20261117",
+      "rationale": "Exact successor for Metamagic 6 Double Cast phase 4 (perk effects): one-line hooks, includes, accessor overrides, registrations or Arcane Ward unit-state plumbing only; the completion effects live in the focused MetamagicDoubleCastCompletion unit and the derived Crescendo/Spellstorm terms in MetamagicDoubleCast. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-METAMAGIC6-PHASE4-20261120",
       "review_scope": "Exact recorded C14 source hash, physical span and organization delta only. No future growth, whole-mechanic, compiler, native, rendered, performance, save-resume, publication or promotion acceptance.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN",
-      "sha256": "81ce23ce8d7b0a792ce638dbf4215280b8b599c514f31be98cffdc4c4bb4fa55"
+      "sha256": "2aec650c76ac699d8258b493af1a521ffac3e4237a6746a8dd6b31f7bcea355c"
     },
     "lib/battle/DamageFinalization.cpp::void CBattleInfoCallback::finalizeDamagePayload(const BattleAttackInfo & info, DamageAttackInfo & payload, const IBattleInfo * currentBattle) const#1": {
       "completed_p_predecessor": {
@@ -24387,7 +24405,7 @@
     "lib/battle/UnitStateValueFields.h::battle::UnitStateValueFields::static auto references(State & unit) noexcept#1": {
       "deferral": "Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split. Engine engineer: before further non-mechanical codec/preflight growth in this exact owner, extract the next touched non-writing capability/shape family into a typed domain validator. Keep Handler I/O contiguous, unchanged prefix position, field order and current1156 roundtrip/malformed-input rejection; no new generic context or include fragment.",
       "kind": "exception",
-      "lines": 95,
+      "lines": 96,
       "organization_acceptance": "Compare complete copied/exchanged values, destination owner/environment/cache identities and parent/sibling isolation; require compile-time nothrow constraints and rejection before prepared commit. Earlier capability/codec obligations are retained, not newly certified.",
       "organization_interface": "Ordered references to CUnitState value members; copy uses left-to-right assignment and exchange uses constrained noexcept value swaps. No owner pointer, environment, cache or provider is transferred.",
       "organization_invariants": [
@@ -24405,12 +24423,12 @@
       "pre_legacy_freeze_review_scope": "Only exact current source organization, measured span/hash and stated responsibility. Excludes the two identified structural blockers, behavior/save/AI/rendered/platform acceptance and publication authorization.",
       "pre_legacy_freeze_review_status": "INDEPENDENT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
       "pre_legacy_freeze_sha256": "086910aa8937cd9bfdf9f2eb0f19b15c9d3ffc258285179c9c1224a2738d46db",
-      "previous_review": "IR-F86-BATTLE-LIB-COMPLETE-ORGANIZATION-FREEZE-20261110",
-      "rationale": "Exact 95 to 92-line scope. Shared battle/bonus admission and deterministic value transitions integrate typed captures, current effect receipts and finite presence projection. Preserve external validation, source identity, branch isolation and ordered lifecycle behavior.\n\nIndependently reviewed C14 scope (92 to 95 physical lines): Three canonical owned value entries extend one mechanical tuple, shared by copy/exchange and snapshot codecs. The new descriptor codec deep-copies into immutable storage and the shield codec validates before no-throw restoration; no second inventory is introduced. This bounds only the recorded hash and measured span; all inherited deferrals, ratchets and runtime holds remain binding, with no future growth allowance.",
-      "review": "IR-NH0921-C14-1164-CODEORG-20261117",
+      "previous_review": "IR-NH0921-C14-1164-CODEORG-20261117",
+      "rationale": "Exact successor for Metamagic 6 Double Cast phase 4 (perk effects): one-line hooks, includes, accessor overrides, registrations or Arcane Ward unit-state plumbing only; the completion effects live in the focused MetamagicDoubleCastCompletion unit and the derived Crescendo/Spellstorm terms in MetamagicDoubleCast. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-METAMAGIC6-PHASE4-20261120",
       "review_scope": "Exact recorded C14 source hash, physical span and organization delta only. No future growth, whole-mechanic, compiler, native, rendered, performance, save-resume, publication or promotion acceptance.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN",
-      "sha256": "a4dc886276f4ca02c97b02eedc80978292d437a3f2ef1c20406cf90a2b100512"
+      "sha256": "4a61785f937b98901bf28f745ff8f750b8a08ef8c5d0d9ba564da7e5e81c6e15"
     },
     "lib/bonuses/Bonus.h::Bonus::void serialize(Handler &h)#1": {
       "deferral": "Before further persistent Bonus fields, extract their typed nonwriting target-admission group with direct/enclosing prefix rejection and explicit absence/old-profile parity. Cap this renewal to the recorded exact size and hash; independent review and relevant runtime validation remain required.",
@@ -26935,7 +26953,7 @@
       "deferral": "Further castEval growth requires focused posteffects receipt dispatch taking Mechanics/recorder/ServerCallback, preserving certification last, no duplicate completion and native injury/packet/RNG order. Native controls: Hero/creatureorigin, shields/sourceidentity/history/actions. No general ceilingwaiver.\n\nBefore any further substantive expansion, extract the next cohesive touched policy, callback/read adapter or ordered admission stage into its focused owner. Preserve exact capture metadata, source visibility, schema rejection, RNG/packet ordering and standalone/world wire identity; no future growth credit from this exception. Current exact-scope addendum: Gameplay owner extracts accepted-original completion and spell-evaluation transaction phases after native live/castEval/AI parity; preserve ticket entry/delegation/cost, effect ordering, one Overflow completion and RNG/reflection routing.",
       "inherited_a1_health_deferral": "Further castEval growth requires focused posteffects receipt dispatch taking Mechanics/recorder/ServerCallback, preserving certification last, no duplicate completion and native injury/packet/RNG order. Native controls: Hero/creatureorigin, shields/sourceidentity/history/actions. No general ceilingwaiver.",
       "kind": "exception",
-      "lines": 2632,
+      "lines": 2639,
       "organization_acceptance": "Packet/state/RNG characterization for original/reflected/automatic/delayed casts, no-op remove/add refresh, healing/creation/death, source family and hypothetical branch isolation. Native, reflection, save and rendered behavior remain unapproved.",
       "organization_interface": "ServerCallback delegate, const callback/Mechanics, original/effective spell IDs and caster owner, explicit capture flags; expose owned injury/healing/creation/status/recipient receipts after synchronous apply, without owning the delegate or state.",
       "organization_invariants": [
@@ -26953,7 +26971,7 @@
       "pre_legacy_freeze_review_scope": "Exact frozen production patch only. Conditional on root serialized engine/AI/UI/content/test composition; no future growth, old-save matrix, native/render/runtime proof or adoption authorization.",
       "pre_legacy_freeze_review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_RENDERED_UNRUN",
       "pre_legacy_freeze_sha256": "35ad59c7acec04e3a9c596ee3ec1c9c543f930c1bf2deaa049a2731f616bdcb4",
-      "previous_review": "IR-0911-INTEGRATION-SOURCE-ORGANIZATION",
+      "previous_review": "IR-NH0923-OVERFLOW-LIFETIME-ESTATE-SOURCE-20261118",
       "prior_a1_health_scope": {
         "kind": "exception",
         "lines": 2629,
@@ -26961,11 +26979,11 @@
         "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
         "sha256": "6968fdebcb529086a26a2f47f6a8a9cf3f61744918663ebea9b0aabb260ac9fc"
       },
-      "rationale": "Exact2632 to2632-line bounded correctness call-substitution exception: existing forEachEffect routes through Effects::forEachActiveEffect, matching the captured-profile suppression already used by applicability/preparation. No extra iteration, cast callback, action/payment/RNG or outcome lifetime added. All existing recorder, cast-completion and Cure extraction obligations remain binding; native spell/forecast parity still requires execution evidence.",
-      "review": "IR-NH0923-OVERFLOW-LIFETIME-ESTATE-SOURCE-20261118",
+      "rationale": "Exact successor for Metamagic 6 Double Cast phase 4 (perk effects): one-line hooks, includes, accessor overrides, registrations or Arcane Ward unit-state plumbing only; the completion effects live in the focused MetamagicDoubleCastCompletion unit and the derived Crescendo/Spellstorm terms in MetamagicDoubleCast. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-METAMAGIC6-PHASE4-20261120",
       "review_scope": "Exact source organization and bounded state/lifetime review only. No compile, rendered acceptance, publication or future growth allowance.",
       "review_status": "INDEPENDENT_SOURCE_REVIEW_NATIVE_RENDERED_UNRUN",
-      "sha256": "f6e95aee2597964fffd0f6e3afd5fe03660bfc1d1edf56d59fde4fc6901bd762",
+      "sha256": "59232908b1da375c39fc2577384e980ae3d532f34c4df58efbaa92bfbcd6fa6e",
       "inherited_exact_source_review": {
         "review": "IR-NH092-ORG-E8CD1819-20261116",
         "sha256": "73d7bd0d10820a15e4dc23747dac42909864ddb1c4e6362c4fb36a52f237bc2e",
@@ -27044,7 +27062,7 @@
     "lib/spells/BattleSpellMechanics.cpp::spells::void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)#1": {
       "deferral": "Before next substantive cast growth, extract ordered completion stages with explicit mechanics/callback/original side/injuries; preserve negation, manual/auto/reflection identity, pre-Echo Inspiration, Counterpressure and point/receipt/RNG ordering. Current exact-scope addendum: Gameplay owner extracts accepted-original completion and spell-evaluation transaction phases after native live/castEval/AI parity; preserve ticket entry/delegation/cost, effect ordering, one Overflow completion and RNG/reflection routing.",
       "kind": "exception",
-      "lines": 523,
+      "lines": 529,
       "organization_acceptance": "Exact full packet/log sequence, state and RNG comparisons for negated/manual/automatic/creature/Mirror/Runic casts, source death, restoration/summon/no-op status, all payment/refund pools and completion count. Prior completion/native gaps remain; no gameplay or save certification.",
       "organization_interface": "Owned value-only follow-up snapshots, ordinal/spell/caster text identity, negation/resistance and finalized recorder receipts; return BattleLogMessage. Keep server application at the original call position and all gameplay mutation/RNG outside formatting.",
       "organization_invariants": [
@@ -27063,12 +27081,12 @@
       "pre_legacy_freeze_review_scope": "Exact frozen production patch only. Conditional on root serialized engine/AI/UI/content/test composition; no future growth, old-save matrix, native/render/runtime proof or adoption authorization.",
       "pre_legacy_freeze_review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_RENDERED_UNRUN",
       "pre_legacy_freeze_sha256": "4387ae27edc8ea776f1a16a1f6f0b55f1ba41207643031015e3a860026ac47fc",
-      "previous_review": "IR-F86-BATTLE-LIB-COMPLETE-ORGANIZATION-FREEZE-20261110",
-      "rationale": "Three-line native original completion bridge adds one Overflow stage; shared recorder observes pre-casualty original injury once and reflection/automatic origins remain separate.\n\nIndependently reviewed C14 scope (519 to 523 physical lines): Substantive receptivity/provenance work moves to focused owners. Existing cast boundaries reset one shared per-cast quota/event and complete Redemption after native post-cast work; the file shrinks and completion routing remains ordered. This bounds only the recorded hash and measured span; all inherited deferrals, ratchets and runtime holds remain binding, with no future growth allowance.",
-      "review": "IR-NH0921-C14-1164-CODEORG-20261117",
+      "previous_review": "IR-NH0921-C14-1164-CODEORG-20261117",
+      "rationale": "Exact successor for Metamagic 6 Double Cast phase 4 (perk effects): one-line hooks, includes, accessor overrides, registrations or Arcane Ward unit-state plumbing only; the completion effects live in the focused MetamagicDoubleCastCompletion unit and the derived Crescendo/Spellstorm terms in MetamagicDoubleCast. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-METAMAGIC6-PHASE4-20261120",
       "review_scope": "Exact recorded C14 source hash, physical span and organization delta only. No future growth, whole-mechanic, compiler, native, rendered, performance, save-resume, publication or promotion acceptance.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN",
-      "sha256": "81763ac958f71946b9778ccb340e146bb22447340d8813df17df630c7397657e",
+      "sha256": "736aa62f3ab977718169ee4541cc8592297e852165859847b7dfa35723bed882",
       "inherited_exact_source_review": {
         "review": "IR-NH092-ORG-3E82D142-20261116",
         "sha256": "052caced3093c8e0e98acb9336e51ba85a6753519ecb1d044330dc7ed7f92da9",
@@ -27177,7 +27195,7 @@
     "lib/spells/ISpellMechanics.cpp": {
       "deferral": "Next substantive constructor expansion should extract immutable hero-cast profile capture with explicit event/caster/battle/rules inputs; retain pre-receipt snapshot timing and no live mutation. Numerical damage/heal/status consumers must use one additive percentage floor/cap, including corrected delayed snapshots. Before further substantive expansion, engine/gameplay owner must extract the next touched coherent formula-family, typed validation or presentation/registry group with a narrow interface and exact unchanged state/packet/RNG ordering. This approval permits only the exact deletion/signature/text migration; no future growth credit.",
       "kind": "exception",
-      "lines": 1643,
+      "lines": 1645,
       "organization_acceptance": "Exact values and query order across explicit zero/absent overrides, delayed snapshots, concentration, current/legacy coefficients, duration families and factory fallback. Assert branch/state/RNG purity of capture; retain earlier numerical parity obligations.",
       "organization_interface": "Explicit event overrides, captured spell/caster/side/battle profile, resolved power/mastery/coefficient facts and extension eligibility; return a duration value without accepting a cast, spending a grant or writing state.",
       "organization_invariants": [
@@ -27195,17 +27213,17 @@
       "pre_legacy_freeze_review_scope": "Exact source organization only; conditional on exact frozen afterimage. The original two bounded review findings are resolved in this exact successor. No native/rendered acceptance or source adoption/publication authorization.",
       "pre_legacy_freeze_review_status": "INDEPENDENT_ORGANIZATION_ONLY_NATIVE_RENDERED_UNRUN",
       "pre_legacy_freeze_sha256": "e57280dd7c6efd03781d37a25470032f9baa1ae8d2f6dcfdf756d31921d95a07",
-      "previous_review": "IR-F86-BATTLE-LIB-COMPLETE-ORGANIZATION-FREEZE-20261110",
-      "rationale": "Exact 1847 to 1641-line scope. Shared spell dispatch/presentation and current duration/scaling/effect policy remain in their existing owners. Preserve captured absence, exact native ordering, raw-input validation and current action/resource semantics.\n\nIndependently reviewed C14 scope (1641 to 1643 physical lines): Two constructor lines capture and validate the immutable ability descriptor from the existing cast event. Classification and damage context rules remain in focused owners. This bounds only the recorded hash and measured span; all inherited deferrals, ratchets and runtime holds remain binding, with no future growth allowance.",
-      "review": "IR-NH0921-C14-1164-CODEORG-20261117",
+      "previous_review": "IR-NH0921-C14-1164-CODEORG-20261117",
+      "rationale": "Exact successor for Metamagic 6 Double Cast phase 4 (perk effects): one-line hooks, includes, accessor overrides, registrations or Arcane Ward unit-state plumbing only; the completion effects live in the focused MetamagicDoubleCastCompletion unit and the derived Crescendo/Spellstorm terms in MetamagicDoubleCast. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-METAMAGIC6-PHASE4-20261120",
       "review_scope": "Exact recorded C14 source hash, physical span and organization delta only. No future growth, whole-mechanic, compiler, native, rendered, performance, save-resume, publication or promotion acceptance.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN",
-      "sha256": "bd4e45fa58bc646d06d74bf9b905ac59cc8fb7bbdb1862022d0ce26f79211d86"
+      "sha256": "c32d7efca54232571f50619753a298ba1f8d464a2f81495c270b59f774f0062d"
     },
     "lib/spells/ISpellMechanics.cpp::spells::BaseMechanics::BaseMechanics(const IBattleCast * event): owner(event->getSpell()), mode(event->getMode()), forceMassive(event->isForceMassive()), cb(event->getBattle())#1": {
       "deferral": "Next substantive constructor expansion should extract immutable hero-cast profile capture with explicit event/caster/battle/rules inputs; retain pre-receipt snapshot timing and no live mutation. Numerical damage/heal/status consumers must use one additive percentage floor/cap, including corrected delayed snapshots. Before further substantive expansion, engine/gameplay owner must extract the next touched coherent formula-family, typed validation or presentation/registry group with a narrow interface and exact unchanged state/packet/RNG ordering. This approval permits only the exact deletion/signature/text migration; no future growth credit.",
       "kind": "exception",
-      "lines": 216,
+      "lines": 217,
       "organization_acceptance": "Exact construction results/query sequence for explicit/absent duration and effect values, Slow/Bless/Haste, defending Inferno, Re-animate, charged Magic Arrow, follow-up pairing, automatic/delayed and concentration inputs, including overflow/clamp endpoints.",
       "organization_interface": "Typed immutable duration inputs: event optional duration, resolved effect level/power, original caster/side and saved rules, captured coefficient/specialty/extension facts. Return clamped duration without Mechanics self-recursion or mutation.",
       "organization_invariants": [
@@ -27223,12 +27241,12 @@
       "pre_legacy_freeze_review_scope": "Exact source organization only; conditional on exact frozen afterimage. The original two bounded review findings are resolved in this exact successor. No native/rendered acceptance or source adoption/publication authorization.",
       "pre_legacy_freeze_review_status": "INDEPENDENT_ORGANIZATION_ONLY_NATIVE_RENDERED_UNRUN",
       "pre_legacy_freeze_sha256": "0168207f98a48ffb832da026e38870026410c84ed7c9ee350d2e3cd17c77c05d",
-      "previous_review": "IR-F86-BATTLE-LIB-COMPLETE-ORGANIZATION-FREEZE-20261110",
-      "rationale": "Exact 325 to 214-line scope. Shared spell dispatch/presentation and current duration/scaling/effect policy remain in their existing owners. Preserve captured absence, exact native ordering, raw-input validation and current action/resource semantics.\n\nIndependently reviewed C14 scope (214 to 216 physical lines): Two constructor lines capture and validate the immutable ability descriptor from the existing cast event. Classification and damage context rules remain in focused owners. This bounds only the recorded hash and measured span; all inherited deferrals, ratchets and runtime holds remain binding, with no future growth allowance.",
-      "review": "IR-NH0921-C14-1164-CODEORG-20261117",
+      "previous_review": "IR-NH0921-C14-1164-CODEORG-20261117",
+      "rationale": "Exact successor for Metamagic 6 Double Cast phase 4 (perk effects): one-line hooks, includes, accessor overrides, registrations or Arcane Ward unit-state plumbing only; the completion effects live in the focused MetamagicDoubleCastCompletion unit and the derived Crescendo/Spellstorm terms in MetamagicDoubleCast. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-METAMAGIC6-PHASE4-20261120",
       "review_scope": "Exact recorded C14 source hash, physical span and organization delta only. No future growth, whole-mechanic, compiler, native, rendered, performance, save-resume, publication or promotion acceptance.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN",
-      "sha256": "3d6dfcb0e11baef48966cb91574a940fa024004981e64874d833a95e0d7d47d3"
+      "sha256": "968beb244c3cdca48e8594f371b3091ca52835623abad2aec2f6dcc20679561c"
     },
     "lib/spells/ISpellMechanics.h": {
       "deferral": "Engine/gameplay owner: before another context/query family expands this facade, extract immutable numerical/cast input value types behind a narrow value-context boundary while preserving DLL linkage, existing virtual/default behavior and HERO versus PASSIVE provenance. Minimum checks: target-free and recipient output ordering, one floor/cap, delayed captured values, automatic versus manual receipts, rejection purity and no additional completed-cast notification for triggers. Current exact-scope addendum: Gameplay owner moves opaque cast-local projection receipt declarations into focused shared receipt types after ABI consumers stabilize; preserve virtual/default API behavior and DLL linkage.",

@@ -182,6 +182,9 @@ public:
 	virtual int64_t getGuardianSpiritHitPoints() const { return 0; }
 	virtual int64_t getRedemptionShieldHitPoints() const { return 0; }
 	virtual int64_t getRedemptionShieldCapacity() const { return 0; }
+	/// Metamagic 6 Arcane Ward pool; it expires at the start of the next round.
+	virtual int64_t getArcaneWardHitPoints() const { return 0; }
+	virtual int64_t getArcaneWardCapacity() const { return 0; }
 	virtual bool hasCompletedActionThisRound() const { return false; }
 	/// Remaining rounds on the active Guardian Spirit marker, or zero when inactive.
 	virtual int32_t getGuardianSpiritRoundsRemaining() const { return 0; }

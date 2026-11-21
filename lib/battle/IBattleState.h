@@ -23,6 +23,7 @@
 #include "NewHorizonsRapidResponse.h"
 #include "SylvanLuckState.h"
 #include "HeroActionAllowanceState.h"
+#include "MetamagicDoubleCastState.h"
 #include "RelentlessAssaultState.h"
 #include "SpellResponseState.h"
 #include "NewHorizonsCommandResources.h"
@@ -136,6 +137,13 @@ public:
 	{
 		(void)side;
 		static const HeroActionAllowanceState empty;
+		return empty;
+	}
+	/// Metamagic 6 per-side ledger; empty outside an authoritative or forwarded battle.
+	virtual const MetamagicDoubleCastState & getMetamagicDoubleCastState(BattleSide side) const
+	{
+		(void)side;
+		static const MetamagicDoubleCastState empty;
 		return empty;
 	}
 	virtual const DoubleCommandState & getDoubleCommandState(BattleSide side) const

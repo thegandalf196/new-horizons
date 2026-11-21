@@ -217,6 +217,9 @@ public:
 		if(battle::hasConsecratedUnitState(data)
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_CONSECRATED_ARMS))
 			throw std::runtime_error("Cannot discard Consecrated unit state in an older update");
+		if(battle::hasArcaneWardUnitState(data)
+			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_DOUBLE_CAST_CHOSEN_PRAYERS))
+			throw std::runtime_error("Cannot discard an Arcane Ward shield in an older update");
 	}
 
 	template <typename Handler> void validateSerializationPrefix(Handler & h) const

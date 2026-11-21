@@ -39,6 +39,7 @@ public:
 	const newHorizonsCreatures::CreatureCategoryRules & getCreatureCategoryRules() const override { throw std::logic_error("Owned battle query is outside its captured scope: getCreatureCategoryRules"); }
 	bool getHeroCommandUsed(BattleSide side) const override { throw std::logic_error("Owned battle query is outside its captured scope: getHeroCommandUsed"); }
 	const HeroActionAllowanceState & getHeroActionAllowances(BattleSide side) const override { throw std::logic_error("Owned battle query is outside its captured scope: getHeroActionAllowances"); }
+	const MetamagicDoubleCastState & getMetamagicDoubleCastState(BattleSide side) const override { throw std::logic_error("Owned battle query is outside its captured scope: getMetamagicDoubleCastState"); }
 	const DoubleCommandState & getDoubleCommandState(BattleSide side) const override { throw std::logic_error("Owned battle query is outside its captured scope: getDoubleCommandState"); }
 	const PreCombatOrderState & getPreCombatOrderState(BattleSide side) const override { throw std::logic_error("Owned battle query is outside its captured scope: getPreCombatOrderState"); }
 	const BattleDeploymentState & getDeploymentState() const override { throw std::logic_error("Owned battle query is outside its captured scope: getDeploymentState"); }

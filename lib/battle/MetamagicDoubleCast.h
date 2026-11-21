@@ -12,6 +12,7 @@ class BattleAction;
 class BattleInfo;
 class CBattleInfoCallback;
 class CGHeroInstance;
+class IBattleInfo;
 
 /// Metamagic 6 (Double Cast) offer lifecycle. Every mutation runs in game-state
 /// visitors (or BattleInfo round/activation transitions they drive), so client
@@ -44,6 +45,14 @@ DLL_LINKAGE void forfeitOnStartAction(BattleInfo & battle, const BattleAction & 
 DLL_LINKAGE void expireOnActivation(BattleInfo & battle);
 /// After the allowance ledgers advanced to `round`: expire offers, apply Arcane Cycle.
 DLL_LINKAGE void startRound(BattleInfo & battle, int32_t round);
+
+/// Crescendo: Spell Power derived from this side's gross spent uses. It is a battle
+/// term added where spell effects read power, never a bonus stored on the hero.
+DLL_LINKAGE int crescendoSpellPower(const IBattleInfo & battle, BattleSide side, const CGHeroInstance * hero);
+/// Same term for a hero that is the fighting side hero of `battle`; 0 otherwise.
+DLL_LINKAGE int crescendoSpellPower(const CGHeroInstance & hero, const CBattleInfoCallback & battle);
+/// Spellstorm: percent removed from this side hero's combat spell costs; 0 before the threshold.
+DLL_LINKAGE int spellstormReductionPercent(const CBattleInfoCallback & battle, const CGHeroInstance & hero);
 
 /// Authority pre-StartAction admission. Returns a refusal reason, or nothing.
 DLL_LINKAGE std::optional<std::string> actionRefusal(const CBattleInfoCallback & battle, const BattleAction & action);

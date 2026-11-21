@@ -60,4 +60,17 @@ bool hasConsecratedUnitState(const JsonNode & unit)
 	}
 	return meaningful;
 }
+bool hasArcaneWardUnitState(const JsonNode & unit)
+{
+	const auto & state = unit["state"];
+	if(!state.isStruct())
+		return false;
+	for(const auto * key : {"arcaneWardHP", "arcaneWardCapacity"})
+	{
+		const auto & node = state[key];
+		if(!node.isNull() && (node.getType() != JsonNode::JsonType::DATA_INTEGER || node.Integer() != 0))
+			return true;
+	}
+	return false;
+}
 }

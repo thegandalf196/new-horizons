@@ -310,8 +310,8 @@ public:
 		if(h.saving && physicalPoisonDescriptor
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_CONSECRATED_ARMS))
 			throw std::runtime_error("Cannot discard physical Poison ability provenance");
-		if(h.saving && !redemptionShield.empty())
-			throw std::runtime_error("Binary stack descriptors cannot preserve an active Redemption shield");
+		if(h.saving && (!redemptionShield.empty() || !arcaneWard.empty()))
+			throw std::runtime_error("Binary stack descriptors cannot preserve an active Redemption or Arcane Ward shield");
 		if(h.saving && completedActionThisRound
 			&& !h.hasFeature(Handler::Version::NEW_HORIZONS_CONSECRATED_ARMS))
 			throw std::runtime_error("Cannot discard completed creature action history");

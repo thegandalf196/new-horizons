@@ -82,6 +82,7 @@ void CUnitState::reset()
 	physicalPoisonSpellSide = BattleSide::NONE;
 	physicalPoisonDescriptor.reset();
 	redemptionShield.clear();
+	arcaneWard.clear();
 	guardianSpiritHitPoints = 0;
 	guardianSpiritRoundsRemaining = 0;
 	phantomInitialIntegrity = 0;
@@ -149,6 +150,7 @@ void CUnitState::afterWait()
 void CUnitState::afterNewRound(bool isFirstRound, bool deferBattleFormRestoration)
 {
 	completedActionThisRound = false;
+	arcaneWard.clear(); // Arcane Ward lasts until the start of the next round.
 	forestAmbush = {};
 	moraleExtraActivation = false;
 	battlecraftOverwatchReadyRound = -1;
@@ -247,6 +249,7 @@ void CUnitState::makeGhost()
 	armorerLastStandDefending = false;
 	veteranPhysicalDamageSinceActivation = 0;
 	redemptionShield.clear();
+	arcaneWard.clear();
 	guardianSpiritHitPoints = 0;
 	guardianSpiritRoundsRemaining = 0;
 	phantomIntegrity = 0;
@@ -279,6 +282,7 @@ void CUnitState::onRemoved()
 	capacityHealthReferenceMax = 0;
 	capacityRegenerationRemainderTenths = 0;
 	redemptionShield.clear();
+	arcaneWard.clear();
 	guardianSpiritHitPoints = 0;
 	guardianSpiritRoundsRemaining = 0;
 	phantomIntegrity = 0;
@@ -296,6 +300,7 @@ void CUnitState::clearDeadUnitTransientState()
 	pursuitMovementRemaining = 0;
 	veteranPhysicalDamageSinceActivation = 0;
 	redemptionShield.clear();
+	arcaneWard.clear();
 	guardianSpiritHitPoints = 0;
 	guardianSpiritRoundsRemaining = 0;
 	// Marks belong to surviving wounds only and must never carry through death.

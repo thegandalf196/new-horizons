@@ -89,6 +89,10 @@ public:
 	{
 		return subject->getBattle()->getHeroActionAllowances(side);
 	}
+	const MetamagicDoubleCastState & getMetamagicDoubleCastState(BattleSide side) const override
+	{
+		return subject->getBattle()->getMetamagicDoubleCastState(side);
+	}
 	const DoubleCommandState & getDoubleCommandState(BattleSide side) const override
 	{
 		return subject->getBattle()->getDoubleCommandState(side);

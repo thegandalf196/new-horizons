@@ -23,6 +23,7 @@
 #include "NewHorizonsDreadCavalry.h"
 #include "../entities/hero/CHero.h"
 #include "../entities/hero/NewHorizonsChosenSpecialties.h"
+#include "MetamagicDoubleCast.h"
 #include "CBattleInfoCallback.h"
 #include "NewHorizonsDemonicGating.h"
 #include "BattleActivationPredicate.h"
@@ -3191,6 +3192,11 @@ int32_t CBattleInfoCallback::calculateBattleSpellCost(const spells::Spell * sp, 
 		const int32_t before = ret;
 		ret = newHorizonsHeroes::chosenSpecialtyAdjustedCost(ret, specialtyDiscount);
 		recordStage(SpellCostStage::Kind::CHOSEN_SPECIALTY, before, ret);
+	}
+	if(const int spellstorm = sp->isCombat() ? metamagicDoubleCast::spellstormReductionPercent(*this, *caster) : 0)
+	{
+		const int32_t before = std::exchange(ret, newHorizonsHeroes::chosenSpecialtyAdjustedCost(ret, spellstorm));
+		recordStage(SpellCostStage::Kind::METAMAGIC_SPELLSTORM, before, ret);
 	}
 	const bool newHorizonsOrdinarySpell = newHorizonsMagic::rulesActive(caster->getMagicRules())
 		&& sp->isCommonHeroSpell() && sp->isCombat() && !sp->isAdventure();

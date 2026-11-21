@@ -92,6 +92,7 @@ private:
 			unit.physicalPoisonSpellSide,
 			unit.physicalPoisonDescriptor,
 			unit.redemptionShield,
+			unit.arcaneWard,
 			unit.completedActionThisRound,
 			unit.guardianSpiritHitPoints,
 			unit.guardianSpiritRoundsRemaining,
@@ -131,7 +132,7 @@ private:
 		|| std::is_same_v<Value, std::vector<uint32_t>>
 		|| std::is_same_v<Value, ConfusionState> || std::is_same_v<Value, DreadCavalryState>
 		|| std::is_same_v<Value, ForestAmbushState>
-		|| std::is_same_v<Value, RedemptionShieldState>;
+		|| std::is_same_v<Value, RedemptionShieldState> || std::is_same_v<Value, ArcaneWardShieldState>;
 
 	template<typename Value> static Value ownedValue(const Value & value)
 	{

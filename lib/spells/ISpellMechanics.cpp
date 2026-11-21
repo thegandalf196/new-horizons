@@ -53,6 +53,7 @@
 #include "../bonuses/Bonus.h"
 #include "../battle/CBattleInfoCallback.h"
 #include "../battle/HeroActionAllowanceState.h"
+#include "../battle/MetamagicDoubleCast.h"
 #include "../battle/HeroCommand.h"
 #include "../battle/IBattleState.h"
 #include "../battle/NewHorizonsDivineMandate.h"
@@ -872,7 +873,8 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 		// mechanics boundary so it affects every ordinary spell effect while
 		// never leaking onto an adventure-map hero or an attacking hero.
 		if(const auto * heroCaster = caster->getHeroCaster())
-			effectPower += newHorizonsMagic::brimstoneSpellPowerBonus(*heroCaster, *cb);
+			effectPower += newHorizonsMagic::brimstoneSpellPowerBonus(*heroCaster, *cb)
+				+ metamagicDoubleCast::crescendoSpellPower(*heroCaster, *cb);
 	}
 	const auto * extendingHero = dynamic_cast<const CGHeroInstance *>(caster);
 	extendSpellEligible = mode == Mode::HERO && extendingHero && cb

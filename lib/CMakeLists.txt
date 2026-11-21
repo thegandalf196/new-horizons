@@ -1036,6 +1036,7 @@ set(lib_MAIN_SRCS
 	spells/NewHorizonsMetamagicDoubleCast.cpp
 	spells/NewHorizonsPolicyFormat.cpp
 	spells/NewHorizonsMetamagicCompletion.cpp
+	spells/MetamagicDoubleCastCompletion.cpp
 	spells/NewHorizonsMagicalMemory.cpp
 	spells/NewHorizonsSorcerySpells.cpp
 	spells/SorcerySpellPresentation.cpp
@@ -1974,6 +1975,7 @@ set(lib_MAIN_HEADERS
 	spells/NewHorizonsMetamagicResolution.h
 	spells/NewHorizonsMetamagicDoubleCast.h
 	spells/NewHorizonsMetamagicCompletion.h
+	spells/MetamagicDoubleCastCompletion.h
 	spells/NewHorizonsMagicalMemory.h
 	spells/NewHorizonsSorcerySpells.h
 	spells/NewHorizonsMetamagicArea.h

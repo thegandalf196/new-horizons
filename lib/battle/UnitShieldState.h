@@ -13,7 +13,7 @@ namespace battle
 {
 class Unit;
 class RedemptionEvent;
-enum class ShieldSource : uint8_t { GUARDIAN_SPIRIT, VICARIOUS_REDEMPTION };
+enum class ShieldSource : uint8_t { GUARDIAN_SPIRIT, VICARIOUS_REDEMPTION, ARCANE_WARD };
 enum class DamageClass : uint8_t { UNCLASSIFIED, PHYSICAL, MAGICAL, HEALTH_COST };
 enum class DamageOrigin : uint8_t { OTHER, CREATURE_STRIKE, HERO_SPELL, CREATURE_ABILITY, PERIODIC, CREATURE_SPELL };
 /// Owned once per logical attack/spell and recipient, shared by every damage rider.
@@ -44,7 +44,7 @@ struct ShieldPoolView
 };
 struct ShieldSnapshot
 {
-	std::array<ShieldPoolView, 2> pools;
+	std::array<ShieldPoolView, 3> pools;
 };
 /// Redemption has no clock: its prayer marker owns expiry and refresh.
 struct DLL_LINKAGE RedemptionShieldState
@@ -62,6 +62,21 @@ struct DLL_LINKAGE RedemptionShieldState
 	void validate() const;
 	void serializeJson(JsonSerializeFormat & handler);
 };
+/// Metamagic 6 Arcane Ward: a non-stacking pool that a later double cast may
+/// raise, never lower. It covers the same damage classes as Redemption and
+/// expires at the start of the next round.
+struct DLL_LINKAGE ArcaneWardShieldState
+{
+	int64_t remaining = 0;
+	int64_t capacity = 0;
+	void clear() noexcept { *this = {}; }
+	bool empty() const noexcept { return remaining == 0 && capacity == 0; }
+	/// Keeps the larger of the remaining pool and the new value; returns true if it changed.
+	bool refresh(int64_t value);
+	int64_t absorb(int64_t & damage);
+	void validate() const;
+	void serializeJson(JsonSerializeFormat & handler);
+};
 enum class DamageProvenance : uint8_t;
 struct ShieldDamagePreview
 {
@@ -75,6 +90,8 @@ DLL_LINKAGE std::optional<ShieldDamagePreview> previewShieldDamage(const Unit & 
 	DamageProvenance provenance, const DamageContext * context = nullptr, bool bypassTemporaryHP = false);
 DLL_LINKAGE bool redemptionCovers(DamageContext damage);
 DLL_LINKAGE bool hasConsecratedUnitState(const JsonNode & unit);
+/// True when a unit-state document carries an Arcane Ward pool (format 1165 and later).
+DLL_LINKAGE bool hasArcaneWardUnitState(const JsonNode & unit);
 DLL_LINKAGE ShieldSnapshot shieldSnapshot(const Unit & unit);
 DLL_LINKAGE void synchronizePrayerEffects(IBattleState & state, const SetStackEffect & effects);
 }

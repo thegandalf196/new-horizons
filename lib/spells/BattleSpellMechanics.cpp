@@ -12,6 +12,7 @@
 #include "SpellEffectScalingProfile.h"
 #include "SpellBonusProvenance.h"
 #include "NewHorizonsMetamagicCompletion.h"
+#include "MetamagicDoubleCastCompletion.h"
 #include "NewHorizonsMetamagicCore.h"
 #include "NewHorizonsMetamagicEnchantments.h"
 #include "NewHorizonsMetamagicOverflow.h"
@@ -1894,6 +1895,9 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 	if(!castDescription.lines.empty())
 		server->apply(castDescription);
 
+	// BattleSpellCast closes a Double Cast offer; keep its first-spell provenance for completion.
+	const auto doubleCastBefore = originalHeroCast
+		? std::optional(battleInfo->getMetamagicDoubleCastState(originalCasterSide)) : std::nullopt;
 	server->apply(sc);
 	if(consumeSpellResponse)
 	{
@@ -2160,6 +2164,9 @@ void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 	if(originalHeroCast && !getAutomaticHeroCast().automatic()
 		&& casterHero == battleInfo->getSideHero(originalCasterSide))
 		newHorizonsElementalAttunement::publishCompletedHeroCast(*server, *battle(), originalCasterSide, sc.spellID);
+	if(doubleCastBefore)
+		metamagicDoubleCast::applyCompletionEffects(*server, *battle(), originalCasterSide, *doubleCastBefore,
+			sc.spellID, sc.affectedCres);
 
 	// send empty event to client
 	// temporary(?) workaround to force animations to trigger

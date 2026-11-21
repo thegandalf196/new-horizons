@@ -168,6 +168,48 @@ void startRound(BattleInfo & battle, int32_t round)
 	}
 }
 
+int crescendoSpellPower(const IBattleInfo & battle, BattleSide side, const CGHeroInstance * hero)
+{
+	const auto * rules = doubleCastRules(hero);
+	const auto perks = rules ? nativeRules::doubleCastPerks(hero) : 0;
+	// The perk check precedes any battle-state query: other rules never read it.
+	if(!rules || rules->crescendoSpellPower(1, perks) == 0
+		|| (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER))
+		return 0;
+	return rules->crescendoSpellPower(battle.getMetamagicDoubleCastState(side).usesSpent, perks);
+}
+
+namespace
+{
+std::optional<BattleSide> fightingSide(const CGHeroInstance & hero, const CBattleInfoCallback & battle)
+{
+	const auto * info = battle.getBattle();
+	const auto side = battle.playerToSide(hero.getOwner());
+	if(!info || (side != BattleSide::ATTACKER && side != BattleSide::DEFENDER) || info->getSideHero(side) != &hero)
+		return std::nullopt;
+	return side;
+}
+}
+
+int crescendoSpellPower(const CGHeroInstance & hero, const CBattleInfoCallback & battle)
+{
+	if(!doubleCastRules(&hero))
+		return 0;
+	const auto side = fightingSide(hero, battle);
+	return side ? crescendoSpellPower(*battle.getBattle(), *side, &hero) : 0;
+}
+
+int spellstormReductionPercent(const CBattleInfoCallback & battle, const CGHeroInstance & hero)
+{
+	const auto * rules = doubleCastRules(&hero);
+	const auto perks = rules ? nativeRules::doubleCastPerks(&hero) : 0;
+	if(!rules || rules->spellstormManaReductionPercent(MetamagicDoubleCastState::MAX_COUNT, perks) == 0)
+		return 0;
+	const auto side = fightingSide(hero, battle);
+	return side ? rules->spellstormManaReductionPercent(
+		battle.getBattle()->getMetamagicDoubleCastState(*side).completedDoubleCasts, perks) : 0;
+}
+
 std::optional<std::string> actionRefusal(const CBattleInfoCallback & battle, const BattleAction & action)
 {
 	if((action.side != BattleSide::ATTACKER && action.side != BattleSide::DEFENDER) || !battle.getBattle())

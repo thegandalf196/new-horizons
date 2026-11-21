@@ -152,6 +152,7 @@ set(test_SRCS
 		server/battles/ConsecratedArmsOrderTest.cpp
 		server/battles/ConsecratedArmsChoiceTest.cpp
 		server/battles/MetamagicDoubleCastTest.cpp
+		server/battles/MetamagicDoubleCastPerksTest.cpp
 		server/battles/ConsecratedArmsLastStandTest.cpp
 		server/battles/ConsecratedArmsBurnMarkTest.cpp
 		server/battles/CreatureBurnRedemptionTest.cpp
@@ -1154,6 +1155,7 @@ set(test_HEADERS
 		server/battles/VerdantPrisonScriptErrorCapture.h
 		server/battles/FrozenAttackStageFixture.h
 		server/battles/HeroCommandFixture.h
+		server/battles/MetamagicDoubleCastFixture.h
 		server/battles/GraveDustPrimaryShotFixture.h
 		server/battles/InfernoStrikeDebuffFixture.h
 		server/battles/NewHorizonsGenieSageFixture.h

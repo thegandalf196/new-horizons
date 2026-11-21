@@ -26,6 +26,7 @@ std::optional<ShieldDamagePreview> previewShieldDamage(const Unit & unit, int64_
 		const bool covered = context ? redemptionCovers(*context)
 			: provenance == DamageProvenance::PHYSICAL_CREATURE || provenance == DamageProvenance::SPELL
 				|| provenance == DamageProvenance::MAGICAL_CREATURE;
+		if(covered) incoming -= std::min(incoming, unit.getArcaneWardHitPoints());
 		if(covered) incoming -= std::min(incoming, unit.getRedemptionShieldHitPoints());
 	}
 	ShieldDamagePreview result;

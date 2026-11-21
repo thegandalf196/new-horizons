@@ -29,6 +29,7 @@ inline bool equal(const battle::ShieldSnapshot & lhs, const battle::ShieldSnapsh
 /// One combined reservoir indicator, not a claim of universal damage coverage.
 /// Use captured capacities while their sources remain active. Guardian Spirit
 /// ends when exhausted; active Redemption can retain an empty, replenishable pool.
+/// Arcane Ward ends when exhausted or at the start of the next round.
 inline Bar bar(const battle::ShieldSnapshot & snapshot, Point amountPosition, int width)
 {
 	Bar result{Rect(amountPosition.x, amountPosition.y - 7, std::max(0, width), 2), 0};
@@ -56,8 +57,8 @@ inline std::string tooltip(const battle::ShieldSnapshot & snapshot)
 			continue;
 		if(!result.empty())
 			result += "\n\n";
-		result += pool.source == battle::ShieldSource::GUARDIAN_SPIRIT
-			? "Guardian Spirit" : "Vicarious Redemption";
+		result += pool.source == battle::ShieldSource::GUARDIAN_SPIRIT ? "Guardian Spirit"
+			: pool.source == battle::ShieldSource::ARCANE_WARD ? "Arcane Ward" : "Vicarious Redemption";
 		result += "\nShield HP remaining: " + std::to_string(pool.remaining)
 			+ " / " + std::to_string(pool.capacity);
 		result += pool.physicalCreatureOnly

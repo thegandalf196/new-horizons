@@ -75,6 +75,9 @@ void CUnitState::absorbShields(int64_t & amount, DamageProvenance provenance, bo
 	const bool eligible = context ? redemptionCovers(*context)
 		: provenance == DamageProvenance::PHYSICAL_CREATURE || provenance == DamageProvenance::SPELL
 			|| provenance == DamageProvenance::MAGICAL_CREATURE;
+	// The round-limited Arcane Ward is spent before the longer-lived Redemption pool.
+	if(eligible)
+		arcaneWard.absorb(amount);
 	if(eligible)
 		redemptionShield.absorb(amount);
 }

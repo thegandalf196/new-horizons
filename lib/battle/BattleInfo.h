@@ -126,6 +126,10 @@ public:
 		for(const auto & side : sides)
 			side.heroActionAllowances.validateSharedPurposeSerialization(h);
 	}
+	const MetamagicDoubleCastState & getMetamagicDoubleCastState(BattleSide side) const override
+	{
+		return sides.at(side).metamagicDoubleCast;
+	}
 	const DoubleCommandState & getDoubleCommandState(BattleSide side) const override
 	{
 		return sides.at(side).doubleCommandState;

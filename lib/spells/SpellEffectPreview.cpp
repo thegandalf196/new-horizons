@@ -9,6 +9,7 @@
 #include "ISpellMechanics.h"
 #include "NewHorizonsMagic.h"
 #include "NewHorizonsMetamagicEffects.h"
+#include "../battle/MetamagicDoubleCast.h"
 #include "NewHorizonsWisdom.h"
 #include "NewHorizonsCureHealing.h"
 #include "NewHorizonsBlink.h"
@@ -57,7 +58,8 @@ void adjustFactionDamagePreview(SpellEffectPreview & result, const CGHeroInstanc
 int initialSpellPower(const CGHeroInstance & hero, const CSpell & spell, const CBattleInfoCallback * callback)
 {
 	const int power = std::max(0, hero.getEffectPower(&spell));
-	return power + (callback ? brimstoneSpellPowerBonus(hero, *callback) : 0);
+	return power + (callback ? brimstoneSpellPowerBonus(hero, *callback)
+		+ metamagicDoubleCast::crescendoSpellPower(hero, *callback) : 0);
 }
 
 

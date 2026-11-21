@@ -1978,6 +1978,7 @@ void CUnitState::serializeJson(JsonSerializeFormat & handler)
 		throw std::runtime_error("Invalid physical Poison state");
 	serializePhysicalPoisonDescriptor(handler, *this);
 	redemptionShield.serializeJson(handler);
+	arcaneWard.serializeJson(handler);
 	handler.serializeBool("completedActionThisRound", completedActionThisRound);
 	handler.serializeInt("guardianSpiritHitPoints", guardianSpiritHitPoints, 0);
 	handler.serializeInt("guardianSpiritRoundsRemaining", guardianSpiritRoundsRemaining, 0);

@@ -91,6 +91,37 @@ void RedemptionShieldState::serializeJson(JsonSerializeFormat & handler)
 	handler.serializeBool("redemptionShieldInitialized", initialized);
 	validate();
 }
+bool ArcaneWardShieldState::refresh(int64_t value)
+{
+	validate();
+	if(value < 0)
+		throw std::invalid_argument("Negative Arcane Ward shield");
+	// Non-stacking: a weaker refresh never lowers protection that is still active.
+	if(value <= remaining)
+		return false;
+	remaining = value;
+	capacity = value;
+	return true;
+}
+int64_t ArcaneWardShieldState::absorb(int64_t & damage)
+{
+	validate();
+	const auto absorbed = std::min(std::max<int64_t>(0, damage), remaining);
+	remaining -= absorbed;
+	damage -= absorbed;
+	return absorbed;
+}
+void ArcaneWardShieldState::validate() const
+{
+	if(remaining < 0 || capacity < 0 || remaining > capacity)
+		throw std::runtime_error("Invalid Arcane Ward shield state");
+}
+void ArcaneWardShieldState::serializeJson(JsonSerializeFormat & handler)
+{
+	handler.serializeInt("arcaneWardHP", remaining, 0);
+	handler.serializeInt("arcaneWardCapacity", capacity, 0);
+	validate();
+}
 bool redemptionCovers(DamageContext damage)
 {
 	return damage.damageClass == DamageClass::PHYSICAL || damage.damageClass == DamageClass::MAGICAL;
@@ -110,6 +141,8 @@ ShieldSnapshot shieldSnapshot(const Unit & unit)
 		guardianRemaining > 0 ? std::max(guardianCapacity, guardianRemaining) : 0, true};
 	result.pools[1] = {ShieldSource::VICARIOUS_REDEMPTION, unit.getRedemptionShieldHitPoints(),
 		unit.getRedemptionShieldCapacity(), false};
+	const auto ward = unit.alive() ? unit.getArcaneWardHitPoints() : 0;
+	result.pools[2] = {ShieldSource::ARCANE_WARD, ward, ward > 0 ? unit.getArcaneWardCapacity() : 0, false};
 	return result;
 }
 }

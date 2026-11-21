@@ -184,6 +184,7 @@ public:
 	BattleSide physicalPoisonSpellOrigin() const override { return physicalPoisonSpellSide; }
 	/// Separate Guardian Spirit buffer; only physical creature damage can consume it.
 	RedemptionShieldState redemptionShield;
+	ArcaneWardShieldState arcaneWard;
 	bool completedActionThisRound = false;
 	int64_t guardianSpiritHitPoints = 0;
 	int32_t guardianSpiritRoundsRemaining = 0;
@@ -283,6 +284,8 @@ public:
 	int64_t getGuardianSpiritHitPoints() const override;
 	int64_t getRedemptionShieldHitPoints() const override;
 	int64_t getRedemptionShieldCapacity() const override;
+	int64_t getArcaneWardHitPoints() const override { return alive() ? arcaneWard.remaining : 0; }
+	int64_t getArcaneWardCapacity() const override { return alive() ? arcaneWard.capacity : 0; }
 	bool hasCompletedActionThisRound() const override { return completedActionThisRound; }
 	void synchronizeRedemptionShield();
 	int64_t gainRedemptionShield(int64_t lostMaximumHP, int conversionBasisPoints, bool alliedHalfRate);
