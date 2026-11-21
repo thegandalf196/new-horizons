@@ -4,6 +4,7 @@
 #include "HeroCommandFixture.h"
 #include "../../../lib/GameLibrary.h"
 #include "../../../lib/battle/ConsecratedArmsChoice.h"
+#include "../../../client/battle/ConsecratedArmsPrayerChoice.h"
 #include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
 
@@ -144,11 +145,52 @@ TEST_F(ConsecratedArmsChoiceTest, ProvisionalAiChoiceKeepsOrdersLegal)
 	EXPECT_TRUE(activePrayer(*battle()->battleGetUnitByID(action.prayerRecipient), Prayer::DIVINE_PURPOSE));
 }
 
+TEST_F(ConsecratedArmsChoiceTest, ChoiceRequestMatchesAuthorityAndPlayerPickerChoiceIsAccepted)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	auto action = BattleAction::makeHeroCommand(ATTACKER, HeroCommand::CHARGE);
+	const auto request = choiceRequest(*battle(), action);
+	ASSERT_EQ(request.prayers, 1u);
+	EXPECT_TRUE(request.policy.chosen);
+	for(const auto * unit : friendly)
+		EXPECT_TRUE(std::binary_search(request.recipients.begin(), request.recipients.end(), unit->unitId()));
+	consecratedArmsPrayerChoice::Selection selection(request.prayers, request.recipients);
+	const auto recipient = friendly.at(1)->unitId();
+	EXPECT_FALSE(selection.chooseRecipient(recipient)); // The prayer is chosen first.
+	ASSERT_TRUE(selection.togglePrayer(Prayer::STEADFAST_SOUL));
+	ASSERT_TRUE(selection.chooseRecipient(recipient));
+	ASSERT_TRUE(selection.apply(action, choiceRequest(*battle(), action)));
+	ASSERT_TRUE(submit(action));
+	EXPECT_TRUE(activePrayer(*friendly.at(1), Prayer::STEADFAST_SOUL));
+	EXPECT_EQ(prayerTotal(), 1);
+}
+
+TEST_F(ConsecratedArmsChoiceTest, ChoiceRequestAsksForTwoPrayersWithAntiphonal)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(MasteryLevel::EXPERT));
+	for(const auto * perk : {".enduringPrayer", ".sacredAccord", ".antiphonalPrayer"})
+		attackerSideHero->applyPerkSelection({SKILL, std::string(SKILL) + perk});
+	auto action = BattleAction::makeHeroCommand(ATTACKER, HeroCommand::CHARGE);
+	const auto request = choiceRequest(*battle(), action);
+	ASSERT_EQ(request.prayers, 2u);
+	consecratedArmsPrayerChoice::Selection selection(request.prayers, request.recipients);
+	ASSERT_TRUE(selection.togglePrayer(Prayer::DIVINE_PURPOSE));
+	ASSERT_TRUE(selection.togglePrayer(Prayer::HEAVENS_JUDGMENT));
+	ASSERT_TRUE(selection.chooseRecipient(friendly.front()->unitId()));
+	ASSERT_TRUE(selection.apply(action, choiceRequest(*battle(), action)));
+	ASSERT_TRUE(submit(action));
+	EXPECT_TRUE(activePrayer(*friendly.front(), Prayer::DIVINE_PURPOSE));
+	EXPECT_TRUE(activePrayer(*friendly.front(), Prayer::HEAVENS_JUDGMENT));
+	EXPECT_EQ(prayerTotal(), 2);
+}
+
 TEST_F(ConsecratedArmsChoiceTest, HeroWithoutTheSkillCarriesNoChoice)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare(MasteryLevel::NONE));
 	EXPECT_FALSE(submit(charge({0}, friendly.front()->unitId())));
 	auto action = BattleAction::makeHeroCommand(ATTACKER, HeroCommand::CHARGE);
+	EXPECT_EQ(choiceRequest(*battle(), action).prayers, 0u);
+	EXPECT_TRUE(choiceRequest(*battle(), action).recipients.empty());
 	applyProvisionalDefaultChoice(*battle(), action);
 	EXPECT_TRUE(action.prayerChoices.empty());
 	EXPECT_TRUE(submit(action));
@@ -162,6 +204,7 @@ TEST_F(ConsecratedArmsChoiceTest, VersionThreeRejectsChoiceFieldsAndStaysRandom)
 	ASSERT_FALSE(capturePolicy(attackerSideHero).chosen);
 	expectRejected(charge({0}, friendly.front()->unitId()));
 	auto action = BattleAction::makeHeroCommand(ATTACKER, HeroCommand::CHARGE);
+	EXPECT_EQ(choiceRequest(*battle(), action).prayers, 0u); // Random prayers open no picker.
 	applyProvisionalDefaultChoice(*battle(), action);
 	EXPECT_TRUE(action.prayerChoices.empty());
 	ASSERT_TRUE(submit(action));

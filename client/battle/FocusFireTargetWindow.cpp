@@ -5,6 +5,7 @@
 #include "StdInc.h"
 #include "FocusFireTargetWindow.h"
 #include "BattleHeroActionWindow.h"
+#include "ConsecratedArmsPrayerWindow.h"
 #include "../GameEngine.h"
 #include "../gui/WindowHandler.h"
 #include "BattleInterface.h"
@@ -320,12 +321,10 @@ void FocusFireTargetWindow::confirm()
 	const auto action = isPairOrder(context->command)
 		? BattleAction::makePairedHeroCommand(context->side, context->command, *context->first, *context->selected)
 		: BattleAction::makeTargetedHeroCommand(context->side, context->command, *context->selected);
-	const auto battleID = context->battleID;
-	auto playerCallback = owner->curInt->cb;
 	context->submitted = true; // Local duplicate-submit latch, not the authoritative action budget.
 	context->closed = true;
 	close();
-	playerCallback->battleMakeSpellAction(battleID, action);
+	consecratedArmsPrayerUI::submitOrder(owner, action);
 }
 
 void FocusFireTargetWindow::show(Canvas & to)

@@ -141,7 +141,7 @@ void CSpellWindow::createSchoolBookmarkAreas()
 	if(prayerTab)
 		interactiveAreas.push_back(std::make_shared<InteractiveArea>(prayerTab->pos,
 			[this] { selectPrayers(); }, "Prayers",
-			"Inspect the prayers granted automatically by Consecrated Arms when this hero issues an Order.", this));
+			"Inspect the prayers that Consecrated Arms grants when this hero issues an Order.", this));
 }
 
 CSpellWindow::InteractiveArea::InteractiveArea(const Rect & bounds, const std::function<void()> & action,

@@ -10,6 +10,7 @@
 #include "BattleInterface.h"
 #include "BattleWindow.h"
 #include "BattleActionsController.h"
+#include "ConsecratedArmsPrayerWindow.h"
 #include "NewHorizonsBattleStatus.h"
 #include "NewHorizonsOrderPresentation.h"
 #include "../CPlayerInterface.h"
@@ -249,12 +250,11 @@ void BattleHeroActionWindow::chooseCommand(HeroCommand command)
 		return;
 	}
 	const auto action = BattleAction::makeHeroCommand(side, command);
-	const auto battleID = owner->getBattleID();
-	auto playerCallback = owner->curInt->cb;
 	// Never set the shared action budget or bonuses in the frontend.
-	// The original hero-action request path validates again on the authority.
+	// The original hero-action request path validates again on the authority;
+	// Chosen Prayers first asks for its prayer and recipient.
 	close();
-	playerCallback->battleMakeSpellAction(battleID, action);
+	consecratedArmsPrayerUI::submitOrder(owner, action);
 }
 
 void BattleHeroActionWindow::chooseSpell()

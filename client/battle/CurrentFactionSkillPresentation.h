@@ -4,6 +4,7 @@
 #include "PassiveFactionSkillPresentation.h"
 #include "../../lib/battle/ConsecratedArms.h"
 #include <algorithm>
+#include <array>
 #include <vector>
 
 namespace passiveFactionSkillPresentation
@@ -57,14 +58,41 @@ inline std::optional<SkillStatusText> consecratedText(const consecratedArms::Pol
 		return std::nullopt;
 	const auto potency = consecratedArms::potencyFaith(faith, policy);
 	const auto rounds = consecratedArms::duration(faith, policy);
-	std::string details = "Each issued Order grants "
-		+ std::string(policy.has(consecratedArms::Perk::ANTIPHONAL_PRAYER) ? "two different random prayers" : "one random prayer")
-		+ " to its recipients. Reapplying a prayer refreshes it without stacking."
+	const bool two = policy.has(consecratedArms::Perk::ANTIPHONAL_PRAYER);
+	const std::string grant = policy.chosen
+		? std::string("Each issued Order grants ") + (two ? "two different prayers" : "one prayer")
+			+ " of your choice to one Order recipient you choose."
+		: std::string("Each issued Order grants ") + (two ? "two different random prayers" : "one random prayer")
+			+ " to its recipients.";
+	std::string details = grant + " Reapplying a prayer refreshes it without stacking."
 		"\n\nCurrent Faith: " + std::to_string(faith) + ". Potency Faith: " + std::to_string(potency)
 		+ ". New prayer duration: " + std::to_string(rounds) + " rounds."
 		"\n\nPrayer pool: Divine Purpose, Dauntless Assault, Steadfast Soul, Vicarious Redemption, Unbroken Vow, Heaven's Judgment."
 		"\nInspect a recipient's status for its active prayers and remaining duration.";
 	return SkillStatusText{"F " + std::to_string(faith), std::move(details), true};
+}
+
+/// The 40 px prayer emblem shared by the spellbook and the Order prayer choice.
+inline const char * prayerImage(consecratedArms::Prayer prayer)
+{
+	static constexpr std::array<const char *, 6> images = {
+		"NH_prayer_divine_purpose.png", "NH_prayer_dauntless_assault.png",
+		"NH_prayer_steadfast_soul.png", "NH_prayer_vicarious_redemption.png",
+		"NH_prayer_unbroken_vow.png", "NH_prayer_heavens_judgment.png"};
+	return images.at(static_cast<size_t>(prayer));
+}
+
+/// One short plain sentence per prayer, for compact lists and choice cards.
+inline const char * prayerSummary(consecratedArms::Prayer prayer)
+{
+	static constexpr std::array<const char *, 6> summaries = {
+		"Raises Morale, Luck and Speed.",
+		"Reduces damage from provoked retaliation.",
+		"Resists hostile non-damaging spells.",
+		"Turns casualties into a protective shield.",
+		"Limits casualties from a single hit.",
+		"Adds magical damage to attacks and retaliations."};
+	return summaries.at(static_cast<size_t>(prayer));
 }
 
 inline std::string prayerPercent(int basisPoints)

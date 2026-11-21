@@ -478,5 +478,16 @@
 	"new-horizons.consecratedArms.prayers.vicariousRedemption": "Vicarious Redemption",
 	"new-horizons.consecratedArms.prayers.unbrokenVow": "Unbroken Vow",
 	"new-horizons.consecratedArms.prayers.heavensJudgment": "Heaven's Judgment",
-	"new-horizons.logs.consecratedArmsGranted": "Consecrated Arms grants %s (potency Faith %d, %d rounds) to %s."
+	"new-horizons.logs.consecratedArmsGranted": "Consecrated Arms grants %s (potency Faith %d, %d rounds) to %s.",
+	"new-horizons.logs.doubleCast.afterglow": "%s extends %d spell effects with Afterglow.",
+	"new-horizons.logs.doubleCast.cleansingWeave": "%s removes %d negative effects with Cleansing Weave.",
+	"new-horizons.logs.doubleCast.arcaneWard": "%s shields friendly stacks with a %d HP Arcane Ward.",
+	"new-horizons.logs.doubleCast.manaSiphon": "%s siphons %d Mana from the enemy hero.",
+	"new-horizons.logs.doubleCast.formulaReserve": "%s recovers %d Mana with Formula Reserve.",
+	"new-horizons.doubleCast.name": "Double Cast",
+	"new-horizons.doubleCast.offerOpen": "Double Cast: %s may now cast a spell other than %s as an immediate follow-up. Uses remaining: %d of %d. Any other action forfeits it.",
+	"new-horizons.doubleCast.spellButton.hover": "Cast the Double Cast follow-up",
+	"new-horizons.doubleCast.spellButton.help": "Double Cast is ready: cast a different spell now as an immediate follow-up. It spends one of %d remaining uses (%d per combat). Any other action, the next creature's turn or the end of the round forfeits it at no cost.",
+	"new-horizons.doubleCast.status": "Follow-up casts remaining this combat: %d of %d. After a hero spell, the hero may immediately cast a different spell. Any other action forfeits the offer at no cost.",
+	"new-horizons.doubleCast.status.offerOpen": "A follow-up offer is open now. Open the spellbook to cast a different spell."
 }

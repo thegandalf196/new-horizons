@@ -104,6 +104,7 @@ set(test_SRCS
 		bonus/BonusDependencyTerrainTest.cpp
 		client/DirectionalMissileFramesTest.cpp
 		client/ShieldPresentationTest.cpp
+		client/ConsecratedArmsPrayerChoiceTest.cpp
 		client/CreatureDamagePresentationTest.cpp
 		client/LeadershipEfficiencyRowTest.cpp
 		client/CreatureAbilityGroupingTest.cpp

@@ -5,6 +5,9 @@
 #include "HeroInfoWindow.h"
 #include "PassiveFactionSkillPresentation.h"
 #include "CurrentFactionSkillPresentation.h"
+#include "DoubleCastCue.h"
+#include "../GameInstance.h"
+#include "../../lib/texts/MetaString.h"
 #include "../windows/InfoWindows.h"
 #include "../../lib/CSkillHandler.h"
 #include "../../lib/CConfigHandler.h"
@@ -57,6 +60,12 @@ std::vector<CombatStatusEntry> heroSkillStatuses(const CGHeroInstance * hero,
 	if(const auto attunement = passiveFactionSkillPresentation::elementalAttunement(*hero, *battleCallback, side))
 		entries.push_back({{}, "Attunement", attunement->value,
 			CInfoWindow::genText("Elemental Attunement", attunement->details)});
+	if(const auto doubleCast = doubleCastCue::read(*battleCallback, side); doubleCast.available())
+	{
+		const auto name = MetaString::createFromTextID("new-horizons.doubleCast.name").toString(&GAME->translator());
+		entries.push_back({{}, name, doubleCastCue::statusValue(doubleCast),
+			CInfoWindow::genText(name, doubleCastCue::statusDetails(doubleCast))});
+	}
 	const auto currentSkills = appendCurrentFactionStatuses(*hero, *battleCallback, side, entries);
 	for(const auto & skill : LIBRARY->skillh->objects)
 	{

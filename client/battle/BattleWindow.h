@@ -96,6 +96,10 @@ class BattleWindow : public InterfaceObjectConfigurable
 	void toggleStickyQuickSpellVisibility();
 	void createStickyHeroInfoWindows();
 	void refreshHeroBattleStatus(BattleSide side);
+	/// Double Cast follow-up cue: spellbook button highlight and one log line per offer.
+	void updateDoubleCastCue();
+	uint32_t announcedDoubleCastOffer = 0;
+	bool doubleCastCueShown = false;
 	int heroBattleStatusHeight(BattleSide side) const;
 	void createQuickSpellWindow();
 	void createTimerInfoWindows();

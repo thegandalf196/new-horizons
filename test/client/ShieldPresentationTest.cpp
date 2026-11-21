@@ -91,3 +91,14 @@ TEST(ShieldPresentation, SingleSourceDoesNotAdvertiseOtherSourcesProtection)
 	EXPECT_EQ(redemptionText.find("Guardian Spirit"), std::string::npos);
 	EXPECT_NE(redemptionText.find("Absorbs physical and magical damage"), std::string::npos);
 }
+
+TEST(ShieldPresentation, ArcaneWardNamesItsSourceCoverageAndExpiry)
+{
+	battle::ShieldSnapshot snapshot;
+	snapshot.pools[0] = {battle::ShieldSource::ARCANE_WARD, 12, 30, false};
+	const auto text = shieldPresentation::tooltip(snapshot);
+	EXPECT_NE(text.find("Arcane Ward\nShield HP remaining: 12 / 30"), std::string::npos);
+	EXPECT_NE(text.find("Absorbs physical and magical damage"), std::string::npos);
+	EXPECT_NE(text.find("start of the next round"), std::string::npos);
+	EXPECT_EQ(shieldPresentation::tooltip(mixedShield(37, 91)).find("next round"), std::string::npos);
+}

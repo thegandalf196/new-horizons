@@ -26,6 +26,7 @@
 #include "BattleWindow.h"
 #include "TemporalFieldWindow.h"
 #include "PurifyWindow.h"
+#include "ConsecratedArmsPrayerWindow.h"
 
 #include "../CPlayerInterface.h"
 #include "../GameEngine.h"
@@ -1051,13 +1052,11 @@ void BattleActionsController::selectHeroOrderTarget(const BattleHex & clickedHex
 		return;
 	}
 
-	const auto battleID = owner.getBattleID();
-	auto playerCallback = owner.curInt->cb;
 	const auto action = isHeroOrderPair(command)
 		? BattleAction::makePairedHeroCommand(side, command, *first, target->unitId())
 		: BattleAction::makeTargetedHeroCommand(side, command, target->unitId());
 	cancelHeroOrderTargeting();
-	playerCallback->battleMakeSpellAction(battleID, action);
+	consecratedArmsPrayerUI::submitOrder(CPlayerInterface::battleInt, action);
 }
 
 bool BattleActionsController::landMinePlacementModeActive() const

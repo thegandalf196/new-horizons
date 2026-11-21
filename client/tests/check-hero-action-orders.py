@@ -61,7 +61,8 @@ assert "battleGetHeroCommandTargets(side, entry.first)" in action
 assert "beginHeroOrderTargeting(command)" in action
 assert "BattleAction::makePairedHeroCommand(side, command" in controller
 assert "BattleAction::makeTargetedHeroCommand(side, command" in controller
-assert "playerCallback->battleMakeSpellAction(battleID, action)" in controller
+assert "consecratedArmsPrayerUI::submitOrder(CPlayerInterface::battleInt, action)" in controller
+assert "battleMakeSpellAction(owner->getBattleID(), order)" in (ROOT / "client/battle/ConsecratedArmsPrayerWindow.cpp").read_text(encoding="utf-8")
 assert "battlePrepareHeroOrderState" in controller
 assert "battlePrepareFocusFireState" in controller
 assert "isCanonicalRules" in controller

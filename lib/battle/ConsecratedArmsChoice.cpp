@@ -87,27 +87,38 @@ std::optional<std::string> choiceRefusal(const CBattleInfoCallback & battle,
 	return chosenRefusal(battle, action, *prepared, policy);
 }
 
-void applyProvisionalDefaultChoice(const CBattleInfoCallback & battle, BattleAction & action)
+ChoiceRequest choiceRequest(const CBattleInfoCallback & battle, const BattleAction & action)
 {
-	if(action.actionType != EActionType::HERO_COMMAND || hasChoiceFields(action)
+	ChoiceRequest result;
+	if(action.actionType != EActionType::HERO_COMMAND
 		|| (action.side != BattleSide::ATTACKER && action.side != BattleSide::DEFENDER))
-		return;
-	const auto policy = capturePolicy(battle.battleGetFightingHero(action.side));
-	const auto required = requiredPrayerChoices(policy);
+		return result;
+	result.policy = capturePolicy(battle.battleGetFightingHero(action.side));
+	const auto required = requiredPrayerChoices(result.policy);
 	if(!required)
-		return;
+		return result;
 	std::vector<uint32_t> targets;
 	for(const auto & target : action.target)
 		if(target.unitValue >= 0)
 			targets.push_back(static_cast<uint32_t>(target.unitValue));
 	const auto prepared = heroCommands::prepareOrderEffects(battle, action.side, action.command, targets);
 	if(!prepared)
+		return result;
+	result.recipients = eligiblePrayerRecipients(battle, action.side, prepared->order);
+	if(!result.recipients.empty())
+		result.prayers = required;
+	return result;
+}
+
+void applyProvisionalDefaultChoice(const CBattleInfoCallback & battle, BattleAction & action)
+{
+	if(hasChoiceFields(action))
 		return;
-	const auto eligible = eligiblePrayerRecipients(battle, action.side, prepared->order);
-	if(eligible.empty())
+	const auto request = choiceRequest(battle, action);
+	if(!request.prayers)
 		return;
-	action.prayerRecipient = eligible.front();
-	for(size_t index = 0; index < required; ++index)
+	action.prayerRecipient = request.recipients.front();
+	for(size_t index = 0; index < request.prayers; ++index)
 		action.prayerChoices.push_back(static_cast<uint8_t>(index));
 }
 }

@@ -678,6 +678,7 @@ void BattleWindow::updateHeroBattleStatus()
 {
 	refreshHeroBattleStatus(BattleSide::ATTACKER);
 	refreshHeroBattleStatus(BattleSide::DEFENDER);
+	updateDoubleCastCue();
 	setPositionInfoWindow();
 }
 
@@ -1206,6 +1207,7 @@ void BattleWindow::blockUI(bool on)
 
 	quickSpellWindow->setInputEnabled(!on && !deploymentPhase);
 	unitActionWindow->setInputEnabled(!on && !deploymentPhase);
+	updateDoubleCastCue(); // A new activation closes the follow-up offer.
 }
 
 void BattleWindow::updateBattleTargetSelectionControls()

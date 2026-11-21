@@ -20099,18 +20099,18 @@
       "hybrid_predecessor_review": "IR-0911-BOUNDED-DIRECT-MAP-COMPOSITION-V3",
       "inherited_deferral": "Owner: ui_developer / gameplay_engineer. Bounded exception for Major System Rework: Leadership attribute restoration, square-root damage scaling, and hero UI panel integration. Hotspots remain subject to ongoing shrinking and modularization policy.\nExact source-list bound only. Before substantive build logic, extract a cohesive target configuration section. Verify source/link membership once and retain no duplicate translation units. Prior stricter obligations remain in inherited_deferral, where present.\n\nBefore introducing conditional build logic, extract a cohesive target helper; retain exact source/link membership, one registration per translation unit and existing inherited obligations.",
       "kind": "exception",
-      "lines": 774,
+      "lines": 779,
       "owner": "ui_developer",
       "previous_exact_review": "IR-PERFORMANCE-STEP2-BUILD-ORG-V1",
       "previous_proposal_review": "PROPOSED-EXACT-REGISTRY-SIX-SOURCE-20261103",
       "previous_review": "PROPOSED-0920-EXACT-SOURCE-ORGANIZATION",
       "prior_deferral": "Before substantive build-control growth, extract a cohesive target helper; retain all inherited deferrals and one registration per translation unit.",
       "proposal_predecessor_review": "PROPOSED-CLIENT225-BOUNDED-20261103",
-      "rationale": "Exact source-list successor: registers CreatureActiveEffectsSection.cpp only; no build logic.",
-      "review": "CLAUDE-0925-CREATURE-INSPECTOR-20261119",
+      "rationale": "Exact source-list successor: registers CreatureActiveEffectsSection.cpp only; no build logic.\n\nCLAUDE-METAMAGIC6-PHASE5-20261120 (supersedes CLAUDE-0925-CREATURE-INSPECTOR-20261119): Registers the focused ConsecratedArmsPrayerWindow and DoubleCastCue client units (five source-list lines); no build logic. Inherited deferrals remain binding; no future growth credit.",
+      "review": "CLAUDE-METAMAGIC6-PHASE5-20261120",
       "review_scope": "Exact bounded source organization and failure-path review only; native/rendered acceptance and future growth unapproved.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_ONLY",
-      "sha256": "bc7d4cb476daaaa5191bb7dd9705eb17932933e87ed632a885bf9048c327ec41",
+      "sha256": "1841a1097fe8d710a83e2a9986b75df6cf88a992313bcf2b34f67817600d9e50",
       "inherited_deferral_step2": "Exact current size only. Retain all prior obligations below; further renderer/cache expansion must extract its specific presentation or map-cache policy behind a focused interface and verify clipping, zoom, wrap, retained ownership, both backends and guarded scene/quit behavior before accepting it."
     },
     "client/CPlayerInterface.cpp": {
@@ -20359,7 +20359,7 @@
     "client/battle/BattleActionsController.cpp": {
       "deferral": "Preserve ALL inherited deferrals and exact prior shrinking baselines. Further growth must extract a cohesive domain owner before expansion; no future growth credit or limit increase. Optional UI includes a pure ordered selection extraction into the existing picker/model; actual session/stale-choice/native-resolution journeys remain required, no gameplay mutation or new layout acceptance.\n\nNext bounded extraction (ui_developer; gameplay_engineer retains spell rules, spans [[1157, 1468], [2862, 2934], [3174, 3194]]): Before the next substantive Storm targeting change, extract that single ordered selection session and preview builder; reduce the controller to start/hover/select/undo/confirm/cancel routing, rather than moving all selectors into another giant file. Interface: Explicit battle/hero/player/round/casting-session identity plus ordered unit IDs; synchronous read-only mechanics queries return value previews and an optional complete BattleAction. Widget/statusbar/command dispatch remains with the current UI owner. Invariants: Ordered distinct IDs and complete-vector legality are re-read before submission; Friendly-fire confirmation and weak callback lifetime remain on the existing path; Cancel/reset invalidates preview and session before redraw or input reentry; Paint getters do not evaluate mechanics, draw authoritative RNG or mutate gameplay; Continuation/action-controller identity and shared command validation remain unchanged. Acceptance: Characterize moved/dead/stale targets, primary order, undo/cancel/reopen, Autofight/tactics/side changes and late callbacks; compare submitted action fields and preview order. Ratchet controller and affected functions down, inventory destination units, and later obtain guarded rendered input/transition evidence. Existing stronger deferrals remain.",
       "kind": "legacy",
-      "lines": 5168,
+      "lines": 5167,
       "next_bounded_extraction": {
         "acceptance": "Characterize moved/dead/stale targets, primary order, undo/cancel/reopen, Autofight/tactics/side changes and late callbacks; compare submitted action fields and preview order. Ratchet controller and affected functions down, inventory destination units, and later obtain guarded rendered input/transition evidence. Existing stronger deferrals remain.",
         "interface": "Explicit battle/hero/player/round/casting-session identity plus ordered unit IDs; synchronous read-only mechanics queries return value previews and an optional complete BattleAction. Widget/statusbar/command dispatch remains with the current UI owner.",
@@ -20389,8 +20389,8 @@
       },
       "owner": "ui_developer",
       "previous_review": "IR-F86-CLIENT-LAUNCHER-SOURCE-ORGANIZATION-20261110",
-      "rationale": "Exact 5225 to 5168-line scope. Client presentation/input routing integrates current spell/action receipts and validated captured views. Preserve command submission, session/teardown ownership, native layout and ordinary input behavior; no direct gameplay mutation is introduced.",
-      "review": "IR-NH092-ORG-3E82D142-20261116",
+      "rationale": "Exact 5225 to 5168-line scope. Client presentation/input routing integrates current spell/action receipts and validated captured views. Preserve command submission, session/teardown ownership, native layout and ordinary input behavior; no direct gameplay mutation is introduced.\n\nCLAUDE-METAMAGIC6-PHASE5-20261120 (supersedes IR-NH092-ORG-3E82D142-20261116): Targeted Orders route their completed action through consecratedArmsPrayerUI::submitOrder instead of sending it directly (one line shorter); the picker lives in its own unit. Inherited deferrals remain binding; no future growth credit.",
+      "review": "CLAUDE-METAMAGIC6-PHASE5-20261120",
       "review_history": [
         {
           "kind": "exception",
@@ -20403,7 +20403,7 @@
       ],
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "69f5246f68f84127310625509705ed550b5eed61f0957b8e1ac85f67f3bf9f16"
+      "sha256": "2e0f54918429398c635536b779a5913328ca27534a846ec997509d41529f8529"
     },
     "client/battle/BattleActionsController.cpp::StormOfDaggersSelectionPreview BattleActionsController::getStormOfDaggersSelectionPreview() const#1": {
       "kind": "legacy",
@@ -20948,14 +20948,14 @@
       },
       "deferral": "Owner: ui_developer. Before further continuation control binding, move its cohesive button/help/shortcut planning into existing CreatureContinuationUI, retaining ordinary and Master Gunner priority, read-only authoritative callbacks, actual output/budget help and rendered enabled/disabled/cancel/reopen evidence. Exact1583 exception only. Exact bounded API/readback migration only: no new rule decisions in this hotspot. UI owner must extract the next touched ShadowGift chooser, temporary-status widget renderer, or hero-status assembly into a cohesive owner before further substantive growth, preserving callback lifetime, current query/ownership, cached-before-redraw ordering and guarded native rendering. Existing obligations remain binding.",
       "kind": "exception",
-      "lines": 1376,
+      "lines": 1378,
       "owner": "ui_developer",
       "previous_review": "PROPOSED-0920-EXACT-SOURCE-ORGANIZATION",
-      "rationale": "Exact 1374 to 1374-line scope. Client presentation/input routing integrates current spell/action receipts and validated captured views. Preserve command submission, session/teardown ownership, native layout and ordinary input behavior; no direct gameplay mutation is introduced.\n\nIndependently reviewed C14 scope (1374 to 1376 physical lines): Only immutable displayed-shield snapshots are passed to the existing side panels and refresh entry point. New rendering and tooltip logic is kept outside the central window. This bounds only the recorded hash and measured span; all inherited deferrals, ratchets and runtime holds remain binding, with no future growth allowance.",
-      "review": "IR-NH0921-C14-1164-CODEORG-20261117",
+      "rationale": "Exact 1374 to 1374-line scope. Client presentation/input routing integrates current spell/action receipts and validated captured views. Preserve command submission, session/teardown ownership, native layout and ordinary input behavior; no direct gameplay mutation is introduced.\n\nIndependently reviewed C14 scope (1374 to 1376 physical lines): Only immutable displayed-shield snapshots are passed to the existing side panels and refresh entry point. New rendering and tooltip logic is kept outside the central window. This bounds only the recorded hash and measured span; all inherited deferrals, ratchets and runtime holds remain binding, with no future growth allowance.\n\nCLAUDE-METAMAGIC6-PHASE5-20261120 (supersedes IR-NH0921-C14-1164-CODEORG-20261117): Two one-line calls to the Double Cast cue, implemented in the focused DoubleCastCue unit. Inherited deferrals remain binding; no future growth credit.",
+      "review": "CLAUDE-METAMAGIC6-PHASE5-20261120",
       "review_scope": "Exact recorded C14 source hash, physical span and organization delta only. No future growth, whole-mechanic, compiler, native, rendered, performance, save-resume, publication or promotion acceptance.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN",
-      "sha256": "db67587b53278cd190f688ead13a72d93186820a350abf26c087a83ee0805ad8"
+      "sha256": "c1e935ea63f8b5cb3bf33890444f39de61a3bf8714f366fa36d560eb650c3240"
     },
     "client/battle/BattleWindow.cpp::BattleWindow::BattleWindow(BattleInterface & Owner) : owner(Owner)#1": {
       "completed_p_predecessor": {

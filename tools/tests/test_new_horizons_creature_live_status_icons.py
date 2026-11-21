@@ -13,7 +13,8 @@ def read(name):
 class CreatureLiveStatusIconsTest(unittest.TestCase):
     def test_prayers_share_catalogue_images_and_preserve_live_readout(self):
         status = read("client/windows/CreatureBonusStatusPresentation.cpp")
-        catalogue = read("client/windows/SpellbookPrayers.cpp")
+        # The spellbook catalogue and the Order prayer choice share these emblems.
+        catalogue = read("client/battle/CurrentFactionSkillPresentation.h")
         pattern = r'"(NH_prayer_[a-z_]+\.png)"'
         self.assertEqual(re.findall(pattern, status), re.findall(pattern, catalogue))
         self.assertEqual(len(re.findall(pattern, status)), 6)

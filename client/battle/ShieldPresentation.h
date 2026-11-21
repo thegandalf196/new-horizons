@@ -64,6 +64,8 @@ inline std::string tooltip(const battle::ShieldSnapshot & snapshot)
 		result += pool.physicalCreatureOnly
 			? "\nAbsorbs physical creature damage only."
 			: "\nAbsorbs physical and magical damage.";
+		if(pool.source == battle::ShieldSource::ARCANE_WARD)
+			result += "\nEnds when exhausted or at the start of the next round.";
 	}
 	if(!result.empty())
 		result += "\n\nWhite bar: combined remaining shield HP / original capacities of active shield sources."

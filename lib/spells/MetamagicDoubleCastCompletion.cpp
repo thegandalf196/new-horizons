@@ -44,12 +44,12 @@ battle::Units friendlyStacks(const CBattleInfoCallback & battle, BattleSide side
 	});
 }
 
-void line(Completion & completion, const std::string & prefix, int64_t amount, const std::string & suffix)
+/// One localized log line: "%s" is the hero name, "%d" the amount.
+void line(Completion & completion, const char * textID, int64_t amount)
 {
-	MetaString entry = MetaString::createFromTextID(completion.hero.getNameTextID());
-	entry.appendRawString(prefix);
-	entry.appendNumber(amount);
-	entry.appendRawString(suffix);
+	MetaString entry = MetaString::createFromTextID(textID);
+	entry.replaceTextID(completion.hero.getNameTextID());
+	entry.replaceNumber(amount);
 	completion.log.lines.push_back(std::move(entry));
 }
 
@@ -104,7 +104,7 @@ void afterglow(Completion & completion, const MetamagicDoubleCastState & before,
 	if(packet.toUpdate.empty())
 		return;
 	completion.server.apply(packet);
-	line(completion, " extends ", extended, " spell effects with Afterglow.");
+	line(completion, "new-horizons.logs.doubleCast.afterglow", extended);
 }
 
 /// Cleansing Weave: the existing Metamagic restoration classification (hostile,
@@ -144,7 +144,7 @@ void cleansingWeave(Completion & completion)
 	if(packet.toRemove.empty())
 		return;
 	completion.server.apply(packet);
-	line(completion, " removes ", removed, " negative effects with Cleansing Weave.");
+	line(completion, "new-horizons.logs.doubleCast.cleansingWeave", removed);
 }
 
 /// Arcane Ward: non-stacking; each friendly stack keeps the larger of its remaining
@@ -171,7 +171,7 @@ void arcaneWard(Completion & completion)
 	if(changes.changedStacks.empty())
 		return;
 	completion.server.apply(changes);
-	line(completion, " shields friendly stacks with a ", amount, " HP Arcane Ward.");
+	line(completion, "new-horizons.logs.doubleCast.arcaneWard", amount);
 }
 
 /// Restores Normal Mana under the ordinary cap and returns what was actually gained.
@@ -193,11 +193,11 @@ void mana(Completion & completion)
 	if(siphon > 0)
 	{
 		enemy->spendMana(&completion.server, siphon);
-		line(completion, " siphons ", siphon, " Mana from the enemy hero.");
+		line(completion, "new-horizons.logs.doubleCast.manaSiphon", siphon);
 		restore(completion, siphon);
 	}
 	if(const auto reserve = restore(completion, completion.rules.formulaReserveMana(completion.perks)))
-		line(completion, " recovers ", reserve, " Mana from Formula Recovery.");
+		line(completion, "new-horizons.logs.doubleCast.formulaReserve", reserve);
 }
 }
 
