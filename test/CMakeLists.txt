@@ -825,6 +825,7 @@ set(test_SRCS
 	server/battles/NewHorizonsOrdinaryScreenAndCounterTest.cpp
 	server/battles/NewHorizonsOrdinaryCreatureSpecialtyTest.cpp
 		server/battles/NewHorizonsConditionalCreatureSpecialtyTest.cpp
+		server/battles/NewHorizonsActivatedOrdinarySpecialtyTest.cpp
 		server/battles/NewHorizonsCreatureAuraSpecialtyTest.cpp
 		server/battles/NewHorizonsGenieSageArtBindingTest.cpp
 		server/battles/NewHorizonsBankCreatureRewardTest.cpp
@@ -1121,6 +1122,7 @@ set(test_SRCS
 set(test_HEADERS
 		HistoricalFactionPerkRules.h
 		OverkillRandomPrayerRules.h
+		ActivatedOrdinarySpecialties.h
 		scripting/HistoricalTimedScript.h
 		scripting/HistoricalLifeDrainScript.h
 		scripting/HistoricalDamageCalculatorScript.h
@@ -1300,6 +1302,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/BattleStrengthRatioTest.cpp
 		battleAI/BattleAIDiagnosticAdmissionTest.cpp
 		battleAI/OrdinaryStrikeEvaluatorIntegrationTest.cpp
+		battleAI/ActivatedOrdinarySpecialtyAITest.cpp
 		battleAI/DamageFinalizationParityTest.cpp
 		battleAI/PrimaryFortuneProducerTest.cpp
 		battleAI/AppliedStrikeFactsTest.cpp

@@ -3276,7 +3276,21 @@
 						"wyvernVenomPolicyVersion": 1,
 						"dispellingShotMageChancePercent": 20,
 						"dispellingShotArchMageChancePercent": 40,
-						"cyclopeanStunChancePercent": 25
+						"cyclopeanStunChancePercent": 25,
+						"lanceFormationDefensePerHex": 1,
+						"lanceFormationMaximumDefense": 5,
+						"consecratedTargetDefenseIgnorePercent": 25,
+						"cinderReprisalDamagePercent": 20,
+						"demonicSolidarityReductionPercent": 20,
+						"scorchingImpactDamageReductionPercent": 20,
+						"cruelOverseerDefenseReduction": 3,
+						"graveDustHealingReductionBasisPoints": 5000,
+						"toxicStingChancePercent": 20,
+						"stormWingsDefenseIgnorePercent": 25,
+						"stormWingsMinimumFlightDistance": 4,
+						"gnollHarriersDamagePercent": 20,
+						"emberbrandDamagePercent": 20,
+						"prismaticVanguardPhysicalDamagePercent": 20
 					},
 					"version": 1,
 					"manaLeeches": {

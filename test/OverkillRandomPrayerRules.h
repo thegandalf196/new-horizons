@@ -6,6 +6,7 @@
 
 #include "../lib/filesystem/ResourcePath.h"
 #include "../lib/json/JsonNode.h"
+#include "ActivatedOrdinarySpecialties.h"
 
 /// Pin Metamagic 5 (Overkill, policy 6) and Consecrated Arms 3 (random prayers,
 /// policy 3): the shipped rules captured before Double Cast and Chosen Prayers.
@@ -39,6 +40,7 @@ inline JsonNode overkillRandomPrayerHeroes(JsonNode heroes)
 		if(entry["perk"].String() == "new-horizons:metamagic.formulaRecovery")
 			entry["perk"].String() = "new-horizons:metamagic.unravelingMagic";
 	heroes.Struct().erase("revisedSpecialties"); // Revised specialties require format 1166.
+	omitActivatedOrdinaryCoefficients(heroes); // Nor do they carry the 0.93.1 ordinary coefficients.
 	heroes.setOverrideFlag(true);
 	return heroes;
 }

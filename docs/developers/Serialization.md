@@ -306,6 +306,12 @@ revalidated before granting XP. The existing 250/500 authorization coefficient a
 weekly recipient receipts are unchanged; recipient XP modifiers apply once.
 Historical row absence retains the former mechanics and specialty presentation.
 
+The extended ordinary creature coefficients (format 1153 and later) are shipped
+from 0.93.1 for every extended row whose accepted design is unchanged; new games
+capture them, while 1164 and 1165 captures keep their absence and the generic
+creature-line rider. Lorelei's and Alkin's rows stay absent until their revised
+designs are implemented.
+
 ## Captured recovery specialties
 
 `NEW_HORIZONS_RECOVERY_SPECIALTIES` protects the optional versioned

@@ -11,6 +11,8 @@
 #include "../../lib/json/JsonNode.h"
 #include "../../lib/serializer/CMemorySerializer.h"
 #include "../../lib/GameLibrary.h"
+#include "../../lib/filesystem/ResourcePath.h"
+#include "../ActivatedOrdinarySpecialties.h"
 namespace
 {
 using Version = ESerializationVersion;
@@ -305,4 +307,47 @@ TEST(OwnedBonusCaptureCodecTest, Historical1157And1158ProfilesRemainSeparateFrom
 	EXPECT_EQ(persistence.oser.version, Version::CURRENT);
 	EXPECT_EQ(persistence.iser.version, Version::CURRENT);
 	EXPECT_NE(persistence.oser.version, codec.version());
+}
+
+TEST(OwnedBonusCaptureCodecTest, ActivatedOrdinaryCoefficientsAdmitAtEverySupportedEpochButNotBefore1153)
+{
+	for(const auto & row : activatedOrdinarySpecialties())
+	{
+		SCOPED_TRACE(row.hero);
+		auto present = captured(false);
+		for(const auto & [key, value] : row.coefficients)
+			present["additionalSpecialties"]["ordinaryCreatureSpecialties"][key].Integer() = value;
+		for(const auto version : {Version::NEW_HORIZONS_CONSECRATED_ARMS, Version::NEW_HORIZONS_DOUBLE_CAST_CHOSEN_PRAYERS,
+			Version::NEW_HORIZONS_REVISED_SPECIALTIES, Version::CURRENT})
+			EXPECT_EQ(OwnedBonusCaptureCodec::fromCapturedSpecialties(present, capabilities(version)).version(),
+				Version::NEW_HORIZONS_CONSECRATED_ARMS);
+		EXPECT_THROW(OwnedBonusCaptureCodec::fromCapturedSpecialties(present,
+			capabilities(Version::NEW_HORIZONS_ORDINARY_COMBAT_SPECIALTIES)), std::runtime_error);
+	}
+}
+
+TEST(OwnedBonusCaptureCodecTest, ShippedAndPre0931SpecialtyTablesBothAdmitAtTheCurrentEpoch)
+{
+	const JsonNode heroes(JsonPath::builtin("config/newHorizonsHeroes"));
+	JsonNode shipped;
+	shipped["additionalSpecialties"] = heroes["additionalSpecialties"];
+	auto older = shipped;
+	omitActivatedOrdinaryCoefficients(older);
+	const auto & policy = shipped["additionalSpecialties"]["ordinaryCreatureSpecialties"];
+	for(const auto & row : activatedOrdinarySpecialties())
+		for(const auto & [key, value] : row.coefficients)
+		{
+			EXPECT_EQ(policy[key].Integer(), value) << key;
+			EXPECT_FALSE(older["additionalSpecialties"]["ordinaryCreatureSpecialties"].Struct().contains(key)) << key;
+		}
+	for(const auto & [hero, key] : deferredOrdinarySpecialties())
+		EXPECT_FALSE(policy.Struct().contains(key)) << hero;
+	for(const auto version : {Version::NEW_HORIZONS_CONSECRATED_ARMS, Version::CURRENT})
+	{
+		EXPECT_NO_THROW(OwnedBonusCaptureCodec::fromCapturedSpecialties(shipped, capabilities(version)));
+		EXPECT_NO_THROW(OwnedBonusCaptureCodec::fromCapturedSpecialties(older, capabilities(version)));
+	}
+	auto malformed = shipped;
+	malformed["additionalSpecialties"]["ordinaryCreatureSpecialties"].Struct().erase("stormWingsMinimumFlightDistance");
+	EXPECT_THROW(OwnedBonusCaptureCodec::fromCapturedSpecialties(malformed, capabilities(Version::CURRENT)), std::runtime_error);
 }

@@ -207,6 +207,44 @@ TEST(CapturedRulePool, RevisedSpecialtyRulesRefuseTheDoubleCastFormat)
 	}
 }
 
+TEST(CapturedRulePool, ActivatedOrdinaryCoefficientsRoundtripAndOlderCapturesStayWithoutThem)
+{
+	const auto policy = [](const CapturedRulePool & pool, auto id) -> const JsonNode &
+	{
+		return pool.document(id, CapturedRuleKind::WorldDevelopment)->document()["additionalSpecialties"]["ordinaryCreatureSpecialties"];
+	};
+	const JsonNode shipped(JsonPath::builtin("config/newHorizonsHeroes"));
+	CapturedRulePool pool;
+	const auto id = pool.intern(CapturedRuleKind::WorldDevelopment, shipped);
+	CMemorySerializer current;
+	ASSERT_NO_THROW(current.oser & pool);
+	CapturedRulePool restored;
+	ASSERT_NO_THROW(current.iser & restored);
+	EXPECT_TRUE(equalCapturedDocuments(restored.document(id, CapturedRuleKind::WorldDevelopment)->document(), shipped));
+	for(const auto & row : activatedOrdinarySpecialties())
+		for(const auto & [key, value] : row.coefficients)
+			EXPECT_EQ(policy(restored, id)[key].Integer(), value) << key;
+
+	// 1164 and 1165 saves keep their captured absence; nothing is synthesized on load.
+	const auto older = overkillRandomPrayerHeroes();
+	for(const auto version : {ESerializationVersion::NEW_HORIZONS_CONSECRATED_ARMS,
+		ESerializationVersion::NEW_HORIZONS_DOUBLE_CAST_CHOSEN_PRAYERS, ESerializationVersion::CURRENT})
+	{
+		CapturedRulePool legacy;
+		const auto legacyId = legacy.intern(CapturedRuleKind::WorldDevelopment, older);
+		CMemorySerializer stored;
+		stored.oser.version = version;
+		stored.iser.version = version;
+		ASSERT_NO_THROW(stored.oser & legacy);
+		CapturedRulePool loaded;
+		ASSERT_NO_THROW(stored.iser & loaded);
+		EXPECT_TRUE(equalCapturedDocuments(loaded.document(legacyId, CapturedRuleKind::WorldDevelopment)->document(), older));
+		for(const auto & row : activatedOrdinarySpecialties())
+			for(const auto & [key, value] : row.coefficients)
+				EXPECT_FALSE(policy(loaded, legacyId).Struct().contains(key)) << key;
+	}
+}
+
 TEST(CapturedRulePool, WideAndNegativeWireIdentitiesCannotAliasValidSmallReferences)
 {
 	CapturedRulePool pool;
