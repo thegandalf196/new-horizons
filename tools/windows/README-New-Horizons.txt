@@ -24,6 +24,10 @@ are never touched. On its first Play, Beta copies the stable imported game
 files; use Original game files while Beta is selected to choose another folder.
 Installing a beta never changes the stable version.
 
+What's new shows the release notes of the installed version on the selected
+track and of the update on offer, as plain text. It reuses the update check;
+offline it shows the notes in CHANGELOG-New-Horizons.md beside the game.
+
 To select or reselect assets, use Original game files in the launcher or open
 Setup.exe beside new-horizons.exe. Setup opens the folder picker and returns
 when preparation finishes. It accepts Data or the Complete parent folder as

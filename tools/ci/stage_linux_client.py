@@ -19,7 +19,16 @@ from stage_runtime_libraries import admit_runtime_libraries, relocate_runtime_ev
 
 # Desktop launcher modules copied into player packages that update themselves.
 PORTABLE_LAUNCHER_MODULES = ('PortableReleaseLauncher.py', 'PortableReleaseUpdate.py', 'PortableLauncherWindow.py',
-                             'PortableLauncherProcess.py', 'PortableLauncherUpgrade.py')
+                             'PortableLauncherProcess.py', 'PortableLauncherUpgrade.py', 'PortableReleaseNotes.py')
+# Player entry points and texts copied from the packaging revision as (source, package name).
+PLAYER_SUPPORT_FILES = (('tools/Play-New-Horizons.sh', 'Play-New-Horizons.sh'),
+                        ('tools/new-horizons-launch.sh', 'new-horizons-launch.sh'),
+                        ('tools/linux_assets_setup.py', 'linux_assets_setup.py'),
+                        ('tools/linux/README-New-Horizons.txt', 'README-New-Horizons.txt'),
+                        ('tools/linux/LEGAL-New-Horizons.txt', 'LEGAL-New-Horizons.txt'),
+                        ('tools/linux/BUILDING-New-Horizons.txt', 'BUILDING-New-Horizons.txt'),
+                        # The launcher's offline What's new text.
+                        ('docs/NEW_HORIZONS_CHANGELOG.md', 'CHANGELOG-New-Horizons.md'))
 
 
 def sha256(path):
@@ -127,12 +136,7 @@ def main():
         (package / name).chmod(0o644)
     for name, record in libraries.items():
         (package / name).write_bytes(record['payload'])  # Owned verified bytes; never modify the input provider.
-    player_files = [('tools/Play-New-Horizons.sh', 'Play-New-Horizons.sh'),
-                         ('tools/new-horizons-launch.sh', 'new-horizons-launch.sh'),
-                         ('tools/linux_assets_setup.py', 'linux_assets_setup.py'),
-                         ('tools/linux/README-New-Horizons.txt', 'README-New-Horizons.txt'),
-                         ('tools/linux/LEGAL-New-Horizons.txt', 'LEGAL-New-Horizons.txt'),
-                         ('tools/linux/BUILDING-New-Horizons.txt', 'BUILDING-New-Horizons.txt')]
+    player_files = list(PLAYER_SUPPORT_FILES)
     if args.portable_updates:
         player_files.extend((f'tools/linux/{name}', name) for name in PORTABLE_LAUNCHER_MODULES)
     for source, name in player_files:

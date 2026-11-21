@@ -36,9 +36,9 @@ function New-FixtureView {
         Status=[PSCustomObject]@{Text=''};Bar=[PSCustomObject]@{Visible=$false};
         Play=[PSCustomObject]@{Enabled=$true};Check=[PSCustomObject]@{Enabled=$true};
         Assets=[PSCustomObject]@{Enabled=$true};Install=[PSCustomObject]@{Enabled=$false};
-        Track=[PSCustomObject]@{Enabled=$true;SelectedIndex=0};
+        Track=[PSCustomObject]@{Enabled=$true;SelectedIndex=0};Notes=[PSCustomObject]@{Enabled=$true};
         State=[PSCustomObject]@{Runtime=$runtime;Offer=$null;Busy=$false;ExitCode=0;Track='stable';
-            Runtimes=@{stable=$runtime;beta=$null};Code=(Join-Path $env:SOURCE 'tools/windows')}}
+            Runtimes=@{stable=$runtime;beta=$null};Code=(Join-Path $env:SOURCE 'tools/windows');Notes=@{}}}
 }
 function New-FixtureRelease([string]$Version,[bool]$Prerelease,[bool]$Draft) {
     $name='New-Horizons-Windows-x64-0123456789ab.zip'

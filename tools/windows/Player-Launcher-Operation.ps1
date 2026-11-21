@@ -3,12 +3,13 @@
 [CmdletBinding()]
 param([ValidateSet('Check','Install','SelfTest')][string]$Operation, [string]$Original,
     [string]$Output, [string]$Request, [string]$StatusPath,
-    [ValidateSet('stable','beta')][string]$Channel = 'stable')
+    [ValidateSet('stable','beta')][string]$Channel = 'stable', [string]$NotesOutput = '', [string]$NotesFor = '')
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'Prepare-NHReleaseUpdate.ps1') -Request $Request -StatusPath $StatusPath
 . (Join-Path $PSScriptRoot 'Portable-Release-Launcher.ps1')
+. (Join-Path $PSScriptRoot 'Player-Launcher-Notes.ps1')
 function Assert-PlainPath([string]$Path) { Assert-UpdatePlainPath $Path }
 
 function Get-NHPublishedRelease([string]$MetadataPath, [string]$Channel) {
@@ -73,8 +74,15 @@ function Invoke-NHPlayerOperation {
     try {
         if ($Operation -eq 'Check') {
             $metadata = $Output + '.release'
-            try { $result = Get-NHLatestPlayerOffer $metadata $Channel }
-            finally { if ([IO.File]::Exists($metadata)) { [IO.File]::Delete($metadata) } }
+            try {
+                $result = Get-NHLatestPlayerOffer $metadata $Channel
+                # What's new notes come from this same response, never a second request.
+                if ($NotesOutput) {
+                    $wanted = @($NotesFor)
+                    if ($null -ne $result) { $wanted += $result.version }
+                    Write-NHCheckNotes $metadata $Channel $wanted $NotesOutput
+                }
+            } finally { if ([IO.File]::Exists($metadata)) { [IO.File]::Delete($metadata) } }
         } else {
             $result = Install-NHPlayerOffer $Original $Request $StatusPath $PSScriptRoot
         }

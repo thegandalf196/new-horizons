@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # Ordinary Windows EXE entry: presentation and exact owned child supervision.
 # Setup, all CLI arguments and crash reporting retain Start-New-Horizons routes.
+. (Join-Path $PSScriptRoot 'Player-Launcher-Notes.ps1')
+
 function New-NHPlayerProcess([string]$Runtime, [string]$Script, [string[]]$Arguments = @(), [string]$LocalData = '') {
     $info = New-Object Diagnostics.ProcessStartInfo
     $info.FileName = Join-Path $PSHOME 'powershell.exe'
@@ -49,7 +51,7 @@ function Wait-NHPlayerProcess($Process, $View, [string]$StatusPath, [int]$Timeou
 
 function Set-NHPlayerBusy($View, [bool]$Busy) {
     $View.State.Busy = $Busy
-    foreach ($control in @($View.Check,$View.Assets,$View.Track)) { $control.Enabled = -not $Busy }
+    foreach ($control in @($View.Check,$View.Assets,$View.Track,$View.Notes)) { $control.Enabled = -not $Busy }
     $View.Play.Enabled = -not $Busy -and $null -ne $View.State.Runtime
     $View.Install.Enabled = -not $Busy -and $null -ne $View.State.Offer
     $View.Bar.Visible = $Busy
@@ -157,6 +159,7 @@ function Invoke-NHPlayerUpdate($View, [string]$Original, [bool]$Install) {
         $output = Join-Path $directory 'result.json'
         $status = Join-Path $directory 'status.txt'
         $request = Join-Path $directory 'accepted.json'
+        $notes = Join-Path $directory 'notes.json'
         $operation = if ($Install) { 'Install' } else { 'Check' }
         $View.Status.Text = 'Checking for updates...'
         if ($Install) {
@@ -166,7 +169,8 @@ function Invoke-NHPlayerUpdate($View, [string]$Original, [bool]$Install) {
         }
         if ($Install) { [IO.File]::WriteAllText($request, ($View.State.Offer | ConvertTo-Json -Compress)) }
         $arguments = @('-Operation',$operation,'-Original',$Original,'-Output',$output,'-StatusPath',$status)
-        if ($Install) { $arguments += @('-Request',$request) } else { $arguments += @('-Channel',$View.State.Track) }
+        if ($Install) { $arguments += @('-Request',$request) }
+        else { $arguments += @('-Channel',$View.State.Track) + (Get-NHPlayerNotesArguments $View $notes) }
         # A handed-over launcher runs its own background operations.
         $script = Join-Path $View.State.Code 'Player-Launcher-Operation.ps1'
         Assert-PlainPath $script
@@ -176,7 +180,10 @@ function Invoke-NHPlayerUpdate($View, [string]$Original, [bool]$Install) {
         $result = Read-NHSmallUpdateJson $output
         if ($code -ne 0 -or -not $result.ok) { throw $result.error }
         $View.State.Offer = $null
-        if ($Install) { Complete-NHPlayerInstall $View $Original } else { Complete-NHPlayerCheck $View $result.value }
+        if ($Install) { Complete-NHPlayerInstall $View $Original } else {
+            Complete-NHPlayerCheck $View $result.value
+            $View.State.Notes[$View.State.Track] = Read-NHReleaseNotesFile $notes
+        }
     } catch {
         $View.Status.Text = 'Update unavailable: ' + $_.Exception.Message + ' Your installed game is unchanged.'
     } finally {
@@ -255,7 +262,7 @@ function New-NHPlayerView($Runtimes, [string]$CodeRoot) {
     $form.MaximizeBox = $false
     $version = New-Object Windows.Forms.Label
     $version.Location = New-Object Drawing.Point(18,54)
-    $version.Size = New-Object Drawing.Size(460,24)
+    $version.Size = New-Object Drawing.Size(340,24)
     $form.Controls.Add($version)
     $status = New-Object Windows.Forms.Label
     $status.Location = New-Object Drawing.Point(18,174)
@@ -274,8 +281,9 @@ function New-NHPlayerView($Runtimes, [string]$CodeRoot) {
         Check=(New-NHPlayerButton $form 'Check for updates' 18 132 145);
         Install=(New-NHPlayerButton $form 'Install update' 173 132 135);
         Assets=(New-NHPlayerButton $form 'Original game files' 318 132 160);
+        Notes=(New-NHPlayerButton $form "What's new" 368 50 110);
         State=[PSCustomObject]@{Runtime=$Runtimes['stable'];Offer=$null;Busy=$false;ExitCode=0;
-            Track='stable';Runtimes=$Runtimes;Code=$CodeRoot}}
+            Track='stable';Runtimes=$Runtimes;Code=$CodeRoot;Notes=@{}}}
     $view.Install.Enabled = $false
     Update-NHPlayerVersion $view
     return $view
@@ -311,6 +319,7 @@ function Show-NHPlayerLauncher([string]$Original, [string]$CodeRoot = '') {
         $view.Assets.add_Click({ Invoke-NHPlayerGame $view $true })
         $view.Check.add_Click({ Invoke-NHPlayerUpdate $view $Original $false })
         $view.Install.add_Click({ Invoke-NHPlayerUpdate $view $Original $true })
+        $view.Notes.add_Click({ Show-NHPlayerNotes $view $Original })
         $view.Track.add_SelectedIndexChanged({ Set-NHPlayerTrack $view $Original $view.Track.SelectedIndex })
         $view.Form.add_Shown({ if (Test-NHLauncherAutoCheck) { Invoke-NHPlayerUpdate $view $Original $false } })
         $null = $view.Form.ShowDialog()

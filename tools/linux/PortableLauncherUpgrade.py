@@ -21,8 +21,10 @@ SELF_TEST = 'NH_PORTABLE_LAUNCHER_V2'
 MARKER = f"SELF_TEST = '{SELF_TEST}'".encode()
 # Helpers first and the entry point last, so an interrupted upgrade never
 # starts a new entry point against old helpers.
-FILES = ('PortableLauncherProcess.py', 'PortableReleaseUpdate.py',
+FILES = ('PortableLauncherProcess.py', 'PortableReleaseUpdate.py', 'PortableReleaseNotes.py',
          'PortableLauncherWindow.py', 'PortableReleaseLauncher.py')
+# Launcher files that older installations do not have yet. Restoring removes them.
+ADDED_FILES = frozenset(('PortableReleaseNotes.py',))
 BACKUP_NAME = 'launcher-backup'
 
 
@@ -64,16 +66,24 @@ def self_test(original):
     return result.returncode == 0 and result.stdout.strip() == SELF_TEST
 
 
+def existing(path, name):
+    """Whether the installation has this launcher file; only added files may be missing."""
+    if name in ADDED_FILES and not os.path.lexists(path / name):
+        return False
+    owned_file(path / name)
+    return True
+
+
 def install(package, original):
     status = original.lstat()
     if not stat.S_ISDIR(status.st_mode) or status.st_uid != os.getuid():
         raise OSError('The installation folder is not owned by this user')
+    present = [name for name in FILES if existing(original, name)]
     for name in FILES:
-        owned_file(original / name)
         owned_file(package / name)
     backup = original / STORE_NAME / BACKUP_NAME
     backup.mkdir(mode=0o700, exist_ok=True)
-    for name in FILES:
+    for name in present:
         shutil.copyfile(original / name, backup / name)
     try:
         for name in FILES:
@@ -83,7 +93,10 @@ def install(package, original):
     except (OSError, SyntaxError, ValueError, subprocess.SubprocessError):
         pass
     for name in FILES:
-        replace(backup / name, original / name)
+        if name in present:
+            replace(backup / name, original / name)
+        else:
+            (original / name).unlink(missing_ok=True)
     print('New Horizons: the launcher update did not pass its check; the previous launcher was kept.',
           file=sys.stderr)
     return 'restored'

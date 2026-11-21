@@ -9,6 +9,7 @@ gi.require_version('Gtk', '4.0')
 from gi.repository import Gio, GLib, Gtk
 
 import PortableReleaseLauncher as release
+import PortableReleaseNotes as release_notes
 from PortableLauncherProcess import StartupCancellation, run_process
 
 
@@ -28,6 +29,7 @@ popover listview, popover row { background: transparent; color: #e9dfcc; }
 popover row:hover, popover row:selected { background: #594832; }
 progressbar trough { background: #342b21; }
 progressbar progress { background: #c6a357; }
+textview, textview text { background: #2b231b; color: #e9dfcc; }
 '''
 
 
@@ -37,6 +39,8 @@ class LauncherWindow(Gtk.ApplicationWindow):
         self.original, self.package, self.channel = original, package, 'stable'
         self.packages = {'stable': package, 'beta': release.choose_runtime(original, 'beta')}
         self.offer, self.busy, self.closed = None, False, False
+        # Notes from this session's last successful check of each track.
+        self.fetched = {'stable': None, 'beta': None}
         self.kind, self.cancel, self.ready = '', threading.Event(), threading.Event()
         self.game_cancel = StartupCancellation()
         self.set_default_size(560, 370)
@@ -59,9 +63,14 @@ class LauncherWindow(Gtk.ApplicationWindow):
         self.track.connect('notify::selected', self.track_changed)
         track.append(self.track)
         panel.append(track)
-        self.version_label = Gtk.Label(xalign=0)
+        version_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        self.version_label = Gtk.Label(xalign=0, hexpand=True)
         self.version_label.add_css_class('version')
-        panel.append(self.version_label)
+        version_row.append(self.version_label)
+        self.notes = Gtk.Button(label="What's new")
+        self.notes.connect('clicked', self.notes_clicked)
+        version_row.append(self.notes)
+        panel.append(version_row)
         self.refresh_version()
         self.status = Gtk.Label(label='Ready to play.', xalign=0, wrap=True)
         self.status.set_size_request(-1, 48)
@@ -113,7 +122,7 @@ class LauncherWindow(Gtk.ApplicationWindow):
 
     def set_busy(self, busy):
         self.busy = busy
-        for button in (self.check, self.assets):
+        for button in (self.check, self.assets, self.notes):
             button.set_sensitive(not busy)
         self.play.set_sensitive(not busy and self.package is not None)
         self.track.set_sensitive(not busy)
@@ -162,20 +171,61 @@ class LauncherWindow(Gtk.ApplicationWindow):
             return False
         channel = self.channel
         self.status.set_text('Checking for a beta release…' if channel == 'beta' else 'Checking the official release…')
-        baseline = release.track_baseline(self.original, channel)
-        def checked(offer):
+        operation = self.track_check(channel)
+        self.begin('check', operation, lambda result: self.checked(channel, *result))
+        return False
+
+    def track_check(self, channel):
+        baseline, installed = release.track_baseline(self.original, channel), self.installed_version(channel)
+        return lambda: release.check_release_notes_bounded(baseline, installed, self.cancel, channel)
+
+    def installed_version(self, channel):
+        package = self.packages[channel]
+        return '.'.join(map(str, release.version(package))) if package else None
+
+    def checked(self, channel, offer, notes):
+        if channel != self.channel:
+            return
+        self.offer = offer
+        self.fetched[channel] = {**(self.fetched[channel] or {}), **notes}
+        self.install.set_sensitive(offer is not None)
+        if offer:
+            self.status.set_text(('Beta ' if channel == 'beta' else 'Version ') + offer['version'] + ' is available.')
+        elif channel == 'beta':
+            self.status.set_text('No beta newer than your installed versions is available right now.')
+        else:
+            self.status.set_text('You have the latest version.')
+
+    def notes_clicked(self, button):
+        """Show this track's notes, checking once per session; offline shows the bundled notes."""
+        if self.busy:
+            return
+        channel = self.channel
+        if self.fetched[channel] is not None:
+            self.show_notes(channel)
+            return
+        check = self.track_check(channel)
+        def operation():
+            try:
+                return check(), None
+            except Exception as error:
+                return None, error
+        def finished(result):
             if channel != self.channel:
                 return
-            self.offer = offer
-            self.install.set_sensitive(offer is not None)
-            if offer:
-                self.status.set_text(('Beta ' if channel == 'beta' else 'Version ') + offer['version'] + ' is available.')
-            elif channel == 'beta':
-                self.status.set_text('No beta newer than your installed versions is available right now.')
+            if result[0] is not None:
+                self.checked(channel, *result[0])
             else:
-                self.status.set_text('You have the latest version.')
-        self.begin('check', lambda: release.check_release_bounded(baseline, self.cancel, channel), checked)
-        return False
+                self.status.set_text('Could not reach the release server. Showing the notes included with this version.')
+            self.show_notes(channel)
+        self.status.set_text('Loading release notes…')
+        self.begin('notes', operation, finished)
+
+    def show_notes(self, channel):
+        installed = self.installed_version(channel)
+        text = release_notes.compose(channel, installed, self.offer['version'] if self.offer else None,
+                                     self.fetched[channel], release_notes.bundled(self.packages[channel], installed))
+        NotesWindow(self, 'Beta' if channel == 'beta' else 'Stable', text).present()
 
     def update_progress(self, value):
         phase = value['phase']
@@ -252,6 +302,32 @@ class LauncherWindow(Gtk.ApplicationWindow):
             self.set_visible(False)
             return True
         return False
+
+
+class NotesWindow(Gtk.Window):
+    """Read-only plain text: the buffer never interprets markup or links."""
+    def __init__(self, parent, track, text):
+        super().__init__(title="What's new · " + track, transient_for=parent, modal=True)
+        self.set_default_size(560, 460)
+        panel = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
+        for side in ('top', 'bottom', 'start', 'end'):
+            getattr(panel, 'set_margin_' + side)(16)
+        self.set_child(panel)
+        view = Gtk.TextView(editable=False, cursor_visible=False, wrap_mode=Gtk.WrapMode.WORD_CHAR)
+        for side in ('top', 'bottom', 'left', 'right'):
+            getattr(view, 'set_' + side + '_margin')(8)
+        view.get_buffer().set_text(text)
+        scroller = Gtk.ScrolledWindow(vexpand=True, hscrollbar_policy=Gtk.PolicyType.NEVER)
+        scroller.set_child(view)
+        panel.append(scroller)
+        close = Gtk.Button(label='Close', halign=Gtk.Align.END)
+        close.connect('clicked', lambda button: self.close())
+        panel.append(close)
+        self.set_default_widget(close)
+        keys = Gtk.ShortcutController()
+        keys.add_shortcut(Gtk.Shortcut.new(Gtk.ShortcutTrigger.parse_string('Escape'),
+                                           Gtk.NamedAction.new('window.close')))
+        self.add_controller(keys)
 
 
 def run_window(original, package):

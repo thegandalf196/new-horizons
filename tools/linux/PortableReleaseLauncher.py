@@ -19,6 +19,7 @@ from PortableReleaseUpdate import (ASSET_NAME, CHANNELS, MAX_ARCHIVE_BYTES, PACK
                                    validate_release_metadata, verify_player_files)
 from urllib.request import build_opener
 from PortableLauncherProcess import run_process
+import PortableReleaseNotes as release_notes
 
 STORE_NAME = '.nh-player-updates'
 # Each track selects its own verified package and plays with its own profile.
@@ -29,6 +30,8 @@ SELF_TEST = 'NH_PORTABLE_LAUNCHER_V2'
 CODE_ROOT = None
 VERSION = re.compile(r'(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)')
 DIGEST = re.compile(r'[0-9a-f]{64}')
+# Two capped notes, JSON-escaped, plus the offer.
+MAX_NOTES_RESPONSE = 512 * 1024
 
 
 def plain(path, directory=False):
@@ -196,14 +199,23 @@ def newest_beta(releases):
     return max(candidates, key=lambda release: tuple(map(int, release_version(release).split('.'))), default=None)
 
 
-def check_release(current, opener=None, channel='stable'):
+def check_release(current, opener=None, channel='stable', notes=None):
+    """notes, when given, maps wanted versions to None. The same response fills
+    it with the plain notes of those versions and of the offer."""
     opener = opener or build_opener(ReleaseRedirects()).open
     if channel == 'beta':
-        release = newest_beta(recent_releases(opener, timeout=5))
-        if release is None:
-            return None
+        releases = recent_releases(opener, timeout=5)
+        release = newest_beta(releases)
     else:
         release = latest_release(opener, timeout=5)
+        releases = [release]
+    offer = None if release is None else release_offer(current, release, channel)
+    if notes is not None:
+        notes.update(release_notes.retained(releases, {*notes, offer and offer['version']}))
+    return offer
+
+
+def release_offer(current, release, channel):
     if not isinstance(release, dict):
         raise ValueError('Invalid official release response')
     if release.get('draft') is not False or (channel == 'stable' and release.get('prerelease') is not False):
@@ -236,17 +248,34 @@ def check_release(current, opener=None, channel='stable'):
 
 def check_release_bounded(current, cancel=None, channel='stable'):
     """A separate owned process bounds DNS and all I/O, not just each read."""
-    command = [sys.executable, str(Path(__file__).absolute()), '--package', str(current), '--check-release',
-               '--channel', channel]
-    result = run_process(command, cancel=cancel, timeout=5)
-    if result.returncode:
-        raise RuntimeError(result.stderr[-1500:] or 'Could not check the official release')
-    if len(result.stdout) > 16384:
-        raise ValueError('Update-check response exceeds the launcher limit')
-    offer = json.loads(result.stdout)
+    offer = bounded_check(current, cancel, channel, (), 16384)
     if offer is not None and not isinstance(offer, dict):
         raise ValueError('Invalid update-check response')
     return offer
+
+
+def check_release_notes_bounded(current, installed, cancel=None, channel='stable'):
+    """The same check, also returning plain release notes of the installed and offered versions."""
+    wanted = [installed] if installed else []
+    result = bounded_check(current, cancel, channel, ('--notes-for', *wanted), MAX_NOTES_RESPONSE)
+    if not isinstance(result, dict) or set(result) != {'offer', 'notes'}:
+        raise ValueError('Invalid update-check response')
+    offer, notes = result['offer'], result['notes']
+    if offer is not None and not isinstance(offer, dict) or not isinstance(notes, dict):
+        raise ValueError('Invalid update-check response')
+    return offer, {key: value for key, value in notes.items() if isinstance(key, str) and VERSION.fullmatch(key)
+                   and isinstance(value, str) and len(value) <= release_notes.MAX_CHARS + 64}
+
+
+def bounded_check(current, cancel, channel, extra, limit):
+    command = [sys.executable, str(Path(__file__).absolute()), '--package', str(current), '--check-release',
+               '--channel', channel, *extra]
+    result = run_process(command, cancel=cancel, timeout=5)
+    if result.returncode:
+        raise RuntimeError(result.stderr[-1500:] or 'Could not check the official release')
+    if len(result.stdout) > limit:
+        raise ValueError('Update-check response exceeds the launcher limit')
+    return json.loads(result.stdout)
 
 
 def install_release(original, offer, progress=None, cancel=None):
@@ -312,6 +341,7 @@ def main(argv=None):
     parser.add_argument('--package', type=Path, required=True)
     parser.add_argument('--check-release', action='store_true', help=argparse.SUPPRESS)
     parser.add_argument('--channel', choices=CHANNELS, default='stable', help=argparse.SUPPRESS)
+    parser.add_argument('--notes-for', nargs='*', help=argparse.SUPPRESS)
     parser.add_argument('--delegated', action='store_true', help=argparse.SUPPRESS)
     parser.add_argument('--self-test', action='store_true', help=argparse.SUPPRESS)
     parser.add_argument('arguments', nargs=argparse.REMAINDER)
@@ -324,7 +354,14 @@ def main(argv=None):
     if args.check_release:
         if forward:
             raise ValueError('Update checks do not accept game arguments')
-        print(json.dumps(check_release(original, channel=args.channel)))
+        if args.notes_for is None:
+            print(json.dumps(check_release(original, channel=args.channel)))
+            return 0
+        if len(args.notes_for) > 2 or not all(VERSION.fullmatch(value) for value in args.notes_for):
+            raise ValueError('Invalid release notes version')
+        notes = dict.fromkeys(args.notes_for)
+        offer = check_release(original, channel=args.channel, notes=notes)
+        print(json.dumps({'offer': offer, 'notes': {key: value for key, value in notes.items() if value}}))
         return 0
     if args.delegated:
         global CODE_ROOT

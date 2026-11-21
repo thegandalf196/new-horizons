@@ -16697,11 +16697,11 @@
       ]
     },
     "tools/windows/Update-NHOriginalLauncher.ps1": {
-      "sha256": "4d7c2c3fe6ab8c3ee599171ac49f4ac8420c5662dc84f118eeaa8e558ec1c163",
-      "review": "CLAUDE-LAUNCHER-BOOTSTRAP-WINDOWS-20261120",
-      "review_scope": "Exact source organization and code review of the Windows original-launcher bootstrap upgrade; no Windows 5.1/WinForms execution.",
+      "sha256": "bd6cf8aa3f34c429fc6015ce5e018b0b1dcfed50f86ba2e7feea6df1dab9ea17",
+      "review": "CLAUDE-WHATSNEW-20261121",
+      "review_scope": "Exact source organization of the launcher What's new window; offline PowerShell 7.5 fixtures only, no Windows PowerShell 5.1/WinForms execution.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
-      "rationale": "Complete 171-line PowerShell callable inventory generated with the PowerShell 7.5.0 AST (all FunctionDefinitionAst and ScriptBlockExpressionAst spans); the generator reproduces every previously reviewed Windows inventory exactly. Largest callable is 22 lines, below 80. Linux parsing does not establish Windows PowerShell 5.1 or WinForms behaviour.",
+      "rationale": "Complete 171-line PowerShell callable inventory generated with the PowerShell 7.5.0 AST (all FunctionDefinitionAst and ScriptBlockExpressionAst spans). Largest callable is 22 lines, below 80. Linux parsing does not establish Windows PowerShell 5.1 or WinForms behaviour.",
       "functions": [
         {
           "symbol": "function Resolve-NHExistingPathCase#1",
@@ -17222,180 +17222,185 @@
       "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE"
     },
     "tools/windows/Player-Launcher.ps1": {
-      "sha256": "810d64f88c83d8cefd86b845efdf7e9e6ac7dec86cfa6f6a77132b4bb1d060a0",
-      "review": "CLAUDE-BETA-TRACK-WINDOWS-20261120",
-      "review_scope": "Exact source organization and code review of the Windows Beta track port; no Windows 5.1/WinForms execution.",
+      "sha256": "39359c0683af35a4efe438769ea397164e0890768c93e46977109ac9fb3791c0",
+      "review": "CLAUDE-WHATSNEW-20261121",
+      "review_scope": "Exact source organization of the launcher What's new window; offline PowerShell 7.5 fixtures only, no Windows PowerShell 5.1/WinForms execution.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
-      "rationale": "Complete 319-line PowerShell callable inventory generated with the PowerShell 7.5.0 AST (all FunctionDefinitionAst and ScriptBlockExpressionAst spans); the generator reproduces every previously reviewed Windows inventory exactly. Largest callable is 40 lines, below 80. Reviewed by the integrator, not the author. Linux parsing does not establish Windows PowerShell 5.1 or WinForms behaviour.",
+      "rationale": "Complete 328-line PowerShell callable inventory generated with the PowerShell 7.5.0 AST (all FunctionDefinitionAst and ScriptBlockExpressionAst spans). Largest callable is 45 lines, below 80. Linux parsing does not establish Windows PowerShell 5.1 or WinForms behaviour.",
       "functions": [
         {
           "symbol": "function New-NHPlayerProcess#1",
-          "start": 4,
-          "end": 22
+          "start": 6,
+          "end": 24
         },
         {
           "symbol": "function New-NHPlayerProcess::<scriptblock>#1",
-          "start": 11,
-          "end": 11
+          "start": 13,
+          "end": 13
         },
         {
           "symbol": "function Wait-NHPlayerProcess#1",
-          "start": 24,
-          "end": 48
+          "start": 26,
+          "end": 50
         },
         {
           "symbol": "function Set-NHPlayerBusy#1",
-          "start": 50,
-          "end": 56
+          "start": 52,
+          "end": 58
         },
         {
           "symbol": "function Get-NHTrackLocalData#1",
-          "start": 58,
-          "end": 69
+          "start": 60,
+          "end": 71
         },
         {
           "symbol": "function Get-NHBetaAssetArguments#1",
-          "start": 71,
-          "end": 80
+          "start": 73,
+          "end": 82
         },
         {
           "symbol": "function Update-NHPlayerVersion#1",
-          "start": 82,
-          "end": 91
+          "start": 84,
+          "end": 93
         },
         {
           "symbol": "function Get-NHTrackBaseline#1",
-          "start": 93,
-          "end": 102
+          "start": 95,
+          "end": 104
         },
         {
           "symbol": "function Set-NHPlayerTrack#1",
-          "start": 104,
-          "end": 123
+          "start": 106,
+          "end": 125
         },
         {
           "symbol": "function Complete-NHPlayerCheck#1",
-          "start": 125,
-          "end": 137
+          "start": 127,
+          "end": 139
         },
         {
           "symbol": "function Complete-NHPlayerInstall#1",
-          "start": 139,
-          "end": 146
+          "start": 141,
+          "end": 148
         },
         {
           "symbol": "function Invoke-NHPlayerUpdate#1",
-          "start": 148,
-          "end": 187
+          "start": 150,
+          "end": 194
         },
         {
           "symbol": "function Invoke-NHPlayerGame#1",
-          "start": 189,
-          "end": 220
+          "start": 196,
+          "end": 227
         },
         {
           "symbol": "function New-NHPlayerButton#1",
-          "start": 222,
-          "end": 229
+          "start": 229,
+          "end": 236
         },
         {
           "symbol": "function New-NHPlayerTrack#1",
-          "start": 231,
-          "end": 246
+          "start": 238,
+          "end": 253
         },
         {
           "symbol": "function New-NHPlayerView#1",
-          "start": 248,
-          "end": 282
+          "start": 255,
+          "end": 290
         },
         {
           "symbol": "function Test-NHLauncherAutoCheck#1",
-          "start": 284,
-          "end": 301
-        },
-        {
-          "symbol": "function Show-NHPlayerLauncher#1",
-          "start": 303,
-          "end": 319
-        },
-        {
-          "symbol": "function Show-NHPlayerLauncher::<scriptblock>#1",
-          "start": 309,
+          "start": 292,
           "end": 309
         },
         {
+          "symbol": "function Show-NHPlayerLauncher#1",
+          "start": 311,
+          "end": 328
+        },
+        {
+          "symbol": "function Show-NHPlayerLauncher::<scriptblock>#1",
+          "start": 317,
+          "end": 317
+        },
+        {
           "symbol": "function Show-NHPlayerLauncher::<scriptblock>#2",
-          "start": 310,
-          "end": 310
+          "start": 318,
+          "end": 318
         },
         {
           "symbol": "function Show-NHPlayerLauncher::<scriptblock>#3",
-          "start": 311,
-          "end": 311
+          "start": 319,
+          "end": 319
         },
         {
           "symbol": "function Show-NHPlayerLauncher::<scriptblock>#4",
-          "start": 312,
-          "end": 312
+          "start": 320,
+          "end": 320
         },
         {
           "symbol": "function Show-NHPlayerLauncher::<scriptblock>#5",
-          "start": 313,
-          "end": 313
+          "start": 321,
+          "end": 321
         },
         {
           "symbol": "function Show-NHPlayerLauncher::<scriptblock>#6",
-          "start": 314,
-          "end": 314
+          "start": 322,
+          "end": 322
         },
         {
           "symbol": "function Show-NHPlayerLauncher::<scriptblock>#7",
-          "start": 315,
-          "end": 315
+          "start": 323,
+          "end": 323
+        },
+        {
+          "symbol": "function Show-NHPlayerLauncher::<scriptblock>#8",
+          "start": 324,
+          "end": 324
         }
       ]
     },
     "tools/windows/Player-Launcher-Operation.ps1": {
-      "sha256": "4f1d0dda9a2ee02a90898aaad27804b329badb512465f929a0151a3db67babd5",
-      "review": "CLAUDE-BETA-TRACK-WINDOWS-20261120",
-      "review_scope": "Exact source organization and code review of the Windows Beta track port; no Windows 5.1/WinForms execution.",
+      "sha256": "906b135021d957184d474cd6bd2412d0e7e02b6b9e8d6bb06452ce8b5e806589",
+      "review": "CLAUDE-WHATSNEW-20261121",
+      "review_scope": "Exact source organization of the launcher What's new window; offline PowerShell 7.5 fixtures only, no Windows PowerShell 5.1/WinForms execution.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
-      "rationale": "Complete 115-line PowerShell callable inventory generated with the PowerShell 7.5.0 AST (all FunctionDefinitionAst and ScriptBlockExpressionAst spans); the generator reproduces every previously reviewed Windows inventory exactly. Largest callable is 32 lines, below 80. Reviewed by the integrator, not the author. Linux parsing does not establish Windows PowerShell 5.1 or WinForms behaviour.",
+      "rationale": "Complete 123-line PowerShell callable inventory generated with the PowerShell 7.5.0 AST (all FunctionDefinitionAst and ScriptBlockExpressionAst spans). Largest callable is 32 lines, below 80. Linux parsing does not establish Windows PowerShell 5.1 or WinForms behaviour.",
       "functions": [
         {
           "symbol": "function Assert-PlainPath#1",
-          "start": 12,
-          "end": 12
+          "start": 13,
+          "end": 13
         },
         {
           "symbol": "function Get-NHPublishedRelease#1",
-          "start": 14,
-          "end": 21
+          "start": 15,
+          "end": 22
         },
         {
           "symbol": "function Get-NHLatestPlayerOffer#1",
-          "start": 23,
-          "end": 54
+          "start": 24,
+          "end": 55
         },
         {
           "symbol": "function Get-NHLatestPlayerOffer::<scriptblock>#1",
-          "start": 32,
-          "end": 32
+          "start": 33,
+          "end": 33
         },
         {
           "symbol": "function Install-NHPlayerOffer#1",
-          "start": 56,
-          "end": 68
+          "start": 57,
+          "end": 69
         },
         {
           "symbol": "function Invoke-NHPlayerOperation#1",
-          "start": 70,
-          "end": 87
+          "start": 71,
+          "end": 95
         },
         {
           "symbol": "function Test-NHPlayerLauncherCode#1",
-          "start": 89,
-          "end": 110
+          "start": 97,
+          "end": 118
         }
       ]
     },
@@ -17613,6 +17618,105 @@
           "symbol": "function Select-UpdateBetaRelease::<scriptblock>#1",
           "start": 125,
           "end": 127
+        }
+      ]
+    },
+    "tools/windows/Player-Launcher-Notes.ps1": {
+      "sha256": "81fd5c778b1eb18e71e1aa3bf28f8aa5bbf1c36bb43443752b752ec9f650e98f",
+      "review": "CLAUDE-WHATSNEW-20261121",
+      "review_scope": "Exact source organization of the launcher What's new window; offline PowerShell 7.5 fixtures only, no Windows PowerShell 5.1/WinForms execution.",
+      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
+      "rationale": "Complete 222-line PowerShell callable inventory generated with the PowerShell 7.5.0 AST (all FunctionDefinitionAst and ScriptBlockExpressionAst spans). Largest callable is 35 lines, below 80. Linux parsing does not establish Windows PowerShell 5.1 or WinForms behaviour.",
+      "functions": [
+        {
+          "symbol": "function Update-NHNotesText#1",
+          "start": 17,
+          "end": 25
+        },
+        {
+          "symbol": "function Limit-NHReleaseNotes#1",
+          "start": 27,
+          "end": 33
+        },
+        {
+          "symbol": "function ConvertTo-NHPlainReleaseNotes#1",
+          "start": 35,
+          "end": 68
+        },
+        {
+          "symbol": "function ConvertTo-NHPlainReleaseNotes::<scriptblock>#1",
+          "start": 44,
+          "end": 44
+        },
+        {
+          "symbol": "function ConvertTo-NHPlainReleaseNotes::<scriptblock>#2",
+          "start": 55,
+          "end": 55
+        },
+        {
+          "symbol": "function ConvertTo-NHPlainReleaseNotes::<scriptblock>#3",
+          "start": 56,
+          "end": 56
+        },
+        {
+          "symbol": "function ConvertTo-NHPlainReleaseNotes::<scriptblock>#4",
+          "start": 61,
+          "end": 61
+        },
+        {
+          "symbol": "function Get-NHRetainedReleaseNotes#1",
+          "start": 70,
+          "end": 85
+        },
+        {
+          "symbol": "function Write-NHCheckNotes#1",
+          "start": 87,
+          "end": 99
+        },
+        {
+          "symbol": "function Write-NHCheckNotes::<scriptblock>#1",
+          "start": 94,
+          "end": 94
+        },
+        {
+          "symbol": "function Read-NHReleaseNotesFile#1",
+          "start": 101,
+          "end": 114
+        },
+        {
+          "symbol": "function Get-NHBundledReleaseNotes#1",
+          "start": 116,
+          "end": 132
+        },
+        {
+          "symbol": "function Format-NHReleaseNotes#1",
+          "start": 134,
+          "end": 153
+        },
+        {
+          "symbol": "function Format-NHReleaseNotes::<scriptblock>#1",
+          "start": 142,
+          "end": 142
+        },
+        {
+          "symbol": "function Get-NHPlayerInstalledVersion#1",
+          "start": 155,
+          "end": 159
+        },
+        {
+          "symbol": "function Get-NHPlayerNotesArguments#1",
+          "start": 161,
+          "end": 166
+        },
+        {
+          "symbol": "function Show-NHPlayerNotes#1",
+          "start": 168,
+          "end": 186
+        },
+        {
+          "symbol": "function Show-NHReleaseNotesWindow#1",
+          "start": 188,
+          "end": 222
         }
       ]
     }
@@ -29959,14 +30063,14 @@
       "deferral": "Before further substantive native cache expansion, extract stage payload population behind a focused helper while retaining locking, complete verification and atomic publication order in prepareCache; future lock/protocol growth must retain the no-follow Directory boundary and process-death/Windows sharing coverage. No broad growth allowance. A7 narrow urgent correction only: before further cache platform-I/O/protocol growth, engine_engineer must extract the coherent native Directory/File access boundary or existing stage-payload population behind a small interface, keeping handle lifetime, exact share/no-reparse flags, locking and publish ordering; characterize Windows short/deep kill/recovery and POSIX parity before changing that boundary. This +9 allowance is not a relaxed ceiling."
     },
     "tools/ci/stage_linux_client.py::main#1": {
-      "lines": 87,
-      "sha256": "13722db45fefdde23715735a9d444cbff720c779784ddbeb1910fc8803cd4d4b",
+      "lines": 82,
+      "sha256": "4dcbaa91a934d1c4f49b8655a4bf8352c8a7a4ccb9977a280273d26a8ea002d3",
       "kind": "exception",
       "owner": "engine_engineer",
-      "review": "CLAUDE-LAUNCHER-BOOTSTRAP-LINUX-20261120",
+      "review": "CLAUDE-WHATSNEW-20261121",
       "review_scope": "Exact independent source organization and reused prior source review only; no native compilation, GUI, Windows execution, performance, promotion or future growth permission.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
-      "rationale": "Exact72 to89-line staging orchestration, file157 to174. Adds explicit player/default versus legacy diagnostic route, four small launcher support artifacts, and optional invocation of focused60-line authenticated archive writer. Source/archive/license/runtime admission remains in existing helpers; archive implementation is not inlined. Coherent below150-line orchestration reviewed at80-line trigger, no generic expansion permission. 2026-11-20: the launcher module list moved to the module-level PORTABLE_LAUNCHER_MODULES constant (adds PortableLauncherUpgrade.py); main shrinks 89 to 87 lines with no new policy.",
+      "rationale": "Exact72 to89-line staging orchestration, file157 to174. Adds explicit player/default versus legacy diagnostic route, four small launcher support artifacts, and optional invocation of focused60-line authenticated archive writer. Source/archive/license/runtime admission remains in existing helpers; archive implementation is not inlined. Coherent below150-line orchestration reviewed at80-line trigger, no generic expansion permission. 2026-11-20: the launcher module list moved to the module-level PORTABLE_LAUNCHER_MODULES constant (adds PortableLauncherUpgrade.py); main shrinks 89 to 87 lines with no new policy. 2026-11-21: the player support file list moved to the module-level PLAYER_SUPPORT_FILES constant (adds the bundled changelog for the launcher What's new window); main shrinks 87 to 82 lines with no new policy.",
       "deferral": "Before further staging orchestration growth, extract the player-support copy plan and optional archive dispatch into a focused helper with exact artifact membership and byte-identity tests; no extra policy in main."
     }
   }

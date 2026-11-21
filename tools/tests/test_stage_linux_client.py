@@ -41,8 +41,12 @@ class LinuxStageTest(unittest.TestCase):
             fixture.run(main, git_payload=lambda command: command[-1].encode())
             package = fixture.arguments['output'] / 'New-Horizons-Linux-x64'
             for name in ('PortableReleaseLauncher.py', 'PortableReleaseUpdate.py',
-                         'PortableLauncherWindow.py', 'PortableLauncherProcess.py', 'PortableLauncherUpgrade.py'):
+                         'PortableLauncherWindow.py', 'PortableLauncherProcess.py', 'PortableLauncherUpgrade.py',
+                         'PortableReleaseNotes.py'):
                 self.assertEqual((package / name).read_bytes(), f'packaging-revision:tools/linux/{name}'.encode())
+            # The launcher's offline What's new text is the player changelog.
+            self.assertEqual((package / 'CHANGELOG-New-Horizons.md').read_bytes(),
+                             b'packaging-revision:docs/NEW_HORIZONS_CHANGELOG.md')
             verify_candidate(package)
 
     def test_legacy_diagnostic_stage_can_explicitly_omit_desktop_modules(self):

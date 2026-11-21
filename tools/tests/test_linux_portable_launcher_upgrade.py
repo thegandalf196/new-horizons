@@ -4,6 +4,7 @@
 import contextlib
 import io
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -33,7 +34,8 @@ class LinuxPortableLauncherUpgradeTest(unittest.TestCase):
         self.package.mkdir(parents=True)
         (store / 'current.json').write_text(json.dumps({'format': 1, 'version': '0.92.7', 'sha256': DIGEST}))
         for name in upgrade.FILES:
-            (self.original / name).write_bytes(old_source(name))
+            if name not in upgrade.ADDED_FILES:
+                (self.original / name).write_bytes(old_source(name))
             (self.package / name).write_bytes((ROOT / 'tools/linux' / name).read_bytes())
 
     def run_upgrade(self):
@@ -44,14 +46,20 @@ class LinuxPortableLauncherUpgradeTest(unittest.TestCase):
 
     def assert_original_is_old(self):
         for name in upgrade.FILES:
-            self.assertEqual((self.original / name).read_bytes(), old_source(name), name)
+            if name in upgrade.ADDED_FILES:
+                self.assertFalse(os.path.lexists(self.original / name), name)
+            else:
+                self.assertEqual((self.original / name).read_bytes(), old_source(name), name)
 
     def test_old_launcher_is_upgraded_and_backed_up(self):
         self.assertEqual(self.run_upgrade(), ('upgraded', ''))
         backup = self.original / upgrade.STORE_NAME / upgrade.BACKUP_NAME
         for name in upgrade.FILES:
             self.assertEqual((self.original / name).read_bytes(), (self.package / name).read_bytes(), name)
-            self.assertEqual((backup / name).read_bytes(), old_source(name), name)
+            if name in upgrade.ADDED_FILES:
+                self.assertFalse((backup / name).exists(), name)
+            else:
+                self.assertEqual((backup / name).read_bytes(), old_source(name), name)
         self.assertEqual(list(self.original.glob('.*.nh-upgrade')), [])
         self.assertTrue(upgrade.self_test(self.original))
 
@@ -79,6 +87,16 @@ class LinuxPortableLauncherUpgradeTest(unittest.TestCase):
             json.dumps({'format': 1, 'version': '0.92.6', 'sha256': 'e' * 64}))
         self.assertEqual(self.run_upgrade(), (None, ''))
         self.assert_original_is_old()
+
+    def test_added_launcher_file_must_be_plain_when_present(self):
+        added = self.original / 'PortableReleaseNotes.py'
+        real = self.original.parent / 'notes-elsewhere.py'
+        real.write_text('')
+        added.symlink_to(real)
+        result, errors = self.run_upgrade()
+        self.assertIsNone(result)
+        self.assertIn('game starts normally', errors)
+        self.assertTrue(added.is_symlink())
 
     def test_package_outside_an_update_store_changes_nothing(self):
         self.assertIsNone(upgrade.upgrade_original(ROOT / 'tools/linux'))
