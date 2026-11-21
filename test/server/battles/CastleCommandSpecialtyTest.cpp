@@ -104,9 +104,9 @@ TEST_F(CastleCommandSpecialtyTest, VolleyShotsCannotProvokeCounterfireOrRepeat)
 TEST_F(CastleCommandSpecialtyTest, VolleyDamageScalesWithLevel)
 {
 	ASSERT_NO_FATAL_FAILURE(volleyArena(1));
-	EXPECT_EQ(newHorizonsHeroes::volleyCommandDamagePercent(attackerSideHero), 31);
+	EXPECT_EQ(newHorizonsHeroes::volleyCommandDamagePercent(attackerSideHero), 30);
 	attackerSideHero->level = 20;
-	EXPECT_EQ(newHorizonsHeroes::volleyCommandDamagePercent(attackerSideHero), 50);
+	EXPECT_EQ(newHorizonsHeroes::volleyCommandDamagePercent(attackerSideHero), 49);
 	attackerSideHero->level = 35;
 	EXPECT_EQ(newHorizonsHeroes::volleyCommandDamagePercent(attackerSideHero), 50);
 }
@@ -145,7 +145,7 @@ TEST_F(CastleCommandSpecialtyTest, RevisedAerialSupremacyRoyalGriffinsCounterEve
 TEST_F(CastleCommandSpecialtyTest, RevisedAerialCounterDamageGrowsWithLevel)
 {
 	ASSERT_NO_FATAL_FAILURE(aerialArena());
-	EXPECT_EQ(newHorizonsHeroes::aerialCounterDamagePercent(attackerSideHero), 20);
+	EXPECT_EQ(newHorizonsHeroes::aerialCounterDamagePercent(attackerSideHero), 18);
 	attackerSideHero->level = 25;
 	EXPECT_EQ(newHorizonsHeroes::aerialCounterDamagePercent(attackerSideHero), 40);
 	BattleAttackInfo plain(griffins, secondShooter, 0, false);

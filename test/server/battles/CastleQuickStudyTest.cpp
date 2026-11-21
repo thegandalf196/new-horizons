@@ -33,7 +33,7 @@ TEST_F(CastleQuickStudyTest, QuickStudyCopiesASeenSpellOnceAtReducedPower)
 	ASSERT_TRUE(quickStudySpecialty::canCopy(*battle(), *attackerSideHero, bless));
 	spells::BattleCast copy(battle(), attackerSideHero, spells::Mode::HERO, bless.toSpell());
 	const auto mechanics = bless.toSpell()->battleMechanics(&copy);
-	EXPECT_EQ(mechanics->getEffectPower(), attackerSideHero->getPrimSkillLevel(PrimarySkill::SPELL_POWER) * 525 / 1000);
+	EXPECT_EQ(mechanics->getEffectPower(), attackerSideHero->getPrimSkillLevel(PrimarySkill::SPELL_POWER) * 500 / 1000);
 	ASSERT_TRUE(submit(spellAt(ATTACKER, bless, actor)));
 	EXPECT_TRUE(actor->hasBonusFrom(BonusSource::SPELL_EFFECT, BonusSourceID(bless)));
 	EXPECT_EQ(quickStudySpecialty::spentCopies(*battle(), *attackerSideHero), 1);
@@ -46,7 +46,7 @@ TEST_F(CastleQuickStudyTest, QuickStudyBudgetIsOneThenTwoFromLevelTenAndSurvives
 	EXPECT_EQ(newHorizonsHeroes::quickStudyUses(attackerSideHero), 1);
 	attackerSideHero->level = 10;
 	EXPECT_EQ(newHorizonsHeroes::quickStudyUses(attackerSideHero), 2);
-	EXPECT_EQ(newHorizonsHeroes::quickStudySpellPowerPermille(attackerSideHero), 750);
+	EXPECT_EQ(newHorizonsHeroes::quickStudySpellPowerPermille(attackerSideHero), 725);
 	ASSERT_NO_FATAL_FAILURE(book(defenderSideHero, SpellID::BLESS, "new-horizons:lightMagic"));
 	ASSERT_NO_FATAL_FAILURE(arena());
 	ASSERT_NO_FATAL_FAILURE(activate(enemy));

@@ -94,8 +94,8 @@ protection.
 presentation. The Castle combat rows (`volleyCommand`, `aerialSupremacy`,
 `benedictionOfArms`, `pariah`, `frostMantle`, `quickStudy`, `sermon`) are parsed
 by `NewHorizonsCastleSpecialties`; each present row retires that hero's historical
-specialty. Level values are `base + perLevel x level`, capped, so the table's caps
-are reached at hero level 20. Frost Mantle's cloak runs the `new-horizons:frostMantle`
+specialty. As in the level rule, the authored base is the hero level 1 value and
+grows by `perLevel` per further level, within its cap. Frost Mantle's cloak runs the `new-horizons:frostMantle`
 combat event; Quick Study derives seen spells and spent copies from each side's
 saved completed hero-cast history, so neither adds battle-state fields.
 

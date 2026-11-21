@@ -3171,6 +3171,7 @@
 					},
 					"pariah": {
 						"morale": -2,
+						"shadowPowerPercent": 5,
 						"shadowPowerPercentPerLevel": 5,
 						"maximumShadowPowerPercent": 100
 					},

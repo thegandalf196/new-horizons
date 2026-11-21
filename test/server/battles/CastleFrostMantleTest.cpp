@@ -40,7 +40,7 @@ TEST_F(CastleFrostMantleTest, FrostMantleCloaksAFriendlyCentreAndReturnsColdOnMe
 		{ return bonus->stacking == newHorizonsFrostMantle::CLOAK_STACKING; }));
 	ASSERT_TRUE(cloak);
 	EXPECT_EQ(cloak->turnsRemain, 2);
-	EXPECT_EQ(cloak->val, 20) << "10% +1% per level at level 10";
+	EXPECT_EQ(cloak->val, 19) << "10% at level 1, +1% per further level";
 	blockRetaliation(enemy); // The cloaked Angels never retaliate, so only cold damage returns.
 	ASSERT_NO_FATAL_FAILURE(activate(enemy));
 	const auto health = enemy->getAvailableHealth();

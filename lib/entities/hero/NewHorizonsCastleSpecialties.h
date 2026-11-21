@@ -14,8 +14,8 @@ namespace newHorizonsHeroes
 {
 struct SpecialtyPresentation;
 
-/// One level-scaled percentage: min(maximum, base + perLevel x level). The table's
-/// caps are reached at hero level 20, so the hero level itself is the multiplier.
+/// One level-scaled percentage: the base is the hero level 1 value and grows by
+/// perLevel for each further level, capped: min(maximum, base + perLevel x (level - 1)).
 /// Values are tenths of a percent so Quick Study's +2.5%/level stays exact.
 struct DLL_LINKAGE LevelPercent
 {

@@ -89,7 +89,7 @@ std::string percentText(int permille)
 
 std::string scalingText(const LevelPercent & value, const char * what)
 {
-	return std::string(what) + " " + percentText(value.basePermille + value.permillePerLevel) + " at hero level 1, +"
+	return std::string(what) + " " + percentText(value.basePermille) + " at hero level 1, +"
 		+ percentText(value.permillePerLevel) + " per level, up to " + percentText(value.maximumPermille) + ".";
 }
 
@@ -101,7 +101,7 @@ std::string currentText(const CGHeroInstance * capturedHero, int permille)
 
 int LevelPercent::permilleAt(int level) const
 {
-	const int64_t value = int64_t{basePermille} + int64_t{permillePerLevel} * std::max(0, level);
+	const int64_t value = int64_t{basePermille} + int64_t{permillePerLevel} * std::max(0, level - 1);
 	return static_cast<int>(std::clamp<int64_t>(value, 0, maximumPermille));
 }
 
@@ -133,8 +133,9 @@ void validateCastleSpecialtyRows(const JsonNode & row)
 	if(row.Struct().contains("pariah"))
 	{
 		const auto & pariah = row["pariah"];
-		detail::fields(pariah, {"morale", "shadowPowerPercentPerLevel", "maximumShadowPowerPercent"});
+		detail::fields(pariah, {"morale", "shadowPowerPercent", "shadowPowerPercentPerLevel", "maximumShadowPowerPercent"});
 		detail::require(detail::integer(pariah["morale"], -3, 0), "Pariah Morale");
+		requirePercent(pariah, "shadowPowerPercent", 100, "Pariah Shadow Spell Power at level 1");
 		requirePercent(pariah, "shadowPowerPercentPerLevel", 10, "Pariah Shadow Spell Power per level");
 		requirePercent(pariah, "maximumShadowPowerPercent", 100, "Pariah maximum Shadow Spell Power");
 	}
@@ -178,7 +179,7 @@ CastleSpecialtyRules castleSpecialtyRules(const JsonNode & development)
 		result.sermon = percentRow(*row, nullptr, "potencyPercentPerLevel", "maximumPotencyPercent");
 	if(const auto * row = castleRow(development, "pariah"))
 		result.pariah = PariahRules{integer(*row, "morale"),
-			percentRow(*row, nullptr, "shadowPowerPercentPerLevel", "maximumShadowPowerPercent")};
+			percentRow(*row, "shadowPowerPercent", "shadowPowerPercentPerLevel", "maximumShadowPowerPercent")};
 	if(const auto * row = castleRow(development, "frostMantle"))
 		result.frostMantle = FrostMantleRules{
 			percentRow(*row, "returnedPercent", "returnedPercentPerLevel", "maximumReturnedPercent"),

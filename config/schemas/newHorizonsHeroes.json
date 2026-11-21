@@ -91,7 +91,7 @@
 							"properties": {"percentOfBasePerLevel": {"type": "integer", "minimum": 1, "maximum": 10}}
 						},
 						"volleyCommand": {
-							"type": "object", "additionalProperties": false, "description": "Orrin: volley shot damage, base + per level, capped.",
+							"type": "object", "additionalProperties": false, "description": "Orrin: volley shot damage at level 1, plus per further level, capped.",
 							"required": ["damagePercent", "damagePercentPerLevel", "maximumDamagePercent"],
 							"properties": {
 								"damagePercent": {"type": "integer", "minimum": 0, "maximum": 100},
@@ -111,9 +111,10 @@
 						"sermon": {"$ref": "#/definitions/specialtyPrayerPotency"},
 						"pariah": {
 							"type": "object", "additionalProperties": false, "description": "Cuthbert: army Morale and Shadow Spell Power term multiplier.",
-							"required": ["morale", "shadowPowerPercentPerLevel", "maximumShadowPowerPercent"],
+							"required": ["morale", "shadowPowerPercent", "shadowPowerPercentPerLevel", "maximumShadowPowerPercent"],
 							"properties": {
 								"morale": {"type": "integer", "minimum": -3, "maximum": 0},
+								"shadowPowerPercent": {"type": "integer", "minimum": 0, "maximum": 100},
 								"shadowPowerPercentPerLevel": {"type": "integer", "minimum": 0, "maximum": 10},
 								"maximumShadowPowerPercent": {"type": "integer", "minimum": 0, "maximum": 100}
 							}

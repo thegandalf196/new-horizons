@@ -29,8 +29,8 @@ TEST_F(CastlePrayerSpecialtyTest, BenedictionGivesTheNextOrderPrayerToTheBlessed
 	const auto chosen = activePrayer(*actor, Prayer::DIVINE_PURPOSE);
 	const auto blessed = activePrayer(*waiter, Prayer::DIVINE_PURPOSE);
 	ASSERT_TRUE(chosen && blessed);
-	// Level 10: +30% potency on the Benediction grant only.
-	EXPECT_EQ(blessed->potencyFaith, newHorizonsHeroes::boostedPotencyFaith(chosen->potencyFaith, 30));
+	// Level 10: +27% potency on the Benediction grant only.
+	EXPECT_EQ(blessed->potencyFaith, newHorizonsHeroes::boostedPotencyFaith(chosen->potencyFaith, 27));
 	EXPECT_FALSE(castleSpecialtyPrayers::benedictionRecipient(*battle(), ATTACKER)) << "Spent by that Order";
 }
 
@@ -62,7 +62,7 @@ TEST_F(CastlePrayerSpecialtyTest, SermonLightSpellRequiresAndGrantsOneChosenPray
 	ASSERT_TRUE(granted);
 	const auto policy = capturePolicy(attackerSideHero);
 	EXPECT_EQ(granted->potencyFaith, newHorizonsHeroes::boostedPotencyFaith(
-		potencyFaith(actualFaith(*attackerSideHero), policy), 60));
+		potencyFaith(actualFaith(*attackerSideHero), policy), 57));
 }
 
 TEST_F(CastlePrayerSpecialtyTest, SermonIgnoresNonLightSpellsAndHistoricalLoynis)

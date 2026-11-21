@@ -30,32 +30,42 @@ TEST(CastleSpecialtyRules, ShippedTableCapturesEveryCombatRow)
 TEST(CastleSpecialtyRules, LevelScalingReachesTheTableCapsAtLevelTwenty)
 {
 	const auto rules = castleSpecialtyRules(shippedHeroes());
-	// Orrin: 30% +1%/level, max 50%.
-	EXPECT_EQ(rules.volleyCommand->percentAt(1), 31);
-	EXPECT_EQ(rules.volleyCommand->percentAt(20), 50);
+	// Orrin: 30% at level 1, +1% per further level, max 50%.
+	EXPECT_EQ(rules.volleyCommand->percentAt(1), 30);
+	EXPECT_EQ(rules.volleyCommand->percentAt(21), 50);
 	EXPECT_EQ(rules.volleyCommand->percentAt(40), 50);
-	// Edric: counter +2%/level, max +40%.
-	EXPECT_EQ(rules.aerialSupremacy->percentAt(1), 2);
-	EXPECT_EQ(rules.aerialSupremacy->percentAt(20), 40);
+	// Edric: counter +0% at level 1, +2% per further level, max +40%.
+	EXPECT_EQ(rules.aerialSupremacy->percentAt(1), 0);
+	EXPECT_EQ(rules.aerialSupremacy->percentAt(20), 38);
 	EXPECT_EQ(rules.aerialSupremacy->percentAt(30), 40);
-	// Adela and Loynis: prayer potency +3%/level, max +60%.
-	EXPECT_EQ(rules.benedictionOfArms->percentAt(10), 30);
+	// Adela and Loynis: prayer potency +0% at level 1, +3% per further level, max +60%.
+	EXPECT_EQ(rules.benedictionOfArms->percentAt(10), 27);
 	EXPECT_EQ(rules.benedictionOfArms->percentAt(25), 60);
-	EXPECT_EQ(rules.sermon->percentAt(1), 3);
-	EXPECT_EQ(rules.sermon->percentAt(20), 60);
+	EXPECT_EQ(rules.sermon->percentAt(1), 0);
+	EXPECT_EQ(rules.sermon->percentAt(20), 57);
 	// Cuthbert: x1.05 at level 1, x2 at level 20 and beyond.
 	EXPECT_EQ(rules.pariah->shadowPowerBonus.percentAt(1), 5);
 	EXPECT_EQ(rules.pariah->shadowPowerBonus.percentAt(20), 100);
 	EXPECT_EQ(rules.pariah->shadowPowerBonus.percentAt(35), 100);
-	// Adelaide: 10% +1%/level, max 40%.
-	EXPECT_EQ(rules.frostMantle->returned.percentAt(1), 11);
-	EXPECT_EQ(rules.frostMantle->returned.percentAt(30), 40);
+	// Adelaide: 10% at level 1, +1% per further level, max 40%.
+	EXPECT_EQ(rules.frostMantle->returned.percentAt(1), 10);
+	EXPECT_EQ(rules.frostMantle->returned.percentAt(31), 40);
 	EXPECT_EQ(rules.frostMantle->returned.percentAt(50), 40);
-	// Sanya: Spell Power 50% +2.5%/level, max 100%, kept in tenths of a percent.
-	EXPECT_EQ(rules.quickStudy->spellPower.permilleAt(1), 525);
-	EXPECT_EQ(rules.quickStudy->spellPower.permilleAt(9), 725);
-	EXPECT_EQ(rules.quickStudy->spellPower.permilleAt(20), 1000);
+	// Sanya: Spell Power 50% at level 1, +2.5% per further level, max 100%, in tenths of a percent.
+	EXPECT_EQ(rules.quickStudy->spellPower.permilleAt(1), 500);
+	EXPECT_EQ(rules.quickStudy->spellPower.permilleAt(9), 700);
+	EXPECT_EQ(rules.quickStudy->spellPower.permilleAt(21), 1000);
 	EXPECT_EQ(rules.quickStudy->spellPower.permilleAt(30), 1000);
+}
+
+TEST(CastleSpecialtyRules, TableValuesHoldAtLevelOneAndLevelTwenty)
+{
+	const auto rules = castleSpecialtyRules(shippedHeroes());
+	// The listed value is the level 1 value: Orrin's volley 30%, Cuthbert x1.05.
+	EXPECT_EQ(rules.volleyCommand->percentAt(1), 30);
+	EXPECT_EQ(rules.volleyCommand->percentAt(20), 49);
+	EXPECT_EQ(100 + rules.pariah->shadowPowerBonus.percentAt(1), 105);
+	EXPECT_EQ(100 + rules.pariah->shadowPowerBonus.percentAt(20), 200) << "x2 at level 20: 5 + 5 x 19";
 }
 
 TEST(CastleSpecialtyRules, PotencyBoostScalesPotencyFaithOnly)
