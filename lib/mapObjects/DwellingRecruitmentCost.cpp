@@ -38,9 +38,12 @@ TResources CGDwelling::getTotalRecruitmentCost(CreatureID creature, int32_t amou
 		const auto base = newHorizonsEstates::recruitmentCost(getRecruitmentCost(creature), amount, false);
 		return newHorizonsEstates::artifactPurchaseQuote(base, buyer).cost;
 	}
+	const auto specialty = newHorizonsEstates::recruitmentSpecialtyDiscount(buyer, creature);
 	if(newHorizonsEstates::usesConscriptionLedger(buyer, creature))
 		return newHorizonsEstates::quoteRecruitment(getRecruitmentCost(creature), amount,
-			projectedLedger ? *projectedLedger : newHorizonsEstates::recruitmentLedger(buyer), true).cost;
+			projectedLedger ? *projectedLedger : newHorizonsEstates::recruitmentLedger(buyer), true, specialty).cost;
+	if(specialty.permille > 0)
+		return newHorizonsEstates::quoteRecruitment(getRecruitmentCost(creature), amount, {}, false, specialty).cost;
 	const bool discount = buyer && buyer->getOwner().isValidPlayer()
 		&& buyer->hasActivePerk("new-horizons:estates", "new-horizons:estates.conscription");
 	return newHorizonsEstates::recruitmentCost(getRecruitmentCost(creature), amount, discount);
@@ -55,9 +58,13 @@ int32_t CGDwelling::getRecruitmentAmount(CreatureID creature, const ResourceSet 
 		&& newHorizonsEstates::usesRevisedPolicy(buyer->getPerkState().getRules()))
 		return available > 0 && !buyer->hasArt(definition->warMachine)
 			&& resources.canAfford(getTotalRecruitmentCost(creature, 1, buyer)) ? 1 : 0;
+	const auto specialty = newHorizonsEstates::recruitmentSpecialtyDiscount(buyer, creature);
 	if(newHorizonsEstates::usesConscriptionLedger(buyer, creature))
 		return newHorizonsEstates::affordableRecruitment(getRecruitmentCost(creature), resources, available,
-			projectedLedger ? *projectedLedger : newHorizonsEstates::recruitmentLedger(buyer), true);
+			projectedLedger ? *projectedLedger : newHorizonsEstates::recruitmentLedger(buyer), true, specialty);
+	if(specialty.permille > 0)
+		return newHorizonsEstates::affordableRecruitment(getRecruitmentCost(creature), resources, available, {}, false,
+			specialty);
 	const bool discount = buyer && buyer->getOwner().isValidPlayer()
 		&& buyer->hasActivePerk("new-horizons:estates", "new-horizons:estates.conscription");
 	return newHorizonsEstates::affordableRecruitment(getRecruitmentCost(creature), resources, available, discount);

@@ -31,7 +31,7 @@ Payment prepare(const CGDwelling & source, const CArmedInstance & destination,
 	}
 	if(newHorizonsEstates::usesConscriptionLedger(buyer, creature))
 		result.ledger = newHorizonsEstates::quoteRecruitment(source.getRecruitmentCost(creature), count,
-			newHorizonsEstates::recruitmentLedger(buyer), true);
+			newHorizonsEstates::recruitmentLedger(buyer), true, newHorizonsEstates::recruitmentSpecialtyDiscount(buyer, creature));
 	result.cost = result.ledger ? result.ledger->cost : source.getTotalRecruitmentCost(creature, count, buyer);
 	return result;
 }

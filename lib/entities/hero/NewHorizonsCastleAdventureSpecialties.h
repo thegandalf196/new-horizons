@@ -33,6 +33,9 @@ struct DLL_LINKAGE CastleAdventureSpecialties
 	/// Sylvia: percent of her full daily Movement added on the first day of each week.
 	std::optional<LevelScaledValue> forcedMarchMovementPercent;
 	int forcedMarchMoralePenalty = 0;
+	/// Lord Haart: recruitment discount in permille of the base price.
+	std::optional<LevelScaledValue> wellConnectedDiscountPermille;
+	int wellConnectedCombinedCapPercent = 0;
 };
 
 DLL_LINKAGE void validateCastleAdventureSpecialties(const JsonNode & revisedRow);
@@ -44,6 +47,11 @@ DLL_LINKAGE int forcedMarchMovementPercent(const CGHeroInstance & hero, int turn
 /// when it does not apply or one is already pending (penalties never stack).
 DLL_LINKAGE std::optional<Bonus> forcedMarchMoralePenalty(const CGHeroInstance & hero);
 DLL_LINKAGE bool isForcedMarchMoralePenalty(const Bonus & bonus);
+
+/// Lord Haart's recruitment discount in permille, or 0 for any other buyer.
+DLL_LINKAGE int wellConnectedDiscountPermille(const CGHeroInstance * buyer);
+/// Cap on Well Connected plus Conscription, in percent of the base price.
+DLL_LINKAGE int wellConnectedCombinedCapPercent(const CGHeroInstance * buyer);
 
 /// True when this hero's captured Castle adventure specialty replaces every prototype
 /// specialty bonus and skill-specialty marker of that hero.

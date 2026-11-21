@@ -2606,6 +2606,9 @@ protected:
 	{
 		NewHorizonsHeroGrowthTest::mapLoaded(map);
 		auto rules = JsonNode(JsonPath::builtin("config/newHorizonsHeroes"));
+		// Well Connected retires Haart's Estates specialty in new games; these
+		// cases characterize the specialty captured before that revision.
+		rules["revisedSpecialties"].Struct().erase("wellConnected");
 		if(useOlderSkillSpecialtyRules)
 		{
 			auto & skills = rules["skillSpecialties"]["skills"].Vector();

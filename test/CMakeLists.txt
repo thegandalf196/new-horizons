@@ -1071,6 +1071,7 @@ set(test_SRCS
 		server/EstatesTransactionsTest.cpp
 		server/CoreStewardshipTest.cpp
 		server/ForcedMarchSpecialtyTest.cpp
+		server/WellConnectedSpecialtyTest.cpp
 		server/FourOfferHeroProgressionTest.cpp
 		server/LegacyEstatesCapture.h
 		server/RevisedEstatesFixture.h
@@ -1454,6 +1455,7 @@ if(ENABLE_NULLKILLER2_AI)
 		nullkiller2/NewHorizonsProspectorAITest.cpp
 		nullkiller2/NewHorizonsGhostUpgradeAITest.cpp
 		nullkiller2/NewHorizonsRecruitmentGrowthAITest.cpp
+		nullkiller2/WellConnectedAITest.cpp
 		nullkiller2/NewHorizonsSethRecruitmentAITest.cpp
 		nullkiller2/NewHorizonsAcademicStudyAITest.cpp
 		nullkiller2/NewHorizonsSageAITest.cpp

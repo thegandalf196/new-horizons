@@ -9,17 +9,30 @@
 #include "../CPlayerState.h"
 #include "../CCreatureHandler.h"
 #include "../callback/IGameInfoCallback.h"
+#include "../entities/hero/NewHorizonsCastleAdventureSpecialties.h"
 
 #include <limits>
 #include <algorithm>
 
 namespace newHorizonsEstates
 {
+namespace
+{
+/// floor(value * numerator / denominator) without overflowing for numerator <= denominator.
+uint64_t fractionOf(uint64_t value, uint64_t numerator, uint64_t denominator)
+{
+	return value / denominator * numerator + value % denominator * numerator / denominator;
+}
+}
+
 RecruitmentQuote quoteRecruitment(const ResourceSet & unitPrice, int32_t quantity,
-	const ConscriptionLedger & ledger, bool eligible)
+	const ConscriptionLedger & ledger, bool eligible, const RecruitmentSpecialtyDiscount & specialty)
 {
 	if(quantity < 0)
 		throw std::runtime_error("Negative recruitment quantity");
+	if(specialty.permille < 0 || specialty.permille > 1000 || specialty.combinedCapPercent < 0
+		|| specialty.combinedCapPercent > 100)
+		throw std::runtime_error("Invalid recruitment specialty discount");
 	if(std::any_of(ledger.begin(), ledger.end(), [](int64_t value) { return value < 0; }))
 		throw std::runtime_error("Negative Conscription cumulative price");
 	RecruitmentQuote result;
@@ -38,6 +51,13 @@ RecruitmentQuote quoteRecruitment(const ResourceSet & unitPrice, int32_t quantit
 			result.after[resource] += static_cast<int64_t>(base);
 			discount = result.after[resource] / 10 - ledger[resource] / 10;
 		}
+		if(specialty.permille > 0)
+		{
+			// The specialty adds to Conscription; together they never exceed the cap.
+			const auto combined = std::min(discount + fractionOf(base, specialty.permille, 1000),
+				fractionOf(base, specialty.combinedCapPercent, 100));
+			discount = std::max(discount, combined);
+		}
 		const auto paid = base - discount;
 		if(paid > std::numeric_limits<TResource>::max())
 			throw std::overflow_error("Recruitment transaction price overflow");
@@ -47,10 +67,10 @@ RecruitmentQuote quoteRecruitment(const ResourceSet & unitPrice, int32_t quantit
 }
 
 int32_t affordableRecruitment(const ResourceSet & unitPrice, const ResourceSet & resources,
-	int32_t available, const ConscriptionLedger & ledger, bool eligible)
+	int32_t available, const ConscriptionLedger & ledger, bool eligible, const RecruitmentSpecialtyDiscount & specialty)
 {
 	// Validate negative components even when stock is empty.
-	quoteRecruitment(unitPrice, 0, ledger, eligible);
+	quoteRecruitment(unitPrice, 0, ledger, eligible, specialty);
 	int64_t low = 0;
 	int64_t high = std::max(0, available);
 	while(low < high)
@@ -59,7 +79,8 @@ int32_t affordableRecruitment(const ResourceSet & unitPrice, const ResourceSet &
 		bool affordable = false;
 		try
 		{
-			affordable = resources.canAfford(quoteRecruitment(unitPrice, static_cast<int32_t>(middle), ledger, eligible).cost);
+			affordable = resources.canAfford(quoteRecruitment(unitPrice, static_cast<int32_t>(middle), ledger, eligible,
+				specialty).cost);
 		}
 		catch(const std::overflow_error &)
 		{
@@ -91,6 +112,20 @@ bool usesConscriptionLedger(const CGHeroInstance * buyer, CreatureID creature)
 	}
 	return buyer && buyer->getOwner().isValidPlayer()
 		&& hasRevisedPerk(buyer, "new-horizons:estates.conscription");
+}
+
+RecruitmentSpecialtyDiscount recruitmentSpecialtyDiscount(const CGHeroInstance * buyer, CreatureID creature)
+{
+	const int permille = newHorizonsHeroes::wellConnectedDiscountPermille(buyer);
+	if(permille <= 0)
+		return {};
+	if(creature != CreatureID::NONE)
+	{
+		const auto * definition = creature.toCreature();
+		if(!definition || definition->warMachine != ArtifactID::NONE)
+			return {}; // Machine factories deliver artifacts, not hero-army creatures.
+	}
+	return {permille, newHorizonsHeroes::wellConnectedCombinedCapPercent(buyer)};
 }
 
 RecruitmentQuoteCursor::RecruitmentQuoteCursor(const CGHeroInstance * buyer)

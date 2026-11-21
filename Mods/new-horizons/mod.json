@@ -3198,6 +3198,12 @@
 						"movementPercentPerLevel": 2,
 						"maximumMovementPercent": 60,
 						"moralePenalty": 1
+					},
+					"wellConnected": {
+						"discountPermille": 50,
+						"discountPermillePerLevel": 5,
+						"maximumDiscountPermille": 150,
+						"combinedDiscountCapPercent": 25
 					}
 				},
 				"creatureLineSpecialties": {

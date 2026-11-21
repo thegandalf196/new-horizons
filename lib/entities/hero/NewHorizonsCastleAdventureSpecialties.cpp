@@ -19,6 +19,7 @@ namespace
 {
 constexpr auto ROW = "revisedSpecialties";
 constexpr auto SYLVIA = "core:sylvia";
+constexpr auto HAART = "core:lordHaart";
 constexpr auto FORCED_MARCH_STACKING = "new-horizons:forced-march-specialty";
 
 bool isHero(const CGHeroInstance & hero, const char * key)
@@ -50,9 +51,15 @@ void requireScaled(const JsonNode & row, const char * base, const char * perLeve
 		&& detail::integer(row[maximum], 1, limit) && row[maximum].Integer() >= row[base].Integer(), name);
 }
 
-std::string growthText(const LevelScaledValue & value)
+/// "5.5%" for 55 permille, "5%" for 50.
+std::string permilleText(int permille)
 {
-	const auto show = [](int amount) { return std::to_string(amount) + "%"; };
+	return std::to_string(permille / 10) + (permille % 10 ? "." + std::to_string(permille % 10) : "") + "%";
+}
+
+std::string growthText(const LevelScaledValue & value, bool permille = false)
+{
+	const auto show = [permille](int amount) { return permille ? permilleText(amount) : std::to_string(amount) + "%"; };
 	return " (" + show(value.base) + " at level 1, +" + show(value.perLevel) + " per further level, up to "
 		+ show(value.maximum) + ")";
 }
@@ -73,6 +80,13 @@ void validateCastleAdventureSpecialties(const JsonNode & revisedRow)
 		requireScaled(row, "movementPercent", "movementPercentPerLevel", "maximumMovementPercent", 500, "Forced March Movement");
 		detail::require(detail::integer(row["moralePenalty"], 0, 3), "Forced March Morale penalty");
 	}
+	if(revisedRow.Struct().contains("wellConnected"))
+	{
+		const auto & row = revisedRow["wellConnected"];
+		detail::fields(row, {"discountPermille", "discountPermillePerLevel", "maximumDiscountPermille", "combinedDiscountCapPercent"});
+		requireScaled(row, "discountPermille", "discountPermillePerLevel", "maximumDiscountPermille", 1000, "Well Connected discount");
+		detail::require(detail::integer(row["combinedDiscountCapPercent"], 1, 100), "Well Connected combined cap");
+	}
 }
 
 std::optional<CastleAdventureSpecialties> castleAdventureSpecialties(const JsonNode & development)
@@ -90,7 +104,13 @@ std::optional<CastleAdventureSpecialties> castleAdventureSpecialties(const JsonN
 		result.forcedMarchMovementPercent = scaled(row, "movementPercent", "movementPercentPerLevel", "maximumMovementPercent");
 		result.forcedMarchMoralePenalty = static_cast<int>(row["moralePenalty"].Integer());
 	}
-	if(!result.forcedMarchMovementPercent)
+	if(revised.Struct().contains("wellConnected"))
+	{
+		const auto & row = revised["wellConnected"];
+		result.wellConnectedDiscountPermille = scaled(row, "discountPermille", "discountPermillePerLevel", "maximumDiscountPermille");
+		result.wellConnectedCombinedCapPercent = static_cast<int>(row["combinedDiscountCapPercent"].Integer());
+	}
+	if(!result.forcedMarchMovementPercent && !result.wellConnectedDiscountPermille)
 		return std::nullopt;
 	return result;
 }
@@ -124,17 +144,33 @@ std::optional<Bonus> forcedMarchMoralePenalty(const CGHeroInstance & hero)
 	return penalty;
 }
 
+int wellConnectedDiscountPermille(const CGHeroInstance * buyer)
+{
+	if(!buyer || !buyer->getOwner().isValidPlayer())
+		return 0;
+	const auto * rules = capturedRules(*buyer);
+	return rules && rules->wellConnectedDiscountPermille && isHero(*buyer, HAART)
+		? rules->wellConnectedDiscountPermille->at(heroLevel(*buyer)) : 0;
+}
+
+int wellConnectedCombinedCapPercent(const CGHeroInstance * buyer)
+{
+	const auto * rules = buyer ? capturedRules(*buyer) : nullptr;
+	return rules && rules->wellConnectedDiscountPermille ? rules->wellConnectedCombinedCapPercent : 100;
+}
+
 bool retiresHistoricalCastleSpecialty(const CGHeroInstance & hero)
 {
 	const auto * rules = capturedRules(hero);
-	return rules && rules->forcedMarchMovementPercent && isHero(hero, SYLVIA);
+	return rules && ((rules->forcedMarchMovementPercent && isHero(hero, SYLVIA))
+		|| (rules->wellConnectedDiscountPermille && isHero(hero, HAART)));
 }
 
 bool resolveCastleAdventurePresentation(const CHero & hero, const JsonNode & development,
 	const CGHeroInstance * capturedHero, SpecialtyPresentation & result)
 {
 	const auto & key = hero.getJsonKey();
-	if(key != SYLVIA)
+	if(key != SYLVIA && key != HAART)
 		return false;
 	const auto rules = castleAdventureSpecialties(development);
 	if(!rules)
@@ -153,6 +189,19 @@ bool resolveCastleAdventurePresentation(const CHero & hero, const JsonNode & dev
 			+ std::to_string(current(value)) + "%" + growthText(value) + ". Her army then has -"
 			+ std::to_string(rules->forcedMarchMoralePenalty)
 			+ " Morale in its next combat. The penalty lasts until that combat ends and does not stack.";
+		return true;
+	}
+	if(key == HAART && rules->wellConnectedDiscountPermille)
+	{
+		const auto & value = *rules->wellConnectedDiscountPermille;
+		result.name = "Well Connected";
+		result.skill = SecondarySkill(SecondarySkill::ESTATES);
+		result.artwork = detail::resolvedSpecialtyArtwork(key, detail::SpecialtyArtworkFamily::Skill, "core:estates");
+		result.summary = "Creatures recruited into his army cost " + permilleText(current(value)) + " less.";
+		result.description = "Recruiting creatures into this hero's army, in towns and at external dwellings, costs "
+			+ permilleText(current(value)) + " less Gold and resources" + growthText(value, true)
+			+ ", rounded down for each resource. This adds to Conscription; together they discount at most "
+			+ std::to_string(rules->wellConnectedCombinedCapPercent) + "%. War machines are not discounted.";
 		return true;
 	}
 	return false;

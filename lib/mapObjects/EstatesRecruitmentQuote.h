@@ -19,10 +19,20 @@ struct DLL_LINKAGE RecruitmentQuote
 	bool discounted = false;
 };
 
+/// A hero specialty discount added to Conscription: permille of each resource's base
+/// price, rounded down, with a cap on the combined discount.
+struct DLL_LINKAGE RecruitmentSpecialtyDiscount
+{
+	int32_t permille = 0;
+	int32_t combinedCapPercent = 100;
+};
+
 DLL_LINKAGE RecruitmentQuote quoteRecruitment(const ResourceSet & unitPrice, int32_t quantity,
-	const ConscriptionLedger & ledger, bool eligible);
+	const ConscriptionLedger & ledger, bool eligible, const RecruitmentSpecialtyDiscount & specialty = RecruitmentSpecialtyDiscount());
 DLL_LINKAGE int32_t affordableRecruitment(const ResourceSet & unitPrice, const ResourceSet & resources,
-	int32_t available, const ConscriptionLedger & ledger, bool eligible);
+	int32_t available, const ConscriptionLedger & ledger, bool eligible, const RecruitmentSpecialtyDiscount & specialty = RecruitmentSpecialtyDiscount());
+/// Lord Haart's Well Connected for creatures recruited into his army; never war machines.
+DLL_LINKAGE RecruitmentSpecialtyDiscount recruitmentSpecialtyDiscount(const CGHeroInstance * buyer, CreatureID creature);
 DLL_LINKAGE ConscriptionLedger recruitmentLedger(const CGHeroInstance * buyer);
 DLL_LINKAGE bool usesConscriptionLedger(const CGHeroInstance * buyer, CreatureID creature = CreatureID::NONE);
 

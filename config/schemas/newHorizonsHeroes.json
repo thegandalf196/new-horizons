@@ -151,6 +151,17 @@
 								"maximumMovementPercent": {"type": "integer", "minimum": 1, "maximum": 500},
 								"moralePenalty": {"type": "integer", "minimum": 0, "maximum": 3}
 							}
+						},
+						"wellConnected": {
+							"type": "object", "additionalProperties": false,
+							"description": "Lord Haart: creature recruitment discount in permille, added to Conscription within a combined cap.",
+							"required": ["discountPermille", "discountPermillePerLevel", "maximumDiscountPermille", "combinedDiscountCapPercent"],
+							"properties": {
+								"discountPermille": {"type": "integer", "minimum": 1, "maximum": 1000},
+								"discountPermillePerLevel": {"type": "integer", "minimum": 0, "maximum": 1000},
+								"maximumDiscountPermille": {"type": "integer", "minimum": 1, "maximum": 1000},
+								"combinedDiscountCapPercent": {"type": "integer", "minimum": 1, "maximum": 100}
+							}
 						}
 					}
 				},

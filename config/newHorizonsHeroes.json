@@ -78,7 +78,8 @@
 		"frostMantle": {"rounds": 2, "returnedPercent": 10, "returnedPercentPerLevel": 1, "maximumReturnedPercent": 40, "initiativePenaltyPercent": 20, "chillRounds": 1},
 		"quickStudy": {"spellPowerPercent": 50, "spellPowerPermillePerLevel": 25, "maximumSpellPowerPercent": 100, "secondUseLevel": 10},
 		"sermon": {"potencyPercentPerLevel": 3, "maximumPotencyPercent": 60},
-		"forcedMarch": {"movementPercent": 20, "movementPercentPerLevel": 2, "maximumMovementPercent": 60, "moralePenalty": 1}
+		"forcedMarch": {"movementPercent": 20, "movementPercentPerLevel": 2, "maximumMovementPercent": 60, "moralePenalty": 1},
+		"wellConnected": {"discountPermille": 50, "discountPermillePerLevel": 5, "maximumDiscountPermille": 150, "combinedDiscountCapPercent": 25}
 	},
 	"creatureLineSpecialties": {
 		"version": 1,
