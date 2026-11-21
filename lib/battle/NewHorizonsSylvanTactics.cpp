@@ -46,11 +46,13 @@ void configure(const CGHeroInstance & hero, SylvanLuckState & fortune)
 	{
 		// Policy 3 reuses the existing activation/Waiting histories, but only
 		// enables the selected hybrid roster. Older captures keep their slots.
+		// Policy 4 revises two of those slots as recipient markers instead.
+		const bool revised = newHorizonsHeroes::usesSylvanTacticsV4(hero.getPerkState().getRules());
 		tactics.fleetfoot = perk("forestSFavor");
 		tactics.patientHunter = perk("serendipity");
-		tactics.dappledCover = perk("luckyRecovery");
+		tactics.dappledCover = !revised && perk("luckyRecovery");
 		tactics.disruptiveStrike = perk("fortunateAim");
-		tactics.quickRedeployment = perk("natureSProvidence");
+		tactics.quickRedeployment = !revised && perk("natureSProvidence");
 		tactics.perfectMoment = perk("perfectMoment");
 		return;
 	}

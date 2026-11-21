@@ -6,6 +6,7 @@ class CBattleInfoCallback;
 namespace battle { class Unit; }
 namespace battleVoluntaryMovementHistory
 {
+/// `hexes` is the committed movement distance of this segment.
 void record(CGameHandler & game, const CBattleInfoCallback & battle, const battle::Unit & unit,
-	bool voluntary, BattleHex before, BattleHex after);
+	bool voluntary, BattleHex before, BattleHex after, int hexes);
 }

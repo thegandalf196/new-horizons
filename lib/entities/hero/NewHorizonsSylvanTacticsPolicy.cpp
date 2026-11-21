@@ -8,7 +8,7 @@ bool usesSylvanTactics(const JsonNode & rules)
 {
 	if(!rules.isStruct() || !rules.Struct().contains("sylvanTacticsPolicy")) return false;
 	const auto & policy = rules["sylvanTacticsPolicy"];
-	if(policy.getType() != JsonNode::JsonType::DATA_INTEGER || policy.Integer() < 1 || policy.Integer() > 3)
+	if(policy.getType() != JsonNode::JsonType::DATA_INTEGER || policy.Integer() < 1 || policy.Integer() > 4)
 		throw std::runtime_error("Invalid Sylvan Tactics policy");
 	return true;
 }
@@ -18,7 +18,13 @@ bool usesSylvanTacticsV2(const JsonNode & rules)
 }
 bool usesSylvanTacticsV3(const JsonNode & rules)
 {
-	return usesSylvanTactics(rules) && rules["sylvanTacticsPolicy"].Integer() == 3;
+	// Policy 4 (Sylvan Tactics 4.1) keeps the mixed roster, slots and icons of
+	// policy 3 and revises only three of its effects.
+	return usesSylvanTactics(rules) && rules["sylvanTacticsPolicy"].Integer() >= 3;
+}
+bool usesSylvanTacticsV4(const JsonNode & rules)
+{
+	return usesSylvanTactics(rules) && rules["sylvanTacticsPolicy"].Integer() == 4;
 }
 void validateSylvanTacticsSerialization(const JsonNode & rules, bool supported)
 {

@@ -67,7 +67,7 @@ TEST(NewHorizonsPerkRules, MixedSylvanCatalogKeepsTenStableTierSlotsAndExplicitP
 {
 	using namespace newHorizonsHeroes;
 	JsonNode rules(JsonPath::builtin("config/newHorizonsPerks"));
-	EXPECT_EQ(rules["sylvanTacticsPolicy"].Integer(), 3);
+	EXPECT_EQ(rules["sylvanTacticsPolicy"].Integer(), 4);
 	const auto skill = perkSkill(rules, "new-horizons:sylvanLuck");
 	ASSERT_TRUE(skill);
 	EXPECT_EQ(skill->name, "Sylvan Tactics");
@@ -86,13 +86,13 @@ TEST(NewHorizonsPerkRules, MixedSylvanCatalogKeepsTenStableTierSlotsAndExplicitP
 		EXPECT_EQ(perk.name, expected[index].second);
 		EXPECT_EQ(perk.requiredRank, index < 4 ? "basic" : index < 8 ? "advanced" : "expert");
 	}
-	for(const int policy : {1, 2, 3})
+	for(const int policy : {1, 2, 3, 4})
 	{
 		rules["sylvanTacticsPolicy"] = JsonNode(policy);
 		EXPECT_TRUE(JsonUtils::validate(rules, "vcmi:newHorizonsPerks", "supported Sylvan policy"));
 		EXPECT_NO_THROW(validatePerkRules(rules));
 	}
-	for(const int policy : {0, 4})
+	for(const int policy : {0, 5})
 	{
 		rules["sylvanTacticsPolicy"] = JsonNode(policy);
 		EXPECT_FALSE(JsonUtils::validate(rules, "vcmi:newHorizonsPerks", "unknown Sylvan policy"));

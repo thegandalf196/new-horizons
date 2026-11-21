@@ -21,8 +21,17 @@ inline Art forRow(std::string_view row)
 		std::string_view name;
 		const char * image;
 		const char * timing;
+		/// Sylvan Tactics 4.1 rows reuse a perk name; their row text selects the help.
+		std::string_view revisedRow = {};
 	};
 	static constexpr Entry entries[] = {
+		{"Dappled Cover", "NH_perk_sylvan_tactics_dappled_cover.png",
+			"A creature that voluntarily moved at least 3 hexes during its activation takes 20% less ranged attack "
+			"damage until its next activation. Teleports and forced movement do not count. It does not reduce melee "
+			"attacks or spell damage.", "until this stack's next activation"},
+		{"Quick Redeployment", "NH_perk_sylvan_tactics_quick_redeployment.png",
+			"After a creature retaliates, it gains +2 Initiative until its next activation. Repeated retaliations "
+			"refresh the bonus without stacking it.", "Initiative"},
 		{"Dappled Cover", "NH_perk_sylvan_tactics_dappled_cover.png",
 			"Waiting creatures take 20% less ranged attack damage. The protection applies while the creature is Waiting "
 			"and ends when it leaves that state. It does not reduce melee attacks or spell damage."},
@@ -43,7 +52,8 @@ inline Art forRow(std::string_view row)
 			"without stacking."},
 	};
 	for(const auto & entry : entries)
-		if(row.starts_with(entry.name) && row.size() > entry.name.size() && row[entry.name.size()] == ':')
+		if(row.starts_with(entry.name) && row.size() > entry.name.size() && row[entry.name.size()] == ':'
+			&& (entry.revisedRow.empty() || row.find(entry.revisedRow) != std::string_view::npos))
 			return {entry.image, "{" + std::string(entry.name) + "}\n\n" + std::string(row) + "\n\n" + entry.timing};
 	return {};
 }

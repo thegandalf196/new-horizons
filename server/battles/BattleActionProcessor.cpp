@@ -2882,7 +2882,7 @@ BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBa
 					gameHandler->sendAndApply(sm);
 					result.destinationCommitted |= currentUnit->getPosition() == dest;
 					battleVoluntaryMovementHistory::record(*gameHandler, battle, *currentUnit, voluntary,
-						previousSegmentPosition, currentUnit->getPosition());
+						previousSegmentPosition, currentUnit->getPosition(), segmentDistance);
 					livingInferno.traverse(previousSegmentPosition, sm.tilesToMove, false);
 					if(nightProwlerTriggered)
 					{

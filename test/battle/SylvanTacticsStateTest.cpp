@@ -32,7 +32,7 @@ TEST(SylvanTacticsStateTest, MissingPolicyRetainsLegacyAndPresentInvalidTypesFai
 {
 	JsonNode rules;
 	EXPECT_FALSE(newHorizonsHeroes::usesSylvanTactics(rules));
-	for(const auto & invalid : {JsonNode(), JsonNode(false), JsonNode(0), JsonNode(4), JsonNode(1.0), JsonNode("1")})
+	for(const auto & invalid : {JsonNode(), JsonNode(false), JsonNode(0), JsonNode(5), JsonNode(1.0), JsonNode("1")})
 	{
 		rules["sylvanTacticsPolicy"] = invalid;
 		EXPECT_THROW(newHorizonsHeroes::usesSylvanTactics(rules), std::runtime_error);
@@ -48,6 +48,13 @@ TEST(SylvanTacticsStateTest, MissingPolicyRetainsLegacyAndPresentInvalidTypesFai
 	rules["sylvanTacticsPolicy"] = JsonNode(3);
 	EXPECT_TRUE(newHorizonsHeroes::usesSylvanTactics(rules));
 	EXPECT_TRUE(newHorizonsHeroes::usesSylvanTacticsV3(rules));
+	EXPECT_FALSE(newHorizonsHeroes::usesSylvanTacticsV2(rules));
+	EXPECT_FALSE(newHorizonsHeroes::usesSylvanTacticsV4(rules));
+	EXPECT_THROW(newHorizonsHeroes::validateSylvanTacticsSerialization(rules, false), std::runtime_error);
+	// Sylvan Tactics 4.1 keeps the mixed roster and revises three of its effects.
+	rules["sylvanTacticsPolicy"] = JsonNode(4);
+	EXPECT_TRUE(newHorizonsHeroes::usesSylvanTacticsV3(rules));
+	EXPECT_TRUE(newHorizonsHeroes::usesSylvanTacticsV4(rules));
 	EXPECT_FALSE(newHorizonsHeroes::usesSylvanTacticsV2(rules));
 	EXPECT_THROW(newHorizonsHeroes::validateSylvanTacticsSerialization(rules, false), std::runtime_error);
 }

@@ -101,7 +101,10 @@ struct DLL_LINKAGE SkillDefinition
 
 DLL_LINKAGE bool usesSylvanTactics(const JsonNode & rules);
 DLL_LINKAGE bool usesSylvanTacticsV2(const JsonNode & rules);
+/// Mixed roster: policy 3 and its policy-4 revision.
 DLL_LINKAGE bool usesSylvanTacticsV3(const JsonNode & rules);
+/// Revised Dappled Cover, Quick Redeployment and Hunting Pack.
+DLL_LINKAGE bool usesSylvanTacticsV4(const JsonNode & rules);
 DLL_LINKAGE void validateSylvanTacticsSerialization(const JsonNode & rules, bool supported);
 
 DLL_LINKAGE bool usesPerkRules(const JsonNode & rules);

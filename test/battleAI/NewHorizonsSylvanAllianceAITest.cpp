@@ -4,8 +4,10 @@
 #include "../../AI/BattleAI/AttackPossibility.h"
 #include "../../AI/BattleAI/BattleExchangeVariant.h"
 #include "../../AI/BattleAI/SylvanTacticsProjection.h"
+#include "../../AI/BattleAI/GnollHarriersProjection.h"
 #include "../../lib/battle/BattleAttackInfo.h"
 #include "../../lib/battle/NewHorizonsSylvanTacticsV2.h"
+#include "../../lib/battle/NewHorizonsSylvanTacticsRevision.h"
 
 class NewHorizonsSylvanAllianceAITest : public ProjectedTargetHitFixture
 {
@@ -33,6 +35,11 @@ protected:
 				if(id.ends_with(".luckyRecovery")) parameter("attackDamageReductionPercent", 20);
 				if(id.ends_with(".natureSProvidence")) parameter("enemySpellCostBonus", 2);
 			}
+		if(policy() <= 3)
+			// Captured policy-2/3 rows keep their own Hunting Pack payload.
+			for(auto & row : rules["skills"]["new-horizons:sylvanLuck"]["perks"].Vector())
+				if(row["id"].String().ends_with(".elvenPrecision"))
+					row["effect"]["parameters"]["attackDamagePercent"].Integer() = 25;
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, rules);
 	}
 	void prepareAlliance(const std::string & creature, const std::string & perk, int rank = 1)
@@ -325,4 +332,52 @@ TEST_F(NewHorizonsSylvanHybridAITest, RetaliationDisruptsButSpellLikeAndCollater
 		EXPECT_EQ(branch->getSylvanLuckState(BattleSide::ATTACKER).tactics.disrupted.contains(target->unitId()), context == 0);
 	}
 	EXPECT_EQ(child->getSylvanLuckState(BattleSide::ATTACKER), before);
+}
+
+class NewHorizonsSylvanRevisedAITest : public NewHorizonsSylvanAllianceAITest
+{
+protected:
+	int policy() const override { return 4; }
+};
+
+TEST_F(NewHorizonsSylvanRevisedAITest, HuntingPackPremiumFollowsTheProjectedTargetsCompletedAction)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareAlliance("core:dwarf", "elvenPrecision"));
+	auto actor = child->getForUpdate(source->unitId());
+	auto target = child->getForUpdate(victim->unitId());
+	ASSERT_TRUE(sylvanTacticsAI::allianceDamage(*child, actor.get(), target.get()));
+	EXPECT_TRUE(sylvanTacticsAI::dynamicDamage(*child, actor.get(), target.get()));
+	EXPECT_FALSE(sylvanTacticsAI::needsProjection(*child));
+	const BattleAttackInfo hit(actor.get(), target.get(), 0, false);
+	DamageCache root;
+	root.cacheDamage(actor.get(), target.get(), child);
+	const auto premium = root.getDamage(actor.get(), target.get(), child);
+	target->completedActionThisRound = true;
+	EXPECT_EQ(newHorizonsSylvanTacticsV2::huntingPackBonus(*child, actor.get(), target.get()), 0);
+	DamageCache continuation(&root);
+	EXPECT_LT(continuation.getDamage(actor.get(), target.get(), child), premium);
+	EXPECT_EQ(continuation.getDamage(actor.get(), target.get(), child), child->battleExpectedLuckDamage(hit));
+	EXPECT_FALSE(victim->hasCompletedActionThisRound());
+}
+
+TEST_F(NewHorizonsSylvanRevisedAITest, ProjectedVoluntaryMovementEarnsDappledCoverOnlyFromTheThirdHex)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareAlliance("core:centaur", "luckyRecovery"));
+	auto * liveShooter = addStack(BattleSide::DEFENDER, creatureByName("core:woodElf"), BattleHex(10, 7), 10);
+	resetChild();
+	auto actor = child->getForUpdate(source->unitId());
+	auto shooter = child->getForUpdate(liveShooter->unitId());
+	const BattleAttackInfo shot(shooter.get(), actor.get(), 0, true);
+	ASSERT_TRUE(sylvanTacticsAI::dynamicDamage(*child, shooter.get(), actor.get()));
+	const auto ordinary = child->battleExpectedLuckDamage(shot);
+	gnollHarriersAI::record(*child, actor->unitId(), BattleHex(3, 5), BattleHex(5, 5));
+	EXPECT_EQ(newHorizonsSylvanTacticsRevision::dappledCoverPercent(actor.get()), 0);
+	EXPECT_EQ(child->battleExpectedLuckDamage(shot), ordinary);
+	gnollHarriersAI::record(*child, actor->unitId(), BattleHex(5, 5), BattleHex(6, 5));
+	EXPECT_EQ(newHorizonsSylvanTacticsRevision::dappledCoverPercent(actor.get()), 20);
+	EXPECT_LT(child->battleExpectedLuckDamage(shot), ordinary);
+	EXPECT_EQ(newHorizonsSylvanTacticsRevision::dappledCoverPercent(source), 0);
+	child->nextTurn(actor->unitId(), BattleUnitTurnReason::TURN_QUEUE);
+	EXPECT_EQ(newHorizonsSylvanTacticsRevision::dappledCoverPercent(actor.get()), 0);
+	EXPECT_EQ(child->battleExpectedLuckDamage(shot), ordinary);
 }

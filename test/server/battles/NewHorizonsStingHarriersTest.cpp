@@ -163,7 +163,8 @@ protected:
 	}
 	void commitHistory(bool voluntary = true)
 	{
-		battleVoluntaryMovementHistory::record(*gameHandler, *battle(), *victim, voluntary, BattleHex(5, 5), victim->getPosition());
+		battleVoluntaryMovementHistory::record(*gameHandler, *battle(), *victim, voluntary, BattleHex(5, 5), victim->getPosition(),
+			BattleHex::getDistance(BattleHex(5, 5), victim->getPosition()));
 	}
 };
 #if ENABLE_BATTLE_AI

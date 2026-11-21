@@ -5,6 +5,7 @@
 #include "HypotheticBattle.h"
 #include "StackWithBonuses.h"
 #include "../../lib/battle/NewHorizonsGnollHarriers.h"
+#include "../../lib/battle/NewHorizonsSylvanTacticsRevision.h"
 #include "../../lib/bonuses/BonusList.h"
 namespace gnollHarriersAI
 {
@@ -24,6 +25,14 @@ void record(HypotheticBattle & battle, uint32_t id, BattleHex before, BattleHex 
 	const auto marker = newHorizonsGnollHarriers::movement(battle, *mover, true, before, after);
 	if(marker)
 		mover->addUnitBonus({*marker});
+	// Sylvan Tactics 4.1 Dappled Cover shares this voluntary-movement receipt.
+	// Callers record each committed step, or one flight, so the hex distance is the path.
+	const auto dappled = newHorizonsSylvanTacticsRevision::dappledMovement(battle, *mover, true,
+		BattleHex::getDistance(before, after));
+	if(!dappled.remove.empty())
+		mover->removeUnitBonus(dappled.remove);
+	if(!dappled.add.empty())
+		mover->addUnitBonus(dappled.add);
 }
 void restoreEffects(HypotheticBattle & battle, const AttackPossibility & captured, bool committedPrefix)
 {
@@ -32,8 +41,17 @@ void restoreEffects(HypotheticBattle & battle, const AttackPossibility & capture
 	const auto id = captured.attackerState->unitId();
 	const auto * source = captured.effectPreview->battleGetUnitByID(id);
 	const auto * current = battle.battleGetUnitByID(id);
+	if(!source || !current)
+		return;
+	const CSelector dappled(newHorizonsSylvanTacticsRevision::isDappledMovement);
+	if(const auto progress = source->getUnstackedBonuses(dappled); !progress->empty())
+	{
+		auto target = battle.getForUpdate(id);
+		target->removeUnitBonus(dappled);
+		target->addUnitBonus({*progress->front()});
+	}
 	const CSelector history(newHorizonsGnollHarriers::isMovementHistory);
-	if(!source || !current || current->hasBonus(history))
+	if(current->hasBonus(history))
 		return;
 	const auto saved = source->getUnstackedBonuses(history);
 	if(!saved->empty())

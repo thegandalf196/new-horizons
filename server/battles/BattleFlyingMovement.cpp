@@ -34,7 +34,8 @@ bool BattleActionProcessor::commitFlyingMovement(const CBattleInfoCallback & bat
 	gameHandler->sendAndApply(movement);
 	result.destinationCommitted |= unit.getPosition() == input.destination;
 	result.voluntaryFlightDistance = input.voluntary && result.destinationCommitted ? input.distance : 0;
-	battleVoluntaryMovementHistory::record(*gameHandler, battle, unit, input.voluntary, input.start, unit.getPosition());
+	battleVoluntaryMovementHistory::record(*gameHandler, battle, unit, input.voluntary, input.start, unit.getPosition(),
+		input.distance);
 	trail.traverse(input.start, movement.tilesToMove, true);
 	result.distance = input.distance;
 	result.movementCost = input.distance;

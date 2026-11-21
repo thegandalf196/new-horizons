@@ -1,6 +1,7 @@
 /* Part of VCMI / New Horizons. GPL v2.0 or later; see license.txt. */
 #include "StdInc.h"
 #include "NewHorizonsSylvanTactics.h"
+#include "NewHorizonsSylvanTacticsRevision.h"
 #include "CBattleInfoCallback.h"
 #include "IBattleState.h"
 #include "../entities/hero/NewHorizonsPerkRules.h"
@@ -68,6 +69,9 @@ std::vector<int> rangedProtection(const CBattleInfoCallback & battle, const batt
 {
 	std::vector<int> result;
 	for(const auto & [name, percent] : rangedProtectionContributions(battle, unit)) result.push_back(percent);
+	// Policy 4 Dappled Cover belongs to the recipient's own movement marker.
+	if(ordinary(unit))
+		if(const int percent = newHorizonsSylvanTacticsRevision::dappledCoverPercent(unit)) result.push_back(percent);
 	return result;
 }
 }

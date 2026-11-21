@@ -6925,7 +6925,7 @@
 				"perkProgressionPolicyVersion": 2,
 				"fourOfferProgressionVersion": 1,
 				"estatesPolicyVersion": 1,
-				"sylvanTacticsPolicy": 3,
+				"sylvanTacticsPolicy": 4,
 				"metamagicPolicy": {
 					"version": 7,
 					"usesPerCombatByRank": [
@@ -10534,15 +10534,15 @@
 								"id": "new-horizons:sylvanLuck.elvenPrecision",
 								"name": "Hunting Pack",
 								"requires": "basic",
-								"description": "Centaurs and Centaur Captains deal +25% attack damage against targets adjacent to another friendly Rampart creature.",
+								"description": "Friendly Rampart creatures deal +15% damage to enemy stacks that have not yet acted this round.",
 								"effect": {
 									"status": "active",
-									"description": "Centaurs and Centaur Captains deal +25% attack damage against targets adjacent to another friendly Rampart creature.",
+									"description": "Friendly Rampart creatures deal +15% damage to enemy stacks that have not yet acted this round.",
 									"parameters": {
-										"attackDamagePercent": 25
+										"attackDamagePercent": 15
 									}
 								},
-								"details": "The attacker does not count as the adjacent supporting creature. The bonus applies to normal attacks and retaliations without granting another action."
+								"details": "Completing an action or Defending counts as acting. Waiting alone does not. The bonus applies to melee and ranged attacks and to retaliations without granting another action."
 							},
 							{
 								"id": "new-horizons:sylvanLuck.forestSFavor",
@@ -10570,12 +10570,12 @@
 								"id": "new-horizons:sylvanLuck.luckyRecovery",
 								"name": "Dappled Cover",
 								"requires": "basic",
-								"description": "Waiting creatures take 20% less ranged attack damage.",
+								"description": "A creature that voluntarily moves at least 3 hexes during its activation takes 20% less ranged attack damage until its next activation.",
 								"effect": {
 									"status": "active",
-									"description": "Waiting creatures take 20% less ranged attack damage."
+									"description": "A creature that voluntarily moves at least 3 hexes during its activation takes 20% less ranged attack damage until its next activation."
 								},
-								"details": "The protection applies while the creature is Waiting and ends when it leaves that state. It does not reduce melee attacks or spell damage."
+								"details": "All movement the creature is ordered to make during one activation counts. Teleports and forced movement do not. It does not reduce melee attacks or spell damage."
 							},
 							{
 								"id": "new-horizons:sylvanLuck.sharedFortune",
@@ -10595,12 +10595,12 @@
 								"id": "new-horizons:sylvanLuck.natureSProvidence",
 								"name": "Quick Redeployment",
 								"requires": "advanced",
-								"description": "Defending grants +2 Speed during the creature’s next activation.",
+								"description": "After a creature retaliates, it gains +2 Initiative until its next activation.",
 								"effect": {
 									"status": "active",
-									"description": "Defending grants +2 Speed during the creature’s next activation."
+									"description": "After a creature retaliates, it gains +2 Initiative until its next activation."
 								},
-								"details": "The bonus is consumed by the next creature activation. Repeated Defending does not stack the Speed bonus."
+								"details": "Repeated retaliations refresh the bonus without stacking it. Pre-emptive blows, Counterfire and Overwatch shots do not count as retaliations."
 							},
 							{
 								"id": "new-horizons:sylvanLuck.fortunateAim",

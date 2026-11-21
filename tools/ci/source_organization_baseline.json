@@ -23549,9 +23549,9 @@
       "inherited_a1_health_deferral": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.",
       "inherited_deferral": "Exact source-list bound only. Before substantive build logic, extract a cohesive target configuration section. Verify source/link membership once and retain no duplicate translation units. Prior stricter obligations remain in inherited_deferral, where present.",
       "kind": "exception",
-      "lines": 2157,
+      "lines": 2159,
       "owner": "engine_engineer",
-      "previous_review": "CLAUDE-0925-DOUBLECAST-CHOSEN-PRAYERS-PHASE23-20261120",
+      "previous_review": "CLAUDE-METAMAGIC6-PHASE4-20261120",
       "prior_a1_health_scope": {
         "kind": "exception",
         "lines": 2063,
@@ -23560,11 +23560,11 @@
         "sha256": "7058cdef35cfce13214572d190c4accfdf5721e6c144af3cdfca9f53bb68c2a0"
       },
       "prior_deferral": "Exact mechanical source/header registration only. Before substantive CMake target policy growth, extract a cohesive configuration section while verifying translation-unit membership and facade linkage. No future file growth allowance. Prior stricter obligations remain in inherited_deferral, where present.\n\nKeep registrations in their current coherent tables. Extract any future conditional target/control logic rather than growing this registry into a build framework.",
-      "rationale": "Exact successor for Metamagic 6 Double Cast phase 4 (perk effects): one-line hooks, includes, accessor overrides, registrations or Arcane Ward unit-state plumbing only; the completion effects live in the focused MetamagicDoubleCastCompletion unit and the derived Crescendo/Spellstorm terms in MetamagicDoubleCast. Existing extraction deferrals retained; no future growth credit.",
-      "review": "CLAUDE-METAMAGIC6-PHASE4-20261120",
+      "rationale": "Exact successor for Sylvan Tactics 4.1: one-line hooks (segment distance passed to the shared voluntary-movement receipt) and one source registration only; the revised Dappled Cover, Quick Redeployment and Hunting Pack rules live in the focused NewHorizonsSylvanTacticsRevision unit. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-SYLVAN41-20261120",
       "review_scope": "Exact frozen A7 production/routing source only; no compiler, Windows path runtime, recovery, timing, release or future-growth acceptance.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NATIVE_WINDOWS_PENDING",
-      "sha256": "7f6f23f466c574c3d5de743be53f4ffc2724b90ae4dd3d9a1a9f311f4ffe95ea",
+      "sha256": "4e1b47045607f62d0f863ae4b36fcd38810090fe0987ba9b8ea227b32a100946",
       "inherited_deferral_step2": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.\n\nExact shared-facade source/header registration only. Before conditional target/control policy growth, extract the next coherent configuration section; preserve one translation unit per implementation and consumer linkage through vcmi. No future registry-size growth credit."
     },
     "lib/CSkillHandler.cpp::std::shared_ptr<CSkill> CSkillHandler::loadFromJson(const std::string & scope, const JsonNode & json, const std::string & identifier, size_t index)#1": {
@@ -28415,7 +28415,7 @@
       "next_bounded_extraction": "Gameplay with Engine: honor the inherited first extraction, the ordered primary aftermath publication stage3956-3966 after BattleAttack. Pass authority, battle, prepared primary/frozen/Mana contexts and typed Reprisal receipts; retain packet-first, PetrifyingBlood, Dread, primary aftermath, once-only Reprisal, Fury, Mana and Frozen order. Characterize complete packets/state/RNG, lethal/LastStand, automatic, retaliation, multihit and secondary cases before any further substantive makeAttack growth. Ground-movement or validation work must extract its own touched bounded phase; do not relocate the entire hub.",
       "owner": "gameplay_engineer",
       "previous_exact_review": "ACTUAL-NHOFF-DIVINE-IDENTITY-PRIVATE-20261031",
-      "previous_review": "IR-GHOST-HARVEST-GROWTH-PRESENTATION-20261119",
+      "previous_review": "CLAUDE-0925-DOUBLECAST-CHOSEN-PRAYERS-PHASE23-20261120",
       "prior_group_d_review": "IR-1145-GP-CONSUMERS-EXACT-9DB40B96-20261030",
       "protected_invariants": [
         "Simulation-thread command authority, current-controller versus physical-side identity and visible callback boundaries",
@@ -28424,7 +28424,7 @@
         "Packet/RNG draw order; primary versus SECONDARY/spell-like damage; health/shield/casualty provenance",
         "No callback/unit use after battle retirement; local movement provenance guard restores on every exit; no asynchronous extraction"
       ],
-      "rationale": "Exact successor for Metamagic 6 Double Cast / Consecrated Arms 4 phases 2-3: one-line calls, includes, version-gated fields or registrations only; the new behavior lives in focused MetamagicDoubleCast and ConsecratedArmsChoice units. Existing extraction deferrals retained; no future growth credit.",
+      "rationale": "Exact successor for Sylvan Tactics 4.1: one-line hooks (segment distance passed to the shared voluntary-movement receipt) and one source registration only; the revised Dappled Cover, Quick Redeployment and Hunting Pack rules live in the focused NewHorizonsSylvanTacticsRevision unit. Existing extraction deferrals retained; no future growth credit.",
       "responsibility_spans": [
         "102-681 targeting/deployment, Divine judgment, logs and spell-placement helpers",
         "683-1144 action basics and validated Hero spell execution",
@@ -28437,22 +28437,22 @@
         "4737-4883 stable-priority captured event reactions"
       ],
       "responsibleSourcePhase": "GP_FROZEN_C7C191B0_AND_REQUIRED_CD088EB5_PARTITION",
-      "review": "CLAUDE-0925-DOUBLECAST-CHOSEN-PRAYERS-PHASE23-20261120",
+      "review": "CLAUDE-SYLVAN41-20261120",
       "review_scope": "Exact accepted Ghost Soul Harvest grant-result presentation and cohesive hostile-kill accumulator extraction only. Source review and pinned parser measurements; no build, native, rendered, sound, performance, or publication acceptance.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_REVIEWED_NATIVE_RENDERED_UNRUN",
-      "sha256": "174bdb6c3ec7a94f4a2832138e9d921881124803d7abdb9122dc055dc3bd943c"
+      "sha256": "135b5fbadb5d816602cbfba270125abec6cb2b819c8b3a0038bf5d72f58e9b7e"
     },
     "server/battles/BattleActionProcessor.cpp::BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest, bool voluntary)#1": {
       "deferral": "Owner: engine_engineer. Before further movement-preflight growth, route the stored continuation cap through its existing movement admission owner; preserve legal zero-move attacks, exact movement/obstacle/Overwatch costs and callback order, ground/flying paths and malformed-action refusal. Exact528 exception only. Before further affected expansion, owning engine/gameplay specialist must extract the next cohesive healing/provider/selection or ordered-transition responsibility, retaining query/mutation/serialization order and historical behavior. No raised ceiling, pending-baseline escape, runtime approval or later-growth permission. Preserve ALL inherited deferrals and exact prior shrinking baselines. Further growth must extract a cohesive domain owner before expansion; no future growth credit or limit increase.",
       "kind": "exception",
       "lines": 505,
       "owner": "engine_engineer",
-      "previous_review": "IR-CURRENT500-GUARD-NATIVE-PURE-JOINT122-20261031",
-      "rationale": "Root explicitly authorized this exact bounded routing seam. Only stored pending continuation movement cap routing. Focused existing owners hold mechanics; no ceiling increase, generic policy expansion or future allowance. Source review only; native/render acceptance pending. Current exact native producer proposal: Exact requested-endpoint/attack-completion routing or shrinking movement phase extraction; no extra action/search/RNG. Exact owned-context-dependency-preserving 48-row ordinary-specialty composition 503->505; healing owner extraction, strict Dust preflight/body cleanup, or existing Purify/Cure relocation only as shown by bounded source diff. Preserves prior producer ledgers, historical prefix refusal and default1151. This is an author proposal; independent source/callable review, full rebuild and native acceptance remain required. Independently measured composition of the 106-path native source layer, reviewed 71-path combat-AI layer, independently reviewed optional cleansing UI, and finite owned-frame stages, preserving the accepted predecessor source. Source identity/registration/callable preservation is approved only for this exact bounded assembly; original mechanic, legal-candidate, owned-query and runtime holds are retained. Finite E3 remains unused pure context only, with no factory/live caller/injury activation.",
-      "review": "IR-COMMON-NATIVE48-AI71-CLEANSING-UI-FINITE-E3-20261031",
+      "previous_review": "IR-COMMON-NATIVE48-AI71-CLEANSING-UI-FINITE-E3-20261031",
+      "rationale": "Exact successor for Sylvan Tactics 4.1: one-line hooks (segment distance passed to the shared voluntary-movement receipt) and one source registration only; the revised Dappled Cover, Quick Redeployment and Hunting Pack rules live in the focused NewHorizonsSylvanTacticsRevision unit. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-SYLVAN41-20261120",
       "review_scope": "Exact current499+canonicalguard+Calh native marks/charge producer composition only; no AI, writer/default or wholefeature semantic acceptance.",
       "review_status": "INDEPENDENT_BOUNDED_SOURCE_ONLY_NATIVE_UNRUN",
-      "sha256": "a71c7708f466ee46e0c65ba59634455f8fb18edca04a81c76e1600c17d9b41ee"
+      "sha256": "70d0060d5c21db07d5a943b4c07c20acea83353a5e381dcb46e138c70aeedb48"
     },
     "server/battles/BattleActionProcessor.cpp::bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, const BattleAction & ba, bool allowPursuitContinuation, dreadCavalryAction::Context & dreadCavalry)#1": {
       "deferral": "Owner: gameplay_engineer. Before further physical attack aftermath growth, extract ordered aftermath coordinator with captured pre-hit entitlements and post-packet resource application; preserve preemptive exclusions, ordinary retaliation, RNG/packet order and both hero pools. Owner: gameplay_engineer with engine_engineer. Before further accepted-melee orchestration growth, extract the next cohesive stage at existing DreadCavalryAction/MeleeMovementContinuation boundaries. Preserve whole-command PetrifyingBlood resolution after all hits and before tail, captured scalar across Rebirth, actual movement, native retaliation, hit/RNG/packet order and no-state-change refusal; require mixed-feature native characterization. Exact native receipt/registration integration only; before further substantive growth extract another cohesive phase preserving damage/movement/authority/order characterization. No future growth credit.\n\nGameplay with Engine: extract the1327-1362 Skirmisher multihit sequence into its focused ranged sequence owner taking actor/primary target, original movement receipt and PerfectMoment side, returning sequence completion. Retain ordinary melee and existing Dread/MeleeMovementContinuation boundaries. Require exact first-strike/counter order, shots, RainOfArrows, expiry and RNG/packets; retain the inherited broader melee/aftermath, Rebirth and no-state-change refusal characterization. Protected invariants: Move cost versus hex distance versus voluntary flight; obstacle hit interrupts attack while retaining accepted movement; Capture sequence-expiry bonuses before new effects; Protect resolves per blow, original Ward passed for consumption; Frozen-before-hit retaliation denial survives Shatter; LastStand prevents further hits/extras; Whole-command PetrifyingBlood after all hits/return/obstacle and before movement tail; one Mana Leech sequence receipt. Gameplay engineer with engine integration: before further accepted-strike growth, extract physical-hit preparation and ordered aftermath publication behind one focused transaction taking immutable source facts, typed per-recipient quota/event owner and prepared packets. Preserve preapply casualty capture, primary then Judgment then final Redemption payout, LastStand spending, SECONDARY exclusions, source/controller identity, native packet/RNG order and hypothetical sibling parity. Existing stronger phase-extraction obligations remain binding.",

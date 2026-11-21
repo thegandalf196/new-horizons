@@ -11,6 +11,7 @@
 #include "../../lib/battle/BattleAttackInfo.h"
 #include "../../lib/battle/NewHorizonsForestAmbush.h"
 #include "../../lib/battle/NewHorizonsSylvanTacticsV2.h"
+#include "../../lib/battle/NewHorizonsSylvanTacticsRevision.h"
 
 namespace sylvanTacticsAI
 {
@@ -81,8 +82,14 @@ bool dynamicDamage(const CBattleInfoCallback & battle,
 	}
 	const auto attack = stateFor(battle, attacker);
 	const auto defense = stateFor(battle, defender);
+	// Policy 4 Dappled Cover and Hunting Pack read recipient markers and the
+	// target's completed-action flag. Keep the provider gate after expiry.
+	namespace revision = newHorizonsSylvanTacticsRevision;
 	return (attack.enabled && (attack.patientHunter || attack.measuredAdvance || attack.crossfire))
-		|| (defense.enabled && defense.dappledCover);
+		|| (defense.enabled && defense.dappledCover)
+		|| revision::active(newHorizonsSylvanTacticsV2::commandingHero(battle, defender), "luckyRecovery")
+		|| revision::dappledCoverPercent(defender) > 0
+		|| revision::active(newHorizonsSylvanTacticsV2::commandingHero(battle, attacker), "elvenPrecision");
 }
 
 void StrikeProjection::damage(const CBattleInfoCallback & world, const BattleAttackInfo & attack,

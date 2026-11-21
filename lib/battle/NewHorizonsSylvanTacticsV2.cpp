@@ -2,6 +2,7 @@
 #include "StdInc.h"
 #include "NewHorizonsSylvanTacticsV2.h"
 #include "NewHorizonsSylvanTactics.h"
+#include "NewHorizonsSylvanTacticsRevision.h"
 #include "CBattleInfoCallback.h"
 #include "BattleAttackInfo.h"
 #include "Unit.h"
@@ -59,11 +60,15 @@ int perkValue(const CGHeroInstance * hero, std::string_view perk, std::string_vi
 }
 bool huntingPackConfigured(const CBattleInfoCallback & battle, const battle::Unit * attacker)
 {
+	if(newHorizonsSylvanTacticsRevision::revised(commandingHero(battle, attacker)))
+		return newHorizonsSylvanTacticsRevision::huntingPackConfigured(battle, attacker);
 	return newHorizonsSylvanTactics::ordinary(attacker) && family(attacker, Family::Centaur)
 		&& hasPerk(commandingHero(battle, attacker), "elvenPrecision");
 }
 int huntingPackBonus(const CBattleInfoCallback & battle, const battle::Unit * attacker, const battle::Unit * target, BattleHex targetPosition)
 {
+	if(newHorizonsSylvanTacticsRevision::revised(commandingHero(battle, attacker)))
+		return newHorizonsSylvanTacticsRevision::huntingPackPercent(battle, attacker, target);
 	if(!huntingPackConfigured(battle, attacker) || !target || battle.battleGetOwner(attacker) == battle.battleGetOwner(target)) return 0;
 	if(targetPosition == BattleHex::INVALID) targetPosition = target->getPosition();
 	for(const auto & hex : target->getSurroundingHexes(targetPosition))

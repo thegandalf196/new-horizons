@@ -43,6 +43,11 @@ protected:
 				if(id.ends_with(".natureSProvidence")) parameter("enemySpellCostBonus", 2);
 			}
 		}
+		if(policy() <= 3)
+			// Captured policy-2/3 rows keep their own Hunting Pack payload.
+			for(auto & row : rules["skills"]["new-horizons:sylvanLuck"]["perks"].Vector())
+				if(row["id"].String().ends_with(".elvenPrecision"))
+					row["effect"]["parameters"]["attackDamagePercent"].Integer() = 25;
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, rules);
 	}
 	void perk(const char * suffix, int tier = 1)

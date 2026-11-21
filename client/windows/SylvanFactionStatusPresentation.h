@@ -1,6 +1,7 @@
 /* Part of VCMI / New Horizons. GPL v2.0 or later; see license.txt. */
 #pragma once
 #include "../../lib/battle/NewHorizonsSylvanTactics.h"
+#include "../../lib/battle/NewHorizonsSylvanTacticsRevision.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/battle/IBattleState.h"
 #include "../../lib/CStack.h"
@@ -89,7 +90,11 @@ inline std::vector<std::string> currentRows(const CPlayerBattleCallback & battle
 		if(ownerPerksVisible)
 			ownerSpeed = newHorizonsSylvanTactics::speedContributions(battle, unit);
 	}
-	return formatCurrentRows(observedProtection, ownerSpeed, ownerPerksVisible,
+	auto rows = formatCurrentRows(observedProtection, ownerSpeed, ownerPerksVisible,
 		battle.battleSylvanTacticsInitiativePercent(unit));
+	// Policy 4 effects are observed recipient markers, like Covering Fire.
+	for(auto & row : newHorizonsSylvanTacticsRevision::statusRows(unit))
+		rows.push_back(std::move(row));
+	return rows;
 }
 }

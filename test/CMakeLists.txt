@@ -988,6 +988,7 @@ set(test_SRCS
 		server/battles/NewHorizonsShadowAssaultTest.cpp
 		server/battles/NewHorizonsNightProwlerTest.cpp
 		server/battles/SylvanAllianceRulesTest.cpp
+		server/battles/SylvanTactics41Test.cpp
 		server/battles/NewHorizonsSylvanTacticsTest.cpp
 		server/battles/NewHorizonsSylvanLuckTest.cpp
 		server/battles/NewHorizonsHeroLuckTest.cpp
