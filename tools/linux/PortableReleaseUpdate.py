@@ -17,8 +17,11 @@ import stat
 import sys
 import tarfile
 import tempfile
+import time
 from urllib.parse import urlsplit
-from urllib.request import HTTPRedirectHandler, Request, build_opener
+from urllib.request import HTTPRedirectHandler, Request, build_opener, getproxies
+
+import PortableLauncherLog as launcher_log
 
 
 API_ROOT = 'https://api.github.com/repos/thegandalf196/new-horizons/releases'
@@ -92,9 +95,21 @@ def open_https(url, opener, timeout=30):
     api = url == LIST_URL or url == LATEST_URL or url.startswith(API_ROOT + '/tags/v')
     hosts = frozenset(('api.github.com',)) if api else DOWNLOAD_HOSTS
     checked_url(url, hosts)
-    response = opener(Request(url, headers={'User-Agent': 'New-Horizons-Portable-Updater',
-                                          'Accept': 'application/vnd.github+json' if api else 'application/octet-stream',
-                                          'Cache-Control': 'no-cache'}), timeout=timeout)
+    # Host and path only: download queries carry signed access tokens. Only
+    # whether a proxy is configured is logged, never its address.
+    parsed, started = urlsplit(url), time.monotonic()
+    launcher_log.write(f'HTTP GET {parsed.hostname}{parsed.path} (timeout {timeout} s, '
+                       f'proxy {"yes" if getproxies().get("https") else "no"})')
+    try:
+        response = opener(Request(url, headers={'User-Agent': 'New-Horizons-Portable-Updater',
+                                              'Accept': 'application/vnd.github+json' if api else 'application/octet-stream',
+                                              'Cache-Control': 'no-cache'}), timeout=timeout)
+    except Exception as error:
+        launcher_log.write(f'HTTP request to {parsed.hostname}{parsed.path} failed after '
+                           f'{int((time.monotonic() - started) * 1000)} ms: {launcher_log.describe_error(error)}')
+        raise
+    launcher_log.write(f'HTTP {response.status} after {int((time.monotonic() - started) * 1000)} ms, '
+                       f'length {response.headers.get("Content-Length", "unknown")}')
     try:
         require(response.status == 200, 'Release request failed')
         checked_url(response.geturl(), hosts)
@@ -431,12 +446,15 @@ def main(argv=None):
     parser.add_argument('--progress', action='store_true', help='Emit JSON progress on stderr')
     args = parser.parse_args(argv)
     previous = signal.signal(signal.SIGTERM, interrupted)
+    launcher_log.join_session('install')
     try:
         progress = (lambda value: print(json.dumps(value), file=sys.stderr, flush=True)) if args.progress else None
         result = prepare_update(args.store, args.request, progress=progress) if progress else prepare_update(args.store, args.request)
         print(json.dumps(result, separators=(',', ':')))
+        launcher_log.write('Release ' + str(result.get('version')) + ' prepared and verified')
         return 0
     except (OSError, ValueError, EOFError, tarfile.TarError) as error:
+        launcher_log.write('Release preparation failed: ' + launcher_log.describe_error(error))
         print('Release preparation failed: ' + str(error), file=sys.stderr)
         return 1
     finally:

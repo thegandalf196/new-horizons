@@ -9,8 +9,8 @@
 # first; Portable-Release-Launcher.ps1 carries the hand-over token and the
 # Start-New-Horizons.ps1 entry point is replaced last. Identical files are skipped.
 $script:NHOriginalLauncherFiles = @('Release-Metadata.ps1', 'Launch-Process.ps1', 'Setup-Progress.ps1',
-    'Complete-Assets.ps1', 'Prepare-NHReleaseUpdate.ps1', 'Player-Launcher-Notes.ps1', 'Player-Launcher.ps1',
-    'Player-Launcher-Operation.ps1', 'Update-NHOriginalLauncher.ps1',
+    'Complete-Assets.ps1', 'Prepare-NHReleaseUpdate.ps1', 'Player-Launcher-Notes.ps1', 'Player-Launcher-Log.ps1',
+    'Player-Launcher.ps1', 'Player-Launcher-Operation.ps1', 'Update-NHOriginalLauncher.ps1',
     'Portable-Release-Launcher.ps1', 'Start-New-Horizons.ps1')
 
 function Resolve-NHExistingPathCase([string]$Path) {

@@ -13,12 +13,14 @@ import stat
 import subprocess
 import sys
 import tempfile
+import time
 
 from PortableReleaseUpdate import (ASSET_NAME, CHANNELS, MAX_ARCHIVE_BYTES, PACKAGE_ROOT as INSTALL_NAME,
                                    ReleaseRedirects, latest_release, private_directory, recent_releases,
                                    validate_release_metadata, verify_player_files)
 from urllib.request import build_opener
 from PortableLauncherProcess import run_process
+import PortableLauncherLog as launcher_log
 import PortableReleaseNotes as release_notes
 
 STORE_NAME = '.nh-player-updates'
@@ -32,6 +34,14 @@ VERSION = re.compile(r'(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)')
 DIGEST = re.compile(r'[0-9a-f]{64}')
 # Two capped notes, JSON-escaped, plus the offer.
 MAX_NOTES_RESPONSE = 512 * 1024
+# The whole owned check child: interpreter start, one GitHub request and parsing.
+# Play never waits for it.
+CHECK_DEADLINE = 45
+# A stalled GitHub request fails with its own error before that deadline.
+REQUEST_TIMEOUT = 20
+# Phases the check child reports, and how a timeout names the step still running.
+CHECK_PHASES = {'launch': 'starting the update check', 'request': 'contacting GitHub',
+                'release': 'checking the published release', 'notes': 'reading release notes'}
 
 
 def plain(path, directory=False):
@@ -109,8 +119,13 @@ def prepare_update(original, store, request, current, progress=None, cancel=None
     environment.pop('LD_AUDIT', None)
     if progress:
         progress({'phase': 'probe'})
-    subprocess.run([str(updated / 'new-horizons'), '--version'], cwd=updated,
-                   env=environment, check=True, capture_output=True, timeout=20)
+    started = time.monotonic()
+    # The first start of a new executable can be slow on a busy system.
+    probe = subprocess.run([str(updated / 'new-horizons'), '--version'], cwd=updated,
+                           env=environment, check=False, capture_output=True, timeout=60)
+    launcher_log.write(f'New client --version check exited with code {probe.returncode} '
+                       f'in {int((time.monotonic() - started) * 1000)} ms')
+    probe.check_returncode()
     if cancel is not None and cancel.is_set():
         raise InterruptedError('Update cancelled before activation')
     atomic_selection(store, selection, SELECTIONS[channel])
@@ -128,7 +143,8 @@ def run_worker(worker, store, request, timeout=1800, progress=None, cancel=None)
             return
         if progress and isinstance(value, dict) and value.get('phase') in ('check', 'download', 'extract', 'verify'):
             progress(value)
-    result = run_process(command, on_stderr=receive, cancel=cancel, timeout=timeout)
+    result = run_process(command, launcher_log.child_environment(), on_stderr=receive, cancel=cancel, timeout=timeout)
+    launcher_log.write(f'Update worker exited with code {result.returncode}')
     if result.returncode:
         raise RuntimeError(result.stderr[-2000:] or 'Update verification failed')
     return json.loads(result.stdout)
@@ -203,14 +219,17 @@ def check_release(current, opener=None, channel='stable', notes=None):
     """notes, when given, maps wanted versions to None. The same response fills
     it with the plain notes of those versions and of the offer."""
     opener = opener or build_opener(ReleaseRedirects()).open
+    launcher_log.phase('request')
     if channel == 'beta':
-        releases = recent_releases(opener, timeout=5)
+        releases = recent_releases(opener, timeout=REQUEST_TIMEOUT)
         release = newest_beta(releases)
     else:
-        release = latest_release(opener, timeout=5)
+        release = latest_release(opener, timeout=REQUEST_TIMEOUT)
         releases = [release]
+    launcher_log.phase('release')
     offer = None if release is None else release_offer(current, release, channel)
     if notes is not None:
+        launcher_log.phase('notes')
         notes.update(release_notes.retained(releases, {*notes, offer and offer['version']}))
     return offer
 
@@ -267,12 +286,36 @@ def check_release_notes_bounded(current, installed, cancel=None, channel='stable
                    and isinstance(value, str) and len(value) <= release_notes.MAX_CHARS + 64}
 
 
-def bounded_check(current, cancel, channel, extra, limit):
+def bounded_check(current, cancel, channel, extra, limit, deadline=CHECK_DEADLINE):
     command = [sys.executable, str(Path(__file__).absolute()), '--package', str(current), '--check-release',
                '--channel', channel, *extra]
-    result = run_process(command, cancel=cancel, timeout=5)
+    phase, errors = ['launch'], []
+    def receive(line):
+        try:
+            value = json.loads(line)
+        except ValueError:
+            value = None
+        if isinstance(value, dict) and value.get('phase') in CHECK_PHASES:
+            phase[0] = value['phase']
+        elif line.strip():
+            errors.append(line)
+    started = time.monotonic()
+    launcher_log.write(f'Check child started for the {channel} track; deadline {deadline} s')
+    try:
+        result = run_process(command, launcher_log.child_environment(), on_stderr=receive, cancel=cancel,
+                             timeout=deadline)
+    except InterruptedError:
+        if cancel is not None and cancel.is_set():
+            launcher_log.write('Check stopped by the player')
+            raise
+        launcher_log.write(f'Check deadline of {deadline} s reached after {int((time.monotonic() - started) * 1000)} ms; '
+                           f'the child was in phase {phase[0]} and was stopped')
+        raise TimeoutError(f'Update check timed out while {CHECK_PHASES[phase[0]]} after {deadline} s. '
+                           'You can still play the installed game.') from None
+    launcher_log.write(f'Check child exited with code {result.returncode} after '
+                       f'{int((time.monotonic() - started) * 1000)} ms')
     if result.returncode:
-        raise RuntimeError(result.stderr[-1500:] or 'Could not check the official release')
+        raise RuntimeError(''.join(errors)[-1500:] or 'Could not check the official release')
     if len(result.stdout) > limit:
         raise ValueError('Update-check response exceeds the launcher limit')
     return json.loads(result.stdout)
@@ -354,32 +397,37 @@ def main(argv=None):
     if args.check_release:
         if forward:
             raise ValueError('Update checks do not accept game arguments')
-        if args.notes_for is None:
-            print(json.dumps(check_release(original, channel=args.channel)))
-            return 0
-        if len(args.notes_for) > 2 or not all(VERSION.fullmatch(value) for value in args.notes_for):
-            raise ValueError('Invalid release notes version')
-        notes = dict.fromkeys(args.notes_for)
-        offer = check_release(original, channel=args.channel, notes=notes)
-        print(json.dumps({'offer': offer, 'notes': {key: value for key, value in notes.items() if value}}))
-        return 0
+        return check_child(original, args.channel, args.notes_for)
+    if not forward:
+        # The window's session log starts before a hand-over and records its self-test.
+        code = Path(__file__).absolute().parent
+        launcher_log.start_session()
+        launcher_log.write_header(launcher_version(code), code)
     if args.delegated:
         global CODE_ROOT
         CODE_ROOT = Path(__file__).absolute().parent
     else:
         newer = newer_launcher(original)
         if newer:
-            environment = dict(os.environ)
+            environment = launcher_log.child_environment()
             environment.pop('NH_PORTABLE_UPDATE_REQUEST', None)
             os.execve(sys.executable, [sys.executable, '-B', str(newer), '--package', str(original),
                                        '--delegated', '--', *forward], environment)
     package = choose_runtime(original)
     if not forward:
+        launcher_log.write(f'Installation {original}; stable plays {package}')
         from PortableLauncherWindow import run_window
         return run_window(original, package)
     environment = dict(os.environ)
     environment.pop('NH_PORTABLE_UPDATE_REQUEST', None)
     os.execve(sys.executable, setup_command(package, forward), environment)
+
+
+def launcher_version(code):
+    try:
+        return '.'.join(map(str, version(code)))
+    except (OSError, ValueError, KeyError):
+        return 'unknown'
 
 
 def newer_launcher(original):
@@ -388,13 +436,44 @@ def newer_launcher(original):
     package = choose_runtime(original)
     if package == original:
         return None
+    started = time.monotonic()
     try:
         code = plain(package / 'PortableReleaseLauncher.py')
         result = subprocess.run([sys.executable, '-B', str(code), '--package', str(original), '--self-test'],
                                 cwd=package, capture_output=True, text=True, timeout=10, check=False)
-    except (OSError, subprocess.SubprocessError):
+    except (OSError, subprocess.SubprocessError) as error:
+        launcher_log.write(f'Launcher self-test of {package} failed: {launcher_log.describe_error(error)}')
         return None
-    return code if result.returncode == 0 and result.stdout.strip() == SELF_TEST else None
+    passed = result.returncode == 0 and result.stdout.strip() == SELF_TEST
+    launcher_log.write(f'Launcher self-test of {package} exited with code {result.returncode} in '
+                       f'{int((time.monotonic() - started) * 1000)} ms; {"passed" if passed else "failed"}')
+    return code if passed else None
+
+
+def check_child(original, channel, notes_for):
+    """The owned update-check process: one JSON answer on stdout, phases on stderr."""
+    if notes_for is not None and (len(notes_for) > 2 or not all(VERSION.fullmatch(value) for value in notes_for)):
+        raise ValueError('Invalid release notes version')
+    launcher_log.join_session('check', report_phases=True)
+    started = time.monotonic()
+    launcher_log.write(f'Check child pid {os.getpid()} running; Python {sys.version.split()[0]}, track {channel}')
+    try:
+        if notes_for is None:
+            answer = check_release(original, channel=channel)
+        else:
+            notes = dict.fromkeys(notes_for)
+            offer = check_release(original, channel=channel, notes=notes)
+            answer = {'offer': offer, 'notes': {key: value for key, value in notes.items() if value}}
+    except Exception as error:
+        launcher_log.write(f'Check failed after {int((time.monotonic() - started) * 1000)} ms: '
+                           f'{launcher_log.describe_error(error)}')
+        print(f'Could not check the official release: {launcher_log.describe_error(error)}', file=sys.stderr)
+        return 1
+    found = (answer.get('offer') if notes_for is not None else answer) or {}
+    launcher_log.write(f'Check succeeded in {int((time.monotonic() - started) * 1000)} ms: '
+                       + (f'version {found["version"]}' if found else 'nothing newer'))
+    print(json.dumps(answer))
+    return 0
 
 
 if __name__ == '__main__':

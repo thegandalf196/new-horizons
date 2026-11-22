@@ -16,6 +16,7 @@ from types import SimpleNamespace
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'tools/linux'))
 
+import PortableLauncherLog as launcher_log
 import PortableReleaseLauncher as launcher
 from PortableLauncherProcess import StartupCancellation, run_process
 from PortableReleaseUpdate import PLAYER_EXECUTABLES, PLAYER_FILES
@@ -28,6 +29,12 @@ class LinuxPortableReleaseLauncherTest(unittest.TestCase):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name).resolve()
+        # The session log of a window started by a test stays in the fixture.
+        state = patch.dict('os.environ', {'XDG_STATE_HOME': str(self.root / 'state')})
+        state.start()
+        self.addCleanup(state.stop)
+        self.addCleanup(setattr, launcher_log._session, 'path', None)
+        self.addCleanup(setattr, launcher_log._session, 'report_phases', False)
         self.original = self.root / launcher.INSTALL_NAME
         self.store = self.original / launcher.STORE_NAME
         self.request = self.store / 'request.json'
@@ -208,7 +215,7 @@ class LinuxPortableReleaseLauncherTest(unittest.TestCase):
                        'browser_download_url': 'https://github.com/thegandalf196/new-horizons/releases/download/v0.92.4/' + name}]}
         with patch.object(launcher, 'latest_release', return_value=release) as latest:
             offer = launcher.check_release(self.original)
-        self.assertEqual(latest.call_args.kwargs['timeout'], 5)
+        self.assertEqual(latest.call_args.kwargs['timeout'], launcher.REQUEST_TIMEOUT)
         self.assertEqual(offer['sha256'], self.SHA256)
         self.assertEqual(offer['version'], '0.92.4')
         self.assertFalse(self.store.exists())
@@ -222,10 +229,15 @@ class LinuxPortableReleaseLauncherTest(unittest.TestCase):
         result = subprocess.CompletedProcess([], 0, 'null', '')
         with patch.object(launcher, 'run_process', return_value=result) as owned:
             self.assertIsNone(launcher.check_release_bounded(self.original, cancel))
-        self.assertEqual(owned.call_args.kwargs['timeout'], 5)
+        self.assertEqual(owned.call_args.kwargs['timeout'], launcher.CHECK_DEADLINE)
         self.assertIs(owned.call_args.kwargs['cancel'], cancel)
         self.assertIn('--check-release', owned.call_args.args[0])
+        # The deadline names the step still running; the player's own cancel stays a cancel.
         with patch.object(launcher, 'run_process', side_effect=InterruptedError('timed out')):
+            with self.assertRaisesRegex(TimeoutError, 'while starting the update check after 45 s'):
+                launcher.check_release_bounded(self.original, cancel)
+        cancel.set()
+        with patch.object(launcher, 'run_process', side_effect=InterruptedError('cancelled')):
             with self.assertRaises(InterruptedError):
                 launcher.check_release_bounded(self.original, cancel)
 
@@ -249,7 +261,7 @@ class LinuxPortableReleaseLauncherTest(unittest.TestCase):
     def test_desktop_game_status_waits_for_stdout_marker_and_sets_owned_environment(self):
         import PortableLauncherWindow as desktop
         statuses, environment = [], {}
-        state = SimpleNamespace(package=self.original, channel='stable', ready=threading.Event(), cancel=threading.Event(),
+        state = SimpleNamespace(package=self.original, channel='stable', ready=threading.Event(), cancel=threading.Event(), busy=False,
                                 cancel_button=unittest.mock.Mock(),
                                 status=unittest.mock.Mock(), status_changed=statuses.append)
         state.begin = lambda kind, operation, finished: finished(operation())
@@ -284,7 +296,7 @@ class LinuxPortableReleaseLauncherTest(unittest.TestCase):
                     self.release('0.93.0', prerelease=True), {'tag_name': 'nonsense'}, 'not a release']
         with patch.object(launcher, 'recent_releases', return_value=releases) as listed:
             offer = launcher.check_release(self.original, channel='beta')
-        self.assertEqual(listed.call_args.kwargs['timeout'], 5)
+        self.assertEqual(listed.call_args.kwargs['timeout'], launcher.REQUEST_TIMEOUT)
         self.assertEqual((offer['version'], offer['channel'], offer['format']), ('0.93.0', 'beta', 2))
         with patch.object(launcher, 'latest_release', return_value=self.release('0.93.0', prerelease=True)):
             with self.assertRaises(ValueError):
@@ -361,7 +373,7 @@ class LinuxPortableReleaseLauncherTest(unittest.TestCase):
         import PortableLauncherWindow as desktop
         application = unittest.mock.Mock()
         state = SimpleNamespace(busy=False, set_busy=unittest.mock.Mock(), status=unittest.mock.Mock(), closed=True,
-                                get_application=lambda: application)
+                                get_application=lambda: application, play_after=False, kind='install', started=0)
         def fail(result):
             raise RuntimeError('startup verification failed')
         self.assertFalse(desktop.LauncherWindow.complete(state, None, None, fail))

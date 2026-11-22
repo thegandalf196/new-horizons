@@ -24,6 +24,9 @@ What's new shows the release notes of the installed version on the selected
 track and of the update on offer, as plain text. It reuses the update check;
 offline it shows the notes in CHANGELOG-New-Horizons.md beside the game.
 
+The launcher writes a diagnostic session log to
+~/.local/state/new-horizons/launcher.log; failed checks name it in the status.
+
 The declared SDL3/image/mixer/ttf providers are included beside the executable
 under their incoming SONAME filenames. BUILD-IDENTITY.json records their exact
 bytes and source origins. Other system libraries and optional drivers remain

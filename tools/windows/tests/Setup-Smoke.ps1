@@ -105,7 +105,7 @@ try {
     $null = Get-ParsedScript (Join-Path $sourceDir 'Launch-Process.ps1')
     $null = Get-ParsedScript (Join-Path $sourceDir 'Setup-Progress.ps1')
     $null = Get-ParsedScript (Join-Path $sourceDir 'Complete-Assets.ps1')
-    foreach ($launcherScript in @('Player-Launcher.ps1', 'Player-Launcher-Operation.ps1', 'Portable-Release-Launcher.ps1',
+    foreach ($launcherScript in @('Player-Launcher.ps1', 'Player-Launcher-Log.ps1', 'Player-Launcher-Operation.ps1', 'Portable-Release-Launcher.ps1',
                                   'Prepare-NHReleaseUpdate.ps1', 'Release-Metadata.ps1', 'Update-NHOriginalLauncher.ps1')) {
         $null = Get-ParsedScript (Join-Path $sourceDir $launcherScript)
     }

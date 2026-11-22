@@ -30,3 +30,28 @@ as the source IP address. Set `general.updateChecks` to `false` in the existing
 profile settings to disable the automatic check. **Check for updates** remains
 available in the launcher. The standalone engine retains its older browser
 notification for direct starts.
+
+## Launcher log
+
+Each launcher window writes one plain-text session log, `launcher.log`, and
+keeps the previous session as `launcher.previous.log`. A session stops logging
+at 1 MiB. Windows writes it to
+`%LOCALAPPDATA%\HeroesIII-NewHorizons\logs\`, beside the stable game logs, for
+both tracks. Linux writes it to `~/.local/state/new-horizons/`, or
+`$XDG_STATE_HOME/new-horizons/`, because the game profile is created by setup.
+A failed update check or start names the log in the launcher status line.
+
+Lines carry the local time in milliseconds, the seconds since that process
+opened the log and the writing role: `launcher`, `check` or `install`. The log
+records launcher version, OS and runtime versions, launcher hand-over
+self-tests, each update-check phase, and each GitHub request. Request lines
+contain host, path, status, length, duration, whether a proxy carries the
+request, and network or TLS errors. The log also records deadlines and the
+phase they stopped, exception types with their causes, child exit codes, and
+the game exit code. The home or profile folder appears as `~` or
+`%USERPROFILE%`. URL queries, tokens, proxy addresses and the environment are
+never written.
+
+The update check has a 45-second deadline. Each GitHub request has its own
+20-second bound. **Play** remains available during a check; selecting it stops
+the check and starts the game.

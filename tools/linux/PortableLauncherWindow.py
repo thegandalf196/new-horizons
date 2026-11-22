@@ -3,11 +3,13 @@
 
 import os
 import threading
+import time
 
 import gi
 gi.require_version('Gtk', '4.0')
 from gi.repository import Gio, GLib, Gtk
 
+import PortableLauncherLog as launcher_log
 import PortableReleaseLauncher as release
 import PortableReleaseNotes as release_notes
 from PortableLauncherProcess import StartupCancellation, run_process
@@ -39,6 +41,9 @@ class LauncherWindow(Gtk.ApplicationWindow):
         self.original, self.package, self.channel = original, package, 'stable'
         self.packages = {'stable': package, 'beta': release.choose_runtime(original, 'beta')}
         self.offer, self.busy, self.closed = None, False, False
+        # Play selected during an update check stops the check, then starts the game.
+        self.play_after, self.started = False, time.monotonic()
+        launcher_log.write(f'GTK {Gtk.get_major_version()}.{Gtk.get_minor_version()}.{Gtk.get_micro_version()}')
         # Notes from this session's last successful check of each track.
         self.fetched = {'stable': None, 'beta': None}
         self.kind, self.cancel, self.ready = '', threading.Event(), threading.Event()
@@ -124,7 +129,9 @@ class LauncherWindow(Gtk.ApplicationWindow):
         self.busy = busy
         for button in (self.check, self.assets, self.notes):
             button.set_sensitive(not busy)
-        self.play.set_sensitive(not busy and self.package is not None)
+        # Play stays available during an update check; selecting it stops the check.
+        self.play.set_sensitive((not busy or self.kind in ('check', 'notes')) and not self.play_after
+                                and self.package is not None)
         self.track.set_sensitive(not busy)
         self.install.set_sensitive(not busy and self.offer is not None)
         self.cancel_button.set_visible(busy and self.kind in ('game', 'install', 'assets')
@@ -138,6 +145,8 @@ class LauncherWindow(Gtk.ApplicationWindow):
             return
         self.kind = kind
         self.cancel.clear()
+        self.started = time.monotonic()
+        launcher_log.write(f'Started {kind} on the {self.channel} track')
         self.set_busy(True)
         self.get_application().hold()
         def work():
@@ -150,13 +159,20 @@ class LauncherWindow(Gtk.ApplicationWindow):
 
     def complete(self, result, error, finished):
         self.set_busy(False)
+        play, self.play_after = self.play_after, False
+        elapsed = int((time.monotonic() - self.started) * 1000)
         try:
-            if error:
-                self.status.set_text(str(error))
+            if play:
+                launcher_log.write(f'Stopped {self.kind} after {elapsed} ms to start the game')
+            elif error:
+                launcher_log.write(f'{self.kind} failed after {elapsed} ms: {launcher_log.describe_error(error)}')
+                self.status.set_text(str(error) + launcher_log.hint())
             else:
+                launcher_log.write(f'{self.kind} finished after {elapsed} ms')
                 finished(result)
         except Exception as caught:
-            self.status.set_text(str(caught))
+            launcher_log.write(f'{self.kind} result failed: {launcher_log.describe_error(caught)}')
+            self.status.set_text(str(caught) + launcher_log.hint())
         if not self.busy:
             # The handler may have changed the package or offer the buttons depend on.
             self.set_busy(False)
@@ -164,6 +180,8 @@ class LauncherWindow(Gtk.ApplicationWindow):
         application.release()
         if self.closed:
             application.quit()
+        elif play:
+            self.play_clicked(None)
         return False
 
     def status_changed(self, text):
@@ -268,12 +286,22 @@ class LauncherWindow(Gtk.ApplicationWindow):
     def play_clicked(self, button):
         if self.package is None:
             return
+        if self.busy:
+            if self.kind in ('check', 'notes') and not self.play_after:
+                launcher_log.write('Play selected during the update check; stopping the check')
+                self.play_after = True
+                self.play.set_sensitive(False)
+                self.status.set_text('Stopping the update check and starting New Horizons…')
+                self.cancel.set()
+            return
         package, channel = self.package, self.channel
         self.game_cancel = StartupCancellation()
         self.ready = self.game_cancel.ready
+        launcher_log.write(f'Game starts from {package} on the {channel} track')
         self.status.set_text('Checking original game files…')
         environment = dict(os.environ)
         environment.pop('NH_PORTABLE_UPDATE_REQUEST', None)
+        environment.pop(launcher_log.ENVIRONMENT, None)
         environment['NH_LAUNCHER_STATUS'] = '1'
         environment['NH_LAUNCHER_MANAGES_UPDATES'] = '1'
         def output(line):
@@ -284,6 +312,7 @@ class LauncherWindow(Gtk.ApplicationWindow):
                 GLib.idle_add(self.cancel_button.set_visible, False)
                 self.status_changed('Game running.')
         def finished(result):
+            launcher_log.write(f'Game exited with code {result.returncode}')
             if result.returncode:
                 self.status.set_text('Game exited with code ' + str(result.returncode) + '.\n' + result.stderr[-1000:])
             else:

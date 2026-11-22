@@ -136,6 +136,8 @@ class CheckNotesTest(unittest.TestCase):
         self.package = Path(temporary.name)
         (self.package / 'config').mkdir()
         (self.package / 'config/newHorizonsVersion.json').write_text(json.dumps({'version': '0.92.7'}))
+        # A check-child run in this process reports phases on stderr only for its own test.
+        self.addCleanup(setattr, launcher.launcher_log._session, 'report_phases', False)
 
     def test_stable_check_retains_the_offer_notes_from_the_same_response(self):
         wanted = dict.fromkeys(['0.92.7'])
@@ -178,7 +180,7 @@ class CheckNotesTest(unittest.TestCase):
             offer, retained = launcher.check_release_notes_bounded(self.package, '0.92.7', threading.Event(), 'beta')
         command = owned.call_args.args[0]
         self.assertEqual(command[command.index('--notes-for') + 1:], ['0.92.7'])
-        self.assertEqual(owned.call_args.kwargs['timeout'], 5)
+        self.assertEqual(owned.call_args.kwargs['timeout'], launcher.CHECK_DEADLINE)
         self.assertEqual((offer, retained), ({'version': '0.93.0'}, {'0.93.0': 'Text'}))
         with patch.object(launcher, 'run_process', return_value=subprocess.CompletedProcess([], 0, 'null', '')):
             with self.assertRaises(ValueError):
@@ -255,9 +257,12 @@ class WindowNotesTest(unittest.TestCase):
         Window = self.desktop.LauncherWindow
         widgets = {name: Mock() for name in ('check', 'assets', 'notes', 'play', 'track', 'install',
                                              'cancel_button', 'progress')}
-        state = SimpleNamespace(package=self.package, offer=None, kind='check', ready=threading.Event(), **widgets)
+        state = SimpleNamespace(package=self.package, offer=None, kind='check', ready=threading.Event(),
+                                play_after=False, **widgets)
         Window.set_busy(state, True)
         widgets['notes'].set_sensitive.assert_called_with(False)
+        # Play is never blocked by an update check.
+        widgets['play'].set_sensitive.assert_called_with(True)
         Window.set_busy(state, False)
         widgets['notes'].set_sensitive.assert_called_with(True)
 
@@ -267,8 +272,9 @@ class WindowNotesTest(unittest.TestCase):
                                              'cancel_button', 'progress', 'status')}
         state = SimpleNamespace(busy=False, channel='beta', package=None, packages={'stable': self.package, 'beta': None},
                                 offer={'version': '0.93.0', 'channel': 'beta'}, kind=None, ready=threading.Event(),
-                                cancel=threading.Event(), closed=False, original=self.package,
-                                get_application=Mock(), refresh_version=Mock(), update_progress=Mock(), **widgets)
+                                cancel=threading.Event(), closed=False, original=self.package, play_after=False,
+                                started=0, get_application=Mock(), refresh_version=Mock(), update_progress=Mock(),
+                                **widgets)
         for name in ('set_busy', 'complete', 'install_clicked'):
             setattr(state, name, getattr(Window, name).__get__(state))
         def begin(kind, operation, finished):

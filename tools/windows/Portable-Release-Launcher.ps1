@@ -51,12 +51,16 @@ function Test-NHUpdatedClient([string]$Runtime) {
     $start.UseShellExecute = $false
     $start.CreateNoWindow = $true
     $process = [Diagnostics.Process]::Start($start)
+    $clock = [Diagnostics.Stopwatch]::StartNew()
     try {
-        if (-not $process.WaitForExit(20000)) {
+        # The first start of a new executable can wait for an antivirus scan.
+        if (-not $process.WaitForExit(60000)) {
             $process.Kill()
             $null = $process.WaitForExit(5000)
+            Write-UpdateLog 'The new client --version check timed out after 60 s'
             throw 'The new client did not finish its startup check.'
         }
+        Write-UpdateLog ('The new client --version check exited with code ' + $process.ExitCode + ' in ' + $clock.ElapsedMilliseconds + ' ms')
         if ($process.ExitCode -ne 0) { throw 'The new client failed its startup check.' }
     } finally {
         $process.Dispose()
@@ -162,7 +166,8 @@ function Select-NHPortableRelease([string]$Original, [bool]$ApplyRequest = $fals
 # The selected package's launcher prints this token when its code loads.
 $script:NHLauncherSelfTestToken = 'NH_WINDOWS_PORTABLE_LAUNCHER_V2'
 
-function Test-NHLauncherSelfTest([string]$Runtime, [int]$TimeoutMilliseconds = 10000) {
+# A cold Windows PowerShell start with antivirus scans can take many seconds.
+function Test-NHLauncherSelfTest([string]$Runtime, [int]$TimeoutMilliseconds = 30000) {
     $operation = Join-Path $Runtime 'Player-Launcher-Operation.ps1'
     Assert-PlainPath $operation
     if (-not [IO.File]::Exists($operation)) { return $false }
@@ -180,17 +185,21 @@ function Test-NHLauncherSelfTest([string]$Runtime, [int]$TimeoutMilliseconds = 1
         $info.EnvironmentVariables.Remove($name)
     }
     $process = [Diagnostics.Process]::Start($info)
+    $clock = [Diagnostics.Stopwatch]::StartNew()
     try {
         $output = $process.StandardOutput.ReadToEndAsync()
         $null = $process.StandardError.ReadToEndAsync()
         if (-not $process.WaitForExit($TimeoutMilliseconds)) {
             try { $process.Kill() } catch { } # It may exit between the wait and the kill.
             $null = $process.WaitForExit(5000)
+            Write-UpdateLog ('Launcher self-test of ' + $Runtime + ' timed out after ' + $TimeoutMilliseconds + ' ms')
             return $false
         }
         $process.WaitForExit()
-        if ($process.ExitCode -ne 0 -or -not $output.Wait(5000)) { return $false }
-        return $output.Result.Trim() -ceq $script:NHLauncherSelfTestToken
+        $passed = $process.ExitCode -eq 0 -and $output.Wait(5000) -and $output.Result.Trim() -ceq $script:NHLauncherSelfTestToken
+        Write-UpdateLog ('Launcher self-test of ' + $Runtime + ' exited with code ' + $process.ExitCode + ' in ' +
+            $clock.ElapsedMilliseconds + ' ms; ' + $(if ($passed) { 'passed' } else { 'failed' }))
+        return $passed
     } finally {
         $process.Dispose()
     }
@@ -205,8 +214,10 @@ function Get-NHNewerLauncher([string]$Original) {
         $entry = Join-Path $runtime 'Start-New-Horizons.ps1'
         Assert-PlainPath $entry
         if (-not [IO.File]::Exists($entry) -or -not (Test-NHLauncherSelfTest $runtime)) { return $null }
+        Write-UpdateLog ('Handing over to the launcher of the selected update ' + (Get-NHProductVersion $runtime))
         return $entry
     } catch {
+        Write-UpdateLog 'The selected update launcher is unavailable; keeping this launcher' $_
         return $null
     }
 }

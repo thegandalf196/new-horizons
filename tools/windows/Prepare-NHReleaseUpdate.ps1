@@ -177,22 +177,45 @@ function Assert-UpdateTransportURI([Uri]$URI) {
     }
 }
 
-function Invoke-UpdateDownload([string]$URL, [string]$Output, [long]$MaximumBytes, [long]$ExactBytes = 0) {
+function Write-UpdateLog([string]$Message, $Failure = $null) {
+    # The launcher session log is optional; a standalone worker has none.
+    if ($null -eq (Get-Command Write-NHLauncherLog -CommandType Function -ErrorAction SilentlyContinue)) { return }
+    if ($null -ne $Failure) { $Message += ': ' + (Format-NHLogError $Failure) }
+    Write-NHLauncherLog $Message
+}
+
+function Get-UpdateProxyUse($Request, [Uri]$URI) {
+    # Only whether a system proxy carries the request; its address is never logged.
+    try {
+        if ($null -eq $Request.Proxy) { return 'no' }
+        if ($Request.Proxy.IsBypassed($URI)) { return 'no' }
+        return 'yes'
+    } catch { return 'unknown' }
+}
+
+function Invoke-UpdateDownload([string]$URL, [string]$Output, [long]$MaximumBytes, [long]$ExactBytes = 0,
+    [int]$TimeoutMilliseconds = 30000) {
     $uri = [Uri]$URL
     $response = $null
+    $http = $null
+    $timer = [Diagnostics.Stopwatch]::StartNew()
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
     try {
         for ($redirects = 0; $redirects -le 5; $redirects++) {
             Assert-UpdateTransportURI $uri
+            # Host and path only: download queries carry signed access tokens.
+            Write-UpdateLog ('HTTP GET ' + $uri.Host + $uri.AbsolutePath + ' (timeout ' + ($TimeoutMilliseconds / 1000) + ' s)')
             $http = [Net.HttpWebRequest]::Create($uri)
             $http.AllowAutoRedirect = $false
-            $http.Timeout = 30000
+            $http.Timeout = $TimeoutMilliseconds
             $http.ReadWriteTimeout = 30000
             $http.UserAgent = 'New-Horizons-Portable-Updater'
             $http.Accept = 'application/vnd.github+json'
             $http.Credentials = $null
             $response = $http.GetResponse()
             $status = [int]$response.StatusCode
+            Write-UpdateLog ('HTTP ' + $status + ' after ' + $timer.ElapsedMilliseconds + ' ms, length ' + $response.ContentLength +
+                ', proxy ' + (Get-UpdateProxyUse $http $uri))
             if ($status -in @(301, 302, 303, 307, 308)) {
                 $location = $response.Headers['Location']
                 if (-not $location -or $redirects -eq 5) { throw 'Invalid update redirect.' }
@@ -223,8 +246,13 @@ function Invoke-UpdateDownload([string]$URL, [string]$Output, [long]$MaximumByte
                 $outputStream.Dispose()
                 $inputStream.Dispose()
             }
+            Write-UpdateLog ('HTTP received ' + $count + ' bytes in ' + $timer.ElapsedMilliseconds + ' ms')
             return
         }
+    } catch {
+        $proxy = if ($null -ne $http) { ', proxy ' + (Get-UpdateProxyUse $http $uri) } else { '' }
+        Write-UpdateLog ('HTTP request to ' + $uri.Host + $uri.AbsolutePath + ' failed after ' + $timer.ElapsedMilliseconds + ' ms' + $proxy) $_
+        throw
     } finally {
         if ($null -ne $response) { $response.Dispose() }
     }

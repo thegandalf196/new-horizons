@@ -38,7 +38,8 @@ function New-FixtureView {
         Assets=[PSCustomObject]@{Enabled=$true};Install=[PSCustomObject]@{Enabled=$false};
         Track=[PSCustomObject]@{Enabled=$true;SelectedIndex=0};Notes=[PSCustomObject]@{Enabled=$true};
         State=[PSCustomObject]@{Runtime=$runtime;Offer=$null;Busy=$false;ExitCode=0;Track='stable';
-            Runtimes=@{stable=$runtime;beta=$null};Code=(Join-Path $env:SOURCE 'tools/windows');Notes=@{}}}
+            Runtimes=@{stable=$runtime;beta=$null};Code=(Join-Path $env:SOURCE 'tools/windows');Notes=@{};
+            Checking=$false;PlayRequested=$false;CloseRequested=$false;Launches=0}}
 }
 function New-FixtureRelease([string]$Version,[bool]$Prerelease,[bool]$Draft) {
     $name='New-Horizons-Windows-x64-0123456789ab.zip'
@@ -113,7 +114,7 @@ $view.State.Runtime=$beta
 $script:Calls=@()
 function New-NHPlayerProcess($Runtime,$Script,$Arguments,$LocalData){
     $script:Calls+=[PSCustomObject]@{Runtime=$Runtime;Script=$Script;Arguments=(@($Arguments) -join '|');LocalData=$LocalData}
-    $p=[PSCustomObject]@{}
+    $p=[PSCustomObject]@{Id=4242}
     $p|Add-Member ScriptMethod Dispose {}
     return $p
 }
@@ -192,7 +193,7 @@ function New-NHPlayerProcess($Runtime,$Script,$Arguments){
     Require ($Arguments -contains 'Check') 'Not a check'
     Require (-not ($Arguments -contains '-Request')) 'Check accepted an update'
     $script:Output=$Arguments[[Array]::IndexOf($Arguments,'-Output')+1]
-    $p=[PSCustomObject]@{Disposed=$false}
+    $p=[PSCustomObject]@{Disposed=$false;Id=4242}
     $p|Add-Member ScriptMethod Dispose {$this.Disposed=$true}
     return $p
 }
@@ -212,7 +213,7 @@ Require (-not $view.State.Busy -and $view.Play.Enabled -and -not $view.Bar.Visib
 $view=New-FixtureView
 function New-NHPlayerProcess($Runtime,$Script,$Arguments){
     $script:Output=$Arguments[[Array]::IndexOf($Arguments,'-Output')+1]
-    $p=[PSCustomObject]@{}
+    $p=[PSCustomObject]@{Id=4242}
     $p|Add-Member ScriptMethod Dispose {}
     return $p
 }
@@ -233,7 +234,7 @@ function New-NHPlayerProcess($Runtime,$Script,$Arguments){
     $script:Launches++
     if($script:Launches -eq 1){Require ($Arguments.Count -eq 0) 'Play args changed'}
     else{Require ($Arguments -contains '-SetupOnly' -and $Arguments -contains '-SelectAssets') 'Setup changed'}
-    $p=[PSCustomObject]@{}
+    $p=[PSCustomObject]@{Id=4242}
     $p|Add-Member ScriptMethod Dispose {}
     return $p
 }

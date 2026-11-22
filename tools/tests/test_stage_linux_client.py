@@ -42,7 +42,7 @@ class LinuxStageTest(unittest.TestCase):
             package = fixture.arguments['output'] / 'New-Horizons-Linux-x64'
             for name in ('PortableReleaseLauncher.py', 'PortableReleaseUpdate.py',
                          'PortableLauncherWindow.py', 'PortableLauncherProcess.py', 'PortableLauncherUpgrade.py',
-                         'PortableReleaseNotes.py'):
+                         'PortableReleaseNotes.py', 'PortableLauncherLog.py'):
                 self.assertEqual((package / name).read_bytes(), f'packaging-revision:tools/linux/{name}'.encode())
             # The launcher's offline What's new text is the player changelog.
             self.assertEqual((package / 'CHANGELOG-New-Horizons.md').read_bytes(),

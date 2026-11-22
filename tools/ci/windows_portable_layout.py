@@ -136,7 +136,8 @@ def stage_frontend(root, helpers, package):
     """Stage the launcher, setup helpers and project license notices."""
     for filename in ('Play-New-Horizons.cmd', 'Start-New-Horizons.ps1', 'Launch-Process.ps1',
                      'Setup-Progress.ps1', 'Complete-Assets.ps1', 'Player-Launcher.ps1',
-                     'Player-Launcher-Notes.ps1', 'Player-Launcher-Operation.ps1', 'Update-NHOriginalLauncher.ps1',
+                     'Player-Launcher-Notes.ps1', 'Player-Launcher-Log.ps1', 'Player-Launcher-Operation.ps1',
+                     'Update-NHOriginalLauncher.ps1',
                      'Portable-Release-Launcher.ps1', 'Prepare-NHReleaseUpdate.ps1', 'Release-Metadata.ps1',
                      'README-New-Horizons.txt', 'dirs.json'):
         source = helpers / filename

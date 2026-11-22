@@ -146,7 +146,8 @@ $view=[PSCustomObject]@{Form=$form;Version=[PSCustomObject]@{Text=''};Status=[PS
     Assets=[PSCustomObject]@{Enabled=$true};Install=[PSCustomObject]@{Enabled=$false};Notes=[PSCustomObject]@{Enabled=$true};
     Track=[PSCustomObject]@{Enabled=$true;SelectedIndex=0};
     State=[PSCustomObject]@{Runtime=$runtime;Offer=$null;Busy=$false;ExitCode=0;Track='stable';
-        Runtimes=@{stable=$runtime;beta=$null};Code=(Join-Path $env:SOURCE 'tools/windows');Notes=@{}}}
+        Runtimes=@{stable=$runtime;beta=$null};Code=(Join-Path $env:SOURCE 'tools/windows');Notes=@{};
+        Checking=$false;PlayRequested=$false;CloseRequested=$false;Launches=0}}
 $script:Checks=0
 function Invoke-NHPlayerUpdate($View,$Original,$Install) { $script:Checks++ }
 function Show-NHReleaseNotesWindow($Owner,$Track,$Text) { $script:Shown=$Text }

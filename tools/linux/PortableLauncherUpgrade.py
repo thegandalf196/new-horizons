@@ -21,10 +21,10 @@ SELF_TEST = 'NH_PORTABLE_LAUNCHER_V2'
 MARKER = f"SELF_TEST = '{SELF_TEST}'".encode()
 # Helpers first and the entry point last, so an interrupted upgrade never
 # starts a new entry point against old helpers.
-FILES = ('PortableLauncherProcess.py', 'PortableReleaseUpdate.py', 'PortableReleaseNotes.py',
+FILES = ('PortableLauncherLog.py', 'PortableLauncherProcess.py', 'PortableReleaseUpdate.py', 'PortableReleaseNotes.py',
          'PortableLauncherWindow.py', 'PortableReleaseLauncher.py')
 # Launcher files that older installations do not have yet. Restoring removes them.
-ADDED_FILES = frozenset(('PortableReleaseNotes.py',))
+ADDED_FILES = frozenset(('PortableReleaseNotes.py', 'PortableLauncherLog.py'))
 BACKUP_NAME = 'launcher-backup'
 
 

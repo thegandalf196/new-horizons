@@ -171,7 +171,10 @@ function Show-NHPlayerNotes($View, [string]$Original) {
     $track = $View.State.Track
     if (-not $View.State.Notes.ContainsKey($track)) {
         $View.Status.Text = 'Loading release notes...'
+        $launches = $View.State.Launches
         Invoke-NHPlayerUpdate $View $Original $false
+        # Play stopped this check and ran the game; the notes are not wanted now.
+        if ($View.State.Launches -ne $launches) { return }
         if (-not $View.State.Notes.ContainsKey($track)) {
             $View.Status.Text = 'Could not reach the release server. Showing the notes included with this version.'
         }

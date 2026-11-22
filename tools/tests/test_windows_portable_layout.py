@@ -50,7 +50,7 @@ class PortableLayoutTest(unittest.TestCase):
         frontend = self.root / 'frontend'
         frontend.mkdir()
         layout.stage_frontend(repository, helpers, frontend)
-        for name in ('Player-Launcher.ps1', 'Player-Launcher-Notes.ps1', 'Player-Launcher-Operation.ps1',
+        for name in ('Player-Launcher.ps1', 'Player-Launcher-Notes.ps1', 'Player-Launcher-Log.ps1', 'Player-Launcher-Operation.ps1',
                      'Portable-Release-Launcher.ps1', 'Prepare-NHReleaseUpdate.ps1', 'Release-Metadata.ps1',
                      'Update-NHOriginalLauncher.ps1'):
             self.assertEqual((frontend / name).read_bytes(), (helpers / name).read_bytes())

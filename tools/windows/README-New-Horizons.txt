@@ -84,7 +84,7 @@ Paste that line into File Explorer's address bar to find:
   content\Data, content\Maps, content\Mp3   private copies of your assets
   config\                                  New Horizons settings
   cache\                                   generated/extracted resources
-  logs\                                    diagnostics
+  logs\                                    diagnostics, including launcher.log
 
 Before the game window opens, the root launcher displays "Preparing game
 artwork and starting New Horizons" while the engine checks NewHorizons.nhart.

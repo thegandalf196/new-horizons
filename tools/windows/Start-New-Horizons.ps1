@@ -202,6 +202,9 @@ try {
             . $updateLauncher
             if ($env:NH_WINDOWS_BOOTSTRAP_UI -eq '1' -and $gameArguments.Count -eq 0 -and
                 -not $SetupOnly -and -not $SelectAssets -and -not $AssetsPath) {
+                # The session log starts before a hand-over and records its self-test.
+                . (Join-Path $packageRoot 'Player-Launcher-Log.ps1')
+                Start-NHLauncherSession $packageRoot
                 $launcherOriginal = Resolve-NHLauncherOriginal $packageRoot $delegatedOriginal
                 if ($launcherOriginal -ceq $packageRoot) {
                     # Run the self-tested launcher of the selected stable update in

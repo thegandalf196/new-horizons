@@ -19,7 +19,8 @@ from stage_runtime_libraries import admit_runtime_libraries, relocate_runtime_ev
 
 # Desktop launcher modules copied into player packages that update themselves.
 PORTABLE_LAUNCHER_MODULES = ('PortableReleaseLauncher.py', 'PortableReleaseUpdate.py', 'PortableLauncherWindow.py',
-                             'PortableLauncherProcess.py', 'PortableLauncherUpgrade.py', 'PortableReleaseNotes.py')
+                             'PortableLauncherProcess.py', 'PortableLauncherUpgrade.py', 'PortableReleaseNotes.py',
+                             'PortableLauncherLog.py')
 # Player entry points and texts copied from the packaging revision as (source, package name).
 PLAYER_SUPPORT_FILES = (('tools/Play-New-Horizons.sh', 'Play-New-Horizons.sh'),
                         ('tools/new-horizons-launch.sh', 'new-horizons-launch.sh'),
