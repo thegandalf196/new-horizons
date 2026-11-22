@@ -11,6 +11,7 @@ class CPlayerBattleCallback;
 class HypotheticBattle;
 class DamageCache;
 class BattleHex;
+class Environment;
 namespace spells { class Mechanics; }
 
 /// Battle AI riders for the revised Castle specialties that a spell candidate's
@@ -29,7 +30,7 @@ DLL_LINKAGE float benedictionValue(const CPlayerBattleCallback & battle, const s
 	BattleSide side, uint32_t blessed, DamageCache & damage);
 /// Orrin's Volley Command: immediate reduced shots of every ready shooter at
 /// the Focus Fire! target, with the Order's ranged bonus (0 when inactive).
-DLL_LINKAGE float volleyValue(const CPlayerBattleCallback & battle, const std::shared_ptr<HypotheticBattle> & board,
+DLL_LINKAGE float volleyValue(const CBattleInfoCallback & battle, const std::shared_ptr<CBattleInfoCallback> & board,
 	BattleSide side, uint32_t target, int focusFirePercent, DamageCache & damage);
 /// Adelaide's Frost Ring centred on a stack is a distinct candidate (cloak or chill).
 DLL_LINKAGE bool keepsFrostMantleCentre(const spells::Mechanics & mechanics, BattleHex centre);
@@ -39,4 +40,21 @@ DLL_LINKAGE float frostMantleValue(const CBattleInfoCallback & battle, const std
 /// Value of Frost Mantle chilling an enemy Frost Ring centre stack (0 for a friendly one).
 DLL_LINKAGE float frostMantleChillValue(const CBattleInfoCallback & battle, const std::shared_ptr<HypotheticBattle> & board,
 	BattleSide side, uint32_t centre, DamageCache & damage);
+
+/// Riders the hero-action shortlist must see when it ranks candidates, or a
+/// Quick search never refines them: Orrin's volley on Focus Fire! and Adelaide's
+/// Frost Mantle on a stack-centred Frost Ring. The board is built only when needed.
+class DLL_LINKAGE ScoutRiders
+{
+	const Environment * environment;
+	std::shared_ptr<CBattleInfoCallback> source;
+	BattleSide side;
+	DamageCache * damage;
+	std::shared_ptr<HypotheticBattle> board;
+public:
+	ScoutRiders(const Environment * environment, std::shared_ptr<CBattleInfoCallback> source, BattleSide side,
+		DamageCache & damage);
+	/// Unscaled rider value of the candidate (0 when it has none).
+	float value(const PossibleSpellcast & candidate);
+};
 }

@@ -12,6 +12,7 @@
 #include "BattleExchangeVariant.h"
 #include "BattleDamageValue.h"
 #include "CanonicalOrderValue.h"
+#include "CastleSpecialtyValue.h"
 #include "SecondWindOpportunity.h"
 #include "HeroActionAdmission.h"
 #include "PossibleSpellcast.h"
@@ -150,6 +151,8 @@ void prepareShortlist(Experiment & result, const Environment * environment,
 	battleSearch::FamilyReservations scouts(budget.get(), battleSearch::WorkKind::Scout,
 		limits ? limits->scoutsPerFamily : 0, budget && limits && limits->refineScouted);
 	result.baselineReady = baseline != nullptr;
+	DamageCache riderDamage(&originalDamage);
+	castleSpecialtyAI::ScoutRiders riders(environment, ownedDecisionSource ? ownedDecisionSource : source, side, riderDamage);
 	for(size_t index = 0; index < candidates.size(); ++index)
 	{
 		const auto & candidate = candidates[index];
@@ -173,6 +176,11 @@ void prepareShortlist(Experiment & result, const Environment * environment,
 		else if(result.refinementLimit && spellScoutCandidate(candidate))
 			marginal = spellScoutUtility(environment, scoutSource, side, candidate,
 				originalDamage, utility, baseline.get(), budget);
+		// Castle riders (Volley, Frost Mantle) are not in the projection. A Quick search
+		// refines only ranked candidates, so there a rider alone still ranks one.
+		if(marginal || result.refinementLimit)
+			if(const auto rider = riders.value(candidate); rider > 0)
+				marginal = marginal.value_or(0.0f) + utility.getPositiveEffectMultiplier() * rider;
 		if(marginal && std::isfinite(*marginal)) result.cheapScores.push_back({index, *marginal});
 		}
 		catch(const battleSearch::BudgetExhausted &) {} // Unscouted, not illegal; reference quota remains.

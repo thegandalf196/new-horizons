@@ -69,7 +69,7 @@ float benedictionValue(const CPlayerBattleCallback & battle, const std::shared_p
 	return BENEDICTION_DISCOUNT * bestPrayerValue(*hero, board, side, holders, damage);
 }
 
-float volleyValue(const CPlayerBattleCallback & battle, const std::shared_ptr<HypotheticBattle> & board,
+float volleyValue(const CBattleInfoCallback & battle, const std::shared_ptr<CBattleInfoCallback> & board,
 	BattleSide side, uint32_t targetId, int focusFirePercent, DamageCache & damage)
 {
 	const int percent = newHorizonsHeroes::volleyCommandDamagePercent(battle.battleGetFightingHero(side));
@@ -173,5 +173,30 @@ void addSpecialtyValue(std::vector<PossibleSpellcast> & candidates, const CPlaye
 		if(bonus > 0)
 			candidate.value += bonus * positive;
 	}
+}
+
+ScoutRiders::ScoutRiders(const Environment * environment, std::shared_ptr<CBattleInfoCallback> source, BattleSide side,
+	DamageCache & damage)
+	: environment(environment), source(std::move(source)), side(side), damage(&damage)
+{
+}
+
+float ScoutRiders::value(const PossibleSpellcast & candidate)
+{
+	if(!source)
+		return 0.0f;
+	if(candidate.command == HeroCommand::FOCUS_FIRE && candidate.focusFire)
+		return volleyValue(*source, source, side, candidate.focusFire->targetUnitId,
+			candidate.focusFire->rangedDamagePercent, *damage);
+	if(candidate.command != HeroCommand::NONE || !candidate.spell || candidate.spell->id != SpellID::FROST_RING
+		|| candidate.dest.empty() || !newHorizonsHeroes::frostMantleRule(source->battleGetFightingHero(side)))
+		return 0.0f;
+	const auto * centre = source->battleGetUnitByPos(candidate.dest.front().hexValue, true);
+	if(!centre)
+		return 0.0f;
+	if(!board)
+		board = std::make_shared<HypotheticBattle>(environment, source);
+	return frostMantleValue(*source, board, side, centre->unitId(), *damage)
+		+ frostMantleChillValue(*source, board, side, centre->unitId(), *damage);
 }
 }

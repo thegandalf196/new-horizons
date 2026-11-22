@@ -132,6 +132,23 @@ protected:
 		return callback->heroRequests;
 	}
 
+	/// Orrin's level-1 army facing two Ogre stacks, as in the beta AI-versus-AI map:
+	/// the Zealots act first, so every shooter is still ready.
+	void ogreField()
+	{
+		ASSERT_NO_FATAL_FAILURE(emptyField());
+		active = place(ATTACKER, "core:zealot", BattleHex(2, 5), 8, 1000);
+		auto * marksmen = place(ATTACKER, "core:marksman", BattleHex(1, 1), 40, 900);
+		auto * monks = place(ATTACKER, "core:monk", BattleHex(1, 4), 12, 800);
+		auto * archers = place(ATTACKER, "core:archer", BattleHex(1, 7), 40, 700);
+		auto * pikemen = place(ATTACKER, "core:pikeman", BattleHex(1, 9), 20, 600);
+		enemy = place(DEFENDER, "core:ogre", BattleHex(15, 3), 38, 500);
+		auto * second = place(DEFENDER, "core:ogre", BattleHex(15, 7), 21, 400);
+		ASSERT_TRUE(active && marksmen && monks && archers && pikemen && enemy && second);
+		ASSERT_NO_FATAL_FAILURE(beginCombat());
+		ASSERT_NO_FATAL_FAILURE(activate(active));
+	}
+
 	/// The fixture battle has no battle query, so a decided battle is not ended for us.
 	bool decided() const
 	{
@@ -323,6 +340,50 @@ TEST_F(CastleSpecialtyAITest, OrrinsVolleyIsWorthMoreBeforeHisShootersAct)
 	ASSERT_NO_FATAL_FAILURE(activate(active));
 	ASSERT_NO_FATAL_FAILURE(board());
 	EXPECT_EQ(castleSpecialtyAI::volleyValue(*live, parent, ATTACKER, enemy->unitId(), 10, cache), 0.0f);
+}
+
+TEST_F(CastleSpecialtyAITest, OrrinFocusesFireAgainstSeveralStacksInEverySearchProfile)
+{
+	ASSERT_NO_FATAL_FAILURE(specialist("core:orrin"));
+	ASSERT_NO_FATAL_FAILURE(ogreField());
+	// Quick search refines one unscouted Order (Charge) plus the best scouted ones;
+	// the volley must rank Focus Fire! among those, not leave it unevaluated.
+	for(const auto profile : {battleSearch::Profile::BeamOneTwoActors, battleSearch::Profile::Full})
+	{
+		// Rough cost of the whole hero decision: the fastest of three identical runs.
+		double milliseconds = std::numeric_limits<double>::max();
+		std::vector<BattleAction> chosen;
+		for(int run = 0; run < 3; ++run)
+		{
+			double elapsed = 0;
+			chosen = liveHeroChoice(profile, &elapsed);
+			milliseconds = std::min(milliseconds, elapsed);
+		}
+		RecordProperty(profile == battleSearch::Profile::Full ? "fullMs" : "quickMs", std::to_string(milliseconds));
+		std::cout << "Orrin hero decision " << (profile == battleSearch::Profile::Full ? "Full" : "Quick")
+			<< ": " << milliseconds << " ms\n";
+		ASSERT_EQ(chosen.size(), 1u);
+		EXPECT_EQ(chosen.front().actionType, EActionType::HERO_COMMAND);
+		EXPECT_EQ(chosen.front().command, HeroCommand::FOCUS_FIRE) << "command " << static_cast<int>(chosen.front().command);
+	}
+	const auto action = liveHeroChoice(battleSearch::Profile::BeamOneTwoActors);
+	ASSERT_EQ(action.size(), 1u);
+	const auto health = enemy->getAvailableHealth() + battle()->battleGetUnitByPos(BattleHex(15, 7), true)->getAvailableHealth();
+	ASSERT_TRUE(submit(action.front()));
+	const auto after = enemy->getAvailableHealth() + battle()->battleGetUnitByPos(BattleHex(15, 7), true)->getAvailableHealth();
+	EXPECT_LT(after, health) << "The volley fires at once";
+}
+
+TEST_F(CastleSpecialtyAITest, OrdinaryHeroOrdersAreAcceptedWithoutAVolley)
+{
+	ASSERT_NO_FATAL_FAILURE(specialist("core:valeska"));
+	ASSERT_NO_FATAL_FAILURE(ogreField());
+	ASSERT_NO_FATAL_FAILURE(board());
+	EXPECT_EQ(castleSpecialtyAI::volleyValue(*live, parent, ATTACKER, enemy->unitId(), 10, cache), 0.0f);
+	const auto chosen = liveHeroChoice(battleSearch::Profile::BeamOneTwoActors);
+	ASSERT_EQ(chosen.size(), 1u);
+	std::cout << "Ordinary hero order " << static_cast<int>(chosen.front().command) << "\n";
+	EXPECT_TRUE(submit(chosen.front()));
 }
 
 TEST_F(CastleSpecialtyAITest, AdelaideCloaksAnIsolatedThreatenedStack)
