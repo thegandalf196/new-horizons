@@ -61,8 +61,10 @@ void replaceBenediction(CGameHandler & handler, const CBattleInfoCallback & batt
 	{
 		const auto * unit = battle.battleGetUnitByID(id);
 		std::vector<Bonus> markers;
-		for(const auto & bonus : *unit->getBonuses(CSelector([](const Bonus * candidate)
-			{ return castleSpecialtyPrayers::isBenedictionMarker(candidate); })))
+		// Hold the list: ranging over *temporary leaves it dangling before C++23.
+		const auto held = unit->getBonuses(CSelector([](const Bonus * candidate)
+			{ return castleSpecialtyPrayers::isBenedictionMarker(candidate); }));
+		for(const auto & bonus : *held)
 			markers.push_back(*bonus);
 		update.toRemove.emplace_back(id, std::move(markers));
 	}
