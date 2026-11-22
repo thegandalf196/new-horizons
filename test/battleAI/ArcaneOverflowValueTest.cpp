@@ -209,7 +209,7 @@ TEST(ArcaneOverflowValueTest, CascadeRetainsFullTwoRecipientUtilityAndOneAccepte
 		{
 			++visits;
 			EXPECT_NE(outcome, Outcome::PrimaryOnly);
-			return LocalUtility{outcome == Outcome::BothLand ? 100 + 120 + 120 : 0, 9};
+			return LocalUtility{static_cast<float>(outcome == Outcome::BothLand ? 100 + 120 + 120 : 0), 9};
 		});
 	ASSERT_TRUE(result);
 	EXPECT_FLOAT_EQ(result->immediate, 170);

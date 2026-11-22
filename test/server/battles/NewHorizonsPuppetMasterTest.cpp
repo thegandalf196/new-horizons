@@ -194,7 +194,7 @@ protected:
 
 	void addBerserkSpellEffectBundle(CStack * target)
 	{
-		const BonusSourceID berserkSource(SpellID(SpellID::BERSERK));
+		const BonusSourceID berserkSource{SpellID(SpellID::BERSERK)};
 		target->addNewBonus(std::make_shared<Bonus>(BonusDuration::UNTIL_OWN_ATTACK,
 			BonusType::ATTACKS_NEAREST_CREATURE, BonusSource::SPELL_EFFECT, 0, berserkSource));
 		// A second component with the same spell source proves Puppet Master removes the

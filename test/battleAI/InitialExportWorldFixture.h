@@ -102,7 +102,7 @@ protected:
 		for(const auto & bonus : *bonuses)
 			if(bonus->stacking == "initial-export-world.test")
 				records.push_back(projectedHitTest::serialized(*bonus));
-		return {unit.unitId(), unit.getAttack(false), unit.getMovementRange(0), unit.getCount(), counters,
+		return {unit.unitId(), unit.getAttack(false), static_cast<int>(unit.getMovementRange(0)), unit.getCount(), counters,
 			unit.getAvailableHealth(), unit.getPosition(), std::move(saved), std::move(records)};
 	}
 	std::vector<Fact> freeze(InitialExportWorld & world)
