@@ -107,7 +107,8 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: ${{ runner.temp }}/nh-windows-test-conan.tgz
-          key: nh-windows-tests-conan-debug-v1-6772d2e9-${{ hashFiles('conanfile.py', 'dependencies/conanfile.py', 'dependencies/luajit_version', 'dependencies/conan_profiles/**', 'tools/conan/sdl_image/**') }}
+          # The workflow is hashed too because it holds the Conan install settings.
+          key: nh-windows-tests-conan-debug-v2-6772d2e9-${{ hashFiles('.github/workflows/new-horizons-windows-tests.yml', 'conanfile.py', 'dependencies/conanfile.py', 'dependencies/luajit_version', 'dependencies/conan_profiles/**', 'tools/conan/sdl_image/**') }}
 
       - name: Resolve Debug dependencies
         env:
@@ -122,7 +123,8 @@ jobs:
           conan export tools/conan/sdl_image --version=3.4.4 --user=newhorizons --channel=patched
           # Checked iterators change the layout of standard containers, so every
           # C++ dependency that passes them through its API is rebuilt as Debug.
-          # C libraries keep their prebuilt Release binaries.
+          # C libraries keep their prebuilt Release binaries. The profile pins the
+          # Release CRT, so the Debug packages also select the debug CRT (/MDd).
           conan install . --output-folder=conan-generated \
             --build='missing:sdl_image/3.4.4@newhorizons/patched' --build='missing:boost/*' \
             --build='missing:onetbb/*' --build='missing:b2/*' --conf='tools.build:jobs=4' \
@@ -131,6 +133,8 @@ jobs:
             --conf='tools.cmake.cmaketoolchain:generator=Ninja' \
             --conf="tools.microsoft.msbuild:vs_version=${MSBUILD_VS_VERSION}" \
             -s '&:build_type=Debug' -s 'boost/*:build_type=Debug' -s 'onetbb/*:build_type=Debug' \
+            -s '&:compiler.runtime_type=Debug' -s 'boost/*:compiler.runtime_type=Debug' \
+            -s 'onetbb/*:compiler.runtime_type=Debug' \
             -o '&:target_pre_windows10=True' -o '&:with_onnxruntime=False' -o '&:with_discord_presence=False' \
             --format=json > conan-test-graph.json
           if [[ "$DEBUG_DEPS_HIT" != true ]]; then
