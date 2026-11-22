@@ -24946,22 +24946,28 @@
       "sha256": "f3f387a929680f6482c35ec712a39815d4b9181e736e8367f0f3ead4d1534cd9"
     },
     "lib/entities/artifact/CArtHandler.cpp": {
-      "kind": "legacy",
-      "lines": 516,
+      "deferral": "Before further growth, extract the instance-bonus relocation step of loadFromJson into a focused helper with a charge-limiter artifact test; exact 518-line bound, no later growth allowance.",
+      "kind": "exception",
+      "lines": 518,
       "owner": "gameplay_engineer",
-      "rationale": "Existing file owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 516 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "82ead3254901194fba29d87d4c2e14b586076ec08d86687414c2f82b2b216dba"
+      "previous_review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "rationale": "Exact 516 to 518-line urgent correctness successor: charge-limited artifact bonuses are collected before removeBonus erases them from the exported list being iterated (iterator invalidation). No other change.",
+      "review": "CLAUDE-UBSWEEP-LIFETIME-20261122",
+      "review_scope": "Exact source organization of a minimal undefined-behaviour fix only; no future growth allowance.",
+      "review_status": "AUTHOR_RECORDED_EXACT_SOURCE_PENDING_INDEPENDENT_REVIEW",
+      "sha256": "53f3956a4acf6549319727846004bf486e745d909c68590428c6ee6711fedc8d"
     },
     "lib/entities/artifact/CArtHandler.cpp::std::shared_ptr<CArtifact> CArtHandler::loadFromJson(const std::string & scope, const JsonNode & node, const std::string & identifier, size_t index)#1": {
-      "kind": "legacy",
-      "lines": 142,
+      "deferral": "Before further growth, extract the instance-bonus relocation step into a focused helper; exact 144-line bound, no later growth allowance.",
+      "kind": "exception",
+      "lines": 144,
       "owner": "gameplay_engineer",
-      "rationale": "Existing function owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 142 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "ffd0dd2ef45843c71b8e567b4af6b6a91e50337d45da2f84414f366abc831d3f"
+      "previous_review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "rationale": "Exact 142 to 144-line urgent correctness successor: collect charge-limited bonuses before removing them, instead of erasing from the exported list during its own range-for.",
+      "review": "CLAUDE-UBSWEEP-LIFETIME-20261122",
+      "review_scope": "Exact source organization of a minimal undefined-behaviour fix only; no future growth allowance.",
+      "review_status": "AUTHOR_RECORDED_EXACT_SOURCE_PENDING_INDEPENDENT_REVIEW",
+      "sha256": "2f469548eb67c3f2c92fb2070737cf7e5eab52670b445961ffe8b1f2753da492"
     },
     "lib/entities/faction/CTownHandler.cpp": {
       "kind": "legacy",

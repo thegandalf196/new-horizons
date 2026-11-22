@@ -232,8 +232,11 @@ void CBonusSystemNode::accumulateBonus(const std::shared_ptr<Bonus>& b)
 		addNewBonus(std::make_shared<Bonus>(*b)); //duplicate needed, original may get destroyed
 }
 
-void CBonusSystemNode::removeBonus(const std::shared_ptr<Bonus>& b)
+void CBonusSystemNode::removeBonus(const std::shared_ptr<Bonus>& removed)
 {
+	// Callers may pass an element of exportedBonuses itself; erasing it would leave the
+	// reference naming the next bonus (or a destroyed slot), so keep our own owner.
+	const std::shared_ptr<Bonus> b = removed;
 	NativeBonusGraphAccess graphAccess;
 	exportedBonuses -= b;
 	if(b->propagator)

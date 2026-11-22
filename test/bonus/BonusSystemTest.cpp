@@ -139,6 +139,30 @@ TEST(BonusSystemInvalidationTest, AttachingChildKeepsUnchangedBranchVersions)
 	EXPECT_EQ(firstChild.getTreeVersion(), firstChildVersion);
 }
 
+TEST(BonusSystemRemovalTest, RemovingAnExportedListElementRemovesThatBonusOnly)
+{
+	CBonusSystemNode node{BonusNodeType::HERO};
+	const auto bonus = [](int value)
+	{
+		return std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::MORALE, BonusSource::OTHER, value,
+			BonusSourceID());
+	};
+	node.addNewBonus(bonus(1));
+	node.addNewBonus(bonus(10));
+	node.addNewBonus(bonus(100));
+
+	// The argument aliases the element that removeBonus erases from the exported list.
+	node.removeBonus(node.getExportedBonusList()[0]);
+
+	ASSERT_EQ(node.getExportedBonusList().size(), 2);
+	EXPECT_EQ(node.getExportedBonusList()[0]->val, 10);
+	EXPECT_EQ(node.valOfBonuses(BonusType::MORALE), 110);
+
+	node.removeBonus(node.getExportedBonusList()[1]);
+	EXPECT_EQ(node.getExportedBonusList().size(), 1);
+	EXPECT_EQ(node.valOfBonuses(BonusType::MORALE), 10);
+}
+
 TEST_F(BonusSystemTest, multipleBonusSources)
 {
 	CBonusSystemNode ring1{BonusNodeType::ARTIFACT_INSTANCE};

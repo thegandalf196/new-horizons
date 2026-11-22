@@ -276,18 +276,20 @@ std::shared_ptr<CArtifact> CArtHandler::loadFromJson(const std::string & scope, 
 		}
 	}
 
-	// Some bonuses must be located in the instance.
+	// Some bonuses must be located in the instance. Collect them first: removeBonus erases
+	// from the exported list, which must not happen while iterating it.
+	std::vector<std::shared_ptr<Bonus>> instanceOnly;
 	for(const auto & b : art->getExportedBonusList())
-	{
 		if(std::dynamic_pointer_cast<const HasChargesLimiter>(b->limiter))
-		{
-			b->source = BonusSource::ARTIFACT;
-			b->duration = BonusDuration::PERMANENT;
-			b->description.appendTextID(art->getNameTextID());
-			b->description.appendRawString(" %+d");
-			art->instanceBonuses.push_back(b);
-			art->removeBonus(b);
-		}
+			instanceOnly.push_back(b);
+	for(const auto & b : instanceOnly)
+	{
+		b->source = BonusSource::ARTIFACT;
+		b->duration = BonusDuration::PERMANENT;
+		b->description.appendTextID(art->getNameTextID());
+		b->description.appendRawString(" %+d");
+		art->instanceBonuses.push_back(b);
+		art->removeBonus(b);
 	}
 
 	return art;
