@@ -358,7 +358,7 @@ bool NativeAdapter::expireEffectSelector(HypotheticBattle & branch, UnitId id, c
 	NativePreparation preparation(branch);
 	const auto target = preparation.unit(id);
 	std::vector<Bonus> unmatched = removed;
-	for(const auto & row : *target->getUnstackedBonuses(selector))
+	for(const auto rows = target->getUnstackedBonuses(selector); const auto & row : *rows)
 	{
 		const auto found = std::ranges::find_if(unmatched, [&](const Bonus & value)
 		{ return row && battle::exactBattleEffectEqual(value, *row); });

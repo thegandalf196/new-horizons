@@ -64,7 +64,8 @@ std::vector<Bonus> removedEffects(const battle::Unit & before, const battle::Uni
 {
 	std::vector<Bonus> result;
 	const auto remaining = after.getBonusesFrom(BonusSource::SPELL_EFFECT);
-	for(const auto & bonus : *before.getUnstackedBonuses(Selector::sourceTypeSel(BonusSource::SPELL_EFFECT)))
+	const auto effects = before.getUnstackedBonuses(Selector::sourceTypeSel(BonusSource::SPELL_EFFECT));
+	for(const auto & bonus : *effects)
 		if(bonus && !remaining->getFirst(Selector::source(BonusSource::SPELL_EFFECT, bonus->sid)))
 			result.push_back(*bonus);
 	return result;
