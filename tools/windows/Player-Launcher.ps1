@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # Ordinary Windows EXE entry: presentation and exact owned child supervision.
 # Setup, all CLI arguments and crash reporting retain Start-New-Horizons routes.
+. (Join-Path $PSScriptRoot 'Setup-Progress.ps1')
 . (Join-Path $PSScriptRoot 'Player-Launcher-Notes.ps1')
 . (Join-Path $PSScriptRoot 'Player-Launcher-Log.ps1')
 # Covers a cold PowerShell start, antivirus scans and one GitHub request that has
@@ -119,6 +120,10 @@ function Update-NHPlayerVersion($View) {
         $View.Version.Text = 'No beta installed yet. Check for updates to find one.'
     } else {
         $View.Version.Text = 'Beta ' + (Get-NHProductVersion $runtime).ToString() + ' ' + [char]0x00B7 + ' separate saves'
+    }
+    # As on Linux, the beta track's version line is blue.
+    if ($View.Version.PSObject.Properties['ForeColor']) {
+        $View.Version.ForeColor = Get-NHLookColor $(if ($View.State.Track -ceq 'beta') { 'Beta' } else { 'Version' })
     }
 }
 
@@ -306,25 +311,48 @@ function Invoke-NHPlayerGame($View, [bool]$Setup) {
     }
 }
 
-function New-NHPlayerButton($Form, [string]$Text, [int]$X, [int]$Y, [int]$Width) {
+function New-NHPlayerButton($Form, [string]$Text, [int]$X, [int]$Y, [int]$Width, [string]$Face = 'Button') {
     $button = New-Object Windows.Forms.Button
     $button.Text = $Text
     $button.Location = New-Object Drawing.Point($X,$Y)
-    $button.Size = New-Object Drawing.Size($Width,32)
+    $button.Size = New-Object Drawing.Size($Width,36)
+    Set-NHButtonLook $button $Face
+    if ($Face -ceq 'Play') { $button.Font = New-Object Drawing.Font($Form.Font, [Drawing.FontStyle]::Bold) }
     $Form.Controls.Add($button)
     return $button
 }
 
-function New-NHPlayerTrack($Form) {
+function New-NHPlayerLabel($Form, [string]$Text, [int]$X, [int]$Y, [int]$Width, [int]$Height) {
     $label = New-Object Windows.Forms.Label
-    $label.Location = New-Object Drawing.Point(18,21)
-    $label.Size = New-Object Drawing.Size(100,20)
-    $label.Text = 'Version track'
+    $label.Location = New-Object Drawing.Point($X,$Y)
+    $label.Size = New-Object Drawing.Size($Width,$Height)
+    $label.TextAlign = 'MiddleLeft'
+    $label.Text = $Text
     $Form.Controls.Add($label)
+    return $label
+}
+
+function New-NHPlayerTitle($Form) {
+    # The Linux launcher's serif title; Georgia ships with Windows 10 and 11.
+    $title = New-Object Windows.Forms.Label
+    $title.AutoSize = $true
+    $title.Location = New-Object Drawing.Point(18,16)
+    $title.Font = New-NHLookFont 'Georgia' 20 'Bold'
+    $title.ForeColor = Get-NHLookColor 'Title'
+    $title.UseMnemonic = $false
+    $title.Text = 'NEW HORIZONS'
+    $Form.Controls.Add($title)
+}
+
+function New-NHPlayerTrack($Form) {
+    $null = New-NHPlayerLabel $Form 'Version track' 22 70 104 26
     $track = New-Object Windows.Forms.ComboBox
     $track.DropDownStyle = 'DropDownList'
-    $track.Location = New-Object Drawing.Point(124,18)
-    $track.Size = New-Object Drawing.Size(354,24)
+    $track.FlatStyle = 'Flat'
+    $track.BackColor = Get-NHLookColor 'Button'
+    $track.ForeColor = Get-NHLookColor 'ButtonText'
+    $track.Location = New-Object Drawing.Point(132,71)
+    $track.Size = New-Object Drawing.Size(406,24)
     $null = $track.Items.Add('Stable')
     $null = $track.Items.Add('Beta (experimental, separate saves)')
     $track.SelectedIndex = 0
@@ -333,40 +361,43 @@ function New-NHPlayerTrack($Form) {
 }
 
 function New-NHPlayerView($Runtimes, [string]$CodeRoot) {
-    Add-Type -AssemblyName System.Windows.Forms
+    # Same rows as the Linux launcher: title, track, version and notes, a
+    # wrapping status, progress, then Play and the other actions two by two.
+    Initialize-NHWindowsLook
     $form = New-Object Windows.Forms.Form
+    Start-NHFormLook $form 560 336
     $form.Text = 'New Horizons'
-    $form.ClientSize = New-Object Drawing.Size(500,276)
     $form.StartPosition = 'CenterScreen'
     $form.FormBorderStyle = 'FixedDialog'
     $form.MaximizeBox = $false
-    $version = New-Object Windows.Forms.Label
-    $version.Location = New-Object Drawing.Point(18,54)
-    $version.Size = New-Object Drawing.Size(340,24)
-    $form.Controls.Add($version)
-    $status = New-Object Windows.Forms.Label
-    $status.Location = New-Object Drawing.Point(18,174)
-    $status.Size = New-Object Drawing.Size(460,62)
-    $status.Text = 'Ready to play.'
-    $form.Controls.Add($status)
+    New-NHPlayerTitle $form
+    $track = New-NHPlayerTrack $form
+    $version = New-NHPlayerLabel $form '' 22 108 396 32
+    $notes = New-NHPlayerButton $form "What's new" 428 106 110
+    $status = New-NHPlayerLabel $form 'Ready to play.' 22 150 516 54
+    $status.TextAlign = 'TopLeft'
+    $status.AutoEllipsis = $true
     $bar = New-Object Windows.Forms.ProgressBar
-    $bar.Location = New-Object Drawing.Point(18,239)
-    $bar.Size = New-Object Drawing.Size(460,18)
+    $bar.Location = New-Object Drawing.Point(22,208)
+    $bar.Size = New-Object Drawing.Size(516,12)
     $bar.Style = 'Marquee'
     $bar.MarqueeAnimationSpeed = 30
     $bar.Visible = $false
     $form.Controls.Add($bar)
-    $view = [PSCustomObject]@{Form=$form;Version=$version;Status=$status;Bar=$bar;Track=(New-NHPlayerTrack $form);
-        Play=(New-NHPlayerButton $form 'Play' 18 90 460);
-        Check=(New-NHPlayerButton $form 'Check for updates' 18 132 145);
-        Install=(New-NHPlayerButton $form 'Install update' 173 132 135);
-        Assets=(New-NHPlayerButton $form 'Original game files' 318 132 160);
-        Notes=(New-NHPlayerButton $form "What's new" 368 50 110);
+    $view = [PSCustomObject]@{Form=$form;Version=$version;Status=$status;Bar=$bar;Track=$track;
+        Play=(New-NHPlayerButton $form 'Play' 22 232 253 'Play');
+        Check=(New-NHPlayerButton $form 'Check for updates' 285 232 253);
+        Install=(New-NHPlayerButton $form 'Install update' 22 278 253);
+        Assets=(New-NHPlayerButton $form 'Original game files' 285 278 253);
+        Notes=$notes;
         State=[PSCustomObject]@{Runtime=$Runtimes['stable'];Offer=$null;Busy=$false;ExitCode=0;
             Track='stable';Runtimes=$Runtimes;Code=$CodeRoot;Notes=@{};Checking=$false;PlayRequested=$false;
             CloseRequested=$false;Launches=0}}
     $view.Install.Enabled = $false
     Update-NHPlayerVersion $view
+    Complete-NHFormLook $form
+    # Focus Play, as the Linux window shows no selected text field.
+    if ($view.Play.Enabled) { $form.ActiveControl = $view.Play }
     return $view
 }
 

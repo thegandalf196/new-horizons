@@ -162,7 +162,7 @@ function Set-ManagedPreset([string]$PackageRoot, [string]$ProfileRoot) {
 }
 
 function Select-CompleteFolder {
-    Add-Type -AssemblyName System.Windows.Forms
+    Initialize-NHWindowsLook
     $dialog = New-Object System.Windows.Forms.FolderBrowserDialog
     $dialog.Description = 'Select your installed, legitimate Heroes III Complete folder (containing Data, Maps and Mp3), or its Data folder. Files will be copied, not modified.'
     $dialog.ShowNewFolderButton = $false
@@ -440,7 +440,7 @@ try {
     [Console]::Error.WriteLine('New Horizons: ' + $_.Exception.Message)
     [Console]::Error.WriteLine('Setup failures prevent launch. Check free space/permissions and README-New-Horizons.txt. Do not use administrator mode.')
     if ($env:NH_WINDOWS_BOOTSTRAP_UI -eq '1') {
-        Add-Type -AssemblyName System.Windows.Forms
+        Initialize-NHWindowsLook
         $null = [Windows.Forms.MessageBox]::Show($_.Exception.Message, 'New Horizons setup')
     }
     $launchExitCode = 1

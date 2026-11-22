@@ -189,37 +189,53 @@ function Show-NHPlayerNotes($View, [string]$Original) {
 }
 
 function Show-NHReleaseNotesWindow($Owner, [string]$Track, [string]$Text) {
-    # A read-only TextBox shows text only: no markup, no clickable links, no browser.
+    Initialize-NHWindowsLook
     $form = New-Object Windows.Forms.Form
+    Start-NHFormLook $form 560 460
     $label = 'Stable'
     if ($Track -ceq 'beta') { $label = 'Beta' }
     $form.Text = "What's new - " + $label
-    $form.ClientSize = New-Object Drawing.Size(560,460)
     $form.MinimumSize = New-Object Drawing.Size(360,260)
     $form.StartPosition = 'CenterParent'
     $form.MinimizeBox = $false
     $form.ShowInTaskbar = $false
+    $close = New-Object Windows.Forms.Button
+    $close.Text = 'Close'
+    $close.Location = New-Object Drawing.Point(434,412)
+    $close.Size = New-Object Drawing.Size(110,32)
+    $close.Anchor = 'Bottom,Right'
+    $close.DialogResult = 'OK'
+    Set-NHButtonLook $close
+    $form.Controls.Add((New-NHReleaseNotesBox $Text))
+    $form.Controls.Add($close)
+    $form.AcceptButton = $close
+    $form.CancelButton = $close
+    $form.ActiveControl = $close
+    Complete-NHFormLook $form
+    try { $null = $form.ShowDialog($Owner) } finally { $form.Dispose() }
+}
+
+function New-NHReleaseNotesBox([string]$Text) {
+    # A read-only TextBox shows text only: no markup, no clickable links, no browser.
+    # Its frame gives the text the Linux window's 8-pixel margin.
+    $frame = New-Object Windows.Forms.Panel
+    $frame.Location = New-Object Drawing.Point(16,16)
+    $frame.Size = New-Object Drawing.Size(528,384)
+    $frame.Anchor = 'Top,Bottom,Left,Right'
+    $frame.Padding = New-Object Windows.Forms.Padding(8)
+    $frame.BackColor = Get-NHLookColor 'Field'
+    $frame.BorderStyle = 'FixedSingle'
     $box = New-Object Windows.Forms.TextBox
     $box.Multiline = $true
     $box.ReadOnly = $true
     $box.WordWrap = $true
     $box.ScrollBars = 'Vertical'
     $box.MaxLength = 262144
-    $box.BackColor = [Drawing.SystemColors]::Window
-    $box.Location = New-Object Drawing.Point(12,12)
-    $box.Size = New-Object Drawing.Size(536,396)
-    $box.Anchor = 'Top,Bottom,Left,Right'
+    $box.BorderStyle = 'None'
+    $box.BackColor = Get-NHLookColor 'Field'
+    $box.ForeColor = Get-NHLookColor 'Text'
+    $box.Dock = 'Fill'
     $box.Text = $Text.Replace("`n", "`r`n")
-    $close = New-Object Windows.Forms.Button
-    $close.Text = 'Close'
-    $close.Location = New-Object Drawing.Point(448,420)
-    $close.Size = New-Object Drawing.Size(100,28)
-    $close.Anchor = 'Bottom,Right'
-    $close.DialogResult = 'OK'
-    $form.Controls.Add($box)
-    $form.Controls.Add($close)
-    $form.AcceptButton = $close
-    $form.CancelButton = $close
-    $form.ActiveControl = $close
-    try { $null = $form.ShowDialog($Owner) } finally { $form.Dispose() }
+    $frame.Controls.Add($box)
+    return $frame
 }
