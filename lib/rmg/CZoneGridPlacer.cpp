@@ -586,7 +586,10 @@ void CZoneGridPlacer::setInitialZoneCenters(
 				return;
 
 			const int3 cell(static_cast<si32>(x), static_cast<si32>(y), level);
-			const auto [targetX, targetY] = normalizedCellPos(cell, gridSize, rand->nextDouble(0.25, 0.75), rand->nextDouble(0.25, 0.75));
+			// Argument order is unspecified; draw Y first, as GCC builds did, to keep Linux maps per seed.
+			const double offsetY = rand->nextDouble(0.25, 0.75);
+			const double offsetX = rand->nextDouble(0.25, 0.75);
+			const auto [targetX, targetY] = normalizedCellPos(cell, gridSize, offsetX, offsetY);
 			zone->setCenter(float3(static_cast<float>(targetX), static_cast<float>(targetY), level));
 		});
 	}

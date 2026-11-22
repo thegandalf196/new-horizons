@@ -26932,13 +26932,16 @@
       "sha256": "9930e5a25d8f72c6b1671b7596d5fa26143128e852ff9677403018e8d8d533e7"
     },
     "lib/rmg/CZoneGridPlacer.cpp": {
-      "kind": "legacy",
-      "lines": 645,
+      "deferral": "Before further growth, extract initial zone-centre placement from CZoneGridPlacer into a focused helper; exact 648-line bound, no later growth allowance.",
+      "kind": "exception",
+      "lines": 648,
       "owner": "engine_engineer",
-      "rationale": "Existing file owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 645 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "6046b0b10e6a5b26c31fac3a7ba265c908ad4657ab7405eb3e03b2beaf652c33"
+      "previous_review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "rationale": "Exact 645 to 648-line urgent correctness successor: the two random zone-centre offsets are drawn in separate statements (Y first, as GCC evaluated them) instead of as two arguments of one call, whose evaluation order differs between compilers.",
+      "review": "CLAUDE-UBSWEEP-LIFETIME-20261122",
+      "review_scope": "Exact source organization of a minimal undefined-behaviour fix only; no future growth allowance.",
+      "review_status": "AUTHOR_RECORDED_EXACT_SOURCE_PENDING_INDEPENDENT_REVIEW",
+      "sha256": "73d9172df481166b8f05755beb84eabd785de80524104860ef5e1619faa5fd4a"
     },
     "lib/rmg/CZoneGridPlacer.cpp::void CZoneGridPlacer::annealGrids(std::vector<std::unique_ptr<GridType>> & grids, const std::vector<size_t> & gridSizes, int mapLevels, vstd::RNG * rand) const#1": {
       "kind": "legacy",
@@ -27013,13 +27016,16 @@
       "sha256": "ed6c0d4ca1dfcee17e8d60e5206cf16835235007712739f12216c6e35fc38181"
     },
     "lib/rmg/ObjectConfig.cpp::void ObjectConfig::serializeJson(JsonSerializeFormat & handler)#1": {
-      "kind": "legacy",
+      "deferral": "Before further growth, extract required-object parsing from serializeJson into a focused helper; exact 305-line bound, no later growth allowance.",
+      "kind": "exception",
       "lines": 305,
       "owner": "engine_engineer",
-      "rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 305 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "da1ccd9d63605c5a273e3eacf0da1b9613cdc7934407598540185a6d0aa5d921"
+      "previous_review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "rationale": "Exact 305-line no-growth urgent correctness successor: the deferred identifier callbacks capture the stateless getInfo helper by value instead of by reference to a local that has gone out of scope when they run.",
+      "review": "CLAUDE-UBSWEEP-LIFETIME-20261122",
+      "review_scope": "Exact source organization of a minimal undefined-behaviour fix only; no future growth allowance.",
+      "review_status": "AUTHOR_RECORDED_EXACT_SOURCE_PENDING_INDEPENDENT_REVIEW",
+      "sha256": "0fcbec4c54102537d3a51d952f2b363941fad2c0ac5ac4f044afc7fba16a8076"
     },
     "lib/rmg/RmgObject.cpp": {
       "kind": "legacy",
