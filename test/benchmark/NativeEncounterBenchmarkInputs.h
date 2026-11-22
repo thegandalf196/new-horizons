@@ -4,7 +4,9 @@
 #include <charconv>
 #include <cstdlib>
 #include <stdexcept>
+#include <string>
 #include <string_view>
+#include <vector>
 
 namespace nativeBenchmark
 {
@@ -49,5 +51,77 @@ inline Army mirrorNecropolisArmy()
 {
 	return {{troop("core:skeleton"), 40}, {troop("core:walkingDead"), 20}, {troop("core:wight"), 10},
 		{troop("core:vampire"), 8}, {troop("core:lich"), 5}, {troop("core:blackKnight"), 3}, {troop("core:boneDragon"), 2}};
+}
+inline Army withSlot(Army army, size_t slot, const char * creature, uint16_t count)
+{
+	army[slot] = {troop(creature), count};
+	return army;
+}
+inline Army strongholdArmy()
+{
+	return {{troop("core:goblin"), 40}, {troop("core:orc"), 15}, {troop("core:ogre"), 8},
+		{troop("core:roc"), 6}, {troop("core:thunderbird"), 5}, {troop("core:cyclop"), 3}};
+}
+inline Army dungeonArmy()
+{
+	return {{troop("core:troglodyte"), 30}, {troop("core:harpy"), 15}, {troop("core:beholder"), 8},
+		{troop("core:medusa"), 8}, {troop("core:minotaur"), 5}, {troop("core:manticore"), 4}, {troop("core:scorpicore"), 2}};
+}
+inline Army infernoArmy()
+{
+	return {{troop("core:imp"), 30}, {troop("core:gog"), 12}, {troop("core:magog"), 8}, {troop("core:demon"), 10},
+		{troop("core:hornedDemon"), 8}, {troop("core:pitFiend"), 4}, {troop("core:efreet"), 3}};
+}
+inline Army fortressArmy()
+{
+	return {{troop("core:gnoll"), 30}, {troop("core:gnollMarauder"), 20}, {troop("core:lizardman"), 15},
+		{troop("core:gorgon"), 4}, {troop("core:wyvern"), 3}};
+}
+inline Army confluxArmy()
+{
+	return {{troop("core:pixie"), 20}, {troop("new-horizons:wisp"), 14}, {troop("new-horizons:wispUpgrade"), 8},
+		{troop("core:airElemental"), 6}, {troop("core:fireElemental"), 6}, {troop("core:energyElemental"), 4}};
+}
+/// A specialty hero against an unchanged hero. Native defaults keep the hero's
+/// own book and Mana; otherwise it receives the fixture spells plus `spells`.
+/// Armies are built at run time: identifiers resolve only after content loads.
+struct SpecialtyEncounter
+{
+	using ArmyFactory = Army (*)();
+	const char * name;
+	const char * hero;
+	ArmyFactory left;
+	ArmyFactory right;
+	const char * opponent;
+	std::vector<std::string> spells;
+	bool nativeHeroDefaults;
+};
+inline std::vector<SpecialtyEncounter> specialtyEncounters()
+{
+	using A = SpecialtyEncounter::ArmyFactory;
+	const A castle = mirrorCastleArmy, inferno = infernoArmy;
+	return {
+		{"Adela", "core:adela", castle, castle, "core:rion", {"core:bless", "core:shield"}, false},
+		{"Loynis", "core:loynis", castle, castle, "core:rion", {"core:bless", "new-horizons:sanctuary"}, false},
+		{"Orrin", "core:orrin", rangedArmy, castle, "core:rion", {"core:bless"}, false},
+		{"Adelaide", "core:adelaide", castle, castle, "core:rion", {"core:frostRing"}, false},
+		{"Sanya", "core:sanya", castle, castle, "core:rion", {"core:slow", "core:haste"}, false},
+		{"Cuthbert", "core:cuthbert", castle, castle, "core:rion", {"core:slow"}, false},
+		{"Edric", "core:edric", +[] { return withSlot(mirrorCastleArmy(), 2, "core:royalGriffin", 12); }, castle, "core:rion", {}, true},
+		{"RionIvorControl", "core:rion", castle, castle, "core:ivor", {"core:bless", "core:slow"}, false},
+		{"Tyris", "core:tyris", +[] { return withSlot(mirrorCastleArmy(), 5, "core:champion", 4); }, castle, "core:rion", {}, true},
+		{"Ingham", "core:ingham", +[] { return withSlot(mirrorCastleArmy(), 4, "core:zealot", 6); }, castle, "core:rion", {}, true},
+		{"Rashka", "core:rashka", +[] { return withSlot(infernoArmy(), 6, "core:efreetSultan", 3); }, inferno, "core:ivor", {}, true},
+		{"Marius", "core:marius", inferno, inferno, "core:ivor", {}, true},
+		{"Calh", "core:calh", inferno, inferno, "core:ivor", {}, true},
+		{"Nymus", "core:nymus", +[] { return withSlot(infernoArmy(), 5, "core:pitLord", 4); }, inferno, "core:ivor", {}, true},
+		{"Moandor", "core:moandor", +[] { return withSlot(mirrorNecropolisArmy(), 4, "core:powerLich", 5); },
+			mirrorNecropolisArmy, "core:ivor", {}, true},
+		{"Synca", "core:synca", dungeonArmy, dungeonArmy, "core:ivor", {}, true},
+		{"Shiva", "core:shiva", strongholdArmy, strongholdArmy, "core:ivor", {}, true},
+		{"Drakon", "core:drakon", fortressArmy, fortressArmy, "core:ivor", {}, true},
+		{"Ignissa", "core:ignissa", confluxArmy, confluxArmy, "core:ivor", {}, true},
+		{"Monere", "core:monere", confluxArmy, confluxArmy, "core:ivor", {}, true},
+	};
 }
 }

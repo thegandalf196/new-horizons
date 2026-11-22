@@ -43,6 +43,8 @@ protected:
 	std::vector<BattleAction> submitted;
 	JsonNode initial;
 	uint64_t callbackUs = 0;
+	std::vector<uint64_t> callbackSeries;
+	std::vector<std::string> attackerExtraSpells;
 	uint64_t callbacksMade = 0;
 	int maximumRound = 0;
 	const int seed = benchmarkSeed();
@@ -137,11 +139,13 @@ protected:
 		ASSERT_EQ(starts["startingPerksPolicyVersion"].Integer(), 4);
 		const auto identity = HeroTypeID::encode(hero.getHeroTypeID().getNum());
 		const auto & expected = starts["startingPerkProfiles"][identity].Vector();
-		ASSERT_EQ(expected.size(), 1u) << identity;
-		ASSERT_EQ(hero.getPerkState().getSelected().size(), 1u) << identity;
-		EXPECT_TRUE(hero.getPerkState().hasSelection(expected.front()["skill"].String(), expected.front()["perk"].String()));
-		ASSERT_EQ(hero.secSkills.size(), 2u);
-		for(const auto & entry : starts["startingDevelopmentProfiles"][identity]["skills"].Vector())
+		ASSERT_LE(expected.size(), 1u) << identity; // A revised start may have no authored perk.
+		ASSERT_EQ(hero.getPerkState().getSelected().size(), expected.size()) << identity;
+		if(!expected.empty())
+			EXPECT_TRUE(hero.getPerkState().hasSelection(expected.front()["skill"].String(), expected.front()["perk"].String()));
+		const auto & skills = starts["startingDevelopmentProfiles"][identity]["skills"].Vector();
+		ASSERT_EQ(hero.secSkills.size(), skills.size()) << identity;
+		for(const auto & entry : skills)
 			EXPECT_EQ(hero.getSecSkillLevel(SecondarySkill(SecondarySkill::decode(entry["skill"].String()))), 1);
 		for(const auto & [skill, rank] : hero.secSkills) EXPECT_EQ(rank, 1);
 		ASSERT_NE(hero.getArt(ArtifactPosition::SPELLBOOK), nullptr);
@@ -196,6 +200,13 @@ protected:
 			ASSERT_NO_FATAL_FAILURE(verifyStartingHero(*leftHero));
 			if(rightHero) ASSERT_NO_FATAL_FAILURE(verifyStartingHero(*rightHero));
 			if(options && !nativeHeroDefaults) ASSERT_NO_FATAL_FAILURE(grantSpells(leftHero, sorcery));
+			for(const auto & name : attackerExtraSpells)
+			{
+				const SpellID spell(SpellID::decode(name));
+				ASSERT_TRUE(spell.hasValue()) << name;
+				leftHero->addSpellToSpellbook(spell);
+				initial["spells"].Vector().emplace_back(name);
+			}
 			initial["attackerHero"] = heroEvidence(*leftHero);
 			if(rightHero) initial["defenderHero"] = heroEvidence(*rightHero);
 		}
@@ -270,7 +281,9 @@ protected:
 			const auto aiBefore = bytes(CRandomGenerator::getDefault());
 			const auto callbackStart = Clock::now();
 			ais[index]->activeStack(BattleID(0), current->getStack(actor->unitId()));
-			callbackUs += microseconds(callbackStart);
+			const auto callbackElapsed = microseconds(callbackStart);
+			callbackUs += callbackElapsed;
+			callbackSeries.push_back(callbackElapsed);
 			++callbacksMade;
 			ASSERT_EQ(bytes(*handler->randomizer), authorityBefore);
 			ASSERT_EQ(bytes(CRandomGenerator::getDefault()), aiBefore);
@@ -285,6 +298,10 @@ protected:
 		ASSERT_TRUE(server.result) << "512-callback budget reached; not a successful whole fight";
 		RecordProperty("callbackUs", std::to_string(callbackUs));
 		RecordProperty("callbacks", std::to_string(callbacksMade));
+		std::string series;
+		for(const auto value : callbackSeries)
+			series += (series.empty() ? "" : " ") + std::to_string(value);
+		RecordProperty("callbackUsSeries", series);
 		RecordProperty("rounds", std::to_string(maximumRound));
 		RecordProperty("packets", std::to_string(server.packets - initialPacketCount));
 		RecordProperty("submittedActionsHex", hex(bytes(submitted)));
@@ -449,5 +466,18 @@ TEST_F(DISABLED_NativeEncounterBenchmarkTest, MirrorNecropolisHeroOptions)
 	ASSERT_NO_FATAL_FAILURE(prepare(army, army, "core:straker", true, false, false, true, "core:galthran"));
 	runEncounter();
 }
+class DISABLED_NativeSpecialtyEncounterBenchmarkTest : public DISABLED_NativeEncounterBenchmarkTest,
+	public ::testing::WithParamInterface<SpecialtyEncounter>
+{
+};
+TEST_P(DISABLED_NativeSpecialtyEncounterBenchmarkTest, Encounter)
+{
+	const auto & row = GetParam();
+	attackerExtraSpells = row.spells;
+	ASSERT_NO_FATAL_FAILURE(prepare(row.left(), row.right(), row.hero, true, false, false, row.nativeHeroDefaults, row.opponent));
+	runEncounter();
+}
+INSTANTIATE_TEST_SUITE_P(Specialties, DISABLED_NativeSpecialtyEncounterBenchmarkTest,
+	::testing::ValuesIn(specialtyEncounters()), [](const auto & info) { return std::string(info.param.name); });
 
 }

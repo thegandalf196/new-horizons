@@ -36,7 +36,7 @@ WORKLOADS = {
 }
 # Keep every recorded nonclock semantic/work witness. Operation-count reductions
 # are reported separately from required action/state/RNG agreement.
-CLOCKS = {'encounterUs', 'callbackUs', 'initializationUs', 'snapshotReadUs', 'snapshotWriteUs'}
+CLOCKS = {'encounterUs', 'callbackUs', 'callbackUsSeries', 'initializationUs', 'snapshotReadUs', 'snapshotWriteUs'}
 # Exact work fields and validated controls are classified by the shared pure schema helper.
 
 

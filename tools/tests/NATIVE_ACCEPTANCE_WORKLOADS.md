@@ -16,6 +16,7 @@ by default and require `--gtest_also_run_disabled_tests`.
 | `SorceryEncounter` | Neela with 24 Gremlins, 12 Stone Gargoyles, external Expert Sorcery and one authored Basic perk. Focus Magic, Forced Recall, Force Lance, Cure and Ice Bolt. 80 Normal Mana, 80 Knowledge and zero Buffer | Same boundary with these spells available for selection |
 | `MirrorCastle` / `MirrorRampart` / `MirrorNecropolis` | Identical seven-stack faction rosters without heroes. Quality trials vary the recorded seed. | Same encounter boundary with both seats evaluated |
 | `MirrorCastleHeroOptions` / `MirrorRampartHeroOptions` / `MirrorNecropolisHeroOptions` | Mirrored creature rosters with distinct same-faction heroes on each side. Each hero uses native starting skills, perk, book and spells. | Same boundary with current Orders and hero spell eligibility. Quality comparisons keep the hero pair fixed and evaluate each AI variant from both seats. |
+| `Specialties/DISABLED_NativeSpecialtyEncounterBenchmarkTest.Encounter/<Hero>` | One row per specialty hero (`NativeEncounterBenchmarkInputs.h`): the Castle specialists, a Rion/Ivor control, and the twelve extended creature specialties, each against an unchanged hero | Same boundary; a regression sweep for forecast failures and per-decision cost of newly active specialties |
 | `SmallMapInitialization` | Owned sparse 36×36 one-level map, two heroes/towns and one neutral | Generated H3M construction/cache dump, parse and world initialization |
 | `LargeMapInitialization` | Same authored objects on a 108×108 one-level map | Same boundary; tile scale, not a dense realistic large scenario |
 | `DayEightCurrentFormatMemoryRoundTrip` | Small map advanced through authoritative daily boundaries to day 8; current-format world snapshot plus explicit authority RNG envelope; day 9 control/reload continuation | Memory snapshot write/read; excludes disk, lobby and replay-history retention |
@@ -37,8 +38,8 @@ state. A benchmark family comparison always keeps its own complete fixture fixed
 The maintained runner writes an explicit `core`, `vcmi`, `vcmi-test`,
 `new-horizons` test preset in each fresh encounter profile before discovery and
 execution. It does not change the world or ordinary benchmark presets. Encounter
-fixtures reject missing or additional active mods. They verify two Basic
-Skills, the exact authored Basic perk and a spellbook before any explicit
+fixtures reject missing or additional active mods. They verify the authored
+Basic Skills, the exact authored Basic perk (none for a perk-less start) and a spellbook before any explicit
 fixture spell or rank grants. The curated preset must
 be applied to both source-matched benchmark arms. Old fixture binaries asserting
 zero perks require the same fixture repair before comparison.
@@ -49,6 +50,8 @@ command must be accepted. A 512-callback/64-round bound rejects incomplete fight
 The result window query stays open; timing excludes acknowledgment, progression
 and adventure continuation. Encounter wall time includes packet observers and
 per-callback RNG-purity witnesses; summed callback time is a separate metric.
+`callbackUsSeries` lists each callback's wall time in action order, for
+per-decision mean, median, p95 and maximum; parity ignores it like other clocks.
 Outputs retain initial unit/hero/army/rule evidence, ordered actions, terminal
 unit states (including exact available HP and a summoned flag for each terminal
 unit), rounds, accepted packets, casualties, experience and both authority
