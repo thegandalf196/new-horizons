@@ -17,7 +17,7 @@ namespace newHorizonsHeroes
 {
 namespace
 {
-constexpr auto ROW = "revisedSpecialties";
+constexpr auto CASTLE_ADVENTURE_ROW = "revisedSpecialties";
 constexpr auto SYLVIA = "core:sylvia";
 constexpr auto HAART = "core:lordHaart";
 constexpr auto CAITLIN = "core:caitlin";
@@ -98,9 +98,9 @@ void validateCastleAdventureSpecialties(const JsonNode & revisedRow)
 
 std::optional<CastleAdventureSpecialties> castleAdventureSpecialties(const JsonNode & development)
 {
-	if(!development.isStruct() || !development.Struct().contains(ROW) || !usesRules(development))
+	if(!development.isStruct() || !development.Struct().contains(CASTLE_ADVENTURE_ROW) || !usesRules(development))
 		return std::nullopt;
-	const auto & revised = development[ROW];
+	const auto & revised = development[CASTLE_ADVENTURE_ROW];
 	if(!revised.isStruct())
 		return std::nullopt;
 	validateCastleAdventureSpecialties(revised);

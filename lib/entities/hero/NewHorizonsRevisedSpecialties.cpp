@@ -23,14 +23,14 @@ namespace newHorizonsHeroes
 {
 namespace
 {
-constexpr auto ROW = "revisedSpecialties";
+constexpr auto REVISED_ROW = "revisedSpecialties";
 constexpr auto CLAVIUS = "core:clavius";
 
 const JsonNode * revisedRow(const JsonNode & development, const char * child)
 {
-	if(!development.isStruct() || !development.Struct().contains(ROW) || !usesRules(development))
+	if(!development.isStruct() || !development.Struct().contains(REVISED_ROW) || !usesRules(development))
 		return nullptr;
-	const auto & row = development[ROW];
+	const auto & row = development[REVISED_ROW];
 	return row.isStruct() && row.Struct().contains(child) ? &row[child] : nullptr;
 }
 
@@ -88,9 +88,9 @@ const ScaledCoefficient * scaledCoefficient(std::string_view key)
 
 void validateRevisedSpecialtiesSerialization(const JsonNode & development)
 {
-	if(!development.isStruct() || !development.Struct().contains(ROW))
+	if(!development.isStruct() || !development.Struct().contains(REVISED_ROW))
 		return;
-	const auto & row = development[ROW];
+	const auto & row = development[REVISED_ROW];
 	detail::fields(row, {"version", "lordOfTheCrypts", "levelScaling", "volleyCommand", "aerialSupremacy",
 		"benedictionOfArms", "pariah", "frostMantle", "quickStudy", "sermon", "forcedMarch", "wellConnected",
 		"almsOfTheFaithful"});
@@ -115,7 +115,7 @@ bool requiresRevisedSpecialtyFormat(const JsonNode & document)
 {
 	const auto claims = [](const JsonNode & rules)
 	{
-		return rules.isStruct() && (rules.Struct().contains(ROW) || rules.Struct().contains("spellcraftPolicyVersion")
+		return rules.isStruct() && (rules.Struct().contains(REVISED_ROW) || rules.Struct().contains("spellcraftPolicyVersion")
 			|| (rules["estatesPolicyVersion"].isNumber() && rules["estatesPolicyVersion"].Integer() == 2));
 	};
 	if(!document.isStruct())

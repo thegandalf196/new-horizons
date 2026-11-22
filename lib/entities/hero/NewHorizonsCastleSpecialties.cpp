@@ -19,7 +19,7 @@ namespace newHorizonsHeroes
 {
 namespace
 {
-constexpr auto ROW = "revisedSpecialties";
+constexpr auto CASTLE_ROW = "revisedSpecialties";
 constexpr auto ORRIN = "core:orrin";
 constexpr auto EDRIC = "core:edric";
 constexpr auto ADELA = "core:adela";
@@ -60,9 +60,9 @@ LevelPercent percentRow(const JsonNode & row, const char * base, const char * pe
 
 const JsonNode * castleRow(const JsonNode & development, const char * child)
 {
-	if(!development.isStruct() || !development.Struct().contains(ROW) || !usesRules(development))
+	if(!development.isStruct() || !development.Struct().contains(CASTLE_ROW) || !usesRules(development))
 		return nullptr;
-	const auto & row = development[ROW];
+	const auto & row = development[CASTLE_ROW];
 	return row.isStruct() && row.Struct().contains(child) ? &row[child] : nullptr;
 }
 
@@ -165,10 +165,10 @@ void validateCastleSpecialtyRows(const JsonNode & row)
 CastleSpecialtyRules castleSpecialtyRules(const JsonNode & development)
 {
 	CastleSpecialtyRules result;
-	if(!development.isStruct() || !development.Struct().contains(ROW) || !usesRules(development)
-		|| !development[ROW].isStruct())
+	if(!development.isStruct() || !development.Struct().contains(CASTLE_ROW) || !usesRules(development)
+		|| !development[CASTLE_ROW].isStruct())
 		return result;
-	validateCastleSpecialtyRows(development[ROW]);
+	validateCastleSpecialtyRows(development[CASTLE_ROW]);
 	if(const auto * row = castleRow(development, "volleyCommand"))
 		result.volleyCommand = percentRow(*row, "damagePercent", "damagePercentPerLevel", "maximumDamagePercent");
 	if(const auto * row = castleRow(development, "aerialSupremacy"))
