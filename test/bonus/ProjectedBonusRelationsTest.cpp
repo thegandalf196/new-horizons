@@ -56,8 +56,10 @@ public:
 class ProjectedBonusRelationsTest : public Test
 {
 protected:
-	CBonusSystemNode army{BonusNodeType::ARMY}, player{BonusNodeType::PLAYER};
+	// Parents first: members are destroyed in reverse order, and army detaches from them.
+	CBonusSystemNode player{BonusNodeType::PLAYER};
 	CBonusSystemNode creature{BonusNodeType::CREATURE}, artifact{BonusNodeType::ARTIFACT};
+	CBonusSystemNode army{BonusNodeType::ARMY};
 	ProjectedBonusGraph graph;
 };
 

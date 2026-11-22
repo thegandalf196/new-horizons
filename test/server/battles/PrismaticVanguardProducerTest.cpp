@@ -125,9 +125,10 @@ TEST_P(VanguardSourceWorldTest, Explicit1152WorldAndDescriptorPreservePendingAct
 	EXPECT_THROW(battleStartFixture::writeDescriptors(*battle(), rejectedDescriptor), std::runtime_error);
 	EXPECT_TRUE(rejectedDescriptor.extractBuffer().empty());
 	constexpr auto version = ESerializationVersion::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES;
+	// Declared first so the deserializer, which also owns the loaded objects, is destroyed first.
+	CGameState restored; restored.preInit(LIBRARY);
 	CMemorySerializer world; world.oser.version = version;
 	ASSERT_NO_THROW(world.oser & *gameState());
-	CGameState restored; restored.preInit(LIBRARY);
 	world.iser.version = version; world.iser.loadingGamestate = true; world.iser.cb = &restored;
 	ASSERT_NO_THROW(world.iser & restored);
 	const auto * hero = restored.getHero(attackerSideHero->id); ASSERT_NE(hero, nullptr);
@@ -155,9 +156,10 @@ INSTANTIATE_TEST_SUITE_P(PendingActiveAndSpent, VanguardSourceWorldTest, ::testi
 TEST_F(PrismaticVanguardProducerTest, HistoricalAbsenceKeepsCurrentWorldAndDescriptorCodecWithoutRearming)
 {
 	capture = -1; ASSERT_NO_FATAL_FAILURE(prepare()); NativeBonusGraphAccess graph;
+	// Declared first so the deserializer, which also owns the loaded objects, is destroyed first.
+	CGameState restored; restored.preInit(LIBRARY);
 	CMemorySerializer world;
 	ASSERT_NO_THROW(world.oser & *gameState());
-	CGameState restored; restored.preInit(LIBRARY);
 	world.iser.loadingGamestate = true; world.iser.cb = &restored;
 	ASSERT_NO_THROW(world.iser & restored);
 	const auto * hero = restored.getHero(attackerSideHero->id); ASSERT_NE(hero, nullptr);
