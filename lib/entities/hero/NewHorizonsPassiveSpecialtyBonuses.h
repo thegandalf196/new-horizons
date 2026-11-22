@@ -8,4 +8,7 @@ namespace newHorizonsHeroes
 {
 /// Cold attachment adapter; immutable Bonus templates use native live queries.
 DLL_LINKAGE std::vector<std::shared_ptr<Bonus>> passiveCreatureSpecialtyBonuses(const CGHeroInstance & hero);
+/// Adds captured rows the hero lacks, keeping present (possibly level-scaled) rows.
+/// Windows 0.93.0 captured the rules but never installed these bonuses.
+DLL_LINKAGE void restoreMissingPassiveCreatureSpecialtyBonuses(CGHeroInstance & hero);
 }

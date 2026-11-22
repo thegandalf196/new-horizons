@@ -11,7 +11,7 @@
 #include "../../bonuses/Propagators.h"
 #include "../../bonuses/Updaters.h"
 #include "../../nativeRules/NativeRulePilots.h"
-#include <string_view>
+#include <string>
 #include <array>
 #include <limits>
 
@@ -125,7 +125,8 @@ std::vector<std::shared_ptr<Bonus>> passiveCreatureSpecialtyBonuses(const CGHero
 		return {};
 	const auto * policy = hero.compiledDevelopment();
 	const auto has = [policy](const char * key) { return policy->hasOrdinaryField(key); };
-	const std::string_view identity = hero.getHeroType()->getJsonKey();
+	// getJsonKey returns by value: a string_view of it dangles, and MSVC clears the buffer.
+	const std::string identity = hero.getHeroType()->getJsonKey();
 	if(identity == "core:vokial" && has("bloodScentMaximumDamagePercent"))
 	{
 		auto bonus = Builder(hero, "core:vampire").familyBonus(BonusType::CASUALTY_DAMAGE_PERCENTAGE, 100, "targetCasualties");
@@ -144,5 +145,13 @@ std::vector<std::shared_ptr<Bonus>> passiveCreatureSpecialtyBonuses(const CGHero
 		return furyOfTheHorde(Builder(hero, "core:orc"));
 	auto capability = creatureSpecialtyCapabilityBonuses(hero);
 	return capability.empty() ? newHorizonsRunicReflection::preparedBonuses(hero) : capability;
+}
+void restoreMissingPassiveCreatureSpecialtyBonuses(CGHeroInstance & hero)
+{
+	for(const auto & bonus : passiveCreatureSpecialtyBonuses(hero))
+		if(std::ranges::none_of(hero.getExportedBonusList(), [&bonus](const auto & existing)
+			{ return existing && existing->source == bonus->source && existing->sid == bonus->sid
+				&& existing->stacking == bonus->stacking; }))
+			hero.addNewBonus(bonus);
 }
 }

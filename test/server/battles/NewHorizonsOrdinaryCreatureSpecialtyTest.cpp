@@ -10,6 +10,7 @@
 #include "../../../lib/battle/NewHorizonsArchery.h"
 #include "../../../lib/battle/UnitMagicResistanceQuery.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
+#include "../../../lib/networkPacks/PacksForClient.h"
 #include "FullGameSnapshotTypes.h"
 #include "../../../lib/callback/GameRandomizer.h"
 #include <tuple>
@@ -492,6 +493,76 @@ TEST(NewHorizonsOrdinaryCreatureSpecialtyPolicy, Independent1144LeafRetainsRound
 		GameSettings roundtrip; ASSERT_NO_THROW(roundtrip.serialize(wire.iser));
 		EXPECT_EQ(roundtrip.getValue(EGameSettings::HEROES_NEW_HORIZONS), extended);
 	}
+}
+
+class StonecallerLoadRepairTest : public NewHorizonsOrdinaryCreatureSpecialtyTest
+{
+protected:
+	// Windows 0.93.0 captured Stonecaller's rules but never installed its bundle.
+	static int capabilityRows(const CGHeroInstance & hero)
+	{
+		return static_cast<int>(std::ranges::count_if(hero.getExportedBonusList(), [](const auto & bonus)
+		{ return bonus && bonus->stacking.starts_with("new-horizons:ordinary-capability:core:thunar:"); }));
+	}
+	const CGHeroInstance * loadWithoutCapabilityRows(CGameState & restored)
+	{
+		prepareCase({"core:thunar", "core:earthElemental", "core:magmaElemental", BonusType::NONE, 12, nullptr, nullptr});
+		attackerSideHero->removeBonuses(CSelector([](const Bonus * bonus)
+		{ return bonus && bonus->stacking.starts_with("new-horizons:ordinary-capability:"); }));
+		EXPECT_EQ(capabilityRows(*attackerSideHero), 0);
+		EXPECT_FALSE(attackerSideHero->getStackPtr(SlotID(0))->hasBonusOfType(BonusType::SHOOTER));
+		restored.preInit(LIBRARY);
+		restored.loadFromMemory(gameState()->saveToMemory());
+		return restored.getHero(attackerSideHero->id);
+	}
+};
+TEST_F(StonecallerLoadRepairTest, CapturedBundleMissingFromSaveIsRestoredOnceOnLoad)
+{
+	CGameState restored;
+	const auto * hero = loadWithoutCapabilityRows(restored);
+	ASSERT_NE(hero, nullptr);
+	EXPECT_EQ(capabilityRows(*hero), 3);
+	for(int slot = 0; slot < 3; ++slot)
+	{
+		const auto * stack = hero->getStackPtr(SlotID(slot));
+		EXPECT_EQ(stack->hasBonusOfType(BonusType::SHOOTER), slot < 2);
+		EXPECT_EQ(stack->valOfBonuses(BonusType::SHOTS), slot < 2 ? 12 : 0);
+		EXPECT_EQ(stack->hasBonusOfType(BonusType::NO_MELEE_PENALTY), slot < 2);
+	}
+	CGameState again;
+	again.preInit(LIBRARY);
+	again.loadFromMemory(restored.saveToMemory());
+	EXPECT_EQ(capabilityRows(*again.getHero(hero->id)), 3);
+}
+TEST_F(StonecallerLoadRepairTest, HistoricalCaptureDoesNotGainTheBundleOnLoad)
+{
+	historical = true;
+	CGameState restored;
+	const auto * hero = loadWithoutCapabilityRows(restored);
+	ASSERT_NE(hero, nullptr);
+	EXPECT_EQ(capabilityRows(*hero), 0);
+	EXPECT_FALSE(hero->getStackPtr(SlotID(0))->hasBonusOfType(BonusType::SHOOTER));
+}
+
+TEST_F(StonecallerLoadRepairTest, RecruitedTavernHeroRegainsMissingBundle)
+{
+	// Tavern heroes are restored only when recruited, not with the map objects.
+	prepareCase({"core:valeska", "core:archer", "core:marksman", BonusType::NONE, 50, nullptr, nullptr});
+	const HeroTypeID thunar(HeroTypeID::decode("core:thunar"));
+	auto * pooled = map()->tryGetFromHeroPool(thunar);
+	ASSERT_NE(pooled, nullptr);
+	EXPECT_EQ(capabilityRows(*pooled), 3);
+	pooled->removeBonuses(CSelector([](const Bonus * bonus)
+	{ return bonus && bonus->stacking.starts_with("new-horizons:ordinary-capability:"); }));
+	ASSERT_EQ(capabilityRows(*pooled), 0);
+	HeroRecruited recruited;
+	recruited.hid = thunar;
+	recruited.player = PlayerColor(0);
+	recruited.tile = int3(12, 12, 0);
+	gameHandler->sendAndApply(recruited);
+	const auto * hero = gameState()->getMap().getHero(thunar);
+	ASSERT_NE(hero, nullptr);
+	EXPECT_EQ(capabilityRows(*hero), 3);
 }
 
 class PiquedramDefendSpecialtyTest : public NewHorizonsOrdinaryCreatureSpecialtyTest {};

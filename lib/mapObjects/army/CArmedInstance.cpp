@@ -20,6 +20,7 @@
 #include "../../mapping/TerrainTile.h"
 #include "../../GameLibrary.h"
 #include "../../gameState/CGameState.h"
+#include "../../entities/hero/NewHorizonsPassiveSpecialtyBonuses.h"
 
 void CArmedInstance::randomizeArmy(FactionID type)
 {
@@ -182,11 +183,16 @@ CBonusSystemNode & CArmedInstance::whatShouldBeAttached()
 
 void CArmedInstance::attachToBonusSystem(CGameState & gs)
 {
+	// Covers tavern heroes from a save, which are attached only when recruited.
+	if(auto * hero = dynamic_cast<CGHeroInstance *>(this))
+		newHorizonsHeroes::restoreMissingPassiveCreatureSpecialtyBonuses(*hero);
 	whatShouldBeAttached().attachTo(whereShouldBeAttached(gs));
 }
 
 void CArmedInstance::restoreBonusSystem(CGameState & gs)
 {
+	if(auto * hero = dynamic_cast<CGHeroInstance *>(this))
+		newHorizonsHeroes::restoreMissingPassiveCreatureSpecialtyBonuses(*hero);
 	whatShouldBeAttached().attachTo(whereShouldBeAttached(gs));
 	for(const auto & elem : stacks)
 		elem.second->artDeserializationFix(gs, elem.second.get());

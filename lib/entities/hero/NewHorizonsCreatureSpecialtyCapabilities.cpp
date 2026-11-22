@@ -9,7 +9,7 @@
 #include "../../bonuses/BonusParameters.h"
 #include "../../bonuses/Limiters.h"
 #include "../../nativeRules/NativeRulePilots.h"
-#include <string_view>
+#include <string>
 namespace newHorizonsHeroes
 {
 namespace
@@ -85,7 +85,8 @@ std::vector<std::shared_ptr<Bonus>> creatureSpecialtyCapabilityBonuses(const CGH
 	if(!hero.getHeroType())
 		return {};
 	const auto * policy = hero.compiledDevelopment();
-	const std::string_view identity = hero.getHeroType()->getJsonKey();
+	// getJsonKey returns by value: a string_view of it dangles, and MSVC clears the buffer.
+	const std::string identity = hero.getHeroType()->getJsonKey();
 	if(identity == "core:thunar" && policy->hasOrdinaryField("stonecallerAmmunition"))
 		return stonecaller(hero);
 	if(identity == "core:vey" && policy->hasOrdinaryField("archshamanSpellMastery"))
