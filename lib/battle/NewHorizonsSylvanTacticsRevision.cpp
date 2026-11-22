@@ -74,7 +74,7 @@ newHorizonsOrdinaryStrike::EffectPlan dappledMovement(const CBattleInfoCallback 
 		|| !active(newHorizonsSylvanTacticsV2::commandingHero(battle, &unit), "luckyRecovery"))
 		return result;
 	int64_t total = hexes;
-	for(const auto & existing : *unit.getUnstackedBonuses(CSelector(isDappledMovement)))
+	for(const auto dappled = unit.getUnstackedBonuses(CSelector(isDappledMovement)); const auto & existing : *dappled)
 	{
 		// Protection is already earned for this activation; nothing changes.
 		if(existing->val >= DAPPLED_COVER_MINIMUM_HEXES)
@@ -113,7 +113,8 @@ newHorizonsOrdinaryStrike::EffectPlan quickRedeployment(const CBattleInfoCallbac
 		|| !active(newHorizonsSylvanTacticsV2::commandingHero(battle, attack.attacker), "natureSProvidence"))
 		return result;
 	result.target = attack.attacker->unitId();
-	for(const auto & existing : *attack.attacker->getUnstackedBonuses(CSelector(isQuickRedeployment)))
+	for(const auto redeployments = attack.attacker->getUnstackedBonuses(CSelector(isQuickRedeployment));
+		const auto & existing : *redeployments)
 		result.remove.push_back(*existing);
 	auto bonus = marker(BonusType::STACKS_INITIATIVE_FLAT, QUICK_REDEPLOYMENT_INITIATIVE,
 		REDEPLOYMENT_IDENTITY, "sylvanQuickRedeployment");

@@ -92,7 +92,7 @@ HeroMoraleContext captureHeroMoraleContext(const CGHeroInstance * hero)
 	else
 		result.limits = {-static_cast<int32_t>(LIBRARY->engineSettings()->getVector(EGameSettings::COMBAT_BAD_MORALE_CHANCE).size()),
 			static_cast<int32_t>(LIBRARY->engineSettings()->getVector(EGameSettings::COMBAT_GOOD_MORALE_CHANCE).size())};
-	for(const auto & bonus : *newHorizonsGlyphsOfFear::moraleBonuses(hero))
+	for(const auto glyphs = newHorizonsGlyphsOfFear::moraleBonuses(hero); const auto & bonus : *glyphs)
 		result.glyphs.push_back(*bonus);
 	return result;
 }
