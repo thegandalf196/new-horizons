@@ -24612,13 +24612,16 @@
       "sha256": "7b274a0c9457d517e0465dbf92e025b3b945a7bb683cb608ebb288f0405534ab"
     },
     "lib/battle/NewHorizonsConfusion.cpp::newHorizonsConfusion::Choices enumerateChoices(const CBattleInfoCallback & battle, const battle::Unit * unit)#1": {
-      "kind": "legacy",
-      "lines": 115,
+      "deferral": "Before further growth, extract the unreachable-target approach step of enumerateChoices into a focused helper; exact 117-line bound, no later growth allowance.",
+      "kind": "exception",
+      "lines": 117,
       "owner": "gameplay_engineer",
-      "rationale": "Existing function owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 115 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "f786541de9eabf282758035eefcfdd6187c619ae31ae5573ee624797942208a3"
+      "previous_review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "rationale": "Exact 115 to 117-line urgent correctness successor: the unreachable-target approach asks the shared approach helper only for a unit with movement, as its other callers do; the helper indexes past the end of its path for an immobile unit.",
+      "review": "CLAUDE-UBSWEEP-LIFETIME-20261122",
+      "review_scope": "Exact source organization of a minimal undefined-behaviour fix only; no future growth allowance.",
+      "review_status": "AUTHOR_RECORDED_EXACT_SOURCE_PENDING_INDEPENDENT_REVIEW",
+      "sha256": "32cbb42b55770cb9a4782cac7818005ce91efb978f59ae995c01617814ded987"
     },
     "lib/battle/NewHorizonsPlague.cpp::newHorizonsPlague::void completeActivation(const CBattleInfoCallback & battle, ServerCallback & server, uint32_t unitId)#1": {
       "kind": "legacy",

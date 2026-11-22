@@ -274,6 +274,20 @@ TEST_F(NewHorizonsConfusionChoicesTest, UnreachableEnemyUsesSharedFurthestLegalA
 	EXPECT_FALSE(target->zeroAdvanceDefends);
 }
 
+TEST_F(NewHorizonsConfusionChoicesTest, ImmobileUnitHasNoAdvanceTowardADistantEnemy)
+{
+	// The shared approach helper indexes its path by path.size() - movement range, which read
+	// past the end of the path for an immobile unit.
+	auto & actor = addUnit(1, BattleSide::ATTACKER, BattleHex(4, 5), 0);
+	auto & enemy = addUnit(2, BattleSide::DEFENDER, BattleHex(12, 5));
+	ASSERT_EQ(actor.getMovementRange(), 0u);
+	const auto choices = newHorizonsConfusion::enumerateChoices(callback, &actor);
+	const auto * target = group(choices, enemy.unitId());
+	ASSERT_NE(target, nullptr);
+	EXPECT_TRUE(target->furthestAdvances.empty());
+	EXPECT_TRUE(target->zeroAdvanceDefends);
+}
+
 TEST_F(NewHorizonsConfusionChoicesTest, WanderListsAllAndOnlyOrdinaryNonstationaryMovementEndpoints)
 {
 	auto & actor = addUnit(1, BattleSide::ATTACKER, BattleHex(8, 5), 2);

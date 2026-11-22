@@ -103,7 +103,9 @@ Choices enumerateChoices(const CBattleInfoCallback & battle, const battle::Unit 
 					approach = hex;
 				}
 			}
-			auto advance = battle.getClosestHexToTargetInRange(reachability, *unit, approach);
+			// As its other callers do, ask only with movement: the helper reads past its path otherwise.
+			auto advance = unit->getMovementRange() > 0
+				? battle.getClosestHexToTargetInRange(reachability, *unit, approach) : BattleHex::INVALID;
 			if(advance.isAvailable() && !available.contains(advance))
 			{
 				// The existing approach helper indexes its path by Speed. Where
