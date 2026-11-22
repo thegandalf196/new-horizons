@@ -67,6 +67,10 @@ protected:
 			// This capture predates authored starting defaults and unified tiers.
 			development["startingSkills"].Struct().erase("startingPerksPolicyVersion");
 			development["startingSkills"].Struct().erase("startingPerkProfiles");
+			// Captures of this policy predate Cuthbert's three-Skill start.
+			auto & cuthbert = development["startingSkills"]["startingDevelopmentProfiles"]["core:cuthbert"]["skills"].Vector();
+			cuthbert.pop_back();
+			cuthbert.back()["skill"].String() = "new-horizons:spellcraft";
 			development.setOverrideFlag(true);
 		}
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, development);

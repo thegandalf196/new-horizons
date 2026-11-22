@@ -356,6 +356,16 @@ inline JsonNode legacyEstatesHeroes()
 	// Current skills-only profiles forbid both startingPerks fields and tables.
 	auto & starts = heroes["startingSkills"];
 	starts["startingPerksPolicyVersion"].Integer() = 2;
+	// Captures of this policy predate the 2026-11-20 Castle starts: Cuthbert had
+	// two Skills and the starting book table had no Cuthbert or Loynis row.
+	auto & cuthbert = starts["startingDevelopmentProfiles"]["core:cuthbert"]["skills"].Vector();
+	if(cuthbert.size() == 3)
+	{
+		cuthbert.pop_back();
+		cuthbert.back()["skill"].String() = "new-horizons:spellcraft";
+	}
+	for(const auto * hero : {"core:cuthbert", "core:loynis"})
+		starts["startingBookReplacements"].Struct().erase(hero);
 	const auto perks = legacyEstatesPerks();
 	for(auto & [identity, profile] : starts["startingDevelopmentProfiles"].Struct())
 	{

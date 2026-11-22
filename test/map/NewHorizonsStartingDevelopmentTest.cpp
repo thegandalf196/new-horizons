@@ -18,6 +18,7 @@
 #include "../../lib/entities/creature/NewHorizonsAssimilation.h"
 #include "../../lib/entities/hero/NewHorizonsHeroRules.h"
 #include "../../lib/entities/hero/HeroStartingProjection.h"
+#include "../../lib/entities/hero/NewHorizonsStartingPerks.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/modding/CModHandler.h"
 #include "../../lib/networkPacks/PacksForLobby.h"
@@ -1796,17 +1797,28 @@ TEST_F(BasicStartingDefaultsTest, All163BasicDefaultsOnePerkAndSpellbookMatchPre
 		SCOPED_TRACE(identity);
 		const auto * hero = gameState()->getMap().getHero(HeroTypeID(HeroTypeID::decode(identity)));
 		ASSERT_NE(hero, nullptr);
-		ASSERT_EQ(hero->secSkills.size(), 2u);
+		// Cuthbert is the deliberate three-Skill, no-perk exception.
+		const bool threeSkills = newHorizonsHeroes::usesThreeSkillStart(rules["startingSkills"], identity);
+		ASSERT_EQ(hero->secSkills.size(), threeSkills ? 3u : 2u);
 		EXPECT_NE(hero->secSkills[0].first, hero->secSkills[1].first);
 		for(const auto & [skill, rank] : hero->secSkills)
 			EXPECT_EQ(rank, MasteryLevel::BASIC);
 		const auto & perks = hero->getPerkState();
-		ASSERT_EQ(perks.getSelected().size(), 1u);
+		ASSERT_EQ(perks.getSelected().size(), threeSkills ? 0u : 1u);
 		EXPECT_TRUE(hero->hasSpellbook());
 		const auto view = newHorizonsHeroes::projectStartingHero(*hero->getHeroType(), capturedStartingContext(*hero));
 		EXPECT_EQ(view.skills, hero->secSkills);
 		EXPECT_EQ(view.perks, perks.getSelected());
-		EXPECT_EQ(view.spells, hero->getRawStartingSpellIds());
+		const auto actual = hero->getRawStartingSpellIds();
+		if(threeSkills)
+		{
+			// Pariah mirrors Cuthbert's Light start with one random Shadow spell that
+			// the deterministic preview cannot name.
+			EXPECT_TRUE(std::ranges::includes(actual, view.spells));
+			EXPECT_EQ(actual.size(), view.spells.size() + 1);
+		}
+		else
+			EXPECT_EQ(view.spells, actual);
 	}
 }
 

@@ -37,7 +37,9 @@ state. Ruleset activation and historical saved-rule snapshots must remain explic
 Current default hero development uses captured
 `startingPerksPolicyVersion: 4`.
 Every registered default has exactly two distinct Basic Skills, including its
-faction Skill, plus one authored Basic perk and an equipped spellbook. The
+faction Skill, plus one authored Basic perk and an equipped spellbook. The one
+deliberate exception, Cuthbert, has three Basic Skills and an explicitly empty
+perk row (`usesThreeSkillStart`); captures before it keep their two-Skill rows. The
 source registry contains 163 explicit profiles. A Skill permits one Basic,
 one Advanced and one Expert perk. Subsequent Skill ranks and perks are separate
 advancement choices. Default profiles apply during fresh initialization.

@@ -68,7 +68,10 @@ TEST(NewHorizonsChosenSpecialties, CurrentStartingBooksReplaceOriginalInscriptio
 	const SpellID chosen(SpellID::decode("new-horizons:theChosen"));
 	ASSERT_TRUE(chosen.hasValue());
 	EXPECT_EQ(startingHeroSpellReplacement(heroType("core:inteus"), rules, magic, SpellID::BLOODLUST), chosen);
-	EXPECT_EQ(startingHeroSpellReplacement(heroType("core:loynis"), rules, magic, SpellID::PRAYER), chosen);
+	// Since the 2026-11-20 Castle starts Loynis's book row selects Sanctuary before The Chosen.
+	EXPECT_EQ(startingHeroSpellReplacement(heroType("core:loynis"), rules, magic, SpellID::PRAYER),
+		SpellID(SpellID::decode("new-horizons:sanctuary")));
+	EXPECT_EQ(chosenStartingSpellReplacement(rules, magic, "core:loynis", SpellID::PRAYER), chosen);
 	EXPECT_FALSE(chosenStartingSpellReplacement(rules, magic, "core:halon", SpellID::STONE_SKIN));
 	EXPECT_FALSE(chosenStartingSpellReplacement(rules, magic, "core:inteus", SpellID::PRAYER));
 }
@@ -77,6 +80,8 @@ TEST(NewHorizonsChosenSpecialties, HistoricalStartingPolicyStillSelectsCrusade)
 {
 	auto rules = configuredRules();
 	rules.Struct().erase("chosenSpecialties");
+	for(const auto * hero : {"core:cuthbert", "core:loynis"}) // Book rows added with the 2026-11-20 Castle starts.
+		rules["startingSkills"]["startingBookReplacements"].Struct().erase(hero);
 	const auto magic = historicalCrusadeRules(JsonNode(JsonPath::builtin("config/newHorizonsMagic")));
 	const SpellID crusade(SpellID::decode("new-horizons:crusade"));
 	EXPECT_EQ(startingHeroSpellReplacement(heroType("core:inteus"), rules, magic, SpellID::BLOODLUST), crusade);

@@ -74,6 +74,11 @@ CANONICAL_CLASS_NAMES = {
 }
 
 
+# Castle 0.93.1: three Basic Skills and no starting perk (faction Skill plus these).
+THREE_SKILL_STARTS = {
+    'core:cuthbert': ('new-horizons:lightMagic', 'new-horizons:shadowMagic'),
+}
+
 # Authored workbook packages added after the first 48 settled profiles.
 # Troops, books, biographies and specialty riders are outside this table.
 WORKBOOK_REMAINING_STARTS = {
@@ -274,6 +279,12 @@ class HeroDataTest(unittest.TestCase):
                 hero = 'core:' + hero
                 with self.subTest(hero=hero):
                     profile = profiles[hero]
+                    if hero in THREE_SKILL_STARTS:
+                        self.assertEqual({row['skill'] for row in profile['skills']},
+                                         {own, *THREE_SKILL_STARTS[hero]})
+                        self.assertEqual({row['rank'] for row in profile['skills']}, {1})
+                        self.assertEqual(self.rules['startingSkills']['startingPerkProfiles'][hero], [])
+                        continue
                     if hero in WORKBOOK_REMAINING_STARTS:
                         perk = WORKBOOK_REMAINING_STARTS[hero]
                         generic_rank = faction_rank = 1

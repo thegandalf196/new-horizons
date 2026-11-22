@@ -76,7 +76,8 @@ void validateBasicSkillProfiles(const JsonNode & starts, bool singlePerk)
 			"canonical installed skills-only hero");
 		fields(profile, {"skills"});
 		const auto & skills = profile["skills"];
-		require(skills.isVector() && skills.Vector().size() == 2, "exactly two skills-only starting parents");
+		require(skills.isVector() && (skills.Vector().size() == 2 || (singlePerk && usesThreeSkillStart(starts, identity))),
+			"exactly two skills-only starting parents");
 		std::set<std::string> parents;
 		for(const auto & skill : skills.Vector())
 		{
@@ -103,7 +104,10 @@ void validateSinglePerkProfiles(const JsonNode & starts)
 	{
 		const auto found = choices.Struct().find(hero);
 		require(found != choices.Struct().end() && found->second.isVector()
-			&& found->second.Vector().size() == 1, "exactly one authored starting perk per hero");
+			&& (found->second.Vector().size() == 1 || usesThreeSkillStart(starts, hero)),
+			"exactly one authored starting perk per hero");
+		if(found->second.Vector().empty())
+			continue;
 		const auto & choice = found->second.Vector().front();
 		fields(choice, {"skill", "perk"});
 		require(choice["skill"].isString() && choice["perk"].isString(), "single starting perk identifiers");
@@ -198,8 +202,11 @@ void validateHistoricalStartingPerkProfiles(const JsonNode & starts)
 void initializeSingleStartingPerk(PerkState & state, const JsonNode & development, HeroTypeID hero,
 	const std::function<int(const std::string &)> & rank)
 {
-	// Existing authored or earned choices are never completed or replaced.
-	if(!state.getSelected().empty()) return;
+	// Existing authored or earned choices are never completed or replaced, and an
+	// explicitly empty three-Skill profile grants no perk.
+	if(!state.getSelected().empty()
+		|| (hero != HeroTypeID::NONE && usesThreeSkillStart(development["startingSkills"], HeroTypeID::encode(hero.getNum()))))
+		return;
 	auto proposed = state;
 	{
 		PerkSelectionOperation operation(proposed);
@@ -255,6 +262,15 @@ bool usesSingleStartingPerkProfiles(const JsonNode & starts)
 {
 	return starts["startingPerksPolicyVersion"].getType() == JsonNode::JsonType::DATA_INTEGER
 		&& starts["startingPerksPolicyVersion"].Integer() == 4;
+}
+
+bool usesThreeSkillStart(const JsonNode & starts, const std::string & hero)
+{
+	if(!usesSingleStartingPerkProfiles(starts))
+		return false;
+	const auto & perks = starts["startingPerkProfiles"][hero];
+	const auto & skills = starts["startingDevelopmentProfiles"][hero]["skills"];
+	return perks.isVector() && perks.Vector().empty() && skills.isVector() && skills.Vector().size() == 3;
 }
 
 void validateStartingPerkProfiles(const JsonNode & starts)

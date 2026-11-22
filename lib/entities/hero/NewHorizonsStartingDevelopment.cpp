@@ -25,8 +25,9 @@ struct StartingBookRow
 	std::string_view hero;
 	std::string_view from;
 	std::string_view to;
+	bool revised = false; // Added with the 2026-11-20 Castle starts; absent from earlier captures.
 };
-constexpr std::array<StartingBookRow, 22> startingBooks{{
+constexpr std::array<StartingBookRow, 24> startingBooks{{
 	{"core:rion", "core:stoneSkin", "new-horizons:guardianSpirit"},
 	{"core:aeris", "core:protectAir", "new-horizons:holyArmor"},
 	{"core:piquedram", "core:shield", "core:slow"},
@@ -48,18 +49,23 @@ constexpr std::array<StartingBookRow, 22> startingBooks{{
 	{"core:saurug", "core:bloodlust", "new-horizons:vengefulVines"},
 	{"core:verdish", "core:protectFire", "new-horizons:regeneration"},
 	{"core:styg", "core:shield", "new-horizons:entangle"},
-	{"core:tiva", "core:stoneSkin", "new-horizons:regeneration"}
+	{"core:tiva", "core:stoneSkin", "new-horizons:regeneration"},
+	{"core:cuthbert", "core:weakness", "new-horizons:holyArmor", true},
+	{"core:loynis", "core:prayer", "new-horizons:sanctuary", true}
 }};
+constexpr size_t historicalStartingBooks = 22;
 
 void validateStartingBooks(const JsonNode & table)
 {
-	require(table.isStruct() && table.Struct().size() == startingBooks.size(), "complete starting book replacement table");
+	require(table.isStruct() && (table.Struct().size() == startingBooks.size()
+		|| table.Struct().size() == historicalStartingBooks), "complete starting book replacement table");
+	const bool revised = table.Struct().size() == startingBooks.size();
 	std::set<int> seen;
 	for(const auto & [hero, row] : table.Struct())
 	{
 		const auto expected = std::find_if(startingBooks.begin(), startingBooks.end(),
 			[&hero](const StartingBookRow & entry) { return entry.hero == hero; });
-		require(expected != startingBooks.end(), "authored starting book hero");
+		require(expected != startingBooks.end() && (revised || !expected->revised), "authored starting book hero");
 		const int id = resolve(HeroTypeID::entityType(), hero);
 		require(HeroTypeID::encode(id) == hero && seen.insert(id).second
 			&& static_cast<size_t>(id) < LIBRARY->heroh->objects.size()
@@ -99,8 +105,8 @@ void validateStartingSkillsImpl(const JsonNode & startingSkills, bool requireMig
 			require(HeroTypeID::encode(id) == hero && heroes.insert(id).second, "canonical unique starting hero");
 			if(usesSkillsOnlyStartingProfiles(startingSkills) || usesSingleStartingPerkProfiles(startingSkills)) fields(profile, {"skills"});
 			else fields(profile, {"skills", "startingPerks"});
-			require(profile["skills"].isVector() && profile["skills"].Vector().size() == 2,
-				"exactly two explicit starting skills");
+			require(profile["skills"].isVector() && (profile["skills"].Vector().size() == 2
+				|| usesThreeSkillStart(startingSkills, hero)), "exactly two explicit starting skills");
 			std::set<int> skills;
 			for(const auto & skill : profile["skills"].Vector())
 			{

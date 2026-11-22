@@ -24,9 +24,17 @@ PerkState freshPerks()
 	return result;
 }
 JsonNode development() { return JsonNode(JsonPath::builtin("config/newHorizonsHeroes")); }
+// Policies before version 4 predate Cuthbert's three-Skill Castle start.
+void restoreTwoSkillCuthbert(JsonNode & starts)
+{
+	auto & skills = starts["startingDevelopmentProfiles"]["core:cuthbert"]["skills"].Vector();
+	skills.pop_back();
+	skills.back()["skill"].String() = "new-horizons:spellcraft";
+}
 JsonNode skillsOnlyDevelopment()
 {
 	auto result = development();
+	restoreTwoSkillCuthbert(result["startingSkills"]);
 	result["startingSkills"]["startingPerksPolicyVersion"].Integer() = 3;
 	result["startingSkills"].Struct().erase("startingPerkProfiles");
 	return result;
@@ -48,6 +56,7 @@ JsonNode historicalDevelopment(int version)
 {
 	auto result = development();
 	auto & starts = result["startingSkills"];
+	restoreTwoSkillCuthbert(starts);
 	starts["startingPerksPolicyVersion"].Integer() = version;
 	starts.Struct().erase("startingPerkProfiles");
 	const auto perks = freshPerks().getRules();
@@ -143,11 +152,18 @@ TEST(StartingPerkDefaults, EveryRegisteredAuthoredProjectionHasTwoBasicSkillsOne
 		const auto * hero = HeroTypeID(HeroTypeID::decode(identity)).toHeroType();
 		ASSERT_NE(hero, nullptr);
 		const auto projection = projectStartingHero(*hero, configured);
-		ASSERT_EQ(projection.skills.size(), 2);
+		const bool threeSkills = usesThreeSkillStart(configured.development["startingSkills"], identity);
+		EXPECT_EQ(threeSkills, identity == "core:cuthbert"); // The one deliberate exception.
+		ASSERT_EQ(projection.skills.size(), threeSkills ? 3 : 2);
 		EXPECT_NE(projection.skills[0].first, projection.skills[1].first);
 		for(const auto & [skill, rank] : projection.skills) EXPECT_EQ(rank, MasteryLevel::BASIC);
-		ASSERT_EQ(projection.perks.size(), 1);
 		EXPECT_TRUE(projection.spellBook);
+		if(threeSkills)
+		{
+			EXPECT_TRUE(projection.perks.empty());
+			continue;
+		}
+		ASSERT_EQ(projection.perks.size(), 1);
 		const auto & expected = configured.development["startingSkills"]["startingPerkProfiles"][identity].Vector().front();
 		EXPECT_EQ(projection.perks.front().skillId, expected["skill"].String());
 		EXPECT_EQ(projection.perks.front().perkId, expected["perk"].String());
@@ -262,17 +278,19 @@ TEST_F(FreshHeroInitializationTest, EveryRegisteredCoreHeroActuallyStartsWithTwo
 		auto * hero = findHeroAt(position);
 		ASSERT_NE(hero, nullptr);
 		EXPECT_EQ(hero->getHeroTypeID(), id);
-		ASSERT_EQ(hero->secSkills.size(), 2);
+		const bool threeSkills = usesThreeSkillStart(configured["startingSkills"], HeroTypeID::encode(id.getNum()));
+		const size_t perks = threeSkills ? 0 : 1;
+		ASSERT_EQ(hero->secSkills.size(), threeSkills ? 3 : 2);
 		EXPECT_NE(hero->secSkills[0].first, hero->secSkills[1].first);
 		for(const auto & [skill, rank] : hero->secSkills) EXPECT_EQ(rank, MasteryLevel::BASIC);
-		ASSERT_EQ(hero->getPerkState().getSelected().size(), 1);
+		ASSERT_EQ(hero->getPerkState().getSelected().size(), perks);
 		EXPECT_TRUE(hero->hasSpellbook());
 		const auto before = hero->secSkills;
 		const auto book = hero->getArtID(ArtifactPosition::SPELLBOOK);
 		hero->initHero(randomizer);
 		EXPECT_EQ(hero->secSkills, before);
 		EXPECT_EQ(hero->getArtID(ArtifactPosition::SPELLBOOK), book);
-		ASSERT_EQ(hero->getPerkState().getSelected().size(), 1);
+		ASSERT_EQ(hero->getPerkState().getSelected().size(), perks);
 		EXPECT_TRUE(hero->hasSpellbook());
 	}
 	// Earned state is serialized and reinitialized without retroactive default grants.

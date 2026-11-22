@@ -125,5 +125,9 @@ TEST(NewHorizonsStartingEquipmentProjection, SinglePerkPolicyGuaranteesFreshSpel
 	auto historical = configured();
 	historical.development["startingSkills"]["startingPerksPolicyVersion"].Integer() = 3;
 	historical.development["startingSkills"].Struct().erase("startingPerkProfiles");
+	// Skills-only captures predate Cuthbert's three-Skill start.
+	auto & cuthbert = historical.development["startingSkills"]["startingDevelopmentProfiles"]["core:cuthbert"]["skills"].Vector();
+	cuthbert.pop_back();
+	cuthbert.back()["skill"].String() = "new-horizons:spellcraft";
 	EXPECT_FALSE(projectStartingHero(prototype("core:christian"), historical, authored).spellBook);
 }

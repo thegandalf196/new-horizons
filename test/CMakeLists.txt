@@ -124,6 +124,7 @@ set(test_SRCS
 		hero/SplitSkillOfferIntegrationTest.cpp
 		hero/SkillOfferLayoutTest.cpp
 		hero/StartingPerkDefaultsTest.cpp
+		hero/CastleStartingProfilesTest.cpp
 		hero/UnifiedSkillProgressionTest.cpp
 		server/UnifiedHeroProgressionTest.cpp
 		nativeDamage/NativeDamageBoundaryTest.cpp

@@ -37,6 +37,10 @@ protected:
 		auto development = JsonNode(JsonPath::builtin("config/newHorizonsHeroes"));
 		development["startingSkills"]["startingPerksPolicyVersion"].Integer() = 3;
 		development["startingSkills"].Struct().erase("startingPerkProfiles");
+		// Captures of this policy predate Cuthbert's three-Skill start.
+		auto & cuthbert = development["startingSkills"]["startingDevelopmentProfiles"]["core:cuthbert"]["skills"].Vector();
+		cuthbert.pop_back();
+		cuthbert.back()["skill"].String() = "new-horizons:spellcraft";
 		development.setOverrideFlag(true);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, development);
 	}

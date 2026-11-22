@@ -14,6 +14,8 @@ else:
     from test_new_horizons_content import load
 
 ROOT = Path(__file__).resolve().parents[2]
+# Deliberate exceptions to two Basic Skills and one perk: three Basic Skills and no perk.
+THREE_SKILL_STARTS = {'core:cuthbert'}
 
 
 class StartingPerkContentTest(unittest.TestCase):
@@ -39,12 +41,16 @@ class StartingPerkContentTest(unittest.TestCase):
             with self.subTest(hero=hero):
                 self.assertEqual(set(profile), {'skills'})
                 ranks = profile['skills']
-                self.assertEqual(len(ranks), 2)
+                expected = 3 if hero in THREE_SKILL_STARTS else 2
+                self.assertEqual(len(ranks), expected)
                 owned = {row['skill'] for row in ranks}
-                self.assertEqual(len(owned), 2)
+                self.assertEqual(len(owned), expected)
                 self.assertEqual({row['rank'] for row in ranks}, {1})
                 self.assertEqual(len(owned & factions), 1)
                 choices = self.start['startingPerkProfiles'][hero]
+                if hero in THREE_SKILL_STARTS:
+                    self.assertEqual(choices, [])
+                    continue
                 self.assertEqual(len(choices), 1)
                 choice, = choices
                 self.assertIn(choice['skill'], owned)
@@ -69,8 +75,9 @@ class StartingPerkContentTest(unittest.TestCase):
                 expected = self.start['factionSkills'][faction]
                 skills = {row['skill'] for row in self.profiles['core:' + hero]['skills']}
                 self.assertIn(expected, skills, hero)
-                generic, = skills - {expected}
-                self.assertGreater(self.rules['skillOfferWeights'][hero_class][generic], 0, hero)
+                for generic in skills - {expected}:
+                    self.assertGreater(self.rules['skillOfferWeights'][hero_class][generic], 0, hero)
+                self.assertEqual(len(skills), 3 if 'core:' + hero in THREE_SKILL_STARTS else 2, hero)
 
     def test_module_prototypes_have_no_authored_starting_perks(self):
         module = load(ROOT / 'Mods/new-horizons/mod.json')

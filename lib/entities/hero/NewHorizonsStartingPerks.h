@@ -13,4 +13,6 @@ DLL_LINKAGE bool usesSkillsOnlyStartingProfiles(const JsonNode & startingSkills)
 /// Version four grants one authored Basic perk and a spellbook at creation only.
 DLL_LINKAGE bool usesSingleStartingPerkProfiles(const JsonNode & startingSkills);
 DLL_LINKAGE void validateStartingPerkProfiles(const JsonNode & startingSkills);
+/// Version four's deliberate exception: three Basic Skills and an explicitly empty perk row.
+DLL_LINKAGE bool usesThreeSkillStart(const JsonNode & startingSkills, const std::string & hero);
 }

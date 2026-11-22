@@ -3628,6 +3628,14 @@
 						"core:tiva": {
 							"from": "core:stoneSkin",
 							"to": "new-horizons:regeneration"
+						},
+						"core:cuthbert": {
+							"from": "core:weakness",
+							"to": "new-horizons:holyArmor"
+						},
+						"core:loynis": {
+							"from": "core:prayer",
+							"to": "new-horizons:sanctuary"
 						}
 					},
 					"startingPerkProfiles": {
@@ -3967,12 +3975,7 @@
 								"perk": "new-horizons:lightMagic.benediction"
 							}
 						],
-						"core:cuthbert": [
-							{
-								"skill": "new-horizons:spellcraft",
-								"perk": "new-horizons:spellcraft.spellPenetration"
-							}
-						],
+						"core:cuthbert": [],
 						"core:loynis": [
 							{
 								"skill": "new-horizons:lightMagic",
@@ -5290,7 +5293,11 @@
 									"rank": 1
 								},
 								{
-									"skill": "new-horizons:spellcraft",
+									"skill": "new-horizons:lightMagic",
+									"rank": 1
+								},
+								{
+									"skill": "new-horizons:shadowMagic",
 									"rank": 1
 								}
 							]

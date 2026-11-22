@@ -25001,12 +25001,12 @@
       "inherited_deferral": "Historical predecessor deferral (numeric cap superseded by the current exact size/hash; extraction and invariants remain binding): Before further starting-Skill policy growth, extract captured profile/table validation into a focused pure helper; preserve canonical unique identities, rank/type checks, historical absence/version/migration handling and two-Basic own-faction coverage. Exact126-line bound, no later growth allowance.",
       "kind": "exception",
       "lines": 128,
-      "previous_review": "IR-OPERATION-LOCAL-PERK-ADMISSION-20261115",
-      "rationale": "Exact128 to128-line bounded condition-only exception: two existing skills-only tests also recognize policy4, whose single perk is validated by a focused20-line helper. Historical captured-profile, identity, rank and migration checks remain intact. No new loop or runtime state mutation; complete roster/table validation extraction remains required before further policy growth.",
-      "review": "IR-NH0922-STARTING-BOOK-PRAYER-PRESENTATION-20261118",
+      "previous_review": "IR-NH0922-STARTING-BOOK-PRAYER-PRESENTATION-20261118",
+      "rationale": "Exact successor for 0.93.1 Castle adventure specialties and starts (Forced March, Well Connected, Alms of the Faithful, Cuthbert and Loynis starts): bounded routing hooks into focused owners only. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-CASTLE-ADVENTURE-0931",
       "review_scope": "Exact source organization and bounded correctness review only; no compilation, rendered acceptance or future growth approval.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_REVIEW_NATIVE_UNRUN",
-      "sha256": "628ea300dc87139c962db6b33fe6a0dd510038324cea3a9342bb3f847dc3a1c4"
+      "sha256": "a2af259c19437f4182de4d2224005a56263de03f3cfa26562662dc0f6f2470f2"
     },
     "lib/entities/hero/NewHorizonsStartingSkillMigration.cpp::newHorizonsHeroes::std::vector<std::pair<SecondarySkill, ui8>> applyStartingFactionSkill( const JsonNode & resolvedRules, bool magicHero, FactionID faction, const std::vector<std::pair<SecondarySkill, ui8>> & initialSkills)#1": {
       "kind": "review",

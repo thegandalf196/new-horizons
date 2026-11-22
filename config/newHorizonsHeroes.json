@@ -316,7 +316,9 @@
 			"core:saurug": {"from": "core:bloodlust", "to": "new-horizons:vengefulVines"},
 			"core:verdish": {"from": "core:protectFire", "to": "new-horizons:regeneration"},
 			"core:styg": {"from": "core:shield", "to": "new-horizons:entangle"},
-			"core:tiva": {"from": "core:stoneSkin", "to": "new-horizons:regeneration"}
+			"core:tiva": {"from": "core:stoneSkin", "to": "new-horizons:regeneration"},
+			"core:cuthbert": {"from": "core:weakness", "to": "new-horizons:holyArmor"},
+			"core:loynis": {"from": "core:prayer", "to": "new-horizons:sanctuary"}
 		},
 		"startingPerkProfiles": {
 			"core:sylvia": [{"skill": "new-horizons:logistics", "perk": "new-horizons:logistics.navigation"}],
@@ -375,7 +377,7 @@
 			"core:christian": [{"skill": "new-horizons:warMachines", "perk": "new-horizons:warMachines.precisionBombardment"}],
 			"core:tyris": [{"skill": "new-horizons:battlecraft", "perk": "new-horizons:battlecraft.reserve"}],
 			"core:adela": [{"skill": "new-horizons:lightMagic", "perk": "new-horizons:lightMagic.benediction"}],
-			"core:cuthbert": [{"skill": "new-horizons:spellcraft", "perk": "new-horizons:spellcraft.spellPenetration"}],
+			"core:cuthbert": [],
 			"core:loynis": [{"skill": "new-horizons:lightMagic", "perk": "new-horizons:lightMagic.healer"}],
 			"core:rion": [{"skill": "new-horizons:warMachines", "perk": "new-horizons:warMachines.surgeon"}],
 			"core:mephala": [{"skill": "new-horizons:armorer", "perk": "new-horizons:armorer.shieldMaster"}],
@@ -540,7 +542,7 @@
 			"core:christian": {"skills": [{"skill": "new-horizons:divineMandate", "rank": 1}, {"skill": "new-horizons:warMachines", "rank": 1}]},
 			"core:tyris": {"skills": [{"skill": "new-horizons:divineMandate", "rank": 1}, {"skill": "new-horizons:battlecraft", "rank": 1}]},
 			"core:adela": {"skills": [{"skill": "new-horizons:divineMandate", "rank": 1}, {"skill": "new-horizons:lightMagic", "rank": 1}]},
-			"core:cuthbert": {"skills": [{"skill": "new-horizons:divineMandate", "rank": 1}, {"skill": "new-horizons:spellcraft", "rank": 1}]},
+			"core:cuthbert": {"skills": [{"skill": "new-horizons:divineMandate", "rank": 1}, {"skill": "new-horizons:lightMagic", "rank": 1}, {"skill": "new-horizons:shadowMagic", "rank": 1}]},
 			"core:loynis": {"skills": [{"skill": "new-horizons:divineMandate", "rank": 1}, {"skill": "new-horizons:lightMagic", "rank": 1}]},
 			"core:rion": {"skills": [{"skill": "new-horizons:divineMandate", "rank": 1}, {"skill": "new-horizons:warMachines", "rank": 1}]},
 			"core:mephala": {"skills": [{"skill": "new-horizons:sylvanLuck", "rank": 1}, {"skill": "new-horizons:armorer", "rank": 1}]},
