@@ -5,6 +5,7 @@
  *
  * License: GNU General Public License v2.0 or later; see license.txt
  */
+#include "StdInc.h"
 #include "HeroCommandFixture.h"
 
 #include "../../../lib/GameConstants.h"
