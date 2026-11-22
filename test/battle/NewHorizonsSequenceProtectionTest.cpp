@@ -167,7 +167,12 @@ TEST_F(NewHorizonsSequenceProtectionTest, SeparatelySelectedMasterGunnerShotStar
 	server.attacks.clear();
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), BattleAction::makeShotAttack(source, target)));
 	ASSERT_EQ(server.attacks.size(), 1u);
-	EXPECT_EQ(before - target->getAvailableHealth(), expected.min);
+	// Torosar's Fiery Shot follows each shot with a Fireball. Whether it also damages the target
+	// depends on the target's Magic Resistance roll, so only the shot's own hit is exact.
+	ASSERT_EQ(server.attacks[0].bsa.size(), 1u);
+	EXPECT_EQ(server.attacks[0].bsa[0].stackAttacked, target->unitId());
+	EXPECT_EQ(server.attacks[0].bsa[0].damageAmount, expected.min);
+	EXPECT_GE(before - target->getAvailableHealth(), expected.min);
 	EXPECT_EQ(source->shots.available(), shots - 1);
 	EXPECT_FALSE(battle()->battleHasPendingRangedFollowUp(source));
 }
