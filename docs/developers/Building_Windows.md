@@ -311,6 +311,31 @@ environment unchanged. Keep proprietary tools and SDK files outside distribution
 artifacts. This helper uses Ninja options; Visual Studio solution builds above
 continue to use their own command.
 
+#### Windows test workflow
+
+The [Windows test workflow](../../.github/workflows/new-horizons-windows-tests.yml)
+compiles and runs tests with MSVC. Some undefined behaviour passes on Linux but
+fails with MSVC, for example reading a destroyed `std::string` through a
+`std::string_view`. It runs on pushes to `main` that change code, tests, CMake
+or configuration, and it can also be dispatched manually. It has its own
+concurrency group and a newer push cancels an older run of it. It never waits
+for or blocks the release build.
+
+The build is Debug with the v142 toolset, the debug CRT and checked iterators
+(`_ITERATOR_DEBUG_LEVEL=2`), plus `/RTC1`. Checked iterators change the layout
+of standard containers. For this reason, Boost and oneTBB are rebuilt as Debug
+from the restored Conan recipes, and the C libraries keep their prebuilt Release
+binaries. The rebuilt packages are cached by the Conan recipe and profile hash.
+The build turns off PCH so that sccache can cache objects.
+
+The job runs `ctest -L nh-pure` and a short list of other standalone checks
+that need no game data. It then compiles `vcmitest` and lists its cases. A
+listing loads every DLL and runs all static initializers. It does not run the
+`vcmitest` cases, because they initialize the game library, and that needs the
+original Heroes III files. Those files are not available in CI. The
+`Windows-test-logs` artifact keeps the CTest logs, JUnit files, the case list
+and `.ninja_log`.
+
 ## Updating an existing checkout
 
 For normal day-to-day updates, keep the Conan cache and existing solution:

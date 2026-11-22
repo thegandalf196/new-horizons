@@ -1,0 +1,243 @@
+name: New Horizons Windows tests
+
+# MSVC Debug test build with checked iterators (_ITERATOR_DEBUG_LEVEL=2) and the
+# debug CRT. Separate from the release workflow: own concurrency group, no
+# packaging. Runs only tests that need no original Heroes III data.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/new-horizons-windows-tests.yml
+      - AI/**
+      - client/**
+      - cmake_modules/**
+      - config/**
+      - dependencies/**
+      - include/**
+      - lib/**
+      - libFacade/**
+      - Mods/new-horizons/Content/config/**
+      - server/**
+      - test/**
+      - tools/conan/**
+      - tools/ci/preflight_dependency_sources.py
+      - tools/ci/seed_windows_conan_sources.sh
+      - tools/ci/verify_vendored_dependencies.py
+      - CMakeLists.txt
+      - CMakePresets.json
+      - conanfile.py
+      - Global.h
+
+permissions:
+  contents: read
+
+concurrency:
+  group: new-horizons-windows-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    if: github.repository == 'thegandalf196/new-horizons' && github.ref == 'refs/heads/main'
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 240
+    env:
+      VSLANG: '1033'
+      PYTHONDONTWRITEBYTECODE: '1'
+      BUILD_ROOT: build/new-horizons-windows-x64
+      LOG_ROOT: build/windows-test-logs
+      # Data-free standalone checks beyond the nh-pure label. The two native
+      # rule-catalogue checks are left out while they also fail on Linux.
+      DATA_FREE_TESTS: >-
+        nhBattleMovementSolverTest nhBattleMovementCompilationTest nhPresentedCanvasStateTest
+        nhMapCacheBandsTest nhAerialSupremacyPresentationTest nhReleaseUpdatePolicyTest
+        nhReleaseUpdateTransportCancelled nhNativeMapImportTest
+      SDL_VIDEODRIVER: dummy
+      SDL_AUDIODRIVER: dummy
+      SDL_VIDEO_DRIVER: dummy
+      SDL_AUDIO_DRIVER: dummy
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Fetch the pinned test framework only
+        run: git submodule update --init --depth 1 test/googletest
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.15'
+
+      - name: Verify preserved dependency recipes without upstream lookup
+        run: python tools/ci/verify_vendored_dependencies.py
+
+      - name: Install upstream MSVC v142 toolset
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $version = & $vswhere -latest -products * -requires Microsoft.Component.MSBuild -property installationVersion
+          "MSBUILD_VS_VERSION=$(($version -split '\.')[0])" >> $env:GITHUB_ENV
+          $installation = & $vswhere -latest -products * -requires Microsoft.Component.MSBuild -property installationPath
+          $installer = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\setup.exe"
+          $process = Start-Process -FilePath $installer -ArgumentList @('modify', '--installPath', "`"$installation`"", '--add', 'Microsoft.VisualStudio.Component.VC.v142.x86.x64', '--quiet', '--norestart') -Wait -PassThru
+          if ($process.ExitCode -notin @(0, 3010)) { throw "VS installer failed: $($process.ExitCode)" }
+
+      - name: Restore upstream Conan binary cache
+        run: |
+          set -euo pipefail
+          python -m pip install 'conan>=2.25,<3'
+          archive="$RUNNER_TEMP/dependencies-windows-x64.txz"
+          curl --fail --location --retry 3 --output "$archive" https://github.com/vcmi/vcmi-dependencies/releases/download/2026-09-01/dependencies-windows-x64.txz
+          echo "6772d2e9f0a730329a195edce895a863d9115c4bba43101a9a6df3fefe6cfe43  $archive" | sha256sum --check
+          conan cache restore "$archive"
+
+      - name: Seed verified Conan source cache fallback for SDL3_image
+        env:
+          # Exact official release bytes pinned by the unchanged SDL_image recipe.
+          SDL_IMAGE_SOURCE_SHA256: 29751304a13d25ac513f24305fa25b06a6edd9607718c90129b8350d35fc5573
+          SDL_IMAGE_SOURCE_BYTES: 11123077
+        run: bash tools/ci/seed_windows_conan_sources.sh sdl_image
+
+      - name: Restore Debug dependency binaries
+        id: debug-deps
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ runner.temp }}/nh-windows-test-conan.tgz
+          key: nh-windows-tests-conan-debug-v1-6772d2e9-${{ hashFiles('conanfile.py', 'dependencies/conanfile.py', 'dependencies/luajit_version', 'dependencies/conan_profiles/**', 'tools/conan/sdl_image/**') }}
+
+      - name: Resolve Debug dependencies
+        env:
+          DEBUG_DEPS_ARCHIVE: ${{ runner.temp }}/nh-windows-test-conan.tgz
+          DEBUG_DEPS_HIT: ${{ steps.debug-deps.outputs.cache-hit }}
+        run: |
+          set -euo pipefail
+          if [[ "$DEBUG_DEPS_HIT" == true ]]; then
+            conan cache restore "$DEBUG_DEPS_ARCHIVE"
+          fi
+          conan profile detect
+          conan export tools/conan/sdl_image --version=3.4.4 --user=newhorizons --channel=patched
+          # Checked iterators change the layout of standard containers, so every
+          # C++ dependency that passes them through its API is rebuilt as Debug.
+          # C libraries keep their prebuilt Release binaries.
+          conan install . --output-folder=conan-generated \
+            --build='missing:sdl_image/3.4.4@newhorizons/patched' --build='missing:boost/*' \
+            --build='missing:onetbb/*' --build='missing:b2/*' --conf='tools.build:jobs=4' \
+            --core-conf="core.sources:download_cache=$NH_CONAN_SOURCE_CACHE" \
+            --profile=dependencies/conan_profiles/msvc-x64 \
+            --conf='tools.cmake.cmaketoolchain:generator=Ninja' \
+            --conf="tools.microsoft.msbuild:vs_version=${MSBUILD_VS_VERSION}" \
+            -s '&:build_type=Debug' -s 'boost/*:build_type=Debug' -s 'onetbb/*:build_type=Debug' \
+            -o '&:target_pre_windows10=True' -o '&:with_onnxruntime=False' -o '&:with_discord_presence=False' \
+            --format=json > conan-test-graph.json
+          if [[ "$DEBUG_DEPS_HIT" != true ]]; then
+            # Keep only the binaries built here; a failed archive only skips the cache.
+            conan list --graph=conan-test-graph.json --graph-binaries=build --format=json > conan-built.json
+            conan cache save --list=conan-built.json --no-source --file="$DEBUG_DEPS_ARCHIVE" \
+              || echo '::warning::Debug dependency binaries were not archived for the cache'
+          fi
+
+      - name: Save Debug dependency binaries
+        if: steps.debug-deps.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ runner.temp }}/nh-windows-test-conan.tgz
+          key: ${{ steps.debug-deps.outputs.cache-primary-key }}
+
+      - uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1, upstream; no private-repository subscription gate
+        with:
+          arch: x64
+          toolset: '14.29'
+
+      - name: Cache compiler outputs between test runs
+        uses: hendrikmuhs/ccache-action@5ebbd400eff9e74630f759d94ddd7b6c26299639 # v1, upstream
+        with:
+          variant: sccache
+          key: new-horizons-msvc-x64-v142-tests-debug
+          create-symlink: false
+          max-size: 3G
+
+      - name: Configure Debug test build
+        id: configure
+        # PCH stays off so sccache can cache objects; discovery of vcmitest's
+        # cases is deferred to test time because the build has no DLL path.
+        # Dash-form compiler flags avoid Git Bash path conversion.
+        run: >-
+          cmake --preset new-horizons-windows-x64
+          -DCMAKE_BUILD_TYPE=Debug
+          '-DCMAKE_C_FLAGS_DEBUG=-Ob0 -Od -RTC1'
+          '-DCMAKE_CXX_FLAGS_DEBUG=-Ob0 -Od -RTC1 -D_ITERATOR_DEBUG_LEVEL=2'
+          -DENABLE_TEST=ON -Dgtest_force_shared_crt=ON
+          -DCMAKE_GTEST_DISCOVER_TESTS_DISCOVERY_MODE=PRE_TEST
+          -DENABLE_PCH=OFF -DENABLE_NH_UNITY_BUILD=ON -DNH_UNITY_BUILD_BATCH_SIZE=8
+          -DENABLE_CCACHE=ON -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
+
+      - name: Put dependency and build DLLs on the test PATH
+        shell: python
+        run: |
+          import os, pathlib
+          libraries = pathlib.Path('conan-generated/_runtime_libs.txt').read_text().splitlines()
+          directories = sorted({os.path.normpath(os.path.dirname(path)) for path in libraries if path.strip()})
+          directories.append(os.path.abspath(os.path.join(os.environ['BUILD_ROOT'], 'bin')))
+          with open(os.environ['GITHUB_PATH'], 'a', encoding='utf-8') as stream:
+              stream.write(''.join(directory + '\n' for directory in directories))
+          print('\n'.join(directories))
+
+      - name: Compile data-free test executables
+        id: data-free
+        run: |
+          set -euo pipefail
+          mkdir -p "$LOG_ROOT"
+          # nh-pure test names are their target names; one probe target runs as a named test.
+          pure=$(ctest --test-dir "$BUILD_ROOT" --show-only=json-v1 -L '^nh-pure$' \
+            | python -c "import json, sys; print(' '.join(test['name'] for test in json.load(sys.stdin)['tests']))")
+          targets="$pure ${DATA_FREE_TESTS//nhReleaseUpdateTransportCancelled/nhReleaseUpdateTransportProbe}"
+          echo "Targets: $targets"
+          cmake --build "$BUILD_ROOT" --target $targets --parallel 4 -- -k 0
+          echo "DATA_FREE_REGEX=^($(echo $DATA_FREE_TESTS | tr ' ' '|'))\$" >> "$GITHUB_ENV"
+
+      - name: Run nh-pure state checks
+        run: >-
+          ctest --test-dir "$BUILD_ROOT" -L '^nh-pure$' --no-tests=error --output-on-failure --timeout 120
+          --output-junit "$GITHUB_WORKSPACE/$LOG_ROOT/nh-pure.xml" --output-log "$GITHUB_WORKSPACE/$LOG_ROOT/nh-pure.log"
+
+      - name: Run other data-free standalone checks
+        if: ${{ !cancelled() && steps.data-free.outcome == 'success' }}
+        run: >-
+          ctest --test-dir "$BUILD_ROOT" -R "$DATA_FREE_REGEX" --no-tests=error --output-on-failure --timeout 300
+          --output-junit "$GITHUB_WORKSPACE/$LOG_ROOT/data-free.xml" --output-log "$GITHUB_WORKSPACE/$LOG_ROOT/data-free.log"
+
+      - name: Compile vcmitest
+        id: vcmitest
+        if: ${{ !cancelled() && steps.configure.outcome == 'success' }}
+        # Keep going so one run reports every rejected translation unit.
+        run: cmake --build "$BUILD_ROOT" --target vcmitest --parallel 4 -- -k 0
+
+      - name: Load vcmitest and list its cases (no game data)
+        if: ${{ !cancelled() && steps.vcmitest.outcome == 'success' }}
+        # Its cases initialize the game library, which needs original Heroes III
+        # files. Listing still loads every DLL and runs all static initializers.
+        run: |
+          set -euo pipefail
+          mkdir -p "$LOG_ROOT"
+          "$BUILD_ROOT/bin/vcmitest.exe" --gtest_list_tests > "$LOG_ROOT/vcmitest-cases.txt"
+          cases=$(grep -c '^  ' "$LOG_ROOT/vcmitest-cases.txt" || true)
+          echo "vcmitest lists $cases cases"
+          test "$cases" -gt 0
+
+      - name: Retain test logs and Ninja timings, including failures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Windows-test-logs-${{ github.sha }}
+          path: |
+            ${{ env.LOG_ROOT }}
+            ${{ env.BUILD_ROOT }}/Testing/Temporary/*.log
+            ${{ env.BUILD_ROOT }}/.ninja_log
+            conan-test-graph.json
+          include-hidden-files: true
+          if-no-files-found: ignore
+          retention-days: 14

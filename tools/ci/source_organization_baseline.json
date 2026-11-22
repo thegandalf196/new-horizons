@@ -48,6 +48,14 @@
       "review": "ROOT-MANUAL-SPANS-NEXT10-20261015",
       "sha256": "bd66b074647abf7f7ae776177b5f2d79749df9d574e36359a585976d3bd833b6"
     },
+    ".github/workflows/new-horizons-windows-tests.yml": {
+      "functions": [],
+      "sha256": "668531587b2995842321c81ac2f8f6cede7b45fcc0acd914da41647134430f59",
+      "review": "PROPOSED-CLAUDE-WINDOWS-MSVC-TESTS-20261122",
+      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
+      "rationale": "Complete exact 243-line workflow callable inventory is empty. Run blocks are Bash, PowerShell and one Python block of external commands, assignments, conditionals and a set comprehension; one inline python -c prints a generator expression. No shell function, def, lambda, class or function-like macro. External scripts and actions remain separately inventoried.",
+      "review_scope": "Exact source only. The first Windows test run provides build and runtime evidence."
+    },
     ".github/workflows/new-horizons-windows.yml": {
       "functions": [],
       "sha256": "cf7a74604af48353234f79748b7aedbbef8f09d9a29490098ffaa9beee5ca197",
