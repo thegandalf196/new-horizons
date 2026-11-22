@@ -7,6 +7,49 @@ and revisions as the game develops.
 For individual perk effects, spell formulas, creature statistics and Order rules,
 read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 
+## 0.93.1 Beta
+
+Castle's heroes get their revised specialties and starts.
+
+- New Castle specialties:
+  - **Orrin, Volley Command:** issuing Focus Fire! makes every ready friendly
+    shooter fire one shot at the target.
+  - **Adela, Benediction of Arms:** a stack she has Blessed also receives the
+    prayer of her next Order.
+  - **Adelaide, Frost Mantle:** Frost Ring centred on a friendly stack cloaks
+    it, returning cold damage to melee attackers and slowing them; centred on
+    an enemy, it chills it.
+  - **Cuthbert, Pariah:** −2 Morale for his army, stronger Shadow spells, and
+    a Shadow spell learned with every Light spell.
+  - **Sanya, Quick Study:** she may cast once any spell another hero cast in
+    the combat.
+  - **Loynis, Sermon:** each Light spell he casts also grants a Consecrated
+    Arms prayer.
+  - **Sylvia, Forced March:** extra movement on the first day of each week, at
+    −1 Morale in her next combat.
+  - **Lord Haart, Well Connected:** cheaper creature recruitment for his army.
+  - **Caitlin, Alms of the Faithful:** taking the experience at a treasure
+    chest also gives part of the declined gold.
+  - **Edric, Aerial Supremacy:** Griffins counter ranged attacks at any range.
+- Specialty values now grow with hero level as listed, and twelve more existing
+  creature specialties are active.
+- Fixed Thunar's Earth Elementals never shooting on Windows (Vey's and
+  Josephine's specialties had the same fault). Windows 0.93.0 saves regain the
+  missing specialty when loaded.
+- Fixed the battle AI stopping with an error in battles with Moandor's Grave
+  Dust, and a broken forecast can no longer end a battle.
+- The AI uses Orrin's volley, Adelaide's Frost Mantle, Adela's Benediction,
+  Loynis's Sermon and Sanya's copies.
+- The launcher's update check no longer times out after 5 seconds; Play is
+  available during a check; each launcher session writes a log
+  (`%LOCALAPPDATA%\HeroesIII-NewHorizons\logs\launcher.log` on Windows,
+  `~/.local/state/new-horizons/launcher.log` on Linux). If your current
+  launcher still reports "Update check timed out", try the check again or
+  download this release manually.
+- The Windows launcher has the same modern look as the Linux one.
+- Several "works by luck" bugs found by a code-wide sweep are fixed.
+- Games saved in 0.92.x and 0.93.0 load and keep their original rules.
+
 ## 0.93.0 Beta
 
 The first Beta release: choose **Beta** as the launcher's Version track to play

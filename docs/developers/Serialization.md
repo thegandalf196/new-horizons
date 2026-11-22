@@ -7,7 +7,10 @@ minimum accepted format is **1164**, `NEW_HORIZONS_CONSECRATED_ARMS`; the curren
 writer is **1166**, `NEW_HORIZONS_REVISED_SPECIALTIES`, which protects captured
 revised specialties, core Stewardship (Estates policy 2) and Spellcraft policy 2.
 1165, `NEW_HORIZONS_DOUBLE_CAST_CHOSEN_PRAYERS`, added Double Cast offer/use state
-and chosen prayer action fields. 1164 and 1165 saves load with their captured rules. Format 1163 introduced the shared captured-rule
+and chosen prayer action fields. 1164 and 1165 saves load with their captured rules. On load (and when a tavern hero
+is recruited), heroes whose captured specialty rules lack their passive creature
+bonuses regain only the missing rows; this repairs Windows 0.93.0 saves, where
+Stonecaller, Archshaman and Gold Standard were never installed. Format 1163 introduced the shared captured-rule
 table but predates the replacement faction perk identities and prayer state.
 The unpublished 1162 feature layout is also rejected. `CLoadFile` rejects earlier formats before
 reading their payload. Retired spell and Metamagic state is not converted or
