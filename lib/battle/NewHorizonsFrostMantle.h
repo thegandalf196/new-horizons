@@ -1,10 +1,12 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #pragma once
 
+#include "Destination.h"
 #include "../bonuses/Bonus.h"
 #include <optional>
 
 class CGHeroInstance;
+namespace spells { class Mechanics; }
 
 /// Adelaide's Frost Mantle (captured revisedSpecialties, format 1166). A Frost Ring
 /// she casts around a friendly stack cloaks it; an enemy in the centre is chilled.
@@ -18,4 +20,7 @@ inline constexpr const char * CHILL_STACKING = "new-horizons:frostMantle.chill";
 DLL_LINKAGE std::optional<Bonus> cloak(const CGHeroInstance * hero);
 /// The chill: -X% Initiative for the captured number of rounds.
 DLL_LINKAGE std::optional<Bonus> chill(const CGHeroInstance * hero);
+/// The holder's Frost Ring centred on a living stack is legal for the cloak or
+/// chill alone, even when the ring reaches no other stack (server and client).
+DLL_LINKAGE bool centredOnStack(const spells::Mechanics & mechanics, const battle::Target & target);
 }

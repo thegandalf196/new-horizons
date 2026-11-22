@@ -254,11 +254,11 @@ std::vector<Target> SpellTargetEvaluator::theBestLocationCasts(const spells::Mec
 			}
 		}
 
-		// Adelaide's Frost Mantle cloaks a friendly centre, so such a centre is not
-		// equal to an empty one that reaches the same stacks.
+		// Adelaide's Frost Mantle cloaks or chills a centre stack: not equal to an empty
+		// centre reaching the same stacks, and worth valuing even if the ring reaches none.
 		for(const auto & cast : allCasts)
 			if(castleSpecialtyAI::keepsFrostMantleCentre(*spellMechanics, cast.first) && !bestCasts.contains(cast.first)
-				&& !isCastHarmful(spellMechanics, cast.second, budget))
+				&& (cast.second.empty() || !isCastHarmful(spellMechanics, cast.second, budget)))
 				bestCasts.insert(cast);
 		for(const auto & cast : bestCasts)
 		{

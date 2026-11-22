@@ -27321,7 +27321,7 @@
       "pre_legacy_freeze_review_scope": "Exact frozen production patch only. Conditional on root serialized engine/AI/UI/content/test composition; no future growth, old-save matrix, native/render/runtime proof or adoption authorization.",
       "pre_legacy_freeze_review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_RENDERED_UNRUN",
       "pre_legacy_freeze_sha256": "35ad59c7acec04e3a9c596ee3ec1c9c543f930c1bf2deaa049a2731f616bdcb4",
-      "previous_review": "CLAUDE-METAMAGIC6-PHASE4-20261120",
+      "previous_review": "CLAUDE-CASTLE-COMBAT-0931",
       "prior_a1_health_scope": {
         "kind": "exception",
         "lines": 2629,
@@ -27329,11 +27329,11 @@
         "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
         "sha256": "6968fdebcb529086a26a2f47f6a8a9cf3f61744918663ebea9b0aabb260ac9fc"
       },
-      "rationale": "Exact successor for 0.93.1 Castle combat specialties (Volley Command, revised Aerial Supremacy, Benediction of Arms, Pariah, Frost Mantle, Quick Study, Sermon): bounded routing hooks into focused new owners only. Existing extraction deferrals retained; no future growth credit.",
-      "review": "CLAUDE-CASTLE-COMBAT-0931",
+      "rationale": "Exact successor for 0.93.1 Castle combat specialties (Volley Command, revised Aerial Supremacy, Benediction of Arms, Pariah, Frost Mantle, Quick Study, Sermon): bounded routing hooks into focused new owners only. Existing extraction deferrals retained; no future growth credit. Frost Mantle centre legality (0.93.1 fix): the final applicability return also admits the holder's stack-centred Frost Ring through newHorizonsFrostMantle::centredOnStack; exact same line count, policy lives in the focused owner.",
+      "review": "CLAUDE-CASTLE-FROST-MANTLE-0931",
       "review_scope": "Exact source organization and bounded state/lifetime review only. No compile, rendered acceptance, publication or future growth allowance.",
       "review_status": "INDEPENDENT_SOURCE_REVIEW_NATIVE_RENDERED_UNRUN",
-      "sha256": "c64140c68afa9c8f9d4add4f4bf6e363ebddd21f226636048f7ab5843d3ff8f3",
+      "sha256": "9b89cd188584d78bc0fbcff66071b7ebca3e576fc11cb127c2d62a3d66beccbf",
       "inherited_exact_source_review": {
         "review": "IR-NH092-ORG-E8CD1819-20261116",
         "sha256": "73d7bd0d10820a15e4dc23747dac42909864ddb1c4e6362c4fb36a52f237bc2e",
@@ -27374,12 +27374,12 @@
       "kind": "exception",
       "lines": 278,
       "owner": "gameplay_engineer",
-      "previous_review": "IR-SHARED84-CURRENT225-EXACT-SOURCE-20261103",
-      "rationale": "Exact 288 to 278-line scope. Shared spell dispatch/presentation and current duration/scaling/effect policy remain in their existing owners. Preserve captured absence, exact native ordering, raw-input validation and current action/resource semantics.",
-      "review": "IR-NH092-ORG-3E82D142-20261116",
+      "previous_review": "IR-NH092-ORG-3E82D142-20261116",
+      "rationale": "Exact 288 to 278-line scope. Shared spell dispatch/presentation and current duration/scaling/effect policy remain in their existing owners. Preserve captured absence, exact native ordering, raw-input validation and current action/resource semantics. Frost Mantle centre legality (0.93.1 fix): the final applicability return also admits the holder's stack-centred Frost Ring through newHorizonsFrostMantle::centredOnStack; exact same line count, policy lives in the focused owner.",
+      "review": "CLAUDE-CASTLE-FROST-MANTLE-0931",
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "09463131301c85f3828d13ae033b853f91ae19dba9be55bb79af90f361343804"
+      "sha256": "4e7ed26ec39a6a8ed74f445a924d112f6f5a2e678ffeeaccb0fa5bb35b92581a"
     },
     "lib/spells/BattleSpellMechanics.cpp::spells::void BattleSpellMechanics::beforeCast(ServerCallback * server, BattleSpellCast & sc, vstd::RNG & rng, const Target & target, std::vector<CompoundMirrorEffect> * compoundMirrorEffects)#1": {
       "deferral": "Before further growth, extract the affected compound targeting/accepted-effect transaction into cohesive validated helpers; preserve identity, owner, rejection/action/payment/RNG order and reduce this exact baseline. Existing Cure extraction obligation remains. Owning gameplay/engine specialist: before further substantive expansion of this touched rule/transition, extract the next coherent affected policy or ordered stage into a focused owner. Preserve callback visibility, original recipient/caster identity, rejection atomicity and packet/RNG order; characterization must compare exact state and emitted packets. This is no future growth credit.",

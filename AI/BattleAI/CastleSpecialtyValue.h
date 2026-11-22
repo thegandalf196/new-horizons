@@ -6,6 +6,7 @@
 #include <memory>
 #include <vector>
 
+class CBattleInfoCallback;
 class CPlayerBattleCallback;
 class HypotheticBattle;
 class DamageCache;
@@ -15,7 +16,7 @@ namespace spells { class Mechanics; }
 /// Battle AI riders for the revised Castle specialties that a spell candidate's
 /// own forecast cannot see: Loynis's Sermon prayer on his Light spells, Adela's
 /// Benediction of Arms on her Bless target and Adelaide's Frost Mantle on a
-/// friendly-centred Frost Ring. Heuristic exposure terms only; no search.
+/// stack-centred Frost Ring. Heuristic exposure terms only; no search.
 namespace castleSpecialtyAI
 {
 DLL_LINKAGE void addSpecialtyValue(std::vector<PossibleSpellcast> & candidates, const CPlayerBattleCallback & battle,
@@ -30,9 +31,12 @@ DLL_LINKAGE float benedictionValue(const CPlayerBattleCallback & battle, const s
 /// the Focus Fire! target, with the Order's ranged bonus (0 when inactive).
 DLL_LINKAGE float volleyValue(const CPlayerBattleCallback & battle, const std::shared_ptr<HypotheticBattle> & board,
 	BattleSide side, uint32_t target, int focusFirePercent, DamageCache & damage);
-/// Adelaide's Frost Ring centred on a friendly stack is a distinct candidate.
+/// Adelaide's Frost Ring centred on a stack is a distinct candidate (cloak or chill).
 DLL_LINKAGE bool keepsFrostMantleCentre(const spells::Mechanics & mechanics, BattleHex centre);
 /// Value of Frost Mantle cloaking a friendly Frost Ring centre stack.
-DLL_LINKAGE float frostMantleValue(const CPlayerBattleCallback & battle, const std::shared_ptr<HypotheticBattle> & board,
+DLL_LINKAGE float frostMantleValue(const CBattleInfoCallback & battle, const std::shared_ptr<HypotheticBattle> & board,
+	BattleSide side, uint32_t centre, DamageCache & damage);
+/// Value of Frost Mantle chilling an enemy Frost Ring centre stack (0 for a friendly one).
+DLL_LINKAGE float frostMantleChillValue(const CBattleInfoCallback & battle, const std::shared_ptr<HypotheticBattle> & board,
 	BattleSide side, uint32_t centre, DamageCache & damage);
 }

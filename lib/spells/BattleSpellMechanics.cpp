@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "../battle/QuickStudySpecialty.h"
+#include "../battle/NewHorizonsFrostMantle.h"
 #include "../battle/NewHorizonsSylvanTacticsV2.h"
 #include "SpellEffectScalingProfile.h"
 #include "SpellBonusProvenance.h"
@@ -1643,9 +1644,8 @@ bool BattleSpellMechanics::canBeCastAt(const Target & target, Problem & problem)
 		|| naturesWrath)
 		return true;
 
-	return effects->applicable(problem, this, target, spellTarget);
+	return effects->applicable(problem, this, target, spellTarget) || newHorizonsFrostMantle::centredOnStack(*this, target);
 }
-
 
 void BattleSpellMechanics::cast(ServerCallback * server, const Target & target)
 {

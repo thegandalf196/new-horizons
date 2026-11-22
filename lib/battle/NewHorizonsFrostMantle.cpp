@@ -3,6 +3,9 @@
 #include "NewHorizonsFrostMantle.h"
 #include "../entities/hero/NewHorizonsCastleSpecialties.h"
 #include "../mapObjects/CGHeroInstance.h"
+#include "../spells/ISpellMechanics.h"
+#include "CBattleInfoCallback.h"
+#include "Unit.h"
 
 namespace newHorizonsFrostMantle
 {
@@ -33,5 +36,18 @@ std::optional<Bonus> chill(const CGHeroInstance * hero)
 	result.stacking = CHILL_STACKING;
 	result.description.appendRawString("Frost Mantle chill");
 	return result;
+}
+
+bool centredOnStack(const spells::Mechanics & mechanics, const battle::Target & target)
+{
+	if(mechanics.getSpellId() != SpellID::FROST_RING || !mechanics.isGenuineHeroCast() || !mechanics.battle()
+		|| target.empty() || !target.front().hexValue.isValid())
+		return false;
+	// The same centre the authority cloaks or chills after the cast.
+	const auto * centre = mechanics.battle()->battleGetUnitByPos(target.front().hexValue, true);
+	if(!centre || !centre->alive() || !centre->isValidTarget(false))
+		return false;
+	const auto * hero = mechanics.getHeroCaster();
+	return centre->unitSide() == mechanics.getCasterSide() ? cloak(hero).has_value() : chill(hero).has_value();
 }
 }

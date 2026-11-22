@@ -10,6 +10,9 @@
 #include "../../AI/BattleAI/CastleSpecialtyValue.h"
 #include "../../AI/BattleAI/HeroActionSelection.h"
 #include "../../AI/BattleAI/ConsecratedArmsValue.h"
+#include "../../AI/BattleAI/BattleSearchPolicy.h"
+#include "../../AI/BattleAI/HeroDecisionPressure.h"
+#include <chrono>
 
 namespace
 {
@@ -105,6 +108,29 @@ protected:
 		cache.buildDamageCache(parent, ATTACKER);
 	}
 	DamageCache cache;
+
+	/// The live hero decision (CBattleAI::attemptHeroAction): the chosen search
+	/// profile and its candidate shortlist. Returns the submitted hero requests.
+	std::vector<BattleAction> liveHeroChoice(battleSearch::Profile profile, double * milliseconds = nullptr)
+	{
+		const battleSearch::Scope search(profile);
+		heroDecisionPressure::Experiment shortlist;
+		callback = std::make_shared<heroQueueTest::QueueCallback>();
+		callback->onBattleStarted(battle());
+		live = callback->getBattle(BattleID(0));
+		environment = std::make_shared<heroQueueTest::QueueEnvironment>(gameState());
+		parent = std::make_shared<HypotheticBattle>(environment.get(), live);
+		child = std::make_shared<HypotheticBattle>(environment.get(), parent);
+		DamageCache damage;
+		damage.buildDamageCache(child, ATTACKER);
+		BattleEvaluator evaluator(environment, callback, child, damage, active, PlayerColor(0), BattleID(0), ATTACKER, 1.0f, 2);
+		evaluator.selectStackAction(active);
+		const auto start = std::chrono::steady_clock::now();
+		evaluator.attemptCastingSpell(active, true, nullptr, nullptr, nullptr, nullptr, &shortlist);
+		if(milliseconds)
+			*milliseconds = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start).count();
+		return callback->heroRequests;
+	}
 
 	/// The fixture battle has no battle query, so a decided battle is not ended for us.
 	bool decided() const
@@ -297,5 +323,34 @@ TEST_F(CastleSpecialtyAITest, OrrinsVolleyIsWorthMoreBeforeHisShootersAct)
 	ASSERT_NO_FATAL_FAILURE(activate(active));
 	ASSERT_NO_FATAL_FAILURE(board());
 	EXPECT_EQ(castleSpecialtyAI::volleyValue(*live, parent, ATTACKER, enemy->unitId(), 10, cache), 0.0f);
+}
+
+TEST_F(CastleSpecialtyAITest, AdelaideCloaksAnIsolatedThreatenedStack)
+{
+	ASSERT_NO_FATAL_FAILURE(specialist("core:adelaide", 10, false));
+	ASSERT_NO_FATAL_FAILURE(book(attackerSideHero, SpellID::FROST_RING, "new-horizons:havocMagic"));
+	ASSERT_NO_FATAL_FAILURE(emptyField());
+	// Ice Elementals shrug off Frost Ring, so no ring can hurt them; their charge
+	// at the lone Crusaders is what the cloak answers (or the chill slows).
+	active = place(ATTACKER, "core:pikeman", BattleHex(1, 1), 1, 1000);
+	actor = place(ATTACKER, "core:crusader", BattleHex(5, 5), 20, 800);
+	enemy = place(DEFENDER, "core:iceElemental", BattleHex(9, 5), 30, 400);
+	ASSERT_TRUE(active && actor && enemy);
+	ASSERT_NO_FATAL_FAILURE(beginCombat());
+	ASSERT_NO_FATAL_FAILURE(activate(active));
+	for(const auto profile : {battleSearch::Profile::BeamOneTwoActors, battleSearch::Profile::Full})
+	{
+		const auto chosen = liveHeroChoice(profile);
+		ASSERT_EQ(chosen.size(), 1u);
+		ASSERT_EQ(chosen.front().actionType, EActionType::HERO_SPELL) << "command " << static_cast<int>(chosen.front().command);
+		EXPECT_EQ(chosen.front().spell, SpellID(SpellID::FROST_RING));
+	}
+	const auto action = acceptedChoice();
+	ASSERT_EQ(action.spell, SpellID(SpellID::FROST_RING));
+	const auto * centre = battle()->battleGetUnitByPos(action.getTarget(battle()).front().hexValue, true);
+	ASSERT_NE(centre, nullptr) << "The ring is centred on a stack";
+	EXPECT_EQ(centre, actor) << "The threatened Crusaders take the cloak";
+	EXPECT_TRUE(actor->hasBonus(CSelector([](const Bonus * bonus)
+		{ return bonus->stacking == newHorizonsFrostMantle::CLOAK_STACKING; })));
 }
 #endif

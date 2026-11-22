@@ -9,6 +9,7 @@
 #include "../../lib/battle/ConsecratedArmsChoice.h"
 #include "../../lib/battle/ConsecratedArmsOrder.h"
 #include "../../lib/battle/NewHorizonsArchery.h"
+#include "../../lib/battle/NewHorizonsFrostMantle.h"
 #include "AttackPossibility.h"
 #include "../../lib/entities/hero/NewHorizonsCastleSpecialties.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
@@ -94,14 +95,10 @@ float volleyValue(const CPlayerBattleCallback & battle, const std::shared_ptr<Hy
 
 bool keepsFrostMantleCentre(const spells::Mechanics & mechanics, BattleHex centre)
 {
-	if(mechanics.getSpellId() != SpellID::FROST_RING || !mechanics.battle())
-		return false;
-	const auto * hero = mechanics.getHeroCaster();
-	const auto * unit = mechanics.battle()->battleGetUnitByPos(centre, true);
-	return newHorizonsHeroes::frostMantleRule(hero) && unit && unit->unitSide() == mechanics.getCasterSide();
+	return newHorizonsFrostMantle::centredOnStack(mechanics, battle::Target{battle::Destination(centre)});
 }
 
-float frostMantleValue(const CPlayerBattleCallback & battle, const std::shared_ptr<HypotheticBattle> & board,
+float frostMantleValue(const CBattleInfoCallback & battle, const std::shared_ptr<HypotheticBattle> & board,
 	BattleSide side, uint32_t centre, DamageCache & damage)
 {
 	const auto * hero = battle.battleGetFightingHero(side);
@@ -117,6 +114,21 @@ float frostMantleValue(const CPlayerBattleCallback & battle, const std::shared_p
 	const auto & exposure = measured.front().exposure;
 	const double returned = exposure.counterStrikes ? exposure.incoming : exposure.incoming * 0.5;
 	return static_cast<float>(returned * newHorizonsHeroes::frostMantleReturnedPercent(hero) / 100.0);
+}
+
+float frostMantleChillValue(const CBattleInfoCallback & battle, const std::shared_ptr<HypotheticBattle> & board,
+	BattleSide side, uint32_t centre, DamageCache & damage)
+{
+	const auto & rule = newHorizonsHeroes::frostMantleRule(battle.battleGetFightingHero(side));
+	const auto * unit = board ? board->battleGetUnitByID(centre) : nullptr;
+	if(!rule || !unit || !unit->alive() || unit->unitSide() == side)
+		return 0.0f;
+	// Slowing the stack delays the share of its strongest blow; tempo, not damage, so halve it.
+	int64_t threat = 0;
+	for(const auto * own : board->battleGetUnitsIf([side](const battle::Unit * candidate)
+		{ return candidate->unitSide() == side && candidate->alive() && !candidate->isGhost(); }))
+		threat = std::max(threat, damage.getDamage(unit, own, board));
+	return static_cast<float>(threat * rule->initiativePenaltyPercent * rule->chillRounds / 200.0);
 }
 
 void addSpecialtyValue(std::vector<PossibleSpellcast> & candidates, const CPlayerBattleCallback & battle,
@@ -156,7 +168,8 @@ void addSpecialtyValue(std::vector<PossibleSpellcast> & candidates, const CPlaye
 				bonus += benedictionValue(battle, board, side, *blessed, damage);
 		if(candidate.spell->id == SpellID::FROST_RING && !candidate.dest.empty())
 			if(const auto * centre = battle.battleGetUnitByPos(candidate.dest.front().hexValue, true))
-				bonus += frostMantleValue(battle, board, side, centre->unitId(), damage);
+				bonus += frostMantleValue(battle, board, side, centre->unitId(), damage)
+					+ frostMantleChillValue(battle, board, side, centre->unitId(), damage);
 		if(bonus > 0)
 			candidate.value += bonus * positive;
 	}
