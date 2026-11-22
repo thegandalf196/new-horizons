@@ -24,7 +24,7 @@ namespace Goals
 		uint64_t defenceArmyStrength;
 		HitMapInfo threat;
 		uint8_t turn;
-		bool counterattack;
+		bool counterattack = false;
 
 	public:
 		DefendTown(const CGTownInstance * town, const HitMapInfo & threat, const AIPath & defencePath, bool isCounterAttack = false);

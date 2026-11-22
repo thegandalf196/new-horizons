@@ -15,16 +15,17 @@ class SpecialAction;
 
 struct AIPathNodeInfo
 {
-	float cost;
-	uint8_t turns;
+	// Graph paths build nodes field by field and leave some unset, so every field has a default.
+	float cost = 0;
+	uint8_t turns = 0;
 	int3 coord;
 	EPathfindingLayer layer;
-	uint64_t danger;
-	const CGHeroInstance * targetHero;
-	int parentIndex;
-	uint64_t chainMask;
+	uint64_t danger = 0;
+	const CGHeroInstance * targetHero = nullptr;
+	int parentIndex = -1;
+	uint64_t chainMask = 0;
 	std::shared_ptr<const SpecialAction> specialAction;
-	bool actionIsBlocked;
+	bool actionIsBlocked = false;
 	// Native exchange receiver already at its source, waiting for this donor.
 	// Synthetic graph actions have no such provenance.
 	const CGHeroInstance * exchangeReadinessDonor = nullptr;
