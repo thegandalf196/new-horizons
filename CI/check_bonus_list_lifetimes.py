@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 
-"""Reject range-for loops that dereference a temporary bonus-list owner."""
+"""Reject range-for loops that dereference a temporary bonus-list owner.
+
+The same repository check step also runs the general temporary-lifetime guard in
+check_temporary_lifetimes.py.
+"""
 
 from pathlib import Path
 import re
@@ -9,6 +13,7 @@ from tree_sitter import Language, Parser, Query, QueryCursor
 import tree_sitter_cpp
 
 from normalize_relative_includes import tracked_source_files
+import check_temporary_lifetimes
 
 
 BONUS_QUERIES = {b"getBonuses", b"getAllBonuses", b"getBonusesOfType"}
@@ -65,7 +70,8 @@ def main():
     for path, line in issues:
         print(f"{path}:{line}: keep the bonus-list owner alive with a range-for initializer")
     print(f"Bonus-list lifetime violations: {len(issues)}")
-    return 1 if issues else 0
+    temporaries = check_temporary_lifetimes.main()
+    return 1 if issues or temporaries else 0
 
 
 if __name__ == "__main__":

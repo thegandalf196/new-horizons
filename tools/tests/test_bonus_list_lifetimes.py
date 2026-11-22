@@ -8,6 +8,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "CI"))
 
 from check_bonus_list_lifetimes import CPP, Parser, unsafe_loop_lines
 
+# The workflow runs this module; it also carries the temporary-lifetime guard's cases.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from test_temporary_lifetimes import TemporaryLifetimeTest  # noqa: F401
+
 
 class BonusListLifetimeTest(unittest.TestCase):
     def test_temporary_owner(self):

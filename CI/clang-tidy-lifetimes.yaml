@@ -1,0 +1,19 @@
+# Focused lifetime and undefined-behaviour checks; see "Object lifetimes and
+# undefined behaviour" in docs/developers/Coding_Guidelines.md for the command.
+# The repository-wide .clang-tidy stays the general style configuration.
+Checks: >
+  -*,
+  bugprone-dangling-handle,
+  bugprone-use-after-move,
+  bugprone-undefined-memory-manipulation,
+  clang-diagnostic-dangling*,
+  clang-diagnostic-return-stack-address,
+  clang-diagnostic-uninitialized,
+  clang-diagnostic-sometimes-uninitialized,
+  clang-diagnostic-unsequenced
+
+CheckOptions:
+  - key:   bugprone-dangling-handle.HandleClasses
+    value: 'std::basic_string_view;std::experimental::basic_string_view;std::span'
+
+HeaderFilterRegex: '.*/(lib|server|AI|client|clientapp|clientsdl2|clientsdl3|include)/.*'

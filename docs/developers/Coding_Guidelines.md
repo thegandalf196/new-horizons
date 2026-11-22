@@ -932,6 +932,25 @@ const std::string identity = hero.getHeroType()->getJsonKey();
   dangling-warning checks, not by reading tests. Run them for changes that store
   views, references or iterators.
 
+The repository source checks run `CI/check_temporary_lifetimes.py` (from the
+bonus-list check step). It rejects a `std::string_view`, `std::span`,
+`.c_str()`/`.data()` pointer or accessor reference bound to a value returned by
+a call, and a range-for through `*` of a smart pointer returned by value. Mark a
+reviewed false positive with `// lifetime-checked: <reason>`. To run the Clang
+lifetime checks, configure a build with `CMAKE_EXPORT_COMPILE_COMMANDS=ON` and
+run clang-tidy with the focused configuration:
+
+```sh
+run-clang-tidy -p "$BUILD_DIR" -j 10 -config-file CI/clang-tidy-lifetimes.yaml \
+  -extra-arg=-Wdangling -extra-arg=-Wdangling-gsl -extra-arg=-Wreturn-stack-address \
+  -extra-arg=-Wuninitialized -extra-arg=-Wsometimes-uninitialized -extra-arg=-Wunsequenced \
+  '/(lib|server|AI|client)/'
+```
+
+For a sanitizer build, add `-fsanitize=address,undefined -fno-omit-frame-pointer`
+to the C, C++ and linker flags of a `RelWithDebInfo` build, then run the tests
+with `ASAN_OPTIONS=detect_stack_use_after_return=1`.
+
 ## Sources
 
 [Mono project coding guidelines](http://www.mono-project.com/Coding_Guidelines)
