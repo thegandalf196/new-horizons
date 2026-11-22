@@ -318,15 +318,16 @@ compiles and runs tests with MSVC. Some undefined behaviour passes on Linux but
 fails with MSVC, for example reading a destroyed `std::string` through a
 `std::string_view`. It runs on pushes to `main` that change code, tests, CMake
 or configuration, and it can also be dispatched manually. It has its own
-concurrency group and a newer push cancels an older run of it. It never waits
-for or blocks the release build.
+concurrency group: a running build finishes, and a newer push replaces the run
+still waiting behind it. It never waits for or blocks the release build.
 
 The build is Debug with the v142 toolset, the debug CRT and checked iterators
 (`_ITERATOR_DEBUG_LEVEL=2`), plus `/RTC1`. Checked iterators change the layout
 of standard containers. For this reason, Boost and oneTBB are rebuilt as Debug
 from the restored Conan recipes, and the C libraries keep their prebuilt Release
 binaries. The rebuilt packages are cached by the Conan recipe and profile hash.
-The build turns off PCH so that sccache can cache objects.
+The build turns off PCH so that sccache can cache objects. Both caches are saved
+even when a later step fails, so each run warms the next one.
 
 The job runs `ctest -L nh-pure` and a short list of other standalone checks
 that need no game data. It then compiles `vcmitest` and lists its cases. A

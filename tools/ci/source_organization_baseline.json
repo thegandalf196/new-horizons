@@ -50,10 +50,10 @@
     },
     ".github/workflows/new-horizons-windows-tests.yml": {
       "functions": [],
-      "sha256": "35afa42f51c2e2fc2167307fb7cea343b5ed1ed35778726118a177792c2b3ed4",
+      "sha256": "eedcdcc1afeb6fc8523f2009906c2eb1dd06e5ef61c984d5a0e6777ef8a68bf9",
       "review": "PROPOSED-CLAUDE-WINDOWS-MSVC-TESTS-20261122",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "rationale": "Complete exact 247-line workflow callable inventory is empty. Run blocks are Bash, PowerShell and one Python block of external commands, assignments, conditionals and a set comprehension; one inline python -c prints a generator expression. No shell function, def, lambda, class or function-like macro. External scripts and actions remain separately inventoried.",
+      "rationale": "Complete exact 255-line workflow callable inventory is empty. Run blocks are Bash, PowerShell and one Python block of external commands, assignments, conditionals and a set comprehension; one inline python -c prints a generator expression. No shell function, def, lambda, class or function-like macro. External scripts and actions remain separately inventoried.",
       "review_scope": "Exact source only. The first Windows test run provides build and runtime evidence."
     },
     ".github/workflows/new-horizons-windows.yml": {

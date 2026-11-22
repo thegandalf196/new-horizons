@@ -32,9 +32,11 @@ on:
 permissions:
   contents: read
 
+# A running build finishes; newer pushes replace the one waiting run, so main
+# pushes during a long build still get a complete result.
 concurrency:
   group: new-horizons-windows-tests-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   test:
@@ -145,7 +147,7 @@ jobs:
           fi
 
       - name: Save Debug dependency binaries
-        if: steps.debug-deps.outputs.cache-hit != 'true'
+        if: always() && steps.debug-deps.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
           path: ${{ runner.temp }}/nh-windows-test-conan.tgz
@@ -231,6 +233,12 @@ jobs:
           cases=$(grep -c '^  ' "$LOG_ROOT/vcmitest-cases.txt" || true)
           echo "vcmitest lists $cases cases"
           test "$cases" -gt 0
+
+      - name: Stop the compiler cache server before the cache is saved
+        if: always()
+        # A cancelled or failed compile can leave sccache writing; its archive
+        # then fails with "file changed as we read it".
+        run: sccache --stop-server || true
 
       - name: Retain test logs and Ninja timings, including failures
         if: always()

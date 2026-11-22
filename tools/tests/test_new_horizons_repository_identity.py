@@ -61,7 +61,7 @@ class NewHorizonsRepositoryIdentityTest(unittest.TestCase):
         source = (ROOT / '.github/workflows/new-horizons-windows-tests.yml').read_text()
         self.assertIn('  push:\n    branches: [main]\n', source)
         self.assertIn('  workflow_dispatch:', source)
-        self.assertIn('  group: new-horizons-windows-tests-${{ github.ref }}\n  cancel-in-progress: true\n', source)
+        self.assertIn('  group: new-horizons-windows-tests-${{ github.ref }}\n  cancel-in-progress: false\n', source)
         self.assertNotIn('group: new-horizons-windows-x64', source)
         self.assertNotIn('new-horizons-windows.yml', source)
 
