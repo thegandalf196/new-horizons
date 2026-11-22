@@ -10,6 +10,7 @@
 
 #include "StdInc.h"
 #include "JsonBonus.h"
+#include "JsonBonusIdentifiers.h"
 
 #include "JsonValidator.h"
 
@@ -58,41 +59,8 @@ const T parseByMapN(const std::map<std::string, T> & map, const JsonNode * val, 
 
 static void loadBonusSubtype(BonusSubtypeID & subtype, BonusType type, const JsonNode & node)
 {
-	if (node.isNull())
-	{
-		subtype = BonusSubtypeID();
-		return;
-	}
-
-	if (node.isNumber()) // Compatibility code for 1.3 or older
-	{
-		logMod->warn("Bonus subtype must be string! (%s)", node.getModScope());
-		subtype = BonusCustomSubtype(node.Integer());
-		return;
-	}
-
-	if (!node.isString())
-	{
-		logMod->warn("Bonus subtype must be string! (%s)", node.getModScope());
-		subtype = BonusSubtypeID();
-		return;
-	}
-
-	const auto entityType = bonusSubtypeEntityType(type);
-
-	if(entityType == EntityTypeEnum::NONE)
-	{
-		logMod->warn("Bonus type %s does not supports subtypes!", LIBRARY->bth->bonusToString(type));
-		subtype = BonusSubtypeID();
-		return;
-	}
-
-	// deferred, unlike the runtime decodeBonusSubtype: while content loads the identifier this
-	// names may belong to a mod that has not been read yet
-	LIBRARY->identifiers()->requestIdentifier(entityTypeName(entityType), node, [&subtype, entityType](int32_t identifier)
-	{
-		subtype = bonusSubtypeOf(entityType, identifier);
-	});
+	// callers pass a member of the bonus or limiter they build, which has to outlive the request
+	JsonBonusIdentifiers::requestSubtype(type, node, [&subtype](const BonusSubtypeID & resolved) { subtype = resolved; });
 }
 
 static bool preparePhysicalAfflictionParameters(const JsonNode & value, JsonNode & parameters)
@@ -369,106 +337,8 @@ static void prepareCombatScriptParameters(Bonus * b, const JsonNode & scriptNode
 
 static void loadBonusSourceInstance(BonusSourceID & sourceInstance, BonusSource sourceType, const JsonNode & node)
 {
-	if (node.isNull())
-	{
-		sourceInstance = BonusCustomSource();
-		return;
-	}
-
-	if (node.isNumber()) // Compatibility code for 1.3 or older
-	{
-		logMod->warn("Bonus source must be string!");
-		sourceInstance = BonusCustomSource(node.Integer());
-		return;
-	}
-
-	if (!node.isString())
-	{
-		logMod->warn("Bonus source must be string!");
-		sourceInstance = BonusCustomSource();
-		return;
-	}
-
-	switch (sourceType)
-	{
-		case BonusSource::ARTIFACT:
-		case BonusSource::ARTIFACT_INSTANCE:
-		{
-			LIBRARY->identifiers()->requestIdentifier( "artifact", node, [&sourceInstance](int32_t identifier)
-			{
-				sourceInstance = ArtifactID(identifier);
-			});
-			break;
-		}
-		case BonusSource::OBJECT_TYPE:
-		{
-			LIBRARY->identifiers()->requestIdentifier( "object", node, [&sourceInstance](int32_t identifier)
-			{
-				sourceInstance = Obj(identifier);
-			});
-			break;
-		}
-		case BonusSource::OBJECT_INSTANCE:
-		case BonusSource::HERO_BASE_SKILL:
-			sourceInstance = ObjectInstanceID(ObjectInstanceID::decode(node.String()));
-			break;
-		case BonusSource::CREATURE_ABILITY:
-		{
-			LIBRARY->identifiers()->requestIdentifier( "creature", node, [&sourceInstance](int32_t identifier)
-			{
-				sourceInstance = CreatureID(identifier);
-			});
-			break;
-		}
-		case BonusSource::TERRAIN_OVERLAY:
-		{
-			LIBRARY->identifiers()->requestIdentifier( "battlefield", node, [&sourceInstance](int32_t identifier)
-			{
-				sourceInstance = BattleField(identifier);
-			});
-			break;
-		}
-		case BonusSource::SPELL_EFFECT:
-		{
-			LIBRARY->identifiers()->requestIdentifier( "spell", node, [&sourceInstance](int32_t identifier)
-			{
-				sourceInstance = SpellID(identifier);
-			});
-			break;
-		}
-		case BonusSource::TOWN_STRUCTURE:
-			assert(0); // TODO
-			sourceInstance = BuildingTypeUniqueID();
-			break;
-		case BonusSource::SECONDARY_SKILL:
-		{
-			LIBRARY->identifiers()->requestIdentifier( "secondarySkill", node, [&sourceInstance](int32_t identifier)
-			{
-				sourceInstance = SecondarySkill(identifier);
-			});
-			break;
-		}
-		case BonusSource::HERO_SPECIAL:
-		{
-			LIBRARY->identifiers()->requestIdentifier( "hero", node, [&sourceInstance](int32_t identifier)
-			{
-				sourceInstance = HeroTypeID(identifier);
-			});
-			break;
-		}
-		case BonusSource::CAMPAIGN_BONUS:
-			sourceInstance = CampaignScenarioID(CampaignScenarioID::decode(node.String()));
-			break;
-		case BonusSource::ARMY:
-		case BonusSource::STACK_EXPERIENCE:
-		case BonusSource::COMMANDER:
-		case BonusSource::GLOBAL:
-		case BonusSource::TERRAIN_NATIVE:
-		case BonusSource::OTHER:
-		default:
-			sourceInstance = BonusSourceID();
-			break;
-	}
+	// callers pass a member of the bonus or limiter they build, which has to outlive the request
+	JsonBonusIdentifiers::requestSourceInstance(sourceType, node, [&sourceInstance](const BonusSourceID & resolved) { sourceInstance = resolved; });
 }
 
 static TUpdaterPtr parseUpdater(const JsonNode & updaterJson)
@@ -1027,104 +897,4 @@ bool JsonUtils::parseBonus(const JsonNode &ability, Bonus *b, const TextIdentifi
 	if(!value->isNull())
 		b->propagationUpdater = parseUpdater(*value);
 	return true;
-}
-
-CSelector JsonUtils::parseSelector(const JsonNode & ability)
-{
-	CSelector ret = Selector::all;
-
-	// Recursive parsers for anyOf, allOf, noneOf
-	const auto * value = &ability["allOf"];
-	if(value->isVector())
-	{
-		for(const auto & andN : value->Vector())
-			ret = ret.And(parseSelector(andN));
-	}
-
-	value = &ability["anyOf"];
-	if(value->isVector())
-	{
-		CSelector base = Selector::none;
-		for(const auto & andN : value->Vector())
-			base = base.Or(parseSelector(andN));
-
-		ret = ret.And(base);
-	}
-
-	value = &ability["noneOf"];
-	if(value->isVector())
-	{
-		CSelector base = Selector::none;
-		for(const auto & andN : value->Vector())
-			base = base.Or(parseSelector(andN));
-
-		ret = ret.And(base.Not());
-	}
-
-	BonusType type = BonusType::NONE;
-
-	// Actual selector parser
-	value = &ability["type"];
-	if(value->isString())
-	{
-		ret = ret.And(Selector::type()(static_cast<BonusType>(*LIBRARY->identifiers()->getIdentifier("bonus", value->String()))));
-	}
-	value = &ability["subtype"];
-	if(!value->isNull() && type != BonusType::NONE)
-	{
-		BonusSubtypeID subtype;
-		loadBonusSubtype(subtype, type, ability);
-		ret = ret.And(Selector::subtype()(subtype));
-	}
-	value = &ability["sourceType"];
-	std::optional<BonusSource> src = std::nullopt; //Fixes for GCC false maybe-uninitialized
-	std::optional<BonusSourceID> id = std::nullopt;
-	if(value->isString())
-	{
-		auto it = bonusSourceMap.find(value->String());
-		if(it != bonusSourceMap.end())
-			src = it->second;
-	}
-
-	value = &ability["sourceID"];
-	if(!value->isNull() && src.has_value())
-	{
-		loadBonusSourceInstance(*id, *src, ability);
-	}
-
-	if(src && id)
-		ret = ret.And(Selector::source(*src, *id));
-	else if(src)
-		ret = ret.And(Selector::sourceTypeSel(*src));
-
-
-	value = &ability["targetSourceType"];
-	if(value->isString())
-	{
-		auto it = bonusSourceMap.find(value->String());
-		if(it != bonusSourceMap.end())
-			ret = ret.And(Selector::targetSourceType()(it->second));
-	}
-	value = &ability["valueType"];
-	if(value->isString())
-	{
-		auto it = bonusValueMap.find(value->String());
-		if(it != bonusValueMap.end())
-			ret = ret.And(Selector::valueType(it->second));
-	}
-	value = &ability["effectRange"];
-	if(value->isString())
-	{
-		auto it = bonusLimitEffect.find(value->String());
-		if(it != bonusLimitEffect.end())
-			ret = ret.And(Selector::effectRange()(it->second));
-	}
-	value = &ability["lastsTurns"];
-	if(value->isNumber())
-		ret = ret.And(Selector::turns(value->Integer()));
-	value = &ability["lastsDays"];
-	if(value->isNumber())
-		ret = ret.And(Selector::days(value->Integer()));
-
-	return ret;
 }

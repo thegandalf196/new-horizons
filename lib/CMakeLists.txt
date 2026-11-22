@@ -749,6 +749,8 @@ set(lib_MAIN_SRCS
 	events/TurnStarted.cpp
 
 	json/JsonBonus.cpp
+	json/JsonBonusIdentifiers.cpp
+	json/JsonBonusSelector.cpp
 	json/JsonRandom.cpp
 	json/JsonKeyExtractor.cpp
 
@@ -1702,6 +1704,7 @@ set(lib_MAIN_HEADERS
 	events/TurnStarted.h
 
 	json/JsonBonus.h
+	json/JsonBonusIdentifiers.h
 	json/JsonRandom.h
 	json/JsonKeyExtractor.h
 

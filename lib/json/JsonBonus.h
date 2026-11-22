@@ -23,5 +23,6 @@ namespace JsonUtils
 	DLL_LINKAGE std::shared_ptr<Bonus> parseBonus(const JsonNode & ability, const TextIdentifier & descriptionID = "");
 	DLL_LINKAGE bool parseBonus(const JsonNode & ability, Bonus * placement, const TextIdentifier & descriptionID = "");
 	std::shared_ptr<const ILimiter> parseLimiter(const JsonNode & limiter);
-	CSelector parseSelector(const JsonNode &ability);
+	/// Selector from json fields. Identifiers it names may resolve after it is built; until they do it matches nothing.
+	DLL_LINKAGE CSelector parseSelector(const JsonNode &ability);
 }

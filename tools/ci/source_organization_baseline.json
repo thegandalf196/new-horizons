@@ -23868,9 +23868,9 @@
       "inherited_a1_health_deferral": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.",
       "inherited_deferral": "Exact source-list bound only. Before substantive build logic, extract a cohesive target configuration section. Verify source/link membership once and retain no duplicate translation units. Prior stricter obligations remain in inherited_deferral, where present.",
       "kind": "exception",
-      "lines": 2175,
+      "lines": 2178,
       "owner": "engine_engineer",
-      "previous_review": "CLAUDE-CASTLE-COMBAT-0931",
+      "previous_review": "CLAUDE-CASTLE-ADVENTURE-0931",
       "prior_a1_health_scope": {
         "kind": "exception",
         "lines": 2063,
@@ -23879,11 +23879,11 @@
         "sha256": "7058cdef35cfce13214572d190c4accfdf5721e6c144af3cdfca9f53bb68c2a0"
       },
       "prior_deferral": "Exact mechanical source/header registration only. Before substantive CMake target policy growth, extract a cohesive configuration section while verifying translation-unit membership and facade linkage. No future file growth allowance. Prior stricter obligations remain in inherited_deferral, where present.\n\nKeep registrations in their current coherent tables. Extract any future conditional target/control logic rather than growing this registry into a build framework.",
-      "rationale": "Exact successor for 0.93.1 Castle adventure specialties and starts (Forced March, Well Connected, Alms of the Faithful, Cuthbert and Loynis starts): bounded routing hooks into focused owners only. Existing extraction deferrals retained; no future growth credit.",
-      "review": "CLAUDE-CASTLE-ADVENTURE-0931",
+      "rationale": "Exact successor for the JSON bonus selector subtype fix: registration of the two sources and one header extracted from lib/json/JsonBonus.cpp (identifier requests and the bonus selector parser). Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-BONUS-SELECTOR-SUBTYPE-20261122",
       "review_scope": "Exact frozen A7 production/routing source only; no compiler, Windows path runtime, recovery, timing, release or future-growth acceptance.",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NATIVE_WINDOWS_PENDING",
-      "sha256": "4fa6d5e66444575a58489f497c07b383d79e7f3688a6a98a1314f74b592c2d3d",
+      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
+      "sha256": "37375436a4010d77456136caf498afb46c25aa3b33ae62860d46066b63ff009c",
       "inherited_deferral_step2": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.\n\nExact shared-facade source/header registration only. Before conditional target/control policy growth, extract the next coherent configuration section; preserve one translation unit per implementation and consumer linkage through vcmi. No future registry-size growth credit."
     },
     "lib/CSkillHandler.cpp::std::shared_ptr<CSkill> CSkillHandler::loadFromJson(const std::string & scope, const JsonNode & json, const std::string & identifier, size_t index)#1": {
@@ -25612,25 +25612,16 @@
       "sha256": "6bc71d3ec534158e0707eaa94042ce7b60e7908921042e75bafa8fc2437b0836"
     },
     "lib/json/JsonBonus.cpp": {
-      "deferral": " Preserve the shrinking loader baseline; before further affected-area expansion, extract the next coherent limiter/parser family with schema/identifier-resolution and historical JSON controls. Current UnitAdjacent helper remains delegated; do not move substantive typed-filter logic back into this loader.",
-      "kind": "exception",
-      "lines": 1130,
-      "owner": "engine_engineer",
-      "previous_review": "IR-SERIALIZATION-FOUNDATION-19-FINAL-EXACT-20261030",
-      "rationale": "Exact 1129 to 1128-line scope. Existing state/content/serialization responsibility integrates current captured rules and explicit native routing. Preserve independent captures, validation boundaries, deterministic order, existing ownership and saved absence.\n\nIndependently reviewed C14 scope (1128 to 1130 physical lines): Two lines route optional typed ability provenance to its strict domain decoder after existing status validation. No descriptor schema rules are duplicated inside the large loader. This bounds only the recorded hash and measured span; all inherited deferrals, ratchets and runtime holds remain binding, with no future growth allowance.",
-      "review": "IR-NH0921-C14-1164-CODEORG-20261117",
-      "review_scope": "Exact recorded C14 source hash, physical span and organization delta only. No future growth, whole-mechanic, compiler, native, rendered, performance, save-resume, publication or promotion acceptance.",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN",
-      "sha256": "6076c884f3b15847b83f167b75d6cc87b321022f4f174eb79f9195726e879ee2"
-    },
-    "lib/json/JsonBonus.cpp::CSelector JsonUtils::parseSelector(const JsonNode & ability)#1": {
       "kind": "legacy",
-      "lines": 99,
+      "lines": 900,
       "owner": "engine_engineer",
-      "rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 99 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "34fd16888a0a27e5ac67e66dae4575ccc42994291fb65b43b9bf781813b59874"
+      "previous_review": "IR-NH0921-C14-1164-CODEORG-20261117",
+      "rationale": "Exact 1130 to 900-line shrink by extraction, now below the ceiling. The subtype and source-instance identifier requests moved to lib/json/JsonBonusIdentifiers.cpp, which takes an owning assignment callback, and the bonus selector parser moved to lib/json/JsonBonusSelector.cpp, which fixes its ignored subtype and source ID with shared pending state. loadBonusSubtype/loadBonusSourceInstance stay as five-line wrappers with unchanged behaviour. Prior C14 scope and inherited obligations remain binding: extract the next coherent limiter/parser family before further affected-area expansion; no future growth credit.",
+      "review": "CLAUDE-BONUS-SELECTOR-SUBTYPE-20261122",
+      "review_scope": "Exact recorded source hash and physical span and organization delta only. No future growth, compiler, native, rendered, save-resume, publication or promotion acceptance.",
+      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
+      "sha256": "6aa7b9e1968795f6939d8bf6acc31185ac3bfed39bbe4815c7682ba1e0018562",
+      "deferral": " Preserve the shrinking loader baseline; before further affected-area expansion, extract the next coherent limiter/parser family with schema/identifier-resolution and historical JSON controls. Current UnitAdjacent helper remains delegated; do not move substantive typed-filter logic back into this loader."
     },
     "lib/json/JsonBonus.cpp::bool JsonUtils::parseBonus(const JsonNode &ability, Bonus *b, const TextIdentifier & descriptionID)#1": {
       "kind": "exception",
@@ -25662,15 +25653,6 @@
       "review": "source-size-legacy-freeze-cf2e62f9-v1",
       "review_scope": "numeric-legacy-debt-freeze-only",
       "sha256": "c3ca899a83d29227b3c7131f02803ca529f51d9b2c173dd11d150c127b809af0"
-    },
-    "lib/json/JsonBonus.cpp::static void loadBonusSourceInstance(BonusSourceID & sourceInstance, BonusSource sourceType, const JsonNode & node)#1": {
-      "kind": "legacy",
-      "lines": 103,
-      "owner": "engine_engineer",
-      "rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 103 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "04108714efc394671d475ffa3004ad50c28a0c83fdb10d5f559e2d2fcd403596"
     },
     "lib/json/JsonNode.cpp": {
       "kind": "legacy",

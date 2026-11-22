@@ -382,6 +382,7 @@ set(test_SRCS
 		bonus/NativeBonusGraphAdmissionTest.cpp
 		bonus/BonusStatusTagsTest.cpp
 		bonus/BuiltinBonusIdentityTest.cpp
+		bonus/JsonBonusSelectorTest.cpp
 		bonus/NewHorizonsUnstackedBonusTest.cpp
 		bonus/NewHorizonsCreatureProbabilityTest.cpp
 
