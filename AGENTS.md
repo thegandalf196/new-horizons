@@ -157,6 +157,12 @@ fork. References to a server mean simulation authority, not a requirement for a
 separate process or socket transport. Frontends submit validated commands;
 never directly mutate gameplay state from UI or bypass command validation.
 
+Code must be correct on both shipped compilers, GCC (Linux) and MSVC (Windows).
+Never rely on undefined behaviour that happens to work: in particular, never bind
+`std::string_view`, `std::span` or a stored reference to a temporary such as a
+by-value `getJsonKey()`. Passing Linux tests do not prove Windows behaviour. See
+"Object lifetimes and undefined behaviour" in the coding guidelines.
+
 Follow `docs/developers/Coding_Guidelines.md` and C++20 conventions. Preserve
 `DLL_LINKAGE` where required across shared-library boundaries. Consumers link
 `vcmi`, the `libFacade/` aggregate, rather than `vcmiMain` directly. AI modules

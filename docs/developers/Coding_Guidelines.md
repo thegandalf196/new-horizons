@@ -892,6 +892,46 @@ Good:
 std::vector<const CGObjectInstance *> guardingCreatures(int3 pos) const;
 ```
 
+### Object lifetimes and undefined behaviour
+
+New Horizons ships on Linux (GCC) and Windows (MSVC). Undefined behaviour often
+looks correct with one compiler and fails silently with the other, so passing
+Linux tests do not prove such code works. Thunar's Stonecaller specialty was
+missing in every Windows game for this reason, while all Linux tests passed.
+
+- Never bind a non-owning view (`std::string_view`, `std::span`, a raw pointer
+  or a reference held in a member or lambda) to a temporary. Many getters return
+  by value, for example `getJsonKey()`, `getNameTranslated()` and `toString()`.
+  Their result lives only until the end of the full expression.
+
+Bad:
+
+```cpp
+const std::string_view identity = hero.getHeroType()->getJsonKey(); // dangles
+if(identity == "core:thunar") // reads freed memory
+```
+
+Good:
+
+```cpp
+const std::string identity = hero.getHeroType()->getJsonKey();
+```
+
+- `const auto &` extends the lifetime of a temporary it binds directly, but a
+  view, `.c_str()`, `.data()` or a member reference taken from that temporary
+  does not.
+- Do not keep iterators, references or pointers into a container across calls
+  that may modify it (adding or removing bonuses, stacks or objects).
+- Do not rely on evaluation order between function arguments (MSVC and GCC
+  differ), on uninitialized values, on signed overflow, or on the order of
+  static initialization across translation units.
+- Code that only works because freed or stale memory still holds the right
+  value is a defect, even when every test passes. Fix the lifetime; do not add
+  a workaround that hides the symptom.
+- Lifetime and undefined-behaviour bugs are found with the sanitizer and Clang
+  dangling-warning checks, not by reading tests. Run them for changes that store
+  views, references or iterators.
+
 ## Sources
 
 [Mono project coding guidelines](http://www.mono-project.com/Coding_Guidelines)
