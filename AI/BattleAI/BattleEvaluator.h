@@ -65,6 +65,9 @@ class DLL_LINKAGE BattleEvaluator
 	std::shared_ptr<CBattleCallback> cb;
 	std::shared_ptr<Environment> env;
 	bool activeActionMade = false;
+	bool heroSubmissionBegun = false;
+	/// Closes the decision base immediately before a Hero Action is sent.
+	void beginHeroSubmission() { decisionBaseOpen = false; heroSubmissionBegun = true; }
 	BattleAction legalSearchIncumbent(const CStack * stack) const;
 	bool submitHeroAction(const PossibleSpellcast & castToPerform, heroActionTiming::Summary * timing);
 	bool finishHeroSelection(std::vector<PossibleSpellcast> &, float, bool,
@@ -159,6 +162,8 @@ public:
 		arrowContinuation::Reuse::TestControl * arrowReuse = nullptr,
 		const battleAIDiagnostic::Admission * admission = nullptr);
 	bool canCastSpell();
+	/// Whether this evaluator began submitting a Hero Action to the authority.
+	bool heroSubmissionStarted() const { return heroSubmissionBegun; }
 	std::optional<PossibleSpellcast> findBestCreatureSpell(const CStack * stack, creatureSpellTiming::Sample * timing = nullptr);
 	/// Deterministic full-pool forecast; does not choose the eventual random spell.
 	float expectedBeneficialCreatureSpellValue(const CStack * caster, const battle::Unit * recipient) const;

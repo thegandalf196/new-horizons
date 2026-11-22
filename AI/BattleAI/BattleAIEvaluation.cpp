@@ -10,9 +10,7 @@
 #include "StdInc.h"
 #include "BattleAI.h"
 #include "BattleEvaluator.h"
-#ifdef NH_PERF_EXPERIMENTS
 #include "BattleAITiming.h"
-#endif
 #include "BattleStrengthRatio.h"
 #include "HeroDecisionPressure.h"
 #include "BattleAIDiagnosticAdmission.h"
@@ -23,6 +21,7 @@
 #include "../../lib/callback/CBattleCallback.h"
 #include "../../lib/callback/IGameInfoCallback.h"
 #include <memory>
+#include "RecoverableEvaluation.h"
 
 float battleAI::strengthRatio(const CBattleInfoCallback & battle, BattleSide side)
 {
@@ -85,4 +84,13 @@ bool CBattleAI::attemptHeroAction(BattleEvaluator & evaluator, const CStack * st
 		heroValueObserver, vinesReuseControl, nullptr, nullptr, &shortlist, nullptr, &admission);
 	if(diagnosticAdmissionObserver) diagnosticAdmissionObserver->completedHeroAdmission(counts);
 	return submitted;
+}
+
+bool CBattleAI::recoverHeroAction(TimingScope & timing, BattleEvaluator & evaluator, const CStack * stack)
+{
+	// A Hero Action that failed before submission is skipped; the creature still acts.
+	return battleAI::recoverEvaluation("Hero Action evaluation", stack, [&]
+	{
+		return timing.measure(&TimingSummary::heroAction, [&] { return attemptHeroAction(evaluator, stack); });
+	}, [&] { return evaluator.heroSubmissionStarted() ? std::nullopt : std::optional<bool>(false); });
 }

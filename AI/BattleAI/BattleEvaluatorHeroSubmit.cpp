@@ -35,7 +35,7 @@ bool BattleEvaluator::submitHeroAction(const PossibleSpellcast & castToPerform,
 				return false;
 			auto action = BattleAction::makeTargetedHeroCommand(side, castToPerform.command, targetId);
 			consecratedArmsAI::applyChosenPrayers(*cb->getBattle(battleID), hb, damageCache, action);
-			decisionBaseOpen = false;
+			beginHeroSubmission();
 	heroActionTiming::SubmitScope submit(timing);
 			cb->battleMakeSpellAction(battleID, action);
 		}
@@ -51,7 +51,7 @@ bool BattleEvaluator::submitHeroAction(const PossibleSpellcast & castToPerform,
 			else
 				action = BattleAction::makeHeroCommand(side, castToPerform.command);
 			consecratedArmsAI::applyChosenPrayers(*cb->getBattle(battleID), hb, damageCache, action);
-			decisionBaseOpen = false;
+			beginHeroSubmission();
 	heroActionTiming::SubmitScope submit(timing);
 			cb->battleMakeSpellAction(battleID, action);
 		}
@@ -92,7 +92,7 @@ bool BattleEvaluator::submitHeroAction(const PossibleSpellcast & castToPerform,
 	// Loynis's Sermon: a Light spell carries its chosen prayer like an Order.
 	consecratedArmsAI::applyChosenPrayers(*cb->getBattle(battleID), hb, damageCache, spellcast);
 	{
-		decisionBaseOpen = false;
+		beginHeroSubmission();
 	heroActionTiming::SubmitScope submit(timing);
 		cb->battleMakeSpellAction(battleID, spellcast);
 	}

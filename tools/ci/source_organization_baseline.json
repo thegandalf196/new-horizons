@@ -16958,179 +16958,202 @@
       "sha256": "6c41b22c70d65455927195128e95c2b006d02079c3d899632f712fd335780f23"
     },
     "AI/BattleAI/BattleAI.cpp": {
-      "sha256": "443aac44b5f5b77230f37a5035536a4ef6f24e991a8d28d302a9a8b8405ba215",
-      "review": "IR-NH0921-COMPOSED4-CODEORG-20261117",
-      "rationale": "Complete exact-content callable inventory independently checked, including definitions, inline bodies, templates, lambdas and function-like macros across both NH_PERF_EXPERIMENTS branches. Original physical spans are retained; parser recovery remains explicit and does not imply empty coverage. Known recovery contexts were inspected; declaration/default-initializer syntax contributes no executable body.",
+      "sha256": "6c6011bb4deb1498662ba78e12891e14f66131971187d8e9a1dcc50c30949785",
+      "review": "CLAUDE-BATTLEAI-RECOVERY-0931",
+      "rationale": "Exact successor for the 0.93.1 battle-AI recovery: activeStack routes stack-action selection and both Hero Action attempts through battleAI::recoverEvaluation (CBattleAI::recoverHeroAction lives in BattleAIEvaluation.cpp); BattleEvaluator gains the inline heroSubmissionStarted/beginHeroSubmission witness. Spans are the parser's for parsed callables plus unchanged mapped spans; no other callable changed. Complete exact-content callable inventory independently checked, including definitions, inline bodies, templates, lambdas and function-like macros across both NH_PERF_EXPERIMENTS branches. Original physical spans are retained; parser recovery remains explicit and does not imply empty coverage. Known recovery contexts were inspected; declaration/default-initializer syntax contributes no executable body.",
       "functions": [
         {
           "symbol": "#define LOGL#1",
-          "start": 51,
-          "end": 51
-        },
-        {
-          "symbol": "#define LOGFL#1",
           "start": 52,
           "end": 52
         },
         {
+          "symbol": "#define LOGFL#1",
+          "start": 53,
+          "end": 53
+        },
+        {
           "symbol": "CBattleAI::~CBattleAI()#1",
-          "start": 55,
-          "end": 62
+          "start": 56,
+          "end": 63
         },
         {
           "symbol": "BattleAction CBattleAI::useHealingTent(const BattleID & battleID, const CStack *stack)#1",
-          "start": 64,
-          "end": 192
+          "start": 65,
+          "end": 193
         },
         {
           "symbol": "CBattleAI::useHealingTent(const BattleID & battleID, const CStack *stack)::[stack](BattleAction action)#1",
-          "start": 68,
-          "end": 72
+          "start": 69,
+          "end": 73
         },
         {
           "symbol": "CBattleAI::useHealingTent(const BattleID & battleID, const CStack *stack)::[&]()#1",
-          "start": 73,
-          "end": 76
+          "start": 74,
+          "end": 77
         },
         {
           "symbol": "CBattleAI::useHealingTent(const BattleID & battleID, const CStack *stack)::[&]()#2",
-          "start": 77,
-          "end": 84
+          "start": 78,
+          "end": 85
         },
         {
           "symbol": "void CBattleAI::yourTacticPhase(const BattleID & battleID, int distance)#1",
-          "start": 194,
-          "end": 197
+          "start": 195,
+          "end": 198
         },
         {
           "symbol": "void CBattleAI::actionFinished(const BattleID & battleID, const BattleAction & action)#1",
-          "start": 199,
-          "end": 202
+          "start": 200,
+          "end": 203
         },
         {
           "symbol": "std::optional<BattleAction> chooseDemonicGate(const std::shared_ptr<CBattleInfoCallback> & battle, const CStack * source, BattleSide side)#1",
-          "start": 204,
-          "end": 297
+          "start": 205,
+          "end": 298
         },
         {
           "symbol": "BattleAction CBattleAI::choosePursuitMovement(const std::shared_ptr<CBattleInfoCallback> & battle, const CStack * source)#1",
-          "start": 299,
-          "end": 327
+          "start": 300,
+          "end": 328
         },
         {
           "symbol": "void CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )#1",
-          "start": 329,
-          "end": 508
+          "start": 330,
+          "end": 504
         },
         {
           "symbol": "CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )::[](std::chrono::time_point<std::chrono::high_resolution_clock> start) -> uint64_t#1",
-          "start": 336,
-          "end": 341
+          "start": 337,
+          "end": 342
         },
         {
           "symbol": "CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )::[&]#1",
-          "start": 360,
-          "end": 367
+          "start": 361,
+          "end": 368
         },
         {
           "symbol": "CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )::[&]#2",
-          "start": 368,
-          "end": 371
+          "start": 397,
+          "end": 404
         },
         {
           "symbol": "CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )::[&]#3",
-          "start": 399,
-          "end": 406
+          "start": 406,
+          "end": 412
         },
         {
-          "symbol": "CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )::[&]#4",
+          "symbol": "CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )::<anonymous>::[&]#1",
           "start": 408,
           "end": 411
         },
         {
-          "symbol": "CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )::[&]#5",
-          "start": 415,
-          "end": 418
+          "symbol": "CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )::[&]#4",
+          "start": 412,
+          "end": 412
         },
         {
           "symbol": "CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )::[&](const BattleHex & hex)#1",
-          "start": 443,
-          "end": 446
+          "start": 439,
+          "end": 442
         },
         {
           "symbol": "bool CBattleAI::shouldUseCreatureCatapult(CBattleInfoCallback & battle, const CStack * stack, const BattleAction & ordinaryAction, PlayerColor actionController)#1",
-          "start": 510,
-          "end": 609
+          "start": 506,
+          "end": 605
         },
         {
           "symbol": "CBattleAI::shouldUseCreatureCatapult(CBattleInfoCallback & battle, const CStack * stack, const BattleAction & ordinaryAction, PlayerColor actionController)::[&](EWallPart part)#1",
-          "start": 555,
-          "end": 558
+          "start": 551,
+          "end": 554
         },
         {
           "symbol": "CBattleAI::shouldUseCreatureCatapult(CBattleInfoCallback & battle, const CStack * stack, const BattleAction & ordinaryAction, PlayerColor actionController)::[&](const BattleHex & hex)#1",
+          "start": 573,
+          "end": 576
+        },
+        {
+          "symbol": "CBattleAI::shouldUseCreatureCatapult(CBattleInfoCallback & battle, const CStack * stack, const BattleAction & ordinaryAction, PlayerColor actionController)::[&](const BattleHex & hex)#2",
           "start": 577,
           "end": 580
         },
         {
-          "symbol": "CBattleAI::shouldUseCreatureCatapult(CBattleInfoCallback & battle, const CStack * stack, const BattleAction & ordinaryAction, PlayerColor actionController)::[&](const BattleHex & hex)#2",
-          "start": 581,
-          "end": 584
-        },
-        {
           "symbol": "BattleAction CBattleAI::useCatapult(const BattleID & battleID, const CStack * stack)#1",
-          "start": 611,
-          "end": 676
+          "start": 607,
+          "end": 672
         },
         {
           "symbol": "void CBattleAI::battleStart(const BattleID & battleID, const CCreatureSet *army1, const CCreatureSet *army2, int3 tile, const CGHeroInstance *hero1, const CGHeroInstance *hero2, BattleSide Side, bool replayAllowed)#1",
-          "start": 678,
-          "end": 685
+          "start": 674,
+          "end": 681
         },
         {
           "symbol": "void CBattleAI::print(const std::string &text) const#1",
-          "start": 687,
-          "end": 690
+          "start": 683,
+          "end": 686
         },
         {
           "symbol": "std::optional<BattleAction> CBattleAI::considerFleeingOrSurrendering(const BattleID & battleID)#1",
-          "start": 692,
-          "end": 731
+          "start": 688,
+          "end": 727
         }
-      ]
+      ],
+      "previous_review": "IR-NH0921-COMPOSED4-CODEORG-20261117"
     },
     "AI/BattleAI/BattleAI.h": {
-      "sha256": "40d20d01f37bc4913cccba22037f47a995262d2ebd45358a98534f2888c2ac7a",
-      "review": "IR-NH0921-COMPOSED4-CODEORG-20261117",
-      "rationale": "Complete exact-content callable inventory independently checked, including definitions, inline bodies, templates, lambdas and function-like macros across both NH_PERF_EXPERIMENTS branches. Original physical spans are retained; parser recovery remains explicit and does not imply empty coverage. Known recovery contexts were inspected; declaration/default-initializer syntax contributes no executable body.",
-      "functions": []
+      "sha256": "f84349e70ffa61a235effadb9c3cc07ac4ea8cfa3c2ef21d1778dfdbfe65c1e5",
+      "review": "CLAUDE-BATTLEAI-RECOVERY-0931",
+      "rationale": "Exact successor for the 0.93.1 battle-AI recovery: activeStack routes stack-action selection and both Hero Action attempts through battleAI::recoverEvaluation (CBattleAI::recoverHeroAction lives in BattleAIEvaluation.cpp); BattleEvaluator gains the inline heroSubmissionStarted/beginHeroSubmission witness. Spans are the parser's for parsed callables plus unchanged mapped spans; no other callable changed. Complete exact-content callable inventory independently checked, including definitions, inline bodies, templates, lambdas and function-like macros across both NH_PERF_EXPERIMENTS branches. Original physical spans are retained; parser recovery remains explicit and does not imply empty coverage. Known recovery contexts were inspected; declaration/default-initializer syntax contributes no executable body.",
+      "functions": [],
+      "previous_review": "IR-NH0921-COMPOSED4-CODEORG-20261117"
     },
     "AI/BattleAI/BattleAIEvaluation.cpp": {
-      "sha256": "52db77b98c8fc835a43f2ab74b2e42203c0765b27177d9cdc5375f438a210d67",
-      "review": "IR-NH0921-COMPOSED4-CODEORG-20261117",
-      "rationale": "Complete exact-content callable inventory independently checked, including definitions, inline bodies, templates, lambdas and function-like macros across both NH_PERF_EXPERIMENTS branches. Original physical spans are retained; parser recovery remains explicit and does not imply empty coverage. Known recovery contexts were inspected; declaration/default-initializer syntax contributes no executable body.",
+      "sha256": "83de343c26315aa221f13ec6031193ff15fa790aaa5bf48ab1553714224c537d",
+      "review": "CLAUDE-BATTLEAI-RECOVERY-0931",
+      "rationale": "Exact successor for the 0.93.1 battle-AI recovery: activeStack routes stack-action selection and both Hero Action attempts through battleAI::recoverEvaluation (CBattleAI::recoverHeroAction lives in BattleAIEvaluation.cpp); BattleEvaluator gains the inline heroSubmissionStarted/beginHeroSubmission witness. Spans are the parser's for parsed callables plus unchanged mapped spans; no other callable changed. Complete exact-content callable inventory independently checked, including definitions, inline bodies, templates, lambdas and function-like macros across both NH_PERF_EXPERIMENTS branches. Original physical spans are retained; parser recovery remains explicit and does not imply empty coverage. Known recovery contexts were inspected; declaration/default-initializer syntax contributes no executable body.",
       "functions": [
         {
           "symbol": "float battleAI::strengthRatio(const CBattleInfoCallback & battle, BattleSide side)#1",
-          "start": 27,
-          "end": 51
+          "start": 26,
+          "end": 50
         },
         {
           "symbol": "int getSimulationTurnsCount(const StartInfo * startInfo)#1",
-          "start": 53,
-          "end": 56
+          "start": 52,
+          "end": 55
         },
         {
           "symbol": "BattleEvaluator CBattleAI::makeEvaluator(const BattleID & battleID, const CStack * stack #ifdef NH_PERF_EXPERIMENTS , TimingScope * diagnostics #endif )#1",
-          "start": 58,
-          "end": 73
+          "start": 57,
+          "end": 72
         },
         {
           "symbol": "bool CBattleAI::attemptHeroAction(BattleEvaluator & evaluator, const CStack * stack)#1",
-          "start": 75,
-          "end": 88
+          "start": 74,
+          "end": 87
+        },
+        {
+          "symbol": "bool CBattleAI::recoverHeroAction(TimingScope & timing, BattleEvaluator & evaluator, const CStack * stack)#1",
+          "start": 89,
+          "end": 96
+        },
+        {
+          "symbol": "CBattleAI::recoverHeroAction(TimingScope & timing, BattleEvaluator & evaluator, const CStack * stack)::[&]#1",
+          "start": 92,
+          "end": 95
+        },
+        {
+          "symbol": "CBattleAI::recoverHeroAction(TimingScope & timing, BattleEvaluator & evaluator, const CStack * stack)::<anonymous>::[&]#1",
+          "start": 94,
+          "end": 94
+        },
+        {
+          "symbol": "CBattleAI::recoverHeroAction(TimingScope & timing, BattleEvaluator & evaluator, const CStack * stack)::[&]#2",
+          "start": 95,
+          "end": 95
         }
-      ]
+      ],
+      "previous_review": "IR-NH0921-COMPOSED4-CODEORG-20261117"
     },
     "AI/BattleAI/BattleAITiming.h": {
       "sha256": "62f9fa960cdfe45b14539f7ac0348241625d144506c138667614b94a4f17a59a",
@@ -17170,31 +17193,42 @@
       ]
     },
     "AI/BattleAI/BattleEvaluator.h": {
-      "sha256": "94e91e210556458a41d9c6d90e29600e6a001b7933d66909360228e5adee38d2",
-      "review": "CLAUDE-METAMAGIC6-PHASE6-20261120",
-      "rationale": "Metamagic 6 phase 6 changes only the finishHeroSelection declaration's candidate parameter from const to mutable reference (completion value is added in place); no callable body, span or line count changes. Previous review IR-NH0921-COMPOSED4-CODEORG-20261117: Complete exact-content callable inventory independently checked, including definitions, inline bodies, templates, lambdas and function-like macros across both NH_PERF_EXPERIMENTS branches. Original physical spans are retained; parser recovery remains explicit and does not imply empty coverage. Known recovery contexts were inspected; declaration/default-initializer syntax contributes no executable body.",
+      "sha256": "7aaced3ea20432e30207652940407bece54612b15663576b9c5b805ef9d0ee4c",
+      "review": "CLAUDE-BATTLEAI-RECOVERY-0931",
+      "rationale": "Exact successor for the 0.93.1 battle-AI recovery: activeStack routes stack-action selection and both Hero Action attempts through battleAI::recoverEvaluation (CBattleAI::recoverHeroAction lives in BattleAIEvaluation.cpp); BattleEvaluator gains the inline heroSubmissionStarted/beginHeroSubmission witness. Spans are the parser's for parsed callables plus unchanged mapped spans; no other callable changed. Metamagic 6 phase 6 changes only the finishHeroSelection declaration's candidate parameter from const to mutable reference (completion value is added in place); no callable body, span or line count changes. Previous review IR-NH0921-COMPOSED4-CODEORG-20261117: Complete exact-content callable inventory independently checked, including definitions, inline bodies, templates, lambdas and function-like macros across both NH_PERF_EXPERIMENTS branches. Original physical spans are retained; parser recovery remains explicit and does not imply empty coverage. Known recovery contexts were inspected; declaration/default-initializer syntax contributes no executable body.",
       "functions": [
         {
+          "symbol": "BattleEvaluator::void beginHeroSubmission()#1",
+          "start": 70,
+          "end": 70
+        },
+        {
           "symbol": "BattleEvaluator::forecast::Counters takeForecastPreparation() noexcept#1",
-          "start": 115,
-          "end": 116
+          "start": 118,
+          "end": 119
         },
         {
           "symbol": "BattleEvaluator::bool usesFiniteSearchWork() const#1",
-          "start": 142,
-          "end": 142
+          "start": 145,
+          "end": 145
         },
         {
           "symbol": "BattleEvaluator::battleSearch::WorkAmounts searchWorkSpent() const#1",
-          "start": 143,
-          "end": 143
+          "start": 146,
+          "end": 146
         },
         {
           "symbol": "BattleEvaluator::std::array<uint64_t, battleSearch::workKindCount> searchWorkRefusals() const#1",
-          "start": 144,
-          "end": 147
+          "start": 147,
+          "end": 150
+        },
+        {
+          "symbol": "BattleEvaluator::bool heroSubmissionStarted() const#1",
+          "start": 166,
+          "end": 166
         }
-      ]
+      ],
+      "previous_review": "CLAUDE-METAMAGIC6-PHASE6-20261120"
     },
     "AI/BattleAI/BattleEvaluatorMovement.cpp": {
       "sha256": "be2dc95b1a6b1177da96dd196b54e0843185a3b011c8001f902ae8c86e26accb",
@@ -18131,11 +18165,11 @@
     "AI/BattleAI/BattleAI.cpp": {
       "deferral": "AI engineer: before further substantive growth, extract continuation admission through existing continuation callbacks and BattleAITiming; preserve stale pending decline, candidate order and validated submissions. AI engineer owns further decomposition of activeStack and timing/lifecycle routing before substantive expansion. Keep command submission, callback identity, timing closure, teardown lifetime and strict branch order; require normal/exception/return scope and exact action/state/both-RNG parity. Freeze file1455 and activeStack221 with no regrowth credit; constructor observer/control are nonowning and must not outlive owners. Runtime acceptance remains separate. Current reviewed exact-size/hash record supersedes earlier numeric caps only; every substantive-growth extraction and acceptance requirement above remains binding, with no regrowth credit. AI engineer retains all inherited affected-area extraction obligations before further substantive growth; these exact small shared-policy/projection routes grant no future regrowth credit. Current exact-scope addendum: AI owner extracts activeStack decision runner (root preparation, finite evaluation, legal fallback, final submission) after characterization; preserve action count, explicit completion, RNG and exception boundaries. Catapult body remains native; its modified line is source-owner wiring only.",
       "kind": "exception",
-      "lines": 731,
+      "lines": 727,
       "owner": "ai_engineer",
-      "previous_review": "IR-AI-F86-IMMUTABLE-SOURCE-ORGANIZATION",
-      "rationale": "Decision-root lifetime and legal-incumbent exception boundary wiring plus explicit captured diagnostics; action construction/submission order remains native, substantive search lives in extracted components.",
-      "review": "IR-NH0921-COMPOSED4-CODEORG-20261117",
+      "previous_review": "IR-NH0921-COMPOSED4-CODEORG-20261117",
+      "rationale": "Exact successor for the 0.93.1 battle-AI recovery (forecast failures no longer escape CBattleAI::activeStack): BattleAI.cpp and activeStack shrink because the Hero Action attempt moved to CBattleAI::recoverHeroAction in BattleAIEvaluation.cpp; submitHeroAction replaces its three decision-base closures one for one with beginHeroSubmission(). Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-BATTLEAI-RECOVERY-0931",
       "review_history": [
         {
           "deferral": "AI engineer: before further substantive growth, extract continuation admission through existing continuation callbacks and BattleAITiming; preserve stale pending decline, candidate order and validated submissions. AI engineer owns further decomposition of activeStack and timing/lifecycle routing before substantive expansion. Keep command submission, callback identity, timing closure, teardown lifetime and strict branch order; require normal/exception/return scope and exact action/state/both-RNG parity. Freeze file1455 and activeStack221 with no regrowth credit; constructor observer/control are nonowning and must not outlive owners. Runtime acceptance remains separate. Current reviewed exact-size/hash record supersedes earlier numeric caps only; every substantive-growth extraction and acceptance requirement above remains binding, with no regrowth credit.",
@@ -18162,7 +18196,7 @@
       ],
       "review_scope": "Exact recorded composed4 physical size and content hash only; no future growth credit or relaxed ceiling. All inherited technical requirements, extraction triggers and runtime holds remain. Source organization review does not establish compilation, functional/native/rendered acceptance, timing, balance or publication authority.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN",
-      "sha256": "443aac44b5f5b77230f37a5035536a4ef6f24e991a8d28d302a9a8b8405ba215",
+      "sha256": "6c6011bb4deb1498662ba78e12891e14f66131971187d8e9a1dcc50c30949785",
       "source_organization_review": {
         "debt_boundary": "Healing 62-190 and legacy gating 202-295 are independent policy owners mixed with activeStack 327-506 and siege/retreat policy. Callback orchestration must not accumulate additional mechanics.",
         "next_bounded_extraction": {
@@ -18229,11 +18263,11 @@
     "AI/BattleAI/BattleAI.cpp::void CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )#1": {
       "deferral": "AI engineer: before further substantive growth, extract continuation admission through existing continuation callbacks and BattleAITiming; preserve stale pending decline, candidate order and validated submissions. AI engineer owns further decomposition of activeStack and timing/lifecycle routing before substantive expansion. Keep command submission, callback identity, timing closure, teardown lifetime and strict branch order; require normal/exception/return scope and exact action/state/both-RNG parity. Freeze file1455 and activeStack221 with no regrowth credit; constructor observer/control are nonowning and must not outlive owners. Runtime acceptance remains separate. AI engineer retains all inherited affected-area extraction obligations before further substantive growth; these exact small shared-policy/projection routes grant no future regrowth credit. Current exact-scope addendum: AI owner extracts activeStack decision runner (root preparation, finite evaluation, legal fallback, final submission) after characterization; preserve action count, explicit completion, RNG and exception boundaries. Catapult body remains native; its modified line is source-owner wiring only.",
       "kind": "exception",
-      "lines": 180,
+      "lines": 175,
       "owner": "ai_engineer",
-      "previous_review": "IR-AI-F86-IMMUTABLE-SOURCE-ORGANIZATION",
-      "rationale": "Exact prior independently scoped180-line body retained: prepare one diagnostic root before evaluator, capture completion explicitly and retain legal fallback on bounded exhaustion; no new branch/action or destructor query.",
-      "review": "IR-NH0921-COMPOSED4-CODEORG-20261117",
+      "previous_review": "IR-NH0921-COMPOSED4-CODEORG-20261117",
+      "rationale": "Exact successor for the 0.93.1 battle-AI recovery (forecast failures no longer escape CBattleAI::activeStack): BattleAI.cpp and activeStack shrink because the Hero Action attempt moved to CBattleAI::recoverHeroAction in BattleAIEvaluation.cpp; submitHeroAction replaces its three decision-base closures one for one with beginHeroSubmission(). Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-BATTLEAI-RECOVERY-0931",
       "review_history": [
         {
           "deferral": "AI engineer: before further substantive growth, extract continuation admission through existing continuation callbacks and BattleAITiming; preserve stale pending decline, candidate order and validated submissions. AI engineer owns further decomposition of activeStack and timing/lifecycle routing before substantive expansion. Keep command submission, callback identity, timing closure, teardown lifetime and strict branch order; require normal/exception/return scope and exact action/state/both-RNG parity. Freeze file1455 and activeStack221 with no regrowth credit; constructor observer/control are nonowning and must not outlive owners. Runtime acceptance remains separate.",
@@ -18260,7 +18294,7 @@
       ],
       "review_scope": "Exact recorded composed4 physical size and content hash only; no future growth credit or relaxed ceiling. All inherited technical requirements, extraction triggers and runtime holds remain. Source organization review does not establish compilation, functional/native/rendered acceptance, timing, balance or publication authority.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN",
-      "sha256": "7725d9b2cf8096bff4314534439cc2cf4afc90b92f7a60f1545ad3a537aa9df9",
+      "sha256": "2c97c7d87582ad4c9d4e4ac219ee5d6cc055427184a379b8a24fc9219aa2e2dd",
       "source_organization_review": {
         "debt_boundary": "Ranged-follow-up target selection 434-473 is local policy inside orchestration. Stopped/Pursuit Hero Action admission 356-385 and timing closure also remain inherited bounded-extraction obligations.",
         "next_bounded_extraction": {
@@ -30288,12 +30322,12 @@
     "AI/BattleAI/BattleEvaluatorHeroSubmit.cpp::bool BattleEvaluator::submitHeroAction(const PossibleSpellcast & castToPerform, heroActionTiming::Summary * timing)#1": {
       "kind": "exception",
       "owner": "gameplay_engineer",
-      "previous_review": null,
+      "previous_review": "CLAUDE-CASTLE-COMBAT-0931",
       "deferral": "Before further substantive expansion, extract the next cohesive touched stage into its focused owner; preserve packet/RNG order, serialization field order and rejection atomicity. No future growth credit.",
       "lines": 81,
-      "sha256": "a5524224702b278a6dc1e97f59ed02c07f94817e56b6d13c4da97d52c66d3e4a",
-      "review": "CLAUDE-CASTLE-COMBAT-0931",
-      "rationale": "Exact successor for 0.93.1 Castle combat specialties (Volley Command, revised Aerial Supremacy, Benediction of Arms, Pariah, Frost Mantle, Quick Study, Sermon): bounded routing hooks into focused new owners only. Existing extraction deferrals retained; no future growth credit."
+      "sha256": "1674f2cba4bbc121293ee39442ce3da02a445041cdb3855d4d91ec4a4743c14c",
+      "review": "CLAUDE-BATTLEAI-RECOVERY-0931",
+      "rationale": "Exact successor for the 0.93.1 battle-AI recovery (forecast failures no longer escape CBattleAI::activeStack): BattleAI.cpp and activeStack shrink because the Hero Action attempt moved to CBattleAI::recoverHeroAction in BattleAIEvaluation.cpp; submitHeroAction replaces its three decision-base closures one for one with beginHeroSubmission(). Existing extraction deferrals retained; no future growth credit."
     },
     "client/battle/BattleCureAfflictionUI.cpp::void BattleInterface::installCureAfflictionUI()#1": {
       "kind": "exception",

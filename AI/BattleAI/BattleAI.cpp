@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "SearchBudget.h"
 #include "SearchIncumbent.h"
+#include "RecoverableEvaluation.h"
 #include "../../lib/battle/NewHorizonsDemonicGating.h"
 #include "DreadCavalryProjection.h"
 #include "BattleAI.h"
@@ -365,10 +366,7 @@ void CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )
 #endif
 			);
 			});
-			if(evaluator.canCastSpell() && timing.measure(&TimingSummary::heroAction, [&]
-			{
-				return attemptHeroAction(evaluator, stack);
-			}))
+			if(evaluator.canCastSpell() && recoverHeroAction(timing, evaluator, stack))
 				return;
 		}
 
@@ -405,19 +403,17 @@ void CBattleAI::activeStack(const BattleID & battleID, const CStack * stack )
 			);
 	});
 
-	result = timing.measure(&TimingSummary::stackActionSelection, [&]
+	result = battleAI::recoverEvaluation("stack action selection", stack, [&]
 	{
-		return evaluator.selectStackAction(stack, timing.selectionSink());
-	});
+		return timing.measure(&TimingSummary::stackActionSelection, [&]
+		{
+			return evaluator.selectStackAction(stack, timing.selectionSink());
+		});
+	}, [&] { return std::optional<BattleAction>(result); });
 
 	if((autobattlePreferences.enableSpellsUsage || cb->getBattle(battleID)->battleUsesHeroCommands()) && evaluator.canCastSpell())
 	{
-		auto spelCasted = timing.measure(&TimingSummary::heroAction, [&]
-		{
-			return attemptHeroAction(evaluator, stack);
-		});
-
-		if(spelCasted)
+		if(recoverHeroAction(timing, evaluator, stack))
 			return;
 	}
 

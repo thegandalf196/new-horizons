@@ -79,6 +79,7 @@ class DLL_LINKAGE CBattleAI : public CBattleGameInterface
 #endif
 	);
 	bool attemptHeroAction(BattleEvaluator & evaluator, const CStack * stack);
+	bool recoverHeroAction(TimingScope & timing, BattleEvaluator & evaluator, const CStack * stack);
 
 	BattleSide side;
 	std::shared_ptr<CBattleCallback> cb;
