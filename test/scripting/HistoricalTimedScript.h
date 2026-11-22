@@ -10,6 +10,7 @@
 #include <string_view>
 namespace historicalTimedIdentityTest
 {
+// Adjacent raw literals: MSVC limits each string literal to 16380 bytes.
 inline constexpr std::string_view TIMED_SOURCE = R"NH_TIMED(local Base = require("spells/unitEffect")
 local SorceryRevision = require("spells/sorceryRevision")
 local Script = setmetatable({}, {__index = Base})
@@ -347,7 +348,7 @@ end
 
 function Script:scaleAegisPowerTerm(mechanics, numerator, divisor, unit)
 	local hero = mechanics:getHeroCaster()
-	if hero and hero:hasActivePerk(LIGHT_MAGIC_SKILL, AEGIS_PERK) then
+)NH_TIMED" R"NH_TIMED(	if hero and hero:hasActivePerk(LIGHT_MAGIC_SKILL, AEGIS_PERK) then
 		-- Fold Aegis into the ratio before the shared scaler's final floor so
 		-- fractional School/Spellcraft/Warcasting/Empower products are retained.
 		numerator = numerator * 120
