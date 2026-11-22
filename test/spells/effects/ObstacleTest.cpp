@@ -331,7 +331,7 @@ TEST_F(ObstacleApplyTest, SelectedV3QuicksandPassesOrderedTargetsAndNeverRandomi
 	{
 		SpellCreatedObstacle patch;
 		patch.fromInfo(capturedChanges[index]);
-		EXPECT_EQ(patch.ID, quicksand);
+		EXPECT_EQ(patch.ID, quicksand.getNum());
 		EXPECT_EQ(patch.pos, expected[index]);
 		EXPECT_TRUE(patch.hidden);
 		EXPECT_FALSE(patch.nativeVisible);
