@@ -60,8 +60,8 @@ struct DLL_LINKAGE OwnedBonusEvaluationFacts
 	};
 	struct AdjacentCreature
 	{
-		bool undead;
-		bool living;
+		bool undead = false;
+		bool living = false;
 		std::map<CreatureID, bool> familyUpgrades;
 	};
 	/// Ordered current query occurrences; absent is unknown, engaged empty is no neighbors.
