@@ -25,6 +25,8 @@
 #include "../../AI/BattleAI/InitialExportBattleSubject.h"
 #include "../../AI/BattleAI/InitialExportEffectQueries.h"
 #include "../../AI/BattleAI/OwnedStackEffectPreflight.h"
+#include "../../AI/BattleAI/AttackPossibility.h"
+#include "../../AI/BattleAI/AttackPreviewHitContext.h"
 namespace
 {
 class GraveDustEnvironment final : public Environment
@@ -389,4 +391,41 @@ TEST_F(GraveDustSnapshotTest, OrdinaryIncomingBonusesPublishCompleteDustAndIsola
 	}
 	EXPECT_EQ(live->save(), sourceState);
 	EXPECT_EQ(dustRandomBytes(*dynamic_cast<CRandomGenerator *>(&gameHandler->getRandomGenerator())), random);
+}
+
+TEST_F(GraveDustSnapshotTest, HeroQueueReplayRestoresNoDustOntoKilledBody)
+{
+	// A Hero-queue replay copies strike riders from the preview board, where a
+	// dusted target can still be alive, onto a destination where it was killed.
+	// The authority removes a killed body's Grave Dust and installs none on it.
+	startGame();
+	startBattle();
+	auto * shooter = addStack(BattleSide::ATTACKER, creatureByName("core:lich"), BattleHex(leftHex), 5);
+	auto * target = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(rightHex + 4), 3);
+	ASSERT_NE(shooter, nullptr);
+	ASSERT_NE(target, nullptr);
+	beginCombat();
+	battle()->addUnitBonus(target->unitId(), newHorizonsGraveDust::records(5000, PlayerColor(0)));
+	const CSelector dust(newHorizonsGraveDust::isEffect);
+	auto environment = std::make_shared<GraveDustEnvironment>(gameState());
+	auto callback = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+	auto preview = std::make_shared<HypotheticBattle>(environment.get(), callback);
+	ASSERT_TRUE(preview->battleGetUnitByID(target->unitId())->hasBonus(dust));
+	AttackPossibility action(shooter->getPosition(), target->getPosition(), BattleAttackInfo(shooter, target, 0, true));
+	action.effectPreview = preview;
+
+	auto killedBoard = std::make_shared<HypotheticBattle>(environment.get(), callback);
+	auto killed = killedBoard->getForUpdate(target->unitId());
+	int64_t lethal = killed->getAvailableHealth();
+	killed->damage(lethal);
+	ASSERT_FALSE(killed->alive());
+	action.affectedUnits = {killed->acquireState()};
+	EXPECT_NO_THROW(AttackPreviewHitContext::replayOrdinaryStrikeEffects(*killedBoard, action));
+	EXPECT_FALSE(killedBoard->battleGetUnitByID(target->unitId())->hasBonus(dust));
+
+	auto survivingBoard = std::make_shared<HypotheticBattle>(environment.get(), callback);
+	auto survivor = survivingBoard->getForUpdate(target->unitId());
+	action.affectedUnits = {survivor->acquireState()};
+	EXPECT_NO_THROW(AttackPreviewHitContext::replayOrdinaryStrikeEffects(*survivingBoard, action));
+	EXPECT_EQ(battle::healingReceivedReduction(*survivingBoard->battleGetUnitByID(target->unitId())), 5000);
 }

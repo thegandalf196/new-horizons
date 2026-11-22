@@ -17,6 +17,10 @@
 #include "PhysicalStrikeProjection.h"
 #include "../../lib/battle/NewHorizonsOrdinaryStrike.h"
 #include "../../lib/battle/NewHorizonsChargeSpecialties.h"
+#include "../../lib/battle/NewHorizonsCoordinatedMarks.h"
+#include "../../lib/battle/NewHorizonsGraveDust.h"
+#include "../../lib/battle/NewHorizonsReactiveDefense.h"
+#include "../../lib/battle/NewHorizonsSpecialtyEvents.h"
 #include "AttackPossibility.h"
 #include "HypotheticBattle.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
@@ -371,20 +375,35 @@ void AttackPreviewHitContext::replayOrdinaryStrikeEffects(HypotheticBattle & des
 		return newHorizonsOrdinaryStrike::isStrikeEffect(bonus)
 			|| newHorizonsChargeSpecialties::isLanceFormation(bonus);
 	});
+	// The authority changes only receipts, Iron Hide spending and consumed marks
+	// on a recipient that is dead or a ghost, and it removes Grave Dust from a
+	// killed body. The preview board can still hold such a unit alive, so its
+	// other riders must not be restored onto the replayed body.
+	const CSelector bodyRider([](const Bonus * bonus)
+	{
+		return newHorizonsSpecialtyEvents::isReceipt(bonus) || newHorizonsReactiveDefense::isIronHideSpent(bonus)
+			|| newHorizonsCoordinatedMarks::isMark(bonus);
+	});
+	const CSelector graveDust(newHorizonsGraveDust::isEffect);
 	for(const auto id : recipients)
 	{
 		const auto * final = captured.effectPreview->battleGetUnitByID(id);
 		const auto * current = destination.battleGetUnitByID(id);
 		if(!final || !current)
 			continue;
-		const auto saved = final->getUnstackedBonuses(rider);
-		if(saved->empty() && !current->hasBonus(rider))
+		const bool available = current->alive() && !current->isGhost();
+		const auto & restored = available ? rider : bodyRider;
+		const auto saved = final->getUnstackedBonuses(restored);
+		const bool bodyDust = !available && current->hasBonus(graveDust);
+		if(saved->empty() && !current->hasBonus(restored) && !bodyDust)
 			continue;
 		std::vector<Bonus> values;
 		for(const auto & bonus : *saved)
 			values.push_back(*bonus);
 		auto target = destination.getForUpdate(id);
-		target->removeUnitBonus(rider);
+		if(bodyDust)
+			target->removeUnitBonus(graveDust);
+		target->removeUnitBonus(restored);
 		target->addUnitBonus(values);
 	}
 	// This owner restores a freshly selected action snapshot, not a cached movement event.
