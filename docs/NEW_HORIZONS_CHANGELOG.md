@@ -48,9 +48,11 @@ Rampart's heroes get their revised specialties.
   - Under the class name it shows the class's Might/Magic balance.
   - Leadership, Mana, Regen, Movement and Vision share one row.
   - "Experience" is spelled correctly on every install.
+- Close and Cancel buttons in New Horizons windows use the original Heroes III
+  buttons.
 - Painted icons replace the flat creature ability, quick save/load, hero
-  growth, Spells/Cancel and artillery icons. Frost Mantle, Brittle and Living
-  Remedy have their own status icons.
+  growth and artillery icons. Frost Mantle, Brittle and Living Remedy have
+  their own status icons.
 - Fixes:
   - The game's data (JSON) reader no longer reads past the end of its input.
   - Damaged or mismatched saved data is rejected with an error instead of
