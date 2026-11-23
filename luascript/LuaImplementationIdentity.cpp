@@ -157,6 +157,22 @@ constexpr auto RANGED_PENETRATION_CALCULATOR_LAYERS = []
 	return result;
 }();
 
+// 0.93.2 Rampart specialty successor pair, reviewed with the 0.93.2 damage pipeline
+// (independent review of the Rampart specialty commits): the root multiplies the
+// attack-local rampartSpecialtyDamageMultiplier (Giant-Slayer, Brittle, Forest Ambush)
+// into the ordinary specialty factor, and the physical stage adds Use the Ground as an
+// independent basis-point reduction. Both inputs default to neutral (1 and 0). The
+// physical stage is the shipped one that also carries Stonebound, so this is the first
+// registered pair of the current root and physical stage; every other root, physical
+// stage and ordered patch keeps its exact historical identity.
+constexpr auto RAMPART_SPECIALTY_CALCULATOR_LAYERS = []
+{
+	auto result = PHYSICAL_PROTECTION_CALCULATOR_LAYERS;
+	result[0] = {"damage/damageCalculator", "3400e97dc002df81da394f58aae82abb83fa5fab7e1e1e94dc1b76c5833e0268"};
+	result[1] = {"damage/physicalProtection", "a66c1b453d7148cc49d2d026236cd6774588066aa151410e4ebd0bfbd2d82cc5"};
+	return result;
+}();
+
 std::string digest(std::string_view source)
 {
 	return nhart::hex(nhart::sha256(std::span<const ui8>(
@@ -245,7 +261,8 @@ LuaImplementationIdentity LuaImplementationIdentity::fromScript(const LuaScriptI
 		|| matchesReviewedLayers(script, POINT_BLANK_CALCULATOR_LAYERS)
 		|| matchesReviewedLayers(script, INSPIRATION_CALCULATOR_LAYERS)
 		|| matchesReviewedLayers(script, LEADERSHIP_EFFICIENCY_CALCULATOR_LAYERS)
-		|| matchesReviewedLayers(script, RANGED_PENETRATION_CALCULATOR_LAYERS))
+		|| matchesReviewedLayers(script, RANGED_PENETRATION_CALCULATOR_LAYERS)
+		|| matchesReviewedLayers(script, RAMPART_SPECIALTY_CALCULATOR_LAYERS))
 		result.canonicalDamageCalculator = true;
 	return result;
 }

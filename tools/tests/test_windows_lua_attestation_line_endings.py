@@ -137,7 +137,13 @@ class LuaAttestationLineEndingsTest(unittest.TestCase):
         self.assertIn('scripts/combat/combatScript.lua', self.paths)
 
     def test_calculator_successor_changes_only_one_reviewed_comment(self):
+        # The 0.93.2 Rampart successor adds one multiplier line to the ranged-penetration root.
         raw = (ROOT / 'scripts/damage/damageCalculator.lua').read_bytes()
+        self.assertEqual(hashlib.sha256(raw).hexdigest(),
+                         '3400e97dc002df81da394f58aae82abb83fa5fab7e1e1e94dc1b76c5833e0268')
+        rampart = b'\t\t* math.max(0, info.rampartSpecialtyDamageMultiplier or 1)\n'
+        self.assertEqual(raw.count(rampart), 1)
+        raw = raw.replace(rampart, b'')
         current = b'-- Attack-local ranged penetration contributes only to the target-side Creature Defense of a'
         previous = b'-- Arcane Breach marks contribute only to the target-side Creature Defense of a'
         self.assertEqual(raw.count(current), 1)
@@ -145,6 +151,15 @@ class LuaAttestationLineEndingsTest(unittest.TestCase):
                          '5f15e17088e5e99c1646df6af2700dc9e02ada906bae5dcfa074c1f0a71e5690')
         self.assertEqual(hashlib.sha256(raw.replace(current, previous)).hexdigest(),
                          '1fa05bbc7fd68c88b814ba56e1efde8bcbf39a69d8442995182c84eed5d0588f')
+
+    def test_physical_protection_successor_adds_only_use_the_ground(self):
+        raw = (ROOT / 'scripts/damage/physicalProtection.lua').read_bytes()
+        self.assertEqual(hashlib.sha256(raw).hexdigest(),
+                         'a66c1b453d7148cc49d2d026236cd6774588066aa151410e4ebd0bfbd2d82cc5')
+        line = b'\ttable.insert(reductions, { info.useTheGroundReductionBasisPoints or 0, 10000 })\n'
+        self.assertEqual(raw.count(line), 1)
+        self.assertEqual(hashlib.sha256(raw.replace(line, b'')).hexdigest(),
+                         '456ca76fa15012d83772264bf7e8df0e6fd5934f6bb62333fee4103987bcd50e')
 
     def test_every_attested_root_import_and_patch_has_explicit_lf(self):
         values = self.attributes(self.paths)

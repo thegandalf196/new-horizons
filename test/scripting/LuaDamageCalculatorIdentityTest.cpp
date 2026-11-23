@@ -254,3 +254,18 @@ TEST(LuaDamageCalculatorIdentity, InspirationAndPriorPointBlankPairsAttestButBot
 	currentRootWithOldProtection->layers[1].sourceText = previous->layers[1].sourceText;
 	EXPECT_FALSE(attests(*currentRootWithOldProtection));
 }
+
+TEST(LuaDamageCalculatorIdentity, RampartSuccessorPairAttestsButEitherHalfAloneFailsClosed)
+{
+	scripting::LuaModule host;
+	const auto current = calculator(host, canonicalPatches());
+	ASSERT_TRUE(attests(*current)) << "The shipped 0.93.2 root and physical stage are one reviewed pair";
+	auto rootWithoutRampart = calculator(host, canonicalPatches());
+	ASSERT_NO_FATAL_FAILURE(replaceRequired(rootWithoutRampart->layers[0].sourceText,
+		"\t\t* math.max(0, info.rampartSpecialtyDamageMultiplier or 1)\n", ""));
+	EXPECT_FALSE(attests(*rootWithoutRampart));
+	auto protectionWithoutUseTheGround = calculator(host, canonicalPatches());
+	ASSERT_NO_FATAL_FAILURE(replaceRequired(protectionWithoutUseTheGround->layers[1].sourceText,
+		"\ttable.insert(reductions, { info.useTheGroundReductionBasisPoints or 0, 10000 })\n", ""));
+	EXPECT_FALSE(attests(*protectionWithoutUseTheGround));
+}
