@@ -102,6 +102,7 @@ TEST(LuckSerendipityState, PacketRejectsMalformedSidesAndPreservesNativeSnapshot
 {
 	BattleAttack packet;
 	packet.battleID = BattleID(0);
+	packet.attackerChanges.battleID = packet.battleID;
 	packet.luckSerendipityState = LuckSerendipityState{true, 2, false, true, true};
 	EXPECT_THROW(packet.validateLuckSerendipityMarker(), std::runtime_error);
 	packet.luckSerendipitySide = BattleSide::ATTACKER;

@@ -243,7 +243,7 @@ TEST(ExtendedOrdinaryBonusSerialization, DirectAndAggregateLimitersGateNewTypeAn
 }
 TEST(ExtendedOrdinaryBonusSerialization, TriggerEnumFieldRefusesLegacyBeforeAnyPacketBytes)
 {
-	BattleTriggerEffect source; source.effect = BonusType::HEALING_RECEIVED_REDUCTION_BASIS_POINTS;
+	BattleTriggerEffect source; source.battleID = BattleID(0); source.effect = BonusType::HEALING_RECEIVED_REDUCTION_BASIS_POINTS;
 	for(const auto version : oldVersions) rejectPrefix(source, version);
 	const auto bytes = encode(source, admitted); CMemorySerializer reader(bytes); reader.iser.version = oldVersions.back();
 	BattleTriggerEffect restored; EXPECT_THROW(reader.iser & restored, std::runtime_error);

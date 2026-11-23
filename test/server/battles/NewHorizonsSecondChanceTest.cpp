@@ -189,6 +189,7 @@ TEST(SylvanLuckRulesTest, SecondChanceAndStrikePacketRoundTripWithLegacyDefaults
 
 	BattleAttack packet;
 	packet.battleID = BattleID(0);
+	packet.attackerChanges.battleID = packet.battleID;
 	packet.fortuneSide = BattleSide::ATTACKER;
 	packet.fortuneState = spent;
 	CMemorySerializer packetWire;

@@ -211,6 +211,7 @@ TEST(ChainOfFortuneRulesTest, StateAndAttackPacketRoundTripKeepLegacyDefaultsAnd
 
 	BattleAttack packet;
 	packet.battleID = BattleID(0);
+	packet.attackerChanges.battleID = packet.battleID;
 	packet.stackAttacking = 42;
 	packet.fortuneSide = BattleSide::ATTACKER;
 	packet.fortuneState = state;
@@ -248,6 +249,7 @@ TEST(ChainOfFortuneRulesTest, StateAndAttackPacketRoundTripKeepLegacyDefaultsAnd
 
 	BattleAttack legacyPacket;
 	legacyPacket.battleID = BattleID(0);
+	legacyPacket.attackerChanges.battleID = legacyPacket.battleID;
 	legacyPacket.fortuneSide = BattleSide::ATTACKER;
 	legacyPacket.fortuneState = legacy;
 	CMemorySerializer legacyPacketWire;

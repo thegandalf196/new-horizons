@@ -1951,6 +1951,7 @@ TEST_F(NewHorizonsDemonicGatingTest, RejectedChainGateMarkerLeavesBattleStateUnt
 	ASSERT_NE(active, nullptr);
 	BattleAttack attack;
 	attack.battleID = BattleID(0);
+	attack.attackerChanges.battleID = attack.battleID;
 	attack.stackAttacking = active->unitId();
 	attack.chainGateTriggered = true;
 	attack.fortuneSide = BattleSide::ATTACKER;
@@ -2065,6 +2066,7 @@ TEST(NewHorizonsDemonicGatingWire, ChainGateStateAndAttackMarkerRoundTripOnlyOnN
 
 	BattleAttack attack;
 	attack.battleID = BattleID(7);
+	attack.attackerChanges.battleID = attack.battleID;
 	attack.stackAttacking = 17;
 	attack.chainGateTriggered = true;
 	CMemorySerializer attackWire;

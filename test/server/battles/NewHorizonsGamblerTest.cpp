@@ -326,6 +326,7 @@ TEST_F(NewHorizonsGamblerTest, CurrentCapturedPolicyRejectsAttackInjectionAndRet
 	const auto * target = defenders.front();
 	BattleAttack outgoing;
 	outgoing.battleID = BattleID(0);
+	outgoing.attackerChanges.battleID = outgoing.battleID;
 	outgoing.stackAttacking = actor->unitId();
 	outgoing.fortuneSide = BattleSide::ATTACKER;
 	outgoing.fortuneState = SylvanLuckState{};
@@ -390,6 +391,7 @@ TEST(GamblerRulesTest, SideWindowAndAttackPacketRoundTripKeepLegacyDefaultsAndRe
 
 	BattleAttack packet;
 	packet.battleID = BattleID(0);
+	packet.attackerChanges.battleID = packet.battleID;
 	packet.stackAttacking = 42;
 	packet.fortuneSide = BattleSide::ATTACKER;
 	packet.fortuneState = state;
@@ -426,6 +428,7 @@ TEST(GamblerRulesTest, SideWindowAndAttackPacketRoundTripKeepLegacyDefaultsAndRe
 
 	BattleAttack legacyPacket;
 	legacyPacket.battleID = BattleID(0);
+	legacyPacket.attackerChanges.battleID = legacyPacket.battleID;
 	legacyPacket.stackAttacking = 42;
 	legacyPacket.fortuneSide = BattleSide::ATTACKER;
 	legacyPacket.fortuneState = legacy;

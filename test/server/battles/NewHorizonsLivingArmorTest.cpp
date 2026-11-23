@@ -207,6 +207,7 @@ TEST(LivingArmorSerialization, OlderWritersRejectTimedSpawnAndOuterPacketBeforeP
 	EXPECT_THROW(change.serialize(direct.oser), std::runtime_error);
 	EXPECT_TRUE(direct.extractBuffer().empty());
 	BattleUnitsChanged envelope;
+	envelope.battleID = BattleID(0);
 	envelope.changedStacks.push_back(change);
 	CMemorySerializer outer;
 	outer.oser.version = direct.oser.version;
