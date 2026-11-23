@@ -260,6 +260,13 @@ ResourceSet patronessCollection(const CGHeroInstance & hero, const CGTownInstanc
 	return result;
 }
 
+ResourceSet patronessOnNextEntry(const CGHeroInstance & hero, const CGTownInstance & town)
+{
+	if(town.getVisitingHero() == &hero || town.getGarrisonHero() == &hero)
+		return {};
+	return patronessCollection(hero, town);
+}
+
 Bonus patronessMarker(const CGHeroInstance & hero, const CGTownInstance & town)
 {
 	Bonus marker(BonusDuration::ONE_WEEK, BonusType::NONE, BonusSource::HERO_SPECIAL, 0,

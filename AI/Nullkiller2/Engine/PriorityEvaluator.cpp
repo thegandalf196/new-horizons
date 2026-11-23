@@ -707,7 +707,7 @@ int32_t RewardEvaluator::getGoldReward(const CGObjectInstance * target, const CG
 	{
 		// Jenova's Patroness: her first entry this week collects part of an own town's income.
 		const auto * town = dynamic_cast<const CGTownInstance *>(target);
-		const auto patroness = town ? newHorizonsHeroes::patronessCollection(*hero, *town) : TResources();
+		const auto patroness = town ? newHorizonsHeroes::patronessOnNextEntry(*hero, *town) : TResources();
 		return dailyIncomeMultiplier * estimateTownIncome(aiNk->cc.get(), target, hero) + getResourcesGoldReward(patroness);
 	}
 	case Obj::MINE:

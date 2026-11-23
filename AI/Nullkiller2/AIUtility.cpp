@@ -724,9 +724,9 @@ bool shouldVisit(const Nullkiller * aiNk, const CGHeroInstance * hero, const CGO
 		if(relations != PlayerRelations::ENEMIES)
 		{
 			const auto * town = dynamic_cast<const CGTownInstance *>(obj);
-			// Jenova's Patroness pays on her first entry each week.
+			// Jenova's Patroness pays on her first entry each week; not while she is already inside.
 			return town && (townMusterArmyReward(aiNk, hero, town) > 0
-				|| !newHorizonsHeroes::patronessCollection(*hero, *town).empty());
+				|| !newHorizonsHeroes::patronessOnNextEntry(*hero, *town).empty());
 		}
 		return true;
 	case Obj::HERO:

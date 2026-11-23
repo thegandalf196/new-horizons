@@ -87,6 +87,9 @@ DLL_LINKAGE int patronessPermille(const CGHeroInstance * hero);
 /// would receive now, or nothing when inactive, the town is not her player's or she
 /// already collected there this week.
 DLL_LINKAGE ResourceSet patronessCollection(const CGHeroInstance & hero, const CGTownInstance & town);
+/// What her next entry into this town would collect: nothing while she is already
+/// inside it (visiting or garrisoned), since only an arrival collects.
+DLL_LINKAGE ResourceSet patronessOnNextEntry(const CGHeroInstance & hero, const CGTownInstance & town);
 /// The marker recording that she collected at this town; it expires with the week.
 DLL_LINKAGE Bonus patronessMarker(const CGHeroInstance & hero, const CGTownInstance & town);
 DLL_LINKAGE int giantSlayerPermillePerStep(const CGHeroInstance * hero);

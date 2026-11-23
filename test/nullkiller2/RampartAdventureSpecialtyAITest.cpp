@@ -110,3 +110,23 @@ TEST_F(RampartAdventureSpecialtyAITest, JenovaValuesAndVisitsHerTownsUntilShePai
 	EXPECT_FALSE(NK2AI::shouldVisit(ai, specialist, town)) << "Collected this week";
 	EXPECT_EQ(reward.getGoldReward(town, specialist), 0);
 }
+
+TEST_F(RampartAdventureSpecialtyAITest, JenovaDoesNotTargetTheTownSheIsAlreadyInside)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare("core:jenova"));
+	auto * ai = gateway->nullkiller.get();
+	NK2AI::RewardEvaluator reward(ai);
+	GameHandlerTestServer server(gameState(), PLAYER);
+	CGameHandler handler(server, gameState());
+	// Inside without an arrival collection (as after a load or a capture that skipped it).
+	HeroVisitCastle inside;
+	inside.hid = specialist->id;
+	inside.tid = town->id;
+	inside.startVisit = true;
+	handler.sendAndApply(inside);
+	ASSERT_EQ(town->getVisitingHero(), specialist);
+	ASSERT_FALSE(newHorizonsHeroes::patronessCollection(*specialist, *town).empty());
+	EXPECT_TRUE(newHorizonsHeroes::patronessOnNextEntry(*specialist, *town).empty());
+	EXPECT_FALSE(NK2AI::shouldVisit(ai, specialist, town)) << "Staying inside collects nothing";
+	EXPECT_EQ(reward.getGoldReward(town, specialist), 0);
+}
