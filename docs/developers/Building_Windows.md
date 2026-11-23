@@ -333,10 +333,12 @@ The job runs `ctest -L nh-pure` and a short list of other standalone checks
 that need no game data. It then compiles `vcmitest`, lists its cases and runs
 them. The original Heroes III files are not available in CI, so cases that need
 the game library skip themselves, as described in
-[Building on Linux](Building_Linux.md). The job summary counts the passed,
-failed and skipped cases. The `Windows-test-logs` artifact keeps the CTest
-logs, JUnit files, the `vcmitest` log and XML report, the case list and
-`.ninja_log`.
+[Building on Linux](Building_Linux.md). `tools/ci/run_gtest_batches.py` runs
+the cases in suite batches. A debug-CRT assertion or a crash ends the process,
+so the case that was running is reported as crashed and its batch resumes after
+it. The job summary counts the passed, failed, skipped and crashed cases and
+lists every case that did not pass. The `Windows-test-logs` artifact keeps the
+CTest logs, JUnit files, the `vcmitest` log, the case list and `.ninja_log`.
 
 ## Updating an existing checkout
 
