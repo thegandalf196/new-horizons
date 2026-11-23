@@ -44,7 +44,7 @@ bool roundTemporary(const CSpell & spell, int32_t effectLevel)
 		if(type == "timed" || type == "core:timed")
 		{
 			for(const auto & [key, bonus] : effect["bonus"].Struct())
-				if(bonus["duration"].String() == "N_TURNS")
+				if(hasRoundDuration(bonus["duration"]))
 					return true;
 		}
 		if(type == "core:timedSummon" || type == "core:battleForm" || type == "core:phantomArmy"
