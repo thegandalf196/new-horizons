@@ -15963,134 +15963,135 @@
     "test/server/battles/NewHorizonsSummonTrollsTest.cpp": {
       "functions": [
         {
-          "end": 41,
-          "start": 38,
+          "end": 42,
+          "start": 39,
           "symbol": "SpellID summonTrollsSpell()#1"
         },
         {
-          "end": 80,
-          "start": 43,
+          "end": 81,
+          "start": 44,
           "symbol": "JsonNode magicRulesAtVersion(const int version)#1"
         },
         {
-          "end": 88,
-          "start": 82,
+          "end": 89,
+          "start": 83,
           "symbol": "int64_t expectedPool(const int spellPower, const int coefficientBasisPoints, const int modifierPercent = 100)#1"
         },
         {
-          "end": 98,
-          "start": 92,
+          "end": 99,
+          "start": 93,
           "symbol": "ArmySnapshot armySnapshot(const CGHeroInstance * hero)#1"
         },
         {
-          "end": 116,
-          "start": 111,
+          "end": 117,
+          "start": 112,
           "symbol": "NewHorizonsSummonTrollsTest::void SetUp() override#1"
         },
         {
-          "end": 125,
-          "start": 118,
+          "end": 126,
+          "start": 119,
           "symbol": "NewHorizonsSummonTrollsTest::void mapLoaded(CMap * map) override#1"
         },
         {
-          "end": 152,
-          "start": 127,
+          "end": 156,
+          "start": 128,
           "symbol": "NewHorizonsSummonTrollsTest::void prepare(const int spellPower = 21, const int rulesVersion = newHorizonsMagic::CURRENT_RULESET_VERSION, const std::string_view healthArtifactKey = {})#1"
         },
         {
-          "end": 161,
-          "start": 154,
+          "end": 165,
+          "start": 158,
           "symbol": "NewHorizonsSummonTrollsTest::void removeDeployedUnits()#1"
         },
         {
-          "end": 171,
-          "start": 163,
+          "end": 175,
+          "start": 167,
           "symbol": "NewHorizonsSummonTrollsTest::BattleAction summonAction(const BattleHex & hex) const#1"
         },
         {
-          "end": 177,
-          "start": 173,
+          "end": 181,
+          "start": 177,
           "symbol": "NewHorizonsSummonTrollsTest::bool castAt(const BattleHex & hex)#1"
         },
         {
-          "end": 187,
-          "start": 179,
+          "end": 191,
+          "start": 183,
           "symbol": "NewHorizonsSummonTrollsTest::bool castHaste()#1"
         },
         {
-          "end": 193,
-          "start": 189,
+          "end": 197,
+          "start": 193,
           "symbol": "NewHorizonsSummonTrollsTest::SpellEffectValUptr preview(const BattleHex & hex) const#1"
         },
         {
-          "end": 203,
-          "start": 195,
+          "end": 207,
+          "start": 199,
           "symbol": "NewHorizonsSummonTrollsTest::std::vector<const CStack *> temporaryTrolls() const#1"
         },
         {
-          "end": 202,
-          "start": 197,
+          "end": 206,
+          "start": 201,
           "symbol": "NewHorizonsSummonTrollsTest::temporaryTrolls() const::[](const CStack * unit)#1"
         },
         {
-          "end": 213,
-          "start": 205,
+          "end": 217,
+          "start": 209,
           "symbol": "NewHorizonsSummonTrollsTest::void selectBeastcaller()#1"
         },
         {
-          "end": 220,
-          "start": 215,
+          "end": 224,
+          "start": 219,
           "symbol": "NewHorizonsSummonTrollsTest::void advanceRound()#1"
         },
         {
-          "end": 300,
-          "start": 223,
+          "end": 304,
+          "start": 227,
           "symbol": "TEST_F(NewHorizonsSummonTrollsTest, CastMatchesPreviewAndKeepsTheChosenTemporaryTrollStack)#1"
         },
         {
-          "end": 299,
-          "start": 294,
+          "end": 303,
+          "start": 298,
           "symbol": "TEST_F(NewHorizonsSummonTrollsTest, CastMatchesPreviewAndKeepsTheChosenTemporaryTrollStack)::[](const std::string & line)#1"
         },
         {
-          "end": 333,
-          "start": 302,
+          "end": 337,
+          "start": 306,
           "symbol": "TEST_F(NewHorizonsSummonTrollsTest, NatureRankScalesOnlyTheSpellPowerComponent)#1"
         },
         {
-          "end": 354,
-          "start": 335,
+          "end": 358,
+          "start": 339,
           "symbol": "TEST_F(NewHorizonsSummonTrollsTest, BeastcallerScalesTheUnroundedWholePoolBeforeFinalFloor)#1"
         },
         {
-          "end": 372,
-          "start": 356,
+          "end": 376,
+          "start": 360,
           "symbol": "TEST_F(NewHorizonsSummonTrollsTest, AdditiveHeroHealthBonusMatchesPreviewCountAndExactPool)#1"
         },
         {
-          "end": 390,
-          "start": 374,
+          "end": 394,
+          "start": 378,
           "symbol": "TEST_F(NewHorizonsSummonTrollsTest, PercentToBaseHeroHealthBonusMatchesPreviewCount)#1"
         },
         {
-          "end": 402,
-          "start": 392,
+          "end": 406,
+          "start": 396,
           "symbol": "TEST_F(NewHorizonsSummonTrollsTest, OccupiedSelectedHexRejectsBeforeManaOrHeroAction)#1"
         },
         {
-          "end": 418,
-          "start": 404,
+          "end": 422,
+          "start": 408,
           "symbol": "TEST_F(NewHorizonsSummonTrollsTest, LaterRoundCreatesAnIndependentStackWithoutCombatWideRecastLock)#1"
         },
         {
-          "end": 428,
-          "start": 420,
+          "end": 432,
+          "start": 424,
           "symbol": "TEST_F(NewHorizonsSummonTrollsTest, SavedV2RejectsBeforeManaAndHeroAction)#1"
         }
       ],
-      "rationale": "Preserve the previously reviewed complete callable inventory; only one historical-profile field-removal statement is inserted. Independently verified exact original bytes after removing that line and adjusted all recorded spans; no new callable or assertion change. Exactcurrent scalar-signature/fixture migration retains allreviewed callable symbols/bodies; maintainedparser spans remeasured afterline shifts. Same inherited emptydefaultargument recovery, no newbody gaps. Currentproduction signatures inspected; nativeunrun.",
-      "review": "IR-CURRENT-SERVER-SPELL-SCALAR-TEST-MIGRATION-20261103",
-      "sha256": "17f408d9a2f598721b43fc31d570ffbaaaa4a85365c548146c05dbd192291daa"
+      "rationale": "Preserve the previously reviewed complete callable inventory; only one historical-profile field-removal statement is inserted. Independently verified exact original bytes after removing that line and adjusted all recorded spans; no new callable or assertion change. Exactcurrent scalar-signature/fixture migration retains allreviewed callable symbols/bodies; maintainedparser spans remeasured afterline shifts. Same inherited emptydefaultargument recovery, no newbody gaps. Currentproduction signatures inspected; nativeunrun. Spans shifted for the original-data guard lines; no callable added or removed.",
+      "review": "PROPOSED-CLAUDE-ASSERT-SWEEP-20261123",
+      "sha256": "54badcaa5d5c87124df9236f10d343ee1a741d2877553df4d0591f45cce885c2",
+      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW"
     },
     "test/server/battles/SethMummyCombatTest.cpp": {
       "functions": [

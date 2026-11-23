@@ -9,6 +9,7 @@
 
 #include "BattleTestFixture.h"
 #include "../../SpellPointTestUtils.h"
+#include "../../../lib/entities/artifact/ArtifactUtils.h"
 #include "../../../lib/GameConstants.h"
 #include "../../../lib/battle/CUnitState.h"
 #include "../../../lib/battle/Unit.h"
@@ -137,8 +138,11 @@ protected:
 		attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
 		setTestSpellPointTotal(attackerSideHero, 1000);
 		if(!healthArtifactKey.empty())
-			giveArtifact(attackerSideHero, ArtifactID(ArtifactID::decode(std::string(healthArtifactKey))),
-				ArtifactPosition::MISC1);
+		{
+			const ArtifactID health(ArtifactID::decode(std::string(healthArtifactKey)));
+			// Each artifact goes to an equipment slot that fits it (the ring and the elixir differ).
+			giveArtifact(attackerSideHero, health, ArtifactUtils::getArtEquippedPosition(attackerSideHero, health));
+		}
 
 		startBattle();
 		removeDeployedUnits();

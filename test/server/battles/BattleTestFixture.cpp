@@ -284,6 +284,9 @@ CStack * BattleTestFixture::addStack(BattleSide side, const CreatureID & creatur
 
 void BattleTestFixture::giveArtifact(const CGHeroInstance * hero, ArtifactID artifact, ArtifactPosition position)
 {
+	// Starting heroes may already carry it (a spellbook); an occupied slot cannot take a second one.
+	if(const auto * worn = hero->getArt(position); worn && worn->getTypeId() == artifact)
+		return;
 	NewArtifact na;
 	na.artHolder = hero->id;
 	na.artId = artifact;

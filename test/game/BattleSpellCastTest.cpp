@@ -604,6 +604,7 @@ TEST_F(BattleSpellCastTest, battleResurrection)
 	attacker->setPrimarySkill(PrimarySkill::KNOWLEDGE, 20, ChangeValueMode::ABSOLUTE);
 	setTestSpellPointTotal(attacker, attacker->manaLimit());
 
+	if(!attacker->getArt(ArtifactPosition::SPELLBOOK)) // A second spellbook cannot take the occupied slot.
 	{
 		NewArtifact na;
 		na.artHolder = attacker->id;
