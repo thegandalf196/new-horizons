@@ -132,7 +132,7 @@ std::optional<Bonus> brittleMarker(const CGHeroInstance * hero)
 	Bonus marker(BonusDuration::UNTIL_NEXT_CREATURE_ACTIVATION, BonusType::NONE, BonusSource::HERO_SPECIAL,
 		permille, BonusSourceID(hero->getHeroTypeID()));
 	marker.stacking = BRITTLE_STACKING;
-	marker.description.appendRawString("Brittle");
+	marker.description.appendTextID("new-horizons.rampart.brittle.effect");
 	return marker;
 }
 
@@ -165,7 +165,7 @@ std::optional<Bonus> livingRemedy(const CGHeroInstance * hero, const battle::Uni
 		BonusSourceID(hero->getHeroTypeID()));
 	regeneration.turnsRemain = newHorizonsHeroes::livingRemedyRounds(hero);
 	regeneration.stacking = LIVING_REMEDY_STACKING;
-	regeneration.description.appendRawString("Living Remedy");
+	regeneration.description.appendTextID("new-horizons.rampart.livingRemedy.effect");
 	return regeneration;
 }
 
@@ -211,7 +211,7 @@ std::optional<Bonus> againstTheOdds(const CBattleInfoCallback & battle, BattleSi
 	Bonus bonus(BonusDuration::ONE_BATTLE, BonusType::LUCK, BonusSource::HERO_SPECIAL, luck,
 		BonusSourceID(hero->getHeroTypeID()));
 	bonus.stacking = AGAINST_THE_ODDS_STACKING;
-	bonus.description.appendRawString("Against the Odds");
+	bonus.description.appendTextID("new-horizons.rampart.againstTheOdds.effect");
 	return bonus;
 }
 

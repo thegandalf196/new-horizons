@@ -26,7 +26,7 @@ void collectOnArrival(CGameHandler & handler, const CGTownInstance & town, const
 	InfoWindow info;
 	info.player = hero.getOwner();
 	info.type = EInfoWindowMode::AUTO;
-	info.text.appendRawString("Patroness: the people of %s present their patroness with part of the town's income.");
+	info.text.appendTextID("new-horizons.rampart.patroness.collect");
 	info.text.replaceTextID(town.getNameTextID());
 	for(const auto & resource : LIBRARY->resourceTypeHandler->getAllObjects())
 		if(collection[resource] > 0)

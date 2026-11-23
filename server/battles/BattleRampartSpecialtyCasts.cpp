@@ -21,12 +21,12 @@ namespace battleRampartSpecialties
 {
 namespace
 {
-void logLine(CGameHandler & handler, const CBattleInfoCallback & battle, const std::string & text, const battle::Unit & unit)
+void logLine(CGameHandler & handler, const CBattleInfoCallback & battle, const std::string & textID, const battle::Unit & unit)
 {
 	BattleLogMessage message;
 	message.battleID = battle.getBattle()->getBattleID();
 	MetaString line;
-	line.appendRawString(text);
+	line.appendTextID(textID);
 	line.replaceNumber(unit.getCount());
 	line.replaceName(unit.creatureId(), unit.getCount());
 	message.lines.push_back(std::move(line));
@@ -104,7 +104,7 @@ void completeCast(CGameHandler & handler, const CBattleInfoCallback & battle, co
 			if(const auto regeneration = newHorizonsRampart::livingRemedy(&hero, *unit))
 			{
 				refresh(handler, battle, *unit, *regeneration);
-				logLine(handler, battle, "Living Remedy: %d %s will regenerate.", *unit);
+				logLine(handler, battle, "new-horizons.rampart.livingRemedy.log", *unit);
 				logGlobal->debug("Living Remedy: %s regenerates %d Health per round", unit->getDescription(), regeneration->val);
 			}
 		// Brittle: an enemy stack Alagar's ice spell actually hit loses its Defend.
@@ -114,7 +114,7 @@ void completeCast(CGameHandler & handler, const CBattleInfoCallback & battle, co
 			{
 				newHorizonsMetamagic::cancelDefend(*handler.spellcastEnvironment(), battle, *unit);
 				refresh(handler, battle, *unit, *marker);
-				logLine(handler, battle, "Brittle: %d %s cannot Defend and take more physical damage.", *unit);
+				logLine(handler, battle, "new-horizons.rampart.brittle.log", *unit);
 				logGlobal->debug("Brittle: %s marked, +%d permille physical damage", unit->getDescription(), marker->val);
 			}
 	}
@@ -142,7 +142,7 @@ void grantAgainstTheOdds(CGameHandler & handler, const CBattleInfoCallback & bat
 		BattleLogMessage message;
 		message.battleID = battle.getBattle()->getBattleID();
 		MetaString line;
-		line.appendRawString("Against the Odds: the stronger enemy grants this army +%d Luck.");
+		line.appendTextID("new-horizons.rampart.againstTheOdds.log");
 		line.replaceNumber(luck->val);
 		message.lines.push_back(std::move(line));
 		handler.sendAndApply(message);

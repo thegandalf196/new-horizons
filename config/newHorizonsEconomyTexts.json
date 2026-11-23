@@ -12,5 +12,6 @@
 	"new-horizons.economy.stewardship.reminderOption.hover": "Steward reminder",
 	"new-horizons.economy.stewardship.reminderOption.help": "{Steward reminder}\n\nWhen ending the turn, warn if an owned town has no steward while one of your heroes stewards no town.",
 	"new-horizons.bank.pendingCreatures": "Troops remaining. Visit to collect:",
-	"new-horizons.economy.mercenaryCompany.pending": "Mercenary Company: %d Rogues await room in this mine’s garrison."
+	"new-horizons.economy.mercenaryCompany.pending": "Mercenary Company: %d Rogues await room in this mine’s garrison.",
+	"new-horizons.rampart.patroness.collect": "Patroness: the people of %s present their patroness with part of the town's income."
 }

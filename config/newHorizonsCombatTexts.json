@@ -498,5 +498,11 @@
 	"new-horizons.doubleCast.status": "Follow-up casts remaining this combat: %d of %d. After a hero spell, the hero may immediately cast a different spell. Any other action forfeits the offer at no cost.",
 	"new-horizons.doubleCast.status.offerOpen": "A follow-up offer is open now. Open the spellbook to cast a different spell.",
 	"new-horizons.doubleCast.differentSpell": "Double Cast needs a different spell",
-	"new-horizons.doubleCast.differentSpell.help": "Double Cast needs a different spell: the follow-up cannot repeat %s. Cast another spell, or take any other action to forfeit the offer at no cost."
+	"new-horizons.doubleCast.differentSpell.help": "Double Cast needs a different spell: the follow-up cannot repeat %s. Cast another spell, or take any other action to forfeit the offer at no cost.",
+	"new-horizons.rampart.brittle.effect": "Brittle: cannot Defend and takes more physical damage until its next activation",
+	"new-horizons.rampart.brittle.log": "Brittle: %d %s cannot Defend and take more physical damage.",
+	"new-horizons.rampart.livingRemedy.effect": "Living Remedy: regenerates at the start of each activation",
+	"new-horizons.rampart.livingRemedy.log": "Living Remedy: %d %s will regenerate.",
+	"new-horizons.rampart.againstTheOdds.effect": "Against the Odds",
+	"new-horizons.rampart.againstTheOdds.log": "Against the Odds: the stronger enemy grants this army +%d Luck."
 }
