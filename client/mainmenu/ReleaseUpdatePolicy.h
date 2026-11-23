@@ -24,4 +24,9 @@ struct Offer
 /// installedVersion is the product config version, never the engine version.
 std::optional<Offer> selectOffer(std::string_view installedVersion, Platform platform,
 	int httpStatus, std::string_view response);
+
+/// The player-facing product version, as in both launchers: 0.94.0-beta.1 is
+/// "0.94.0 Beta 1" and 0.94.0-rc.1 "0.94.0 Release Candidate 1". A plain or
+/// unrecognised version is returned unchanged.
+std::string versionLabel(std::string_view version);
 }

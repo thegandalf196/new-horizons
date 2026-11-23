@@ -53,6 +53,15 @@ int main()
 	int count = 0;
 	try
 	{
+		run("ProductVersionLabelsNamePrereleasesLikeTheLaunchers", []
+		{
+			require(releaseUpdates::versionLabel("0.94.0-beta.1") == "0.94.0 Beta 1");
+			require(releaseUpdates::versionLabel("0.94.0-beta.10") == "0.94.0 Beta 10");
+			require(releaseUpdates::versionLabel("0.94.0-rc.1") == "0.94.0 Release Candidate 1");
+			for(const auto * unchanged : {"0.94.0", "0.93.2", "0.94.0-alpha.1", "0.94.0-beta.0", "0.94.0-beta.01",
+				"0.94.0-beta", "0.94.0-RC.1", "0.94-beta.1", "0.94.0-beta.1234567890", "", "-beta.1"})
+				require(releaseUpdates::versionLabel(unchanged) == unchanged);
+		}, count);
 		run("NewerProductReleaseHasConstructedOfficialPage", []
 		{
 			const auto release = fixture();

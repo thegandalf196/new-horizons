@@ -69,7 +69,8 @@ class ProductVersionTests(unittest.TestCase):
         self.assertIn('productVersionConfig(JsonPath::builtin("config/newHorizonsVersion.json"))', MENU_SOURCE)
         self.assertIn('std::string getProductVersion() const;', MENU_HEADER)
         self.assertIn('return productVersionConfig["version"].String();', MENU_SOURCE)
-        self.assertIn('"New Horizons " + CMainMenuConfig::get().getProductVersion()', MENU_SOURCE)
+        # The label names prereleases like the launchers; the raw version stays the identity.
+        self.assertIn('"New Horizons " + releaseUpdates::versionLabel(CMainMenuConfig::get().getProductVersion())', MENU_SOURCE)
         self.assertNotRegex(MENU_SOURCE + MENU_HEADER, r'0\.14\.0')
 
     def test_local_connection_uses_the_configured_loading_background(self):

@@ -4,6 +4,7 @@
 #include "../../lib/json/JsonNode.h"
 #include "../../lib/modding/CModVersion.h"
 
+#include <algorithm>
 #include <charconv>
 #include <array>
 #include <cmath>
@@ -156,5 +157,30 @@ std::optional<Offer> selectOffer(std::string_view installedVersion, Platform pla
 		// Expected malformed network data is silent, including strict JSON errors.
 	}
 	return {};
+}
+
+std::string versionLabel(std::string_view version)
+{
+	const auto dash = version.find('-');
+	if(dash == std::string_view::npos)
+		return std::string(version);
+	const auto base = version.substr(0, dash);
+	const auto suffix = version.substr(dash + 1);
+	if(std::count(base.begin(), base.end(), '.') != 2 || !parseVersion(base, false))
+		return std::string(version);
+	constexpr std::array<std::pair<std::string_view, std::string_view>, 2> PRERELEASES{{
+		{"beta.", "Beta"}, {"rc.", "Release Candidate"}}};
+	for(const auto & [prefix, name] : PRERELEASES)
+	{
+		if(!suffix.starts_with(prefix))
+			continue;
+		const auto number = suffix.substr(prefix.size());
+		// N starts at 1, has no leading zeros and at most nine digits, as in the launchers.
+		if(number.empty() || number.size() > 9 || number.front() == '0'
+			|| number.find_first_not_of("0123456789") != std::string_view::npos)
+			break;
+		return std::string(base) + " " + std::string(name) + " " + std::string(number);
+	}
+	return std::string(version);
 }
 }

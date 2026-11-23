@@ -118,9 +118,8 @@ CMenuScreen::CMenuScreen(const JsonNode & configNode)
 		FONT_SMALL,
 		ETextAlignment::BOTTOMLEFT,
 		Colors::YELLOW,
-		"New Horizons " + CMainMenuConfig::get().getProductVersion(),
+		"New Horizons " + releaseUpdates::versionLabel(CMainMenuConfig::get().getProductVersion()),
 		versionLabelMaxWidth);
-
 }
 
 std::shared_ptr<CIntObject> CMenuScreen::createTab(size_t index)

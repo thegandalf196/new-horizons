@@ -2591,424 +2591,426 @@
     "client/mainmenu/CMainMenu.cpp": {
       "functions": [
         {
-          "end": 124,
+          "symbol": "CMenuScreen::CMenuScreen(const JsonNode & configNode) : CWindowObject(BORDERED), config(configNode)#1",
           "start": 72,
-          "symbol": "CMenuScreen::CMenuScreen(const JsonNode & configNode) : CWindowObject(BORDERED), config(configNode)#1"
+          "end": 123
         },
         {
-          "end": 132,
-          "start": 126,
-          "symbol": "std::shared_ptr<CIntObject> CMenuScreen::createTab(size_t index)#1"
+          "symbol": "std::shared_ptr<CIntObject> CMenuScreen::createTab(size_t index)#1",
+          "start": 125,
+          "end": 131
         },
         {
-          "end": 138,
-          "start": 134,
-          "symbol": "void CMenuScreen::show(Canvas & to)#1"
+          "symbol": "void CMenuScreen::show(Canvas & to)#1",
+          "start": 133,
+          "end": 137
         },
         {
-          "end": 143,
-          "start": 140,
-          "symbol": "void CMenuScreen::activate()#1"
+          "symbol": "void CMenuScreen::activate()#1",
+          "start": 139,
+          "end": 142
         },
         {
-          "end": 148,
-          "start": 145,
-          "symbol": "void CMenuScreen::switchToTab(size_t index)#1"
+          "symbol": "void CMenuScreen::switchToTab(size_t index)#1",
+          "start": 144,
+          "end": 147
         },
         {
-          "end": 153,
-          "start": 150,
-          "symbol": "void CMenuScreen::switchToTab(std::string name)#1"
+          "symbol": "void CMenuScreen::switchToTab(std::string name)#1",
+          "start": 149,
+          "end": 152
         },
         {
-          "end": 158,
-          "start": 155,
-          "symbol": "size_t CMenuScreen::getActiveTab() const#1"
+          "symbol": "size_t CMenuScreen::getActiveTab() const#1",
+          "start": 154,
+          "end": 157
         },
         {
-          "end": 163,
-          "start": 159,
-          "symbol": "void CMenuScreen::keyPressed(EShortcut key)#1"
+          "symbol": "void CMenuScreen::keyPressed(EShortcut key)#1",
+          "start": 158,
+          "end": 162
         },
         {
-          "end": 245,
-          "start": 165,
-          "symbol": "static std::function<void()> genCommand(CMenuScreen * menu, std::vector<std::string> menuType, const std::string & string)#1"
+          "symbol": "static std::function<void()> genCommand(CMenuScreen * menu, std::vector<std::string> menuType, const std::string & string)#1",
+          "start": 164,
+          "end": 244
         },
         {
-          "end": 199,
-          "start": 199,
-          "symbol": "genCommand(CMenuScreen * menu, std::vector<std::string> menuType, const std::string & string)::[]()#1"
+          "symbol": "genCommand(CMenuScreen * menu, std::vector<std::string> menuType, const std::string & string)::[]()#1",
+          "start": 198,
+          "end": 198
         },
         {
-          "end": 201,
-          "start": 201,
-          "symbol": "genCommand(CMenuScreen * menu, std::vector<std::string> menuType, const std::string & string)::[]()#2"
+          "symbol": "genCommand(CMenuScreen * menu, std::vector<std::string> menuType, const std::string & string)::[]()#2",
+          "start": 200,
+          "end": 200
         },
         {
-          "end": 203,
-          "start": 203,
-          "symbol": "genCommand(CMenuScreen * menu, std::vector<std::string> menuType, const std::string & string)::[]()#3"
+          "symbol": "genCommand(CMenuScreen * menu, std::vector<std::string> menuType, const std::string & string)::[]()#3",
+          "start": 202,
+          "end": 202
         },
         {
-          "end": 205,
-          "start": 205,
-          "symbol": "genCommand(CMenuScreen * menu, std::vector<std::string> menuType, const std::string & string)::[]()#4"
+          "symbol": "genCommand(CMenuScreen * menu, std::vector<std::string> menuType, const std::string & string)::[]()#4",
+          "start": 204,
+          "end": 204
         },
         {
-          "end": 207,
-          "start": 207,
-          "symbol": "genCommand(CMenuScreen * menu, std::vector<std::string> menuType, const std::string & string)::[]()#5"
+          "symbol": "genCommand(CMenuScreen * menu, std::vector<std::string> menuType, const std::string & string)::[]()#5",
+          "start": 206,
+          "end": 206
         },
         {
-          "end": 216,
-          "start": 216,
-          "symbol": "genCommand(CMenuScreen * menu, std::vector<std::string> menuType, const std::string & string)::[]()#6"
+          "symbol": "genCommand(CMenuScreen * menu, std::vector<std::string> menuType, const std::string & string)::[]()#6",
+          "start": 215,
+          "end": 215
         },
         {
-          "end": 218,
-          "start": 218,
-          "symbol": "genCommand(CMenuScreen * menu, std::vector<std::string> menuType, const std::string & string)::[]()#7"
+          "symbol": "genCommand(CMenuScreen * menu, std::vector<std::string> menuType, const std::string & string)::[]()#7",
+          "start": 217,
+          "end": 217
         },
         {
-          "end": 220,
-          "start": 220,
-          "symbol": "genCommand(CMenuScreen * menu, std::vector<std::string> menuType, const std::string & string)::[]()#8"
+          "symbol": "genCommand(CMenuScreen * menu, std::vector<std::string> menuType, const std::string & string)::[]()#8",
+          "start": 219,
+          "end": 219
         },
         {
-          "end": 222,
-          "start": 222,
-          "symbol": "genCommand(CMenuScreen * menu, std::vector<std::string> menuType, const std::string & string)::[]()#9"
+          "symbol": "genCommand(CMenuScreen * menu, std::vector<std::string> menuType, const std::string & string)::[]()#9",
+          "start": 221,
+          "end": 221
         },
         {
-          "end": 229,
-          "start": 229,
-          "symbol": "genCommand(CMenuScreen * menu, std::vector<std::string> menuType, const std::string & string)::[]()#10"
+          "symbol": "genCommand(CMenuScreen * menu, std::vector<std::string> menuType, const std::string & string)::[]()#10",
+          "start": 228,
+          "end": 228
         },
         {
-          "end": 229,
-          "start": 229,
-          "symbol": "genCommand(CMenuScreen * menu, std::vector<std::string> menuType, const std::string & string)::()::[]()#1"
+          "symbol": "genCommand(CMenuScreen * menu, std::vector<std::string> menuType, const std::string & string)::()::[]()#1",
+          "start": 228,
+          "end": 228
         },
         {
-          "end": 234,
-          "start": 234,
-          "symbol": "genCommand(CMenuScreen * menu, std::vector<std::string> menuType, const std::string & string)::[]()#11"
+          "symbol": "genCommand(CMenuScreen * menu, std::vector<std::string> menuType, const std::string & string)::[]()#11",
+          "start": 233,
+          "end": 233
         },
         {
-          "end": 238,
-          "start": 238,
-          "symbol": "genCommand(CMenuScreen * menu, std::vector<std::string> menuType, const std::string & string)::[]()#12"
+          "symbol": "genCommand(CMenuScreen * menu, std::vector<std::string> menuType, const std::string & string)::[]()#12",
+          "start": 237,
+          "end": 237
         },
         {
-          "end": 272,
-          "start": 247,
-          "symbol": "std::shared_ptr<CButton> CMenuEntry::createButton(CMenuScreen * parent, const JsonNode & button)#1"
+          "symbol": "std::shared_ptr<CButton> CMenuEntry::createButton(CMenuScreen * parent, const JsonNode & button)#1",
+          "start": 246,
+          "end": 271
         },
         {
-          "end": 331,
-          "start": 274,
-          "symbol": "CMenuEntry::CMenuEntry(CMenuScreen * parent, const JsonNode & config)#1"
+          "symbol": "CMenuEntry::CMenuEntry(CMenuScreen * parent, const JsonNode & config)#1",
+          "start": 273,
+          "end": 330
         },
         {
-          "end": 345,
-          "start": 333,
-          "symbol": "CMainMenuConfig::CMainMenuConfig() : campaignSets(JsonUtils::assembleFromFiles(\"config/campaignSets.json\")) , config(JsonPath::builtin(\"config/mainmenu.json\")) , productVersionConfig(JsonPath::builtin(\"config/newHorizonsVersion.json\"))#1"
+          "symbol": "CMainMenuConfig::CMainMenuConfig() : campaignSets(JsonUtils::assembleFromFiles(\"config/campaignSets.json\")) , config(JsonPath::builtin(\"config/mainmenu.json\")) , productVersionConfig(JsonPath::builtin(\"config/newHorizonsVersion.json\"))#1",
+          "start": 332,
+          "end": 344
         },
         {
-          "end": 351,
-          "start": 347,
-          "symbol": "const CMainMenuConfig & CMainMenuConfig::get()#1"
+          "symbol": "const CMainMenuConfig & CMainMenuConfig::get()#1",
+          "start": 346,
+          "end": 350
         },
         {
-          "end": 356,
-          "start": 353,
-          "symbol": "const JsonNode & CMainMenuConfig::getConfig() const#1"
+          "symbol": "const JsonNode & CMainMenuConfig::getConfig() const#1",
+          "start": 352,
+          "end": 355
         },
         {
-          "end": 361,
-          "start": 358,
-          "symbol": "const JsonNode & CMainMenuConfig::getCampaigns() const#1"
+          "symbol": "const JsonNode & CMainMenuConfig::getCampaigns() const#1",
+          "start": 357,
+          "end": 360
         },
         {
-          "end": 366,
-          "start": 363,
-          "symbol": "std::string CMainMenuConfig::getProductVersion() const#1"
+          "symbol": "std::string CMainMenuConfig::getProductVersion() const#1",
+          "start": 362,
+          "end": 365
         },
         {
-          "end": 382,
-          "start": 368,
-          "symbol": "CMainMenu::CMainMenu()#1"
+          "symbol": "CMainMenu::CMainMenu()#1",
+          "start": 367,
+          "end": 381
         },
         {
-          "end": 389,
-          "start": 386,
-          "symbol": "void CMenuScreen::tick(uint32_t)#1"
+          "symbol": "void CMenuScreen::tick(uint32_t)#1",
+          "start": 385,
+          "end": 388
         },
         {
-          "end": 412,
-          "start": 391,
-          "symbol": "void CMainMenu::pollReleaseUpdate()#1"
+          "symbol": "void CMainMenu::pollReleaseUpdate()#1",
+          "start": 390,
+          "end": 411
         },
         {
-          "end": 410,
-          "start": 407,
-          "symbol": "CMainMenu::pollReleaseUpdate()::[page = offer->releasePage]()#1"
+          "symbol": "CMainMenu::pollReleaseUpdate()::[page = offer->releasePage]()#1",
+          "start": 406,
+          "end": 409
         },
         {
-          "end": 410,
-          "start": 410,
-          "symbol": "CMainMenu::pollReleaseUpdate()::[]()#1"
+          "symbol": "CMainMenu::pollReleaseUpdate()::[]()#1",
+          "start": 409,
+          "end": 409
         },
         {
-          "end": 436,
-          "start": 414,
-          "symbol": "void CMainMenu::playIntroVideos()#1"
+          "symbol": "void CMainMenu::playIntroVideos()#1",
+          "start": 413,
+          "end": 435
         },
         {
-          "end": 421,
-          "start": 416,
-          "symbol": "CMainMenu::playIntroVideos()::[](std::string video, bool rim, float scaleFactor, std::function<void(bool)> cb)#1"
+          "symbol": "CMainMenu::playIntroVideos()::[](std::string video, bool rim, float scaleFactor, std::function<void(bool)> cb)#1",
+          "start": 415,
+          "end": 420
         },
         {
-          "end": 418,
-          "start": 418,
-          "symbol": "CMainMenu::playIntroVideos()::(std::string video, bool rim, float scaleFactor, std::function<void(bool)> cb)::[cb](bool skipped)#1"
+          "symbol": "CMainMenu::playIntroVideos()::(std::string video, bool rim, float scaleFactor, std::function<void(bool)> cb)::[cb](bool skipped)#1",
+          "start": 417,
+          "end": 417
         },
         {
-          "end": 435,
-          "start": 423,
-          "symbol": "CMainMenu::playIntroVideos()::[playVideo, this](bool skipped)#1"
+          "symbol": "CMainMenu::playIntroVideos()::[playVideo, this](bool skipped)#1",
+          "start": 422,
+          "end": 434
         },
         {
-          "end": 432,
-          "start": 425,
-          "symbol": "CMainMenu::playIntroVideos()::(bool skipped)::[playVideo, this](bool skipped)#1"
+          "symbol": "CMainMenu::playIntroVideos()::(bool skipped)::[playVideo, this](bool skipped)#1",
+          "start": 424,
+          "end": 431
         },
         {
-          "end": 429,
-          "start": 427,
-          "symbol": "CMainMenu::playIntroVideos()::(bool skipped)::(bool skipped)::[this](bool skipped)#1"
+          "symbol": "CMainMenu::playIntroVideos()::(bool skipped)::(bool skipped)::[this](bool skipped)#1",
+          "start": 426,
+          "end": 428
         },
         {
-          "end": 441,
-          "start": 438,
-          "symbol": "void CMainMenu::playMusic()#1"
+          "symbol": "void CMainMenu::playMusic()#1",
+          "start": 437,
+          "end": 440
         },
         {
-          "end": 450,
-          "start": 443,
-          "symbol": "void CMainMenu::activate()#1"
+          "symbol": "void CMainMenu::activate()#1",
+          "start": 442,
+          "end": 449
         },
         {
-          "end": 461,
-          "start": 452,
-          "symbol": "void CMainMenu::onScreenResize()#1"
+          "symbol": "void CMainMenu::onScreenResize()#1",
+          "start": 451,
+          "end": 460
         },
         {
-          "end": 468,
-          "start": 463,
-          "symbol": "void CMainMenu::makeActiveInterface()#1"
+          "symbol": "void CMainMenu::makeActiveInterface()#1",
+          "start": 462,
+          "end": 467
         },
         {
-          "end": 487,
-          "start": 470,
-          "symbol": "static void openLocalGameSetup()#1"
+          "symbol": "static void openLocalGameSetup()#1",
+          "start": 469,
+          "end": 486
         },
         {
-          "end": 501,
-          "start": 489,
-          "symbol": "void CMainMenu::openLobby(ESelectionScreen screenType, bool host, const std::vector<std::string> & names, ELoadMode loadMode, bool battleMode, bool hotseatMode, std::string server, ui16 port)#1"
+          "symbol": "void CMainMenu::openLobby(ESelectionScreen screenType, bool host, const std::vector<std::string> & names, ELoadMode loadMode, bool battleMode, bool hotseatMode, std::string server, ui16 port)#1",
+          "start": 488,
+          "end": 500
         },
         {
-          "end": 508,
-          "start": 503,
-          "symbol": "void CMainMenu::openCampaignLobby(const std::string & campaignFileName, std::string campaignSet)#1"
+          "symbol": "void CMainMenu::openCampaignLobby(const std::string & campaignFileName, std::string campaignSet)#1",
+          "start": 502,
+          "end": 507
         },
         {
-          "end": 515,
-          "start": 510,
-          "symbol": "void CMainMenu::openCampaignLobby(std::shared_ptr<CampaignState> campaign)#1"
+          "symbol": "void CMainMenu::openCampaignLobby(std::shared_ptr<CampaignState> campaign)#1",
+          "start": 509,
+          "end": 514
         },
         {
-          "end": 528,
-          "start": 517,
-          "symbol": "void CMainMenu::openCampaignScreen(std::string name)#1"
+          "symbol": "void CMainMenu::openCampaignScreen(std::string name)#1",
+          "start": 516,
+          "end": 527
         },
         {
-          "end": 543,
-          "start": 530,
-          "symbol": "void CMainMenu::startTutorial()#1"
+          "symbol": "void CMainMenu::startTutorial()#1",
+          "start": 529,
+          "end": 542
         },
         {
-          "end": 549,
-          "start": 545,
-          "symbol": "void CMainMenu::openHighScoreScreen()#1"
+          "symbol": "void CMainMenu::openHighScoreScreen()#1",
+          "start": 544,
+          "end": 548
         },
         {
-          "end": 554,
-          "start": 551,
-          "symbol": "std::shared_ptr<CPicture> CMainMenu::createPicture(const JsonNode & config)#1"
+          "symbol": "std::shared_ptr<CPicture> CMainMenu::createPicture(const JsonNode & config)#1",
+          "start": 550,
+          "end": 553
         },
         {
-          "end": 584,
-          "start": 556,
-          "symbol": "CMultiMode::CMultiMode(ESelectionScreen ScreenType) : screenType(ScreenType)#1"
+          "symbol": "CMultiMode::CMultiMode(ESelectionScreen ScreenType) : screenType(ScreenType)#1",
+          "start": 555,
+          "end": 583
         },
         {
-          "end": 583,
-          "start": 583,
-          "symbol": "CMultiMode::CMultiMode(ESelectionScreen ScreenType)::[this]()#1"
+          "symbol": "CMultiMode::CMultiMode(ESelectionScreen ScreenType)::[this]()#1",
+          "start": 582,
+          "end": 582
         },
         {
-          "end": 590,
-          "start": 586,
-          "symbol": "void CMultiMode::openLobby()#1"
+          "symbol": "void CMultiMode::openLobby()#1",
+          "start": 585,
+          "end": 589
         },
         {
-          "end": 597,
-          "start": 592,
-          "symbol": "void CMultiMode::hostTCP(EShortcut shortcut)#1"
+          "symbol": "void CMultiMode::hostTCP(EShortcut shortcut)#1",
+          "start": 591,
+          "end": 596
         },
         {
-          "end": 604,
-          "start": 599,
-          "symbol": "void CMultiMode::joinTCP(EShortcut shortcut)#1"
+          "symbol": "void CMultiMode::joinTCP(EShortcut shortcut)#1",
+          "start": 598,
+          "end": 603
         },
         {
-          "end": 625,
-          "start": 606,
-          "symbol": "std::vector<std::string> CMultiMode::getPlayersNames()#1"
+          "symbol": "std::vector<std::string> CMultiMode::getPlayersNames()#1",
+          "start": 605,
+          "end": 624
         },
         {
-          "end": 631,
-          "start": 627,
-          "symbol": "void CMultiMode::onNameChange(std::string newText)#1"
+          "symbol": "void CMultiMode::onNameChange(std::string newText)#1",
+          "start": 626,
+          "end": 630
         },
         {
-          "end": 657,
-          "start": 633,
-          "symbol": "JoinScreen::JoinScreen(ESelectionScreen ScreenType, const std::vector<std::string> & PlayerNames) : screenType(ScreenType), playerNames(PlayerNames)#1"
+          "symbol": "JoinScreen::JoinScreen(ESelectionScreen ScreenType, const std::vector<std::string> & PlayerNames) : screenType(ScreenType), playerNames(PlayerNames)#1",
+          "start": 632,
+          "end": 656
         },
         {
-          "end": 651,
-          "start": 646,
-          "symbol": "JoinScreen::JoinScreen(ESelectionScreen ScreenType, const std::vector<std::string> & PlayerNames)::[this]()#1"
+          "symbol": "JoinScreen::JoinScreen(ESelectionScreen ScreenType, const std::vector<std::string> & PlayerNames)::[this]()#1",
+          "start": 645,
+          "end": 650
         },
         {
-          "end": 656,
-          "start": 656,
-          "symbol": "JoinScreen::JoinScreen(ESelectionScreen ScreenType, const std::vector<std::string> & PlayerNames)::[this]()#2"
+          "symbol": "JoinScreen::JoinScreen(ESelectionScreen ScreenType, const std::vector<std::string> & PlayerNames)::[this]()#2",
+          "start": 655,
+          "end": 655
         },
         {
-          "end": 663,
-          "start": 659,
-          "symbol": "JoinScreen::~JoinScreen()#1"
+          "symbol": "JoinScreen::~JoinScreen()#1",
+          "start": 658,
+          "end": 662
         },
         {
-          "end": 685,
-          "start": 665,
-          "symbol": "void JoinScreen::onServerDiscovered(const DiscoveredServer & server)#1"
+          "symbol": "void JoinScreen::onServerDiscovered(const DiscoveredServer & server)#1",
+          "start": 664,
+          "end": 684
         },
         {
-          "end": 684,
-          "start": 667,
-          "symbol": "JoinScreen::onServerDiscovered(const DiscoveredServer & server)::[this, server]()#1"
+          "symbol": "JoinScreen::onServerDiscovered(const DiscoveredServer & server)::[this, server]()#1",
+          "start": 666,
+          "end": 683
         },
         {
-          "end": 679,
-          "start": 674,
-          "symbol": "JoinScreen::onServerDiscovered(const DiscoveredServer & server)::()::[this, server]#1"
+          "symbol": "JoinScreen::onServerDiscovered(const DiscoveredServer & server)::()::[this, server]#1",
+          "start": 673,
+          "end": 678
         },
         {
-          "end": 739,
-          "start": 687,
-          "symbol": "CMultiPlayers::CMultiPlayers(const std::vector<std::string>& playerNames, ESelectionScreen ScreenType, bool Host, ELoadMode LoadMode, EShortcut shortcut) : host(Host), hotseat(shortcut == EShortcut::MAIN_MENU_HOTSEAT), loadMode(LoadMode), screenType(ScreenType)#1"
+          "symbol": "CMultiPlayers::CMultiPlayers(const std::vector<std::string>& playerNames, ESelectionScreen ScreenType, bool Host, ELoadMode LoadMode, EShortcut shortcut) : host(Host), hotseat(shortcut == EShortcut::MAIN_MENU_HOTSEAT), loadMode(LoadMode), screenType(ScreenType)#1",
+          "start": 686,
+          "end": 738
         },
         {
-          "end": 727,
-          "start": 727,
-          "symbol": "CMultiPlayers::CMultiPlayers(const std::vector<std::string>& playerNames, ESelectionScreen ScreenType, bool Host, ELoadMode LoadMode, EShortcut shortcut)::[this]()#1"
+          "symbol": "CMultiPlayers::CMultiPlayers(const std::vector<std::string>& playerNames, ESelectionScreen ScreenType, bool Host, ELoadMode LoadMode, EShortcut shortcut)::[this]()#1",
+          "start": 726,
+          "end": 726
         },
         {
-          "end": 747,
-          "start": 741,
-          "symbol": "size_t CMultiPlayers::countEnteredNames() const#1"
+          "symbol": "size_t CMultiPlayers::countEnteredNames() const#1",
+          "start": 740,
+          "end": 746
         },
         {
-          "end": 746,
-          "start": 743,
-          "symbol": "CMultiPlayers::countEnteredNames() const::[](const auto & playerName)#1"
+          "symbol": "CMultiPlayers::countEnteredNames() const::[](const auto & playerName)#1",
+          "start": 742,
+          "end": 745
         },
         {
-          "end": 752,
-          "start": 749,
-          "symbol": "void CMultiPlayers::onChange(std::string newText)#1"
+          "symbol": "void CMultiPlayers::onChange(std::string newText)#1",
+          "start": 748,
+          "end": 751
         },
         {
-          "end": 795,
-          "start": 754,
-          "symbol": "void CMultiPlayers::enterSelectionScreen()#1"
+          "symbol": "void CMultiPlayers::enterSelectionScreen()#1",
+          "start": 753,
+          "end": 794
         },
         {
-          "end": 860,
-          "start": 797,
-          "symbol": "CSimpleJoinScreen::CSimpleJoinScreen(bool host, const std::string & server, ui16 port)#1"
+          "symbol": "CSimpleJoinScreen::CSimpleJoinScreen(bool host, const std::string & server, ui16 port)#1",
+          "start": 796,
+          "end": 859
         },
         {
-          "end": 871,
-          "start": 862,
-          "symbol": "void CSimpleJoinScreen::connectToServer()#1"
+          "symbol": "void CSimpleJoinScreen::connectToServer()#1",
+          "start": 861,
+          "end": 870
         },
         {
-          "end": 883,
-          "start": 873,
-          "symbol": "void CSimpleJoinScreen::leaveScreen()#1"
+          "symbol": "void CSimpleJoinScreen::leaveScreen()#1",
+          "start": 872,
+          "end": 882
         },
         {
-          "end": 889,
-          "start": 885,
-          "symbol": "void CSimpleJoinScreen::onChange(const std::string & newText)#1"
+          "symbol": "void CSimpleJoinScreen::onChange(const std::string & newText)#1",
+          "start": 884,
+          "end": 888
         },
         {
-          "end": 905,
-          "start": 891,
-          "symbol": "void CSimpleJoinScreen::startConnection(const std::string & addr, ui16 port)#1"
+          "symbol": "void CSimpleJoinScreen::startConnection(const std::string & addr, ui16 port)#1",
+          "start": 890,
+          "end": 904
         },
         {
-          "end": 903,
-          "start": 900,
-          "symbol": "CSimpleJoinScreen::startConnection(const std::string & addr, ui16 port)::[addr, port]()#1"
+          "symbol": "CSimpleJoinScreen::startConnection(const std::string & addr, ui16 port)::[addr, port]()#1",
+          "start": 899,
+          "end": 902
         },
         {
-          "end": 910,
-          "start": 907,
-          "symbol": "CLoadingScreen::CLoadingScreen() : CLoadingScreen(getBackground())#1"
+          "symbol": "CLoadingScreen::CLoadingScreen() : CLoadingScreen(getBackground())#1",
+          "start": 906,
+          "end": 909
         },
         {
-          "end": 958,
-          "start": 912,
-          "symbol": "CLoadingScreen::CLoadingScreen(ImagePath background) : CWindowObject(BORDERED, background)#1"
+          "symbol": "CLoadingScreen::CLoadingScreen(ImagePath background) : CWindowObject(BORDERED, background)#1",
+          "start": 911,
+          "end": 957
         },
         {
-          "end": 962,
-          "start": 960,
-          "symbol": "CLoadingScreen::~CLoadingScreen()#1"
+          "symbol": "CLoadingScreen::~CLoadingScreen()#1",
+          "start": 959,
+          "end": 961
         },
         {
-          "end": 976,
-          "start": 964,
-          "symbol": "void CLoadingScreen::tick(uint32_t msPassed)#1"
+          "symbol": "void CLoadingScreen::tick(uint32_t msPassed)#1",
+          "start": 963,
+          "end": 975
         },
         {
-          "end": 998,
-          "start": 978,
-          "symbol": "ImagePath CLoadingScreen::getBackground()#1"
+          "symbol": "ImagePath CLoadingScreen::getBackground()#1",
+          "start": 977,
+          "end": 997
         }
       ],
-      "rationale": "Entire998-line menu source read including all constructors, explicit empty-bodied loading-screen destructor960-962, JoinScreen destructor659-663, command factory and its nested shutdown lambda229, video callback nesting414-436, release-offer callbacks407-410, discovery callback nesting665-685, network continuation900-903 and VCMI_MOBILE conditional736-738. All83 genuine maintained parser units retained exactly:55 handwritten definition bodies plus28 lambdas. CMainMenu::~CMainMenu384 is defaulted/bodyless and excluded under maintained body metric; no function-like macro definitions. OBJECT_CONSTRUCTION uses are invocations, not definitions in this file. Both diagnostics at186 arise within existing `(void(CMenuScreen::*)(size_t))` pointer-to-member cast used by std::bind; it declares no implemented function and genCommand165-245 is fully retained, with all13 contained lambdas. The VCMI_MOBILE arm contains only giveFocus() statement, no conditional callable. No unparsed callable bodies identified. Existing81-line genCommand and998-line file numeric pins unchanged; no behavior/thread/lifecycle certification or exception.",
-      "review": "IR-MANUAL-CALLBACK-MAINMENU-ed3114ef-20261015",
-      "sha256": "c263066f072412a6cc21ef389529483766da1677b19888778653aee0743031bd"
+      "rationale": "Entire998-line menu source read including all constructors, explicit empty-bodied loading-screen destructor960-962, JoinScreen destructor659-663, command factory and its nested shutdown lambda229, video callback nesting414-436, release-offer callbacks407-410, discovery callback nesting665-685, network continuation900-903 and VCMI_MOBILE conditional736-738. All83 genuine maintained parser units retained exactly:55 handwritten definition bodies plus28 lambdas. CMainMenu::~CMainMenu384 is defaulted/bodyless and excluded under maintained body metric; no function-like macro definitions. OBJECT_CONSTRUCTION uses are invocations, not definitions in this file. Both diagnostics at186 arise within existing `(void(CMenuScreen::*)(size_t))` pointer-to-member cast used by std::bind; it declares no implemented function and genCommand165-245 is fully retained, with all13 contained lambdas. The VCMI_MOBILE arm contains only giveFocus() statement, no conditional callable. No unparsed callable bodies identified. Existing81-line genCommand and998-line file numeric pins unchanged; no behavior/thread/lifecycle certification or exception. 2026-11-23: the version label passes the product version through releaseUpdates::versionLabel (a prerelease reads \"0.94.0 Beta 1\"); the blank line before the CMenuScreen constructor end is removed, so the constructor ends at 123, the file shrinks 998 to 997 and every later span moves up one line. The 83 callables and the parser recovery in the genCommand cast are otherwise unchanged.",
+      "review": "CLAUDE-MENU-VERSION-LABEL-20261123",
+      "sha256": "54a7bb6acbe6486b8f2830148be9e7b977fae1add2c040085ea5c1f4884b1d66",
+      "review_status": "AUTHOR_GENERATED_PENDING_INTEGRATOR_REVIEW_NO_NATIVE_ACCEPTANCE",
+      "review_scope": "Exact 997-line successor: the menu label calls releaseUpdates::versionLabel and a stray blank line before the CMenuScreen constructor end is removed; the same 83 callables, the constructor 72-123 one line shorter and later spans one line earlier."
     },
     "client/mainmenu/CMainMenu.h": {
       "functions": [],
@@ -21901,12 +21903,12 @@
     },
     "client/mainmenu/CMainMenu.cpp": {
       "kind": "legacy",
-      "lines": 998,
+      "lines": 997,
       "owner": "ui_developer",
-      "rationale": "Existing file owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 998 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "c263066f072412a6cc21ef389529483766da1677b19888778653aee0743031bd"
+      "rationale": "Existing file owned for structural review by ui_developer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 998 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral. 2026-11-23: shrinks 998 to 997 (a stray blank line removed) while the version label calls the tested releaseUpdates::versionLabel helper in ReleaseUpdatePolicy.cpp; no new code in this file.",
+      "review": "CLAUDE-MENU-VERSION-LABEL-20261123",
+      "review_scope": "Exact one-line shrink 998 to 997 with the label formatter call; no growth allowance.",
+      "sha256": "54a7bb6acbe6486b8f2830148be9e7b977fae1add2c040085ea5c1f4884b1d66"
     },
     "client/mainmenu/CMainMenu.cpp::static std::function<void()> genCommand(CMenuScreen * menu, std::vector<std::string> menuType, const std::string & string)#1": {
       "kind": "legacy",
