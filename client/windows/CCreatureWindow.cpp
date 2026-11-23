@@ -12,6 +12,7 @@
 #include "NewHorizonsOrderIndicators.h"
 #include "CCreatureWindow.h"
 #include "CreatureUpgradeConfirmation.h"
+#include "CreatureStatusCardGrouping.h"
 #include "../../lib/battle/BattleDisplacementCause.h"
 #include "../../lib/entities/creature/NewHorizonsRecruitmentTraining.h"
 #include "wiki/WikiWindow.h"
@@ -988,15 +989,15 @@ void CStackWindow::initBonusesList()
 
 		const auto & sameBonusPredicate = [currentBonus](const std::shared_ptr<Bonus> & b)
 		{
-			return currentBonus->type == b->type && currentBonus->subtype == b->subtype;
+			return creatureStatusCardGrouping::sameCard(*currentBonus, *b);
 		};
 
 		groupedBonuses.emplace_back();
 
 		std::copy_if(receivedBonuses.begin(), receivedBonuses.end(), std::back_inserter(groupedBonuses.back()), sameBonusPredicate);
-		receivedBonuses.remove_if(Selector::typeSubtype(currentBonus->type, currentBonus->subtype));
+		receivedBonuses.remove_if([currentBonus](const Bonus * b) { return creatureStatusCardGrouping::sameCard(*currentBonus, *b); });
 		// FIXME: potential edge case: unit has ability that is propagated away (and needs to be displayed), but also receives same bonus from someplace else
-		abilities.remove_if(Selector::typeSubtype(currentBonus->type, currentBonus->subtype));
+		abilities.remove_if([currentBonus](const Bonus * b) { return creatureStatusCardGrouping::sameCard(*currentBonus, *b); });
 	}
 
 	// Add any remaining abilities of this unit that don't affect it at the moment, such as abilities that are propagated away, e.g. to other side in combat

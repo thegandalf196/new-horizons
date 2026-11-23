@@ -1,6 +1,8 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
 #include "../../client/windows/CreatureAbilityGrouping.h"
+#include "../../client/windows/CreatureStatusCardGrouping.h"
+#include "../../lib/battle/NewHorizonsRampartSpecialties.h"
 
 TEST(CreatureAbilityGrouping, WaterElementalVulnerabilitiesShareOneCard)
 {
@@ -41,4 +43,40 @@ TEST(SylvanStatusArt, RowsGetPerkIconAndTimingHelp)
 	EXPECT_EQ(sylvanStatusArt::forRow("Disruptive Strike: -15% Initiative until this stack's next activation.").image,
 		"NH_perk_sylvan_tactics_disruptive_strike.png");
 	EXPECT_TRUE(sylvanStatusArt::forRow("Unknown: something").image.empty());
+}
+
+namespace
+{
+Bonus noneMarker(const char * stacking, const char * icon = "")
+{
+	Bonus marker(BonusDuration::ONE_BATTLE, BonusType::NONE, BonusSource::HERO_SPECIAL, 50, BonusSourceID());
+	marker.stacking = stacking;
+	if(*icon)
+		marker.customIconPath = ImagePath::builtin(icon);
+	return marker;
+}
+}
+
+TEST(CreatureStatusCardGrouping, BrittleKeepsItsOwnCardBesideOtherNoneMarkers)
+{
+	const auto brittle = noneMarker(newHorizonsRampart::BRITTLE_STACKING, "NH_status_brittle.png");
+	const auto other = noneMarker("new-horizons:arcane-inspiration");
+	EXPECT_TRUE(creatureStatusCardGrouping::ownsCard(brittle));
+	EXPECT_FALSE(creatureStatusCardGrouping::sameCard(brittle, other));
+	EXPECT_FALSE(creatureStatusCardGrouping::sameCard(other, brittle));
+	EXPECT_TRUE(creatureStatusCardGrouping::sameCard(brittle, brittle)) << "Copies of one marker stay one card";
+	// Prayer markers and plain NONE markers keep their shared group.
+	const auto prayers = consecratedArms::prayerBonuses(consecratedArms::Prayer::DIVINE_PURPOSE, 200,
+		consecratedArms::Policy{1}, 3, 1);
+	const auto prayer = std::find_if(prayers.begin(), prayers.end(), [](const Bonus & bonus)
+		{ return bonus.type == BonusType::NONE && consecratedArms::identity(&bonus); });
+	ASSERT_NE(prayer, prayers.end());
+	EXPECT_FALSE(creatureStatusCardGrouping::ownsCard(*prayer));
+	EXPECT_FALSE(creatureStatusCardGrouping::sameCard(*prayer, brittle));
+	EXPECT_TRUE(creatureStatusCardGrouping::sameCard(*prayer, other));
+	// Other bonus types still group by type and subtype (Living Remedy joins Regeneration).
+	Bonus remedy(BonusDuration::N_TURNS, BonusType::HP_REGENERATION, BonusSource::HERO_SPECIAL, 30, BonusSourceID());
+	remedy.customIconPath = ImagePath::builtin("NH_status_living_remedy.png");
+	const Bonus innate(BonusDuration::PERMANENT, BonusType::HP_REGENERATION, BonusSource::CREATURE_ABILITY, 50, BonusSourceID());
+	EXPECT_TRUE(creatureStatusCardGrouping::sameCard(remedy, innate));
 }
