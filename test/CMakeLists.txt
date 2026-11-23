@@ -157,6 +157,7 @@ set(test_SRCS
 		server/battles/CastlePrayerSpecialtyTest.cpp
 		server/battles/CastlePariahTest.cpp
 		server/battles/CastleFrostMantleTest.cpp
+		server/battles/RampartCombatLifecycleTest.cpp
 		server/battles/RampartCombatSpecialtyTest.cpp
 		server/battles/CastleQuickStudyTest.cpp
 		server/battles/MetamagicDoubleCastTest.cpp

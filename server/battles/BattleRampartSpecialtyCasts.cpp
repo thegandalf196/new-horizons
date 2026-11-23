@@ -11,6 +11,8 @@
 #include "../../lib/networkPacks/PacksForClient.h"
 #include "../../lib/networkPacks/PacksForClientBattle.h"
 #include "../../lib/networkPacks/SetStackEffect.h"
+#include "../../lib/bonuses/BonusList.h"
+#include "../../lib/bonuses/BonusSelector.h"
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/spells/ISpellMechanics.h"
 #include "../../lib/spells/NewHorizonsMetamagicCompletion.h"
@@ -31,11 +33,22 @@ void logLine(CGameHandler & handler, const CBattleInfoCallback & battle, const s
 	handler.sendAndApply(message);
 }
 
-void update(CGameHandler & handler, const CBattleInfoCallback & battle, uint32_t unit, const Bonus & bonus)
+/// Replaces any earlier copy of the specialty effect (same stacking), so a new cast
+/// refreshes its value and duration instead of adding a second copy.
+void refresh(CGameHandler & handler, const CBattleInfoCallback & battle, const battle::Unit & unit, const Bonus & bonus)
 {
 	SetStackEffect effect;
 	effect.battleID = battle.getBattle()->getBattleID();
-	effect.toUpdate.emplace_back(unit, std::vector<Bonus>{bonus});
+	const auto stacking = bonus.stacking;
+	// Hold the list: ranging over *temporary leaves it dangling before C++23.
+	const auto held = unit.getBonuses(CSelector([stacking](const Bonus * candidate)
+		{ return candidate && candidate->stacking == stacking; }));
+	std::vector<Bonus> earlier;
+	for(const auto & existing : *held)
+		earlier.push_back(*existing);
+	if(!earlier.empty())
+		effect.toRemove.emplace_back(unit.unitId(), std::move(earlier));
+	effect.toAdd.emplace_back(unit.unitId(), std::vector<Bonus>{bonus});
 	handler.sendAndApply(effect);
 }
 
@@ -90,7 +103,7 @@ void completeCast(CGameHandler & handler, const CBattleInfoCallback & battle, co
 		if(spell.getId() == SpellID::CURE && unit->unitSide() == side)
 			if(const auto regeneration = newHorizonsRampart::livingRemedy(&hero, *unit))
 			{
-				update(handler, battle, id, *regeneration);
+				refresh(handler, battle, *unit, *regeneration);
 				logLine(handler, battle, "Living Remedy: %d %s will regenerate.", *unit);
 				logGlobal->debug("Living Remedy: %s regenerates %d Health per round", unit->getDescription(), regeneration->val);
 			}
@@ -100,7 +113,7 @@ void completeCast(CGameHandler & handler, const CBattleInfoCallback & battle, co
 			if(const auto marker = newHorizonsRampart::brittleMarker(&hero))
 			{
 				newHorizonsMetamagic::cancelDefend(*handler.spellcastEnvironment(), battle, *unit);
-				update(handler, battle, id, *marker);
+				refresh(handler, battle, *unit, *marker);
 				logLine(handler, battle, "Brittle: %d %s cannot Defend and take more physical damage.", *unit);
 				logGlobal->debug("Brittle: %s marked, +%d permille physical damage", unit->getDescription(), marker->val);
 			}
