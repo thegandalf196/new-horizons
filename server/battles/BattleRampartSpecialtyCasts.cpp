@@ -116,8 +116,15 @@ void grantAgainstTheOdds(CGameHandler & handler, const CBattleInfoCallback & bat
 		const auto luck = hero ? newHorizonsRampart::againstTheOdds(battle, side) : std::nullopt;
 		if(!luck)
 			continue;
-		GiveBonus grant(GiveBonus::ETarget::OBJECT, hero->id, *luck);
-		handler.giveHeroBonus(&grant);
+		// Her stacks gain the Luck; the hero's own Luck (spell Luck rolls) is unchanged.
+		SetStackEffect grant;
+		grant.battleID = battle.getBattle()->getBattleID();
+		for(const auto * unit : battle.battleGetUnitsIf([side](const battle::Unit * candidate)
+			{ return candidate->unitSide() == side && candidate->alive() && !candidate->isGhost(); }))
+			grant.toAdd.emplace_back(unit->unitId(), std::vector<Bonus>{*luck});
+		if(grant.toAdd.empty())
+			continue;
+		handler.sendAndApply(grant);
 		logGlobal->debug("Against the Odds: %s's army gains +%d Luck", hero->getNameTextID(), luck->val);
 		BattleLogMessage message;
 		message.battleID = battle.getBattle()->getBattleID();

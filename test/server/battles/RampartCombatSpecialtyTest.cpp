@@ -192,11 +192,17 @@ TEST_F(RampartCombatSpecialtyTest, AgainstTheOddsGrantsLuckOnlyAgainstAStrongerA
 	ASSERT_NO_FATAL_FAILURE(emptyField());
 	auto * centaurs = place(ATTACKER, "core:centaur", BattleHex(5, 5), 10, 1000);
 	ASSERT_TRUE(place(DEFENDER, "core:angel", BattleHex(12, 5), 10, 400));
+	const auto heroLuck = attackerSideHero->luckVal();
+	const auto stackLuck = centaurs->luckVal();
 	ASSERT_NO_FATAL_FAILURE(beginCombat());
 	const auto * luck = tagged(*centaurs, newHorizonsRampart::AGAINST_THE_ODDS_STACKING);
 	ASSERT_NE(luck, nullptr);
 	EXPECT_EQ(luck->type, BonusType::LUCK);
 	EXPECT_EQ(luck->val, 2) << "+1, +1 per 10 hero levels";
+	EXPECT_EQ(centaurs->luckVal(), std::min(stackLuck + 2, 3)) << "Her stacks gain the Luck";
+	EXPECT_EQ(attackerSideHero->luckVal(), heroLuck) << "Her own spell Luck rolls are unchanged";
+	EXPECT_FALSE(attackerSideHero->hasBonus(Selector::type()(BonusType::LUCK).And(CSelector([](const Bonus * bonus)
+		{ return bonus->stacking == newHorizonsRampart::AGAINST_THE_ODDS_STACKING; }))));
 }
 
 TEST_F(RampartCombatSpecialtyTest, AgainstTheOddsStaysOffAgainstAWeakerArmy)
