@@ -28559,11 +28559,13 @@
       "owner": "gameplay_engineer",
       "previous_review": "CLAUDE-CASTLE-COMBAT-0931",
       "rationale": "Exact successor for the 0.93.2 Rampart hero specialties (Use the Ground, Elusive, Patroness, Giant-Slayer, Living Remedy, Sorceress of Enroth, Brittle, Against the Odds, revised Perfect Mount, Treantmoot and Forest Ambush): one-line routing hooks into the focused new owners lib/entities/hero/NewHorizonsRampartSpecialties, lib/battle/NewHorizonsRampartSpecialties, lib/pathfinder/NewHorizonsElusive, server/battles/BattleRampartSpecialtyCasts, server/processors/PatronessVisit and AI/BattleAI/RampartSpecialtyValue. Existing extraction deferrals retained; no future growth credit.",
-      "review": "CLAUDE-RAMPART-0932",
+      "review": "PROPOSED-CLAUDE-ASSERT-SWEEP-20261123",
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "42a2e6d8c63c20aa3b6309fd9a915eb6e535a913f363b55b9a1d60ab5a68f22a",
-      "inherited_rampart_deferral": "Extend the focused progression owner before further routing. Before substantive handler growth, extract the next lifecycle command group with removed/covered/transferred query, callback suppression and conservation coverage; exact6058 only. Prior stricter obligations remain in inherited_deferral, where present."
+      "sha256": "28432e6564cdf9e5870e8b23ec13bb3a89ecb6fb77090eabba146ae67a15a2bb",
+      "inherited_rampart_deferral": "Extend the focused progression owner before further routing. Before substantive handler growth, extract the next lifecycle command group with removed/covered/transferred query, callback suppression and conservation coverage; exact6058 only. Prior stricter obligations remain in inherited_deferral, where present.",
+      "prior_review": "CLAUDE-RAMPART-0932",
+      "assert_sweep_note": "One line: a Quick Study copy has no own source to charge, so the charge lookup returns before its canCastThisSpell assert. Same line count; release behaviour unchanged."
     },
     "server/CGameHandler.cpp::bool CGameHandler::buildStructure(ObjectInstanceID tid, BuildingID requestedID, bool force)#1": {
       "kind": "review",
@@ -28683,15 +28685,18 @@
     },
     "server/CGameHandler.cpp::std::function<void()> CGameHandler::prepareChargeBasedSpellCompletion(const ObjectInstanceID & heroObjectID, const SpellID & spellID)#1": {
       "deferral": "Next substantive source-completion expansion should extract the selected charged-source completion receipt with explicit hero/artifact/spell/cost IDs, re-resolve after effects and preserve permanent/reusable priority, charge amount and exactly-once debit; retain source-consumption native regression.",
-      "kind": "review",
+      "kind": "exception",
       "lines": 99,
       "owner": "gameplay_engineer",
       "previous_review": "source-size-legacy-freeze-cf2e62f9-v1",
       "rationale": "Removes obsolete scroll-learning callback while preserving selected charged-source revalidation/debit; callback159 to99 and file6651 to6592. Adventure unlock delegates to authoritative shared visiting-hero price.",
-      "review": "IR-WISDOM-GAMEPLAY-EXACT-SUCCESSOR-SOURCE-20261103",
+      "review": "PROPOSED-CLAUDE-ASSERT-SWEEP-20261123",
       "review_scope": "Exact2387ef45 gameplay successor with coherent content/UI/AI dependencies. No future growth, old-save matrix, native/render proof, or adoption authorization.",
-      "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_RENDERED_UNRUN",
-      "sha256": "c3e9e43f006a46d121e8f2c1226af03f77f262225a992d99f1913652fb88e93b"
+      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
+      "sha256": "e9ea45eeb7390c73570a3fe9686c8a6b91977dd75064114a05f31d59f4c57007",
+      "prior_review": "IR-WISDOM-GAMEPLAY-EXACT-SUCCESSOR-SOURCE-20261103",
+      "assert_sweep_note": "One line: a Quick Study copy has no own source to charge, so the charge lookup returns before its canCastThisSpell assert. Same line count; release behaviour unchanged.",
+      "prior_kind": "review"
     },
     "server/CGameHandler.cpp::void CGameHandler::checkVictoryLossConditionsForPlayer(PlayerColor player)#1": {
       "kind": "legacy",

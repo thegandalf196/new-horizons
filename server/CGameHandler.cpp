@@ -5661,7 +5661,7 @@ std::function<void()> CGameHandler::prepareChargeBasedSpellCompletion(const Obje
 {
 	const auto * hero = gameInfo().getHero(heroObjectID);
 	assert(hero);
-	assert(hero->canCastThisSpell(spellID.toSpell()));
+	if(!hero->canCastThisSpell(spellID.toSpell())) return {}; // A Quick Study copy has no own source to charge
 
 
 	// Preserve permanent and reusable spell sources ahead of charged sources.
