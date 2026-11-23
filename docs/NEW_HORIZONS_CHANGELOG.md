@@ -7,7 +7,7 @@ and revisions as the game develops.
 For individual perk effects, spell formulas, creature statistics and Order rules,
 read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 
-## 0.93.2 Beta
+## 0.94.0-beta.1
 
 Rampart's heroes get their revised specialties.
 
