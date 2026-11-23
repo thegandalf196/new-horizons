@@ -115,8 +115,10 @@ int64_t holyWrathDamage(const CBattleInfoCallback & battle, const CGHeroInstance
 	const int steps = std::max(0, rank(battle, target));
 	if(steps == 0)
 		return damage;
-	const int64_t boosted = damage * (1000 + int64_t{perStep} * steps) / 1000;
-	return boosted < damage ? std::numeric_limits<int64_t>::max() : boosted;
+	const int64_t factor = 1000 + int64_t{perStep} * steps;
+	if(damage > std::numeric_limits<int64_t>::max() / factor)
+		return std::numeric_limits<int64_t>::max();
+	return damage * factor / 1000;
 }
 
 bool isIceSpell(SpellID spell)
