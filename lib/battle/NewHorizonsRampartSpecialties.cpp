@@ -143,6 +143,7 @@ std::optional<Bonus> brittleMarker(const CGHeroInstance * hero)
 		permille, BonusSourceID(hero->getHeroTypeID()));
 	marker.stacking = BRITTLE_STACKING;
 	marker.description.appendTextID("new-horizons.rampart.brittle.effect");
+	marker.customIconPath = ImagePath::builtin("NH_status_brittle.png");
 	return marker;
 }
 
@@ -176,6 +177,7 @@ std::optional<Bonus> livingRemedy(const CGHeroInstance * hero, const battle::Uni
 	regeneration.turnsRemain = newHorizonsHeroes::livingRemedyRounds(hero);
 	regeneration.stacking = LIVING_REMEDY_STACKING;
 	regeneration.description.appendTextID("new-horizons.rampart.livingRemedy.effect");
+	regeneration.customIconPath = ImagePath::builtin("NH_status_living_remedy.png");
 	return regeneration;
 }
 

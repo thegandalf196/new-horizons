@@ -64,6 +64,7 @@ TEST_F(RampartCombatLifecycleTest, ARecastCureRefreshesLivingRemedyInsteadOfAddi
 	EXPECT_EQ(regeneration->turnsRemain, 2) << "The newer duration wins";
 	EXPECT_EQ(regeneration->val, actor->getCount() * static_cast<int>(actor->getMaxHealth()) * 4 / 100)
 		<< "The newer value (4% at level 9) wins";
+	EXPECT_EQ(regeneration->customIconPath, ImagePath::builtin("NH_status_living_remedy.png")) << "Its status icon";
 }
 
 TEST_F(RampartCombatLifecycleTest, ARecastIceBoltRefreshesBrittleInsteadOfAddingACopy)
@@ -82,6 +83,9 @@ TEST_F(RampartCombatLifecycleTest, ARecastIceBoltRefreshesBrittleInsteadOfAdding
 	ASSERT_TRUE(submit(spellAt(ATTACKER, SpellID::ICE_BOLT, enemy)));
 	EXPECT_EQ(copies(*enemy, newHorizonsRampart::BRITTLE_STACKING), 1) << "A new ice spell refreshes the mark";
 	EXPECT_EQ(newHorizonsRampart::brittlePermille(*enemy), 55) << "The newer value wins";
+	const auto * brittle = tagged(*enemy, newHorizonsRampart::BRITTLE_STACKING);
+	ASSERT_NE(brittle, nullptr);
+	EXPECT_EQ(brittle->customIconPath, ImagePath::builtin("NH_status_brittle.png")) << "Its status icon";
 }
 
 TEST_F(RampartCombatLifecycleTest, IvorsDelayedGrandElfShotAppliesTheBonusToItsFirstShotOnly)
