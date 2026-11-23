@@ -51,7 +51,9 @@ void HeroInstanceProxy::registerMethods(MethodRegistrar & R)
 		{{"skill", "Secondary skill JSON key."}},
 		{"Mastery level (0 = none, 1 = basic, 2 = advanced, 3 = expert)."},
 		"Returns the hero's mastery of the given secondary skill.");
-	R.method<&CGHeroInstance::hasActivePerk>("hasActivePerk",
+	// hasActivePerk is overloaded; Lua binds the skill/perk string form.
+	R.method<static_cast<bool (CGHeroInstance::*)(const std::string &, const std::string &) const>(
+		&CGHeroInstance::hasActivePerk)>("hasActivePerk",
 		{
 			{"skill", "Canonical scoped New Horizons skill ID."},
 			{"perk", "Canonical scoped New Horizons perk ID."}
