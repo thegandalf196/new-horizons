@@ -166,6 +166,7 @@
 	"new-horizons.hero.classLean.might": "Might %MIGHT%%",
 	"new-horizons.hero.classLean.magic": "Magic %MAGIC%%",
 	"new-horizons.hero.manaRegen.short": "Regen",
+	"core.jktext.6": "{Experience}",
 	"new-horizons.combat.orderBadge.sourceExpiry": "Issued by the %SOURCE% hero. Expires at the end of round %ROUND%; its benefit may end earlier when used or broken.",
 	"new-horizons.combat.orderBadge.carriedExpiry": "%SOURCE% Order, issued round %ROUND%: retains its benefit until this recipient's next completed or forfeited Creature Activation, unless used or broken first.",
 	"new-horizons.combat.orderBadge.attacker": "attacking",
