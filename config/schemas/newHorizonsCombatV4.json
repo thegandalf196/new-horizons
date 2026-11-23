@@ -483,12 +483,12 @@
 					],
 					"additionalProperties": false,
 					"properties": {
-						"formationRatingPerRound": {"type": "number", "minimum": 0, "exclusiveMinimum": true, "maximum": 1000},
+						"formationRatingPerRound": {"type": "number", "minimum": 0, "exclusiveMinimum": 0, "maximum": 1000},
 						"leadershipPerRound": {
 							"type": "number",
 							"minimum": 0,
 							"maximum": 1000000,
-							"exclusiveMinimum": true
+							"exclusiveMinimum": 0
 						},
 						"minimum": {
 							"type": "integer",
@@ -529,7 +529,7 @@
 									"type": "number",
 									"minimum": 0,
 									"maximum": 1000000,
-									"exclusiveMinimum": true
+									"exclusiveMinimum": 0
 								},
 								"cap": {
 									"type": "integer",
