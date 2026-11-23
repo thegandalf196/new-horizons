@@ -49,6 +49,24 @@ std::vector<uint32_t> reached(const CBattleInfoCallback & battle, BattleSide sid
 		result.push_back(unit->unitId());
 	return result;
 }
+
+/// Regeneration only matters for a stack that is already wounded or that an enemy can
+/// hit before the effect runs out: a shooter, or a walker within reach of its hex.
+bool needsRegeneration(const CBattleInfoCallback & battle, const battle::Unit & target)
+{
+	if(target.getFirstHPleft() < target.getMaxHealth())
+		return true;
+	for(const auto * enemy : battle.battleGetUnitsIf([&target](const battle::Unit * candidate)
+		{ return candidate->unitSide() != target.unitSide() && candidate->alive() && !candidate->isGhost(); }))
+	{
+		if(battle.battleCanShoot(enemy))
+			return true;
+		const auto distance = BattleHex::getDistance(enemy->getPosition(), target.getPosition());
+		if(distance <= static_cast<int>(enemy->getMovementRange()) + 1)
+			return true;
+	}
+	return false;
+}
 }
 
 float livingRemedyValue(const CBattleInfoCallback & battle, BattleSide side, uint32_t unit)
@@ -57,7 +75,7 @@ float livingRemedyValue(const CBattleInfoCallback & battle, BattleSide side, uin
 	if(!target || !target->alive() || target->isGhost() || target->unitSide() != side)
 		return 0.0f;
 	const auto regeneration = newHorizonsRampart::livingRemedy(battle.battleGetFightingHero(side), *target);
-	if(!regeneration)
+	if(!regeneration || !needsRegeneration(battle, *target))
 		return 0.0f;
 	// Each round heals at most the top creature's wound.
 	const double perRound = std::min<double>(regeneration->val, target->getMaxHealth());

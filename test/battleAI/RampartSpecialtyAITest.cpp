@@ -218,6 +218,21 @@ TEST_F(RampartSpecialtyAITest, UseTheGroundCachedDamageFollowsAnObstacleThatVani
 	EXPECT_NEAR(static_cast<double>(protectedHit) / openHit, 0.95, 0.02);
 }
 
+TEST_F(RampartSpecialtyAITest, LivingRemedyCountsOnlyForAWoundedOrThreatenedStack)
+{
+	ASSERT_NO_FATAL_FAILURE(specialist("core:uland", 10));
+	ASSERT_NO_FATAL_FAILURE(emptyField());
+	active = place(ATTACKER, "core:pikeman", BattleHex(1, 5), 1, 1000);
+	actor = place(ATTACKER, "core:crusader", BattleHex(1, 9), 40, 800);
+	enemy = place(DEFENDER, "core:dwarf", BattleHex(15, 1), 5, 400);
+	ASSERT_TRUE(active && actor && enemy);
+	ASSERT_NO_FATAL_FAILURE(beginCombat());
+	EXPECT_EQ(rampartSpecialtyAI::livingRemedyValue(*battle(), ATTACKER, actor->unitId()), 0.0f)
+		<< "Unwounded and out of every enemy's reach";
+	injure(actor, actor->getAvailableHealth() - 30);
+	EXPECT_GT(rampartSpecialtyAI::livingRemedyValue(*battle(), ATTACKER, actor->unitId()), 0.0f) << "Wounded";
+}
+
 TEST_F(RampartSpecialtyAITest, AgainstTheOddsLuckIsVisibleToTheAI)
 {
 	ASSERT_NO_FATAL_FAILURE(specialist("core:melodia", 20));
