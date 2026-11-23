@@ -236,6 +236,8 @@ function New-NHReleaseNotesBox([string]$Text) {
     $box.ForeColor = Get-NHLookColor 'Text'
     $box.Dock = 'Fill'
     $box.Text = $Text.Replace("`n", "`r`n")
+    # Dark scroll bars on Windows 10 1809+ and 11.
+    $box.add_HandleCreated({ param($sender, $e) Set-NHControlTheme $sender 'DarkMode_Explorer' })
     $frame.Controls.Add($box)
     return $frame
 }

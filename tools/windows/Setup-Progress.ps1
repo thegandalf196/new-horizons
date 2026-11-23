@@ -19,7 +19,7 @@ function Add-NHNativeMethod($Type, [string]$Library, [string]$Name, [Type]$Retur
 }
 
 function Get-NHNativeLook {
-    # Two Win32 entry points defined in memory with Reflection.Emit; Add-Type
+    # Win32 entry points defined in memory with Reflection.Emit; Add-Type
     # would start the C# compiler on every launch.
     if ($null -ne $script:NHLook.Native) { return $script:NHLook.Native }
     $name = New-Object Reflection.AssemblyName 'NHNativeLook'
@@ -27,6 +27,7 @@ function Get-NHNativeLook {
     $type = $assembly.DefineDynamicModule('NHNativeLook').DefineType('NHNativeLook', 'Public,Abstract,Sealed')
     Add-NHNativeMethod $type 'user32.dll' 'SetProcessDPIAware' ([bool]) @()
     Add-NHNativeMethod $type 'dwmapi.dll' 'DwmSetWindowAttribute' ([int]) @([IntPtr], [int], [int].MakeByRefType(), [int])
+    Add-NHNativeMethod $type 'uxtheme.dll' 'SetWindowTheme' ([int]) @([IntPtr], [string], [string])
     $script:NHLook.Native = $type.CreateType()
     return $script:NHLook.Native
 }
@@ -80,6 +81,14 @@ function Set-NHDarkTitleBar($Form) {
     } catch { } # Older Windows keeps its standard caption.
 }
 
+function Set-NHControlTheme($Control, [string]$Theme) {
+    # Windows 10 1809+ and 11 draw dark scroll bars (DarkMode_Explorer) and dark
+    # combo box frames (DarkMode_CFD). Elsewhere an unknown theme leaves the
+    # standard look. A null list keeps the class name; an empty one would
+    # switch the control's visual styles off.
+    try { $null = (Get-NHNativeLook)::SetWindowTheme($Control.Handle, $Theme, [NullString]::Value) } catch { }
+}
+
 function Start-NHFormLook($Form, [int]$Width, [int]$Height) {
     # Layout is written in 96-DPI pixels; Complete-NHFormLook scales it to the display.
     Initialize-NHWindowsLook
@@ -123,6 +132,38 @@ function Set-NHButtonLook($Button, [string]$Face = 'Button') {
     $Button.FlatAppearance.MouseOverBackColor = Get-NHLookColor 'Hover'
     $Button.FlatAppearance.MouseDownBackColor = Get-NHLookColor 'Pressed'
     $Button.add_Paint({ param($sender, $e) Write-NHDisabledButton $sender $e })
+}
+
+function Write-NHComboItem($Combo, $Item) {
+    # Rows in the launcher colours instead of a white box and the blue system list.
+    if ($Item.Index -lt 0) { return }
+    try {
+        $edit = ($Item.State -band [Windows.Forms.DrawItemState]::ComboBoxEdit) -ne 0
+        $face = 'Field'
+        if ($edit) { $face = 'Button' }
+        elseif (($Item.State -band [Windows.Forms.DrawItemState]::Selected) -ne 0) { $face = 'Hover' }
+        $brush = New-Object Drawing.SolidBrush((Get-NHLookColor $face))
+        try { $Item.Graphics.FillRectangle($brush, $Item.Bounds) } finally { $brush.Dispose() }
+        $text = 'DisabledText'
+        if ($Combo.Enabled) { $text = 'ButtonText' }
+        $row = $Item.Bounds
+        $bounds = New-Object Drawing.Rectangle(($row.X + 4), $row.Y, [Math]::Max(0, $row.Width - 8), $row.Height)
+        $flags = [Windows.Forms.TextFormatFlags]'Left,VerticalCenter,SingleLine,EndEllipsis,NoPrefix'
+        [Windows.Forms.TextRenderer]::DrawText($Item.Graphics, [string]$Combo.Items[$Item.Index], $Combo.Font, $bounds,
+            (Get-NHLookColor $text), $flags)
+    } catch { } # Presentation only.
+}
+
+function Set-NHComboLook($Combo) {
+    # Owner-drawn rows; the dark Windows theme draws the frame and arrow, and
+    # older Windows keeps its standard frame around the dark rows.
+    $Combo.DropDownStyle = 'DropDownList'
+    $Combo.FlatStyle = 'Standard'
+    $Combo.DrawMode = 'OwnerDrawFixed'
+    $Combo.BackColor = Get-NHLookColor 'Field'
+    $Combo.ForeColor = Get-NHLookColor 'ButtonText'
+    $Combo.add_DrawItem({ param($sender, $e) Write-NHComboItem $sender $e })
+    $Combo.add_HandleCreated({ param($sender, $e) Set-NHControlTheme $sender 'DarkMode_CFD' })
 }
 
 function Show-AssetImportProgress([int]$Files, [long]$Bytes, [switch]$StartingGame) {

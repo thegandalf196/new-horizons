@@ -91,6 +91,26 @@ class WindowsLauncherLookSourceTest(unittest.TestCase):
             self.assertIn(label, launcher)
             self.assertIn(label.strip('\'"'), linux)
 
+    def test_track_list_and_notes_scroll_bars_use_the_dark_theme(self):
+        theme = self.look['Set-NHControlTheme']
+        # A null class list keeps the control's class; an empty string would turn visual styles off.
+        self.assertIn('::SetWindowTheme($Control.Handle, $Theme, [NullString]::Value)', theme)
+        self.assertIn('} catch { }', theme)
+        combo = self.look['Set-NHComboLook']
+        for required in ("$Combo.DropDownStyle = 'DropDownList'", "$Combo.FlatStyle = 'Standard'",
+                         "$Combo.DrawMode = 'OwnerDrawFixed'", 'Write-NHComboItem $sender $e',
+                         "add_HandleCreated({ param($sender, $e) Set-NHControlTheme $sender 'DarkMode_CFD' })"):
+            self.assertIn(required, combo)
+        item = self.look['Write-NHComboItem']
+        for face in ("'Field'", "'Button'", "'Hover'", "'ButtonText'", "'DisabledText'", 'ComboBoxEdit', 'NoPrefix'):
+            self.assertIn(face, item)
+        self.assertNotIn('SystemColors', item)
+        launcher = functions((WINDOWS / 'Player-Launcher.ps1').read_text())['New-NHPlayerTrack']
+        self.assertIn('Set-NHComboLook $track', launcher)
+        self.assertNotIn('FlatStyle', launcher)
+        notes = functions((WINDOWS / 'Player-Launcher-Notes.ps1').read_text())['New-NHReleaseNotesBox']
+        self.assertIn("add_HandleCreated({ param($sender, $e) Set-NHControlTheme $sender 'DarkMode_Explorer' })", notes)
+
 
 @unittest.skipUnless(PS, 'Set NH_TEST_POWERSHELL for offline launcher checks')
 class WindowsLauncherLookPowerShellTest(unittest.TestCase):
@@ -115,7 +135,7 @@ $methods=@($first.GetMethods() | Where-Object { $_.DeclaringType -eq $first } | 
                                     timeout=30, check=False)
         self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
         self.assertEqual(json.loads(result.stdout), {
-            'methods': ['DwmSetWindowAttribute:True:True', 'SetProcessDPIAware:True:True'],
+            'methods': ['DwmSetWindowAttribute:True:True', 'SetProcessDPIAware:True:True', 'SetWindowTheme:True:True'],
             'same': True, 'ready': True, 'dynamic': True})
 
 

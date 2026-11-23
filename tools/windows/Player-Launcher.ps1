@@ -331,10 +331,7 @@ function New-NHPlayerTitle($Form) {
 function New-NHPlayerTrack($Form, [string]$Track) {
     $null = New-NHPlayerLabel $Form 'Version track' 22 70 104 26
     $track = New-Object Windows.Forms.ComboBox
-    $track.DropDownStyle = 'DropDownList'
-    $track.FlatStyle = 'Flat'
-    $track.BackColor = Get-NHLookColor 'Button'
-    $track.ForeColor = Get-NHLookColor 'ButtonText'
+    Set-NHComboLook $track
     $track.Location = New-Object Drawing.Point(132,71)
     $track.Size = New-Object Drawing.Size(406,24)
     $null = $track.Items.Add('Stable')
