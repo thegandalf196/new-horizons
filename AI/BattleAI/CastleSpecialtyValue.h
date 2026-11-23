@@ -37,7 +37,7 @@ DLL_LINKAGE bool keepsFrostMantleCentre(const spells::Mechanics & mechanics, Bat
 /// Value of Frost Mantle cloaking a friendly Frost Ring centre stack.
 DLL_LINKAGE float frostMantleValue(const CBattleInfoCallback & battle, const std::shared_ptr<HypotheticBattle> & board,
 	BattleSide side, uint32_t centre, DamageCache & damage);
-/// Value of Frost Mantle chilling an enemy Frost Ring centre stack (0 for a friendly one).
+/// Value of Frost Mantle chilling an enemy Frost Ring centre stack (0 for a friendly or immune one).
 DLL_LINKAGE float frostMantleChillValue(const CBattleInfoCallback & battle, const std::shared_ptr<HypotheticBattle> & board,
 	BattleSide side, uint32_t centre, DamageCache & damage);
 

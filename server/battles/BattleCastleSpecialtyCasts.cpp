@@ -103,12 +103,13 @@ void BattleActionProcessor::completeCastleSpecialtyCast(const CBattleInfoCallbac
 		if(friendly)
 			replaceBenediction(*gameHandler, battle, side, blessed->unitId(), hero);
 	}
-	// Frost Mantle: cloak a friendly centre stack, or only chill an enemy one.
+	// Frost Mantle: cloak a friendly centre stack, or only chill an enemy one receptive to Frost Ring.
 	if(spell.getId() == SpellID::FROST_RING && context.centre)
 	{
 		const auto * centre = battle.battleGetUnitByID(*context.centre);
 		const auto effect = !centre || !centre->alive() ? std::nullopt
-			: centre->unitSide() == side ? newHorizonsFrostMantle::cloak(&hero) : newHorizonsFrostMantle::chill(&hero);
+			: centre->unitSide() == side ? newHorizonsFrostMantle::cloak(&hero)
+			: newHorizonsFrostMantle::chills(battle, hero, *centre) ? newHorizonsFrostMantle::chill(&hero) : std::nullopt;
 		if(effect)
 		{
 			SetStackEffect update;

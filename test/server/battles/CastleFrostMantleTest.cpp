@@ -39,6 +39,12 @@ protected:
 		ASSERT_NO_FATAL_FAILURE(activate(active));
 	}
 
+	/// Makes the stack immune to Frost Ring by the given bonus for the whole battle.
+	void immune(const CStack * unit, BonusType type, int value, BonusSubtypeID subtype = BonusSubtypeID())
+	{
+		effect(unit, Bonus(BonusDuration::ONE_BATTLE, type, BonusSource::OTHER, value, BonusSourceID(), subtype));
+	}
+
 	/// The hex-only legality query the battle interface asks while hovering.
 	bool castableAt(BattleHex hex) const
 	{
@@ -125,4 +131,48 @@ TEST_F(CastleFrostMantleTest, OtherHeroesStillCannotRingAnIsolatedStack)
 	EXPECT_FALSE(castableAt(actor->getPosition()));
 	EXPECT_FALSE(castableAt(enemy->getPosition()));
 	EXPECT_FALSE(submit(spellAtHex(ATTACKER, SpellID::FROST_RING, actor->getPosition())));
+}
+
+TEST_F(CastleFrostMantleTest, FrostMantleRingOnAnImmuneEnemyStrikesTheRingButDoesNotChill)
+{
+	ASSERT_NO_FATAL_FAILURE(specialist("core:adelaide"));
+	ASSERT_NO_FATAL_FAILURE(book(attackerSideHero, SpellID::FROST_RING, "new-horizons:havocMagic"));
+	ASSERT_NO_FATAL_FAILURE(arena());
+	ASSERT_NO_FATAL_FAILURE(immune(enemy, BonusType::SPELL_IMMUNITY, 0, BonusSubtypeID(SpellID(SpellID::FROST_RING))));
+	EXPECT_TRUE(castableAt(enemy->getPosition())) << "The ring still reaches the adjacent Angels";
+	const auto health = actor->getAvailableHealth();
+	ASSERT_TRUE(submit(spellAtHex(ATTACKER, SpellID::FROST_RING, enemy->getPosition())));
+	EXPECT_LT(actor->getAvailableHealth(), health);
+	EXPECT_EQ(chill(*enemy), 0) << "Frost Ring immunity blocks the chill";
+	EXPECT_FALSE(cloaked(*enemy));
+}
+
+TEST_F(CastleFrostMantleTest, FrostMantleCannotRingAnIsolatedEnemyImmuneToFrostRing)
+{
+	ASSERT_NO_FATAL_FAILURE(specialist("core:adelaide"));
+	ASSERT_NO_FATAL_FAILURE(book(attackerSideHero, SpellID::FROST_RING, "new-horizons:havocMagic"));
+	ASSERT_NO_FATAL_FAILURE(emptyField());
+	active = place(ATTACKER, "core:pikeman", BattleHex(1, 1), 1, 1000);
+	actor = place(ATTACKER, "core:crusader", BattleHex(5, 5), 20, 800);
+	enemy = place(DEFENDER, "core:halberdier", BattleHex(12, 5), 30, 400);
+	const auto * iceElementals = place(DEFENDER, "core:iceElemental", BattleHex(12, 1), 10, 300);
+	const auto * levelImmune = place(DEFENDER, "core:halberdier", BattleHex(12, 9), 10, 200);
+	const auto * resistant = place(DEFENDER, "core:halberdier", BattleHex(8, 9), 10, 100);
+	ASSERT_TRUE(active && actor && enemy && iceElementals && levelImmune && resistant);
+	ASSERT_NO_FATAL_FAILURE(immune(levelImmune, BonusType::LEVEL_SPELL_IMMUNITY, 5));
+	ASSERT_NO_FATAL_FAILURE(immune(resistant, BonusType::MAGIC_RESISTANCE, 100));
+	ASSERT_NO_FATAL_FAILURE(beginCombat());
+	ASSERT_NO_FATAL_FAILURE(activate(active));
+	// Spell and level immunity: the ring reaches nobody and the centre cannot be
+	// chilled, so the cast has no effect and stays illegal.
+	for(const auto * immuneCentre : {iceElementals, levelImmune})
+		EXPECT_FALSE(castableAt(immuneCentre->getPosition())) << immuneCentre->getDescription();
+	EXPECT_TRUE(castableAt(enemy->getPosition())) << "An ordinary isolated enemy can still be chilled";
+	EXPECT_TRUE(castableAt(resistant->getPosition())) << "Magic resistance is capped at 75%, so it is never immunity";
+	const auto mana = attackerSideHero->getManaAvailable();
+	EXPECT_FALSE(submit(spellAtHex(ATTACKER, SpellID::FROST_RING, iceElementals->getPosition())));
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
+	EXPECT_EQ(chill(*iceElementals), 0);
+	ASSERT_TRUE(submit(spellAtHex(ATTACKER, SpellID::FROST_RING, enemy->getPosition())));
+	EXPECT_EQ(chill(*enemy), -20);
 }

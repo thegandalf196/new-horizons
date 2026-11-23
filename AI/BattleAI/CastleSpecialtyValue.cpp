@@ -119,9 +119,12 @@ float frostMantleValue(const CBattleInfoCallback & battle, const std::shared_ptr
 float frostMantleChillValue(const CBattleInfoCallback & battle, const std::shared_ptr<HypotheticBattle> & board,
 	BattleSide side, uint32_t centre, DamageCache & damage)
 {
-	const auto & rule = newHorizonsHeroes::frostMantleRule(battle.battleGetFightingHero(side));
+	const auto * hero = battle.battleGetFightingHero(side);
+	const auto & rule = newHorizonsHeroes::frostMantleRule(hero);
 	const auto * unit = board ? board->battleGetUnitByID(centre) : nullptr;
-	if(!rule || !unit || !unit->alive() || unit->unitSide() == side)
+	// The authority's receptivity check: a stack immune to Frost Ring is never chilled.
+	if(!rule || !unit || !unit->alive() || unit->unitSide() == side
+		|| !newHorizonsFrostMantle::chills(*board, *hero, *unit))
 		return 0.0f;
 	// Slowing the stack delays the share of its strongest blow; tempo, not damage, so halve it.
 	int64_t threat = 0;

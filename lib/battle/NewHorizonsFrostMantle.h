@@ -6,6 +6,8 @@
 #include <optional>
 
 class CGHeroInstance;
+class CBattleInfoCallback;
+namespace battle { class Unit; }
 namespace spells { class Mechanics; }
 
 /// Adelaide's Frost Mantle (captured revisedSpecialties, format 1166). A Frost Ring
@@ -20,7 +22,12 @@ inline constexpr const char * CHILL_STACKING = "new-horizons:frostMantle.chill";
 DLL_LINKAGE std::optional<Bonus> cloak(const CGHeroInstance * hero);
 /// The chill: -X% Initiative for the captured number of rounds.
 DLL_LINKAGE std::optional<Bonus> chill(const CGHeroInstance * hero);
+/// The chill reaches an enemy centre only if Frost Ring's ordinary receptivity
+/// admits it (spell, level and school immunity, as for any ring target).
+DLL_LINKAGE bool chills(const spells::Mechanics & mechanics, const battle::Unit & centre);
+/// The same check for the hero's plain Frost Ring (battle AI valuation).
+DLL_LINKAGE bool chills(const CBattleInfoCallback & battle, const CGHeroInstance & hero, const battle::Unit & centre);
 /// The holder's Frost Ring centred on a living stack is legal for the cloak or
-/// chill alone, even when the ring reaches no other stack (server and client).
+/// receptive chill alone, even when the ring reaches no other stack (server and client).
 DLL_LINKAGE bool centredOnStack(const spells::Mechanics & mechanics, const battle::Target & target);
 }

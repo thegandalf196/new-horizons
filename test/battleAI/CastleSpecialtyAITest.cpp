@@ -321,6 +321,21 @@ TEST_F(CastleSpecialtyAITest, SpecialtyRidersValueTheirTargetsAndOnlyForTheirHer
 	EXPECT_EQ(castleSpecialtyAI::frostMantleValue(*live, parent, ATTACKER, enemy->unitId(), cache), 0.0f);
 }
 
+TEST_F(CastleSpecialtyAITest, FrostMantleChillIsWorthNothingOnAStackImmuneToFrostRing)
+{
+	ASSERT_NO_FATAL_FAILURE(specialist("core:adelaide", 10));
+	ASSERT_NO_FATAL_FAILURE(spellArena());
+	ASSERT_NO_FATAL_FAILURE(board());
+	EXPECT_GT(castleSpecialtyAI::frostMantleChillValue(*live, parent, ATTACKER, enemy->unitId(), cache), 0.0f)
+		<< "Slowing the Halberdiers delays their blow at the Crusaders";
+	EXPECT_EQ(castleSpecialtyAI::frostMantleChillValue(*live, parent, ATTACKER, actor->unitId(), cache), 0.0f);
+	ASSERT_NO_FATAL_FAILURE(effect(enemy, Bonus(BonusDuration::ONE_BATTLE, BonusType::SPELL_IMMUNITY, BonusSource::OTHER,
+		0, BonusSourceID(), BonusSubtypeID(SpellID(SpellID::FROST_RING)))));
+	ASSERT_NO_FATAL_FAILURE(board());
+	EXPECT_EQ(castleSpecialtyAI::frostMantleChillValue(*live, parent, ATTACKER, enemy->unitId(), cache), 0.0f)
+		<< "Frost Ring immunity blocks the chill, so the AI must not value it";
+}
+
 TEST_F(CastleSpecialtyAITest, OrrinsVolleyIsWorthMoreBeforeHisShootersAct)
 {
 	ASSERT_NO_FATAL_FAILURE(specialist("core:orrin", 10));
