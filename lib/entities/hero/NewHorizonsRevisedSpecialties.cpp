@@ -273,8 +273,7 @@ bool resolveRevisedSpecialtyPresentation(const CHero & hero, const JsonNode & de
 	const CGHeroInstance * capturedHero, SpecialtyPresentation & result)
 {
 	if(resolveCastleSpecialtyPresentation(hero, development, capturedHero, result)
-		|| resolveCastleAdventurePresentation(hero, development, capturedHero, result)
-		|| resolveRampartSpecialtyPresentation(hero, development, capturedHero, result))
+		|| resolveCastleAdventurePresentation(hero, development, capturedHero, result))
 		return true;
 	if(hero.getJsonKey() != CLAVIUS)
 		return false;
