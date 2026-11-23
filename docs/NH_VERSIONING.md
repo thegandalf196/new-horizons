@@ -18,9 +18,15 @@ Before 1.0 use `0.MINOR.PATCH`: meaningful player capability checkpoints increas
 
 ## Stable and Beta tracks
 
+The repository has two long-lived branches. `beta` is the development and Beta
+line: development commits, the Windows tests and the repository-contract checks
+run there, and beta tags are cut on it. `main` is the Stable line and receives
+only Stable promotions and Stable hotfixes. `main` is currently at 0.92.8
+(Stable).
+
 Stable releases are ordinary GitHub releases; the launchers' Stable track only
 accepts the official latest release. Beta releases are GitHub prereleases built
-from `main`, numbered like any other release: while stable continues on
+from tags on `beta`, numbered like any other release: while stable continues on
 `0.MINOR.PATCH`, betas use the next MINOR (for example 0.93.x beside 0.92.x).
 The Beta track offers the newest published release of either kind that is newer
 than both installed tracks, installs it beside the stable version, and plays it
@@ -40,7 +46,7 @@ Hand-over only follows the installation's own track.
 ### Promoting a beta to Stable
 
 A stable release promotes a beta that held up. Do not cut a stable release from
-`main` while an experiment is still in beta.
+the head of `beta` while an experiment is still in beta.
 
 - **What to promote.** The owner picks a published beta whose changes they
   want, for example 0.93.5. It does not have to be the newest beta.
@@ -48,16 +54,25 @@ A stable release promotes a beta that held up. Do not cut a stable release from
   faction series, after 0.93.9). The chosen beta must have been available for
   about one to two weeks with no open crash, corruption or save-loss report.
   Any earlier beta can be promoted at the owner's request.
-- **How.** The stable release is the chosen beta's exact source. A detached
-  commit on top of that beta's tag changes only the version metadata (the next
-  MINOR, for example 0.94.0) and the changelog. Build it with
-  `release_channel=stable` and publish it as an ordinary, non-prerelease
-  GitHub release. Push only its tag; do not create a branch. Fixes for
-  confirmed bugs in that beta can be added as separate detached commits on the
-  same line, but no new mechanics.
+- **How.** The stable release is the chosen beta's exact source. On `main`,
+  create one commit whose tree is the beta tag's tree and whose parents are
+  `main` and the tag, then add one commit that changes only the version
+  metadata (the next MINOR, for example 0.94.0) and the changelog:
+
+  ```sh
+  git checkout main
+  git merge --ff-only $(git commit-tree 'v0.93.5^{tree}' -p main \
+      -p 'v0.93.5^{commit}' -m "Promote 0.93.5 to Stable")
+  # edit config/newHorizonsVersion.json and the changelog, then commit
+  ```
+
+  `main` moves forward without a force push. Tag `v0.94.0` on `main`, push
+  `main` and the tag, build it with `release_channel=stable` and publish it as
+  an ordinary, non-prerelease GitHub release. Fixes for confirmed bugs in that
+  beta can be added as later commits on `main`, but no new mechanics.
 - **Later betas.** Changes from betas after the promoted one (0.93.6 onward in
-  the example) stay on `main`. A change the owner rejects is reverted or
-  reworked on `main`; it never reaches Stable unless a later beta that contains
+  the example) stay on `beta`. A change the owner rejects is reverted or
+  reworked on `beta`; it never reaches Stable unless a later beta that contains
   it is promoted. Because the Beta track only offers releases newer than both
   installed tracks, the next beta after a promotion uses the next MINOR after
   the new stable one (0.95.0 after 0.94.0).
@@ -65,8 +80,9 @@ A stable release promotes a beta that held up. Do not cut a stable release from
   release as usual. Beta saves stay in the beta profile. A save made by a later
   beta (0.93.6 in the example) may use a newer format than the promoted stable
   release can read.
-- **Stable fixes during a beta.** Urgent fixes go out as detached commits on the
-  current stable tag, with only the new tag pushed, for example 0.94.1.
+- **Stable fixes.** Urgent fixes are commits on `main`, tagged there, for
+  example 0.94.1. Copy each one to `beta` with `git cherry-pick`. Never merge
+  `main` into `beta`.
 
 From 0.92.6 the launcher extracted by the player hands over to the launcher in
 the selected stable update after a self-test, so launcher changes reach existing

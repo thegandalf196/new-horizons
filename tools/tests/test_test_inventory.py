@@ -90,7 +90,7 @@ class TestInventoryTest(unittest.TestCase):
 
     def test_remote_native_checks_require_explicit_manual_opt_in(self):
         workflow = (ROOT / '.github/workflows/instruction-portability.yml').read_text()
-        self.assertIn('  push:\n    branches: [main]\n  pull_request:\n', workflow)
+        self.assertIn('  push:\n    branches: [beta]\n  pull_request:\n', workflow)
         self.assertIn('  workflow_dispatch:\n    inputs:\n      run_native_checks:\n', workflow)
         option = workflow.split('      run_native_checks:\n', 1)[1].split('\npermissions:', 1)[0]
         self.assertIn('        type: boolean\n        default: false\n', option)

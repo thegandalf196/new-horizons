@@ -60,13 +60,13 @@ class PortableLayoutTest(unittest.TestCase):
 
     def test_release_identity_records_the_dispatched_track_and_requires_it_for_tags(self):
         run = {'GITHUB_RUN_ID': '7', 'GITHUB_RUN_ATTEMPT': '1'}
-        for ref, channel in (('refs/tags/v0.93.2', 'beta'), ('refs/tags/v0.92.9', 'stable'), ('refs/heads/main', 'beta')):
+        for ref, channel in (('refs/tags/v0.93.2', 'beta'), ('refs/tags/v0.92.9', 'stable'), ('refs/heads/beta', 'beta')):
             self.assertEqual(layout.release_identity(dict(run, GITHUB_REF=ref, NH_RELEASE_CHANNEL=channel)),
                              {'run_id': '7', 'run_attempt': '1', 'release_channel': channel})
         # An untagged preview may omit the track; launchers read a package without one as stable.
-        self.assertEqual(layout.release_identity(dict(run, GITHUB_REF='refs/heads/main')), {'run_id': '7', 'run_attempt': '1'})
+        self.assertEqual(layout.release_identity(dict(run, GITHUB_REF='refs/heads/beta')), {'run_id': '7', 'run_attempt': '1'})
         for environment in ({'GITHUB_REF': 'refs/tags/v0.93.2'}, {'GITHUB_REF': 'refs/tags/v0.93.2', 'NH_RELEASE_CHANNEL': ''},
-                            {'GITHUB_REF': 'refs/heads/main', 'NH_RELEASE_CHANNEL': 'nightly'}):
+                            {'GITHUB_REF': 'refs/heads/beta', 'NH_RELEASE_CHANNEL': 'nightly'}):
             with self.subTest(environment=environment), self.assertRaises(RuntimeError):
                 layout.release_identity(dict(run, **environment))
 

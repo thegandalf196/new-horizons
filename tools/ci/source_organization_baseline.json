@@ -24,17 +24,18 @@
     },
     ".github/workflows/github.yml": {
       "functions": [],
-      "rationale": "Complete independent review of all 55 embedded run blocks (52 Bash, two PowerShell, one CMD): commands, conditionals, loops and JSON data heredocs, no inline callable definitions. Sourced scripts remain separately inventoried.",
-      "review": "ROOT-LEGACY-CI-709a32fe-20261015",
-      "sha256": "709a32fe2882e293a3b4f12f3c99352066714652b2c50861b0d046d915d6f6f8"
+      "rationale": "Complete independent review of all 55 embedded run blocks (52 Bash, two PowerShell, one CMD): commands, conditionals, loops and JSON data heredocs, no inline callable definitions. Sourced scripts remain separately inventoried. Branch-model update: only branch names in push triggers or job gates change (main to beta, or the upstream beta push entry removed); no run body changes.",
+      "review": "CLAUDE-BETA-BRANCH-CHECKS-20261123",
+      "sha256": "490b2e91fc65c767feda649008cf2c58e0b5c1adfa0e69d3a46a83c667dfe670",
+      "review_status": "AUTHOR_GENERATED_PENDING_INTEGRATOR_REVIEW_NO_NATIVE_ACCEPTANCE"
     },
     ".github/workflows/instruction-portability.yml": {
       "functions": [],
-      "rationale": "Complete exact167-line workflow inventory. Twelve literal run blocks33-37,44-52,57-66,77-85,91,97-99,106-108,113-117,128-129,147-154,159-160,165-167 and scalar140 contain external commands/assignments only. Added external bonus-list guard test58 and guard116 define no local callable. Existing shell conditional groups47-49/77-84 and command substitutions48/78/79/98/106 remain invocations. No shell function, inline language/heredoc, lambda or function-like macro. Complete callable inventory stays empty; external sources remain independently measured.",
-      "review": "IR-NEXT-BUILD-LIFETIME-NHART-REVERT-20261119",
-      "sha256": "7d613b87ff341cc8ac5ebac3fe5bcd366eaf99fe996e8130a0433c5606009dc6",
+      "rationale": "Complete exact167-line workflow inventory. Twelve literal run blocks33-37,44-52,57-66,77-85,91,97-99,106-108,113-117,128-129,147-154,159-160,165-167 and scalar140 contain external commands/assignments only. Added external bonus-list guard test58 and guard116 define no local callable. Existing shell conditional groups47-49/77-84 and command substitutions48/78/79/98/106 remain invocations. No shell function, inline language/heredoc, lambda or function-like macro. Complete callable inventory stays empty; external sources remain independently measured. Branch-model update: only branch names in push triggers or job gates change (main to beta, or the upstream beta push entry removed); no run body changes.",
+      "review": "CLAUDE-BETA-BRANCH-CHECKS-20261123",
+      "sha256": "877e932b336fe61650cd8db26d6f30709f65a6401c3502fbe8a417da03c37095",
       "review_scope": "Exact independent source/organization only; no compilation, runtime, rendering, timing, publication or future-growth acceptance.",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE"
+      "review_status": "AUTHOR_GENERATED_PENDING_INTEGRATOR_REVIEW_NO_NATIVE_ACCEPTANCE"
     },
     ".github/workflows/new-horizons-windows-manual-setup.yml": {
       "functions": [],
@@ -44,24 +45,25 @@
     },
     ".github/workflows/new-horizons-windows-notices.yml": {
       "functions": [],
-      "rationale": "Only embedded code is Python run block27\u201333: import, assignments, runpy loading external tracked module, calling collect_microsoft_notices, and for/if/print. No def/async def/lambda/class body in this file. External module callable is separately inventoried, not defined by its dictionary lookup invocation here.",
-      "review": "ROOT-MANUAL-SPANS-NEXT10-20261015",
-      "sha256": "bd66b074647abf7f7ae776177b5f2d79749df9d574e36359a585976d3bd833b6"
+      "rationale": "Only embedded code is Python run block27\u201333: import, assignments, runpy loading external tracked module, calling collect_microsoft_notices, and for/if/print. No def/async def/lambda/class body in this file. External module callable is separately inventoried, not defined by its dictionary lookup invocation here. Branch-model update: only branch names in push triggers or job gates change (main to beta, or the upstream beta push entry removed); no run body changes.",
+      "review": "CLAUDE-BETA-BRANCH-CHECKS-20261123",
+      "sha256": "7d7f66d0401dec25f47ffffbb77d6a82a470e33687e7b06baa9aa2e898925dba",
+      "review_status": "AUTHOR_GENERATED_PENDING_INTEGRATOR_REVIEW_NO_NATIVE_ACCEPTANCE"
     },
     ".github/workflows/new-horizons-windows-tests.yml": {
       "functions": [],
-      "sha256": "74304b533790ca04a0d291ae71bb7026a6ac0e7374cdbdef835406f91f8a4458",
-      "review": "PROPOSED-CLAUDE-WINDOWS-MSVC-TESTS-20261122",
-      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "rationale": "Complete exact 269-line workflow callable inventory is empty. Run blocks are Bash, PowerShell and one Python step of external commands, assignments, conditionals and comprehensions; one inline python -c prints a generator expression. No shell function, def, lambda, class or function-like macro. External scripts and actions remain separately inventoried.",
+      "sha256": "5a7d383125adcd4ff4193eb98204b989eb52b1e063d11735f4c7866339eae412",
+      "review": "CLAUDE-BETA-BRANCH-CHECKS-20261123",
+      "review_status": "AUTHOR_GENERATED_PENDING_INTEGRATOR_REVIEW_NO_NATIVE_ACCEPTANCE",
+      "rationale": "Complete exact 269-line workflow callable inventory is empty. Run blocks are Bash, PowerShell and one Python step of external commands, assignments, conditionals and comprehensions; one inline python -c prints a generator expression. No shell function, def, lambda, class or function-like macro. External scripts and actions remain separately inventoried. Branch-model update: only branch names in push triggers or job gates change (main to beta, or the upstream beta push entry removed); no run body changes.",
       "review_scope": "Exact source only. The first Windows test run provides build and runtime evidence."
     },
     ".github/workflows/new-horizons-windows.yml": {
       "functions": [],
-      "sha256": "891dc97de43eacceed43e4fd59a1c9c72ee06b51502207763e6ef7247b99d32a",
-      "review": "CLAUDE-BETA-PACKAGE-TRACK-20261123",
+      "sha256": "b6d931eeca2dc133dfca667c125ea245742e929da1f7db0a431b1f545f6600eb",
+      "review": "CLAUDE-BETA-BRANCH-CHECKS-20261123",
       "review_status": "AUTHOR_GENERATED_PENDING_INTEGRATOR_REVIEW_NO_NATIVE_ACCEPTANCE",
-      "rationale": "Exact 588-line YAML callable inventory is empty. Adds the release_channel dispatch input and one step that runs the tested tools/ci/release_channel.py helper before any dependency build; all other run bodies are unchanged.",
+      "rationale": "Exact 588-line YAML callable inventory is empty. Adds the release_channel dispatch input and one step that runs the tested tools/ci/release_channel.py helper before any dependency build; all other run bodies are unchanged. Branch-model update: only branch names in push triggers or job gates change (main to beta, or the upstream beta push entry removed); no run body changes.",
       "review_scope": "Exact source organization of the package release track (BUILD-IDENTITY release_channel), track-aware launcher selection on Windows and Linux, and the first-start beta save copy; offline PowerShell 7.5 and Python fixtures only, no Windows PowerShell 5.1, WinForms or Windows release build execution."
     },
     ".github/workflows/qt_translation_update.yml": {
@@ -18031,12 +18033,13 @@
   "units": {
     ".github/workflows/github.yml": {
       "kind": "legacy",
-      "lines": 998,
+      "lines": 997,
       "owner": "engine_engineer",
-      "rationale": "Automatic pull-request responsibility moved to the focused repository-contracts workflow; legacy platform push/manual routes retained byte-for-byte. One trigger line removed, not a whitespace reduction or semantic-quality exception. Existing structural debt remains frozen and requires scoped extraction before expansion.",
-      "review": "ROOT-LEGACY-CI-709a32fe-20261015",
+      "rationale": "Automatic pull-request responsibility moved to the focused repository-contracts workflow; legacy platform push/manual routes retained byte-for-byte. One trigger line removed, not a whitespace reduction or semantic-quality exception. Existing structural debt remains frozen and requires scoped extraction before expansion. Branch-model update: only branch names in push triggers or job gates change (main to beta, or the upstream beta push entry removed); no run body changes.",
+      "review": "CLAUDE-BETA-BRANCH-CHECKS-20261123",
       "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "709a32fe2882e293a3b4f12f3c99352066714652b2c50861b0d046d915d6f6f8"
+      "sha256": "490b2e91fc65c767feda649008cf2c58e0b5c1adfa0e69d3a46a83c667dfe670",
+      "review_status": "AUTHOR_GENERATED_PENDING_INTEGRATOR_REVIEW_NO_NATIVE_ACCEPTANCE"
     },
     ".github/workflows/new-horizons-windows.yml": {
       "deferral": "Before further workflow expansion, move the next cohesive inline validation or package-check body into a focused tested CI helper while preserving exact inputs, compile-step timing boundaries, failures and artifacts. No generic workflow growth allowance.",
@@ -18044,11 +18047,11 @@
       "lines": 588,
       "owner": "engine_engineer",
       "prior_deferral": "Existing engine engineer ownership remains. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral. This exception covers only the exact542-line official source URL/comment correction with all transport, size, digest and cache admission controls unchanged. No future growth, numerical ceiling change or coverage exclusion is authorized. This separate review permits only the exact547-line explicit-interpreter successor. Before further expansion, engine_engineer must extract the affected dependency/preflight/package stage into a focused script or shared action, preserving source/cache, CRT/notices, dispatch and artifact contract checks and lowering the orchestration baseline. No future growth, default ceiling increase or exclusion is granted. This separate urgent-correctness review covers only the exact556-line early-bootstrap-smoke ordering successor. Existing extraction obligations and all ceilings remain unchanged; no future growth is authorized.",
-      "rationale": "Workflow grows 579 to 588 lines: a release_channel dispatch input and one step that calls the new focused, unit-tested tools/ci/release_channel.py helper (validation and GITHUB_ENV export are not inline), placed before any dependency build so a release tag without a track fails fast. All other steps, compile timing boundaries and artifacts are unchanged. Existing extraction deferrals apply.",
-      "review": "CLAUDE-BETA-PACKAGE-TRACK-20261123",
+      "rationale": "Workflow grows 579 to 588 lines: a release_channel dispatch input and one step that calls the new focused, unit-tested tools/ci/release_channel.py helper (validation and GITHUB_ENV export are not inline), placed before any dependency build so a release tag without a track fails fast. All other steps, compile timing boundaries and artifacts are unchanged. Existing extraction deferrals apply. Branch-model update: only branch names in push triggers or job gates change (main to beta, or the upstream beta push entry removed); no run body changes.",
+      "review": "CLAUDE-BETA-BRANCH-CHECKS-20261123",
       "review_scope": "Exact source review of the release_channel input and its validation step; the next Windows release build provides acceptance.",
       "review_status": "AUTHOR_GENERATED_PENDING_INTEGRATOR_REVIEW_NO_NATIVE_ACCEPTANCE",
-      "sha256": "891dc97de43eacceed43e4fd59a1c9c72ee06b51502207763e6ef7247b99d32a",
+      "sha256": "b6d931eeca2dc133dfca667c125ea245742e929da1f7db0a431b1f545f6600eb",
       "inherited_deferral_step2": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count."
     },
     "AI/BattleAI/AttackPossibility.cpp": {

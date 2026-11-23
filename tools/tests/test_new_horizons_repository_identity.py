@@ -7,12 +7,12 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
 REPOSITORY = "github.repository == 'thegandalf196/new-horizons' && "
-MAIN = "github.ref == 'refs/heads/main'"
+BETA = "github.ref == 'refs/heads/beta'"
 # Release builds also run from version tags (see the Windows dispatch gate).
 GATES = {
-    'new-horizons-windows-notices.yml': REPOSITORY + MAIN,
-    'new-horizons-windows-tests.yml': REPOSITORY + MAIN,
-    'new-horizons-windows.yml': REPOSITORY + "(" + MAIN + " || startsWith(github.ref, 'refs/tags/v') || "
+    'new-horizons-windows-notices.yml': REPOSITORY + BETA,
+    'new-horizons-windows-tests.yml': REPOSITORY + BETA,
+    'new-horizons-windows.yml': REPOSITORY + "(" + BETA + " || startsWith(github.ref, 'refs/tags/v') || "
         "(github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/performance/quick-combat-and-ci'))",
 }
 
@@ -38,19 +38,19 @@ def job_gates(source):
 
 
 class NewHorizonsRepositoryIdentityTest(unittest.TestCase):
-    def test_windows_jobs_target_only_the_renamed_repository_main(self):
+    def test_windows_jobs_target_only_the_renamed_repository_beta(self):
         for name, expected in GATES.items():
             with self.subTest(workflow=name):
                 source = (ROOT / '.github/workflows' / name).read_text()
                 self.assertEqual(job_gates(source), [expected])
 
-    def test_notices_scoped_push_tracks_main_and_retains_its_path_filter(self):
+    def test_notices_scoped_push_tracks_beta_and_retains_its_path_filter(self):
         source = (ROOT / '.github/workflows/new-horizons-windows-notices.yml').read_text()
-        self.assertIn('  push:\n    branches: [main]\n', source)
+        self.assertIn('  push:\n    branches: [beta]\n', source)
         self.assertIn('    paths: [.github/workflows/new-horizons-windows-notices.yml]', source)
         self.assertIn('  workflow_dispatch:', source)
 
-    def test_main_build_remains_manually_dispatched_without_added_push(self):
+    def test_release_build_remains_manually_dispatched_without_added_push(self):
         source = (ROOT / '.github/workflows/new-horizons-windows.yml').read_text()
         self.assertIn('  workflow_dispatch:', source)
         self.assertNotRegex(source, re.compile(r'^  push:', re.MULTILINE),
@@ -59,7 +59,7 @@ class NewHorizonsRepositoryIdentityTest(unittest.TestCase):
 
     def test_tests_workflow_never_shares_or_delays_the_release_build(self):
         source = (ROOT / '.github/workflows/new-horizons-windows-tests.yml').read_text()
-        self.assertIn('  push:\n    branches: [main]\n', source)
+        self.assertIn('  push:\n    branches: [beta]\n', source)
         self.assertIn('  workflow_dispatch:', source)
         self.assertIn('  group: new-horizons-windows-tests-${{ github.ref }}\n  cancel-in-progress: false\n', source)
         self.assertNotIn('group: new-horizons-windows-x64', source)

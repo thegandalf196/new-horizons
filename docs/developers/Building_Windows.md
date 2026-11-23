@@ -322,7 +322,7 @@ continue to use their own command.
 The [Windows test workflow](../../.github/workflows/new-horizons-windows-tests.yml)
 compiles and runs tests with MSVC. Some undefined behaviour passes on Linux but
 fails with MSVC, for example reading a destroyed `std::string` through a
-`std::string_view`. It runs on pushes to `main` that change code, tests, CMake
+`std::string_view`. It runs on pushes to `beta` that change code, tests, CMake
 or configuration, and it can also be dispatched manually. It has its own
 concurrency group: a running build finishes, and a newer push replaces the run
 still waiting behind it. It never waits for or blocks the release build.

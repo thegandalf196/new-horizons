@@ -53,10 +53,10 @@ class WindowsPreviewDispatchTest(unittest.TestCase):
                 self.assertFalse(report.exists())
             return result, summary.read_text() if summary.exists() else ''
 
-    def test_only_main_release_tags_and_exact_manual_branch_are_admitted(self):
+    def test_only_beta_release_tags_and_exact_manual_branch_are_admitted(self):
         self.assertEqual(' '.join(self.job['if'].split()),
                          "github.repository == 'thegandalf196/new-horizons' && "
-                         "(github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') || "
+                         "(github.ref == 'refs/heads/beta' || startsWith(github.ref, 'refs/tags/v') || "
                          "(github.event_name == 'workflow_dispatch' && github.ref == '" + BRANCH + "'))")
         self.assertEqual(self.steps['Validate matched performance preview controls']['if'], "github.ref == '" + BRANCH + "'")
         self.assertEqual(self.workflow['permissions'], {'contents': 'read', 'actions': 'read'})
@@ -134,7 +134,7 @@ class WindowsPreviewDispatchTest(unittest.TestCase):
             self.assertEqual(summary, '')
 
     def test_helper_rejects_nonmanual_or_other_branch_execution(self):
-        for environment in ({'GITHUB_REF': 'refs/heads/main'}, {'GITHUB_REF': BRANCH + '-other'},
+        for environment in ({'GITHUB_REF': 'refs/heads/beta'}, {'GITHUB_REF': BRANCH + '-other'},
                             {'GITHUB_EVENT_NAME': 'push'}, {'GITHUB_EVENT_NAME': ''}):
             result, summary = self.run_controls(CONTROLS, environment=environment)
             self.assertNotEqual(result.returncode, 0)
@@ -168,8 +168,8 @@ class WindowsPreviewDispatchTest(unittest.TestCase):
         self.assertLess(names.index('Select the package release track'),
                         names.index('Install upstream MSVC v142 toolset'))
         cases = (('refs/tags/v0.93.2', 'beta', 'beta'), ('refs/tags/v0.92.9', 'stable', 'stable'),
-                 ('refs/heads/main', '', ''), ('refs/heads/main', 'beta', 'beta'),
-                 ('refs/tags/v0.93.2', '', None), ('refs/heads/main', 'nightly', None),
+                 ('refs/heads/beta', '', ''), ('refs/heads/beta', 'beta', 'beta'),
+                 ('refs/tags/v0.93.2', '', None), ('refs/heads/beta', 'nightly', None),
                  ('refs/tags/v0.93.2', 'Beta', None))
         for ref, channel, recorded in cases:
             with self.subTest(ref=ref, channel=channel), tempfile.TemporaryDirectory() as temporary:

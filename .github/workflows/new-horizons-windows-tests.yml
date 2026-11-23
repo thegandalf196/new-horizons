@@ -6,7 +6,7 @@ name: New Horizons Windows tests
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [beta]
     paths:
       - .github/workflows/new-horizons-windows-tests.yml
       - AI/**
@@ -33,7 +33,7 @@ on:
 permissions:
   contents: read
 
-# A running build finishes; newer pushes replace the one waiting run, so main
+# A running build finishes; newer pushes replace the one waiting run, so beta
 # pushes during a long build still get a complete result.
 concurrency:
   group: new-horizons-windows-tests-${{ github.ref }}
@@ -41,7 +41,7 @@ concurrency:
 
 jobs:
   test:
-    if: github.repository == 'thegandalf196/new-horizons' && github.ref == 'refs/heads/main'
+    if: github.repository == 'thegandalf196/new-horizons' && github.ref == 'refs/heads/beta'
     runs-on: windows-2025-vs2026
     timeout-minutes: 240
     env:

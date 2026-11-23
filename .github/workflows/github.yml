@@ -3,7 +3,6 @@ name: Daily Builds and Tests
 on:
   push:
     branches:
-      - beta
       - master
       - develop
   workflow_dispatch:
