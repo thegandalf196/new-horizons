@@ -7,6 +7,7 @@ import unittest
 
 from .nhart_force_lance import force_lance_wave, validate_force_lance
 from .nhart_test_resources import later_art_waves, read_resource, entries_before_wave
+from .nhart_released_history import baseline_payload_proof
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -27,9 +28,9 @@ class ForceLanceArtTest(unittest.TestCase):
         self.assertEqual(len(before), 6252)
         self.assertEqual(hashlib.sha256(canonical).hexdigest(), self.wave['baselineEntriesSha256'])
         for entry in before:
-            payload = read_resource(entry['resource'])
-            self.assertEqual((len(payload), hashlib.sha256(payload).hexdigest()),
-                             (entry['size'], entry['sha256']))
+            # A later selected repaint keeps only a typed proof of the replaced payload.
+            self.assertIn(baseline_payload_proof(entry, read_resource(entry['resource'])),
+                          ('verified-matching-payload', 'verified-selected-replacement'))
         selected = json.loads(self.selection)
         self.assertEqual(selected['nativeTipAnchor'], [110, 138])
         self.assertEqual(selected['mirroredTipAnchor'], [49, 138])

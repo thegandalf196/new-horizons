@@ -19,6 +19,7 @@ from .nhart_skill_rank_art import skill_rank_wave
 from .nhart_release_presentation import presentation_wave
 from .nhart_living_armor_backdrop import backdrop_wave
 from .nhart_creature_ability_art import ability_wave
+from .nhart_interface_status_art import interface_status_wave
 from .nhart_current_faction_perk_art import current_faction_perk_wave_from
 
 
@@ -53,7 +54,8 @@ class ReleasedArtHistoryTest(unittest.TestCase):
                          (5859 + len(current_rank_wave['resources']) + len(current_perk_wave['resources'])
                           + len(presentation_wave(self.waves)['resources'])
                           + len(backdrop_wave(self.waves)['resources'])
-                          + len(ability_wave(self.waves)['resources']), 41))
+                          + len(ability_wave(self.waves)['resources'])
+                          + len(interface_status_wave(self.waves)['resources']), 41))
         for family in ('mummy-runtime', 'conflux-water-ice-runtime', 'wisps-and-projectiles'):
             changed = copy.deepcopy(self.entries)
             next(row for row in changed if row['family'] == family)['origin'] = 'unreviewed'

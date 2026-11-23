@@ -63,7 +63,8 @@ class SelectedSpellArtTest(unittest.TestCase):
         self.assertEqual(digest, self.selection['baselineEntriesSha256'])
         for row in baseline:
             self.assertIn(baseline_payload_proof(row, resource_before_wave(row['resource'], waves, 0)),
-                          ('verified-matching-payload', 'verified-released-replacement'))
+                          ('verified-matching-payload', 'verified-released-replacement',
+                           'verified-selected-replacement'))
         if waves:
             self.assertEqual(waves[0]['baselineArchiveSha256'], self.selection['newArchiveSha256'])
         else:

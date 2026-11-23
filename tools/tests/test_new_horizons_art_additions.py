@@ -25,6 +25,8 @@ from .nhart_skill_rank_art import validate_skill_rank_art
 from .nhart_release_presentation import validate_presentation_art
 from .nhart_living_armor_backdrop import validate_backdrop
 from .nhart_creature_ability_art import validate_ability_art
+from .nhart_interface_status_art import validate_interface_status_art
+from .nhart_status_icon_repaint import validate_repaint
 from .nhart_released_history import (authority_before_leadership_rework,
     released_predecessor_entries, baseline_payload_proof)
 from .nhart_config_revisions import config_at_revision, wave_config_revision
@@ -341,7 +343,8 @@ class ArtAdditionsTest(unittest.TestCase):
             self.assertEqual(wave['entryCount'], wave['baselineCount'] + len(wave['resources']))
             for row in baseline:
                 proof = baseline_payload_proof(row, resource_before_wave(row['resource'], self.waves, index))
-                self.assertIn(proof, ('verified-matching-payload', 'verified-released-replacement'))
+                self.assertIn(proof, ('verified-matching-payload', 'verified-released-replacement',
+                                      'verified-selected-replacement'))
             if index and index != self.bridgeIndex:
                 self.assertEqual(wave['baselineArchiveSha256'], self.waves[index - 1]['newArchiveSha256'])
         self.assertEqual(len(verified_index()), self.waves[-1]['entryCount'])
@@ -355,7 +358,7 @@ class ArtAdditionsTest(unittest.TestCase):
         historical = dict(re.findall(r'\{"(new-horizons:[^"]+)", "([^"]+)"\}',
                                      header_before_faction_rebindings(header_before_reworked_perks(self.header))))
         for wave in self.waves:
-            declared = {name for row in wave['perks'] + wave['statuses'] + wave.get('spells', []) + wave.get('specialties', []) + wave.get('creatures', []) + wave.get('perkPresentations', []) + wave.get('artRoles', []) + wave.get('heroInterfaceButtons', []) + wave.get('orderEntryButtons', []) + wave.get('nativeEffectAliases', []) + wave.get('suppliedAuthority', []) + wave.get('forceLanceEffects', []) + wave.get('skillRankArtwork', []) + wave.get('releaseArtwork', []) + wave.get('creatureBackdrops', []) + wave.get('abilityIcons', []) + wave.get('creatureAbilityArtwork', []) + ([wave['waterIceRestoration']] if 'waterIceRestoration' in wave else []) for name in row['resources']}
+            declared = {name for row in wave['perks'] + wave['statuses'] + wave.get('spells', []) + wave.get('specialties', []) + wave.get('creatures', []) + wave.get('perkPresentations', []) + wave.get('artRoles', []) + wave.get('heroInterfaceButtons', []) + wave.get('orderEntryButtons', []) + wave.get('nativeEffectAliases', []) + wave.get('suppliedAuthority', []) + wave.get('forceLanceEffects', []) + wave.get('skillRankArtwork', []) + wave.get('releaseArtwork', []) + wave.get('creatureBackdrops', []) + wave.get('abilityIcons', []) + wave.get('creatureAbilityArtwork', []) + wave.get('interfaceStatusArtwork', []) + ([wave['waterIceRestoration']] if 'waterIceRestoration' in wave else []) for name in row['resources']}
             alliance = [row for row in wave.get('perkPresentations', []) if row.get('schemaVersion') == 3]
             if alliance:
                 validate_alliance_resource_reuse(wave, declared, self.manifest['entries'],
@@ -503,6 +506,12 @@ class ArtAdditionsTest(unittest.TestCase):
             if current_faction_perk_wave(wave):
                 self.assertEqual(wave['baselineHeaderSha256'],
                                  '824fbc555e13220abb7f9e8b3db648fc3fa35ea0411234bba6c17953a6f73bbf')
+                continue
+            if 'statusIconRepaint' in wave:
+                validate_repaint(wave, self.manifest['entries'], read_resource)
+                continue
+            if 'interfaceStatusArtwork' in wave:
+                validate_interface_status_art(wave, self.manifest['entries'], read_resource)
                 continue
             if 'creatureAbilityArtwork' in wave:
                 validate_ability_art(wave, self.manifest['entries'], read_resource)

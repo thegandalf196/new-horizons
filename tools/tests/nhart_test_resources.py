@@ -59,6 +59,10 @@ def resource_before_wave(name, waves, index, reader=None):
                 from .nhart_water_ice_restoration import historical_payload
                 payload = historical_payload(wave, replacement, payload)
                 continue
+            if 'statusIconRepaint' in wave:
+                from .nhart_status_icon_repaint import historical_payload as repaint_payload
+                payload = repaint_payload(wave, replacement, payload)
+                continue
             if not name.endswith('.json') or set(replacement) != {'previous', 'current', 'removeAppendedSequence'}:
                 raise ValueError('Unsupported reversible resource change')
             descriptor = json.loads(payload)

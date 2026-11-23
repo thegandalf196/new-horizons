@@ -1,0 +1,187 @@
+{
+  "format": 1,
+  "selection": "Owner-approved repaint of ten creature-trait status icons 2026-11-23",
+  "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
+  "entries": [
+    {
+      "resource": "SPRITES/NH_status_adjacent_50.png",
+      "previousSha256": "c8029bf57e28ac8a404a8fc2a7f1b684485cdd61a2962993593b15a8e37b602e",
+      "sha256": "9621c165e9d15f357a48b76b68b5062d38467e10ab94b07899dd762fc898452b",
+      "dimensions": [
+        50,
+        50
+      ],
+      "alphaBoundingBox": [
+        2,
+        3,
+        48,
+        47
+      ],
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "f50377d2557d61c8bba176dcc33d9bc0e51a6f094d20a812dffccb28da23a081",
+      "reviewCopySha256": "dc9766e849fdfdaf1a7afc421244db4a0428c99bdec0f4346d9fe69525ceedcc"
+    },
+    {
+      "resource": "SPRITES/NH_status_breath_50.png",
+      "previousSha256": "40d1cfc546e8f8ff69dd27fd963de3396c0174e561e6f9314d4f1b03ae752b09",
+      "sha256": "e3ecd851352c895c13b0d2e7bf858534b6360ea2b9de06eac6e83c6640766b8d",
+      "dimensions": [
+        50,
+        50
+      ],
+      "alphaBoundingBox": [
+        2,
+        5,
+        48,
+        45
+      ],
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "b87550d207e7f26b25821aef79c22252d3f6c473b35f09d7ec6fcac89356725b",
+      "reviewCopySha256": "04b64ffddb0eafc114a568f676e9ec212ee37339a8baa76141bbc92864dc8d0b"
+    },
+    {
+      "resource": "SPRITES/NH_status_flying_50.png",
+      "previousSha256": "10ec8a65fb1f5b7504c514358a21a3875f24de470395e1eec9540909150e510e",
+      "sha256": "445468a74b48320461e7c5d42a2cc9d9d2c1c2ba942ae244b3f117206f99c9b1",
+      "dimensions": [
+        50,
+        50
+      ],
+      "alphaBoundingBox": [
+        2,
+        3,
+        48,
+        46
+      ],
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "07abe9c44ebfaaa09b13fcac857d0d3c3fb5d63f4f40d26a96aa2851812ebec2",
+      "reviewCopySha256": "fbca94e50c0f9ce889fd1ce92f57bd9f887cd3f6aa08d481670ea6e5723bb931"
+    },
+    {
+      "resource": "SPRITES/NH_status_noRetaliation_50.png",
+      "previousSha256": "a3315bc29ba8c3f91c1973a60dd35523cf6b2792a5a26e14e2671c4599052919",
+      "sha256": "917cd2030ede20a630c1c6608b8e8424cd86beef1f9af9507b55c75ea88b333c",
+      "dimensions": [
+        50,
+        50
+      ],
+      "alphaBoundingBox": [
+        4,
+        2,
+        46,
+        48
+      ],
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "55d7dca4c8f7e7353fe398ee11e4f2d1a01dae597d3dddfe9858e6f414d58b70",
+      "reviewCopySha256": "330c60181e78f46dcae75be5e558655e33a484b2b9c478db2e4a64624f51da35"
+    },
+    {
+      "resource": "SPRITES/NH_status_regeneration_50.png",
+      "previousSha256": "a0745a108c7c2da8bc9ecbc97c09b597505a0ddd4bff682cd714b5d33e604b81",
+      "sha256": "c8eba33111099a7e3c497e49b6036e72080a8e0bb917af4ef5c722e4be70e5e3",
+      "dimensions": [
+        50,
+        50
+      ],
+      "alphaBoundingBox": [
+        7,
+        2,
+        43,
+        48
+      ],
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "a6cf344fc36570e2fb4755336d04c80864811cd701ddf619f1d4e584ab0a19e8",
+      "reviewCopySha256": "93be1eda2a18b9002e1ed3509b766589e64a612b74a99919a07350c723ca8d84"
+    },
+    {
+      "resource": "SPRITES/NH_status_resistance_50.png",
+      "previousSha256": "cddc2cf1ddc38693895322df022ef42a6f3b801f583668f3db84f58b0a3fcf23",
+      "sha256": "e22d54fa41013625cb3033d8dab7d8f0fbd4dbe8857ef570c24ee542e9435daa",
+      "dimensions": [
+        50,
+        50
+      ],
+      "alphaBoundingBox": [
+        5,
+        2,
+        45,
+        48
+      ],
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "5bb817ec93d3805ecf02f4f8ae35846810d235712f076cd04343e3b392e1b798",
+      "reviewCopySha256": "f57b462808f8c6a8ca017b27bdd090a5e56b27479078afe8d14cd5de214ec37b"
+    },
+    {
+      "resource": "SPRITES/NH_status_shooter_50.png",
+      "previousSha256": "ca8e1deeaa7cdbe2ccc5784f5649d3ba32dae23a8e2262a41a196d33492320e3",
+      "sha256": "85585f15f3fce3067953357910bc4f55b948e8e007dd16889c5d78f02cc22a03",
+      "dimensions": [
+        50,
+        50
+      ],
+      "alphaBoundingBox": [
+        4,
+        2,
+        46,
+        48
+      ],
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "5ed3c025a5d509ce2c4c291259057796ab6cb63ba22ced6d3107f53ca3bca526",
+      "reviewCopySha256": "4f4eb8f3e8e88184beed691bd296c0a8483d7ddb0b135e4816f95bfdf1b9e19a"
+    },
+    {
+      "resource": "SPRITES/NH_status_siege_50.png",
+      "previousSha256": "850f2523ad3f9ffc6d3bc119ee64de006eb20b97a3d52ed9db1dd33810147c9d",
+      "sha256": "29862b4617460611c26e83eed8e9bfd38000742976045fdef50cba8b55e17934",
+      "dimensions": [
+        50,
+        50
+      ],
+      "alphaBoundingBox": [
+        4,
+        2,
+        46,
+        48
+      ],
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "63d934fb98644bcb7ae946d9b6465998a921c1e667b8c6e595dcb0bc3ae3d5d8",
+      "reviewCopySha256": "d72b80e68c1a56f8b6e287662af81809728a03fc5ed4564b1909ce9be61508d1"
+    },
+    {
+      "resource": "SPRITES/NH_status_undead_50.png",
+      "previousSha256": "7a3968cf589fc58dc83298c5ec8ad346b6e18d48e26d93a8ae9a85c7c5284c00",
+      "sha256": "b644019e924f727191b974a0a5fb662c78f106d851101f81f57fe78f6da60ed1",
+      "dimensions": [
+        50,
+        50
+      ],
+      "alphaBoundingBox": [
+        5,
+        2,
+        44,
+        48
+      ],
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "e0f1caab77bd4090a0f0040c8a40d26ce46661bcec7d48ff482a480da5920415",
+      "reviewCopySha256": "44d84373b4e721243a890b5f1006a86d974f514871082d18b37a5c33886d7460"
+    },
+    {
+      "resource": "SPRITES/NH_status_unlimitedRetaliations_50.png",
+      "previousSha256": "a2990d5b64ba154e7f0ed936129d9fec950fb9c7fdb8386c4fc70e2363efd311",
+      "sha256": "cf85e2e3763b35a22cfb4126a35463203ddeeae8c95ca33bc9e6f9aff228538b",
+      "dimensions": [
+        50,
+        50
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        48,
+        47
+      ],
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "7ba0ce53252efbdf9039f609f8e495be135ccf0188581a6e0685667ae7024998",
+      "reviewCopySha256": "fb80afbba62b3b5fdc113a61f0abaf5d9c5d4dbe0e811deb98602b6008f6c680"
+    }
+  ]
+}

@@ -18540,6 +18540,291 @@
         }
       ],
       "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "baselineArchiveSha256": "599d6825b4d38c0ca0f413196e07a9ed288df33f8c7a0974dc0bba02347e5263",
+      "baselineManifestSha256": "703539b779cb997050ad159e1f82a84ba1d19281ddf327d8a620c5731c5cb6bf",
+      "baselineEntriesSha256": "c1f078eca3ee956c4db36df46178b65189eec57cb7efe1f16d454d966ded3f6a",
+      "baselineCount": 6596,
+      "entryCount": 6602,
+      "newArchiveSha256": "3b9495d54d1f459c1b3ba7a7a856b3f77f070a99c27adbd7122c0c5deb3b8b3d",
+      "resources": [
+        "SPRITES/NH_hero_lean_magic.png",
+        "SPRITES/NH_hero_lean_might.png",
+        "SPRITES/NH_status_brittle.png",
+        "SPRITES/NH_status_frost_mantle_chill.png",
+        "SPRITES/NH_status_frost_mantle_cloak.png",
+        "SPRITES/NH_status_living_remedy.png"
+      ],
+      "perks": [],
+      "statuses": [],
+      "reusedBindings": [],
+      "interfaceStatusArtwork": [
+        {
+          "resources": [
+            "SPRITES/NH_hero_lean_magic.png",
+            "SPRITES/NH_hero_lean_might.png",
+            "SPRITES/NH_status_brittle.png",
+            "SPRITES/NH_status_frost_mantle_chill.png",
+            "SPRITES/NH_status_frost_mantle_cloak.png",
+            "SPRITES/NH_status_living_remedy.png"
+          ],
+          "selectionRecordSha256": "6dbc8c031e7cc17177ce4a8220cd1ac42b61d10b9190f3805d6b5d92e0e3f253"
+        }
+      ],
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "baselineArchiveSha256": "3b9495d54d1f459c1b3ba7a7a856b3f77f070a99c27adbd7122c0c5deb3b8b3d",
+      "baselineManifestSha256": "19e6a22cacf0e7ef2146024c3e76bbeb7f8f90532006926dabdde45fb8cab531",
+      "baselineEntriesSha256": "41cfb3bf81b59cefabe44c5b09a4d30077c24e11f10e86281e014714fa91a76c",
+      "baselineCount": 6602,
+      "entryCount": 6602,
+      "newArchiveSha256": "1367fcee13eb6947fa0ce70dbf3a1edabeeb6c0d50faa0358c3185f047352432",
+      "resources": [],
+      "replacedEntries": [
+        {
+          "previous": {
+            "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
+            "family": "builtin-skills-perks-orders-and-ui",
+            "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
+            "resource": "SPRITES/NH_status_adjacent_50.png",
+            "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
+            "sha256": "c8029bf57e28ac8a404a8fc2a7f1b684485cdd61a2962993593b15a8e37b602e",
+            "size": 3671,
+            "source": "Mods/new-horizons/Images/NH_status_adjacent_50.png"
+          },
+          "current": {
+            "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
+            "family": "builtin-skills-perks-orders-and-ui",
+            "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+            "resource": "SPRITES/NH_status_adjacent_50.png",
+            "selection": "Owner-approved repaint of ten creature-trait status icons 2026-11-23",
+            "sha256": "9621c165e9d15f357a48b76b68b5062d38467e10ab94b07899dd762fc898452b",
+            "size": 5881,
+            "source": "Mods/new-horizons/Images/NH_status_adjacent_50.png"
+          }
+        },
+        {
+          "previous": {
+            "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
+            "family": "builtin-skills-perks-orders-and-ui",
+            "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
+            "resource": "SPRITES/NH_status_breath_50.png",
+            "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
+            "sha256": "40d1cfc546e8f8ff69dd27fd963de3396c0174e561e6f9314d4f1b03ae752b09",
+            "size": 3076,
+            "source": "Mods/new-horizons/Images/NH_status_breath_50.png"
+          },
+          "current": {
+            "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
+            "family": "builtin-skills-perks-orders-and-ui",
+            "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+            "resource": "SPRITES/NH_status_breath_50.png",
+            "selection": "Owner-approved repaint of ten creature-trait status icons 2026-11-23",
+            "sha256": "e3ecd851352c895c13b0d2e7bf858534b6360ea2b9de06eac6e83c6640766b8d",
+            "size": 4862,
+            "source": "Mods/new-horizons/Images/NH_status_breath_50.png"
+          }
+        },
+        {
+          "previous": {
+            "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
+            "family": "builtin-skills-perks-orders-and-ui",
+            "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
+            "resource": "SPRITES/NH_status_flying_50.png",
+            "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
+            "sha256": "10ec8a65fb1f5b7504c514358a21a3875f24de470395e1eec9540909150e510e",
+            "size": 3769,
+            "source": "Mods/new-horizons/Images/NH_status_flying_50.png"
+          },
+          "current": {
+            "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
+            "family": "builtin-skills-perks-orders-and-ui",
+            "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+            "resource": "SPRITES/NH_status_flying_50.png",
+            "selection": "Owner-approved repaint of ten creature-trait status icons 2026-11-23",
+            "sha256": "445468a74b48320461e7c5d42a2cc9d9d2c1c2ba942ae244b3f117206f99c9b1",
+            "size": 5227,
+            "source": "Mods/new-horizons/Images/NH_status_flying_50.png"
+          }
+        },
+        {
+          "previous": {
+            "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
+            "family": "builtin-skills-perks-orders-and-ui",
+            "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
+            "resource": "SPRITES/NH_status_noRetaliation_50.png",
+            "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
+            "sha256": "a3315bc29ba8c3f91c1973a60dd35523cf6b2792a5a26e14e2671c4599052919",
+            "size": 4189,
+            "source": "Mods/new-horizons/Images/NH_status_noRetaliation_50.png"
+          },
+          "current": {
+            "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
+            "family": "builtin-skills-perks-orders-and-ui",
+            "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+            "resource": "SPRITES/NH_status_noRetaliation_50.png",
+            "selection": "Owner-approved repaint of ten creature-trait status icons 2026-11-23",
+            "sha256": "917cd2030ede20a630c1c6608b8e8424cd86beef1f9af9507b55c75ea88b333c",
+            "size": 5547,
+            "source": "Mods/new-horizons/Images/NH_status_noRetaliation_50.png"
+          }
+        },
+        {
+          "previous": {
+            "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
+            "family": "builtin-skills-perks-orders-and-ui",
+            "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
+            "resource": "SPRITES/NH_status_regeneration_50.png",
+            "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
+            "sha256": "a0745a108c7c2da8bc9ecbc97c09b597505a0ddd4bff682cd714b5d33e604b81",
+            "size": 3706,
+            "source": "Mods/new-horizons/Images/NH_status_regeneration_50.png"
+          },
+          "current": {
+            "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
+            "family": "builtin-skills-perks-orders-and-ui",
+            "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+            "resource": "SPRITES/NH_status_regeneration_50.png",
+            "selection": "Owner-approved repaint of ten creature-trait status icons 2026-11-23",
+            "sha256": "c8eba33111099a7e3c497e49b6036e72080a8e0bb917af4ef5c722e4be70e5e3",
+            "size": 4606,
+            "source": "Mods/new-horizons/Images/NH_status_regeneration_50.png"
+          }
+        },
+        {
+          "previous": {
+            "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
+            "family": "builtin-skills-perks-orders-and-ui",
+            "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
+            "resource": "SPRITES/NH_status_resistance_50.png",
+            "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
+            "sha256": "cddc2cf1ddc38693895322df022ef42a6f3b801f583668f3db84f58b0a3fcf23",
+            "size": 4061,
+            "source": "Mods/new-horizons/Images/NH_status_resistance_50.png"
+          },
+          "current": {
+            "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
+            "family": "builtin-skills-perks-orders-and-ui",
+            "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+            "resource": "SPRITES/NH_status_resistance_50.png",
+            "selection": "Owner-approved repaint of ten creature-trait status icons 2026-11-23",
+            "sha256": "e22d54fa41013625cb3033d8dab7d8f0fbd4dbe8857ef570c24ee542e9435daa",
+            "size": 4706,
+            "source": "Mods/new-horizons/Images/NH_status_resistance_50.png"
+          }
+        },
+        {
+          "previous": {
+            "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
+            "family": "builtin-skills-perks-orders-and-ui",
+            "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
+            "resource": "SPRITES/NH_status_shooter_50.png",
+            "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
+            "sha256": "ca8e1deeaa7cdbe2ccc5784f5649d3ba32dae23a8e2262a41a196d33492320e3",
+            "size": 2806,
+            "source": "Mods/new-horizons/Images/NH_status_shooter_50.png"
+          },
+          "current": {
+            "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
+            "family": "builtin-skills-perks-orders-and-ui",
+            "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+            "resource": "SPRITES/NH_status_shooter_50.png",
+            "selection": "Owner-approved repaint of ten creature-trait status icons 2026-11-23",
+            "sha256": "85585f15f3fce3067953357910bc4f55b948e8e007dd16889c5d78f02cc22a03",
+            "size": 3976,
+            "source": "Mods/new-horizons/Images/NH_status_shooter_50.png"
+          }
+        },
+        {
+          "previous": {
+            "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
+            "family": "builtin-skills-perks-orders-and-ui",
+            "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
+            "resource": "SPRITES/NH_status_siege_50.png",
+            "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
+            "sha256": "850f2523ad3f9ffc6d3bc119ee64de006eb20b97a3d52ed9db1dd33810147c9d",
+            "size": 3433,
+            "source": "Mods/new-horizons/Images/NH_status_siege_50.png"
+          },
+          "current": {
+            "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
+            "family": "builtin-skills-perks-orders-and-ui",
+            "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+            "resource": "SPRITES/NH_status_siege_50.png",
+            "selection": "Owner-approved repaint of ten creature-trait status icons 2026-11-23",
+            "sha256": "29862b4617460611c26e83eed8e9bfd38000742976045fdef50cba8b55e17934",
+            "size": 4557,
+            "source": "Mods/new-horizons/Images/NH_status_siege_50.png"
+          }
+        },
+        {
+          "previous": {
+            "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
+            "family": "builtin-skills-perks-orders-and-ui",
+            "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
+            "resource": "SPRITES/NH_status_undead_50.png",
+            "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
+            "sha256": "7a3968cf589fc58dc83298c5ec8ad346b6e18d48e26d93a8ae9a85c7c5284c00",
+            "size": 3407,
+            "source": "Mods/new-horizons/Images/NH_status_undead_50.png"
+          },
+          "current": {
+            "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
+            "family": "builtin-skills-perks-orders-and-ui",
+            "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+            "resource": "SPRITES/NH_status_undead_50.png",
+            "selection": "Owner-approved repaint of ten creature-trait status icons 2026-11-23",
+            "sha256": "b644019e924f727191b974a0a5fb662c78f106d851101f81f57fe78f6da60ed1",
+            "size": 5069,
+            "source": "Mods/new-horizons/Images/NH_status_undead_50.png"
+          }
+        },
+        {
+          "previous": {
+            "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
+            "family": "builtin-skills-perks-orders-and-ui",
+            "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
+            "resource": "SPRITES/NH_status_unlimitedRetaliations_50.png",
+            "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
+            "sha256": "a2990d5b64ba154e7f0ed936129d9fec950fb9c7fdb8386c4fc70e2363efd311",
+            "size": 4169,
+            "source": "Mods/new-horizons/Images/NH_status_unlimitedRetaliations_50.png"
+          },
+          "current": {
+            "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
+            "family": "builtin-skills-perks-orders-and-ui",
+            "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+            "resource": "SPRITES/NH_status_unlimitedRetaliations_50.png",
+            "selection": "Owner-approved repaint of ten creature-trait status icons 2026-11-23",
+            "sha256": "cf85e2e3763b35a22cfb4126a35463203ddeeae8c95ca33bc9e6f9aff228538b",
+            "size": 4874,
+            "source": "Mods/new-horizons/Images/NH_status_unlimitedRetaliations_50.png"
+          }
+        }
+      ],
+      "perks": [],
+      "statuses": [],
+      "reusedBindings": [],
+      "statusIconRepaint": [
+        {
+          "replaced": [
+            "SPRITES/NH_status_adjacent_50.png",
+            "SPRITES/NH_status_breath_50.png",
+            "SPRITES/NH_status_flying_50.png",
+            "SPRITES/NH_status_noRetaliation_50.png",
+            "SPRITES/NH_status_regeneration_50.png",
+            "SPRITES/NH_status_resistance_50.png",
+            "SPRITES/NH_status_shooter_50.png",
+            "SPRITES/NH_status_siege_50.png",
+            "SPRITES/NH_status_undead_50.png",
+            "SPRITES/NH_status_unlimitedRetaliations_50.png"
+          ],
+          "selectionRecordSha256": "72281932c12c48f10c769488aeb4a2a2462c5fb41007d494981aa9750aa4249c"
+        }
+      ],
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
     }
   ]
 }

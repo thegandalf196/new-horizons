@@ -1,0 +1,111 @@
+{
+  "format": 1,
+  "selection": "Owner-approved hero class lean and battle status icons 2026-11-23",
+  "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
+  "entries": [
+    {
+      "resource": "SPRITES/NH_hero_lean_might.png",
+      "role": "hero-class-lean-might",
+      "sha256": "6c2f66bf188d362e905fa6f0cdc9bf27b9f4d49aec8b3990b9bb12a63bced176",
+      "dimensions": [
+        16,
+        16
+      ],
+      "alphaBoundingBox": [
+        0,
+        0,
+        16,
+        16
+      ],
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "8923f6206b8192e3dd14f8339e0d0ea34e3aa6b13399653e516183bb8e52785f"
+    },
+    {
+      "resource": "SPRITES/NH_hero_lean_magic.png",
+      "role": "hero-class-lean-magic",
+      "sha256": "8d750ba6b1fa587edcb26ace65beb4733931d3063035880126428603c0925dbb",
+      "dimensions": [
+        16,
+        16
+      ],
+      "alphaBoundingBox": [
+        0,
+        1,
+        16,
+        15
+      ],
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "5df659a3b5a96dd2aaf9dec40fccc67eeb1b39aa4191ea71f76b7a4090d4e45e"
+    },
+    {
+      "resource": "SPRITES/NH_status_frost_mantle_cloak.png",
+      "role": "frost-mantle-cloak-status",
+      "sha256": "e540edd111f50a21503265a7ecfc69384069f789682143db1e8c9b158acd6b2e",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        3,
+        2,
+        41,
+        42
+      ],
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "fa27518b76586033a37362777bbdbc09d4aae1ca4fab8116b73407b9a2b54448"
+    },
+    {
+      "resource": "SPRITES/NH_status_frost_mantle_chill.png",
+      "role": "frost-mantle-chill-status",
+      "sha256": "3a550e04607d7861a9818664057779d5c99c429882e5ad35c7a78c333b86683e",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        4,
+        2,
+        39,
+        42
+      ],
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "46ad91cb47f768a44a82df96006d005f83ee5b47a08f3cf1a3ef9fc57733a324"
+    },
+    {
+      "resource": "SPRITES/NH_status_brittle.png",
+      "role": "rampart-brittle-status",
+      "sha256": "041d0e17820799b02993b2f07d15223be7117f07998dbaaccc903f043caee46d",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        5,
+        2,
+        38,
+        42
+      ],
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "eb179aa76f88b964e5a8d9d87fe8cc4beecc69963dd40ebfd6d12eb2c10281ea",
+      "reviewCopySha256": "e11d3015f2e4a56dbfe9efd4783bcc70a9d0dc25fd434ac88198dfa51c380ba3"
+    },
+    {
+      "resource": "SPRITES/NH_status_living_remedy.png",
+      "role": "rampart-living-remedy-status",
+      "sha256": "1860a95e3eeb6cea118ada44ff5f1fd4ef4e35f6e42f90ed11ea43ac7bb51f4d",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        3,
+        2,
+        41,
+        42
+      ],
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "fade62d0504dd5d83f810d7441190d44070d6d3bd746cff5823b9c668bfdbb11",
+      "reviewCopySha256": "f710d8afe14321d6f3cd874019fd5a101a433493917a24ba48c597da35e11043"
+    }
+  ]
+}
