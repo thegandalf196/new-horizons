@@ -18,6 +18,9 @@ namespace newHorizonsFrostMantle
 inline constexpr const char * SCRIPT = "new-horizons:frostMantle";
 inline constexpr const char * CLOAK_STACKING = "new-horizons:frostMantle.cloak";
 inline constexpr const char * CHILL_STACKING = "new-horizons:frostMantle.chill";
+/// Selected NHART status icons for the two bonus cards (44px, transparent).
+inline constexpr const char * CLOAK_ICON = "NH_status_frost_mantle_cloak";
+inline constexpr const char * CHILL_ICON = "NH_status_frost_mantle_chill";
 /// The cloak: a combat-event trigger whose value is the returned damage percentage.
 DLL_LINKAGE std::optional<Bonus> cloak(const CGHeroInstance * hero);
 /// The chill: -X% Initiative for the captured number of rounds.

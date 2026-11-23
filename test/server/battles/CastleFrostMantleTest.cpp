@@ -1,6 +1,8 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
 #include "CastleSpecialtyFixture.h"
+#include "../../../lib/GameLibrary.h"
+#include "../../../lib/IBonusTypeHandler.h"
 #include "../../../lib/battle/NewHorizonsFrostMantle.h"
 #include "../../../lib/bonuses/BonusSelector.h"
 #include "../../../lib/spells/CSpell.h"
@@ -66,6 +68,8 @@ TEST_F(CastleFrostMantleTest, FrostMantleCloaksAFriendlyCentreAndReturnsColdOnMe
 	ASSERT_TRUE(cloak);
 	EXPECT_EQ(cloak->turnsRemain, 2);
 	EXPECT_EQ(cloak->val, 19) << "10% at level 1, +1% per further level";
+	EXPECT_EQ(cloak->customIconPath, ImagePath::builtin("NH_status_frost_mantle_cloak"));
+	EXPECT_EQ(LIBRARY->getBth()->bonusToGraphics(std::const_pointer_cast<Bonus>(cloak)), ImagePath::builtin("NH_status_frost_mantle_cloak"));
 	blockRetaliation(enemy); // The cloaked Angels never retaliate, so only cold damage returns.
 	ASSERT_NO_FATAL_FAILURE(activate(enemy));
 	const auto health = enemy->getAvailableHealth();
@@ -82,6 +86,11 @@ TEST_F(CastleFrostMantleTest, FrostMantleOnlyChillsAnEnemyCentre)
 	ASSERT_TRUE(submit(spellAtHex(ATTACKER, SpellID::FROST_RING, enemy->getPosition())));
 	EXPECT_FALSE(cloaked(*enemy));
 	EXPECT_EQ(chill(*enemy), -20);
+	const auto chilled = enemy->getBonus(CSelector([](const Bonus * bonus)
+		{ return bonus->stacking == newHorizonsFrostMantle::CHILL_STACKING; }));
+	ASSERT_TRUE(chilled);
+	EXPECT_EQ(chilled->customIconPath, ImagePath::builtin("NH_status_frost_mantle_chill"));
+	EXPECT_EQ(LIBRARY->getBth()->bonusToGraphics(std::const_pointer_cast<Bonus>(chilled)), ImagePath::builtin("NH_status_frost_mantle_chill"));
 }
 
 TEST_F(CastleFrostMantleTest, HistoricalAdelaideCastsAnOrdinaryFrostRing)

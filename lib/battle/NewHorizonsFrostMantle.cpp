@@ -21,6 +21,7 @@ std::optional<Bonus> cloak(const CGHeroInstance * hero)
 		newHorizonsHeroes::frostMantleReturnedPercent(hero), BonusSourceID(hero->getHeroTypeID()), BonusSubtypeID(script));
 	result.turnsRemain = rule->rounds;
 	result.stacking = CLOAK_STACKING;
+	result.customIconPath = ImagePath::builtin(CLOAK_ICON);
 	result.description.appendRawString("Frost Mantle");
 	return result;
 }
@@ -35,6 +36,7 @@ std::optional<Bonus> chill(const CGHeroInstance * hero)
 	result.valType = BonusValueType::ADDITIVE_VALUE;
 	result.turnsRemain = rule->chillRounds;
 	result.stacking = CHILL_STACKING;
+	result.customIconPath = ImagePath::builtin(CHILL_ICON);
 	result.description.appendRawString("Frost Mantle chill");
 	return result;
 }
