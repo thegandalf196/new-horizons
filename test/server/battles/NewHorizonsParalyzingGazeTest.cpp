@@ -371,6 +371,7 @@ TEST_F(NewHorizonsParalyzingGazeBattleTest, MissingRecipientAndMalformedPendingR
 	EXPECT_EQ(rngBytes(), rngBefore);
 	auto bad = newHorizonsParalyzingGaze::marker();
 	bad.duration = BonusDuration::N_TURNS;
+	bad.turnsRemain = 1; // A timed bonus must have turns left; the wrong duration is the malformation.
 	target->addNewBonus(std::make_shared<Bonus>(bad)); // Deliberate malformed negative fixture.
 	const auto before = target->save();
 	ASSERT_TRUE(before["state"]["counterAttacks"]["totalCache"].isNull())

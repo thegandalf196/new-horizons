@@ -14,10 +14,12 @@ namespace
 {
 std::shared_ptr<Bonus> probabilityModifier(int multiplier)
 {
-	return std::make_shared<Bonus>(BonusDuration::N_TURNS,
+	auto bonus = std::make_shared<Bonus>(BonusDuration::N_TURNS,
 		BonusType::FAVORABLE_CREATURE_CHANCE_MULTIPLIER_BASIS_POINTS,
 		BonusSource::OTHER, multiplier, BonusSourceID(), BonusSubtypeID(),
 		BonusValueType::INDEPENDENT_MIN);
+	bonus->turnsRemain = 1; // A timed bonus always has turns left, as a spell gives it.
+	return bonus;
 }
 }
 
