@@ -3,6 +3,9 @@
 #include "RouteActorObservation.h"
 #include "../../../lib/callback/CPlayerSpecificInfoCallback.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
+#include "../../../lib/networkPacks/PacksForClient.h"
+#include "../../../lib/networkPacks/PacksForServer.h"
+#include "../../../lib/serializer/CTypeList.h"
 #include <algorithm>
 #include <utility>
 
@@ -75,6 +78,22 @@ void RouteActorObservation::objectRemoved(const CGObjectInstance & object)
 		if(command->active && command->identity == &object && command->heroID == object.id
 			&& command->player == object.getOwner() && object.ID == Obj::HERO)
 			command->removed = true;
+	}
+}
+
+void RouteActorObservation::requestRealized(const PackageApplied & receipt, bool queryPending)
+{
+	if(receipt.result || receipt.packType != CTypeList::getInstance().getTypeID<MoveHero>(nullptr))
+		return;
+	std::lock_guard lock(mutex);
+	for(auto * command : activeCommands)
+	{
+		// Route commands are synchronous: an armed command's player has one MoveHero in flight.
+		if(command->active && command->player == receipt.player)
+		{
+			command->rejected = true;
+			command->queryPendingAtRejection = queryPending;
+		}
 	}
 }
 }

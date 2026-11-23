@@ -19634,11 +19634,11 @@
       },
       "deferral": "Before substantive gateway growth, extract the touched object-specific purchase/interaction stage, passing callback, hero, destination and authoritative quote. Preserve visible-state checks, native command order, actual buyer and once-only reservations.\n\nBefore any further gateway or turn-error growth, extract the turn-completion/error boundary into the existing turn-execution owner with explicit callback, player and interruption/termination outcome. Retain the shared read lease during state reads and turn completion/recovery. Release and reacquire it only through the synchronous request wait guard. Preserve no endTurn on planner cancellation/termination, original authoritative command order and at-most-once fallback; characterize normal, thrown-error and shutdown routes before extraction. Retain all prior purchase/interaction extraction obligations.",
       "kind": "exception",
-      "lines": 2428,
+      "lines": 2427,
       "owner": "ai_engineer",
-      "previous_review": "CLAUDE-SPECIALTIES-0931",
-      "rationale": "Exact successor for 0.93.1 Castle adventure specialties and starts (Forced March, Well Connected, Alms of the Faithful, Cuthbert and Loynis starts): bounded routing hooks into focused owners only. Existing extraction deferrals retained; no future growth credit.",
-      "review": "CLAUDE-CASTLE-ADVENTURE-0931",
+      "previous_review": "CLAUDE-CASTLE-ADVENTURE-0931",
+      "rationale": "Exact successor for the 0.93.1 AI route-refusal fix: requestRealized forwards every authoritative receipt to RouteActorObservation (one routing line; the query-reply confirmation loses its braces), so the gateway shrinks 2428 to 2427. MoveHero refusal tracking and the resubmission decision live in RouteActorObservation and RouteMovement. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-AI-ROUTE-REFUSAL-0931",
       "review_history": [
         {
           "deferral": "AI engineer owns extraction of current-node special-action dispatch/current-day execution boundary into a focused executor before any further affected-area growth. Preserve parent dependencies, composite and DimensionDoor stale recovery, current-day approaches, exact request/wait/ack ordering, exceptions and captured historical behavior; characterize them with focused native tests. Gateway file remains capped at2861 until shrinking extraction.",
@@ -19689,7 +19689,7 @@
       ],
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "78eab10c8091c21d5768aebac6c5f787981c0346aa0fadccd3e0813a965682a8"
+      "sha256": "6477444e1225268b26515cf77543baedb5aecff805cbc8bd5da74dfa8fe581fb"
     },
     "AI/Nullkiller2/AIGateway.cpp::NK2AI::AIGateway::pickBestArtifacts(const std::shared_ptr<CCallback> & cc, const CGHeroInstance * h, const CGHeroInstance * other)::[cc](const CGHeroInstance * h, const CGHeroInstance * otherh, bool giveStuffToFirstHero) -> void#1": {
       "kind": "legacy",
@@ -20184,16 +20184,6 @@
       "review_category": "ordinary-function-review",
       "review_scope": "numeric-legacy-debt-freeze-only",
       "sha256": "5e5201c4c2bb6452295ebc4757f05eff7104417dac678052a0ac06c6a98c62b9"
-    },
-    "AI/Nullkiller2/Helpers/RouteMovement.cpp::NK2AI::RouteMovement::bool run()#1": {
-      "kind": "review",
-      "lines": 83,
-      "owner": "ai_engineer",
-      "rationale": "Focused movement stage run83 lines after extraction79; owns existing ordered same-tile/path loop/arrival boundaries and forwards scoped actor completion. Below150-line ceiling; review at80-line trigger only, not ceiling exception. Command submission, authoritative wait and typed completion remain adjacent; actor receipt/mutex logic is in RouteActorObservation. Source-only measurement, native/control/renderer acceptance separate.",
-      "review": "IR-ASTRAL-ROUTE-ACTOR-OBSERVATION-20261024",
-      "review_scope": "exact-source-only-focused-route-movement-stage",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "sha256": "a12b33082070157d4f63c313b661a2089d97492b7b0648bfda47b20d52c145fa"
     },
     "AI/Nullkiller2/Pathfinding/AINodeStorage.cpp": {
       "deferral": "AI engineer: extract TownPortalFinder and calculateTownPortal/calculateTownPortalTeleportations into one cohesive Town Portal path-generation component before further expansion in this area. Preserve actor/node ordering, initial-node input/output, callback full-roster capability, nearest/tie/occupied-town and movement/mana semantics; verify denied/own/allied forecasts and exact world/RNG preservation. The next structural change must reduce AINodeStorage; this six-line exception gives no unrelated regrowth credit.",

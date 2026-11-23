@@ -42,10 +42,12 @@ class RouteMovement
 		}
 	}
 
-	void afterMovementCheck()
+	/// Returns true when the authority refused the command behind a query that is now answered.
+	bool afterMovementCheck()
 	{
 		gateway.waitTillFree(); // Movement may complete a battle or blocking dialog.
 		const auto unavailable = command->complete(*gateway.cc);
+		const bool retryable = command->rejectedBehindQuery();
 		command.reset();
 		if(unavailable)
 		{
@@ -53,6 +55,25 @@ class RouteMovement
 			clearProbing();
 			throw *unavailable;
 		}
+		return retryable;
+	}
+
+	/// Submits one route command (a single step or a teleport) from the hero's current tile.
+	/// A battle's deferred level-up can reach the AI only after it sent the next command, so the
+	/// authority refuses that command; afterMovementCheck has answered the query, so resubmit once.
+	template<typename Submit>
+	void submitCommand(Submit && submit)
+	{
+		const auto origin = heroPtr->visitablePos();
+		armCommand();
+		submit();
+		if(!afterMovementCheck() || heroPtr->visitablePos() != origin)
+			return;
+		logAi->debug("Resubmitting route command of hero %s at %s after a refusal behind a query",
+			heroPtr->getNameTextID(), origin.toString());
+		armCommand();
+		submit();
+		afterMovementCheck();
 	}
 
 	const CGObjectInstance * getObj(int3 coord, bool ignoreHero)
@@ -91,8 +112,10 @@ class RouteMovement
 
 	void doMovement(int3 dst, bool transit, const EPathfindingLayer & layer)
 	{
-		armCommand();
-		gateway.cc->moveHero(*heroPtr, heroPtr->convertFromVisitablePos(dst), transit, layer);
+		submitCommand([&]()
+		{
+			gateway.cc->moveHero(*heroPtr, heroPtr->convertFromVisitablePos(dst), transit, layer);
+		});
 	}
 
 	void doTeleportMovement(ObjectInstanceID exitId, int3 exitPos)
@@ -102,19 +125,18 @@ class RouteMovement
 			gateway.nullkiller->armyFormation->rearrangeArmyForWhirlpool(*heroPtr);
 		}
 
-		armCommand();
-		const auto clearDestination = vstd::makeScopeGuard([&]()
+		submitCommand([&]()
 		{
-			gateway.destinationTeleport = ObjectInstanceID();
-			gateway.destinationTeleportPos = int3(-1);
+			const auto clearDestination = vstd::makeScopeGuard([&]()
+			{
+				gateway.destinationTeleport = ObjectInstanceID();
+				gateway.destinationTeleportPos = int3(-1);
+			});
+			gateway.destinationTeleport = exitId;
+			if(exitPos.isValid())
+				gateway.destinationTeleportPos = exitPos;
+			gateway.cc->moveHero(*heroPtr, heroPtr->pos, false);
 		});
-		gateway.destinationTeleport = exitId;
-		if(exitPos.isValid())
-			gateway.destinationTeleportPos = exitPos;
-		gateway.cc->moveHero(*heroPtr, heroPtr->pos, false);
-		gateway.destinationTeleport = ObjectInstanceID();
-		gateway.destinationTeleportPos = int3(-1);
-		afterMovementCheck();
 	}
 
 	void doChannelProbing()
@@ -144,6 +166,21 @@ class RouteMovement
 		}
 	}
 
+	/// Every command below moves the hero from currentCoord. Once the hero stands anywhere else
+	/// (a refused step, a different teleport exit), the rest of the path is stale: its next
+	/// single step would not neighbour the hero, so the authority would refuse each one.
+	bool leftRoute(const int3 & currentCoord, const char * reason)
+	{
+		if(heroPtr->visitablePos() == currentCoord && !reason)
+			return false;
+		logAi->debug("Hero %s stops route at %s (path expected %s): %s", heroPtr->getNameTextID(),
+			heroPtr->visitablePos().toString(), currentCoord.toString(), reason ? reason : "hero left the path");
+		gateway.nullkiller->invalidatePathfinderData();
+		return true;
+	}
+
+	/// Returns false when the hero must wait for a later turn. A stale route returns true
+	/// with i > 0, leaving run() to evaluate the tile the hero actually reached.
 	bool followPath(const CGPath & path, int & i)
 	{
 		for(; i > 0; i--)
@@ -151,8 +188,10 @@ class RouteMovement
 			int3 currentCoord = path.nodes[i].coord;
 			const auto & nextNode = path.nodes[i - 1];
 			int3 nextCoord = nextNode.coord;
+			if(leftRoute(currentCoord, nullptr))
+				return true;
 
-			auto currentObject = getObj(currentCoord, currentCoord == heroPtr->visitablePos());
+			auto currentObject = getObj(currentCoord, true);
 			auto nextObjectTop = getObj(nextCoord, false);
 			auto nextObject = getObj(nextCoord, true);
 			auto destTeleportObj = getDestTeleportObj(currentObject, nextObjectTop, nextObject);
@@ -176,6 +215,9 @@ class RouteMovement
 
 			if(nextCoord == heroPtr->visitablePos())
 				continue;
+			// Teleports are requested from the entrance; a single step to the exit is never legal.
+			if(isTeleportAction(nextNode.action))
+				return leftRoute(currentCoord, "no connected teleport exit");
 
 			bool isConnected = false;
 			bool isNextObjectTeleport = false;
@@ -185,17 +227,25 @@ class RouteMovement
 				isConnected = CGTeleport::isConnected(nextObjectTop, getObj(path.nodes[i - 2].coord, false));
 				isNextObjectTeleport = CGTeleport::isTeleport(nextObjectTop);
 			}
-			if(isConnected || isNextObjectTeleport || nextNode.layer == EPathfindingLayer::AIR)
-				// Hero should be able to go through object if it's allow transit
-				doMovement(nextCoord, true, nextNode.layer);
-			else
-				doMovement(nextCoord, false, nextNode.layer);
-
-			afterMovementCheck();
+			// Hero should be able to go through object if it's allow transit
+			doMovement(nextCoord, isConnected || isNextObjectTeleport || nextNode.layer == EPathfindingLayer::AIR,
+				nextNode.layer);
 
 			if(gateway.teleportChannelProbingList.size())
 				doChannelProbing();
 		}
+		return true;
+	}
+
+	bool revisitCurrentTile()
+	{
+		//FIXME: this assertion fails also if AI moves onto defeated guarded object
+		//assert(cb->getVisitableObjs(dst).size() > 1); //there's no point in revisiting tile where there is no visitable object
+		// TODO: is it feasible to hero get killed there if game work properly?
+		submitCommand([&]() { gateway.cc->moveHero(*heroPtr, heroPtr->convertFromVisitablePos(dst), false); });
+		// If revisiting, teleport probing is never done, and so the entries into the list would remain unused and uncleared
+		gateway.teleportChannelProbingList.clear();
+		// not sure if AI can currently reconsider to attack bank while staying on it. Check issue 2084 on mantis for more information.
 		return true;
 	}
 
@@ -226,17 +276,7 @@ public:
 		int3 startHpos = heroPtr->visitablePos();
 		bool ret = false;
 		if(startHpos == dst)
-		{
-			//FIXME: this assertion fails also if AI moves onto defeated guarded object
-			//assert(cb->getVisitableObjs(dst).size() > 1); //there's no point in revisiting tile where there is no visitable object
-			armCommand();
-			gateway.cc->moveHero(*heroPtr, heroPtr->convertFromVisitablePos(dst), false);
-			afterMovementCheck(); // TODO: is it feasible to hero get killed there if game work properly?
-			// If revisiting, teleport probing is never done, and so the entries into the list would remain unused and uncleared
-			gateway.teleportChannelProbingList.clear();
-			// not sure if AI can currently reconsider to attack bank while staying on it. Check issue 2084 on mantis for more information.
-			ret = true;
-		}
+			ret = revisitCurrentTile();
 		else
 		{
 			CGPath path;

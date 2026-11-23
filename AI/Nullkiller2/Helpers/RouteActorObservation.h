@@ -12,6 +12,7 @@
 class CGHeroInstance;
 class CGObjectInstance;
 class CPlayerSpecificInfoCallback;
+struct PackageApplied;
 
 namespace NK2AI
 {
@@ -41,6 +42,8 @@ public:
 		const PlayerColor player;
 		bool removed = false;
 		bool active = true;
+		bool rejected = false;
+		bool queryPendingAtRejection = false;
 
 		Command(RouteActorObservation & owner, const CGHeroInstance & actor, PlayerColor player,
 			const CPlayerSpecificInfoCallback & callback);
@@ -50,6 +53,10 @@ public:
 		Command & operator=(const Command &) = delete;
 		/// Called after authoritative movement/battle/query completion, under the game-state read lock.
 		std::optional<RouteActorUnavailable> complete(const CPlayerSpecificInfoCallback & callback);
+		/// After complete(): the authority refused this MoveHero while the AI still held an
+		/// unanswered query, e.g. a battle's deferred level-up that reached the AI only after
+		/// the move was sent. The refusal is transient once that query has been answered.
+		bool rejectedBehindQuery() const { return rejected && queryPendingAtRejection; }
 	};
 
 	/// Arm immediately before submitting the command, with an already verified owned actor.
@@ -57,6 +64,8 @@ public:
 		const CPlayerSpecificInfoCallback & callback);
 	/// Called before the authoritative removal packet changes the map.
 	void objectRemoved(const CGObjectInstance & object);
+	/// Called for every authoritative receipt; records MoveHero refusals on armed commands.
+	void requestRealized(const PackageApplied & receipt, bool queryPending);
 
 private:
 	std::mutex mutex;

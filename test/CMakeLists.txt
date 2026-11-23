@@ -1499,6 +1499,7 @@ if(ENABLE_NULLKILLER2_AI)
 		nullkiller2/AdventureSpellExecutionTest.cpp
 		nullkiller2/EspritDeCorpsArmySelectionTest.cpp
 		nullkiller2/Helpers/RouteActorObservationTest.cpp
+		nullkiller2/Helpers/RouteMovementRefusalTest.cpp
 		nullkiller2/Helpers/ExplorationHelperTest.cpp
 		nullkiller2/Helpers/NewHorizonsMusterTest.cpp
 		nullkiller2/NewHorizonsAdventureSpellUnlockAITest.cpp

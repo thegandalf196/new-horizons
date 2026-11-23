@@ -540,9 +540,8 @@ void AIGateway::requestRealized(PackageApplied * pa)
 
 	if(pa->packType == CTypeList::getInstance().getTypeID<QueryReply>(nullptr)
 		|| pa->packType == CTypeList::getInstance().getTypeID<HeroMasteryReply>(nullptr))
-	{
 		status.receivedAnswerConfirmation(pa->requestID, pa->result);
-	}
+	routeActorObservation.requestRealized(*pa, status.getQueriesCount() > 0);
 }
 
 void AIGateway::receivedResource()
