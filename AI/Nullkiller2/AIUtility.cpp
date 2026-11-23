@@ -35,6 +35,7 @@
 #include "../../lib/bonuses/Propagators.h"
 #include "../../lib/spells/CSpellHandler.h"
 #include "../../lib/spells/NewHorizonsSpellAvailability.h"
+#include "../../lib/entities/hero/NewHorizonsRampartSpecialties.h"
 
 #include <vcmi/CreatureService.h>
 
@@ -723,7 +724,9 @@ bool shouldVisit(const Nullkiller * aiNk, const CGHeroInstance * hero, const CGO
 		if(relations != PlayerRelations::ENEMIES)
 		{
 			const auto * town = dynamic_cast<const CGTownInstance *>(obj);
-			return town && townMusterArmyReward(aiNk, hero, town) > 0;
+			// Jenova's Patroness pays on her first entry each week.
+			return town && (townMusterArmyReward(aiNk, hero, town) > 0
+				|| !newHorizonsHeroes::patronessCollection(*hero, *town).empty());
 		}
 		return true;
 	case Obj::HERO:

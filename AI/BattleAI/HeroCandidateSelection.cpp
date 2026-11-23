@@ -3,6 +3,7 @@
 #include "BattleEvaluator.h"
 #include "DoubleCastFollowUp.h"
 #include "CastleSpecialtyValue.h"
+#include "RampartSpecialtyValue.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/callback/CBattleCallback.h"
 #include "HeroActionSelection.h"
@@ -15,6 +16,8 @@ bool BattleEvaluator::finishHeroSelection(std::vector<PossibleSpellcast> & possi
 	doubleCastAI::addCompletionValue(possibleCasts, *cb->getBattle(battleID), hb, side, noCastBaseline,
 		damageCache, scoreEvaluator.getPositiveEffectMultiplier());
 	castleSpecialtyAI::addSpecialtyValue(possibleCasts, *cb->getBattle(battleID), hb, side,
+		damageCache, scoreEvaluator.getPositiveEffectMultiplier());
+	rampartSpecialtyAI::addSpecialtyValue(possibleCasts, *cb->getBattle(battleID), hb, side,
 		damageCache, scoreEvaluator.getPositiveEffectMultiplier());
 	const auto selection = heroActionSelection::choose(possibleCasts, noCastBaseline, mandatoryOrder, observer);
 	if(!selection)

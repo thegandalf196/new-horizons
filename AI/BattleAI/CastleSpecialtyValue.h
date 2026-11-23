@@ -42,8 +42,9 @@ DLL_LINKAGE float frostMantleChillValue(const CBattleInfoCallback & battle, cons
 	BattleSide side, uint32_t centre, DamageCache & damage);
 
 /// Riders the hero-action shortlist must see when it ranks candidates, or a
-/// Quick search never refines them: Orrin's volley on Focus Fire! and Adelaide's
-/// Frost Mantle on a stack-centred Frost Ring. The board is built only when needed.
+/// Quick search never refines them: Orrin's volley on Focus Fire!, Adelaide's
+/// Frost Mantle on a stack-centred Frost Ring and the Rampart cast riders (Uland's
+/// Living Remedy, Alagar's Brittle). The board is built only when needed.
 class DLL_LINKAGE ScoutRiders
 {
 	const Environment * environment;

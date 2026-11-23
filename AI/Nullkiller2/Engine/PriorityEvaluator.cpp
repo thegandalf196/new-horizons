@@ -45,6 +45,7 @@
 #include "../Markers/ArmyUpgrade.h"
 #include "../Markers/DefendTown.h"
 
+#include "../../../lib/entities/hero/NewHorizonsRampartSpecialties.h"
 #include <vcmi/spells/Service.h>
 #include <vcmi/spells/Spell.h>
 
@@ -703,7 +704,12 @@ int32_t RewardEvaluator::getGoldReward(const CGObjectInstance * target, const CG
 	case Obj::WATER_WHEEL:
 		return 1000;
 	case Obj::TOWN:
-		return dailyIncomeMultiplier * estimateTownIncome(aiNk->cc.get(), target, hero);
+	{
+		// Jenova's Patroness: her first entry this week collects part of an own town's income.
+		const auto * town = dynamic_cast<const CGTownInstance *>(target);
+		const auto patroness = town ? newHorizonsHeroes::patronessCollection(*hero, *town) : TResources();
+		return dailyIncomeMultiplier * estimateTownIncome(aiNk->cc.get(), target, hero) + getResourcesGoldReward(patroness);
+	}
 	case Obj::MINE:
 	case Obj::ABANDONED_MINE:
 	{

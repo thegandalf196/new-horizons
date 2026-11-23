@@ -2,6 +2,7 @@
 #include "StdInc.h"
 #include "CastleSpecialtyValue.h"
 #include "ConsecratedArmsValue.h"
+#include "RampartSpecialtyValue.h"
 #include "HypotheticBattle.h"
 #include "../../lib/battle/BattleAction.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
@@ -191,6 +192,10 @@ float ScoutRiders::value(const PossibleSpellcast & candidate)
 	if(candidate.command == HeroCommand::FOCUS_FIRE && candidate.focusFire)
 		return volleyValue(*source, source, side, candidate.focusFire->targetUnitId,
 			candidate.focusFire->rangedDamagePercent, *damage);
+	// Rampart riders (Living Remedy, Brittle) need no hypothetical board.
+	const float rampart = rampartSpecialtyAI::riderValue(*source, source, side, candidate, *damage);
+	if(rampart > 0)
+		return rampart;
 	if(candidate.command != HeroCommand::NONE || !candidate.spell || candidate.spell->id != SpellID::FROST_RING
 		|| candidate.dest.empty() || !newHorizonsHeroes::frostMantleRule(source->battleGetFightingHero(side)))
 		return 0.0f;
