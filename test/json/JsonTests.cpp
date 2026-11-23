@@ -39,6 +39,7 @@ TEST(JsonSchemaStartupTest, AuthoredBonusIdentityPatternRejectsControlCharacters
 	EXPECT_TRUE(validator.check(schema, JsonNode("")).empty());
 	for(const char control : { '\0', '\n', '\x1f', '\x7f' })
 	{
+		SCOPED_TRACE(static_cast<int>(control));
 		const std::string identity = std::string("core:") + control + "curse";
 		EXPECT_FALSE(validator.check(schema, JsonNode(identity)).empty());
 	}
@@ -67,6 +68,7 @@ TEST(JsonSchemaStartupTest, TaggedBonusValidatesAndStillUsesStrictBonusParser)
 	bonus["turns"].Integer() = 2;
 	bonus["statusTags"].Vector().emplace_back("DEBUFF");
 	bonus["statusIdentity"].String() = "core:slow";
+	bonus.setModScope(ModScope::scopeBuiltin()); // Identifier requests need the owning mod, as loaded content has.
 	JsonValidator validator;
 	EXPECT_TRUE(validator.check("vcmi:bonusInstance", bonus).empty());
 	const auto parsed = JsonUtils::parseBonus(bonus);
