@@ -310,10 +310,12 @@ TEST(NewHorizonsNecromancyPolicy, VersionThreeRequiresItsEpochEvenWithoutTheComm
 	JsonNode overrides;
 	overrides["heroes"]["newHorizonsPerks"] = bare;
 	EXPECT_THROW(newHorizonsHeroes::validateCommandOverrides(overrides, false), std::runtime_error);
-	const auto settingsBefore = settings.getFullConfig();
+	// An unloaded GameSettings has no values to read, so compare its saved form.
+	const auto saved = [](GameSettings & value) { CMemorySerializer memory; value.serialize(memory.oser); return memory.extractBuffer(); };
+	const auto settingsBefore = saved(settings);
 	CMemorySerializer settingsReader;
 	settingsReader.oser & overrides;
 	settingsReader.iser.version = previous;
 	EXPECT_THROW(settings.serialize(settingsReader.iser), std::runtime_error);
-	EXPECT_EQ(settings.getFullConfig(), settingsBefore);
+	EXPECT_EQ(saved(settings), settingsBefore);
 }

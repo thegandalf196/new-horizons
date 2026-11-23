@@ -50,7 +50,9 @@ TEST(NewHorizonsCommandProtocol, MissingCrossoverHistoryAndUnsupportedCapturesCa
 TEST(NewHorizonsCommandProtocol, UnsupportedCombatOverrideReadLeavesSettingsUnchanged)
 {
 	GameSettings settings;
-	const auto before = settings.getFullConfig();
+	// An unloaded GameSettings has no values to read, so compare its saved form.
+	const auto saved = [](GameSettings & value) { CMemorySerializer memory; value.serialize(memory.oser); return memory.extractBuffer(); };
+	const auto before = saved(settings);
 	JsonNode incoming;
 	incoming["combat"]["heroCommands"]["warfarePolicyVersion"].Integer() = 1;
 	CMemorySerializer memory;
@@ -58,7 +60,7 @@ TEST(NewHorizonsCommandProtocol, UnsupportedCombatOverrideReadLeavesSettingsUnch
 	memory.iser.version = memory.oser.version;
 	memory.oser & incoming;
 	EXPECT_THROW(settings.serialize(memory.iser), std::runtime_error);
-	EXPECT_EQ(settings.getFullConfig(), before);
+	EXPECT_EQ(saved(settings), before);
 }
 
 TEST(NewHorizonsCommandProtocol, NineValuedOptionsRetainAcquisitionLevelAfterLaterAdvancement)

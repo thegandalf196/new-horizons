@@ -122,7 +122,9 @@ TEST(LeadershipEfficiencyRules, DownlevelSettingsRejectBeforePrefixAndPreservePr
 	EXPECT_THROW(authored.serialize(writer.oser), std::runtime_error);
 	EXPECT_TRUE(writer.extractBuffer().empty());
 	GameSettings recipient;
-	const auto before = recipient.getFullConfig();
+	// An unloaded GameSettings has no values to read, so compare its saved form.
+	const auto saved = [](GameSettings & value) { CMemorySerializer memory; value.serialize(memory.oser); return memory.extractBuffer(); };
+	const auto before = saved(recipient);
 	JsonNode incoming;
 	incoming["heroes"]["newHorizonsCapabilities"] = capabilities;
 	CMemorySerializer reader;
@@ -130,5 +132,5 @@ TEST(LeadershipEfficiencyRules, DownlevelSettingsRejectBeforePrefixAndPreservePr
 	reader.iser.version = reader.oser.version;
 	reader.oser & incoming;
 	EXPECT_THROW(recipient.serialize(reader.iser), std::runtime_error);
-	EXPECT_EQ(recipient.getFullConfig(), before);
+	EXPECT_EQ(saved(recipient), before);
 }
