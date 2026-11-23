@@ -1,5 +1,8 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#ifdef __GLIBC__
+#include <malloc.h>
+#endif
 #include "CastleAdventureSpecialtyFixture.h"
 #include "../mock/GameHandlerTestServer.h"
 #include "../../lib/entities/hero/NewHorizonsRampartSpecialties.h"
@@ -27,11 +30,11 @@ protected:
 	std::unique_ptr<GameHandlerTestServer> server;
 	std::unique_ptr<CGameHandler> handler;
 
-	void guarded(const char * creatureName, int level = 1)
+	void guarded(const char * creatureName, int level = 1, const char * hero = "core:kyrre")
 	{
 		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
 		builder.size(36).playerActive(PLAYER)
-			.hero({5, 5, 0}, HeroTypeID(HeroTypeID::decode("core:kyrre")), PLAYER)
+			.hero({5, 5, 0}, HeroTypeID(HeroTypeID::decode(hero)), PLAYER)
 				.heroGarrison({{creature("core:centaur"), 1}})
 			.hero({24, 24, 0}, HeroTypeID(HeroTypeID::decode("core:orrin")), PLAYER)
 				.heroGarrison({{creature("core:pikeman"), 1}})
@@ -295,6 +298,35 @@ TEST_F(RampartAdventureSpecialtyTest, PatronessCollectsOnTheCaptureThatEndsAnOrd
 	map()->moveObject(specialist->id, town->visitablePos() + specialist->getVisitableOffset());
 	handler->heroVisitCastle(town, specialist);
 	EXPECT_EQ(gold(), before + collected) << "Entering the captured town this week collects nothing more";
+}
+
+TEST_F(RampartAdventureSpecialtyTest, WinningAgainstAWanderingCreatureThatIsRemovedLeavesThePatronessHookSafe)
+{
+	// The 0.93.2 smoke crash: after the battle the visited creature is removed, and the
+	// after-battle Patroness hook must not touch the object pointer read before the battle.
+#ifdef __GLIBC__
+	mallopt(M_PERTURB, 0xA5); // Freed memory is overwritten, so a stale object read faults here.
+#endif
+	ASSERT_NO_FATAL_FAILURE(guarded("core:pikeman", 1, "core:jenova"));
+	const auto guardId = guard->id;
+	const auto before = gold();
+	handler->setMovePoints(specialist->id, 20000);
+	// Stepping into the guarded zone starts the fight with the wandering creature.
+	const auto tile = approach();
+	ASSERT_TRUE(tile);
+	ASSERT_TRUE(handler->moveHero(specialist->id, specialist->convertFromVisitablePos(*tile),
+		EMovementMode::STANDARD, false, PLAYER, EPathfindingLayer::LAND));
+	ASSERT_NE(gameState()->getBattle(PLAYER), nullptr);
+	handler->battles->cheatBattleVictory(PLAYER);
+	for(const auto player : {PLAYER, PlayerColor::NEUTRAL})
+		if(const auto dialog = handler->queries->topQuery(player); dialog && dialog->getType() == QueryType::BattleDialog)
+			ASSERT_TRUE(handler->queryReply(dialog->queryID, 0, player));
+#ifdef __GLIBC__
+	mallopt(M_PERTURB, 0);
+#endif
+	EXPECT_EQ(gameState()->getBattle(PLAYER), nullptr);
+	EXPECT_EQ(gameState()->getObjInstance(guardId), nullptr) << "The defeated creature is removed";
+	EXPECT_EQ(gold(), before) << "A creature is not a town: nothing is collected";
 }
 
 TEST_F(RampartAdventureSpecialtyTest, PatronessLeavesOutJenovasOwnStewardGold)

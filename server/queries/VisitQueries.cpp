@@ -49,8 +49,9 @@ void MapObjectVisitQuery::onExposure(QueryPtr topQuery)
 
 	if(auto battleQuery = std::dynamic_pointer_cast<CBattleQuery>(topQuery))
 	{
-		if(object && hero && !processingDeferredBattleLevelUps)
-			newHorizonsPatroness::collectAfterBattle(*gh, *object, *hero);
+		// `object` and `hero` may be dangling now: battleFinished can remove either.
+		if(!processingDeferredBattleLevelUps)
+			newHorizonsPatroness::collectAfterBattle(*gh, visitedObject, visitingHero);
 		auto levelUps = battleQuery->takeDeferredLevelUps();
 		deferredBattleLevelUps.insert(deferredBattleLevelUps.end(), levelUps.begin(), levelUps.end());
 	}

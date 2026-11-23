@@ -10,6 +10,7 @@
 #include "../../lib/networkPacks/PacksForClient.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/entities/ResourceTypeHandler.h"
+#include "../../lib/gameState/CGameState.h"
 
 namespace newHorizonsPatroness
 {
@@ -34,10 +35,13 @@ void collectOnArrival(CGameHandler & handler, const CGTownInstance & town, const
 	handler.sendAndApply(info);
 }
 
-void collectAfterBattle(CGameHandler & handler, const CGObjectInstance & object, const CGHeroInstance & hero)
+void collectAfterBattle(CGameHandler & handler, ObjectInstanceID object, ObjectInstanceID hero)
 {
+	// Look both up now: a defeated creature or a fallen hero no longer exists.
+	const auto * town = dynamic_cast<const CGTownInstance *>(handler.gameState().getObjInstance(object));
+	const auto * visitor = handler.gameState().getHero(hero);
 	// Only a town her player now owns pays; the weekly marker prevents a second collection.
-	if(const auto * town = dynamic_cast<const CGTownInstance *>(&object))
-		collectOnArrival(handler, *town, hero);
+	if(town && visitor)
+		collectOnArrival(handler, *town, *visitor);
 }
 }
