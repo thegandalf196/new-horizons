@@ -18058,6 +18058,55 @@
           "end": 65
         }
       ]
+    },
+    "luascript/api/adventure/HeroInstance.cpp": {
+      "functions": [
+        {
+          "symbol": "scripting::api::void HeroInstanceProxy::registerMethods(MethodRegistrar & R)#1",
+          "start": 25,
+          "end": 75
+        },
+        {
+          "symbol": "scripting::api::bool HeroInstanceProxy::isMale(const CGHeroInstance & hero)#1",
+          "start": 77,
+          "end": 80
+        },
+        {
+          "symbol": "scripting::api::bool HeroInstanceProxy::isFemale(const CGHeroInstance & hero)#1",
+          "start": 82,
+          "end": 85
+        },
+        {
+          "symbol": "scripting::api::int HeroInstanceProxy::getLevel(const CGHeroInstance & hero)#1",
+          "start": 87,
+          "end": 90
+        },
+        {
+          "symbol": "scripting::api::int64_t HeroInstanceProxy::getExperience(const CGHeroInstance & hero)#1",
+          "start": 92,
+          "end": 95
+        },
+        {
+          "symbol": "scripting::api::bool HeroInstanceProxy::hasArtifact(const CGHeroInstance & hero, ArtifactID artifact)#1",
+          "start": 97,
+          "end": 100
+        },
+        {
+          "symbol": "scripting::api::int HeroInstanceProxy::ownedArtifacts(const CGHeroInstance & hero, ArtifactID artifact)#1",
+          "start": 102,
+          "end": 112
+        },
+        {
+          "symbol": "scripting::api::int HeroInstanceProxy::creatureCountInArmy(const CGHeroInstance & hero, CreatureID creature)#1",
+          "start": 114,
+          "end": 124
+        }
+      ],
+      "rationale": "Complete 126-line source inspected: eight callable bodies, HeroInstanceProxy::registerMethods 25-75 and the seven static accessors isMale 77-80, isFemale 82-85, getLevel 87-90, getExperience 92-95, hasArtifact 97-100, ownedArtifacts 102-112 and creatureCountInArmy 114-124; no lambda or function-like macro body. Parser recovery (missing:type_identifier and ERROR nodes at 55-56 and 60) is the static_cast member-function-pointer template argument that selects the string overload of hasActivePerk, inside registerMethods; it is not a callable. Largest callable is 51 lines, below 80. Exact-content coverage only.",
+      "review": "CLAUDE-LUA-ORACLE-BIND-20261123",
+      "review_scope": "Exact 126-line callable coverage after a764ff1d5a; no size exception, future growth or native acceptance.",
+      "review_status": "AUTHOR_GENERATED_PENDING_INTEGRATOR_REVIEW_NO_NATIVE_ACCEPTANCE",
+      "sha256": "7d4299f31029edfc6ed07c7942776e5478805ef156c948a903d95738d06bcfe6"
     }
   },
   "schema": 1,
