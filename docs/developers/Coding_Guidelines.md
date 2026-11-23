@@ -934,13 +934,18 @@ const std::string identity = hero.getHeroType()->getJsonKey();
 - Never index a string, `std::string_view`, vector or array at or past its end,
   and never call `front()` or `back()` on an empty one. A view is not
   null-terminated. With libstdc++ such a read often returns a harmless byte, but
-  the MSVC debug build in the Windows test workflow aborts. To find these on
-  Linux, configure a separate test build with
-  `-DCMAKE_CXX_FLAGS=-D_GLIBCXX_ASSERTIONS -DENABLE_TEST=ON`. This flag keeps the
-  ABI, so the system libraries still link. Build `vcmitest` and run it once with
-  the original data and once without it. Each violation aborts with
-  `Assertion '__n < this->size()' failed` or a similar message that names the
-  container.
+  the MSVC debug build in the Windows test workflow aborts. That build also
+  enables every `assert()`, while the Linux Release and RelWithDebInfo builds
+  define `NDEBUG` and skip them. An assert must therefore hold for every input,
+  including malformed saves, packets and JSON. Code that rejects bad input must
+  check it before reaching an assert.
+- To find these on Linux, configure a separate test build with
+  `-DCMAKE_CXX_FLAGS=-D_GLIBCXX_ASSERTIONS -DENABLE_TEST=ON` and with
+  `-DCMAKE_CXX_FLAGS_RELWITHDEBINFO="-O2 -g1"`, which leaves out `-DNDEBUG`. Both
+  settings keep the ABI, so the system libraries still link. Build `vcmitest` and
+  run it once with the original data and once without it, one process per suite
+  so that one abort does not hide the rest. Each violation aborts with
+  `Assertion '__n < this->size()' failed` or the failed `assert()` expression.
 
 The repository source checks run `CI/check_temporary_lifetimes.py` (from the
 bonus-list check step). It rejects a `std::string_view`, `std::span`,
