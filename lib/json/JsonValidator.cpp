@@ -352,17 +352,12 @@ static std::string maxItemsCheck(JsonValidator & validator, const JsonNode & bas
 
 static std::string uniqueItemsCheck(JsonValidator & validator, const JsonNode & baseSchema, const JsonNode & schema, const JsonNode & data)
 {
-	if (schema.Bool())
+	// The items to compare are the data's; the keyword's own value is a boolean.
+	const auto & items = data.Vector();
+	for (auto item = items.begin(); schema.Bool() && item != items.end(); item++)
 	{
-		for (auto itA = schema.Vector().begin(); itA != schema.Vector().end(); itA++)
-		{
-			auto itB = itA;
-			while (++itB != schema.Vector().end())
-			{
-				if (*itA == *itB)
-					return validator.makeErrorMessage("List must consist from unique items");
-			}
-		}
+		if (std::find(std::next(item), items.end(), *item) != items.end())
+			return validator.makeErrorMessage("List must consist from unique items");
 	}
 	return "";
 }

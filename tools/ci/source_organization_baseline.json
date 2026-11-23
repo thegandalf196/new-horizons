@@ -25804,12 +25804,14 @@
     },
     "lib/json/JsonValidator.cpp": {
       "kind": "legacy",
-      "lines": 755,
+      "lines": 750,
       "owner": "engine_engineer",
-      "rationale": "Existing file owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 755 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "rationale": "Legacy freeze shrinks by the uniqueItems correction: the keyword compared the schema value instead of the data items, so it never enforced uniqueness and an assert-enabled build aborted. No growth.",
+      "review": "PROPOSED-CLAUDE-ASSERT-SWEEP-20261123",
       "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "86da13b00478804d1e70391e470f91b4b911e148987da1edcdca3eab27bd0a3e"
+      "sha256": "6405ac1b5a7eb61b9a16470bc0cda96b6004f38a0b3c68205d3e32112b7cdee0",
+      "prior_review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW"
     },
     "lib/mapObjectConstructors/AObjectTypeHandler.cpp::void AObjectTypeHandler::init(const JsonNode & input)#1": {
       "kind": "legacy",
