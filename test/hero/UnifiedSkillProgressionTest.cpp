@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../server/LegacyEstatesCapture.h"
 #include "../../lib/entities/hero/NewHorizonsPerkState.h"
 #include "../../lib/serializer/CMemorySerializer.h"
@@ -18,7 +19,9 @@ newHorizonsHeroes::PerkState state()
 int expert(const std::string & skill) { return skill == SKILL ? 3 : 0; }
 }
 
-TEST(UnifiedSkillProgression, CompleteTierPoolsAreSequentialAndIndependentOfSeed)
+using UnifiedSkillProgression = vcmiTestData::OriginalDataTest;
+
+TEST_F(UnifiedSkillProgression, CompleteTierPoolsAreSequentialAndIndependentOfSeed)
 {
 	auto current = state();
 	ASSERT_TRUE(newHorizonsHeroes::usesUnifiedSkillProgression(current.getRules()));
@@ -37,7 +40,7 @@ TEST(UnifiedSkillProgression, CompleteTierPoolsAreSequentialAndIndependentOfSeed
 	EXPECT_TRUE(current.nextRequiredPerkOffer(expert).empty());
 }
 
-TEST(UnifiedSkillProgression, SubsetsReorderingForgedMetadataAndDuplicateRepliesAreAtomic)
+TEST_F(UnifiedSkillProgression, SubsetsReorderingForgedMetadataAndDuplicateRepliesAreAtomic)
 {
 	auto current = state();
 	const auto offer = current.nextRequiredPerkOffer(expert);
@@ -59,7 +62,7 @@ TEST(UnifiedSkillProgression, SubsetsReorderingForgedMetadataAndDuplicateReplies
 	EXPECT_EQ(current.toJson(), accepted);
 }
 
-TEST(UnifiedSkillProgression, RankAdvancementRequiresPreviousTierAndOwnershipOfRank)
+TEST_F(UnifiedSkillProgression, RankAdvancementRequiresPreviousTierAndOwnershipOfRank)
 {
 	auto current = state();
 	EXPECT_TRUE(current.canAdvanceSkillNormally(SKILL, 0));
@@ -76,7 +79,7 @@ TEST(UnifiedSkillProgression, RankAdvancementRequiresPreviousTierAndOwnershipOfR
 	EXPECT_FALSE(current.canAdvanceSkillNormally(SKILL, 3));
 }
 
-TEST(UnifiedSkillProgression, AuthoredStartingPerkAndBinaryReloadRetainMandatoryTierDebt)
+TEST_F(UnifiedSkillProgression, AuthoredStartingPerkAndBinaryReloadRetainMandatoryTierDebt)
 {
 	auto current = state();
 	const auto authored = current.candidatesForSkillTier(SKILL, 1).at(2);
@@ -97,7 +100,7 @@ TEST(UnifiedSkillProgression, AuthoredStartingPerkAndBinaryReloadRetainMandatory
 	EXPECT_EQ(restored.toJson(), completed);
 }
 
-TEST(UnifiedSkillProgression, DowngradeRefusesBeforeWritingAnyPerkPayload)
+TEST_F(UnifiedSkillProgression, DowngradeRefusesBeforeWritingAnyPerkPayload)
 {
 	auto current = state();
 	CMemorySerializer memory;

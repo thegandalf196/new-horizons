@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/battle/OwnedUnitCreatureResolver.h"
 #include "../../lib/bonuses/CBonusSystemNode.h"
 #include "../../lib/bonuses/PreparedBonusGraphStorage.h"
@@ -23,7 +24,9 @@ struct WithoutLibrary
 	~WithoutLibrary() { LIBRARY = saved; }
 };
 }
-TEST(OwnedProspectiveCreatureMetadataTest, CopiedHpAndAiValueRemainIndependentAfterSourceAndLibraryRetire)
+using OwnedProspectiveCreatureMetadataTest = vcmiTestData::OriginalDataTest;
+
+TEST_F(OwnedProspectiveCreatureMetadataTest, CopiedHpAndAiValueRemainIndependentAfterSourceAndLibraryRetire)
 {
 	CBonusSystemNode sentinel(BonusNodeType::UNKNOWN, true);
 	const auto generation = PreparedBonusGraphStorage::currentGeneration();
@@ -45,7 +48,7 @@ TEST(OwnedProspectiveCreatureMetadataTest, CopiedHpAndAiValueRemainIndependentAf
 	EXPECT_EQ(PreparedBonusGraphStorage::currentGeneration(), generation);
 	EXPECT_EQ(sentinel.getTreeVersion(), tree);
 }
-TEST(OwnedProspectiveCreatureMetadataTest, MissingFactsStayUnknownAndDoNotBorrowAnotherPrototypeOrLibrary)
+TEST_F(OwnedProspectiveCreatureMetadataTest, MissingFactsStayUnknownAndDoNotBorrowAnotherPrototypeOrLibrary)
 {
 	auto hpOnly = prototype(1); hpOnly.baseHitPoints = 12;
 	auto aiOnly = prototype(2); aiOnly.aiValue = 17;
@@ -58,7 +61,7 @@ TEST(OwnedProspectiveCreatureMetadataTest, MissingFactsStayUnknownAndDoNotBorrow
 	EXPECT_THROW(resolver.creature(CreatureID(3))->getBaseHitPoints(), std::logic_error);
 	EXPECT_THROW(resolver.creature(CreatureID(3))->getAIValue(), std::logic_error);
 }
-TEST(OwnedProspectiveCreatureMetadataTest, CapturedZeroAndSignedPrototypeValuesAreNotReplacedOrClamped)
+TEST_F(OwnedProspectiveCreatureMetadataTest, CapturedZeroAndSignedPrototypeValuesAreNotReplacedOrClamped)
 {
 	auto zero = prototype(4); zero.baseHitPoints = 0; zero.aiValue = 0;
 	auto signedValue = prototype(5); signedValue.baseHitPoints = -1; signedValue.aiValue = -7;

@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../HistoricalFactionPerkRules.h"
 #include "../../lib/entities/hero/NewHorizonsPerkRules.h"
 #include "../../lib/CSkillHandler.h"
@@ -209,6 +210,7 @@ TEST(NewHorizonsPerkRules, SettingsSchemaAcceptsTheActualRegistry)
 
 TEST(NewHorizonsPerkRules, EveryCanonicalSkillResolvesToItsExactRegisteredEntity)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const JsonNode rules(JsonPath::builtin("config/newHorizonsPerks"));
 	for(const auto & [skillId, definition] : rules["skills"].Struct())
 	{
@@ -381,6 +383,7 @@ TEST(NewHorizonsPerkRules, GlobalSettingsRefusesPriorCodecAndCurrentCodecPreserv
 
 TEST(NewHorizonsPerkRules, EmptyMapRefusesPriorCodecAndCurrentCodecPreservesGlobalWeightedPolicy)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto current = historicalOfferCodecRules();
 	// Retain this exact historical policy1/1113 boundary control.
 	current["offerWeightPolicyVersion"].Integer() = 1;
@@ -567,6 +570,7 @@ TEST(NewHorizonsPerkRules, R2RawPreviousSettingsReaderRejectsBeforeReplacingPoli
 
 TEST(NewHorizonsPerkRules, R2EmptyMapCodecGuardsPreviousEpochAndCurrentCodecRetainsPolicyOne)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto current = historicalOfferCodecRules();
 	current.Struct().erase("perkProgressionPolicyVersion"); // Explicit historical R2 codec.
 	ASSERT_EQ(current["offerWeightPolicyVersion"].Integer(), 2);
@@ -706,6 +710,7 @@ TEST(NewHorizonsPerkRules, StrictSettings1117FenceRejectsBeforeWriteAndBeforeOve
 
 TEST(NewHorizonsPerkRules, StrictEmptyMap1117WriterRefusesBeforeHeaderAndCurrentCodecPreservesMarker)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto current = historicalOfferCodecRules();
 	current.setOverrideFlag(true);
 	CMap source(nullptr);

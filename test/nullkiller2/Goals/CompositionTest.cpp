@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 
 #include "AI/Nullkiller2/Goals/Composition.h"
 
@@ -53,7 +54,9 @@ public:
 };
 }
 
-TEST(Nullkiller2_Goals_Composition, continuesSequenceAfterFulfilledSubgoal)
+using Nullkiller2_Goals_Composition = vcmiTestData::OriginalDataTest;
+
+TEST_F(Nullkiller2_Goals_Composition, continuesSequenceAfterFulfilledSubgoal)
 {
 	std::vector<int> events;
 	NK2AI::Goals::Composition composition;
@@ -67,7 +70,7 @@ TEST(Nullkiller2_Goals_Composition, continuesSequenceAfterFulfilledSubgoal)
 	EXPECT_EQ(events, (std::vector<int>{1, 2}));
 }
 
-TEST(Nullkiller2_Goals_Composition, propagatesFailureAfterCompletedSubgoal)
+TEST_F(Nullkiller2_Goals_Composition, propagatesFailureAfterCompletedSubgoal)
 {
 	std::vector<int> events;
 	NK2AI::Goals::Composition composition;

@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/GameSettings.h"
 #include "../../lib/entities/hero/NewHorizonsSpecialtySerialization.h"
 #include "../../lib/mapping/CMap.h"
@@ -134,6 +135,7 @@ TEST(NewHorizonsSpecialtySerialization, AbsentTableHasIdenticalPreviousAndCurren
 }
 TEST(NewHorizonsSpecialtySerialization, MapPreflightChecksOverridesAndLegacyWrapperFailsClosed)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	CMap map(nullptr);
 	map.overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, captured());
 	EXPECT_THROW(map.validateNewHorizonsSpecialtySerialization(context(Version::NEW_HORIZONS_RECOVERY_SPECIALTIES)), std::runtime_error);

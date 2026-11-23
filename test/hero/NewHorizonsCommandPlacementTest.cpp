@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/GameConstants.h"
 #include "../../lib/entities/hero/NewHorizonsCommandPlacement.h"
 #include <limits>
@@ -10,6 +11,7 @@ using Category = newHorizonsCreatures::CreatureCategory;
 
 TEST(NewHorizonsCommandPlacement, AssimilationBypassesOnlyTierPermissionIncludingAtCommandOne)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const CommandCreatureTraits core{Category::CORE, false};
 	const CommandCreatureTraits elite{Category::ELITE, false};
 	const CommandCreatureTraits elemental{Category::ELITE, true};
@@ -28,6 +30,7 @@ TEST(NewHorizonsCommandPlacement, AssimilationBypassesOnlyTierPermissionIncludin
 
 TEST(NewHorizonsCommandPlacement, FindsCompleteArrangementInsteadOfTrustingFirstFreeSlot)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const std::vector<CommandPlacementStack> input = {
 		{CreatureID(1), 100, {Category::CORE, false}, SlotID(6)},
 		{CreatureID(2), 100, {Category::CORE, false}, SlotID(3)},
@@ -52,6 +55,7 @@ TEST(NewHorizonsCommandPlacement, FindsCompleteArrangementInsteadOfTrustingFirst
 
 TEST(NewHorizonsCommandPlacement, SevenStackConfluxArrangementAndRepeatedStacksPreserveIdentity)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	std::vector<CommandPlacementStack> input;
 	input.push_back({CreatureID(1), 10, {Category::CORE, false}, SlotID()});
 	input.push_back({CreatureID(2), 10, {Category::CORE, false}, SlotID()});

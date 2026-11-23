@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include <limits>
 #include "../../lib/GameLibrary.h"
 #include "../../lib/CCreatureHandler.h"
@@ -36,6 +37,7 @@ size_t tentIndex(const StartingHeroProjection & projection)
 }
 TEST(NewHorizonsStartingEquipmentProjection, DefaultOnlyTentProbabilityBecomesCertain)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	for(const char * key : {"core:rion", "core:verdish"})
 	{
 		SCOPED_TRACE(key);
@@ -50,6 +52,7 @@ TEST(NewHorizonsStartingEquipmentProjection, DefaultOnlyTentProbabilityBecomesCe
 }
 TEST(NewHorizonsStartingEquipmentProjection, AuthoredEmptyAndPresentEquipmentAreDistinct)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	for(const char * key : {"core:rion", "core:verdish"})
 		for(bool present : {false, true})
 		{
@@ -65,6 +68,7 @@ TEST(NewHorizonsStartingEquipmentProjection, AuthoredEmptyAndPresentEquipmentAre
 }
 TEST(NewHorizonsStartingEquipmentProjection, DefaultEquipmentSurvivesAnAuthoredCreatureArmy)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	StartingHeroOverrides authored;
 	authored.army = std::vector<CHero::InitialArmyStack>{{17, 17, CreatureID(CreatureID::decode("core:pikeman"))}};
 	const auto view = projectStartingHero(prototype("core:rion"), configured(), authored);
@@ -76,6 +80,7 @@ TEST(NewHorizonsStartingEquipmentProjection, DefaultEquipmentSurvivesAnAuthoredC
 }
 TEST(NewHorizonsStartingEquipmentProjection, CapturedLegacyAndOtherHeroesDoNotInventGuarantee)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto & hero = prototype("core:rion");
 	auto captured = configured();
 	captured.development = resolveHeroRules(captured.development, hero.heroClass->getId());
@@ -91,6 +96,7 @@ TEST(NewHorizonsStartingEquipmentProjection, CapturedLegacyAndOtherHeroesDoNotIn
 }
 TEST(NewHorizonsStartingEquipmentProjection, UnknownAuthoredEquipmentNeverClaimsCertainty)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	StartingHeroOverrides authored;
 	authored.defaultEquipment = false;
 	const auto view = projectStartingHero(prototype("core:rion"), configured(), authored);
@@ -106,6 +112,7 @@ TEST(NewHorizonsStartingEquipmentProjection, MissingRandomAndUnregisteredHeroIde
 
 TEST(NewHorizonsStartingEquipmentProjection, SaveCampaignAndOngoingWorldDoNotClaimFreshDefaults)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto context = configured();
 	context.freshEquipmentDefaults = false;
 	const auto view = projectStartingHero(prototype("core:rion"), context);
@@ -115,6 +122,7 @@ TEST(NewHorizonsStartingEquipmentProjection, SaveCampaignAndOngoingWorldDoNotCla
 
 TEST(NewHorizonsStartingEquipmentProjection, SinglePerkPolicyGuaranteesFreshSpellbookWithAuthoredEmptyEquipment)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	StartingHeroOverrides authored;
 	authored.defaultEquipment = false;
 	authored.spellBook = false;

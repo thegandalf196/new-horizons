@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 #include "NewHorizonsElementalTerrainFixture.h"
 #include "../../../lib/battle/AccessibilityInfo.h"
 #include "../../../lib/battle/BattleForm.h"
@@ -413,6 +414,7 @@ TEST(PolymorphProtocolTest, UnitStateAndCompositePacketsRejectOlderWritersBefore
 
 TEST(PolymorphProtocolTest, MarkerAddUpdateRemoveRejectOlderWritersButPlainEffectsRemainCompatible)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const SpellID spell(SpellID::decode("new-horizons:polymorph"));
 	const Bonus marker = battle::polymorphMarker(spell, PlayerColor(0));
 	for(int operation = 0; operation < 3; ++operation)

@@ -1,5 +1,6 @@
 /* Part of VCMI engine; GNU General Public License v2.0 or later. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/mapObjects/EstatesArtifactQuote.h"
 #include "../../lib/mapObjects/IMarket.h"
 #include "../../lib/entities/artifact/CArtHandler.h"
@@ -39,6 +40,7 @@ TEST(EstatesHoarderQuote, HalfGoldRoundsUpAndUnusedAllowanceSurvivesZeroPrice)
 
 TEST(EstatesHoarderQuote, StandardMerchantBuybackCannotProfitAfterHoarderDiscount)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	std::vector<ArtifactID> artifactIds;
 	LIBRARY->artifacts()->forEach([&](const Artifact * artifact, bool &)
 	{

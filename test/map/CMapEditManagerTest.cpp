@@ -9,6 +9,7 @@
  */
 
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 
 #include "../../lib/filesystem/ResourcePath.h"
 #include "../../lib/mapping/CMapService.h"
@@ -21,7 +22,9 @@
 #include "../../lib/callback/EditorCallback.h"
 
 
-TEST(MapManager, DrawTerrain_Type)
+using MapManager = vcmiTestData::OriginalDataTest;
+
+TEST_F(MapManager, DrawTerrain_Type)
 {
 	try
 	{
@@ -108,7 +111,7 @@ TEST(MapManager, DrawTerrain_Type)
 	}
 }
 
-TEST(MapManager, DrawTerrain_View)
+TEST_F(MapManager, DrawTerrain_View)
 {
 	try
 	{

@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 #include "HeroCommandFixture.h"
 #include "../../spells/NewHorizonsMagicProfileFixture.h"
 #include "../../../lib/spells/NewHorizonsMagic.h"
@@ -774,7 +775,9 @@ TEST_F(NewHorizonsSpellRosterConsumerTest, OtherSpellRewardRestrictionsAndScroll
 	EXPECT_FALSE(legacyComponents.front().helpReason.has_value());
 }
 
-TEST(ComponentHelpReasonSerialization, CurrentRoundTripAndOlderReadKeepComponentIdentity)
+using ComponentHelpReasonSerialization = vcmiTestData::OriginalDataTest;
+
+TEST_F(ComponentHelpReasonSerialization, CurrentRoundTripAndOlderReadKeepComponentIdentity)
 {
 	const auto spell = spellNamed("core:antiMagic");
 	Component original(ComponentType::SPELL, spell, -1);

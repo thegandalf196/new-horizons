@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../PerkTestSetup.h"
 #include "../NewHorizonsHistoricalAdventurePolicyTestUtils.h"
 #include <gtest/gtest.h>
@@ -732,6 +733,7 @@ TEST(NewHorizonsLegendaryReputationRules, OverflowFreeAuthoredAndUnselectedDoNot
 
 TEST(NewHorizonsLegendaryReputationRules, ArmyValueWireRoundTripsEntireUnsignedRangeThroughBulkPacket)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const std::array<uint64_t, 7> values = {
 		0, 1, std::numeric_limits<uint32_t>::max(), uint64_t{1} << 32,
 		static_cast<uint64_t>(std::numeric_limits<int64_t>::max()),
@@ -768,6 +770,7 @@ TEST(NewHorizonsLegendaryReputationRules, ArmyValueWireRoundTripsEntireUnsignedR
 
 TEST(NewHorizonsLegendaryReputationRules, ArmyValueMalformedWireHalvesRejectBeforeValueAssignment)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	constexpr int64_t outside = static_cast<int64_t>(std::numeric_limits<uint32_t>::max()) + 1;
 	const std::array<std::pair<int64_t, int64_t>, 4> invalid = {
 		std::pair<int64_t, int64_t>{-1, 0}, {0, -1}, {outside, 0}, {0, outside}

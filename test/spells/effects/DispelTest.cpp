@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 
 #include "EffectFixture.h"
 #include "../../../lib/json/JsonNode.h"
@@ -21,6 +22,7 @@ using namespace ::testing;
 class DispelFixture : public Test, public EffectFixture
 {
 public:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	// Real game spell IDs so SpellID::encode() round-trips through LIBRARY correctly.
 	const SpellID positiveID  = SpellID::BLESS;
 	const SpellID negativeID  = SpellID::CURSE;

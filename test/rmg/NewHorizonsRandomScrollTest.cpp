@@ -4,6 +4,7 @@
  * License: GNU General Public License v2 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 
 #include "../../lib/GameLibrary.h"
 #include "../../lib/GameConstants.h"
@@ -37,6 +38,7 @@ public:
 class NewHorizonsRandomScrollTest : public testing::Test
 {
 protected:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	CRmgTemplate mapTemplate;
 	CMapGenOptions options;
 	std::unique_ptr<CMapGenerator> generator;

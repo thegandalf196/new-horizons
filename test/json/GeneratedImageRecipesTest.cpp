@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/filesystem/GeneratedImageRecipes.h"
 #include "../../lib/filesystem/Filesystem.h"
 #include "../../lib/GameLibrary.h"
@@ -122,6 +123,7 @@ TEST(GeneratedImageRecipesTest, CallerScopePolicyIsAppliedToEveryPhysicalDepende
 
 TEST(GeneratedImageRecipesTest, ActualImageValidatorAcceptsKnownCuratedPhysicalRecipes)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	ASSERT_TRUE(vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE));
 	for(const auto & recipe : generatedImageRecipes::creaturePortraits())
 	{
@@ -135,6 +137,7 @@ TEST(GeneratedImageRecipesTest, ActualImageValidatorAcceptsKnownCuratedPhysicalR
 
 TEST(GeneratedImageRecipesTest, ActualImageValidatorStillRejectsTyposAndUnrelatedScope)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	ASSERT_TRUE(vstd::contains(LIBRARY->modh->getActiveMods(), GameConstants::NEW_HORIZONS_MOD_SCOPE));
 	EXPECT_FALSE(validateImage("NH_academy_mageHolding_icon_lagre.png", GameConstants::NEW_HORIZONS_MOD_SCOPE).empty());
 	EXPECT_FALSE(validateImage("NH_arbitrary_generated.png", GameConstants::NEW_HORIZONS_MOD_SCOPE).empty());

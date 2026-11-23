@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../mock/TinyMapGameTest.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/GameLibrary.h"
@@ -57,6 +58,7 @@ static_assert(std::is_same_v<decltype(std::declval<PerkState &>().getSelected())
 
 TEST(CompiledPerkCatalogue, EveryDefinitionMatchesCapturedAdmissionAndHasUniqueDenseIndex)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto rules = canonicalRules();
 	const ValidatedPerkRules admitted(rules);
 	const CompiledPerkCatalogue catalog(admitted);
@@ -90,6 +92,7 @@ TEST(CompiledPerkCatalogue, EveryDefinitionMatchesCapturedAdmissionAndHasUniqueD
 
 TEST(CompiledPerkCatalogue, ForeignAndExpiredCatalogueHandlesNeverAliasEqualDenseIndices)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto rules = canonicalRules();
 	const ValidatedPerkRules admitted(rules);
 	PerkId expired;
@@ -119,6 +122,7 @@ TEST(CompiledPerkCatalogue, EmptyHistoricalCapturesStayEmpty)
 
 TEST(CompiledPerkCatalogue, SelectionCommitReplacementCopyAndRollbackKeepProjectionConsistent)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto state = fresh();
 	expectProjection(state);
 	const auto basic = acquire(state, 1);
@@ -143,6 +147,7 @@ TEST(CompiledPerkCatalogue, SelectionCommitReplacementCopyAndRollbackKeepProject
 
 TEST(CompiledPerkCatalogue, FailedRulesAndSelectionReplacementAreAtomic)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto state = fresh();
 	const auto basic = acquire(state, 1);
 	const auto id = state.compiledCatalogue()->find(basic.skillId, basic.perkId);
@@ -162,6 +167,7 @@ TEST(CompiledPerkCatalogue, FailedRulesAndSelectionReplacementAreAtomic)
 
 TEST(CompiledPerkCatalogue, LiveRankLossRestorationAndExternalGrantDoNotChangeAcquisition)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto state = fresh();
 	const auto basic = acquire(state, 1);
 	const auto id = state.compiledCatalogue()->find(basic.skillId, basic.perkId);
@@ -179,6 +185,7 @@ TEST(CompiledPerkCatalogue, LiveRankLossRestorationAndExternalGrantDoNotChangeAc
 
 TEST(CompiledPerkCatalogue, JsonBinaryLoadAndChangedInstalledInputRebuildIndependentProjections)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto state = fresh();
 	acquire(state, 1);
 	acquire(state, 2);
@@ -206,6 +213,7 @@ TEST(CompiledPerkCatalogue, JsonBinaryLoadAndChangedInstalledInputRebuildIndepen
 
 TEST(CompiledPerkCatalogue, BuiltinCombatKeysResolveActualCapturedStatusAndTier)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto rules = canonicalRules();
 	for(auto & perk : rules["skills"][SKILL]["perks"].Vector())
 		if(perk["id"].String() == "new-horizons:offense.executioner")
@@ -283,6 +291,7 @@ TEST_F(CompiledPerkHeroTest, ActualHeroRankGrantRemovalRestorationAndWorldLoadKe
 
 TEST(CompiledPerkCatalogue, OutstandingOperationRetainsItsCaptureAndRejectsReplacement)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto state = fresh();
 	PerkSelectionOperation operation(state);
 	const auto choice = operation.candidates(SKILL, 1).front().selection;
@@ -298,6 +307,7 @@ TEST(CompiledPerkCatalogue, OutstandingOperationRetainsItsCaptureAndRejectsRepla
 
 TEST(CompiledPerkCatalogue, OutstandingOperationCannotOverwriteAnotherCommittedSelection)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto state = fresh();
 	PerkSelectionOperation operation(state);
 	const auto candidates = operation.candidates(SKILL, 1);

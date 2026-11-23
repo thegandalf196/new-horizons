@@ -10,6 +10,7 @@
 #pragma once
 
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 
 #include "../mock/mock_Services.h"
 #include "../mock/mock_MapService.h"
@@ -36,6 +37,7 @@
 class GameStateTest : public ::testing::Test, public ServerCallback, public MapListener
 {
 public:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	GameStateTest()
 		: gameEventCallback(std::make_shared<GameEventCallbackMock>(this)),
 		mapService("test/MiniTest/", this),

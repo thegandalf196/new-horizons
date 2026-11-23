@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 
 #include "TargetConditionItemFixture.h"
 
@@ -41,6 +42,7 @@ public:
 
 TEST_P(NormalLevelConditionTest, DefaultForAbility)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	setDefaultExpectations();
 	EXPECT_CALL(mechanicsMock, getSpellLevel()).WillRepeatedly(Return(0));
 	EXPECT_TRUE(subject->isReceptive(&mechanicsMock, &unitMock));
@@ -65,6 +67,7 @@ TEST_P(NormalLevelConditionTest, ReceptiveNormal)
 //TODO: this tests covers fact that creature abilities ignored (by spell level == 0), should this be done by ability flag or by cast mode?
 TEST_P(NormalLevelConditionTest, ReceptiveAbility)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	setDefaultExpectations();
 	unitBonuses.addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::LEVEL_SPELL_IMMUNITY, BonusSource::OTHER, 5, BonusSourceID()));
 	if(isMagicalEffect)

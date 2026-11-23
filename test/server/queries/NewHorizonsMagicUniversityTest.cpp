@@ -4,6 +4,7 @@
  * License: GNU General Public License v2 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 
 #include "../../../lib/GameLibrary.h"
 #include "../../../lib/GameSettings.h"
@@ -185,7 +186,9 @@ TEST_F(NewHorizonsMagicUniversityTest, StockPersistsAcrossSaveAndLoad)
 	EXPECT_EQ(restoredTown->availableItemsIds(EMarketMode::RESOURCE_SKILL), before);
 }
 
-TEST(NewHorizonsMagicUniversityPriceTest, LegacyUniversityRemainsGoldOnly)
+using NewHorizonsMagicUniversityPriceTest = vcmiTestData::OriginalDataTest;
+
+TEST_F(NewHorizonsMagicUniversityPriceTest, LegacyUniversityRemainsGoldOnly)
 {
 	const JsonNode legacyRules;
 	const auto price = newHorizonsUniversity::tuition(nullptr, legacyRules, *LIBRARY->settingsHandler);

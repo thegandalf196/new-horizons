@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../OverkillRandomPrayerRules.h"
 #include "../PerkStateFixture.h"
 #include "../server/battles/FullGameSnapshotTypes.h"
@@ -62,6 +63,7 @@ template<typename Value> void rejectsOldPrefix(Value & value)
 
 TEST(NewHorizonsPassiveFactionPolicy, PresentMalformedPoliciesRejectWithoutMutation)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	for(const auto * key : {"metamagicPolicy", "divineMandatePolicy", "demonicGatingPolicy", "bloodragePolicy"})
 		for(const auto & malformed : malformedPolicies(std::string_view(key) == "metamagicPolicy"))
 		{
@@ -126,6 +128,7 @@ TEST(NewHorizonsPassiveFactionPolicy, SettingsAdmissionRejectsBeforeChangingOthe
 
 TEST(NewHorizonsPassiveFactionPolicy, OldWritersRefuseBeforePrefixAnd1155RoundTrips)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	newHorizonsHeroes::PerkState state; state.replaceRules(passiveRules());
 	GameSettings settings;
 	settings.addOverride(EGameSettings::HEROES_NEW_HORIZONS_PERKS, state.getRules());
@@ -143,6 +146,7 @@ TEST(NewHorizonsPassiveFactionPolicy, OldWritersRefuseBeforePrefixAnd1155RoundTr
 
 TEST(NewHorizonsPassiveFactionPolicy, ForgedOldReaderPreservesExistingSettingsAndPerkState)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto historical = passiveRules();
 	for(const auto * key : {"metamagicPolicy", "divineMandatePolicy", "demonicGatingPolicy", "bloodragePolicy"})
 		historical.Struct().erase(key);

@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/battle/CommandArmyBonuses.h"
 #include "../../lib/bonuses/BonusList.h"
 #include "../../lib/bonuses/BonusParameters.h"
@@ -43,6 +44,7 @@ void rejectsBeforePrefix(T & source, Version version)
 
 TEST(CommandArmyBonusSerialization, Current1158ClonesOwnProjectionWithAliasesAndNoNativeFallback)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	ASSERT_EQ(Version::CURRENT, Version::NEW_HORIZONS_COMMAND_AUTHORITY);
 	const auto codec = OwnedBonusCaptureCodec::current();
 	ASSERT_EQ(codec.version(), Version::NEW_HORIZONS_COMMAND_AUTHORITY);

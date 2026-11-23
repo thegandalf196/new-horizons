@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/CBonusTypeHandler.h"
 #include "../../lib/bonuses/Bonus.h"
@@ -26,6 +27,7 @@ Bonus input(BonusType type)
 
 TEST(BuiltinBonusIdentityTest, AllBuiltinTokensKeepExactCanonicalIdentityWithOrWithoutDisplayRows)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 #define BONUS_NAME(name) std::pair{BonusType::name, #name},
 	const auto names = std::array{BONUS_LIST};
 #undef BONUS_NAME
@@ -43,6 +45,7 @@ TEST(BuiltinBonusIdentityTest, AllBuiltinTokensKeepExactCanonicalIdentityWithOrW
 
 TEST(BuiltinBonusIdentityTest, DisplayMetadataCannotAliasDistinctJsonTypesAndBothParseBack)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	// Canonical identities remain distinct independently of optional display metadata.
 	const auto first = input(BonusType::LUCK);
 	const auto second = input(BonusType::MORALE);
@@ -67,6 +70,7 @@ TEST(BuiltinBonusIdentityTest, DisplayMetadataCannotAliasDistinctJsonTypesAndBot
 
 TEST(BuiltinBonusIdentityTest, LimiterJsonKeepsDistinctCanonicalDependencyAndRoundTrips)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto first = input(BonusType::STACKS_SPEED);
 	auto second = first;
 	first.limiter = std::make_shared<HasAnotherBonusLimiter>(BonusType::LUCK);
@@ -85,6 +89,7 @@ TEST(BuiltinBonusIdentityTest, LimiterJsonKeepsDistinctCanonicalDependencyAndRou
 
 TEST(BuiltinBonusIdentityTest, BinaryEnumStateRetainsEachIdentityWithoutJsonConversion)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	for(const auto type : {BonusType::LUCK, BonusType::MORALE, BonusType::STACKS_SPEED})
 	{
 		auto original = input(type);
@@ -103,6 +108,7 @@ TEST(BuiltinBonusIdentityTest, BinaryEnumStateRetainsEachIdentityWithoutJsonConv
 
 TEST(BuiltinBonusIdentityTest, NoneEncodingAndOutOfRangeRefusalRemainUnchanged)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	EXPECT_TRUE(BonusTypeID::encode(static_cast<int32_t>(BonusType::NONE)).empty());
 	EXPECT_EQ(BonusTypeID::decode(""), static_cast<int32_t>(BonusType::NONE));
 	EXPECT_THROW(BonusTypeID::encode(std::numeric_limits<int32_t>::max()), std::out_of_range);
@@ -110,6 +116,7 @@ TEST(BuiltinBonusIdentityTest, NoneEncodingAndOutOfRangeRefusalRemainUnchanged)
 
 TEST(BuiltinBonusIdentityTest, PhysicalResistanceDisplayUsesActualBasisPointValue)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto bonus = std::make_shared<Bonus>(input(BonusType::PHYSICAL_DAMAGE_REDUCTION_BASIS_POINTS));
 	bonus->val = 7500;
 	EXPECT_EQ(LIBRARY->bth->bonusToString(bonus), "Physical resistance: 75% less physical damage.");

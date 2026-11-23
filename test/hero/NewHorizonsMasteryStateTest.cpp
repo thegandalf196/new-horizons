@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/entities/hero/NewHorizonsMasteryState.h"
 #include "../../lib/serializer/CMemorySerializer.h"
 #include <stdexcept>
@@ -24,6 +25,7 @@ newHorizonsHeroes::MasteryState state()
 
 TEST(NewHorizonsMasteryState, NewlyExpertMustWaitForNextLevelAndNoRankFourIsProduced)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto saved = state();
 	saved.captureBeforeLevel(2, 2);
 	// Becoming Expert during this level's normal skill choice cannot rewrite the latch.
@@ -37,6 +39,7 @@ TEST(NewHorizonsMasteryState, NewlyExpertMustWaitForNextLevelAndNoRankFourIsProd
 
 TEST(NewHorizonsMasteryState, InvalidRepliesPreservePendingOfferAndDuplicateAcceptanceFails)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	using namespace newHorizonsHeroes;
 	auto saved = state();
 	saved.captureBeforeLevel(2, 3);
@@ -59,6 +62,7 @@ TEST(NewHorizonsMasteryState, InvalidRepliesPreservePendingOfferAndDuplicateAcce
 
 TEST(NewHorizonsMasteryState, PendingAndSelectedRoundtripKeepOriginalOffer)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	using namespace newHorizonsHeroes;
 	auto original = state();
 	original.captureBeforeLevel(2, 3);
@@ -81,6 +85,7 @@ TEST(NewHorizonsMasteryState, PendingAndSelectedRoundtripKeepOriginalOffer)
 
 TEST(NewHorizonsMasteryState, CrossoverPreservesSavedOptionsAndRebindsOnlyIdentityWithFreshSequence)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	using namespace newHorizonsHeroes;
 	auto original = state();
 	original.captureBeforeLevel(2, 3);
@@ -104,6 +109,7 @@ TEST(NewHorizonsMasteryState, CrossoverPreservesSavedOptionsAndRebindsOnlyIdenti
 
 TEST(NewHorizonsMasteryState, CrossoverRejectsFractionalSequencesMissingFieldsAndContradictoryEligibility)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	using namespace newHorizonsHeroes;
 	auto original = state();
 	original.captureBeforeLevel(2, 3);
@@ -123,6 +129,7 @@ TEST(NewHorizonsMasteryState, CrossoverRejectsFractionalSequencesMissingFieldsAn
 
 TEST(NewHorizonsMasteryState, AbsentRulesAndForgedOfferNeverAdoptDefaults)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	using namespace newHorizonsHeroes;
 	MasteryState legacy;
 	legacy.captureBeforeLevel(2, 3);

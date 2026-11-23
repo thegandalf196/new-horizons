@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/entities/hero/NewHorizonsNecromancy.h"
 #include "../../lib/entities/hero/NewHorizonsNecromancyPolicy.h"
 #include "../../lib/entities/hero/NewHorizonsReclaimer.h"
@@ -20,7 +21,9 @@ newHorizonsNecromancy::Policy versionTwo()
 }
 }
 
-TEST(NewHorizonsNecromancyV2Yield, CollectorMultipliesFreshYieldWithOneFinalFloor)
+using NewHorizonsNecromancyV2Yield = vcmiTestData::OriginalDataTest;
+
+TEST_F(NewHorizonsNecromancyV2Yield, CollectorMultipliesFreshYieldWithOneFinalFloor)
 {
 	const auto policy = versionTwo();
 	const auto plain = newHorizonsNecromancy::resolveSkeletonRaising(1, 67, false, true, 0, 1000,
@@ -34,7 +37,7 @@ TEST(NewHorizonsNecromancyV2Yield, CollectorMultipliesFreshYieldWithOneFinalFloo
 	EXPECT_EQ(boosted.manaRecovered, 13);
 }
 
-TEST(NewHorizonsNecromancyV2Yield, ManaUsesOnlyFreshRetainedSkeletonsAndNormalCapacity)
+TEST_F(NewHorizonsNecromancyV2Yield, ManaUsesOnlyFreshRetainedSkeletonsAndNormalCapacity)
 {
 	const auto policy = versionTwo();
 	auto raised = newHorizonsNecromancy::resolveSkeletonRaising(3, 1000, true, true, 0, 1000,
@@ -58,7 +61,7 @@ TEST(NewHorizonsNecromancyV2Yield, ManaUsesOnlyFreshRetainedSkeletonsAndNormalCa
 	EXPECT_EQ(blocked.manaRecovered, 0);
 }
 
-TEST(NewHorizonsNecromancyV2Yield, ResidualZombieSpecialtyStillConvertsButNeverGeneratesNewMana)
+TEST_F(NewHorizonsNecromancyV2Yield, ResidualZombieSpecialtyStillConvertsButNeverGeneratesNewMana)
 {
 	const auto policy = versionTwo();
 	const auto raised = newHorizonsNecromancy::resolveSkeletonRaising(1, 100, true, true, 0, 1000,

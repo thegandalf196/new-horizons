@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/bonuses/BonusEvaluationContext.h"
 #include "../../lib/bonuses/CBonusSystemNode.h"
 #include "../../lib/bonuses/Updaters.h"
@@ -73,6 +74,7 @@ TEST(OwnedBonusEvaluationFactsTest, OwnedStaticCountAndStableLevelUseNoLibraryOr
 }
 TEST(OwnedBonusEvaluationFactsTest, HeroGrowthAndMultiplicationMatchLiveCanonicalContext)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	CGHeroInstance source(nullptr);
 	source.level = 11;
 	BonusEvaluationContext live(source);
@@ -158,6 +160,7 @@ TEST(OwnedBonusEvaluationFactsTest, NonIdempotentMultiplierDistinguishesRawFromA
 
 TEST(OwnedBonusEvaluationFactsTest, LiveFilteredPlaceholderSkipsUnsafeLevelGetter)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	CGHeroInstance source(nullptr);
 	source.putStack(SlotID(0), std::make_unique<CStackInstance>(nullptr));
 	BonusEvaluationContext live(source);

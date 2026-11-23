@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 
 #include "mock/mock_BonusBearer.h"
 #include "mock/mock_UnitEnvironment.h"
@@ -55,6 +56,7 @@ public:
 class UnitLifecycleTest : public Test
 {
 protected:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	UnitInfoMock info;
 	UnitEnvironmentMock environment;
 	BonusBearerMock bonuses;

@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 #include "../../../lib/battle/OwnedProspectiveCreatureDomain.h"
 #include "../../../lib/battle/OwnedUnitBonusFrame.h"
 #include "../../../lib/battle/CUnitState.h"
@@ -151,7 +152,9 @@ struct WithoutLibrary
 };
 template<typename T> auto wire(const T & value) { CMemorySerializer memory; memory.oser & value; return memory.extractBuffer(); }
 }
-TEST(OwnedBattleFormQueryTest, ActualCandidateQueryRetainsBothFootprintsAndOwnedStateWithoutLibrary)
+using OwnedBattleFormQueryTest = vcmiTestData::OriginalDataTest;
+
+TEST_F(OwnedBattleFormQueryTest, ActualCandidateQueryRetainsBothFootprintsAndOwnedStateWithoutLibrary)
 {
 	auto types = domain(); const auto captured = frame(*types); const auto before = captured->save();
 	NiceMock<BoundBattle> callback; callback.retained = types; callback.geometry();
@@ -163,7 +166,7 @@ TEST(OwnedBattleFormQueryTest, ActualCandidateQueryRetainsBothFootprintsAndOwned
 	EXPECT_TRUE(forms[0].landing.isValid()); EXPECT_TRUE(forms[1].landing.isValid());
 	EXPECT_EQ(captured->save(), before); EXPECT_EQ(PreparedBonusGraphStorage::currentGeneration(), generation);
 }
-TEST(OwnedBattleFormQueryTest, MissingAndForeignOwnedDomainsRemainUnknownInsteadOfUsingNativePool)
+TEST_F(OwnedBattleFormQueryTest, MissingAndForeignOwnedDomainsRemainUnknownInsteadOfUsingNativePool)
 {
 	auto types = domain(); const auto foreign = domain(); const auto captured = frame(*types); const auto before = captured->save();
 	ASSERT_NE(foreign->creatures().get(), types->creatures().get());
@@ -211,7 +214,7 @@ TEST_F(OwnedShapeshifterQueryTest, ActualWeightsUseCapturedAiValuesAndHpConverte
 	EXPECT_EQ(wire(*nativeRng), nativeBefore); EXPECT_EQ(wire(*fixtureRng), fixtureBefore);
 }
 
-TEST(OwnedBattleFormQueryTest, RetainedStateLoanKeepsSourceAndSiblingIndependentAcrossLibraryRetirement)
+TEST_F(OwnedBattleFormQueryTest, RetainedStateLoanKeepsSourceAndSiblingIndependentAcrossLibraryRetirement)
 {
 	auto types = domain(); auto source = frame(*types); const auto sibling = source->fork();
 	const auto before = source->save(), siblingBefore = sibling->save();
@@ -238,7 +241,7 @@ TEST(OwnedBattleFormQueryTest, RetainedStateLoanKeepsSourceAndSiblingIndependent
 	EXPECT_EQ(wire(CRandomGenerator::getDefault()), randomBefore);
 }
 
-TEST(OwnedBattleFormQueryTest, ActualOwnedApplyUsesAdmittedStateAndCanonicalPacketsWithExactUniformDraw)
+TEST_F(OwnedBattleFormQueryTest, ActualOwnedApplyUsesAdmittedStateAndCanonicalPacketsWithExactUniformDraw)
 {
 	auto types = domain(); const auto captured = frame(*types); const auto receiver = captured->fork();
 	const auto before = captured->save(); NiceMock<BoundBattle> callback;
@@ -280,7 +283,7 @@ TEST(OwnedBattleFormQueryTest, ActualOwnedApplyUsesAdmittedStateAndCanonicalPack
 	EXPECT_TRUE(receiver->unit().hasBattleForm()); EXPECT_EQ(captured->save(), before);
 	EXPECT_EQ(wire(random), wire(expectedRandom)); EXPECT_EQ(wire(CRandomGenerator::getDefault()), globalBefore);
 }
-TEST(OwnedBattleFormQueryTest, ActualOwnedApplyRejectsMissingAndForeignLoansBeforeDrawingOrPublishing)
+TEST_F(OwnedBattleFormQueryTest, ActualOwnedApplyRejectsMissingAndForeignLoansBeforeDrawingOrPublishing)
 {
 	auto types = domain(); const auto captured = frame(*types); const auto foreign = captured->fork();
 	const auto before = captured->save(), foreignBefore = foreign->save();

@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later.
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../mock/TinyMapGameTest.h"
 #include "../mock/GameHandlerTestServer.h"
 #include "../SpellPointTestUtils.h"
@@ -493,6 +494,7 @@ TEST_F(NewHorizonsProtectedMobilityTest, OldPlainHeroReadResetsPreloadedFlightLa
 
 TEST(NewHorizonsProtectedMobilityRulesTest, VmapActualFullAndHeaderOnlyReadPreserveAuthoredMetadata)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto map = std::make_unique<CMap>(nullptr);
 	map->width = 4;
 	map->height = 4;
@@ -532,6 +534,7 @@ TEST(NewHorizonsProtectedMobilityRulesTest, VmapActualFullAndHeaderOnlyReadPrese
 
 TEST(NewHorizonsProtectedMobilityRulesTest, ActualHeaderRejectsOlderVersionAndMalformedProtectedTriples)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto map = std::make_unique<CMap>(nullptr);
 	map->width = 4;
 	map->height = 4;

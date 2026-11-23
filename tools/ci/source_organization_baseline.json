@@ -11261,64 +11261,65 @@
     "test/battle/AutocombatPreferencesTest.cpp": {
       "functions": [
         {
-          "end": 39,
-          "start": 36,
+          "end": 41,
+          "start": 38,
           "symbol": "test::AutocombatPreferencesTest::std::array<UnitMock *, 5> units()#1"
         },
         {
-          "end": 56,
-          "start": 41,
+          "end": 58,
+          "start": 43,
           "symbol": "test::AutocombatPreferencesTest::void SetUp() override#1"
         },
         {
-          "end": 64,
-          "start": 58,
+          "end": 66,
+          "start": 60,
           "symbol": "test::AutocombatPreferencesTest::void disableAllCategories()#1"
         },
         {
-          "end": 80,
-          "start": 67,
+          "end": 82,
+          "start": 69,
           "symbol": "test::TEST_F(AutocombatPreferencesTest, DefaultsPreserveAutomaticDelegation)#1"
         },
         {
-          "end": 87,
-          "start": 83,
+          "end": 89,
+          "start": 85,
           "symbol": "test::TEST_F(AutocombatPreferencesTest, SelectiveCreaturesExcluded)#1"
         },
         {
-          "end": 93,
-          "start": 89,
+          "end": 95,
+          "start": 91,
           "symbol": "test::TEST_F(AutocombatPreferencesTest, SelectiveCatapultExcluded)#1"
         },
         {
-          "end": 99,
-          "start": 95,
+          "end": 101,
+          "start": 97,
           "symbol": "test::TEST_F(AutocombatPreferencesTest, SelectiveBallistaExcluded)#1"
         },
         {
-          "end": 105,
-          "start": 101,
+          "end": 107,
+          "start": 103,
           "symbol": "test::TEST_F(AutocombatPreferencesTest, SelectiveFirstAidTentExcluded)#1"
         },
         {
-          "end": 129,
-          "start": 107,
+          "end": 131,
+          "start": 109,
           "symbol": "test::TEST_F(AutocombatPreferencesTest, SelectiveExclusionDoesNotDisableOtherCategories)#1"
         },
         {
-          "end": 145,
-          "start": 131,
+          "end": 147,
+          "start": 133,
           "symbol": "test::TEST_F(AutocombatPreferencesTest, FullBattleOverridesExclusionsWithoutMutatingPreferences)#1"
         },
         {
-          "end": 152,
-          "start": 147,
+          "end": 154,
+          "start": 149,
           "symbol": "test::TEST_F(AutocombatPreferencesTest, TowersRemainAutomaticWithAllCategoriesDisabled)#1"
         }
       ],
-      "rationale": "Complete 154-line source review covers three fixture methods and all eight TEST_F bodies. Recovery at line 109 is a pointer-to-member std::array declaration inside an already measured test, not another callable. No lambdas or handwritten function-like macros.",
-      "review": "test-function-inventory-complete-32",
-      "sha256": "fef22f476f4a9a0fadf1138589a2aa29fc95207a46d78bc2cf0acbf134e4eb4b"
+      "rationale": "Complete 154-line source review covers three fixture methods and all eight TEST_F bodies. Recovery at line 109 is a pointer-to-member std::array declaration inside an already measured test, not another callable. No lambdas or handwritten function-like macros. Spans shifted for the original-data guard lines; no callable added or removed.",
+      "review": "PROPOSED-CLAUDE-NO-ORIGINAL-DATA-TESTS-20261123",
+      "sha256": "66c021a5708563ea696d6f781fba600e97399284a320e35cce42b5d0d2cd938c",
+      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW"
     },
     "test/battle/NewHorizonsBattleAITimingTest.cpp": {
       "functions": [
@@ -12357,136 +12358,136 @@
     "test/battle/NewHorizonsBattleFormHealthTest.cpp": {
       "functions": [
         {
-          "end": 40,
-          "start": 40,
+          "end": 41,
+          "start": 41,
           "symbol": "FormHealthBonusBearer::int32_t getTreeVersion() const override#1"
         },
         {
-          "end": 74,
-          "start": 42,
+          "end": 75,
+          "start": 43,
           "symbol": "FormHealthBonusBearer::TConstBonusListPtr getAllBonuses(const CSelector & selector, const std::string &) const override#1"
         },
         {
-          "end": 61,
-          "start": 54,
+          "end": 62,
+          "start": 55,
           "symbol": "FormHealthBonusBearer::getAllBonuses(const CSelector & selector, const std::string &) const override::[&](const CreatureID creature, const int32_t initiative)#1"
         },
         {
-          "end": 80,
-          "start": 76,
+          "end": 81,
+          "start": 77,
           "symbol": "FormHealthBonusBearer::TConstBonusListPtr getUnstackedBonuses(const CSelector & selector) const override#1"
         },
         {
-          "end": 88,
-          "start": 86,
+          "end": 89,
+          "start": 87,
           "symbol": "FormTestUnitState::FormTestUnitState(const IUnitInfo * unit_, const IBonusBearer * bonus_) : unit(unit_), bonus(bonus_)#1"
         },
         {
-          "end": 94,
-          "start": 90,
+          "end": 95,
+          "start": 91,
           "symbol": "FormTestUnitState::FormTestUnitState & operator=(const CUnitState & other)#1"
         },
         {
-          "end": 99,
-          "start": 96,
+          "end": 100,
+          "start": 97,
           "symbol": "FormTestUnitState::TConstBonusListPtr getAllBonuses(const CSelector & selector, const std::string & cachingStr = {}) const override#1"
         },
         {
-          "end": 104,
-          "start": 101,
+          "end": 105,
+          "start": 102,
           "symbol": "FormTestUnitState::TConstBonusListPtr getUnstackedBonuses(const CSelector & selector) const override#1"
         },
         {
-          "end": 109,
-          "start": 106,
+          "end": 110,
+          "start": 107,
           "symbol": "FormTestUnitState::int32_t getTreeVersion() const override#1"
-        },
-        {
-          "end": 111,
-          "start": 111,
-          "symbol": "FormTestUnitState::uint32_t unitId() const override#1"
         },
         {
           "end": 112,
           "start": 112,
+          "symbol": "FormTestUnitState::uint32_t unitId() const override#1"
+        },
+        {
+          "end": 113,
+          "start": 113,
           "symbol": "FormTestUnitState::BattleSide unitSide() const override#1"
         },
         {
-          "end": 116,
-          "start": 113,
-          "symbol": "FormTestUnitState::const CCreature * unitType() const override#1"
-        },
-        {
           "end": 117,
-          "start": 117,
-          "symbol": "FormTestUnitState::PlayerColor unitOwner() const override#1"
+          "start": 114,
+          "symbol": "FormTestUnitState::const CCreature * unitType() const override#1"
         },
         {
           "end": 118,
           "start": 118,
-          "symbol": "FormTestUnitState::SlotID unitSlot() const override#1"
+          "symbol": "FormTestUnitState::PlayerColor unitOwner() const override#1"
         },
         {
           "end": 119,
           "start": 119,
-          "symbol": "FormTestUnitState::int32_t unitBaseAmount() const override#1"
+          "symbol": "FormTestUnitState::SlotID unitSlot() const override#1"
         },
         {
           "end": 120,
           "start": 120,
+          "symbol": "FormTestUnitState::int32_t unitBaseAmount() const override#1"
+        },
+        {
+          "end": 121,
+          "start": 121,
           "symbol": "FormTestUnitState::void spendMana(ServerCallback *, const int) const override#1"
         },
         {
-          "end": 135,
-          "start": 127,
+          "end": 136,
+          "start": 128,
           "symbol": "void configureUnitInfo(UnitInfoMock & info, const CCreature * creature)#1"
         },
         {
-          "end": 276,
-          "start": 138,
+          "end": 278,
+          "start": 139,
           "symbol": "TEST(NewHorizonsBattleFormHealthTest, PreservesHealthProvenanceAcrossRepartitionCopySaveAndExpiry)#1"
         },
         {
-          "end": 341,
-          "start": 278,
+          "end": 344,
+          "start": 280,
           "symbol": "TEST(NewHorizonsBattleFormHealthTest, AcquiredCStackStateUsesReplacementNativeBonusesAndRoundTrips)#1"
         },
         {
-          "end": 311,
-          "start": 308,
+          "end": 314,
+          "start": 311,
           "symbol": "TEST(NewHorizonsBattleFormHealthTest, AcquiredCStackStateUsesReplacementNativeBonusesAndRoundTrips)::[formCreatureID](const Bonus * bonus)#1"
         },
         {
-          "end": 315,
-          "start": 312,
+          "end": 318,
+          "start": 315,
           "symbol": "TEST(NewHorizonsBattleFormHealthTest, AcquiredCStackStateUsesReplacementNativeBonusesAndRoundTrips)::[sourceCreatureID](const Bonus * bonus)#1"
         },
         {
-          "end": 379,
-          "start": 343,
+          "end": 383,
+          "start": 346,
           "symbol": "TEST(NewHorizonsBattleFormHealthTest, ReversionRelocatesOriginalFootprintWithoutChangingHealthOrLiveStack)#1"
         },
         {
-          "end": 401,
-          "start": 381,
+          "end": 406,
+          "start": 385,
           "symbol": "TEST(NewHorizonsBattleFormHealthTest, ImpossibleReversionDoesNotMutateTheStack)#1"
         },
         {
-          "end": 475,
-          "start": 405,
+          "end": 481,
+          "start": 410,
           "symbol": "TEST(NewHorizonsBattleFormHealthTest, CloneKeepsOneHitDeathAndClearsFormProvenanceBeforeGhosting)#1"
         },
         {
-          "end": 500,
-          "start": 477,
+          "end": 507,
+          "start": 483,
           "symbol": "TEST(NewHorizonsBattleFormHealthTest, IncomingReceiptUsesCommonRawCapOnceAndKeepsOriginalLedgerOnExpiry)#1"
         }
       ],
-      "rationale": "Complete exact-file callable inventory: 25 body-bearing definitions/macros (previous 27; 24 exact body-span bytes retained from the independently reviewed HEAD preimage). Named current spans include nested lambdas and all inline/template bodies; removed/added identities are separately reconciled. Recovery contexts: line96: TConstBonusListPtr getAllBonuses(const CSelector & selector, const std::string & cachingStr = {}) const override; line191: intermediate.operator=(static_cast<const CUnitState &>(restored));. These coverage spans are not size exceptions, parser/gate exclusions, native acceptance or future-content approval.",
-      "review": "IR-NH092-ORG-3E82D142-20261116",
+      "rationale": "Complete exact-file callable inventory: 25 body-bearing definitions/macros (previous 27; 24 exact body-span bytes retained from the independently reviewed HEAD preimage). Named current spans include nested lambdas and all inline/template bodies; removed/added identities are separately reconciled. Recovery contexts: line96: TConstBonusListPtr getAllBonuses(const CSelector & selector, const std::string & cachingStr = {}) const override; line191: intermediate.operator=(static_cast<const CUnitState &>(restored));. These coverage spans are not size exceptions, parser/gate exclusions, native acceptance or future-content approval. Spans shifted for the original-data guard lines; no callable added or removed.",
+      "review": "PROPOSED-CLAUDE-NO-ORIGINAL-DATA-TESTS-20261123",
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "2f13e101f311bc65ed036b6a599dd75f2a6aa252c131cca761d20d66d0740c82"
+      "sha256": "b8dd0936d6910d4a5924d9951291460146e12f5a4ca1a430e720681d9f8c7f06"
     },
     "test/battle/NewHorizonsConfusionStateTest.cpp": {
       "functions": [
@@ -12904,69 +12905,70 @@
       "functions": [
         {
           "symbol": "test::JsonNode skillConfig(const std::string & combatStatusProvider = {})#1",
-          "start": 29,
-          "end": 58
+          "start": 30,
+          "end": 59
         },
         {
           "symbol": "test::bool validSkillSchema(const JsonNode & skill)#1",
-          "start": 60,
-          "end": 63
+          "start": 61,
+          "end": 64
         },
         {
           "symbol": "test::CSkillTest::void SetUp() override#1",
-          "start": 75,
-          "end": 78
+          "start": 76,
+          "end": 79
         },
         {
           "symbol": "test::TEST_F(CSkillTest, RegistersIcons)#1",
-          "start": 81,
-          "end": 107
+          "start": 82,
+          "end": 108
         },
         {
           "symbol": "test::TEST_F(CSkillTest, RegistersIcons)::[this](auto && PH1, auto && PH2, auto && PH3, auto && PH4)#1",
-          "start": 92,
-          "end": 95
+          "start": 93,
+          "end": 96
         },
         {
           "symbol": "test::TEST_F(CSkillTest, MissingCombatStatusDefaultsToNoneAndEmptyTooltip)#1",
-          "start": 109,
-          "end": 118
+          "start": 110,
+          "end": 120
         },
         {
           "symbol": "test::TEST_F(CSkillTest, CombatStatusDescriptionIsRegisteredForTranslation)#1",
-          "start": 120,
-          "end": 126
+          "start": 122,
+          "end": 129
         },
         {
           "symbol": "test::TEST_F(CSkillTest, BloodrageCombatStatusProviderIsTyped)#1",
-          "start": 128,
-          "end": 134
+          "start": 131,
+          "end": 138
         },
         {
           "symbol": "test::TEST_F(CSkillTest, DivineMandateCombatStatusProviderIsTyped)#1",
-          "start": 136,
-          "end": 142
+          "start": 140,
+          "end": 147
         },
         {
           "symbol": "test::TEST(CSkillCombatStatusLoaderTest, RetiredMetamagicUsesProviderIsRejected)#1",
-          "start": 144,
-          "end": 154
+          "start": 149,
+          "end": 159
         },
         {
           "symbol": "test::TEST(CSkillCombatStatusSchemaTest, OptionalStatusAcceptsCanonicalAndRejectsMalformedShapes)#1",
-          "start": 156,
-          "end": 191
+          "start": 161,
+          "end": 196
         },
         {
           "symbol": "test::TEST(CSkillCombatStatusLoaderTest, RejectsMalformedMetadataBeforeLoadingSkillData)#1",
-          "start": 193,
-          "end": 240
+          "start": 198,
+          "end": 245
         }
       ],
-      "rationale": "Complete242-line successor to238-line skill fixture: all12 retained callable bodies remain represented, including two helpers, fixture setup, eight tests and forwarding lambda. Eleven bodies are byte-identical after exact span remapping. Only RetiredMetamagicUsesProviderIsRejected expands144-150to144-154 to validate the same retired-provider metadata with optional unmounted images removed from a schema-only copy; runtime loader rejection still receives original input. Later complete test spans shift+4. No new callable or coverage gap; existing empty-default-argument parser recovery remains covered by exact skillConfig29-58.",
-      "review": "IR-RELEASE-ORG-SCOPED-WINDOWS-SKILL-ASSEMBLY-20261119",
+      "rationale": "Complete242-line successor to238-line skill fixture: all12 retained callable bodies remain represented, including two helpers, fixture setup, eight tests and forwarding lambda. Eleven bodies are byte-identical after exact span remapping. Only RetiredMetamagicUsesProviderIsRejected expands144-150to144-154 to validate the same retired-provider metadata with optional unmounted images removed from a schema-only copy; runtime loader rejection still receives original input. Later complete test spans shift+4. No new callable or coverage gap; existing empty-default-argument parser recovery remains covered by exact skillConfig29-58. Spans shifted for the original-data guard lines; no callable added or removed.",
+      "review": "PROPOSED-CLAUDE-NO-ORIGINAL-DATA-TESTS-20261123",
       "review_scope": "Exact complete242-line callable inventory; no functional/native test execution claim.",
-      "sha256": "4d7b450d437ba01528b416535f7faf916cb995b9153d65cb9fc6f9c3c1ca5b24"
+      "sha256": "468d50c6d0f2c7d2f7061056c09da4ebe687a0a2ed28daca4d6cd11e7b2b1249",
+      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW"
     },
     "test/game/MovementCostTest.cpp": {
       "functions": [
@@ -14990,136 +14992,136 @@
     "test/server/battles/NewHorizonsCrusadeTest.cpp": {
       "functions": [
         {
-          "end": 35,
-          "start": 32,
+          "end": 36,
+          "start": 33,
           "symbol": "SpellID crusadeSpell()#1"
         },
         {
-          "end": 88,
-          "start": 37,
+          "end": 89,
+          "start": 38,
           "symbol": "JsonNode legacyMagicRules(int version)#1"
         },
         {
-          "end": 94,
-          "start": 90,
+          "end": 95,
+          "start": 91,
           "symbol": "TConstBonusListPtr crusadeBonuses(const CStack * unit)#1"
         },
         {
-          "end": 100,
-          "start": 96,
+          "end": 101,
+          "start": 97,
           "symbol": "std::shared_ptr<Bonus> flatDamageReduction(int value)#1"
         },
         {
-          "end": 118,
-          "start": 113,
+          "end": 119,
+          "start": 114,
           "symbol": "NewHorizonsCrusadeTest::void SetUp() override#1"
         },
         {
-          "end": 140,
-          "start": 120,
+          "end": 141,
+          "start": 121,
           "symbol": "NewHorizonsCrusadeTest::void mapLoaded(CMap * loaded) override#1"
         },
         {
-          "end": 149,
-          "start": 142,
+          "end": 150,
+          "start": 143,
           "symbol": "NewHorizonsCrusadeTest::void removeDeployedUnits()#1"
         },
         {
-          "end": 174,
-          "start": 151,
+          "end": 175,
+          "start": 152,
           "symbol": "NewHorizonsCrusadeTest::void prepare(int power = 50, int lightMagicRank = MasteryLevel::NONE)#1"
         },
         {
-          "end": 184,
-          "start": 176,
+          "end": 185,
+          "start": 177,
           "symbol": "NewHorizonsCrusadeTest::BattleAction crusadeAction() const#1"
         },
         {
-          "end": 190,
-          "start": 186,
+          "end": 191,
+          "start": 187,
           "symbol": "NewHorizonsCrusadeTest::bool castCrusade()#1"
         },
         {
-          "end": 200,
-          "start": 192,
+          "end": 201,
+          "start": 193,
           "symbol": "NewHorizonsCrusadeTest::bool castHaste()#1"
         },
         {
-          "end": 214,
-          "start": 202,
+          "end": 215,
+          "start": 203,
           "symbol": "NewHorizonsCrusadeTest::void selectLightCrusader()#1"
         },
         {
-          "end": 221,
-          "start": 216,
+          "end": 222,
+          "start": 217,
           "symbol": "NewHorizonsCrusadeTest::void advanceRound()#1"
         },
         {
-          "end": 230,
-          "start": 223,
+          "end": 231,
+          "start": 224,
           "symbol": "NewHorizonsCrusadeTest::std::shared_ptr<Bonus> bonusOfType(const CStack * unit, BonusType type, BonusSubtypeID subtype = {}) const#1"
         },
         {
-          "end": 293,
-          "start": 233,
+          "end": 294,
+          "start": 234,
           "symbol": "TEST_F(NewHorizonsCrusadeTest, AuthoritativeCastEmpowersAlliesAndUsesOneHeroAction)#1"
         },
         {
-          "end": 306,
-          "start": 295,
+          "end": 307,
+          "start": 296,
           "symbol": "TEST_F(NewHorizonsCrusadeTest, SpellPowerTableAndSchoolRankScaleOnlyDerivedTerms)#1"
         },
         {
-          "end": 319,
-          "start": 308,
+          "end": 320,
+          "start": 309,
           "symbol": "TEST_F(NewHorizonsCrusadeTest, AuthoredAttackDefenseInitiativeAndReductionCapsAreEnforced)#1"
         },
         {
-          "end": 328,
-          "start": 321,
+          "end": 329,
+          "start": 322,
           "symbol": "TEST_F(NewHorizonsCrusadeTest, BasicLightScalesOnlyTheSpellPowerReductionTerm)#1"
         },
         {
-          "end": 337,
-          "start": 330,
+          "end": 338,
+          "start": 331,
           "symbol": "TEST_F(NewHorizonsCrusadeTest, ExpertLightScalesOnlyTheSpellPowerReductionTerm)#1"
         },
         {
-          "end": 352,
-          "start": 339,
+          "end": 353,
+          "start": 340,
           "symbol": "TEST_F(NewHorizonsCrusadeTest, CrusaderExtendsEveryAppliedBonusToFourRounds)#1"
         },
         {
-          "end": 394,
-          "start": 358,
+          "end": 395,
+          "start": 359,
           "symbol": "TEST_F(NewHorizonsCrusadeTest, RecastRefreshesTheSameSourceAndTheNormalDurationExpires)#1"
         },
         {
-          "end": 414,
-          "start": 396,
+          "end": 415,
+          "start": 397,
           "symbol": "TEST_F(NewHorizonsCrusadeTest, FractionalReductionMultipliesWithExistingMagicalProtection)#1"
         },
         {
-          "end": 427,
-          "start": 416,
+          "end": 428,
+          "start": 417,
           "symbol": "TEST_F(NewHorizonsCrusadeTest, VersionOneSavedRulesDoNotGainCrusade)#1"
         },
         {
-          "end": 438,
-          "start": 429,
+          "end": 439,
+          "start": 430,
           "symbol": "TEST_F(NewHorizonsCrusadeTest, VersionTwoSavedRulesDoNotGainCrusade)#1"
         },
         {
-          "end": 459,
-          "start": 440,
-          "symbol": "TEST(NewHorizonsCrusadeSerializationTest, FractionalReductionRoundTripsInCurrentSavesAndRejectsDownsave)#1"
+          "end": 462,
+          "start": 443,
+          "symbol": "TEST_F(NewHorizonsCrusadeSerializationTest, FractionalReductionRoundTripsInCurrentSavesAndRejectsDownsave)#1"
         }
       ],
-      "rationale": "Complete exact-file callable inventory: 25 body-bearing definitions/macros (previous 28; 23 exact body-span bytes retained from the independently reviewed HEAD preimage). Named current spans include nested lambdas and all inline/template bodies; removed/added identities are separately reconciled. Recovery contexts: line223: std::shared_ptr<Bonus> bonusOfType(const CStack * unit, BonusType type, BonusSubtypeID subtype = {}) const. These coverage spans are not size exceptions, parser/gate exclusions, native acceptance or future-content approval.",
-      "review": "IR-NH092-ORG-3E82D142-20261116",
+      "rationale": "Complete exact-file callable inventory: 25 body-bearing definitions/macros (previous 28; 23 exact body-span bytes retained from the independently reviewed HEAD preimage). Named current spans include nested lambdas and all inline/template bodies; removed/added identities are separately reconciled. Recovery contexts: line223: std::shared_ptr<Bonus> bonusOfType(const CStack * unit, BonusType type, BonusSubtypeID subtype = {}) const. These coverage spans are not size exceptions, parser/gate exclusions, native acceptance or future-content approval. Spans shifted for the original-data guard lines; no callable added or removed.",
+      "review": "PROPOSED-CLAUDE-NO-ORIGINAL-DATA-TESTS-20261123",
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "fff0e7895b2f32dba4c873fc98f2e49f79a1622dfa74dd59261503c2ca5b1e50"
+      "sha256": "1016890deaad57f0873e468c0d69ca4517a9ab3478068a04ceb780325fc72d91"
     },
     "test/server/battles/NewHorizonsFactionSpellDamageTest.cpp": {
       "functions": [
@@ -15427,211 +15429,211 @@
     "test/server/battles/NewHorizonsPurifyTest.cpp": {
       "functions": [
         {
-          "end": 42,
-          "start": 39,
+          "end": 43,
+          "start": 40,
           "symbol": "SpellID purifySpell()#1"
         },
         {
-          "end": 51,
-          "start": 44,
+          "end": 52,
+          "start": 45,
           "symbol": "Bonus spellEffect(SpellID source, BonusType type, int value, BonusSubtypeID subtype = BonusSubtypeID())#1"
         },
         {
-          "end": 63,
-          "start": 58,
+          "end": 64,
+          "start": 59,
           "symbol": "NewHorizonsPurifyTest::void SetUp() override#1"
         },
         {
-          "end": 79,
-          "start": 65,
+          "end": 80,
+          "start": 66,
           "symbol": "NewHorizonsPurifyTest::void mapLoaded(CMap * map) override#1"
         },
         {
-          "end": 93,
-          "start": 81,
+          "end": 94,
+          "start": 82,
           "symbol": "NewHorizonsPurifyTest::void selectPurifyingMandate()#1"
         },
         {
-          "end": 129,
-          "start": 95,
+          "end": 130,
+          "start": 96,
           "symbol": "NewHorizonsPurifyTest::void prepare(int32_t spellPower = 0, bool purifier = false, bool purifyingMandate = false)#1"
         },
         {
-          "end": 138,
-          "start": 131,
+          "end": 139,
+          "start": 132,
           "symbol": "NewHorizonsPurifyTest::void installGraveDust(CStack * recipient, int value = 5000)#1"
         },
         {
-          "end": 147,
-          "start": 140,
+          "end": 148,
+          "start": 141,
           "symbol": "NewHorizonsPurifyTest::void removeDeployedUnits()#1"
         },
         {
-          "end": 159,
-          "start": 149,
+          "end": 160,
+          "start": 150,
           "symbol": "NewHorizonsPurifyTest::void addSourceGroup(CStack * unit, SpellID source, int firstValue = -2, bool secondBonus = false)#1"
         },
         {
-          "end": 173,
-          "start": 161,
+          "end": 174,
+          "start": 162,
           "symbol": "NewHorizonsPurifyTest::void addPhysicalPoison(CStack * unit)#1"
         },
         {
-          "end": 191,
-          "start": 175,
+          "end": 192,
+          "start": 176,
           "symbol": "NewHorizonsPurifyTest::void addMarkedAffliction(CStack * unit, const std::string & kind, const int64_t applicationOrder, const int32_t sourceNumber)#1"
         },
         {
-          "end": 200,
-          "start": 193,
+          "end": 201,
+          "start": 194,
           "symbol": "NewHorizonsPurifyTest::bool hasAffliction(const CStack * unit, const std::string & kind) const#1"
         },
         {
-          "end": 199,
-          "start": 196,
+          "end": 200,
+          "start": 197,
           "symbol": "NewHorizonsPurifyTest::hasAffliction(const CStack * unit, const std::string & kind) const::[&](const auto & affliction)#1"
         },
         {
-          "end": 211,
-          "start": 202,
+          "end": 212,
+          "start": 203,
           "symbol": "NewHorizonsPurifyTest::BattleAction action(BattleHex center, std::vector<std::pair<int32_t, SpellID>> choices = {}) const#1"
         },
         {
-          "end": 217,
-          "start": 213,
+          "end": 218,
+          "start": 214,
           "symbol": "NewHorizonsPurifyTest::bool cast(std::vector<std::pair<int32_t, SpellID>> choices = {}, BattleHex center = BattleHex(3, 5))#1"
         },
         {
-          "end": 224,
-          "start": 219,
+          "end": 225,
+          "start": 220,
           "symbol": "NewHorizonsPurifyTest::bool hasEffect(const CStack * unit, SpellID source) const#1"
         },
         {
-          "end": 238,
-          "start": 232,
+          "end": 239,
+          "start": 233,
           "symbol": "TEST(NewHorizonsPurifyHelpersTest, SpellPowerCapChangesAt120)#1"
         },
         {
-          "end": 248,
-          "start": 240,
+          "end": 249,
+          "start": 241,
           "symbol": "TEST_F(NewHorizonsPurifyTest, SavedV2RulesDoNotEnablePurify)#1"
         },
         {
-          "end": 264,
-          "start": 250,
+          "end": 265,
+          "start": 251,
           "symbol": "TEST(NewHorizonsPurifyHelpersTest, SchoolCoefficientFloorsOnlyThePowerTermAndPreservesCap)#1"
         },
         {
-          "end": 282,
-          "start": 266,
+          "end": 283,
+          "start": 267,
           "symbol": "TEST_F(NewHorizonsPurifyTest, CapturedOlderRulesKeepUnmodifiedCountDespiteCurrentExpertHero)#1"
         },
         {
-          "end": 314,
-          "start": 288,
+          "end": 315,
+          "start": 289,
           "symbol": "TEST_P(NewHorizonsPurifySchoolRankTest, PaidTwoGroupCleanseUsesCapturedRankAndRejectsBelowThreshold)#1"
         },
         {
-          "end": 358,
-          "start": 320,
+          "end": 359,
+          "start": 321,
           "symbol": "TEST_F(NewHorizonsPurifyTest, SelectionIsRadiusLimitedAndRemovesOneCompleteSourceGroup)#1"
         },
         {
-          "end": 334,
-          "start": 331,
+          "end": 335,
+          "start": 332,
           "symbol": "TEST_F(NewHorizonsPurifyTest, SelectionIsRadiusLimitedAndRemovesOneCompleteSourceGroup)::[this](const auto & stack)#1"
         },
         {
-          "end": 343,
-          "start": 340,
+          "end": 344,
+          "start": 341,
           "symbol": "TEST_F(NewHorizonsPurifyTest, SelectionIsRadiusLimitedAndRemovesOneCompleteSourceGroup)::[this](const auto & stack)#2"
         },
         {
-          "end": 388,
-          "start": 360,
+          "end": 389,
+          "start": 361,
           "symbol": "TEST_F(NewHorizonsPurifyTest, RejectsNoopForgedPositiveAndOverCapChoicesBeforeSpending)#1"
         },
         {
-          "end": 413,
-          "start": 390,
+          "end": 414,
+          "start": 391,
           "symbol": "TEST_F(NewHorizonsPurifyTest, DoesNotRemoveOrderSourcedEffects)#1"
         },
         {
-          "end": 437,
-          "start": 415,
+          "end": 438,
+          "start": 416,
           "symbol": "TEST_F(NewHorizonsPurifyTest, PhysicalPoisonIsASelectableBaseEffectWithoutPurifier)#1"
         },
         {
-          "end": 455,
-          "start": 439,
+          "end": 456,
+          "start": 440,
           "symbol": "TEST_F(NewHorizonsPurifyTest, PurifierAutomaticallyClearsPhysicalPoisonInAdditionToSelectedGroups)#1"
         },
         {
-          "end": 478,
-          "start": 457,
+          "end": 479,
+          "start": 458,
           "symbol": "TEST_F(NewHorizonsPurifyTest, DivineMandateOrderFollowupPurifyRemovesOneStoredPoisonAffliction)#1"
         },
         {
-          "end": 497,
-          "start": 480,
+          "end": 498,
+          "start": 481,
           "symbol": "TEST_F(NewHorizonsPurifyTest, PurifierCleanupPrecedesMandateDiseaseRemoval)#1"
         },
         {
-          "end": 520,
-          "start": 499,
+          "end": 521,
+          "start": 500,
           "symbol": "TEST_F(NewHorizonsPurifyTest, OrdinaryInitialHeroSpellDoesNotReceivePurifyingMandateBonus)#1"
         },
         {
-          "end": 546,
-          "start": 522,
+          "end": 547,
+          "start": 523,
           "symbol": "TEST_F(NewHorizonsPurifyTest, PhysicalOnlyMandatePurifyDoesNotTriggerAnExtraAfflictionRemoval)#1"
         },
         {
-          "end": 576,
-          "start": 548,
+          "end": 577,
+          "start": 549,
           "symbol": "TEST_F(NewHorizonsPurifyTest, MandateDiseaseGroupRemovalDoesNotUnlockAnotherAfflictionRemoval)#1"
         },
         {
-          "end": 562,
-          "start": 559,
+          "end": 563,
+          "start": 560,
           "symbol": "TEST_F(NewHorizonsPurifyTest, MandateDiseaseGroupRemovalDoesNotUnlockAnotherAfflictionRemoval)::[](const auto & affliction)#1"
         },
         {
-          "end": 611,
-          "start": 578,
+          "end": 613,
+          "start": 579,
           "symbol": "TEST(NewHorizonsPurifyHelpersTest, ActionRoundTripsAndOlderProtocolRejectsOnlyPopulatedPurifyChoices)#1"
         },
         {
-          "end": 626,
-          "start": 613,
+          "end": 628,
+          "start": 615,
           "symbol": "TEST_F(NewHorizonsPurifyTest, PurifierCleansesCanonicalGraveDustAtFullHealthOutsideBaseCap)#1"
         },
         {
-          "end": 637,
-          "start": 628,
+          "end": 639,
+          "start": 630,
           "symbol": "TEST_F(NewHorizonsPurifyTest, NoPurifierNoMagicalCleanupKeepsDustAndRejectsEmptyCast)#1"
         },
         {
-          "end": 649,
-          "start": 639,
+          "end": 651,
+          "start": 641,
           "symbol": "TEST_F(NewHorizonsPurifyTest, PurifierKeepsOutsideAndEnemyDust)#1"
         },
         {
-          "end": 660,
-          "start": 651,
+          "end": 662,
+          "start": 653,
           "symbol": "TEST_F(NewHorizonsPurifyTest, PurifyingMandateCleansesDustOnlyAfterActualMagicalGroupRemoval)#1"
         },
         {
-          "end": 670,
-          "start": 662,
+          "end": 672,
+          "start": 664,
           "symbol": "TEST_F(NewHorizonsPurifyTest, InitialPurifyWithoutMandateFollowupKeepsDust)#1"
         }
       ],
-      "rationale": "Complete exact-file callable inventory: 40 body-bearing definitions/macros (previous 40; 39 exact body-span bytes retained from the independently reviewed HEAD preimage). Named current spans include nested lambdas and all inline/template bodies; removed/added identities are separately reconciled. Recovery contexts: line202: BattleAction action(BattleHex center, std::vector<std::pair<int32_t, SpellID>> choices = {}) const; line213: bool cast(std::vector<std::pair<int32_t, SpellID>> choices = {}, BattleHex center = BattleHex(3, 5)). These coverage spans are not size exceptions, parser/gate exclusions, native acceptance or future-content approval.",
-      "review": "IR-NH092-ORG-3E82D142-20261116",
+      "rationale": "Complete exact-file callable inventory: 40 body-bearing definitions/macros (previous 40; 39 exact body-span bytes retained from the independently reviewed HEAD preimage). Named current spans include nested lambdas and all inline/template bodies; removed/added identities are separately reconciled. Recovery contexts: line202: BattleAction action(BattleHex center, std::vector<std::pair<int32_t, SpellID>> choices = {}) const; line213: bool cast(std::vector<std::pair<int32_t, SpellID>> choices = {}, BattleHex center = BattleHex(3, 5)). These coverage spans are not size exceptions, parser/gate exclusions, native acceptance or future-content approval. Spans shifted for the original-data guard lines; no callable added or removed.",
+      "review": "PROPOSED-CLAUDE-NO-ORIGINAL-DATA-TESTS-20261123",
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "d2dd1ff861bb2f31e7d5bd31b9dce8d8ad67e6916769de82e5ac0889659d2a76"
+      "sha256": "b0e881a58070baf8c261646fa8bbcaac36f9d93c68465447d1b80b9e0a8dda21"
     },
     "test/server/battles/NewHorizonsShieldOfChaosTest.cpp": {
       "functions": [
@@ -16307,206 +16309,208 @@
     "test/spells/OverwhelmingFormulaDamageTest.cpp": {
       "functions": [
         {
-          "end": 29,
-          "start": 26,
+          "end": 30,
+          "start": 27,
           "symbol": "FormulaBattle::const OverwhelmingFormulaState & getOverwhelmingFormulaState(BattleSide side) const override#1"
         },
         {
-          "end": 41,
-          "start": 34,
+          "end": 42,
+          "start": 35,
           "symbol": "JsonNode capture(BattleSide side, const std::string & token)#1"
         },
         {
-          "end": 47,
-          "start": 43,
+          "end": 48,
+          "start": 44,
           "symbol": "std::shared_ptr<Bonus> reduction(BonusType type, int value, SpellSchool school)#1"
         },
         {
-          "end": 56,
-          "start": 52,
+          "end": 58,
+          "start": 54,
           "symbol": "OverwhelmingFormulaDamageTest::void SetUp() override#1"
         },
         {
-          "end": 63,
-          "start": 58,
+          "end": 65,
+          "start": 60,
           "symbol": "OverwhelmingFormulaDamageTest::int64_t damage(int64_t raw, bool fractional, int hold = 0, int perk = 0, const std::vector<int> & penetrations = {})#1"
         },
         {
-          "end": 85,
-          "start": 70,
+          "end": 87,
+          "start": 72,
           "symbol": "TEST(OverwhelmingFormulaCapture, CanonicalStringTokensPreserveFullUint64IdentityOnWire)#1"
         },
         {
-          "end": 114,
-          "start": 87,
+          "end": 116,
+          "start": 89,
           "symbol": "TEST(OverwhelmingFormulaCapture, MalformedMetadataNeverRemovesOrdinaryContributorsOrAddsFormula)#1"
         },
         {
-          "end": 95,
-          "start": 91,
+          "end": 97,
+          "start": 93,
           "symbol": "TEST(OverwhelmingFormulaCapture, MalformedMetadataNeverRemovesOrdinaryContributorsOrAddsFormula)::[&battle](const JsonNode & payload)#1"
         },
         {
-          "end": 133,
-          "start": 116,
+          "end": 135,
+          "start": 118,
           "symbol": "TEST(OverwhelmingFormulaCapture, DynamicContributorRespectsRegisteredTokenWinningCastAndCasterSide)#1"
         },
         {
-          "end": 150,
-          "start": 135,
+          "end": 152,
+          "start": 137,
           "symbol": "TEST(OverwhelmingFormulaCapture, FormulaComposesIndependentlyWithWarcastingAndTargetQualifiedContributors)#1"
         },
         {
-          "end": 161,
-          "start": 152,
+          "end": 163,
+          "start": 154,
           "symbol": "TEST_F(OverwhelmingFormulaDamageTest, DetectsFractionalProtectionEvenWhenBothRoundedDamageValuesMatch)#1"
         },
         {
-          "end": 174,
-          "start": 163,
+          "end": 176,
+          "start": 165,
           "symbol": "TEST_F(OverwhelmingFormulaDamageTest, DetectionAndDamageShareCurrentMatchingSchoolAndAnySources)#1"
         },
         {
-          "end": 186,
-          "start": 176,
+          "end": 188,
+          "start": 178,
           "symbol": "TEST_F(OverwhelmingFormulaDamageTest, ZeroSourcesAreInertWhileCurrentHoldAndPerkBasisPointsAreApplicable)#1"
         }
       ],
-      "rationale": "All186 lines read; inline FormulaBattle override, two free helpers, fixture SetUp/damage, four TEST and three TEST_F bodies plus checkInvalid lambda91-95. Braced default59 belongs to damage58-63.",
-      "review": "test-function-inventory-complete-32",
-      "sha256": "d7b4a9829f0676ebf293c6a081971924478c5b84b101a592e2e146df5ef1a118"
+      "rationale": "All186 lines read; inline FormulaBattle override, two free helpers, fixture SetUp/damage, four TEST and three TEST_F bodies plus checkInvalid lambda91-95. Braced default59 belongs to damage58-63. Spans shifted for the original-data guard lines; no callable added or removed.",
+      "review": "PROPOSED-CLAUDE-NO-ORIGINAL-DATA-TESTS-20261123",
+      "sha256": "f647f4434be85f8746d75248afb50759783fd1b355dcd3d9c13f913d65da0d67",
+      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW"
     },
     "test/spells/TargetConditionTransferTest.cpp": {
       "functions": [
         {
-          "end": 49,
-          "start": 35,
+          "end": 50,
+          "start": 36,
           "symbol": "test::TargetConditionTransferTest::void SetUp() override#1"
         },
         {
-          "end": 37,
-          "start": 37,
+          "end": 38,
+          "start": 38,
           "symbol": "test::TargetConditionTransferTest::SetUp() override::[&]()#1"
         },
         {
-          "end": 44,
-          "start": 40,
+          "end": 45,
+          "start": 41,
           "symbol": "test::TargetConditionTransferTest::SetUp() override::[](const Spell::SchoolCallback & callback)#1"
         },
         {
-          "end": 55,
-          "start": 51,
+          "end": 56,
+          "start": 52,
           "symbol": "test::TargetConditionTransferTest::void load(const JsonNode & configuration)#1"
         },
         {
-          "end": 61,
-          "start": 57,
+          "end": 62,
+          "start": 58,
           "symbol": "test::TargetConditionTransferTest::RecipientConditionContext context(std::optional<bool> opposing = false, std::optional<int64_t> ceiling = {}, bool v3 = true, SpellID family = SpellID(SpellID::SLOW)) const#1"
         },
         {
-          "end": 69,
-          "start": 63,
+          "end": 70,
+          "start": 64,
           "symbol": "test::TargetConditionTransferTest::void add(BonusType type, BonusSubtypeID subtype = BonusSubtypeID(), bool absolute = false)#1"
         },
         {
-          "end": 79,
-          "start": 71,
+          "end": 80,
+          "start": 72,
           "symbol": "test::TargetConditionTransferTest::void forbid(BonusType type, const std::string & name)#1"
         },
         {
-          "end": 95,
-          "start": 82,
+          "end": 97,
+          "start": 83,
           "symbol": "test::TEST_F(TargetConditionTransferTest, BasicTraitInversionAndOrdinaryRegression)#1"
         },
         {
-          "end": 103,
-          "start": 97,
+          "end": 105,
+          "start": 99,
           "symbol": "test::TEST_F(TargetConditionTransferTest, ResistanceGateAndNegationPrecedence)#1"
         },
         {
-          "end": 111,
-          "start": 105,
+          "end": 113,
+          "start": 107,
           "symbol": "test::TEST_F(TargetConditionTransferTest, AbsoluteFamilyImmunityPrecedesNegation)#1"
         },
         {
-          "end": 120,
-          "start": 113,
+          "end": 122,
+          "start": 115,
           "symbol": "test::TEST_F(TargetConditionTransferTest, NormalFamilyImmunityAndReceptivePositiveException)#1"
         },
         {
-          "end": 129,
-          "start": 122,
+          "end": 131,
+          "start": 124,
           "symbol": "test::TEST_F(TargetConditionTransferTest, AbsoluteLevelImmunityUsesSavedLevel)#1"
         },
         {
-          "end": 140,
-          "start": 131,
+          "end": 142,
+          "start": 133,
           "symbol": "test::TEST_F(TargetConditionTransferTest, CapturedHealthCeilingIsExactWithoutRecalculation)#1"
         },
         {
-          "end": 151,
-          "start": 142,
+          "end": 153,
+          "start": 144,
           "symbol": "test::TEST_F(TargetConditionTransferTest, MissingHealthCaptureCannotPassInvertedCondition)#1"
         },
         {
-          "end": 162,
-          "start": 153,
+          "end": 164,
+          "start": 155,
           "symbol": "test::TEST_F(TargetConditionTransferTest, KnownNegationBypassesNormalCaptureWithoutRecalculation)#1"
         },
         {
-          "end": 176,
-          "start": 164,
+          "end": 178,
+          "start": 166,
           "symbol": "test::TEST_F(TargetConditionTransferTest, OriginalCasterProvenanceIsRequiredOnlyForBattleWideNegation)#1"
         },
         {
-          "end": 189,
-          "start": 178,
+          "end": 192,
+          "start": 180,
           "symbol": "test::TEST_F(TargetConditionTransferTest, ForgetfulnessV3UsesSavedRuleAndSourceNotFamily)#1"
         },
         {
-          "end": 202,
-          "start": 191,
+          "end": 205,
+          "start": 194,
           "symbol": "test::TEST_F(TargetConditionTransferTest, SchoolImmunityAndAlternativeRequirements)#1"
-        },
-        {
-          "end": 207,
-          "start": 207,
-          "symbol": "test::UnsupportedTransferItem::bool isReceptive(const Mechanics *, const battle::Unit *) const override#1"
-        },
-        {
-          "end": 208,
-          "start": 208,
-          "symbol": "test::UnsupportedTransferItem::void setInverted(bool) override#1"
-        },
-        {
-          "end": 209,
-          "start": 209,
-          "symbol": "test::UnsupportedTransferItem::void setExclusive(bool) override#1"
         },
         {
           "end": 210,
           "start": 210,
-          "symbol": "test::UnsupportedTransferItem::bool isExclusive() const override#1"
+          "symbol": "test::UnsupportedTransferItem::bool isReceptive(const Mechanics *, const battle::Unit *) const override#1"
         },
         {
           "end": 211,
           "start": 211,
+          "symbol": "test::UnsupportedTransferItem::void setInverted(bool) override#1"
+        },
+        {
+          "end": 212,
+          "start": 212,
+          "symbol": "test::UnsupportedTransferItem::void setExclusive(bool) override#1"
+        },
+        {
+          "end": 213,
+          "start": 213,
+          "symbol": "test::UnsupportedTransferItem::bool isExclusive() const override#1"
+        },
+        {
+          "end": 214,
+          "start": 214,
           "symbol": "test::UnsupportedTransferItem::bool isForgetfulnessShooterRequirement() const override#1"
         },
         {
-          "end": 225,
-          "start": 214,
+          "end": 228,
+          "start": 217,
           "symbol": "test::TEST_F(TargetConditionTransferTest, UnknownCustomConditionCannotSilentlyPassOrBeNegated)#1"
         },
         {
-          "end": 245,
-          "start": 227,
+          "end": 249,
+          "start": 230,
           "symbol": "test::TEST_F(TargetConditionTransferTest, CachedFactoryAndSpellForwardingRejectWrongSource)#1"
         }
       ],
-      "rationale": "All247 lines read; fixture methods and two SetUp lambdas, thirteen TEST_F bodies and five inline UnsupportedTransferItem override bodies (including empty setters). Braced default58 is an initializer, not another callable.",
-      "review": "test-function-inventory-complete-32",
-      "sha256": "6181c7d1f81f1e1ed62be1c364535b388fb6f8c60004a8f8b170e3f203228691"
+      "rationale": "All247 lines read; fixture methods and two SetUp lambdas, thirteen TEST_F bodies and five inline UnsupportedTransferItem override bodies (including empty setters). Braced default58 is an initializer, not another callable. Spans shifted for the original-data guard lines; no callable added or removed.",
+      "review": "PROPOSED-CLAUDE-NO-ORIGINAL-DATA-TESTS-20261123",
+      "sha256": "47fb3772cec546ca86d8ba7eeb60c13f5b25ccbb6e113fb78f72c0f4e739bf08",
+      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW"
     },
     "tools/native/BattleActionExport.h": {
       "functions": [],

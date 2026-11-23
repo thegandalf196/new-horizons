@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 
 #include "../../lib/battle/CBattleInfoCallback.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
@@ -238,6 +239,7 @@ TEST(ReachabilityInfoTest, GhostWalkChecksTheWholeDoubleWideEndpointFootprint)
 
 TEST_F(CBattleInfoCallbackTest, playerCallbackCannotAccessEnemyHero)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	CGHeroInstance attacker(nullptr);
 	CGHeroInstance defender(nullptr);
 	EXPECT_CALL(battleMock, getSidePlayer(BattleSide::ATTACKER)).WillRepeatedly(Return(PlayerColor(0)));
@@ -407,6 +409,7 @@ TEST_F(AttackableHexesTest, getAttackableHexes_DoubleWideAttacker_DoubleWideDefe
 
 TEST_F(AttackableHexesTest, LongWeaponCanAttackWithOneEmptyHexGap)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	UnitFake & attacker = addLongWeaponUnit(60, BattleSide::ATTACKER);
 	UnitFake & defender = addRegularMelee(attacker.getPosition().cloneInDirection(BattleHex::RIGHT).cloneInDirection(BattleHex::RIGHT), BattleSide::DEFENDER);
 
@@ -435,6 +438,7 @@ TEST_F(AttackableHexesTest, LongWeaponCanBeDisabledForManualAttack)
 
 TEST_F(AttackableHexesTest, LongWeaponRequiresEmptyMiddleHex)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	UnitFake & attacker = addLongWeaponUnit(60, BattleSide::ATTACKER);
 	const BattleHex middleHex = attacker.getPosition().cloneInDirection(BattleHex::RIGHT);
 	UnitFake & blocker = addRegularMelee(middleHex, BattleSide::ATTACKER);
@@ -453,6 +457,7 @@ TEST_F(AttackableHexesTest, LongWeaponRequiresEmptyMiddleHex)
 
 TEST_F(AttackableHexesTest, LongWeaponCanAttackOverCorpseInMiddleHex)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	UnitFake & attacker = addLongWeaponUnit(60, BattleSide::ATTACKER);
 	const BattleHex middleHex = attacker.getPosition().cloneInDirection(BattleHex::RIGHT);
 	UnitFake & corpse = addRegularMelee(middleHex, BattleSide::ATTACKER);
@@ -471,6 +476,7 @@ TEST_F(AttackableHexesTest, LongWeaponCanAttackOverCorpseInMiddleHex)
 
 TEST_F(AttackableHexesTest, LongWeaponDoubleWideCanAttackWithOneEmptyHexGap)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	UnitFake & attacker = addLongWeaponDoubleWide(60, BattleSide::ATTACKER);
 	UnitFake & defender = addRegularMelee(attacker.getPosition().cloneInDirection(BattleHex::RIGHT).cloneInDirection(BattleHex::RIGHT), BattleSide::DEFENDER);
 
@@ -487,6 +493,7 @@ TEST_F(AttackableHexesTest, LongWeaponDoubleWideCanAttackWithOneEmptyHexGap)
 
 TEST_F(AttackableHexesTest, LongWeaponDoubleWideFallsBackToAdjacentReachableHexWhenLongHexIsUnavailable)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	UnitFake & attacker = addLongWeaponDoubleWide(60, BattleSide::ATTACKER);
 	UnitFake & defender = addRegularMelee(attacker.getPosition().cloneInDirection(BattleHex::RIGHT).cloneInDirection(BattleHex::RIGHT).cloneInDirection(BattleHex::RIGHT), BattleSide::DEFENDER);
 
@@ -500,6 +507,7 @@ TEST_F(AttackableHexesTest, LongWeaponDoubleWideFallsBackToAdjacentReachableHexW
 
 TEST_F(AttackableHexesTest, LongWeaponSingleWideInvalidDirectionReturnsInvalidHex)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	UnitFake & attacker = addLongWeaponUnit(60, BattleSide::ATTACKER);
 
 	startBattle();
@@ -524,6 +532,7 @@ TEST_F(AttackableHexesTest, LongWeaponSingleWideGetAttackedUnitsFromGapThrows)
 
 TEST_F(AttackableHexesTest, CerberiAttackerRight)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	//    #
 	// X A D
 	//    #
@@ -540,6 +549,7 @@ TEST_F(AttackableHexesTest, CerberiAttackerRight)
 
 TEST_F(AttackableHexesTest, CerberiAttackerTopRight)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	//  # D
 	// X A #
 	//
@@ -556,6 +566,7 @@ TEST_F(AttackableHexesTest, CerberiAttackerTopRight)
 
 TEST_F(AttackableHexesTest, CerberiAttackerTopMiddle)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	// # D #
 	//  X A
 	//
@@ -572,6 +583,7 @@ TEST_F(AttackableHexesTest, CerberiAttackerTopMiddle)
 
 TEST_F(AttackableHexesTest, CerberiAttackerTopLeft)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	//  D #
 	// # X A
 	//
@@ -588,6 +600,7 @@ TEST_F(AttackableHexesTest, CerberiAttackerTopLeft)
 
 TEST_F(AttackableHexesTest, CerberiAttackerLeft)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	//  #
 	// D X A
 	//  #
@@ -606,6 +619,7 @@ TEST_F(AttackableHexesTest, CerberiAttackerLeft)
 
 TEST_F(AttackableHexesTest, DragonRightRegular_RightHorithontalBreath)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	// X A D #
 	UnitFake & attacker = addDragon(35, BattleSide::ATTACKER);
 	UnitFake & defender = addRegularMelee(36, BattleSide::DEFENDER);
@@ -618,6 +632,7 @@ TEST_F(AttackableHexesTest, DragonRightRegular_RightHorithontalBreath)
 
 TEST_F(AttackableHexesTest, DragonDragonBottomRightHead_BottomRightBreathFromHead)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	// X A
 	//    D X		target D
 	//     #
@@ -632,6 +647,7 @@ TEST_F(AttackableHexesTest, DragonDragonBottomRightHead_BottomRightBreathFromHea
 
 TEST_F(AttackableHexesTest, DragonDragonVerticalDownHead_VerticalDownBreathFromHead)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	// X A
 	//  D X		target D
 	//     #
@@ -646,6 +662,7 @@ TEST_F(AttackableHexesTest, DragonDragonVerticalDownHead_VerticalDownBreathFromH
 
 TEST_F(AttackableHexesTest, DragonDragonVerticalDownHead_VerticalRightBreathFromHead)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	// X A
 	//  D X		target X
 	//     #
@@ -660,6 +677,7 @@ TEST_F(AttackableHexesTest, DragonDragonVerticalDownHead_VerticalRightBreathFrom
 
 TEST_F(AttackableHexesTest, DragonDragonVerticalDownBack_VerticalDownBreath)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	//  X A
 	// D X		target X
 	//  #
@@ -674,6 +692,7 @@ TEST_F(AttackableHexesTest, DragonDragonVerticalDownBack_VerticalDownBreath)
 
 TEST_F(AttackableHexesTest, DragonDragonHeadBottomRight_BottomRightBreathFromHead)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	//  X A
 	// D X		target D
 	//  #
@@ -688,6 +707,7 @@ TEST_F(AttackableHexesTest, DragonDragonHeadBottomRight_BottomRightBreathFromHea
 
 TEST_F(AttackableHexesTest, DragonLeftBottomDragonBackToBack_LeftBottomBreathFromBackHex)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	//    X A
 	// D X		target X
 	//  #
@@ -704,6 +724,7 @@ TEST_F(AttackableHexesTest, DragonLeftBottomDragonBackToBack_LeftBottomBreathFro
 
 TEST_F(AttackableHexesTest, DragonDragonVerticalDownHeadReverse_VerticalDownBreathFromHead)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	//   A X
 	//  X D		target D
 	// #
@@ -718,6 +739,7 @@ TEST_F(AttackableHexesTest, DragonDragonVerticalDownHeadReverse_VerticalDownBrea
 
 TEST_F(AttackableHexesTest, DragonVerticalDownDragonBackReverse_VerticalDownBreath)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	// A X
 	//  X D		target X
 	//   #
@@ -732,6 +754,7 @@ TEST_F(AttackableHexesTest, DragonVerticalDownDragonBackReverse_VerticalDownBrea
 
 TEST_F(AttackableHexesTest, DragonRightBottomDragonHeadReverse_RightBottomBreathFromHeadHex)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	// A X
 	//  X D		target D
 	UnitFake & attacker = addDragon(36, BattleSide::DEFENDER);
@@ -745,6 +768,7 @@ TEST_F(AttackableHexesTest, DragonRightBottomDragonHeadReverse_RightBottomBreath
 
 TEST_F(AttackableHexesTest, DefenderPositionOverride_BreathCountsHypoteticDefenderPosition)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	// # N
 	//  X D		target D
 	//   A X

@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "NewHorizonsHeroRulesFixture.h"
 #include "../../lib/entities/hero/NewHorizonsHerbalSurgeon.h"
 #include "../../lib/entities/hero/NewHorizonsRecoverySpecialties.h"
@@ -20,7 +21,9 @@ JsonNode herbalRules()
 	return rules;
 }
 }
-TEST(NewHorizonsHerbalSurgeonRules, CapturePreservesIndependentChannelsAndAbsentHistoricalPolicy)
+using NewHorizonsHerbalSurgeonRules = vcmiTestData::OriginalDataTest;
+
+TEST_F(NewHorizonsHerbalSurgeonRules, CapturePreservesIndependentChannelsAndAbsentHistoricalPolicy)
 {
 	auto source = herbalRules();
 	source["recoverySpecialties"]["herbalSurgeon"]["tentMaximumPercent"].Integer() = 50;
@@ -38,7 +41,7 @@ TEST(NewHorizonsHerbalSurgeonRules, CapturePreservesIndependentChannelsAndAbsent
 	EXPECT_FALSE(herbalSurgeonRules(historical));
 	EXPECT_EQ(historical, before);
 }
-TEST(NewHorizonsHerbalSurgeonRules, RejectsUnsafeMissingUnknownAndBypassFields)
+TEST_F(NewHorizonsHerbalSurgeonRules, RejectsUnsafeMissingUnknownAndBypassFields)
 {
 	const auto valid = resolveHeroRules(herbalRules(), HeroClassID(0));
 	std::vector<JsonNode> invalid(5, valid);

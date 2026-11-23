@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/battle/Unit.h"
 #include "../../lib/battle/UnitAdditionRules.h"
 #include "../../lib/battle/OwnedUnitCreatureResolver.h"
@@ -30,7 +31,9 @@ public:
 	std::string encode(int32_t) const override { throw std::logic_error("Unknown prototype"); }
 };
 }
-TEST(OwnedUnitAdditionResolverTest, FullNatureSpawnMetadataRoundTripsWithoutNativeIdentifiers)
+using OwnedUnitAdditionResolverTest = vcmiTestData::OriginalDataTest;
+
+TEST_F(OwnedUnitAdditionResolverTest, FullNatureSpawnMetadataRoundTripsWithoutNativeIdentifiers)
 {
 	Resolver resolver({definition()});
 	WithoutLibrary absent;
@@ -47,7 +50,7 @@ TEST(OwnedUnitAdditionResolverTest, FullNatureSpawnMetadataRoundTripsWithoutNati
 	EXPECT_EQ(decoded.summonRoundsRemaining, 2);
 	JsonNode again; decoded.save(again, resolver); EXPECT_EQ(again, data);
 }
-TEST(OwnedUnitAdditionResolverTest, LegacyAbsentFieldsMatchNativeDefaultsAndUnknownKeysNeverBecomeNone)
+TEST_F(OwnedUnitAdditionResolverTest, LegacyAbsentFieldsMatchNativeDefaultsAndUnknownKeysNeverBecomeNone)
 {
 	Resolver resolver({definition()});
 	WithoutLibrary absent;
@@ -64,7 +67,7 @@ TEST(OwnedUnitAdditionResolverTest, LegacyAbsentFieldsMatchNativeDefaultsAndUnkn
 	NegativeDecoder missing;
 	EXPECT_THROW(owned.load(3, legacy, missing), std::logic_error);
 }
-TEST(OwnedUnitAdditionResolverTest, ExistingRebirthAndCapacityGuardsUseOwnedDescriptorAtTheSameLazyPoint)
+TEST_F(OwnedUnitAdditionResolverTest, ExistingRebirthAndCapacityGuardsUseOwnedDescriptorAtTheSameLazyPoint)
 {
 	Resolver resolver({definition()});
 	WithoutLibrary absent;

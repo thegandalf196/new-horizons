@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt and AUTHORS. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "mock/mock_battle_Unit.h"
 #include "../../lib/battle/FocusMagicValueState.h"
 #include "../../lib/bonuses/BonusList.h"
@@ -68,7 +69,9 @@ std::vector<std::byte> rngState()
 }
 }
 
-TEST(FocusMagicValueStateTest, ThreeConvertedAcceptedStrikesMatchNativeIncludingFinalShot)
+using FocusMagicValueStateTest = vcmiTestData::OriginalDataTest;
+
+TEST_F(FocusMagicValueStateTest, ThreeConvertedAcceptedStrikesMatchNativeIncludingFinalShot)
 {
 	ValueUnit unit;
 	unit.grant(enchantment(unit, focus()));
@@ -94,7 +97,7 @@ TEST(FocusMagicValueStateTest, ThreeConvertedAcceptedStrikesMatchNativeIncluding
 	EXPECT_TRUE(state.records.empty());
 }
 
-TEST(FocusMagicValueStateTest, NativeShootersSpendOrdinaryAmmoWithoutFocusRefillOnRecast)
+TEST_F(FocusMagicValueStateTest, NativeShootersSpendOrdinaryAmmoWithoutFocusRefillOnRecast)
 {
 	ValueUnit unit;
 	unit.rows.push_back(std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::SHOOTER,
@@ -120,7 +123,7 @@ TEST(FocusMagicValueStateTest, NativeShootersSpendOrdinaryAmmoWithoutFocusRefill
 	sameRecords(enchantment(unit, focus(), 10), recast.effects.add);
 }
 
-TEST(FocusMagicValueStateTest, RejectedOrMeleeStrikeConsumesNothingAndRecastRestoresOnlyThree)
+TEST_F(FocusMagicValueStateTest, RejectedOrMeleeStrikeConsumesNothingAndRecastRestoresOnlyThree)
 {
 	auto state = valueState(enchantment(false, focus(), 20));
 	for(const auto [accepted, ranged] : {std::pair{false, true}, std::pair{true, false}})
@@ -139,7 +142,7 @@ TEST(FocusMagicValueStateTest, RejectedOrMeleeStrikeConsumesNothingAndRecastRest
 	EXPECT_EQ(recast.effects.add.size(), 2u); // Marker + shooter; no inherited melee abilities or ammo.
 }
 
-TEST(FocusMagicValueStateTest, OwnedBranchesOutliveNativeUnitAndDoNotUseRng)
+TEST_F(FocusMagicValueStateTest, OwnedBranchesOutliveNativeUnitAndDoNotUseRng)
 {
 	const auto randomBefore = rngState();
 	auto unit = std::make_unique<ValueUnit>();
@@ -157,7 +160,7 @@ TEST(FocusMagicValueStateTest, OwnedBranchesOutliveNativeUnitAndDoNotUseRng)
 	EXPECT_EQ(rngState(), randomBefore);
 }
 
-TEST(FocusMagicValueStateTest, AbsentIsValidButMalformedOrBorrowedPayloadRequiresFallback)
+TEST_F(FocusMagicValueStateTest, AbsentIsValidButMalformedOrBorrowedPayloadRequiresFallback)
 {
 	ValueUnit unit;
 	ASSERT_TRUE(captureValueState(unit));
@@ -178,7 +181,7 @@ TEST(FocusMagicValueStateTest, AbsentIsValidButMalformedOrBorrowedPayloadRequire
 	EXPECT_THROW(prepareStrike(inconsistent, true, true), std::invalid_argument);
 }
 
-TEST(FocusMagicValueStateTest, MetamagicCapabilitiesExpireWithTheFinalFocusCharge)
+TEST_F(FocusMagicValueStateTest, MetamagicCapabilitiesExpireWithTheFinalFocusCharge)
 {
 	auto records = enchantment(false, focus());
 	for(const auto type : {BonusType::FLYING, BonusType::FREE_SHOOTING})

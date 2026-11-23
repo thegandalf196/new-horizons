@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 
 #include "../../lib/CSkillHandler.h"
 #include "../../lib/json/JsonUtils.h"
@@ -108,6 +109,7 @@ TEST_F(CSkillTest, RegistersIcons)
 
 TEST_F(CSkillTest, MissingCombatStatusDefaultsToNoneAndEmptyTooltip)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	EXPECT_EQ(subject->getCombatStatusProvider(), CSkill::CombatStatusProvider::NONE);
 	EXPECT_TRUE(subject->getCombatStatusDescriptionTranslated().empty());
 
@@ -119,6 +121,7 @@ TEST_F(CSkillTest, MissingCombatStatusDefaultsToNoneAndEmptyTooltip)
 
 TEST_F(CSkillTest, CombatStatusDescriptionIsRegisteredForTranslation)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	TestSkillHandler handler;
 	const auto parsed = handler.loadFromJson("vcmi-test", skillConfig("bloodrageDamage"), "combatStatusTranslatedProbe", 42);
 	EXPECT_EQ(parsed->getCombatStatusProvider(), CSkill::CombatStatusProvider::BLOODRAGE_DAMAGE);
@@ -127,6 +130,7 @@ TEST_F(CSkillTest, CombatStatusDescriptionIsRegisteredForTranslation)
 
 TEST_F(CSkillTest, BloodrageCombatStatusProviderIsTyped)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	TestSkillHandler handler;
 	const auto parsed = handler.loadFromJson("vcmi-test", skillConfig("bloodrageDamage"), "bloodrageCombatStatusProbe", 42);
 	EXPECT_EQ(parsed->getCombatStatusProvider(), CSkill::CombatStatusProvider::BLOODRAGE_DAMAGE);
@@ -135,6 +139,7 @@ TEST_F(CSkillTest, BloodrageCombatStatusProviderIsTyped)
 
 TEST_F(CSkillTest, DivineMandateCombatStatusProviderIsTyped)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	TestSkillHandler handler;
 	const auto parsed = handler.loadFromJson("vcmi-test", skillConfig("divineMandateUses"), "divineMandateCombatStatusProbe", 42);
 	EXPECT_EQ(parsed->getCombatStatusProvider(), CSkill::CombatStatusProvider::DIVINE_MANDATE_USES);

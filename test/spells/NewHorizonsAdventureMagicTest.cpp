@@ -8,6 +8,7 @@
  */
 
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 
 #include "../../lib/ResourceSet.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
@@ -23,6 +24,7 @@ JsonNode rules()
 
 TEST(NewHorizonsAdventureMagicTest, CanonicalRosterIsNeutralAndHasFixedCosts)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto savedRules = rules();
 	struct ExpectedAdventureSpell
 	{
@@ -120,6 +122,7 @@ TEST(NewHorizonsAdventureMagicTest, MissingOrMalformedUnlockCostIsRejected)
 
 TEST(NewHorizonsAdventureMagicTest, UnlockCostUsesSavedSnapshotValues)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const SpellID spell(SpellID::SUMMON_BOAT);
 	auto savedRules = rules();
 	auto & savedCost = savedRules["adventureSpells"]["core:summonBoat"]["unlockCost"];

@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "NewHorizonsHeroRulesFixture.h"
 #include "../../lib/GameSettings.h"
 #include "../../lib/serializer/CMemorySerializer.h"
@@ -24,7 +25,9 @@ JsonNode schoolRules()
 }
 }
 
-TEST(NewHorizonsSchoolSpellcraftRules, CurrentCaptureIsIndependentAndAbsenceNeverFillsFromInstalledRules)
+using NewHorizonsSchoolSpellcraftRules = vcmiTestData::OriginalDataTest;
+
+TEST_F(NewHorizonsSchoolSpellcraftRules, CurrentCaptureIsIndependentAndAbsenceNeverFillsFromInstalledRules)
 {
 	auto configured = schoolRules();
 	ASSERT_NO_THROW(validateHeroRules(configured, true));
@@ -45,7 +48,7 @@ TEST(NewHorizonsSchoolSpellcraftRules, CurrentCaptureIsIndependentAndAbsenceNeve
 	EXPECT_EQ(historical, before);
 }
 
-TEST(NewHorizonsSchoolSpellcraftRules, StrictPresentPolicyRejectsMissingUnknownFractionalAndUnsafeBounds)
+TEST_F(NewHorizonsSchoolSpellcraftRules, StrictPresentPolicyRejectsMissingUnknownFractionalAndUnsafeBounds)
 {
 	const auto valid = resolveHeroRules(schoolRules(), HeroClassID(0));
 	EXPECT_THROW(validateIndividualSpecialtiesSerialization(valid, true, true, false), std::runtime_error);
@@ -67,7 +70,7 @@ TEST(NewHorizonsSchoolSpellcraftRules, StrictPresentPolicyRejectsMissingUnknownF
 	EXPECT_NO_THROW(validateResolvedHeroRules(boundary));
 }
 
-TEST(NewHorizonsSchoolSpellcraftRules, GlobalCodecRejectsPreviousWriterBeforePrefixAndPreviousReaderBeforeInstalling)
+TEST_F(NewHorizonsSchoolSpellcraftRules, GlobalCodecRejectsPreviousWriterBeforePrefixAndPreviousReaderBeforeInstalling)
 {
 	const auto rules = schoolRules();
 	GameSettings settings;

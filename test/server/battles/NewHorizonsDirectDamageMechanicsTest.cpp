@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 #include "../../PerkStateFixture.h"
 #include "HeroCommandFixture.h"
 #include "../../hero/NewHorizonsHeroRulesFixture.h"
@@ -2875,7 +2876,9 @@ TEST_F(HeroLuckSpellTest, PaidFireWallCapturesCriticalDamageOnceAcrossWireAndMov
 	EXPECT_EQ(server.castsOf(spell->getId()).size(), 1u);
 }
 
-TEST(HeroLuckSpellDamageTest, NumericScalingSaturatesAndKeepsExecutionAndHealingIneligible)
+using HeroLuckSpellDamageTest = vcmiTestData::OriginalDataTest;
+
+TEST_F(HeroLuckSpellDamageTest, NumericScalingSaturatesAndKeepsExecutionAndHealingIneligible)
 {
 	EXPECT_EQ(spells::scaleHeroLuckDamage(1, 200), 2);
 	EXPECT_EQ(spells::scaleHeroLuckDamage(3, 150), 4);

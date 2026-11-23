@@ -1,9 +1,12 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/nativeRules/CapturedRuleRef.h"
 #include "../../lib/filesystem/ResourcePath.h"
 
-TEST(CompiledMasteryRules, EverySupportedPolicyMatchesRawOptionsAndRetainsAbsence)
+using CompiledMasteryRules = vcmiTestData::OriginalDataTest;
+
+TEST_F(CompiledMasteryRules, EverySupportedPolicyMatchesRawOptionsAndRetainsAbsence)
 {
 	JsonNode current(JsonPath::builtin("config/newHorizonsMasteries"));
 	JsonNode historical = current;
@@ -17,7 +20,7 @@ TEST(CompiledMasteryRules, EverySupportedPolicyMatchesRawOptionsAndRetainsAbsenc
 	}
 }
 
-TEST(CompiledMasteryRules, IndependentOwnersKeepOldMagnitudesAndRejectMalformedReplacement)
+TEST_F(CompiledMasteryRules, IndependentOwnersKeepOldMagnitudesAndRejectMalformedReplacement)
 {
 	JsonNode raw(JsonPath::builtin("config/newHorizonsMasteries"));
 	nativeRules::CapturedRuleRef<nativeRules::CapturedRuleKind::Mastery> old(raw);

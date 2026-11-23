@@ -6,6 +6,7 @@
  * Full text of license available in license.txt file, in main folder
  */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 #include "../../PerkTestSetup.h"
 #include "HeroCommandFixture.h"
 #include "../../../AI/BattleAI/StackWithBonuses.h"
@@ -324,7 +325,9 @@ TEST_F(NewHorizonsIronWillTest, BothPerksCaptureOneSharedNonstackingRecipientLed
 		std::vector<uint32_t>{friendly->unitId()});
 }
 
-TEST(NewHorizonsIronWillProtocolTest, CurrentRoundTripOldPrefixesLegacyDefaultsAndMalformedShape)
+using NewHorizonsIronWillProtocolTest = vcmiTestData::OriginalDataTest;
+
+TEST_F(NewHorizonsIronWillProtocolTest, CurrentRoundTripOldPrefixesLegacyDefaultsAndMalformedShape)
 {
 	HeroOrderState order;
 	order.command = HeroCommand::RIPOSTE;

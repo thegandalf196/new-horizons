@@ -7,6 +7,7 @@
  * Full text of license available in license.txt file, in main folder
  */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 #include "../../PerkTestSetup.h"
 
 #include "HeroCommandFixture.h"
@@ -564,7 +565,9 @@ TEST_F(NewHorizonsForgetfulnessTest, DispelAndNaturalExpiryRestoreTheWarmShooter
 	EXPECT_GT(battle()->battleGetRound(), startingRound);
 }
 
-TEST(NewHorizonsForgetfulnessSerializationTest, MarkerRoundTripsOnCurrentWireAndRejectsLossyOlderWriters)
+using NewHorizonsForgetfulnessSerializationTest = vcmiTestData::OriginalDataTest;
+
+TEST_F(NewHorizonsForgetfulnessSerializationTest, MarkerRoundTripsOnCurrentWireAndRejectsLossyOlderWriters)
 {
 	const Bonus marker = makeSuppressionMarker(2, 3);
 	CMemorySerializer current;

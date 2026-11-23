@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 #include "HeroCommandFixture.h"
 #include "BattleStartSnapshotFixture.h"
 #include "../../../lib/battle/BattleAttackInfo.h"
@@ -260,6 +261,7 @@ TEST(NewHorizonsTheChosenRulesTest, RawPowerAndSchoolOnlyDurationUsesCapturedKno
 
 TEST(NewHorizonsTheChosenRulesTest, CapturedIdentityRejectsOlderWritersAndHasNoCrusadeAlias)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const JsonNode saved(JsonPath::builtin("config/newHorizonsMagic"));
 	EXPECT_NO_THROW(newHorizonsTheChosen::validateSerialization(saved, true));
 	EXPECT_THROW(newHorizonsTheChosen::validateSerialization(saved, false), std::runtime_error);
@@ -277,6 +279,7 @@ TEST(NewHorizonsTheChosenRulesTest, CapturedIdentityRejectsOlderWritersAndHasNoC
 
 TEST(NewHorizonsTheChosenRulesTest, ExistingBonusSerializationRetainsSourceAndRemainingDuration)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	Bonus original(BonusDuration::N_TURNS, BonusType::JOUSTING, BonusSource::SPELL_EFFECT,
 		5, BonusSourceID(chosenSpell()));
 	original.turnsRemain = 3;

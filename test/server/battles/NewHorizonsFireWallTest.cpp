@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 #include "../../../lib/spells/ISpellMechanics.h"
 #include "../../../lib/spells/CSpell.h"
 
@@ -97,6 +98,7 @@ protected:
 
 TEST(NewHorizonsFireWallTest, DirectionActionAndActivationStateRequireCanonicalProtocol)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	BattleAction action;
 	action.side = BattleSide::ATTACKER;
 	action.actionType = EActionType::HERO_SPELL;

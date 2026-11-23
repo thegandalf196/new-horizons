@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 
 #include "EffectFixture.h"
 #include "../../../lib/spells/CSpell.h"
@@ -31,6 +32,7 @@ using namespace ::testing;
 class TimedApplyTest : public TestWithParam<bool>, public EffectFixture
 {
 public:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	bool cumulative = false;
 
 	// Use a real game spell so SpellID::encode() round-trips correctly.
@@ -137,6 +139,7 @@ INSTANTIATE_TEST_SUITE_P
 class TimedTest : public Test, public EffectFixture
 {
 public:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	const SpellID testSpellId = SpellID::CURSE;
 
 	TimedTest()
@@ -375,6 +378,7 @@ TEST_F(TimedTest, ConvertBonusBindSetsCasterUnitId)
 class TimedHeroSpecialtyTest : public Test, public EffectFixture
 {
 public:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	std::unique_ptr<CGHeroInstance> hero;
 	const SpellID testSpellId = SpellID::BLESS;
 

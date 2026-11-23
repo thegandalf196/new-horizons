@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/GameSettings.h"
 #include "../../lib/mapObjects/NewHorizonsNeutralCalibration.h"
 #include "../../lib/battle/HeroCommand.h"
@@ -69,6 +70,7 @@ JsonNode targetedCommandRules()
 
 TEST(GameSettings, VersionedHeroCommandOverrideReplacesCanonicalRulesAndRoundTrips)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto base = baseSettings();
 	const auto canonicalRules = base["combat"]["heroCommands"];
 	const auto authoredRules = targetedCommandRules();
@@ -157,6 +159,7 @@ TEST(GameSettings, NonVersionedSettingsOverridesStillDeepMerge)
 
 TEST(GameSettings, AbsentOptionalCapturesReachLegacyConsumers)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto base = baseSettings();
 	base["heroes"].Struct().erase("newHorizons");
 	GameSettings settings;
@@ -166,6 +169,7 @@ TEST(GameSettings, AbsentOptionalCapturesReachLegacyConsumers)
 
 TEST(GameSettings, WholeNullOverridesDisableLoadedOptionalCaptures)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto base = optionalCaptureSettings();
 	GameSettings settings;
 	settings.loadBase(base);
@@ -183,6 +187,7 @@ TEST(GameSettings, WholeNullOverridesDisableLoadedOptionalCaptures)
 
 TEST(GameSettings, ExplicitEmptyCapturesKeepObjectIdentityAndLegacyConsumers)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	GameSettings settings;
 	settings.loadBase(optionalCaptureSettings());
 	JsonNode empty;

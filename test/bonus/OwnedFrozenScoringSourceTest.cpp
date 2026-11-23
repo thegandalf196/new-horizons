@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/bonuses/OwnedFrozenScoringSource.h"
 #include "../../lib/bonuses/BonusList.h"
 #include "../../lib/bonuses/Updaters.h"
@@ -19,7 +20,9 @@ std::shared_ptr<Bonus> value(int amount)
 	return std::make_shared<Bonus>(BonusDuration::PERMANENT,BonusType::PHYSICAL_DEFENSE,BonusSource::OTHER,amount,BonusSourceID());
 }
 }
-TEST(OwnedFrozenScoringSourceTest, SelectorRunsBeforeStackAndUnstackedAliasesStayDistinctFromValueCopies)
+using OwnedFrozenScoringSourceTest = vcmiTestData::OriginalDataTest;
+
+TEST_F(OwnedFrozenScoringSourceTest, SelectorRunsBeforeStackAndUnstackedAliasesStayDistinctFromValueCopies)
 {
 	auto low=value(7),high=value(15); low->stacking=high->stacking="same-source";
 	const std::vector<Bonus> stacked{*low,*high};
@@ -36,7 +39,7 @@ TEST(OwnedFrozenScoringSourceTest, SelectorRunsBeforeStackAndUnstackedAliasesSta
 	EXPECT_NE((*copies)[0],(*copies)[1]); EXPECT_EQ(copies->totalValue(),14);
 	EXPECT_TRUE(distinct->getUnstackedBonuses(Selector::all)->empty());
 }
-TEST(OwnedFrozenScoringSourceTest, FrozenRulesNeverRunAndLoansOwnNestedPayloadsAfterOriginalsRetire)
+TEST_F(OwnedFrozenScoringSourceTest, FrozenRulesNeverRunAndLoansOwnNestedPayloadsAfterOriginalsRetire)
 {
 	auto record=value(7); auto updater=std::make_shared<CompositeUpdater>();
 	updater->updaters.push_back(std::make_shared<TimesStackSizeUpdater>(0,100,9,1));
@@ -49,7 +52,7 @@ TEST(OwnedFrozenScoringSourceTest, FrozenRulesNeverRunAndLoansOwnNestedPayloadsA
 	const auto * copied=dynamic_cast<const CompositeUpdater *>((*loan)[0]->updater.get()); ASSERT_NE(copied,nullptr);
 	EXPECT_EQ(copied->updaters.size(),size_t(1)); EXPECT_TRUE((*loan)[0]->limiter);
 }
-TEST(OwnedFrozenScoringSourceTest, UnknownRuleAndCyclicMetadataRefuseWithoutCanonicalRawRights)
+TEST_F(OwnedFrozenScoringSourceTest, UnknownRuleAndCyclicMetadataRefuseWithoutCanonicalRawRights)
 {
 	class Unknown final:public TimesStackSizeUpdater {};
 	auto record=value(7); record->updater=std::make_shared<Unknown>();

@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../mock/mock_UnitEnvironment.h"
 #include "../../lib/CStack.h"
 #include "../../lib/GameLibrary.h"
@@ -74,6 +75,7 @@ public:
 class PreparedStackStateTransferTest : public Test
 {
 protected:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	CStackBasicDescriptor descriptor{CreatureID(0), 8};
 	CStackInstance base{nullptr, CreatureID(0), 8, true};
 	CStack original{&descriptor, PlayerColor(0), 17, BattleSide::ATTACKER};

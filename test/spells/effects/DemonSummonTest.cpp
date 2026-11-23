@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 
 #include "EffectFixture.h"
 
@@ -40,6 +41,7 @@ public:
 class DemonSummonTest : public Test, public EffectFixture
 {
 public:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	StrictMock<CreatureMock> demonType;
 	const std::string demonId = "core:airElemental";
 	const int32_t demonMaxHealth = 100;
@@ -167,6 +169,7 @@ TEST_F(DemonSummonTest, PhantomUnitCasterCannotConvertCorpsesOrPreviewDemons)
 class DemonSummonApplyTest : public TestWithParam<bool>, public EffectFixture
 {
 public:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	StrictMock<CreatureMock> demonType;
 	const std::string demonId = "core:airElemental";
 	const uint32_t newUnitId = 42;

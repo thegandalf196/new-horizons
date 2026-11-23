@@ -3,6 +3,7 @@
 	* License: GNU General Public License v2.0 or later; see license.txt
 	*/
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/battle/BattleInfo.h"
 #include "../../lib/networkPacks/PacksForClientBattle.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
@@ -94,6 +95,7 @@ TEST(NewHorizonsDeepTrancePersistence, LegacyCompletionAddsOnlyActualIndependent
 }
 TEST(NewHorizonsDeepTrancePersistence, HeroReceiptRejectsLossyPrefixAndRetainsFullDayDomain)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	for(const auto format : {previous, ESerializationVersion::NEW_HORIZONS_REPLAY_PAYLOAD_VERSIONS})
 	{
 		CGHeroInstance hero(nullptr);

@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/GameSettings.h"
 #include "../../lib/entities/hero/NewHorizonsOrdinaryCreatureSpecialties.h"
 #include "../../lib/entities/hero/NewHorizonsSpecialtySerialization.h"
@@ -188,6 +189,7 @@ TEST(OrdinaryPolicyExtensionsSerialization, FirstSixOnlyRawSettingsRetain1144Byt
 
 TEST(OrdinaryPolicyExtensionsSerialization, MapSettingsOnlyPreflightUsesTheNamedContext)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	for(const auto & [key, value] : extensions)
 	{
 		auto rules = captured();

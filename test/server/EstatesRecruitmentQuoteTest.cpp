@@ -1,5 +1,6 @@
 /* Part of VCMI engine; GNU General Public License v2.0 or later. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/mapObjects/EstatesRecruitmentQuote.h"
 
 #include <limits>
@@ -18,6 +19,7 @@ ResourceSet price(int gold, int gems = 0)
 
 TEST(EstatesRecruitmentQuote, SeventyFiveGoldCostsSixtyEightThenSixtySeven)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto first = quoteRecruitment(price(75), 1, {}, true);
 	EXPECT_EQ(first.cost[EGameResID::GOLD], 68);
 	const auto second = quoteRecruitment(price(75), 1, first.after, true);
@@ -28,6 +30,7 @@ TEST(EstatesRecruitmentQuote, SeventyFiveGoldCostsSixtyEightThenSixtySeven)
 
 TEST(EstatesRecruitmentQuote, EveryResourceHasPurchasePartitionInvariance)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	ResourceSet unit;
 	for(size_t resource = 0; resource < 7; ++resource)
 		unit[resource] = static_cast<int>(resource * 17 + 1);
@@ -46,6 +49,7 @@ TEST(EstatesRecruitmentQuote, EveryResourceHasPurchasePartitionInvariance)
 
 TEST(EstatesRecruitmentQuote, TenRareResourcesCostNineAndOnlyEligiblePurchasesAccumulate)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	ConscriptionLedger ledger{};
 	ResourceSet total;
 	for(int i = 0; i < 10; ++i)
@@ -62,6 +66,7 @@ TEST(EstatesRecruitmentQuote, TenRareResourcesCostNineAndOnlyEligiblePurchasesAc
 
 TEST(EstatesRecruitmentQuote, AffordabilityUsesActualRemainderIncludingFreeTenthResource)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	ConscriptionLedger ledger{};
 	EXPECT_EQ(affordableRecruitment(price(75), price(67), 10, ledger, true), 0);
 	ledger[6] = 75;
@@ -74,6 +79,7 @@ TEST(EstatesRecruitmentQuote, AffordabilityUsesActualRemainderIncludingFreeTenth
 
 TEST(EstatesRecruitmentQuote, InvalidAndUnrepresentableQuotesDoNotMutateLedger)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	ConscriptionLedger ledger{};
 	ledger[6] = std::numeric_limits<int64_t>::max();
 	const auto original = ledger;
@@ -87,6 +93,7 @@ TEST(EstatesRecruitmentQuote, InvalidAndUnrepresentableQuotesDoNotMutateLedger)
 
 TEST(EstatesRecruitmentQuote, CancelledAndStaleProjectionDoesNotAdvanceCursor)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	RecruitmentQuoteCursor cursor(ConscriptionLedger{});
 	const auto quoted = quoteRecruitment(price(75), 1, cursor.current(), true);
 	EXPECT_EQ(cursor.current(), ConscriptionLedger{}); // Inspection/cancellation is read-only.

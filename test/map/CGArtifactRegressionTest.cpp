@@ -8,12 +8,15 @@
  *
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 
 #include "callback/EditorCallback.h"
 #include "mapping/CMap.h"
 #include "mapObjects/MiscObjects.h"
 
-TEST(CGArtifactRegression, RandomArtifactInstanceLookupIsSafe)
+using CGArtifactRegression = vcmiTestData::OriginalDataTest;
+
+TEST_F(CGArtifactRegression, RandomArtifactInstanceLookupIsSafe)
 {
 	EditorCallback cb(nullptr);
 	CMap map(&cb);

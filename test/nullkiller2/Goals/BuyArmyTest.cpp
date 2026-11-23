@@ -7,6 +7,7 @@
  * Full text of license available in license.txt file, in main folder
  */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 
 #include "AI/Nullkiller2/Goals/BuyArmy.h"
 #include "AI/Nullkiller2/Analyzers/ArmyManager.h"
@@ -44,7 +45,9 @@ void fillFullArmy(CCreatureSet & army)
 }
 }
 
-TEST(Nullkiller2_Goals_BuyArmy, fullArmyDoesNotNeedFreeSlotForExistingCreature)
+using Nullkiller2_Goals_BuyArmy = vcmiTestData::OriginalDataTest;
+
+TEST_F(Nullkiller2_Goals_BuyArmy, fullArmyDoesNotNeedFreeSlotForExistingCreature)
 {
 	CGHeroInstance army(nullptr);
 	fillFullArmy(army);
@@ -62,7 +65,7 @@ TEST(Nullkiller2_Goals_BuyArmy, fullArmyDoesNotNeedFreeSlotForExistingCreature)
 		<< "a full army still needs a free slot for a missing creature type";
 }
 
-TEST(Nullkiller2_Goals_BuyArmy, partialArmyDoesNotNeedFreeSlotForMissingCreature)
+TEST_F(Nullkiller2_Goals_BuyArmy, partialArmyDoesNotNeedFreeSlotForMissingCreature)
 {
 	CGHeroInstance army(nullptr);
 	ASSERT_TRUE(army.setCreature(SlotID(0), CreatureID(CreatureID::ARCHER), 1));

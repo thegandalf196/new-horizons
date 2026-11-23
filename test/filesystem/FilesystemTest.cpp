@@ -9,6 +9,7 @@
  */
 
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 
 #include "../../lib/filesystem/CFilesystemLoader.h"
 #include "../../lib/filesystem/ResourcePath.h"
@@ -84,6 +85,7 @@ TEST_F(FilesystemTest, GeneratedMapCreatedAfterInitializationIsRefreshable)
 
 TEST_F(FilesystemTest, LateGeneratedUserMapHasCoreOriginAndLoadsHeader)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto directoryName = boost::filesystem::unique_path("generated-map-%%%%-%%%%-%%%%");
 	const auto mapsDirectory = VCMIDirs::get().userDataPath() / "Maps" / directoryName;
 	const ResourcePath resource("Maps/" + directoryName.string() + "/BattleOnlyMode.h3m");

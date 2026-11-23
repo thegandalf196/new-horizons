@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/constants/StringConstants.h"
 
@@ -25,6 +26,7 @@ JsonNode activeRules()
 
 TEST(NewHorizonsMagicArrowTest, DetailedSorceryFormulaAndCapAreDeterministic)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto rules = activeRules();
 	const SpellID arrow(SpellID::MAGIC_ARROW);
 	ASSERT_TRUE(newHorizonsMagic::magicArrowOverchargeEnabled(rules, arrow));
@@ -46,6 +48,7 @@ TEST(NewHorizonsMagicArrowTest, DetailedSorceryFormulaAndCapAreDeterministic)
 
 TEST(NewHorizonsMagicArrowTest, OverchargerRaisesOnlyTheCapacityByOneLevel)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto rules = activeRules();
 	const SpellID arrow(SpellID::MAGIC_ARROW);
 	newHorizonsMagic::MagicArrowOverchargeModifiers modifiers;

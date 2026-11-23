@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../mock/mock_BonusBearer.h"
 #include "../mock/mock_UnitEnvironment.h"
 #include "../mock/mock_UnitInfo.h"
@@ -23,6 +24,7 @@ namespace
 class NewHorizonsSerpentsEmbraceTest : public testing::Test
 {
 protected:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	UnitInfoMock info;
 	UnitEnvironmentMock environment;
 	BonusBearerMock bonuses;
@@ -82,7 +84,9 @@ TEST_F(NewHorizonsSerpentsEmbraceTest, IndependentSourcesHaveSelectiveReleasePla
 	EXPECT_TRUE(newHorizonsSerpentsEmbrace::releasePlan(*unit, 13).empty());
 	EXPECT_EQ(unit->getMovementRange(), 0); // Planning does not mutate recipient state.
 }
-TEST(NewHorizonsSerpentsEmbraceMarker, RoundtripRetainsPhysicalSourceAndIndependentIdentity)
+using NewHorizonsSerpentsEmbraceMarker = vcmiTestData::OriginalDataTest;
+
+TEST_F(NewHorizonsSerpentsEmbraceMarker, RoundtripRetainsPhysicalSourceAndIndependentIdentity)
 {
 	const auto source = newHorizonsSerpentsEmbrace::marker(11, CreatureID(CreatureID::decode("core:nagaQueen")));
 	CMemorySerializer wire;
@@ -96,7 +100,7 @@ TEST(NewHorizonsSerpentsEmbraceMarker, RoundtripRetainsPhysicalSourceAndIndepend
 	EXPECT_EQ(loaded.statusIdentity, source.statusIdentity);
 	EXPECT_TRUE(vstd::contains(loaded.statusTags, BonusStatusTag::NON_TRANSFERABLE));
 }
-TEST(NewHorizonsSerpentsEmbraceMarker, MalformedSourceProvenanceRejectsWithoutDereferencingUnit)
+TEST_F(NewHorizonsSerpentsEmbraceMarker, MalformedSourceProvenanceRejectsWithoutDereferencingUnit)
 {
 	auto bonus = newHorizonsSerpentsEmbrace::marker(11, CreatureID(CreatureID::decode("core:naga")));
 	bonus.parameters = std::make_shared<BonusParameters>(12);
@@ -110,7 +114,7 @@ TEST(NewHorizonsSerpentsEmbraceMarker, MalformedSourceProvenanceRejectsWithoutDe
 	EXPECT_THROW(newHorizonsSerpentsEmbrace::marker(std::numeric_limits<uint32_t>::max(), CreatureID(CreatureID::decode("core:naga"))), std::invalid_argument);
 }
 
-TEST(NewHorizonsSerpentsEmbraceMarker, OlderDirectAndEnclosingWritersRejectBeforePrefix)
+TEST_F(NewHorizonsSerpentsEmbraceMarker, OlderDirectAndEnclosingWritersRejectBeforePrefix)
 {
 	auto bonus = newHorizonsSerpentsEmbrace::marker(11, CreatureID(CreatureID::decode("core:naga")));
 	CMemorySerializer direct, outer;
@@ -122,7 +126,7 @@ TEST(NewHorizonsSerpentsEmbraceMarker, OlderDirectAndEnclosingWritersRejectBefor
 	EXPECT_THROW(packet.serialize(outer.oser), std::runtime_error);
 	EXPECT_TRUE(outer.extractBuffer().empty());
 }
-TEST(NewHorizonsSerpentsEmbraceMarker, OldReaderRejectsSourceActivationSemantics)
+TEST_F(NewHorizonsSerpentsEmbraceMarker, OldReaderRejectsSourceActivationSemantics)
 {
 	auto bonus = newHorizonsSerpentsEmbrace::marker(11, CreatureID(CreatureID::decode("core:naga")));
 	CMemorySerializer current;
@@ -132,7 +136,7 @@ TEST(NewHorizonsSerpentsEmbraceMarker, OldReaderRejectsSourceActivationSemantics
 	Bonus loaded;
 	EXPECT_THROW(loaded.serialize(old.iser), std::runtime_error);
 }
-TEST(NewHorizonsSerpentsEmbraceMarker, MalformedTypedMarkerWriterRejectsBeforePrefix)
+TEST_F(NewHorizonsSerpentsEmbraceMarker, MalformedTypedMarkerWriterRejectsBeforePrefix)
 {
 	auto bonus = newHorizonsSerpentsEmbrace::marker(11, CreatureID(CreatureID::decode("core:naga")));
 	bonus.statusIdentity = "serpentsEmbrace";
@@ -185,7 +189,7 @@ Bonus rawRestraint()
 	return result;
 }
 }
-TEST(NewHorizonsSerpentsEmbraceMarker, LibraryFreeStructuralPreflightAndRegistryBackedCurrentRoundtrip)
+TEST_F(NewHorizonsSerpentsEmbraceMarker, LibraryFreeStructuralPreflightAndRegistryBackedCurrentRoundtrip)
 {
 	Bonus raw;
 	{
@@ -225,7 +229,7 @@ TEST(NewHorizonsSerpentsEmbraceMarker, LibraryFreeStructuralPreflightAndRegistry
 	unsupported.iser.version = ESerializationVersion::NEW_HORIZONS_MANA_LEECHES;
 	EXPECT_THROW(loaded.serialize(unsupported.iser), std::runtime_error);
 }
-TEST(NewHorizonsSerpentsEmbraceMarker, LibraryFreeMalformedCurrentAndOldBoundariesRejectWithoutPrefix)
+TEST_F(NewHorizonsSerpentsEmbraceMarker, LibraryFreeMalformedCurrentAndOldBoundariesRejectWithoutPrefix)
 {
 	{
 		WithoutLibrary isolated;

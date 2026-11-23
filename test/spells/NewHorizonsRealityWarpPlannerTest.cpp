@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/bonuses/BonusParameters.h"
 #include "../../lib/bonuses/Limiters.h"
 #include "../../lib/bonuses/Propagators.h"
@@ -182,6 +183,7 @@ TEST(NewHorizonsRealityWarpPlannerTest, RecalculatesKnownCasterHostilityAndPrese
 
 TEST(NewHorizonsRealityWarpPlannerTest, BonusCasterOwnerSerializationIsVersionedAndRejectsLossyDownsave)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	Bonus source(BonusDuration::N_TURNS, BonusType::MORALE, BonusSource::SPELL_EFFECT,
 		-3, BonusSourceID(SpellID(SpellID::SORROW)));
 	source.turnsRemain = 2;
@@ -231,6 +233,7 @@ JsonNode hypnotizedBonusConfig()
 
 TEST(NewHorizonsRealityWarpPlannerTest, HypnotizeHealthCeilingSurvivesParserJsonAndCurrentWireRoundTrip)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	constexpr int64_t capturedHealthCeiling = 9007199254740993LL;
 	auto config = hypnotizedBonusConfig();
 	config["addInfo"]["maximumTargetHealth"].Integer() = capturedHealthCeiling;
@@ -264,6 +267,7 @@ TEST(NewHorizonsRealityWarpPlannerTest, HypnotizeHealthCeilingSurvivesParserJson
 
 TEST(NewHorizonsRealityWarpPlannerTest, HypnotizeParserRejectsMalformedCapturedHealthCeilings)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto floatingCeiling = hypnotizedBonusConfig();
 	floatingCeiling["addInfo"]["maximumTargetHealth"].Float() = 9007199254740992.0;
 	EXPECT_THROW(JsonUtils::parseBonus(floatingCeiling), std::runtime_error);
@@ -279,6 +283,7 @@ TEST(NewHorizonsRealityWarpPlannerTest, HypnotizeParserRejectsMalformedCapturedH
 
 TEST(NewHorizonsRealityWarpPlannerTest, LegacyHypnotizeWithoutHealthCeilingRemainsReadable)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto legacy = JsonUtils::parseBonus(hypnotizedBonusConfig());
 	ASSERT_NE(legacy, nullptr);
 	ASSERT_EQ(legacy->type, BonusType::HYPNOTIZED);

@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 
 #include "HeroCommandFixture.h"
 
@@ -277,7 +278,9 @@ TEST_F(NewHorizonsManaConservationTest, AdvancedPerkIsInactiveBelowAdvancedWisdo
 	EXPECT_EQ(attackerSideHero->getBufferSpellPoints(), 13);
 }
 
-TEST(NewHorizonsManaConservationStateTest, SideAndCastAnnouncementRoundTripAndRejectLossyDownsave)
+using NewHorizonsManaConservationStateTest = vcmiTestData::OriginalDataTest;
+
+TEST_F(NewHorizonsManaConservationStateTest, SideAndCastAnnouncementRoundTripAndRejectLossyDownsave)
 {
 	SideInBattle source(nullptr);
 	source.acceptedHeroManaSpent = 321;

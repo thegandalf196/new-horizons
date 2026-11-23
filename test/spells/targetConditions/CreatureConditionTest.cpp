@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 
 #include "TargetConditionItemFixture.h"
 
@@ -19,6 +20,7 @@ using namespace ::testing;
 class CreatureConditionTest : public TargetConditionItemTest
 {
 public:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	void setDefaultExpectations()
 	{
 		EXPECT_CALL(unitMock, getAllBonuses(_, _)).Times(0);

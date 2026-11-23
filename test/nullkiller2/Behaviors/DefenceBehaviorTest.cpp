@@ -7,6 +7,7 @@
  * Full text of license available in license.txt file, in main folder
  */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 
 #include "AI/Nullkiller2/Analyzers/DangerHitMapAnalyzer.h"
 #include "AI/Nullkiller2/Behaviors/DefenceBehavior.h"
@@ -61,7 +62,9 @@ test::TownFake townTarget()
 }
 }
 
-TEST(Nullkiller2_Behaviors_DefenceBehavior, castleDefenceCountsCommittedDefenderAndTowers)
+using Nullkiller2_Behaviors_DefenceBehavior = vcmiTestData::OriginalDataTest;
+
+TEST_F(Nullkiller2_Behaviors_DefenceBehavior, castleDefenceCountsCommittedDefenderAndTowers)
 {
 	test::TownFake town;
 	town.withBuilding(BuildingID::CASTLE);
@@ -80,7 +83,7 @@ TEST(Nullkiller2_Behaviors_DefenceBehavior, castleDefenceCountsCommittedDefender
 		<< "a mobile hero must be locked when hero plus castle towers cover the threat";
 }
 
-TEST(Nullkiller2_Behaviors_DefenceBehavior, towerDefenceNeedsCommittedDefender)
+TEST_F(Nullkiller2_Behaviors_DefenceBehavior, towerDefenceNeedsCommittedDefender)
 {
 	test::TownFake town;
 	town.withBuilding(BuildingID::CASTLE);
@@ -90,7 +93,7 @@ TEST(Nullkiller2_Behaviors_DefenceBehavior, towerDefenceNeedsCommittedDefender)
 	EXPECT_EQ(NK2AI::Goals::estimateTownDefence(*town.get(), nullptr), townArmyDefence) << "uncommitted town defence should not rely on tower value";
 }
 
-TEST(Nullkiller2_Behaviors_DefenceBehavior, defenderLockIsSkippedWhenTownArmyAlreadyCoversThreat)
+TEST_F(Nullkiller2_Behaviors_DefenceBehavior, defenderLockIsSkippedWhenTownArmyAlreadyCoversThreat)
 {
 	test::TownFake town;
 	ASSERT_TRUE(town.get()->setCreature(SlotID(0), CreatureID::ARCHER, 100));
@@ -105,7 +108,7 @@ TEST(Nullkiller2_Behaviors_DefenceBehavior, defenderLockIsSkippedWhenTownArmyAlr
 	EXPECT_FALSE(NK2AI::Goals::shouldLockTownDefender(*town.get(), defender, threat, 1.0f)) << "do not reserve a mobile hero when town stacks already suffice";
 }
 
-TEST(Nullkiller2_Behaviors_DefenceBehavior, defenderLockIsOnlyForImmediateTownThreats)
+TEST_F(Nullkiller2_Behaviors_DefenceBehavior, defenderLockIsOnlyForImmediateTownThreats)
 {
 	test::TownFake town;
 	town.withBuilding(BuildingID::CASTLE);
@@ -119,7 +122,7 @@ TEST(Nullkiller2_Behaviors_DefenceBehavior, defenderLockIsOnlyForImmediateTownTh
 	EXPECT_FALSE(NK2AI::Goals::shouldLockTownDefender(*town.get(), defender, distantThreat, 1.0f)) << "distant threats should stay in normal defence planning";
 }
 
-TEST(Nullkiller2_Behaviors_DefenceBehavior, requiredDefenderCoversAllUrgentTownThreats)
+TEST_F(Nullkiller2_Behaviors_DefenceBehavior, requiredDefenderCoversAllUrgentTownThreats)
 {
 	test::TownFake town;
 	town.withBuilding(BuildingID::CASTLE);
@@ -137,7 +140,7 @@ TEST(Nullkiller2_Behaviors_DefenceBehavior, requiredDefenderCoversAllUrgentTownT
 		<< "reserve the town hero when the same hero makes every urgent threat survivable";
 }
 
-TEST(Nullkiller2_Behaviors_DefenceBehavior, requiredDefenderCanBeNeededBeforeFullDefenceIsStable)
+TEST_F(Nullkiller2_Behaviors_DefenceBehavior, requiredDefenderCanBeNeededBeforeFullDefenceIsStable)
 {
 	test::TownFake town;
 	town.withBuilding(BuildingID::CASTLE);
@@ -155,7 +158,7 @@ TEST(Nullkiller2_Behaviors_DefenceBehavior, requiredDefenderCanBeNeededBeforeFul
 		<< "reserve a defender that covers one urgent threat, even when another threat still needs a follow-up defence action";
 }
 
-TEST(Nullkiller2_Behaviors_DefenceBehavior, requiredDefenderIsSkippedWhenItCoversNoUrgentThreat)
+TEST_F(Nullkiller2_Behaviors_DefenceBehavior, requiredDefenderIsSkippedWhenItCoversNoUrgentThreat)
 {
 	test::TownFake town;
 	town.withBuilding(BuildingID::CASTLE);
@@ -172,7 +175,7 @@ TEST(Nullkiller2_Behaviors_DefenceBehavior, requiredDefenderIsSkippedWhenItCover
 		<< "do not reserve a defender that cannot make any urgent town threat survivable";
 }
 
-TEST(Nullkiller2_Behaviors_DefenceBehavior, reserveDefenderThatImprovesUrgentTownDefence)
+TEST_F(Nullkiller2_Behaviors_DefenceBehavior, reserveDefenderThatImprovesUrgentTownDefence)
 {
 	test::TownFake town;
 	town.withBuilding(BuildingID::CASTLE);
@@ -192,7 +195,7 @@ TEST(Nullkiller2_Behaviors_DefenceBehavior, reserveDefenderThatImprovesUrgentTow
 		<< "do not treat a useful garrison defender as free while urgent town danger remains";
 }
 
-TEST(Nullkiller2_Behaviors_DefenceBehavior, reserveDefenderIsSkippedForDistantTownThreat)
+TEST_F(Nullkiller2_Behaviors_DefenceBehavior, reserveDefenderIsSkippedForDistantTownThreat)
 {
 	test::TownFake town;
 	town.withBuilding(BuildingID::CASTLE);
@@ -208,7 +211,7 @@ TEST(Nullkiller2_Behaviors_DefenceBehavior, reserveDefenderIsSkippedForDistantTo
 		<< "safe garrison heroes must stay available for extraction when there is no urgent town threat";
 }
 
-TEST(Nullkiller2_Behaviors_DefenceBehavior, sameTurnReturnPathAllowsSimpleRoundTrip)
+TEST_F(Nullkiller2_Behaviors_DefenceBehavior, sameTurnReturnPathAllowsSimpleRoundTrip)
 {
 	CGHeroInstance defender(nullptr);
 	ASSERT_TRUE(defender.setCreature(SlotID(0), CreatureID::ARCHER, 1));
@@ -219,7 +222,7 @@ TEST(Nullkiller2_Behaviors_DefenceBehavior, sameTurnReturnPathAllowsSimpleRoundT
 		<< "a garrison defender may raid only when the same turn has enough movement to return";
 }
 
-TEST(Nullkiller2_Behaviors_DefenceBehavior, defenderReleaseAllowsEnemyTownCaptureAfterArmyIsMostlyBought)
+TEST_F(Nullkiller2_Behaviors_DefenceBehavior, defenderReleaseAllowsEnemyTownCaptureAfterArmyIsMostlyBought)
 {
 	auto targetTown = townTarget();
 
@@ -238,7 +241,7 @@ TEST(Nullkiller2_Behaviors_DefenceBehavior, defenderReleaseAllowsEnemyTownCaptur
 		<< "a defender can leave for an enemy town once the home town has no meaningful current-week army left to buy";
 }
 
-TEST(Nullkiller2_Behaviors_DefenceBehavior, defenderReleaseAllowsEnemyTownCaptureWhenHomeStillNeedsFollowup)
+TEST_F(Nullkiller2_Behaviors_DefenceBehavior, defenderReleaseAllowsEnemyTownCaptureWhenHomeStillNeedsFollowup)
 {
 	auto targetTown = townTarget();
 
@@ -257,7 +260,7 @@ TEST(Nullkiller2_Behaviors_DefenceBehavior, defenderReleaseAllowsEnemyTownCaptur
 		<< "do not keep a defender idle when it cannot make the home town stable and can capture an enemy town instead";
 }
 
-TEST(Nullkiller2_Behaviors_DefenceBehavior, defenderReleaseRejectsNonEnemyTownCapture)
+TEST_F(Nullkiller2_Behaviors_DefenceBehavior, defenderReleaseRejectsNonEnemyTownCapture)
 {
 	auto targetTown = townTarget();
 
@@ -275,7 +278,7 @@ TEST(Nullkiller2_Behaviors_DefenceBehavior, defenderReleaseRejectsNonEnemyTownCa
 		<< "releasing a defender is reserved for enemy town captures, not neutral or allied visits";
 }
 
-TEST(Nullkiller2_Behaviors_DefenceBehavior, defenderReleaseRejectsMeaningfulUnboughtArmy)
+TEST_F(Nullkiller2_Behaviors_DefenceBehavior, defenderReleaseRejectsMeaningfulUnboughtArmy)
 {
 	auto targetTown = townTarget();
 
@@ -294,7 +297,7 @@ TEST(Nullkiller2_Behaviors_DefenceBehavior, defenderReleaseRejectsMeaningfulUnbo
 		<< "buying the current-week army should happen before a defender takes a risky town-capture trip";
 }
 
-TEST(Nullkiller2_Behaviors_DefenceBehavior, defenderReleaseRejectsEndOfWeekGrowthRisk)
+TEST_F(Nullkiller2_Behaviors_DefenceBehavior, defenderReleaseRejectsEndOfWeekGrowthRisk)
 {
 	auto targetTown = townTarget();
 
@@ -312,7 +315,7 @@ TEST(Nullkiller2_Behaviors_DefenceBehavior, defenderReleaseRejectsEndOfWeekGrowt
 		<< "do not risk losing fresh week growth unless the town is fully bought out";
 }
 
-TEST(Nullkiller2_Behaviors_DefenceBehavior, sameTurnReturnPathRejectsPathWithoutReturnMovement)
+TEST_F(Nullkiller2_Behaviors_DefenceBehavior, sameTurnReturnPathRejectsPathWithoutReturnMovement)
 {
 	CGHeroInstance defender(nullptr);
 	ASSERT_TRUE(defender.setCreature(SlotID(0), CreatureID::ARCHER, 1));

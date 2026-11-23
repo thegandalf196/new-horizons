@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../server/CVCMIServer.h"
 #include "../../server/LobbyNetPackVisitors.h"
 #include "../../lib/mapping/CMapInfo.h"
@@ -99,6 +100,7 @@ TEST_F(NeutralArmyLobbyOptionsTest, LoadedAndCampaignChoicesAreFrozenWhileUnchan
 }
 TEST_F(NeutralArmyLobbyOptionsTest, GameplayAndBattleOnlyRejectChangedNeutralRequest)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	server.setState(EServerState::GAMEPLAY);
 	const auto before = server.si->extraOptionsInfo;
 	auto requested = before;

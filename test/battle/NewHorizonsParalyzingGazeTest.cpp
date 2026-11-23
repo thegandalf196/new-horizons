@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../mock/mock_BonusBearer.h"
 #include "../mock/mock_UnitEnvironment.h"
 #include "../mock/mock_UnitInfo.h"
@@ -26,6 +27,7 @@ namespace
 class NewHorizonsParalyzingGazeTest : public testing::Test
 {
 protected:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	UnitInfoMock info;
 	UnitEnvironmentMock environment;
 	BonusBearerMock bonuses;
@@ -85,6 +87,7 @@ TEST_F(NewHorizonsParalyzingGazeTest, ActivationAndRoundDoNotExpireOnePendingTok
 }
 TEST(NewHorizonsParalyzingGazeMarker, CurrentRoundtripAndOldPrefixRejection)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto token = newHorizonsParalyzingGaze::marker();
 	CMemorySerializer current;
 	token.serialize(current.oser);
@@ -107,6 +110,7 @@ TEST(NewHorizonsParalyzingGazeMarker, CurrentRoundtripAndOldPrefixRejection)
 }
 TEST(NewHorizonsParalyzingGazeMarker, StructuralPreflightRequiresNoLibraryAndRejectsMalformedBeforePrefix)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto token = newHorizonsParalyzingGaze::marker(); // Full ID wire requires registry.
 	auto * saved = std::exchange(LIBRARY, nullptr);
 	struct Restore { GameLibrary * value; ~Restore() { LIBRARY = value; } } restore{saved};
@@ -122,6 +126,7 @@ TEST(NewHorizonsParalyzingGazeMarker, StructuralPreflightRequiresNoLibraryAndRej
 }
 TEST(NewHorizonsParalyzingGazeMarker, StaticRemovalIdentityDoesNotAliasOtherNoneStatuses)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto token = newHorizonsParalyzingGaze::marker();
 	auto other = token;
 	other.sid = BonusSourceID(HeroTypeID(HeroTypeID::decode("core:fafner")));
@@ -164,6 +169,7 @@ TEST(NewHorizonsParalyzingGazeMarker, NewDefiantCauseRejectsOldPrefixButHistoric
 
 TEST(NewHorizonsParalyzingGazeMarker, ActiveStackBattleAndStartRejectOldWritersBeforeAnyEnclosingPrefix)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto stack = std::make_unique<CStack>();
 	stack->addNewBonus(std::make_shared<Bonus>(newHorizonsParalyzingGaze::marker()));
 	CMemorySerializer stackWire;

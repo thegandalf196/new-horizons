@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/nativeRules/CapturedRuleRef.h"
 #include "../../lib/nativeRules/CompiledMetamagicRules.h"
 #include "../../lib/serializer/CMemorySerializer.h"
@@ -12,6 +13,7 @@ using MagicRef = nativeRules::CapturedRuleRef<nativeRules::CapturedRuleKind::Wor
 }
 TEST(CapturedMagicRules, SharedWorldAndBattleReferencesRoundtripTheSameExactOwner)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	nativeRules::CapturedRulePool pool;
 	JsonNode raw(JsonPath::builtin("config/newHorizonsMagic"));
 	const auto id = pool.intern(nativeRules::CapturedRuleKind::WorldMagic, raw);
@@ -75,6 +77,7 @@ public:
 }
 TEST(CapturedMagicRules, BattleAdmissionPreservesRawCaptureWhenCustomCallbackForwardsAnotherOwner)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	MismatchingMagicCallback callback;
 	callback.raw = JsonNode(JsonPath::builtin("config/newHorizonsMagic"));
 	callback.forwarded = nativeRules::CapturedRuleDocument::compile(nativeRules::CapturedRuleKind::WorldMagic, callback.raw);

@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 #include "../../PerkStateFixture.h"
 #include "PreparedPilotFixture.h"
 #include "../../../lib/GameSettings.h"
@@ -143,7 +144,9 @@ TEST_F(PreparedPilotFixture, PerkReaderRejectsMalformedDefinitionWithoutReplacin
 	EXPECT_EQ(target.toJson(), before);
 	EXPECT_EQ(prepared, previous);
 }
-TEST(PreparedPilotSettings, MergedAdmissionIsAtomicAndValidPartialRowsRoundTrip)
+using PreparedPilotSettings = vcmiTestData::OriginalDataTest;
+
+TEST_F(PreparedPilotSettings, MergedAdmissionIsAtomicAndValidPartialRowsRoundTrip)
 {
 	GameSettings settings;
 	ASSERT_NO_THROW(settings.loadBase(LIBRARY->settingsHandler->getFullConfig()));
@@ -180,7 +183,7 @@ TEST(PreparedPilotSettings, MergedAdmissionIsAtomicAndValidPartialRowsRoundTrip)
 	EXPECT_THROW(settings.serialize(unsupported.oser), std::runtime_error);
 	EXPECT_TRUE(unsupported.extractBuffer().empty());
 }
-TEST(PreparedPilotSettings, PartialPerkOverridePersistsItsFragmentAndRejectsUnsupportedPolicyBeforePrefix)
+TEST_F(PreparedPilotSettings, PartialPerkOverridePersistsItsFragmentAndRejectsUnsupportedPolicyBeforePrefix)
 {
 	GameSettings settings;
 	ASSERT_NO_THROW(settings.loadBase(LIBRARY->settingsHandler->getFullConfig()));
@@ -208,7 +211,7 @@ TEST(PreparedPilotSettings, PartialPerkOverridePersistsItsFragmentAndRejectsUnsu
 	EXPECT_EQ(settings.getFullConfig(), before);
 }
 
-TEST(PreparedPilotSettings, ReadValidationPreservesMissingAndExplicitNullCaptureKeysAcrossResaves)
+TEST_F(PreparedPilotSettings, ReadValidationPreservesMissingAndExplicitNullCaptureKeysAcrossResaves)
 {
 	for(const bool explicitNull : {false, true})
 	{
@@ -276,7 +279,7 @@ TEST_F(PreparedPilotFixture, WholeWorldReadKeepsAbsentMapMagicOverrideAndCapture
 			gameHandler->randomizer->rollPrimarySkillsForLevelup(attackerSideHero));
 }
 
-TEST(PreparedPilotSettings, ExplicitNullFiniteCommandMarkerRejectsBeforeReplacingCurrentAuthority)
+TEST_F(PreparedPilotSettings, ExplicitNullFiniteCommandMarkerRejectsBeforeReplacingCurrentAuthority)
 {
 	GameSettings settings;
 	ASSERT_NO_THROW(settings.loadBase(LIBRARY->settingsHandler->getFullConfig()));
@@ -316,7 +319,7 @@ TEST_F(PreparedPilotFixture, PartialPerkOverrideEnclosingMapRejectsUnsupportedPo
 		gameState()->getSettings().getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS));
 }
 
-TEST(PreparedPilotSettings, CompleteCapturedPerkOverrideDoesNotInheritInstalledTierPolicy)
+TEST_F(PreparedPilotSettings, CompleteCapturedPerkOverrideDoesNotInheritInstalledTierPolicy)
 {
 	GameSettings settings;
 	ASSERT_NO_THROW(settings.loadBase(LIBRARY->settingsHandler->getFullConfig()));
@@ -334,7 +337,7 @@ TEST(PreparedPilotSettings, CompleteCapturedPerkOverrideDoesNotInheritInstalledT
 	EXPECT_EQ(restored.getValue(EGameSettings::HEROES_NEW_HORIZONS_PERKS)["perkProgressionPolicyVersion"].Integer(), 1);
 }
 
-TEST(PreparedPilotSettings, InvalidMergedPartialPerkPolicyReaderCannotReplaceAdmittedOverrides)
+TEST_F(PreparedPilotSettings, InvalidMergedPartialPerkPolicyReaderCannotReplaceAdmittedOverrides)
 {
 	GameSettings settings;
 	ASSERT_NO_THROW(settings.loadBase(LIBRARY->settingsHandler->getFullConfig()));
@@ -370,7 +373,7 @@ TEST(PreparedPilotSettings, InvalidMergedPartialPerkPolicyReaderCannotReplaceAdm
 	}
 }
 
-TEST(PreparedPilotSettings, MalformedRawFragmentCannotReplaceExistingOverrides)
+TEST_F(PreparedPilotSettings, MalformedRawFragmentCannotReplaceExistingOverrides)
 {
 	GameSettings settings;
 	ASSERT_NO_THROW(settings.loadBase(LIBRARY->settingsHandler->getFullConfig()));

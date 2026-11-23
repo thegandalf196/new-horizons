@@ -9,6 +9,7 @@
  */
 
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 
 #include "../../lib/GameLibrary.h"
 #include "../../lib/StartInfo.h"
@@ -35,6 +36,7 @@ StartInfo makeStartInfo()
 
 TEST(SavegamePathTest, UsesStoredGameDirectory)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto startInfo = makeStartInfo();
 	CMapHeader mapHeader;
 
@@ -46,6 +48,7 @@ TEST(SavegamePathTest, UsesStoredGameDirectory)
 
 TEST(SavegamePathTest, BuildsDirectoryNameForOldSave)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto startInfo = makeStartInfo();
 	CMapHeader mapHeader;
 	startInfo.saveDirectory.clear();
@@ -58,6 +61,7 @@ TEST(SavegamePathTest, BuildsDirectoryNameForOldSave)
 
 TEST(SavegamePathTest, NamesAutosaveAfterGameDate)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto startInfo = makeStartInfo();
 	CMapHeader mapHeader;
 	const auto & gameSettings = *LIBRARY->engineSettings();

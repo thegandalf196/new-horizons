@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../AI/BattleAI/LifeDrainCandidateValueReuse.h"
 #include "../../AI/BattleAI/BattleExchangeVariant.h"
 #include "../../lib/spells/CSpell.h"
@@ -14,6 +15,7 @@
 class LifeDrainCandidateValueReuseTest : public ::testing::Test
 {
 protected:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	::testing::NiceMock<UnitMock> enemy, friendA, friendB;
 	PossibleSpellcast cast;
 	heroActionProjection::Admission admission;

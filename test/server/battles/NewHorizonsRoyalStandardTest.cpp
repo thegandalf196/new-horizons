@@ -6,6 +6,7 @@
  * Full text of license available in license.txt file, in main folder
  */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 #include "../../PerkTestSetup.h"
 #include "HeroCommandFixture.h"
 #include "../../../AI/BattleAI/StackWithBonuses.h"
@@ -235,7 +236,9 @@ TEST_F(NewHorizonsRoyalStandardTest, CurrentHostileControllerLosesCapturedFloor)
 	EXPECT_EQ(battle()->battleGetMorale(friendly), 0);
 }
 
-TEST(NewHorizonsRoyalStandardPacketsTest, CurrentRoundTripLegacyDefaultsAndOuterPrefixes)
+using NewHorizonsRoyalStandardPacketsTest = vcmiTestData::OriginalDataTest;
+
+TEST_F(NewHorizonsRoyalStandardPacketsTest, CurrentRoundTripLegacyDefaultsAndOuterPrefixes)
 {
 	HeroOrderState order;
 	order.command = HeroCommand::CHARGE;

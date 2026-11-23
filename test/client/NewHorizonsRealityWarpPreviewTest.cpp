@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "../StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../client/battle/NewHorizonsRealityWarpPreview.h"
 
 namespace
@@ -42,6 +43,7 @@ std::string text(const newHorizonsRealityWarp::PreparedExchange & exchange)
 
 TEST(NewHorizonsRealityWarpPreviewTest, CompletePreviewShowsMovingAndEveryStayingReason)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto exchange = prepared();
 	using Reason = newHorizonsRealityWarp::StayReason;
 	for(const auto reason : {Reason::EXCLUDED_EFFECT, Reason::UNKNOWN_SOURCE, Reason::MISSING_CAPTURE,
@@ -85,6 +87,7 @@ TEST(NewHorizonsRealityWarpPreviewTest, ConfirmationComparesFullExpectedAndRepla
 
 TEST(NewHorizonsRealityWarpPreviewTest, CapturedSidecarStrengthAndProvenanceRemainVisible)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto exchange = prepared();
 	auto & bundle = exchange.previews.front().bundle;
 	bundle.guardianSpirit = newHorizonsRealityWarp::GuardianSpiritPayload{123, 2};

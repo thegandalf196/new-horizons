@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/bonuses/BonusDependencyCapture.h"
 #include "../../lib/bonuses/BonusDependencyOverlay.h"
 #include "../../lib/bonuses/OwnedRecipientBonusGraph.h"
@@ -66,6 +67,7 @@ void parity(const OwnedBonusQueryFrame & frame, const OwnedRecipientBonusGraph &
 }
 TEST(BonusDependencyTerrainTest, NativeAndNonNativeGrassUseSameNativeAllOfDecision)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	for(bool native : {false, true})
 	{
 		auto source = input(native);
@@ -98,6 +100,7 @@ TEST(BonusDependencyTerrainTest, NativeAndNonNativeGrassUseSameNativeAllOfDecisi
 }
 TEST(BonusDependencyTerrainTest, ExplicitTerrainAndTierLimitsKeepNativeSemantics)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	for(int level : {1, 3, 4})
 	{
 		auto source = input(false); source.local = {reward(true)};
@@ -114,6 +117,7 @@ TEST(BonusDependencyTerrainTest, ExplicitTerrainAndTierLimitsKeepNativeSemantics
 }
 TEST(BonusDependencyTerrainTest, InheritedHeroExclusionKeepsActualPrimaryRatingSuppressionOrder)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto hero = input();
 	hero.facts.nodeType = BonusNodeType::HERO;
 	hero.facts.heroLevel = 3; hero.facts.armySlots.emplace();
@@ -152,6 +156,7 @@ TEST(BonusDependencyTerrainTest, StandaloneCaptureAndMissingTerrainDomainsStayCl
 }
 TEST(BonusDependencyTerrainTest, AdventureAndQueryTerrainPrecedenceRemainOwnedAcrossSourceRetirement)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto source = input();
 	source.facts.terrainContext->adventure = DIRT;
 	source.facts.terrainContext->query = GRASS;
@@ -172,6 +177,7 @@ TEST(BonusDependencyTerrainTest, AdventureAndQueryTerrainPrecedenceRemainOwnedAc
 }
 TEST(BonusDependencyTerrainTest, BaselessQueryTerrainPrecedesExplicitBattleFallback)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	for(bool query : {false, true})
 	{
 		auto source = input();

@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/nativeRules/CapturedRuleRef.h"
 #include "../../lib/nativeRules/CompiledDevelopmentRules.h"
 #include "../../lib/entities/hero/NewHorizonsPrimaryGrowth.h"
@@ -10,6 +11,7 @@
 
 TEST(CompiledDevelopmentRules, CurrentClassesPreserveProfilesOrderedGrowthAndLiveRanks)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const JsonNode world(JsonPath::builtin("config/newHorizonsHeroes"));
 	for(const auto & [key, definition] : world["classProfiles"].Struct())
 	{
@@ -52,6 +54,7 @@ TEST(CompiledDevelopmentRules, CurrentClassesPreserveProfilesOrderedGrowthAndLiv
 
 TEST(CompiledDevelopmentRules, MissingHistoricalPoliciesStayAbsentAndImmutableOwnersIgnoreChangedDefaults)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const nativeRules::CompiledDevelopmentRules absent{JsonNode()};
 	EXPECT_FALSE(absent.active());
 	EXPECT_FALSE(absent.profile());
@@ -82,6 +85,7 @@ TEST(CompiledDevelopmentRules, MissingHistoricalPoliciesStayAbsentAndImmutableOw
 
 TEST(CompiledDevelopmentRules, HistoricalGrowthVersionsRetainNoExtraDrawsAndTheirOwnRounding)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const JsonNode world(JsonPath::builtin("config/newHorizonsHeroes"));
 	const auto initial = newHorizonsHeroes::resolveHeroRules(world, HeroClassID(HeroClassID::decode("core:knight")));
 	for(const int version : {1, 2, 3})
@@ -107,6 +111,7 @@ TEST(CompiledDevelopmentRules, HistoricalGrowthVersionsRetainNoExtraDrawsAndThei
 
 TEST(CompiledDevelopmentRules, SpecialtyScalarsAndResolvedHeroRowsMatchRawWithoutInventedPolicies)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const JsonNode world(JsonPath::builtin("config/newHorizonsHeroes"));
 	auto raw = newHorizonsHeroes::resolveHeroRules(world, HeroClassID(HeroClassID::decode("core:knight")));
 	const nativeRules::CompiledDevelopmentRules typed(raw);
@@ -172,6 +177,7 @@ TEST(CompiledDevelopmentRules, SpecialtyScalarsAndResolvedHeroRowsMatchRawWithou
 
 TEST(CompiledDevelopmentRules, FactionAliasesRewardMigrationAndExclusionMatchRawForEveryRegisteredSkill)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const JsonNode world(JsonPath::builtin("config/newHorizonsHeroes"));
 	const auto raw = newHorizonsHeroes::resolveHeroRules(world, HeroClassID(HeroClassID::decode("core:knight")));
 	const nativeRules::CompiledDevelopmentRules typed(raw);
@@ -193,6 +199,7 @@ TEST(CompiledDevelopmentRules, FactionAliasesRewardMigrationAndExclusionMatchRaw
 
 TEST(CompiledDevelopmentRules, PreparedCreaturePrototypesShareOnlyImmutableDefinitionsAndAttachIndependentBonuses)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const JsonNode world(JsonPath::builtin("config/newHorizonsHeroes"));
 	const auto raw = newHorizonsHeroes::resolveHeroRules(world, HeroClassID(HeroClassID::decode("core:knight")));
 	const nativeRules::CompiledDevelopmentRules typed(raw);

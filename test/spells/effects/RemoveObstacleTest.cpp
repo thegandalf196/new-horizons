@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 
 #include "EffectFixture.h"
 
@@ -66,6 +67,7 @@ std::shared_ptr<SpellCreatedObstacle> makeSpellObstacle(si32 uniqueID, const Bat
 class RemoveObstacleTest : public Test, public EffectFixture
 {
 public:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	RemoveObstacleTest()
 		: EffectFixture("core:removeObstacle")
 	{
@@ -177,6 +179,7 @@ TEST_F(RemoveObstacleTest, NotApplicableTargetWhenHexEmpty)
 class RemoveObstacleApplyTest : public Test, public EffectFixture
 {
 public:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	RemoveObstacleApplyTest()
 		: EffectFixture("core:removeObstacle")
 	{

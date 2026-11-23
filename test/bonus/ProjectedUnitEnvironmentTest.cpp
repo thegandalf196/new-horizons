@@ -5,6 +5,7 @@
  * Full text of license available in license.txt file, in main folder
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "ProjectedUnitEnvironmentFixture.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include <limits>
@@ -17,6 +18,7 @@ using namespace environmentFixture;
 class ProjectedUnitEnvironmentTest : public Test, protected Projection
 {
 protected:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	void expectAllRefuse(const battle::Unit * unit)
 	{
 		EXPECT_THROW(environment->unitHasAmmoCart(unit), std::invalid_argument);

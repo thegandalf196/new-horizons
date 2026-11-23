@@ -5,6 +5,7 @@
  * Full text of license available in license.txt file, in main folder
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../mock/mock_BonusBearer.h"
 #include "../mock/mock_UnitEnvironment.h"
 #include "../mock/mock_UnitInfo.h"
@@ -34,6 +35,7 @@ using Decision = ILimiter::EDecision;
 class ProjectedBonusLimitationTest : public Test
 {
 protected:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	CStackBasicDescriptor descriptor{CreatureID(0), 8};
 	CStack original{&descriptor, PlayerColor(0), 17, BattleSide::ATTACKER};
 	UnitInfoMock info, neighborInfo;

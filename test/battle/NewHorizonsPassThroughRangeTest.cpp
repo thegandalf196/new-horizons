@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 
 #include "../../lib/battle/AccessibilityInfo.h"
 #include "../../lib/battle/BattleReach.h"
@@ -179,7 +180,9 @@ TEST(AccessibilityInfoLongReachLineTest, AnyClearTiedStraightRayIsAccepted)
 	EXPECT_FALSE(accessibility.hasClearStraightHexRay(from, to, endpoints));
 }
 
-TEST(CBattleInfoCallbackLongReachTest, GapCountExtendsMeleeRangeWithoutChangingAdjacencyOnlyQueries)
+using CBattleInfoCallbackLongReachTest = vcmiTestData::OriginalDataTest;
+
+TEST_F(CBattleInfoCallbackLongReachTest, GapCountExtendsMeleeRangeWithoutChangingAdjacencyOnlyQueries)
 {
 	TestBattleCallback callback;
 	TestUnit attacker(BattleSide::ATTACKER, BattleHex(5, 5));
@@ -225,7 +228,7 @@ TEST(AccessibilityInfoLongReachLineTest, RequestedApproachUsesTheActualClearFina
 	EXPECT_FALSE(accessibility.hasClearStraightHexRay(from, to, endpoints, BattleHex::BOTTOM));
 }
 
-TEST(CBattleInfoCallbackLongReachTest, MaximumDistanceUsesNetBonusesAndClampsWithoutIntegerOverflow)
+TEST_F(CBattleInfoCallbackLongReachTest, MaximumDistanceUsesNetBonusesAndClampsWithoutIntegerOverflow)
 {
 	TestBattleCallback callback;
 	TestUnit attacker(BattleSide::ATTACKER, BattleHex(5, 5));
@@ -296,7 +299,7 @@ TEST(AccessibilityInfoLongReachLineTest, FootprintEntrySectorUnionPreservesGener
 	}
 }
 
-TEST(CBattleInfoCallbackLongReachTest, DoublewideRangeUsesTheNearestOccupiedFootprints)
+TEST_F(CBattleInfoCallbackLongReachTest, DoublewideRangeUsesTheNearestOccupiedFootprints)
 {
 	TestBattleCallback callback;
 	TestUnit attacker(BattleSide::ATTACKER, BattleHex(11, 5), true);
@@ -309,7 +312,7 @@ TEST(CBattleInfoCallbackLongReachTest, DoublewideRangeUsesTheNearestOccupiedFoot
 	EXPECT_FALSE(callback.isMeleeAttackPossibleWithLongReach(&attacker, &defender));
 }
 
-TEST(CBattleInfoCallbackLongReachTest, DescriptionDisplaysTheSharedMaximumRatherThanRawGap)
+TEST_F(CBattleInfoCallbackLongReachTest, DescriptionDisplaysTheSharedMaximumRatherThanRawGap)
 {
 	const auto description = [](int maximum)
 	{

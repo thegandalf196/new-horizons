@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 
 #include "EffectFixture.h"
 
@@ -29,6 +30,7 @@ using namespace ::testing;
 class DamageTest : public Test, public EffectFixture
 {
 public:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	DamageTest()
 		: EffectFixture("core:damage")
 	{
@@ -160,6 +162,7 @@ TEST_F(DamageTest, NonMagicalSpellIgnoresDamageReduction)
 class DamageApplyTest : public Test, public EffectFixture
 {
 public:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	UnitEnvironmentMock unitEnvironmentMock;
 
 	DamageApplyTest()

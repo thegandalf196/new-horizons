@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL v2.0 or later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../server/battles/FullGameSnapshotTypes.h"
 #include "../../lib/GameSettings.h"
 #include "../../lib/CStack.h"
@@ -101,6 +102,7 @@ TEST(NewHorizonsPetrifyingBloodSerialization, UnitAndAttackEnvelopesRejectOldWri
 }
 TEST(NewHorizonsPetrifyingBloodSerialization, BattleAndEntryRejectSpentReceiptBeforePrefix)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	BattleStart entry;
 	entry.info = std::make_unique<BattleInfo>(nullptr);
 	entry.info->stacks.push_back(std::make_unique<CStack>());

@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../PerkStateFixture.h"
 #include "../server/LegacyEstatesCapture.h"
 #include "../../lib/entities/hero/NewHorizonsPerkState.h"
@@ -132,6 +133,7 @@ JsonNode expectedHeroProcText(const JsonNode & saved)
 
 TEST(NewHorizonsPerkState, LegacyHeroProcTextMigratesFromCanonicalOnJsonLoadWithoutChangingSavedPolicy)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto legacy = legacyHeroProcJson();
 	const auto expected = expectedHeroProcText(legacy["rules"]);
 	const auto restored = newHorizonsHeroes::PerkState::fromJson(legacy);
@@ -143,6 +145,7 @@ TEST(NewHorizonsPerkState, LegacyHeroProcTextMigratesFromCanonicalOnJsonLoadWith
 
 TEST(NewHorizonsPerkState, LegacyHeroProcTextMigratesOnBinaryLoadAndIsIdempotent)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto legacy = legacyHeroProcJson();
 	CMemorySerializer memory;
 	const bool pooled = false;
@@ -170,6 +173,7 @@ TEST(NewHorizonsPerkState, LegacyHeroProcTextMigratesOnBinaryLoadAndIsIdempotent
 
 TEST(NewHorizonsPerkState, AdmissionNormalizesLegacyPresentationWithoutLosingMetadataOrPolicy)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto legacy = legacyHeroProcJson();
 	auto & row = savedPerk(legacy["rules"], "new-horizons:luck", "new-horizons:luck.luckyRecovery");
 	for(const auto * key : {"name", "description"})
@@ -194,6 +198,7 @@ TEST(NewHorizonsPerkState, AdmissionNormalizesLegacyPresentationWithoutLosingMet
 
 TEST(NewHorizonsPerkState, PooledLegacyPresentationAdmissionSharesOneOwnerAndIsIdempotent)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto legacy = legacyHeroProcJson();
 	CMemorySerializer memory;
 	int64_t count = 1;
@@ -238,6 +243,7 @@ TEST(NewHorizonsPerkState, PooledLegacyPresentationAdmissionSharesOneOwnerAndIsI
 
 TEST(NewHorizonsPerkState, NormalizedDuplicateRawPoolRejectsWithoutReplacingItsOwner)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto legacy = legacyHeroProcJson();
 	const auto normalized = expectedHeroProcText(legacy["rules"]);
 	ASSERT_NE(legacy["rules"], normalized);
@@ -259,6 +265,7 @@ TEST(NewHorizonsPerkState, NormalizedDuplicateRawPoolRejectsWithoutReplacingItsO
 
 TEST(NewHorizonsPerkState, SharedLegacySelectionsNormalizeWhileStrictDuplicatesRejectAtomically)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	for(const bool strict : {false, true})
 	{
 		SCOPED_TRACE(strict);
@@ -290,6 +297,7 @@ TEST(NewHorizonsPerkState, SharedLegacySelectionsNormalizeWhileStrictDuplicatesR
 
 TEST(NewHorizonsPerkState, CurrentAndUnrecognizedHeroProcTextRemainExactlyCaptured)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	for(bool customLegacy : {false, true})
 	{
 		auto captured = state();
@@ -324,6 +332,7 @@ TEST(NewHorizonsPerkState, LegacyStateRemainsEmptyAndCannotSelect)
 
 TEST(NewHorizonsPerkState, SelectionEnforcesExactlyOnePerTierAndThreePerSkillCap)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto saved = state();
 	const auto options = newHorizonsHeroes::perkOptions(saved.getRules(), SKILL);
 	ASSERT_EQ(options.size(), 10u);
@@ -343,6 +352,7 @@ TEST(NewHorizonsPerkState, SelectionEnforcesExactlyOnePerTierAndThreePerSkillCap
 
 TEST(NewHorizonsPerkState, OrdinaryRanksAndPerksAlternateWhilePerkTiersStayOrdered)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto saved = state();
 	const auto options = newHorizonsHeroes::perkOptions(saved.getRules(), SKILL);
 	const auto noRank = [](const std::string &) { return 0; };
@@ -378,6 +388,7 @@ TEST(NewHorizonsPerkState, OrdinaryRanksAndPerksAlternateWhilePerkTiersStayOrder
 
 TEST(NewHorizonsPerkState, SpellPenetrationOpensNormalAdvancedSpellcraftProgression)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto saved = state();
 	constexpr auto SKILL = "new-horizons:spellcraft";
 	constexpr auto PERK = "new-horizons:spellcraft.spellPenetration";
@@ -391,6 +402,7 @@ TEST(NewHorizonsPerkState, SpellPenetrationOpensNormalAdvancedSpellcraftProgress
 
 TEST(NewHorizonsPerkState, EmpowerSpellOpensNormalExpertSpellcraftProgression)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto saved = state();
 	constexpr auto SKILL = "new-horizons:spellcraft";
 	constexpr auto BASIC_PERK = "new-horizons:spellcraft.spellPenetration";
@@ -406,6 +418,7 @@ TEST(NewHorizonsPerkState, EmpowerSpellOpensNormalExpertSpellcraftProgression)
 
 TEST(NewHorizonsPerkState, CommanderPerksOpenNormalAdvancedAndExpertCommandProgression)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	constexpr auto COMMAND = "new-horizons:command";
 	constexpr auto VETERAN = "new-horizons:command.veteranCommander";
 	for(const auto * basic : {"new-horizons:command.aggressiveCommander",
@@ -425,6 +438,7 @@ TEST(NewHorizonsPerkState, CommanderPerksOpenNormalAdvancedAndExpertCommandProgr
 
 TEST(NewHorizonsPerkState, OccupiedTierOnlyBlocksAlternativesFromTheSameSkill)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto saved = state();
 	const auto sorceryOptions = newHorizonsHeroes::perkOptions(saved.getRules(), SKILL);
 	const std::string otherSkill = "new-horizons:discipline";
@@ -440,6 +454,7 @@ TEST(NewHorizonsPerkState, OccupiedTierOnlyBlocksAlternativesFromTheSameSkill)
 
 TEST(NewHorizonsPerkState, OfferKeepsSameTierPerksFromOtherSkillsEligible)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto saved = state();
 	// Isolate occupied-tier admission from the growing authored Discipline pool.
 	perkStateFixture::editRules(saved, [&](JsonNode & rules)
@@ -464,6 +479,7 @@ TEST(NewHorizonsPerkState, OfferKeepsSameTierPerksFromOtherSkillsEligible)
 
 TEST(NewHorizonsPerkState, PlannedAndRankLockedEffectsNeverProjectAsEnabled)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto saved = plannedState();
 	const auto planned = newHorizonsHeroes::perkOptions(saved.getRules(), PLANNED_SKILL);
 	ASSERT_GE(planned.size(), 2u);
@@ -486,6 +502,7 @@ TEST(NewHorizonsPerkState, PlannedAndRankLockedEffectsNeverProjectAsEnabled)
 
 TEST(NewHorizonsPerkState, OverchargerActivationComesFromTheSavedRegistrySnapshot)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto active = state();
 	constexpr auto SKILL = "new-horizons:sorceryMagic";
 	constexpr auto PERK = "new-horizons:sorceryMagic.overcharger";
@@ -514,6 +531,7 @@ TEST(NewHorizonsPerkState, OverchargerActivationComesFromTheSavedRegistrySnapsho
 
 TEST(NewHorizonsPerkState, JsonAndBinaryRoundTripsPreserveSavedRegistrySnapshot)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto original = state();
 	const auto perk = newHorizonsHeroes::perkOptions(original.getRules(), SKILL).front();
 	original.select(SKILL, perk.id, 3);
@@ -543,6 +561,7 @@ TEST(NewHorizonsPerkState, JsonAndBinaryRoundTripsPreserveSavedRegistrySnapshot)
 
 TEST(NewHorizonsPerkState, BinaryWriterMatchesCapturedFieldsForZeroOneAndMultipleSelections)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto saved = state();
 	const auto options = newHorizonsHeroes::perkOptions(saved.getRules(), SKILL);
 	for(size_t count = 0; count <= 3; ++count)
@@ -565,6 +584,7 @@ TEST(NewHorizonsPerkState, BinaryWriterMatchesCapturedFieldsForZeroOneAndMultipl
 
 TEST(NewHorizonsPerkState, SuccessfulSaveDoesNotHideLaterCatalogOrSelectionCorruption)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto saved = state();
 	const auto perk = newHorizonsHeroes::perkOptions(saved.getRules(), SKILL).front();
 	saved.select(SKILL, perk.id, 3);
@@ -587,6 +607,7 @@ TEST(NewHorizonsPerkState, SuccessfulSaveDoesNotHideLaterCatalogOrSelectionCorru
 
 TEST(NewHorizonsPerkState, HistoricalRetiredSpellBufferMigratesToSpellEchoAcrossJsonAndBinaryLoads)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto legacy = state();
 	perkStateFixture::editRules(legacy, [&](JsonNode & rules)
 	{
@@ -649,6 +670,7 @@ TEST(NewHorizonsPerkState, HistoricalRetiredSpellBufferMigratesToSpellEchoAcross
 
 TEST(NewHorizonsPerkState, RevivedSpellBufferSurvivesJsonAndBinaryLoadsForNewOrUnknownSnapshots)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	constexpr auto skill = "new-horizons:metamagic";
 	constexpr auto revived = "new-horizons:metamagic.spellBuffer";
 	constexpr auto replacement = "new-horizons:metamagic.spellEcho";
@@ -708,6 +730,7 @@ TEST(NewHorizonsPerkState, RevivedSpellBufferSurvivesJsonAndBinaryLoadsForNewOrU
 
 TEST(NewHorizonsPerkState, RetiredSelectionWithoutMatchingHistoricalDefinitionIsRejected)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	constexpr auto skill = "new-horizons:metamagic";
 	constexpr auto retired = "new-horizons:metamagic.spellBuffer";
 	constexpr auto currentPerk = "new-horizons:metamagic.spellEcho";
@@ -743,6 +766,7 @@ TEST(NewHorizonsPerkState, RetiredSelectionWithoutMatchingHistoricalDefinitionIs
 
 TEST(NewHorizonsPerkState, CrossoverRejectsUnknownFieldsAndForgedSelections)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto original = state();
 	const auto perk = newHorizonsHeroes::perkOptions(original.getRules(), SKILL).front();
 	original.select(SKILL, perk.id, 3);
@@ -756,6 +780,7 @@ TEST(NewHorizonsPerkState, CrossoverRejectsUnknownFieldsAndForgedSelections)
 
 TEST(NewHorizonsPerkState, LegacySameTierSelectionsKeepTheEarliestChoiceOnLoad)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto original = state();
 	const auto options = newHorizonsHeroes::perkOptions(original.getRules(), SKILL);
 	JsonNode legacy;
@@ -781,6 +806,7 @@ TEST(NewHorizonsPerkState, LegacySameTierSelectionsKeepTheEarliestChoiceOnLoad)
 
 TEST(NewHorizonsPerkState, OfferIsDeterministicBoundedAndUsesOnlyLearnedEligibleSkills)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto saved = state();
 	const auto ranks = [](const std::string & skillId)
 	{
@@ -815,6 +841,7 @@ TEST(NewHorizonsPerkState, OfferIsDeterministicBoundedAndUsesOnlyLearnedEligible
 
 TEST(NewHorizonsPerkState, HavocDamagePerksAreAcceptedBasicChoices)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	constexpr auto havoc = "new-horizons:havocMagic";
 	for(const auto * perk : {"new-horizons:havocMagic.pyromancer", "new-horizons:havocMagic.cryomancer"})
 	{
@@ -851,6 +878,7 @@ TEST(NewHorizonsPerkState, HavocDamagePerksAreAcceptedBasicChoices)
 
 TEST(NewHorizonsPerkState, ExpertHavocWithBasicStormcallerOffersOnlyAdvancedTier)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto saved = state();
 	constexpr auto havoc = "new-horizons:havocMagic";
 	constexpr auto stormcaller = "new-horizons:havocMagic.stormcaller";
@@ -870,6 +898,7 @@ TEST(NewHorizonsPerkState, ExpertHavocWithBasicStormcallerOffersOnlyAdvancedTier
 
 TEST(NewHorizonsPerkState, OfferExcludesPlannedPerksAndCanBeEmpty)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto saved = plannedState();
 	const auto plannedOnly = saved.prepareOffer([](const std::string & skillId)
 	{
@@ -892,6 +921,7 @@ TEST(NewHorizonsPerkState, OfferExcludesPlannedPerksAndCanBeEmpty)
 
 TEST(NewHorizonsPerkState, AcceptedOfferRevalidatesSnapshotRankDuplicateAndCap)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto saved = state();
 	const auto expert = [](const std::string & skillId)
 	{
@@ -930,6 +960,7 @@ TEST(NewHorizonsPerkState, AcceptedOfferRevalidatesSnapshotRankDuplicateAndCap)
 
 TEST(NewHorizonsPerkState, OfferNeverRepeatsAnOccupiedTierForTheSameSkill)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto saved = state();
 	const auto options = newHorizonsHeroes::perkOptions(saved.getRules(), SKILL);
 	saved.select(SKILL, options[0].id, 3);
@@ -990,6 +1021,7 @@ newHorizonsHeroes::PerkState::OfferWeightContext capturedWeights(
 
 TEST(NewHorizonsPerkState, ParentWeightIsPerPerkNotNormalizedByFamily)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto saved = weightedOfferState();
 	const auto offer = saved.prepareOffer(weightedOfferRank, 4, capturedWeights(parentOfferWeight));
 	ASSERT_EQ(offer.size(), 2u);
@@ -1003,6 +1035,7 @@ TEST(NewHorizonsPerkState, ParentWeightIsPerPerkNotNormalizedByFamily)
 
 TEST(NewHorizonsPerkState, WeightedIntegerDrawHasStableGoldenSequence)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto saved = weightedOfferState();
 	const auto offer = saved.prepareOffer(weightedOfferRank, 0, capturedWeights(parentOfferWeight));
 	ASSERT_EQ(offer.size(), 2u);
@@ -1012,6 +1045,7 @@ TEST(NewHorizonsPerkState, WeightedIntegerDrawHasStableGoldenSequence)
 
 TEST(NewHorizonsPerkState, ZeroParentWeightExcludesAllItsPerks)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto saved = weightedOfferState();
 	const auto weights = [](const std::string & skill) -> std::optional<int>
 	{
@@ -1026,6 +1060,7 @@ TEST(NewHorizonsPerkState, ZeroParentWeightExcludesAllItsPerks)
 
 TEST(NewHorizonsPerkState, ExplicitLegacyWeightContextRetainsExactUniformOrdering)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto saved = weightedOfferState();
 	auto uniform = saved;
 	perkStateFixture::editRules(uniform, [&](JsonNode & rules) { rules.Struct().erase("offerWeightPolicyVersion"); });
@@ -1040,6 +1075,7 @@ TEST(NewHorizonsPerkState, ExplicitLegacyWeightContextRetainsExactUniformOrderin
 
 TEST(NewHorizonsPerkState, PartialMissingOrInvalidParentWeightsRefuse)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto saved = weightedOfferState();
 	const auto partial = [](const std::string & skill) -> std::optional<int>
 	{
@@ -1055,6 +1091,7 @@ TEST(NewHorizonsPerkState, PartialMissingOrInvalidParentWeightsRefuse)
 
 TEST(NewHorizonsPerkState, WeightedAcceptanceRevalidatesWeightsRankAndTier)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto saved = weightedOfferState();
 	// The weighted sample must not also be a complete eligible tier pool.
 	perkStateFixture::editRules(saved, [&](JsonNode & rules) { savedPerk(rules, "new-horizons:luck", "new-horizons:luck.luckyAim")["effect"]["status"].String() = "active"; });
@@ -1088,6 +1125,7 @@ TEST(NewHorizonsPerkState, WeightedAcceptanceRevalidatesWeightsRankAndTier)
 
 TEST(NewHorizonsPerkState, CapturedPolicyAndLegacyPendingOfferSurviveSaveRoundtrip)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto saved = weightedOfferState();
 	const auto weighted = saved.prepareOffer(weightedOfferRank, 4, capturedWeights(parentOfferWeight));
 	CMemorySerializer memory;
@@ -1108,6 +1146,7 @@ TEST(NewHorizonsPerkState, CapturedPolicyAndLegacyPendingOfferSurviveSaveRoundtr
 }
 TEST(NewHorizonsPerkState, WeightedCapturedPolicyRefusesOlderBinaryWriter)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto saved = weightedOfferState();
 	CMemorySerializer older;
 	older.oser.version = static_cast<ESerializationVersion>(
@@ -1117,6 +1156,7 @@ TEST(NewHorizonsPerkState, WeightedCapturedPolicyRefusesOlderBinaryWriter)
 
 TEST(NewHorizonsPerkState, WeightedCapturedPolicyRefusesOlderRawBinaryReader)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto saved = weightedOfferState();
 	CMemorySerializer current;
 	current.oser & saved;
@@ -1128,6 +1168,7 @@ TEST(NewHorizonsPerkState, WeightedCapturedPolicyRefusesOlderRawBinaryReader)
 
 TEST(NewHorizonsPerkState, AbsentWeightedPolicyRefusesPriorCodecAndCurrentCodecRetainsPendingOffer)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto legacy = weightedOfferState();
 	perkStateFixture::editRules(legacy, [&](JsonNode & rules) { rules.Struct().erase("offerWeightPolicyVersion"); });
 	const auto pending = legacy.prepareOffer(weightedOfferRank, 42);
@@ -1150,6 +1191,7 @@ TEST(NewHorizonsPerkState, AbsentWeightedPolicyRefusesPriorCodecAndCurrentCodecR
 
 TEST(NewHorizonsPerkState, AbsentWeightedPolicyBinarySaveDoesNotMutateCapturedRules)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto priorEpoch = static_cast<ESerializationVersion>(
 		static_cast<int>(ESerializationVersion::NEW_HORIZONS_WEIGHTED_PERKS_AND_DRUID_SPECIALTIES) - 1);
 	for(const bool older : {false, true})
@@ -1182,6 +1224,7 @@ TEST(NewHorizonsPerkState, AbsentWeightedPolicyBinarySaveDoesNotMutateCapturedRu
 
 TEST(NewHorizonsPerkState, NullWeightedPolicyCannotReplaceAnAdmittedCapture)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto saved = state();
 	const auto before = saved.toJson();
 	auto malformed = saved.getRules();
@@ -1196,6 +1239,7 @@ TEST(NewHorizonsPerkState, NullWeightedPolicyCannotReplaceAnAdmittedCapture)
 
 TEST(NewHorizonsPerkState, ActiveWeightedPolicyRefusesMissingContextOrLookup)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto saved = weightedOfferState();
 	EXPECT_THROW(saved.prepareOffer(weightedOfferRank, 42), std::runtime_error);
 	const newHorizonsHeroes::PerkState::OfferWeightContext forgotten{
@@ -1239,6 +1283,7 @@ newHorizonsHeroes::PerkState::OfferWeightContext r2Weights(const newHorizonsHero
 
 TEST(NewHorizonsPerkState, R2DrawsDistinctParentsInsteadOfWeightingEachPerk)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto saved = r2State();
 	const auto context = r2Weights(saved);
 	for(uint64_t seed = 0; seed < 64; ++seed)
@@ -1252,6 +1297,7 @@ TEST(NewHorizonsPerkState, R2DrawsDistinctParentsInsteadOfWeightingEachPerk)
 
 TEST(NewHorizonsPerkState, HistoricalStrictProgressionUsesSixAlternatingRankAndPerkSteps)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	newHorizonsHeroes::PerkState saved;
 	saved.replaceRules(estatesTest::legacyEstatesPerks());
 	// Capture the ordered-tier policy before unified four-card offers.
@@ -1288,6 +1334,7 @@ TEST(NewHorizonsPerkState, HistoricalStrictProgressionUsesSixAlternatingRankAndP
 
 TEST(NewHorizonsPerkState, HistoricalStrictExceptionalExpertStillRequiresBasicThenAdvancedThenExpert)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	newHorizonsHeroes::PerkState saved;
 	saved.replaceRules(estatesTest::legacyEstatesPerks());
 	// Capture the ordered-tier policy before unified four-card offers.
@@ -1311,6 +1358,7 @@ TEST(NewHorizonsPerkState, HistoricalStrictExceptionalExpertStillRequiresBasicTh
 
 TEST(NewHorizonsPerkState, StrictCaptureRejectsHistoricalDuplicateOrGappedPrefixesWithoutNormalization)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto historical = r2State();
 	historical.select("new-horizons:luck", "new-horizons:luck.opportunist", 1);
 	historical.select("new-horizons:luck", "new-horizons:luck.secondChance", 1);
@@ -1332,6 +1380,7 @@ TEST(NewHorizonsPerkState, StrictCaptureRejectsHistoricalDuplicateOrGappedPrefix
 
 TEST(NewHorizonsPerkState, HistoricalStrictEligibilityDoesNotRebaseFullClassRelativeParentWeights)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	newHorizonsHeroes::PerkState saved;
 	saved.replaceRules(estatesTest::legacyEstatesPerks());
 	// Capture the ordered-tier policy before unified four-card offers.
@@ -1360,6 +1409,7 @@ TEST(NewHorizonsPerkState, HistoricalStrictEligibilityDoesNotRebaseFullClassRela
 
 TEST(NewHorizonsPerkState, StrictAndHistoricalR2Refuse1117BeforePrefixWhileCurrentCodecRoundTrips)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	newHorizonsHeroes::PerkState strict;
 	strict.replaceRules(estatesTest::legacyEstatesPerks());
 	CMemorySerializer refused;
@@ -1385,6 +1435,7 @@ TEST(NewHorizonsPerkState, StrictAndHistoricalR2Refuse1117BeforePrefixWhileCurre
 
 TEST(NewHorizonsPerkState, R2LearnedZeroParentHasOneQuantumAndSoleParentHasTwoUniformChoices)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto saved = r2State();
 	const auto context = r2Weights(saved, 0, 10);
 	const auto both = saved.prepareOffer(weightedOfferRank, 4, context);
@@ -1403,6 +1454,7 @@ TEST(NewHorizonsPerkState, R2LearnedZeroParentHasOneQuantumAndSoleParentHasTwoUn
 
 TEST(NewHorizonsPerkState, R2FullReferenceAndNumericalCacheDoNotDependOnEligiblePool)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto saved = r2State();
 	auto context = r2Weights(saved);
 	ASSERT_FALSE(saved.prepareOffer(weightedOfferRank, 1, context).empty());
@@ -1417,6 +1469,7 @@ TEST(NewHorizonsPerkState, R2FullReferenceAndNumericalCacheDoNotDependOnEligible
 
 TEST(NewHorizonsPerkState, R2AdditionalBasicChoicesSurviveJsonAndBinaryWithoutLegacyDeduplication)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto saved = r2State();
 	saved.select("new-horizons:luck", "new-horizons:luck.opportunist", 1);
 	const auto onlyLuck = [](const std::string & id) { return id == "new-horizons:luck" ? 1 : 0; };
@@ -1436,6 +1489,7 @@ TEST(NewHorizonsPerkState, R2AdditionalBasicChoicesSurviveJsonAndBinaryWithoutLe
 
 TEST(NewHorizonsPerkState, R2AndPolicyOneRefusePriorWritersWhileCurrentCodecRetainsPolicyOne)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto saved = r2State();
 	CMemorySerializer old;
 	old.oser.version = ESerializationVersion::NEW_HORIZONS_MASTER_SPELLWARD;
@@ -1457,6 +1511,7 @@ TEST(NewHorizonsPerkState, R2AndPolicyOneRefusePriorWritersWhileCurrentCodecReta
 
 TEST(NewHorizonsPerkState, R2FirstAndEitherSlotStatisticsRespectConfiguredParentRatio)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	for(double ratio : {1.0, 1.5, 2.0, 3.0})
 	{
 		SCOPED_TRACE(ratio);
@@ -1517,6 +1572,7 @@ TEST(NewHorizonsPerkState, R2FirstAndEitherSlotStatisticsRespectConfiguredParent
 
 TEST(NewHorizonsPerkState, R2SupportsFiniteLargeRatiosWithoutUint64Overflow)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto saved = r2State(std::numeric_limits<double>::max());
 	const auto context = r2Weights(saved);
 	const auto offer = saved.prepareOffer(weightedOfferRank, 42, context);
@@ -1527,6 +1583,7 @@ TEST(NewHorizonsPerkState, R2SupportsFiniteLargeRatiosWithoutUint64Overflow)
 
 TEST(NewHorizonsPerkState, R2WizardFourParentsUseFullClassBoundsRegardlessOfPerkPoolCardinality)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const JsonNode development(JsonPath::builtin("config/newHorizonsHeroes"));
 	std::map<std::string, int> row;
 	for(const auto & [id, value] : development["skillOfferWeights"]["core:wizard"].Struct())
@@ -1624,6 +1681,7 @@ TEST(NewHorizonsPerkState, R2WizardFourParentsUseFullClassBoundsRegardlessOfPerk
 
 TEST(NewHorizonsPerkState, R2QuantizedWeightsHaveExactEndpointsRescalingAndStableFullBounds)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto saved = r2State();
 	auto context = r2Weights(saved);
 	context.referenceWeights["new-horizons:offense"] = 5;
@@ -1649,6 +1707,7 @@ TEST(NewHorizonsPerkState, R2QuantizedWeightsHaveExactEndpointsRescalingAndStabl
 
 TEST(NewHorizonsPerkState, R2QuantizedWeightsAreMonotonicAcrossEveryPositiveClassWeight)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	using Integer = boost::multiprecision::cpp_int;
 	for(double ratio : {1.0, 1.5, 2.0, 3.0})
 	{
@@ -1679,6 +1738,7 @@ TEST(NewHorizonsPerkState, R2QuantizedWeightsAreMonotonicAcrossEveryPositiveClas
 
 TEST(NewHorizonsPerkState, R2UniformAllZeroAndLearnedZeroUseSameMinimumQuantum)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto saved = r2State(3);
 	auto context = r2Weights(saved);
 	for(int value : {0, 7})
@@ -1697,6 +1757,7 @@ TEST(NewHorizonsPerkState, R2UniformAllZeroAndLearnedZeroUseSameMinimumQuantum)
 
 TEST(NewHorizonsPerkState, R2QuantizationKeepsLargestFiniteDoubleEndpointExact)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto saved = r2State(std::numeric_limits<double>::max());
 	const auto actual = saved.quantizedParentWeights(r2Weights(saved));
 	using Integer = boost::multiprecision::cpp_int;
@@ -1708,6 +1769,7 @@ TEST(NewHorizonsPerkState, R2QuantizationKeepsLargestFiniteDoubleEndpointExact)
 
 TEST(NewHorizonsPerkState, R2StillEnforcesThreeTotalUniquePerksAndEarlierTierPrerequisites)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto saved = r2State();
 	auto missingBasic = saved;
 	bool testedAdvanced = false;

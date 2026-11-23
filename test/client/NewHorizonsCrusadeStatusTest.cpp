@@ -8,6 +8,7 @@
  *
  */
 #include "../StdInc.h"
+#include "../OriginalDataRequirement.h"
 
 #include "../../client/battle/NewHorizonsBattleStatus.h"
 #include "../../lib/spells/CSpell.h"
@@ -39,6 +40,7 @@ std::vector<std::shared_ptr<Bonus>> fiveCrusadeBonuses(SpellID spell, int32_t ro
 class NewHorizonsCrusadeStatusTest : public ::testing::Test
 {
 protected:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	void SetUp() override
 	{
 		crusadeId = SpellID::decode(std::string(CRUSADE_SPELL_KEY));

@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 
 #include "../mock/mock_battle_Unit.h"
 
@@ -26,6 +27,7 @@ using Mode = AutocombatPreferences::Mode;
 class AutocombatPreferencesTest : public ::testing::Test
 {
 protected:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	AutocombatPreferences preferences;
 	NiceMock<UnitMock> creature;
 	NiceMock<UnitMock> catapult;

@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 
 #include "../server/battles/BattleTestFixture.h"
 #include "../../AI/BattleAI/StackWithBonuses.h"
@@ -106,6 +107,7 @@ void appendGroup(BonusBearerMock & bearer, const std::vector<Bonus> & group)
 class PhysicalAfflictionTest : public testing::Test
 {
 protected:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	void addDefaultHealthBonus(BonusBearerMock & bearer)
 	{
 		bearer.addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::STACK_HEALTH,
@@ -422,7 +424,9 @@ TEST_F(PhysicalAfflictionTest, StoredPhysicalPoisonSurvivesAcquiringDetachedStat
 	EXPECT_EQ(restored->physicalPoisonSourceStackId, 29);
 }
 
-TEST(PhysicalAfflictionParserTest, MarkerSchemaAndParserAcceptDefaultAndMaximumOrderAndRejectOutOfRangeFloats)
+using PhysicalAfflictionParserTest = vcmiTestData::OriginalDataTest;
+
+TEST_F(PhysicalAfflictionParserTest, MarkerSchemaAndParserAcceptDefaultAndMaximumOrderAndRejectOutOfRangeFloats)
 {
 	auto defaultOrder = markerConfig("poison");
 	ASSERT_TRUE(JsonUtils::validate(defaultOrder, "vcmi:bonusInstance", "physical-affliction marker schema"));
@@ -462,6 +466,7 @@ TEST(PhysicalAfflictionParserTest, MarkerSchemaAndParserAcceptDefaultAndMaximumO
 
 TEST(PhysicalAfflictionPersistenceTest, JsonParametersAndMarkerRoundTripAtCurrentVersion)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	JsonNode metadata;
 	metadata["kind"].String() = "bleeding";
 	metadata["applicationOrder"].Integer() = 23;

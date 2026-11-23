@@ -5,6 +5,7 @@
  * Full text of license available in license.txt file, in main folder
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../mock/mock_BonusBearer.h"
 #include "../mock/mock_UnitEnvironment.h"
 #include "../mock/mock_UnitInfo.h"
@@ -202,6 +203,7 @@ TEST_F(NewHorizonsFrozenSnapshotTest, BattleStartRejectsCleansedReceiptBeforeIts
 class NewHorizonsFrozenFoundationTest : public testing::Test
 {
 protected:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	UnitInfoMock info;
 	UnitEnvironmentMock environment;
 	BonusBearerMock bonuses;

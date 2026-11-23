@@ -6,6 +6,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt file, in main folder
  */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 #include "../../spells/HistoricalCrusadeRules.h"
 #include "HeroCommandFixture.h"
 #include "../../SpellPointTestUtils.h"
@@ -437,7 +438,9 @@ TEST_F(NewHorizonsCrusadeTest, VersionTwoSavedRulesDoNotGainCrusade)
 	EXPECT_TRUE(crusadeBonuses(friendly)->empty());
 }
 
-TEST(NewHorizonsCrusadeSerializationTest, FractionalReductionRoundTripsInCurrentSavesAndRejectsDownsave)
+using NewHorizonsCrusadeSerializationTest = vcmiTestData::OriginalDataTest;
+
+TEST_F(NewHorizonsCrusadeSerializationTest, FractionalReductionRoundTripsInCurrentSavesAndRejectsDownsave)
 {
 	const Bonus source(BonusDuration::N_TURNS, BonusType::SPELL_DAMAGE_REDUCTION_BASIS_POINTS,
 		BonusSource::SPELL_EFFECT, 1573, BonusSourceID(crusadeSpell()), BonusSubtypeID(SpellSchool::ANY));

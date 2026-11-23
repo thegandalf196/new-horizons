@@ -5,6 +5,7 @@
  * Full text of license available in license.txt file in main folder
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 
 #include "../../lib/GameConstants.h"
 #include "../../lib/GameLibrary.h"
@@ -184,6 +185,7 @@ void assertWeekAppliedAndForecastAdvanced(
 
 TEST(NewHorizonsAstrologyWire, PreviewResultRoundTripsWithTheNewSaveFeature)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	NewTurn outgoing;
 	outgoing.nextAstrologyWeek = {
 		EWeekType::BONUS_GROWTH,
@@ -217,6 +219,7 @@ TEST(NewHorizonsAstrologyWire, OlderFormatsRejectAnAuthoredPreviewInsteadOfDisca
 
 TEST(NewHorizonsAstrologyWire, ConstructionPreviewRoundTripsAndOlderFormatsRemainEmpty)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	NewStructures outgoing;
 	outgoing.tid = ObjectInstanceID(42);
 	outgoing.bid.insert(BuildingID::SPECIAL_2);

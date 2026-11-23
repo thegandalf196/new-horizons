@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 
 #include "../../lib/GameLibrary.h"
 #include "../../lib/bonuses/Bonus.h"
@@ -67,6 +68,7 @@ constexpr int32_t otherLateCreature = 8;
 
 TEST(JsonBonusSelectorTest, SubtypeMatchesOnlyThatSubtypeOfThatType)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto selector = JsonUtils::parseSelector(selectorJson("PRIMARY_SKILL", "attack"));
 
 	EXPECT_TRUE(matches(selector, BonusType::PRIMARY_SKILL, PrimarySkill::ATTACK));
@@ -77,6 +79,7 @@ TEST(JsonBonusSelectorTest, SubtypeMatchesOnlyThatSubtypeOfThatType)
 
 TEST(JsonBonusSelectorTest, TypeWithoutSubtypeMatchesEverySubtypeOfThatTypeOnly)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto selector = JsonUtils::parseSelector(selectorJson("PRIMARY_SKILL", ""));
 
 	EXPECT_TRUE(matches(selector, BonusType::PRIMARY_SKILL, PrimarySkill::ATTACK));
@@ -96,6 +99,7 @@ TEST(JsonBonusSelectorTest, UnknownTypeOrSubtypeMatchesNothing)
 
 TEST(JsonBonusSelectorTest, SourceIdMatchesOnlyThatSourceInstance)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	JsonNode json;
 	json["sourceType"].String() = "SPELL_EFFECT";
 	json["sourceID"].String() = "bless";
@@ -148,6 +152,7 @@ TEST(JsonBonusSelectorTest, DeferredRequestsOutliveADiscardedSelector)
 
 TEST(JsonBonusSelectorTest, NoLoadedSpellTargetConditionUsesTheStructuredSelectorForm)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	// Audit pin: spell target conditions are the only content that reaches parseSelector, and only
 	// through a structured entry. None is shipped - the subtype fix changes no current gameplay - and
 	// any added later needs its intended subtype behaviour reviewed.

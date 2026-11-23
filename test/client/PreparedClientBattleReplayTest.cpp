@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../client/replay/PreparedClientBattleReplay.h"
 #include "../../client/netlag/NetworkLagRollbackCopy.h"
 #include "../../lib/gameState/CGameState.h"
@@ -61,6 +62,7 @@ void openPrediction(NetworkLagReplyState & state)
 
 TEST(PreparedClientBattleReplayTest, ActualNoPredictionEntryPreservesUnconditionalOuterAndConfiguredInner)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	for(bool configured : {false, true})
 	{
 		auto state = world(configured);
@@ -81,6 +83,7 @@ TEST(PreparedClientBattleReplayTest, ActualNoPredictionEntryPreservesUncondition
 
 TEST(PreparedClientBattleReplayTest, RealPredictionMatchRecordsOnlyOuterRegardlessOfConfiguredMode)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	for(bool configured : {false, true})
 	{
 		auto state = world(configured);
@@ -101,6 +104,7 @@ TEST(PreparedClientBattleReplayTest, RealPredictionMatchRecordsOnlyOuterRegardle
 
 TEST(PreparedClientBattleReplayTest, RealMismatchUsesReversePredictionsAndForwardRollbackOrder)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	for(bool configured : {false, true})
 	{
 		auto state = world(configured);
@@ -139,6 +143,7 @@ TEST(PreparedClientBattleReplayTest, RealMismatchUsesReversePredictionsAndForwar
 
 TEST(PreparedClientBattleReplayTest, RealQueueInvalidationOrCallerMutationRefusesWholeReplay)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto state = world(true);
 	auto caller = packet();
 	NetworkLagReplyState predictions;
@@ -171,6 +176,7 @@ TEST(PreparedClientBattleReplayTest, InspectorRetirementDoesNotLeaveAnOriginalQu
 
 TEST(PreparedClientBattleReplayTest, ReadOnlyWriterPreservesCallerThroughWholeReplayAcceptance)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto state = world(true);
 	auto caller = packet();
 	caller.changedStacks.emplace_back(1, BattleChanges::EOperation::UPDATE);
@@ -230,6 +236,7 @@ TEST(PreparedClientBattleReplayTest, EveryCurrentRollbackProducerHasAnIndependen
 
 TEST(PreparedClientBattleReplayTest, SavedOptOutSkipsActualOuterSnapshotAndEncodingButKeepsEntryValidation)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto state = std::make_shared<CGameState>();
 	state->replayLog.configure(false, 1, false);
 	auto caller = packet();
@@ -245,6 +252,7 @@ TEST(PreparedClientBattleReplayTest, SavedOptOutSkipsActualOuterSnapshotAndEncod
 
 TEST(PreparedClientBattleReplayTest, SavedOptOutStillInspectsMatchingLagPrediction)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto state = std::make_shared<CGameState>();
 	state->replayLog.configure(false, 1, false);
 	auto caller = packet();

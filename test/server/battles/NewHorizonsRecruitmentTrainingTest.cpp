@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 #include "../../PerkTestSetup.h"
 #include <sstream>
 #include "../../../lib/GameLibrary.h"
@@ -547,6 +548,7 @@ TEST(NewHorizonsRecruitmentTrainingProtocolTest, MergeUsesLaterDeadlineAndOrFlag
 
 TEST(NewHorizonsRecruitmentTrainingProtocolTest, DirectAndCompositeCombatBonusPayloadsRejectOldWriterBeforePrefix)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	Bonus bonus(BonusDuration::ONE_BATTLE, BonusType::MORALE, BonusSource::SECONDARY_SKILL, 1,
 		BonusSourceID(SecondarySkill(SecondarySkill::decode(newHorizonsTraining::SKILL))));
 	bonus.stacking = "new-horizons:drillSergeant";

@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../SpellPointTestUtils.h"
 
 #include "mock/mock_Services.h"
@@ -62,6 +63,7 @@
 class BattleSpellCastTest : public ::testing::Test, public SpellCastEnvironment, public MapListener
 {
 public:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	BattleSpellCastTest()
 		: gameEventCallback(std::make_shared<GameEventCallbackMock>(this)),
 		mapService("test/MiniTest/", this),

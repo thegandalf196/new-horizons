@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "HeroQueueBonusSnapshot.h"
 #include "../../lib/battle/BattleHexArray.h"
 #include "../../lib/bonuses/BonusList.h"
@@ -76,6 +77,7 @@ TEST(HeroQueueBonusSnapshotTest, NativeTerrainSentinelUsesNumericRuntimeWire)
 
 TEST(HeroQueueBonusSnapshotTest, UnitOnHexMembershipDistinguishesEqualStorageWireInTraversalOrder)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	BattleHexArray changed{BattleHex(10)};
 	changed.set(0, BattleHex(11));
 	const BattleHexArray fresh{BattleHex(11)};
@@ -119,6 +121,7 @@ TEST(HeroQueueBonusSnapshotTest, UnitOnHexMembershipDistinguishesEqualStorageWir
 
 TEST(HeroQueueBonusSnapshotTest, TopAndRecursiveCombatEffectOwnersRemainObservable)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto leaf = std::make_shared<Bonus>();
 	auto middle = std::make_shared<Bonus>(withNested(leaf));
 	Bonus root = withNested(middle);
@@ -187,6 +190,7 @@ TEST(HeroQueueBonusSnapshotTest, RuntimeProvenanceStatusAndParameterValuesAreRet
 
 TEST(HeroQueueBonusSnapshotTest, AllCurrentParameterAlternativesAndKnownGraphsAreSupported)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	for(const auto & parameters : std::vector<TBonusParametersPtr>{
 		std::make_shared<BonusParameters>(int32_t(7)), std::make_shared<BonusParameters>(CreatureID(0)),
 		std::make_shared<BonusParameters>(SpellID(SpellID::CURE)),
@@ -206,6 +210,7 @@ TEST(HeroQueueBonusSnapshotTest, AllCurrentParameterAlternativesAndKnownGraphsAr
 
 TEST(HeroQueueBonusSnapshotTest, StackSizeStepValuesRemainObservableAtEveryUpdaterPosition)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto make = [](int position, int step)
 	{
 		Bonus value;
@@ -241,6 +246,7 @@ TEST(HeroQueueBonusSnapshotTest, StackSizeStepValuesRemainObservableAtEveryUpdat
 
 TEST(HeroQueueBonusSnapshotTest, StackSizeStepSupplementRetainsNestedTraversalOrder)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto leaf = std::make_shared<Bonus>();
 	leaf->updater = std::make_shared<TimesStackSizeUpdater>(0, 100, 1, 4);
 	Bonus root = withNested(leaf);

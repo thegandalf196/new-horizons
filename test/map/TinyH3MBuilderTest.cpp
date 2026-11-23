@@ -9,6 +9,7 @@
  */
 
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 
 #include "../mock/TinyH3MBuilder.h"
 #include "../mock/mock_MapServiceTinyH3M.h"
@@ -89,6 +90,7 @@ LoadedMap loadMap(std::vector<uint8_t> bytes)
 
 TEST(TinyH3MBuilderTest, TwoLevelMapHasTwoLayers)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto bytes = TinyH3M::TinyH3MBuilder(EMapFormat::ROE)
 		.size(36, /*twoLevel*/ true)
 		.name("TwoLevelROE")
@@ -101,6 +103,7 @@ TEST(TinyH3MBuilderTest, TwoLevelMapHasTwoLayers)
 
 TEST(TinyH3MBuilderTest, EmptyROEFullLoad)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto bytes = TinyH3M::TinyH3MBuilder(EMapFormat::ROE)
 		.size(36, /*twoLevel*/ false)
 		.name("EmptyROEFull")
@@ -117,6 +120,7 @@ TEST(TinyH3MBuilderTest, EmptyROEFullLoad)
 
 TEST(TinyH3MBuilderTest, EmptySODFullLoad)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto bytes = TinyH3M::TinyH3MBuilder(EMapFormat::SOD)
 		.size(36, /*twoLevel*/ false)
 		.name("EmptySODFull")
@@ -133,6 +137,7 @@ TEST(TinyH3MBuilderTest, EmptySODFullLoad)
 
 TEST(TinyH3MBuilderTest, AllSupportedObjectsLoad)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	// One instance of every object kind the builder currently emits. Acceptance
 	// bar is "CMapLoaderH3M::loadMap returns a non-null CMap" — per-type body
 	// assertions live in dedicated tests.
@@ -189,6 +194,7 @@ std::vector<const T *> findAll(const CMap & map)
 
 TEST(TinyH3MBuilderTest, HeroesPlacement)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	// Fixed hero (Orrin, type 0) owned by red, plus a random hero owned by blue.
 	auto bytes = TinyH3M::TinyH3MBuilder(EMapFormat::SOD)
 		.size(36, /*twoLevel*/ false)
@@ -225,6 +231,7 @@ TEST(TinyH3MBuilderTest, HeroesPlacement)
 
 TEST(TinyH3MBuilderTest, SpellScrollLoads)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	// SpellID 15 = Magic Arrow (always available, no expansion required).
 	const SpellID spell{15};
 
@@ -248,6 +255,7 @@ TEST(TinyH3MBuilderTest, SpellScrollLoads)
 
 TEST(TinyH3MBuilderTest, HeroCustomisation)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	// Hero with garrison, experience, primary skills, and a backpack artifact.
 	auto bytes = TinyH3M::TinyH3MBuilder(EMapFormat::SOD)
 		.size(36, /*twoLevel*/ false)
@@ -275,6 +283,7 @@ TEST(TinyH3MBuilderTest, HeroCustomisation)
 
 TEST(TinyH3MBuilderTest, DimensionDoorHeroLoadout)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	// SpellID 8 = Dimension Door. Keep this tiny generated map as an in-repo
 	// DD fixture foundation instead of relying only on external test maps.
 	const SpellID dimensionDoor{8};
@@ -302,6 +311,7 @@ TEST(TinyH3MBuilderTest, DimensionDoorHeroLoadout)
 
 TEST(TinyH3MBuilderTest, KillCreatureQuest)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	// Monster + quest guard that targets the monster's wire identifier.
 	TinyH3M::TinyH3MBuilder b(EMapFormat::SOD);
 	b.size(36).name("KillQuest")
@@ -366,6 +376,7 @@ std::unique_ptr<CGameState> initializeTinyMap(std::vector<uint8_t> bytes, Servic
 class TinyH3MTownGarrisonTest : public ::testing::TestWithParam<EMapFormat>
 {
 protected:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	ServicesMock services;
 
 	LoadedMap loadTown(const std::optional<TownArmy> & army)

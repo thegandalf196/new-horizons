@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 #include "BattleTestFixture.h"
 #include "../../SpellPointTestUtils.h"
 #include "../../../lib/GameLibrary.h"
@@ -257,6 +258,7 @@ TEST_F(NewHorizonsLivingArmorTest, CountdownAndPhysicalReductionUseOrdinaryLayer
 
 TEST(LivingArmorSerialization, LegacySpawnDefaultsToCombatLongAndInvalidLifetimeFailsClosed)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	battle::UnitInfo value;
 	value.type = CreatureID(0);
 	value.count = 1;

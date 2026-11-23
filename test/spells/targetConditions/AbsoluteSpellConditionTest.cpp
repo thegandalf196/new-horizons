@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 
 #include "TargetConditionItemFixture.h"
 #include "../../../lib/bonuses/BonusParameters.h"
@@ -20,6 +21,7 @@ using namespace ::testing;
 class AbsoluteSpellConditionTest : public TargetConditionItemTest, public WithParamInterface<tuple<int32_t, int32_t> >
 {
 public:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	int32_t immuneSpell;
 	int32_t castSpell;
 

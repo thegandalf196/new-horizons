@@ -1,4 +1,5 @@
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/json/JsonNode.h"
 #include "../../lib/json/JsonUtils.h"
 #include "../../lib/json/JsonValidator.h"
@@ -80,6 +81,7 @@ TEST(JsonSchemaStartupTest, TaggedBonusValidatesAndStillUsesStrictBonusParser)
 
 TEST(JsonSchemaStartupTest, RandomCasterPolicyParserRetainsAbsentZeroAndExactScalarOne)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	JsonNode bonus;
 	bonus["type"].String() = "RANDOM_SPELLCASTER";
 	bonus["val"].Integer() = 2;
@@ -100,6 +102,7 @@ TEST(JsonSchemaStartupTest, RandomCasterPolicyParserRetainsAbsentZeroAndExactSca
 
 TEST(JsonSchemaStartupTest, RandomCasterPolicyParserRejectsCoercionAndUnknownValuesWithoutSchema)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	JsonNode bonus;
 	bonus["type"].String() = "RANDOM_SPELLCASTER";
 	bonus["val"].Integer() = 2;

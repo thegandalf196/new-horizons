@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 #include "BattleTestFixture.h"
 #include "../../../lib/CSkillHandler.h"
 #include "../../../lib/GameSettings.h"
@@ -27,7 +28,9 @@ newHorizonsNecromancy::NecromancyResult output(bool current, bool room = true,
 }
 }
 
-TEST(NewHorizonsSkeletonNecromancy, NewPerksKeepLivingRaisingAndManaWithoutEnemySpecialPoolsOrConversions)
+using NewHorizonsSkeletonNecromancy = vcmiTestData::OriginalDataTest;
+
+TEST_F(NewHorizonsSkeletonNecromancy, NewPerksKeepLivingRaisingAndManaWithoutEnemySpecialPoolsOrConversions)
 {
 	const auto value = output(true);
 	EXPECT_EQ(value.percentage, 35);
@@ -51,7 +54,7 @@ TEST(NewHorizonsSkeletonNecromancy, NewPerksKeepLivingRaisingAndManaWithoutEnemy
 	EXPECT_EQ(legacy.skeletonsOffered, 87);
 }
 
-TEST(NewHorizonsSkeletonNecromancy, RankRatesAndHistoricalConversionsKeepTheirSeparatePolicies)
+TEST_F(NewHorizonsSkeletonNecromancy, RankRatesAndHistoricalConversionsKeepTheirSeparatePolicies)
 {
 	for(const int rank : {1, 2, 3})
 	{
@@ -68,7 +71,7 @@ TEST(NewHorizonsSkeletonNecromancy, RankRatesAndHistoricalConversionsKeepTheirSe
 	EXPECT_EQ(historical.boneDragonsRaised, 1);
 }
 
-TEST(NewHorizonsSkeletonNecromancy, SkeletonCapacityRemainsAtomicAndBoneSteelKeepsSelectedForm)
+TEST_F(NewHorizonsSkeletonNecromancy, SkeletonCapacityRemainsAtomicAndBoneSteelKeepsSelectedForm)
 {
 	const auto blocked = output(true, false);
 	EXPECT_TRUE(blocked.blockedByArmyCapacity);
@@ -82,7 +85,7 @@ TEST(NewHorizonsSkeletonNecromancy, SkeletonCapacityRemainsAtomicAndBoneSteelKee
 	EXPECT_EQ(raised.skeletonsRaised, 70);
 }
 
-TEST(NewHorizonsSkeletonNecromancy, VidominaStillReclaimsResidualSkeletonsIndependentlyOfPerks)
+TEST_F(NewHorizonsSkeletonNecromancy, VidominaStillReclaimsResidualSkeletonsIndependentlyOfPerks)
 {
 	const auto ordinary = output(true);
 	const auto specialty = newHorizonsNecromancy::reclaimResidualSkeletons(ordinary, 100, 95, 100);

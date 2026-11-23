@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/bonuses/OwnedRecipientBonusGraph.h"
 #include "../../lib/bonuses/Limiters.h"
 #include "../../lib/bonuses/Updaters.h"
@@ -66,6 +67,7 @@ TEST(OwnedRecipientRootQueryTest, ExplicitFrameCountAndExtraRawRecordShareOneAli
 }
 TEST(OwnedRecipientRootQueryTest, SelectedFormParentsAndAcceptanceUseCanonicalRawGraphAndHeroStage)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto input = root(); input.parents = {1, 2, 3};
 	Graph::NodeInput hero; hero.facts.nodeType = BonusNodeType::HERO; hero.facts.heroLevel = 3; hero.facts.armySlots.emplace();
 	auto speed = bonus(BonusType::STACKS_SPEED, 2); speed->updater = std::make_shared<TimesHeroLevelUpdater>(); hero.local = {speed};

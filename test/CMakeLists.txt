@@ -1146,6 +1146,7 @@ set(test_HEADERS
  		StdInc.h
 
  		CVcmiTestConfig.h
+		OriginalDataRequirement.h
 		JsonComparer.h
 		SpellPointTestUtils.h
 		battleAI/InitialExportWorldFixture.h

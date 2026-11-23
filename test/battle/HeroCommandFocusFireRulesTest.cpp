@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/battle/HeroCommand.h"
 #include <limits>
 
@@ -63,6 +64,7 @@ TEST(HeroCommandFocusFireRules, ExistingIdsRemainStableAndNewIdIsNotADoctrine)
 
 TEST(HeroCommandFocusFireRules, LegacyExtraKeyCannotEnableTargetedOrder)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto rules = legacyRules();
 	const auto v2 = targetedRules();
 	rules["commands"]["focusFire"] = v2["commands"]["focusFire"];
@@ -76,6 +78,7 @@ TEST(HeroCommandFocusFireRules, LegacyExtraKeyCannotEnableTargetedOrder)
 
 TEST(HeroCommandFocusFireRules, OrdersOnlyV3RejectsLegacyDoctrineCommands)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto rules = ordersOnlyRules();
 	ASSERT_NO_THROW(heroCommands::validateRules(rules));
 	EXPECT_EQ(rules["rulesetVersion"].Integer(), heroCommands::ORDERS_ONLY_RULESET_VERSION);
@@ -87,6 +90,7 @@ TEST(HeroCommandFocusFireRules, OrdersOnlyV3RejectsLegacyDoctrineCommands)
 
 TEST(HeroCommandFocusFireRules, V2UsesExactTargetedDefinitionAndExistingCoefficient)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto rules = targetedRules();
 	ASSERT_NO_THROW(heroCommands::validateRules(rules));
 	EXPECT_TRUE(heroCommands::supportedByRules(rules, HeroCommand::FOCUS_FIRE));
@@ -110,6 +114,7 @@ TEST(HeroCommandFocusFireRules, V2RejectsFloatVersionRatherThanCoercingIt)
 
 TEST(HeroCommandFocusFireRules, LegacyVersionRepresentationAndAbsenceRemainUnchanged)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto rules = legacyRules();
 	// Legacy Integer() accepted fractional values truncating to one. Keep that
 	// compatibility local to v1; do not extend it to the new strict schema.
@@ -173,6 +178,7 @@ TEST(HeroCommandFocusFireRules, V2RejectsNonRangedEffectsAndMalformedCoefficient
 
 TEST(HeroCommandFocusFireRules, EveryCoefficientRejectsNonNumericAndUnsafeValues)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	std::vector<JsonNode> badKinds(5);
 	badKinds[1].Bool() = true;
 	badKinds[2].String() = "20";
@@ -204,6 +210,7 @@ TEST(HeroCommandFocusFireRules, EveryCoefficientRejectsNonNumericAndUnsafeValues
 
 TEST(HeroCommandFocusFireRules, LegacyWideCoefficientsCancelOverflowWithoutLosingResidual)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto rules = legacyRules();
 	auto & formula = rules["commands"]["charge"]["effects"]["meleeDamagePercent"];
 	formula["attack"].Float() = 1e308;

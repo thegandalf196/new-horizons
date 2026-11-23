@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt and AUTHORS. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../AI/BattleAI/BattleStrengthRatio.h"
 #include "../../AI/BattleAI/BattleSearchPolicy.h"
 #include "../../lib/CCreatureHandler.h"
@@ -34,6 +35,7 @@ public:
 class BattleStrengthRatioTest : public ::testing::Test
 {
 protected:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	BattleInfo battle{nullptr};
 	CPlayerBattleCallback callback{&battle, PlayerColor(0)};
 	CreatureID strongest;

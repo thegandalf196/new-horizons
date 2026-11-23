@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 #include "../../PerkTestSetup.h"
 #include "../../SpellPointTestUtils.h"
 
@@ -69,6 +70,7 @@ public:
 
 TEST(NewHorizonsNecromancy, RankFormulaUsesExactLivingCountsAndBoneCollectorPoints)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto basic = resolve(1, 99, 0, false, false, false, true, true, 0, 0);
 	EXPECT_EQ(basic.percentage, 10);
 	EXPECT_EQ(basic.skeletonsOffered, 9);
@@ -88,6 +90,7 @@ TEST(NewHorizonsNecromancy, RankFormulaUsesExactLivingCountsAndBoneCollectorPoin
 
 TEST(NewHorizonsNecromancy, DarkConversionAutomaticallyUsesOnlyCompleteCoreGroups)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto incompleteCoreGroup = resolve(1, 29, 29, false, false, true, true, true, 0, 0);
 	EXPECT_EQ(incompleteCoreGroup.skeletonsOffered, 2);
 	EXPECT_EQ(incompleteCoreGroup.zombiesRaised, 0);
@@ -126,6 +129,7 @@ TEST(NewHorizonsNecromancy, DarkConversionAutomaticallyUsesOnlyCompleteCoreGroup
 
 TEST(NewHorizonsNecromancy, SoulHarvesterUsesOnlyCompleteEliteGroupsAndLeavesRemainders)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto completeEliteGroup = resolve(2, 30, 0, false, false, false, true, true, 0, 0,
 		30, true, true);
 	EXPECT_EQ(completeEliteGroup.skeletonsOffered, 6);
@@ -160,6 +164,7 @@ TEST(NewHorizonsNecromancy, SoulHarvesterUsesOnlyCompleteEliteGroupsAndLeavesRem
 
 TEST(NewHorizonsNecromancy, DarkConversionAndSoulHarvesterProduceIndependentOutputs)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	// At Advanced rank, 65 Core + 65 Elite casualties yield 26 Skeletons.
 	// The Core share funds four Zombies, the Elite share funds two Wights, and
 	// the global rounding remainder stays as two Skeletons.
@@ -175,6 +180,7 @@ TEST(NewHorizonsNecromancy, DarkConversionAndSoulHarvesterProduceIndependentOutp
 
 TEST(NewHorizonsNecromancy, MasterOfBonesChangesOnlyTheSkeletonOutputForm)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto baseSkeletons = resolve(3, 10, 0, false, false, false, true, true, 0, 0);
 	ASSERT_TRUE(baseSkeletons.applied);
 	EXPECT_EQ(baseSkeletons.skeletonsRaised, 3);
@@ -195,6 +201,7 @@ TEST(NewHorizonsNecromancy, MasterOfBonesChangesOnlyTheSkeletonOutputForm)
 
 TEST(NewHorizonsNecromancy, MasterOfBonesKeepsItsFormAcrossMixedOutputsAndAtomicRejection)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto skeletonWarrior = creature("core:skeletonWarrior");
 	const auto mixed = resolve(2, 130, 65, false, false, true, true, true, 0, 0,
 		65, true, true, skeletonWarrior);
@@ -217,6 +224,7 @@ TEST(NewHorizonsNecromancy, MasterOfBonesKeepsItsFormAcrossMixedOutputsAndAtomic
 
 TEST(NewHorizonsNecromancy, LordOfTheDeadConsumesTwelveBeforeCategoryConversions)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto championArmy = resolve(3, 40, 40, false, false, true, true, true, 0, 0,
 		0, false, true, CreatureID::NONE, {}, {}, true, true, true);
 	EXPECT_EQ(championArmy.skeletonsOffered, 12);
@@ -257,6 +265,7 @@ TEST(NewHorizonsNecromancy, LordOfTheDeadConsumesTwelveBeforeCategoryConversions
 
 TEST(NewHorizonsNecromancy, LordOfTheDeadRequiresTwelveSkeletonsAndAQualifiedArmy)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto belowThreshold = resolve(3, 39, 39, false, false, true, true, true, 0, 0,
 		0, false, true, CreatureID::NONE, {}, {}, true, true, true);
 	EXPECT_EQ(belowThreshold.skeletonsOffered, 11);
@@ -284,6 +293,7 @@ TEST(NewHorizonsNecromancy, LordOfTheDeadRequiresTwelveSkeletonsAndAQualifiedArm
 
 TEST(NewHorizonsNecromancy, DeathLordAndGraveKnowledgeUseIndependentFlooredRates)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto deathLordBelowThreshold = resolve(2, 0, 0, false, false, false, true, true, 0, 0,
 		0, false, true, CreatureID::NONE,
 		newHorizonsNecromancy::SpecialCasualtyCounts{19, 19, 0}, {});
@@ -329,6 +339,7 @@ TEST(NewHorizonsNecromancy, DeathLordAndGraveKnowledgeUseIndependentFlooredRates
 
 TEST(NewHorizonsNecromancy, SpecialCasualtyCategorySharesFeedCoreConversion)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto nonliving = resolve(2, 0, 0, false, false, true, true, true, 0, 0,
 		0, false, true, CreatureID::NONE,
 		newHorizonsNecromancy::SpecialCasualtyCounts{120, 60, 60}, {});
@@ -403,6 +414,7 @@ TEST(NewHorizonsNecromancy, DestinationReservationUsesTwoFreeSlotsAndRejectsOneA
 
 TEST(NewHorizonsNecromancy, BlackHarvestIsCappedByManaCapacity)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto harvested = resolve(3, 1000, 0, false, false, false, true, true, 0, 100);
 	EXPECT_EQ(harvested.skeletonsRaised, 300);
 	EXPECT_EQ(harvested.manaRecovered, 10);
@@ -2398,6 +2410,7 @@ TEST_F(NewHorizonsNecromancyAITest, BattleResultExcludesDestroyRemainsCasualties
 
 TEST(NewHorizonsNecromancy, ResultSummaryAndEligibilityAreVersionGated)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	BattleResultsApplied outgoing;
 	outgoing.battleID = BattleID(1);
 	outgoing.necromancy.active = true;

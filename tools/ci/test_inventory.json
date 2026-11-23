@@ -21,7 +21,7 @@
     "client/tests/OutlineMaskTest.cpp": {"classification": "manual", "reason": "Standalone diagnostic and stdin image tool. Runtime assertions disappear under NDEBUG; do not register a vacuous Release test."}
   },
   "rootPolicies": {
-    "test": "Explicit CMake references are lexical registration candidates only. vcmitest requires original assets and an isolated TEST profile; feature conditions remain visible. Exporters and managed fixtures are not default-public acceptance.",
+    "test": "Explicit CMake references are lexical registration candidates only. vcmitest needs original assets and an isolated TEST profile for its game-library cases, which skip without them; feature conditions remain visible. Exporters and managed fixtures are not default-public acceptance.",
     "client/tests": "Registered standalone sources may be pure state checks; other scripts/drivers are manual diagnostics unless an explicit curated runner selects them. GUI probes require the maintained private owner.",
     "tools/tests": "Python checks are conditional on their imports, fixtures and tool dependencies; source presence does not schedule execution. Public CI must choose a reviewed asset-free subset.",
     "tools/ci": "Maintained helpers and explicit diagnostic/delivery entry points, not automatically executed tests. Snapshot/owner tools never gain runtime authority from this inventory."

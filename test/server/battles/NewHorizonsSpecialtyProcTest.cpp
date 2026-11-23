@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 #include "NewHorizonsSpecialtyProcFixture.h"
 class NewHorizonsSpecialtyProcTest : public NewHorizonsSpecialtyProcFixture {};
 TEST_F(NewHorizonsSpecialtyProcTest, BaseWyvernReceivesExactlyNativeMonarchChanceWithoutChangingPotency)
@@ -151,7 +152,9 @@ TEST_F(NewHorizonsSpecialtyProcTest, PendingStunBonusRoundtripsAndMalformedProve
 	marker.turnsRemain = 1;
 	EXPECT_THROW(newHorizonsStun::isMarker(&marker), std::runtime_error);
 }
-TEST(StrongWyvernPoisonReceipt, CurrentBinaryPreservesPositiveAndNegativeReceipt)
+using StrongWyvernPoisonReceipt = vcmiTestData::OriginalDataTest;
+
+TEST_F(StrongWyvernPoisonReceipt, CurrentBinaryPreservesPositiveAndNegativeReceipt)
 {
 	for(bool strong : {false, true})
 	{
@@ -165,7 +168,7 @@ TEST(StrongWyvernPoisonReceipt, CurrentBinaryPreservesPositiveAndNegativeReceipt
 		EXPECT_EQ(restored.spellID, packet.spellID);
 	}
 }
-TEST(StrongWyvernPoisonReceipt, UnsupportedOrForgedReceiptRejectsBeforeAnyPacketPrefix)
+TEST_F(StrongWyvernPoisonReceipt, UnsupportedOrForgedReceiptRejectsBeforeAnyPacketPrefix)
 {
 	BattleSpellCast packet;
 	packet.battleID = BattleID(0); packet.side = BattleSide::ATTACKER;

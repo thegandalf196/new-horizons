@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../server/battles/HeroCommandFixture.h"
 #include "../../server/CVCMIServer.h"
 #include "../../lib/json/JsonNode.h"
@@ -139,6 +140,7 @@ struct PublicationReceipt
 class PacketUpdatePublicationTest : public ::testing::Test, public INetworkClientListener
 {
 protected:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	PublicationWorld authorityWorld, receiverWorld;
 	std::unique_ptr<CVCMIServer> authority;
 	std::unique_ptr<INetworkHandler> clientNetwork;

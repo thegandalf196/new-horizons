@@ -5,6 +5,7 @@
  * Full text of license available in license.txt file, in main folder
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../server/battles/BattleTestFixture.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/TerrainHandler.h"
@@ -264,6 +265,7 @@ public:
 
 TEST(LocalBonusExportTest, ReexportDoesNotMultiplyUpdaterApplicationsOrMutateSource)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	LocalExportProbe root;
 	const auto bonus = localSpeedBonus();
 	bonus->updater = std::make_shared<DoubleLocalValueUpdater>();

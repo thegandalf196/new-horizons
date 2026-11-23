@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 
 #include "EffectFixture.h"
 
@@ -32,6 +33,7 @@ namespace
 class CatapultTest : public Test, public EffectFixture
 {
 public:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	CatapultTest()
 		:EffectFixture("core:catapult")
 	{
@@ -94,6 +96,7 @@ TEST_F(CatapultTest, ApplicableInTown)
 class CatapultApplyTest : public Test, public EffectFixture
 {
 public:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	CatapultApplyTest()
 		: EffectFixture("core:catapult")
 	{

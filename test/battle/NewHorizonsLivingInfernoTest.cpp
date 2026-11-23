@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/battle/NewHorizonsLivingInferno.h"
 #include "../../lib/serializer/CMemorySerializer.h"
 #include "../../lib/networkPacks/PacksForClientBattle.h"
@@ -55,6 +56,7 @@ TEST(NewHorizonsLivingInferno, FlyingTraversalIncludesIntermediatesFromEndpointO
 }
 TEST(NewHorizonsLivingInferno, RenderFlagCopiesAndCurrentWireRoundTrips)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	SpellCreatedObstacle wall;
 	wall.pos = BattleHex(5, 5);
 	wall.customSize = BattleHexArray{wall.pos, BattleHex(6, 5), BattleHex(7, 6)};
@@ -84,6 +86,7 @@ TEST(NewHorizonsLivingInferno, OldObstacleWriterRejectsFlagBeforeItsPrefix)
 }
 TEST(NewHorizonsLivingInferno, HistoricalObstacleLoadClearsReusedPresentationFlag)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	SpellCreatedObstacle old;
 	old.pos = BattleHex(5, 5);
 	old.customSize = BattleHexArray{old.pos};
@@ -99,6 +102,7 @@ TEST(NewHorizonsLivingInferno, HistoricalObstacleLoadClearsReusedPresentationFla
 
 TEST(NewHorizonsLivingInferno, CurrentObstaclePacketRetainsFlagAndOldWriterRejectsBeforePacketPrefix)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	SpellCreatedObstacle wall;
 	wall.renderAtEachHex = true;
 	wall.customSize = BattleHexArray{BattleHex(5, 5)};

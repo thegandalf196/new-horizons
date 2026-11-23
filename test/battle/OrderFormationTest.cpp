@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/battle/OrderFormation.h"
 #include "../../lib/battle/HeroCommand.h"
 #include "../../lib/filesystem/ResourcePath.h"
@@ -16,6 +17,7 @@ JsonNode rules()
 
 TEST(OrderFormation, CapturedPrototypeUsesClampedAttackDefenseAndRealCommand)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto captured = rules();
 	ASSERT_NO_THROW(heroCommands::validateRules(captured));
 	EXPECT_EQ(orderFormation::rating(captured, 101, 100, 6), 160);
@@ -61,6 +63,7 @@ TEST(OrderFormation, VanguardDurationHasOneRoundBaseAndEfficiencyOnDerivedRating
 
 TEST(OrderFormation, FeintUsesRatingAndExistingFinalCapAfterCombinedArms)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto captured = rules();
 	auto snapshot = orderFormation::snapshot(captured, HeroCommand::FEINT, 1, 101, 100, 6, 100, 100, 150);
 	EXPECT_EQ(snapshot.feintReductionPercent, 39);
@@ -122,6 +125,7 @@ TEST(OrderFormation, FeintRetainsExistingWholePercentRoundingAtHalfBoundary)
 
 TEST(OrderFormation, VanguardPotencyKeepsMinimumEfficientAttributesWhenCommandChanges)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto captured = rules();
 	const auto low = orderFormation::snapshot(captured, HeroCommand::VANGUARD, 1, 150, 0, 1, 100, 100, 100);
 	const auto high = orderFormation::snapshot(captured, HeroCommand::VANGUARD, 1, 150, 0, 30, 100, 100, 100);

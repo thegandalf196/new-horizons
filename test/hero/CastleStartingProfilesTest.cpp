@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/entities/hero/HeroStartingProjection.h"
 #include "../../lib/entities/hero/NewHorizonsHeroRules.h"
 #include "../../lib/entities/hero/NewHorizonsPerkState.h"
@@ -79,7 +80,9 @@ JsonNode historicalStarts()
 }
 }
 
-TEST(CastleStartingProfiles, CuthbertStartsWithThreeBasicSkillsNoPerkAndHolyArmor)
+using CastleStartingProfiles = vcmiTestData::OriginalDataTest;
+
+TEST_F(CastleStartingProfiles, CuthbertStartsWithThreeBasicSkillsNoPerkAndHolyArmor)
 {
 	if(!SpellID::decode("new-horizons:holyArmor"))
 		GTEST_SKIP() << "Requires New Horizons content";
@@ -95,7 +98,7 @@ TEST(CastleStartingProfiles, CuthbertStartsWithThreeBasicSkillsNoPerkAndHolyArmo
 	EXPECT_FALSE(view.spells.contains(SpellID(SpellID::WEAKNESS)));
 }
 
-TEST(CastleStartingProfiles, LoynisStartsWithSanctuaryInsteadOfTheChosen)
+TEST_F(CastleStartingProfiles, LoynisStartsWithSanctuaryInsteadOfTheChosen)
 {
 	if(!SpellID::decode("new-horizons:sanctuary"))
 		GTEST_SKIP() << "Requires New Horizons content";
@@ -105,7 +108,7 @@ TEST(CastleStartingProfiles, LoynisStartsWithSanctuaryInsteadOfTheChosen)
 	EXPECT_EQ(view.perks.size(), 1u);
 }
 
-TEST(CastleStartingProfiles, HistoricalCapturesKeepTheirStarts)
+TEST_F(CastleStartingProfiles, HistoricalCapturesKeepTheirStarts)
 {
 	if(!SpellID::decode("new-horizons:theChosen"))
 		GTEST_SKIP() << "Requires New Horizons content";
@@ -119,7 +122,7 @@ TEST(CastleStartingProfiles, HistoricalCapturesKeepTheirStarts)
 	EXPECT_TRUE(loynis.spells.contains(spell("new-horizons:theChosen")));
 }
 
-TEST(CastleStartingProfiles, OnlyAnExplicitlyEmptyPerkRowAllowsThreeSkills)
+TEST_F(CastleStartingProfiles, OnlyAnExplicitlyEmptyPerkRowAllowsThreeSkills)
 {
 	auto rules = development();
 	auto & starts = rules["startingSkills"];
@@ -139,7 +142,7 @@ TEST(CastleStartingProfiles, OnlyAnExplicitlyEmptyPerkRowAllowsThreeSkills)
 	EXPECT_THROW(validateHeroRules(partialBooks, false), std::runtime_error);
 }
 
-TEST(CastleStartingProfiles, NoTwoCastleHeroesShareBothSkillsAndThePerk)
+TEST_F(CastleStartingProfiles, NoTwoCastleHeroesShareBothSkillsAndThePerk)
 {
 	const auto rules = development();
 	const auto & starts = rules["startingSkills"];

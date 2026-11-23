@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 
 #include <gtest/gtest.h>
 #include <tbb/global_control.h>
@@ -202,7 +203,10 @@ protected:
 };
 }
 
-class RandomArtifactPoolConsumers : public ::testing::TestWithParam<size_t> {};
+class RandomArtifactPoolConsumers : public ::testing::TestWithParam<size_t> {
+public:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
+private:};
 
 TEST_P(RandomArtifactPoolConsumers, RmgQuestCandidatesUseTemplatePolicyAndPreserveExplicitEmptyOverride)
 {

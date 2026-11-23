@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 
 #include "EffectFixture.h"
 
@@ -25,6 +26,7 @@ using namespace ::testing;
 class CloneTest : public Test, public EffectFixture
 {
 public:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	CloneTest()
 		: EffectFixture("core:clone")
 	{
@@ -149,6 +151,7 @@ TEST_F(CloneTest, AcceptsTierAtMaxTier)
 class CloneApplyTest : public Test, public EffectFixture
 {
 public:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	std::shared_ptr<::battle::UnitInfo> cloneAddInfo;
 	std::shared_ptr<::battle::CUnitState> cloneState;
 	std::shared_ptr<::battle::CUnitState> originalState;

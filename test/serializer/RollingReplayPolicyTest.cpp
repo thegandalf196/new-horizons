@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/gameState/PreparedReplayAppend.h"
 #include "../../lib/gameState/CGameState.h"
 #include "../../lib/networkPacks/PacksForClient.h"
@@ -33,6 +34,7 @@ TEST(RollingReplayPolicy, DefaultAndFullGameOverrideKeepEnabledBehavior)
 
 TEST(RollingReplayPolicy, DisabledDirectAndPreparedEntriesNeverRequestSnapshotOrEncodePackets)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	ReplayLog disabled;
 	disabled.configure(false, 1, false);
 	EXPECT_FALSE(disabled.isCaptureEnabled());

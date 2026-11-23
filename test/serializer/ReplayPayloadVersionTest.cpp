@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/gameState/ReplayLog.h"
 #include "../../lib/gameState/PreparedReplayAppend.h"
 #include "../../lib/gameState/CGameState.h"
@@ -144,6 +145,7 @@ TEST(ReplayPayloadVersionTest, CurrentAndOpaqueSameChapterCopyMoveAndResavePrese
 
 TEST(ReplayPayloadVersionTest, KnownProvenanceCannotBeDroppedBeforeChapterLogOrWorldPrefix)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto log = knownLog();
 	for(const int kind : {0, 1, 2})
 	{

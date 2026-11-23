@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "HistoricalCapabilityRules.h"
 #include "../../lib/entities/hero/NewHorizonsCapabilityRules.h"
 #include "../../lib/json/JsonUtils.h"
@@ -7,6 +8,7 @@
 
 TEST(NewHorizonsCommandCapability, HistoricalV5ResolvesAllClassesWithoutRetiredTables)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	using namespace newHorizonsHeroes;
 	const JsonNode world = historicalCapabilityRulesV5();
 	ASSERT_EQ(world["rulesetVersion"].Integer(), 5);
@@ -43,6 +45,7 @@ TEST(NewHorizonsCommandCapability, HistoricalV5ResolvesAllClassesWithoutRetiredT
 
 TEST(NewHorizonsCommandCapability, HistoricalV5PolicyCannotLeakV4NumericalRatings)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	using namespace newHorizonsHeroes;
 	const JsonNode historicalV5 = historicalCapabilityRulesV5();
 	auto historical = historicalCapabilityRulesV4();
@@ -80,6 +83,7 @@ TEST(NewHorizonsCommandCapability, HistoricalV5SettingsSchemaRejectsUnknownAndIn
 
 TEST(NewHorizonsCommandCapability, HistoricalV5RejectsRetiredColumnsAndMissingOrMalformedCommand)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	using namespace newHorizonsHeroes;
 	const JsonNode historicalV5 = historicalCapabilityRulesV5();
 	for(const auto * key : {"classProfiles", "leadership", "profile"})
@@ -102,6 +106,7 @@ TEST(NewHorizonsCommandCapability, HistoricalV5RejectsRetiredColumnsAndMissingOr
 
 TEST(NewHorizonsCommandCapability, HistoricalV5PreservesAllCapturedSiegeAndShopValues)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	using namespace newHorizonsHeroes;
 	const JsonNode historicalV5 = historicalCapabilityRulesV5();
 	const auto historical = historicalCapabilityRulesV4();

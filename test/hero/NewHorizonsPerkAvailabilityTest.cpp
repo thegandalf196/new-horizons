@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../PerkStateFixture.h"
 
 #include "../../client/windows/NewHorizonsPerkAvailability.h"
@@ -119,6 +120,7 @@ int rankFor(const std::string & skillId)
 
 TEST(NewHorizonsPerkAvailability, MirrorsLearnedRankAndServerOfferEligibility)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto state = makeState();
 	const auto basic = definition(state, BASIC);
 	const auto notLearned = newHorizonsPerkAvailability::evaluatePerk(state, SKILL, 0, basic);
@@ -143,6 +145,7 @@ TEST(NewHorizonsPerkAvailability, MirrorsLearnedRankAndServerOfferEligibility)
 
 TEST(NewHorizonsPerkAvailability, ExceptionalRankDoesNotSkipEarlierPerkTier)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto state = makeState();
 	const auto advanced = definition(state, ADVANCED);
 	const auto rankLocked = newHorizonsPerkAvailability::evaluatePerk(state, SKILL, 1, advanced);
@@ -169,6 +172,7 @@ TEST(NewHorizonsPerkAvailability, ExceptionalRankDoesNotSkipEarlierPerkTier)
 
 TEST(NewHorizonsPerkAvailability, DistinguishesOccupiedTiersAndPerSkillCap)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto state = makeState();
 	state.select(std::string(SKILL), std::string(BASIC), 1);
 	const auto selected = newHorizonsPerkAvailability::evaluatePerk(
@@ -190,6 +194,7 @@ TEST(NewHorizonsPerkAvailability, DistinguishesOccupiedTiersAndPerSkillCap)
 
 TEST(NewHorizonsPerkAvailability, PlannedAndMissingCataloguesFailClosed)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto state = makeState();
 	// Exercise a captured planned entry without depending on which current
 	// production effects have since been implemented.
@@ -216,6 +221,7 @@ TEST(NewHorizonsPerkAvailability, PlannedAndMissingCataloguesFailClosed)
 
 TEST(NewHorizonsPerkAvailability, TierSlotUsesRegistryTierRegardlessOfSavedSelectionOrder)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto state = makeState();
 	state.replaceSelected({
 		{std::string(SKILL), std::string(EXPERT)},
@@ -245,6 +251,7 @@ TEST(NewHorizonsPerkAvailability, TierSlotUsesRegistryTierRegardlessOfSavedSelec
 
 TEST(NewHorizonsPerkAvailability, ReadOnlyEvaluationsDoNotMutateSavedState)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto state = makeState();
 	state.select(std::string(SKILL), std::string(BASIC), 1);
 	const auto rulesBefore = state.getRules();
@@ -260,6 +267,7 @@ TEST(NewHorizonsPerkAvailability, ReadOnlyEvaluationsDoNotMutateSavedState)
 
 TEST(NewHorizonsPerkAvailability, R2SameTierAlternativesRemainAvailableUntilCap)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto state = makeR2State();
 	ASSERT_TRUE(newHorizonsHeroes::usesR2PerkOffers(state.getRules()));
 	state.select(std::string(SKILL), std::string(BASIC), 1);
@@ -279,6 +287,7 @@ TEST(NewHorizonsPerkAvailability, R2SameTierAlternativesRemainAvailableUntilCap)
 
 TEST(NewHorizonsPerkAvailability, StrictCurrentOccupiedTierMatchesAuthoritativeAcquisitionPredicate)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto state = strictState();
 	ASSERT_TRUE(newHorizonsHeroes::usesStrictPerkProgression(state.getRules()));
 	state.select(std::string(SKILL), std::string(BASIC), 1);
@@ -298,6 +307,7 @@ TEST(NewHorizonsPerkAvailability, StrictCurrentOccupiedTierMatchesAuthoritativeA
 
 TEST(NewHorizonsPerkAvailability, StrictExceptionalExpertSlotsFollowBasicAdvancedExpertWithoutRepeatedTier)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto state = strictState();
 	ASSERT_TRUE(newHorizonsHeroes::usesStrictPerkProgression(state.getRules()));
 	const std::array<std::string_view, 3> selected = {BASIC, ADVANCED, EXPERT};
@@ -320,6 +330,7 @@ TEST(NewHorizonsPerkAvailability, StrictExceptionalExpertSlotsFollowBasicAdvance
 
 TEST(NewHorizonsPerkAvailability, R2SlotsDisplayAllSelectionsIncludingRepeatedTier)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto state = makeR2State();
 	state.select(std::string(SKILL), std::string(BASIC), 1);
 	state.select(std::string(SKILL), std::string(BASIC_ALTERNATIVE), 1);
@@ -341,6 +352,7 @@ TEST(NewHorizonsPerkAvailability, R2SlotsDisplayAllSelectionsIncludingRepeatedTi
 
 TEST(NewHorizonsPerkAvailability, R2EmptySlotReportsCapacityWithoutInventingTier)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto state = makeR2State();
 	state.select(std::string(SKILL), std::string(BASIC), 1);
 	const auto empty = newHorizonsPerkAvailability::evaluateSelectionSlot(state, SKILL, 1, 1);
@@ -355,6 +367,7 @@ TEST(NewHorizonsPerkAvailability, R2EmptySlotReportsCapacityWithoutInventingTier
 
 TEST(NewHorizonsPerkAvailability, FourOfferExceptionalRanksRetainEarlierStagesAndAllowExtraBasic)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto state = fourOfferState();
 	ASSERT_NO_THROW(state.validate());
 	ASSERT_TRUE(newHorizonsPerkAvailability::usesSelectionSlots(state));
@@ -373,6 +386,7 @@ TEST(NewHorizonsPerkAvailability, FourOfferExceptionalRanksRetainEarlierStagesAn
 
 TEST(NewHorizonsPerkAvailability, FourOfferCellsKeepEverySameTierAcquisitionAndActualTier)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto state = fourOfferState();
 	state.select(std::string(SKILL), std::string(BASIC), 3);
 	state.select(std::string(SKILL), std::string(BASIC_ALTERNATIVE), 3);
@@ -401,6 +415,7 @@ TEST(NewHorizonsPerkAvailability, FourOfferCellsKeepEverySameTierAcquisitionAndA
 
 TEST(NewHorizonsPerkAvailability, FourOfferThreeBasicPerksFillDistinctCellsWithoutUnlockingLaterRanks)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto state = fourOfferState();
 	const std::array<std::string_view, 3> selected = {BASIC, BASIC_ALTERNATIVE, BASIC_PLANNED};
 	for(const auto id : selected)

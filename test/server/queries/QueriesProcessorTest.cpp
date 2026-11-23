@@ -1,4 +1,5 @@
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 #include "../../PerkStateFixture.h"
 #include "../../hero/HistoricalLevelOfferFixture.h"
 
@@ -1367,6 +1368,7 @@ TEST_F(NewHorizonsPerkAIJourneyTest, ChristianRatioThreeSeed17LevelsOneThroughTw
 
 TEST_F(QueriesProcessorTest, popIfTop_removesTopQuery)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto query = std::make_shared<TestQuery>(&gh, PlayerColor(1), QueryType::HeroMovement);
 
 	queries.addQuery(query);
@@ -1400,6 +1402,7 @@ TEST_F(QueriesProcessorTest, popIfTop_doesNothingWhenQueryIsNotPresent)
 
 TEST_F(QueriesProcessorTest, popIfTop_skipsWhenNestedQueryIsAbove_andLaterSucceedsAfterUnwind)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto movementQuery = std::make_shared<TestQuery>(&gh, PlayerColor(1), QueryType::HeroMovement);
 	auto visitQuery = std::make_shared<TestQuery>(&gh, PlayerColor(1), QueryType::MapObjectVisit);
 
@@ -1463,6 +1466,7 @@ TEST_F(QueriesProcessorTest, popIfTop_exposesQueryBelowWithRemovedQueryAsArgumen
 
 TEST_F(QueriesProcessorTest, popIfTop_allowsExposedQueryToPopItself)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto bottomQuery = std::make_shared<TestQuery>(&gh, PlayerColor(1), QueryType::HeroMovement);
 	auto topQuery = std::make_shared<TestQuery>(&gh, PlayerColor(1), QueryType::MapObjectVisit);
 
@@ -1498,6 +1502,7 @@ TEST_F(QueriesProcessorTest, popIfTop_allowsExposedQueryToPopItself)
 
 TEST_F(QueriesProcessorTest, popIfTop_removesMultiPlayerQueryOnlyWhereItIsTop)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto sharedQuery = std::make_shared<TestQuery>(
 		&gh,
 		std::initializer_list<PlayerColor>{PlayerColor(0), PlayerColor(1)},
@@ -1520,6 +1525,7 @@ TEST_F(QueriesProcessorTest, popIfTop_removesMultiPlayerQueryOnlyWhereItIsTop)
 
 TEST_F(QueriesProcessorTest, popIfTop_removesMultiPlayerQueryAfterItBecomesTopAgain)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto sharedQuery = std::make_shared<TestQuery>(
 		&gh,
 		std::initializer_list<PlayerColor>{PlayerColor(0), PlayerColor(1)},
@@ -1559,6 +1565,7 @@ TEST_F(QueriesProcessorTest, popIfTop_removesMultiPlayerQueryAfterItBecomesTopAg
 
 TEST_F(QueriesProcessorTest, popQuery_removesMultiPlayerQueryOnlyWhereItIsTop)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto sharedQuery = std::make_shared<TestQuery>(
 		&gh,
 		std::initializer_list<PlayerColor>{PlayerColor(0), PlayerColor(1)},
@@ -1579,6 +1586,7 @@ TEST_F(QueriesProcessorTest, popQuery_removesMultiPlayerQueryOnlyWhereItIsTop)
 
 TEST_F(QueriesProcessorTest, popQuery_removesRemainingMultiPlayerQueryAfterItBecomesTop)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto sharedQuery = std::make_shared<TestQuery>(
 		&gh,
 		std::initializer_list<PlayerColor>{PlayerColor(0), PlayerColor(1)},
@@ -1740,6 +1748,7 @@ TEST_F(QueriesProcessorTest, getQuery_returnsNullForUnknownQueryId)
 
 TEST_F(QueriesProcessorTest, getQuery_returnsAddedQueryAndNullAfterRemoval)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto query = std::make_shared<TestQuery>(&gh, PlayerColor(1), QueryType::HeroMovement);
 
 	queries.addQuery(query);
@@ -1758,6 +1767,7 @@ TEST_F(QueriesProcessorTest, countQuery_returnsZeroForNullptr)
 
 TEST_F(QueriesProcessorTest, foreignPlayerCannotPreseedReplyOnAnotherPlayersNonTopQuery)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	std::optional<int32_t> captured;
 	auto ownTop = std::make_shared<CGenericQuery>(&gh, PlayerColor(0), [](std::optional<int32_t>) {});
 	auto foreign = std::make_shared<CGenericQuery>(&gh, PlayerColor(1), [&](std::optional<int32_t> reply)
@@ -1774,6 +1784,7 @@ TEST_F(QueriesProcessorTest, foreignPlayerCannotPreseedReplyOnAnotherPlayersNonT
 
 TEST_F(QueriesProcessorTest, necromancyReplyCanBeDeferredUntilItsQueryIsExposed)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto firstChoice = CreatureID(1);
 	const auto secondChoice = CreatureID(2);
 	std::optional<CreatureID> selected;
@@ -1805,6 +1816,7 @@ TEST_F(QueriesProcessorTest, necromancyReplyCanBeDeferredUntilItsQueryIsExposed)
 
 TEST_F(QueriesProcessorTest, invalidBuriedNecromancyReplyDoesNotCompleteOnExposure)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	int callbackCount = 0;
 	auto necromancy = std::make_shared<CNecromancyQuery>(&gh, PlayerColor(0),
 		std::vector<CreatureID>{CreatureID(1), CreatureID(2)}, [&](std::optional<CreatureID>)
@@ -1828,6 +1840,7 @@ TEST_F(QueriesProcessorTest, invalidBuriedNecromancyReplyDoesNotCompleteOnExposu
 
 TEST_F(QueriesProcessorTest, foreignPlayerCannotPreseedNecromancyAndOtherBuriedRepliesKeepLegacyBehavior)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	int necromancyCallbackCount = 0;
 	auto necromancy = std::make_shared<CNecromancyQuery>(&gh, PlayerColor(0),
 		std::vector<CreatureID>{CreatureID(1), CreatureID(2)}, [&](std::optional<CreatureID>)

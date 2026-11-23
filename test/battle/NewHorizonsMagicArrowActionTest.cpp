@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/battle/BattleAction.h"
 #include "../../lib/battle/SideInBattle.h"
 #include "../../lib/battle/NewHorizonsShadowGift.h"
@@ -41,6 +42,7 @@ TEST(NewHorizonsShadowGiftMechanicsTest, SharedTierFormulaAndNoFreeSacrifice)
 
 TEST(NewHorizonsMagicArrowActionTest, OverchargeRoundTripsOnlyOnTheNewProtocol)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	BattleAction action;
 	action.actionType = EActionType::HERO_SPELL;
 	action.side = BattleSide::ATTACKER;
@@ -73,6 +75,7 @@ TEST(NewHorizonsMagicArrowActionTest, OverchargeRoundTripsOnlyOnTheNewProtocol)
 
 TEST(NewHorizonsMagicArrowActionTest, SelectiveDispelRoundTripsOnlyOnItsProtocol)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	BattleAction action;
 	action.actionType = EActionType::HERO_SPELL;
 	action.side = BattleSide::ATTACKER;
@@ -104,6 +107,7 @@ TEST(NewHorizonsMagicArrowActionTest, SelectiveDispelRoundTripsOnlyOnItsProtocol
 
 TEST(NewHorizonsMagicArrowActionTest, TemporalFieldRoundTripsOnlyOnItsProtocol)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	BattleAction action;
 	action.actionType = EActionType::HERO_SPELL;
 	action.side = BattleSide::ATTACKER;
@@ -135,6 +139,7 @@ TEST(NewHorizonsMagicArrowActionTest, TemporalFieldRoundTripsOnlyOnItsProtocol)
 
 TEST(NewHorizonsShadowGiftMechanicsTest, SelectedTierRoundTripsOnlyOnItsProtocol)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	BattleAction action;
 	action.actionType = EActionType::HERO_SPELL;
 	action.side = BattleSide::ATTACKER;
@@ -172,6 +177,7 @@ TEST(NewHorizonsShadowGiftMechanicsTest, SelectedTierRoundTripsOnlyOnItsProtocol
 
 TEST(NewHorizonsMagicArrowActionTest, TemporalFieldConsumptionStateRoundTripsAndRejectsLossyWrites)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	SideInBattle side(nullptr);
 	side.temporalFieldUsed = true;
 	CMemorySerializer currentSide;

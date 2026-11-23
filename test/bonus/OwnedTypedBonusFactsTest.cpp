@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/bonuses/OwnedRecipientBonusGraph.h"
 #include "../../lib/bonuses/Limiters.h"
 #include "../../lib/bonuses/PreparedBonusGraphStorage.h"
@@ -53,6 +54,7 @@ std::unique_ptr<OwnedRecipientBonusGraph> graph(Input input, const std::shared_p
 }
 TEST(OwnedTypedBonusFactsTest, CreatureFamilyTierAlignmentUseCopiedFactsWithoutLibrary)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto input = subject();
 	auto bonus = value();
 	bonus->limiter = std::make_shared<AllOfLimiter>(std::vector<TLimiterPtr>{family(CreatureID(1), true),
@@ -71,6 +73,7 @@ TEST(OwnedTypedBonusFactsTest, CreatureFamilyTierAlignmentUseCopiedFactsWithoutL
 }
 TEST(OwnedTypedBonusFactsTest, ExactFamilySkipsMissingUpgradeTableButUncapturedRelationThrows)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto input = subject();
 	input.facts.creatureContext->familyUpgrades.clear();
 	auto exact = value();
@@ -85,6 +88,7 @@ TEST(OwnedTypedBonusFactsTest, ExactFamilySkipsMissingUpgradeTableButUncapturedR
 }
 TEST(OwnedTypedBonusFactsTest, CapturedCreatureAbsenceIsNotAnUnboundDomain)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto input = subject();
 	input.facts.creatureContext->creature.reset();
 	auto bonus = value();
@@ -98,6 +102,7 @@ TEST(OwnedTypedBonusFactsTest, CapturedCreatureAbsenceIsNotAnUnboundDomain)
 }
 TEST(OwnedTypedBonusFactsTest, FactionDefaultsUseCapturedSourceWhileExplicitFactionShortCircuits)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto input = subject();
 	input.facts.creatureContext->sourceFactions[CreatureID(10)] = FactionID(7);
 	auto bonus = value();
@@ -136,6 +141,7 @@ TEST(OwnedTypedBonusFactsTest, RankKeepsStrictBoundsCommanderDiscardAndKnownAbse
 }
 TEST(OwnedTypedBonusFactsTest, TerrainPreservesAdventureNoneThenQueryBoundAndLegacyPrecedence)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto input = subject();
 	input.facts.terrainContext.emplace();
 	auto & terrain = *input.facts.terrainContext;
@@ -165,6 +171,7 @@ TEST(OwnedTypedBonusFactsTest, TerrainPreservesAdventureNoneThenQueryBoundAndLeg
 }
 TEST(OwnedTypedBonusFactsTest, ExplicitAbsentBattleCannotFallBackToLegacyOrNativeObject)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto input = subject();
 	input.facts.terrainContext.emplace();
 	input.facts.terrainContext->explicitNativeContext = true;
@@ -203,6 +210,7 @@ TEST(OwnedTypedBonusFactsTest, NativeTerrainUsesMembershipOrExistingDependencyFi
 }
 TEST(OwnedTypedBonusFactsTest, CopiedAcceptancePreservesSummonAndGhostRules)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const SecondarySkill sylvan(SecondarySkill::decode("new-horizons:sylvanLuck"));
 	ASSERT_TRUE(sylvan.hasValue()); // CURRENT clone encodes a real registered identifier before NoLibrary.
 	auto input = subject();
@@ -227,6 +235,7 @@ TEST(OwnedTypedBonusFactsTest, CopiedAcceptancePreservesSummonAndGhostRules)
 }
 TEST(OwnedTypedBonusFactsTest, CopiedFormAcceptanceFiltersOnlyOriginalTypedCreatureSources)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto input = subject();
 	auto bonus = value();
 	bonus->source = BonusSource::CREATURE_ABILITY;
@@ -261,6 +270,7 @@ TEST(OwnedTypedBonusFactsTest, MissingAcceptanceAndLiveBridgesFailBeforeAnyNativ
 }
 TEST(OwnedTypedBonusFactsTest, InheritedLimiterUsesRecipientFactsWithoutRequiringSourceCreature)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto input = subject();
 	input.parents = {1};
 	Input source;

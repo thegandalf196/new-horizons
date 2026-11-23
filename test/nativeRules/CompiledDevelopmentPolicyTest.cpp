@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/nativeRules/CompiledDevelopmentRules.h"
 #include "../../lib/entities/hero/NewHorizonsParalyzingGaze.h"
 #include "../../lib/entities/hero/NewHorizonsSerpentsEmbrace.h"
@@ -12,7 +13,9 @@
 #include "../../lib/entities/hero/NewHorizonsChosenSpecialties.h"
 #include "../../lib/pathfinder/NewHorizonsMovement.h"
 #include "../../lib/filesystem/ResourcePath.h"
-TEST(CompiledDevelopmentPolicy, NumericalSpecialtiesBooleansMovementAndChosenIdentityMatchRaw)
+using CompiledDevelopmentPolicy = vcmiTestData::OriginalDataTest;
+
+TEST_F(CompiledDevelopmentPolicy, NumericalSpecialtiesBooleansMovementAndChosenIdentityMatchRaw)
 {
 	const JsonNode world(JsonPath::builtin("config/newHorizonsHeroes"));
 	const auto current = newHorizonsHeroes::resolveHeroRules(world, HeroClassID(HeroClassID::decode("core:knight")));

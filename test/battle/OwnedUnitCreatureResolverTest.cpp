@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/battle/OwnedUnitCreatureResolver.h"
 #include "../../lib/battle/CUnitState.h"
 #include "../../lib/bonuses/ProjectedBonusView.h"
@@ -77,7 +78,9 @@ public:
 	int32_t getTreeVersion() const override { return 0; }
 };
 }
-TEST(OwnedUnitCreatureResolverTest, InertCopiedMetadataKeysAndNativeGenerationRemainIndependent)
+using OwnedUnitCreatureResolverTest = vcmiTestData::OriginalDataTest;
+
+TEST_F(OwnedUnitCreatureResolverTest, InertCopiedMetadataKeysAndNativeGenerationRemainIndependent)
 {
 	const auto generation = PreparedBonusGraphStorage::currentGeneration();
 	CBonusSystemNode sentinel(BonusNodeType::UNKNOWN, true);
@@ -106,7 +109,7 @@ TEST(OwnedUnitCreatureResolverTest, InertCopiedMetadataKeysAndNativeGenerationRe
 	EXPECT_EQ(PreparedBonusGraphStorage::currentGeneration(), generation);
 	EXPECT_EQ(sentinel.getTreeVersion(), version);
 }
-TEST(OwnedUnitCreatureResolverTest, InvalidDuplicateIdentitiesNeverPublishDescriptorLoans)
+TEST_F(OwnedUnitCreatureResolverTest, InvalidDuplicateIdentitiesNeverPublishDescriptorLoans)
 {
 	EXPECT_THROW(Resolver({descriptor(1), descriptor(1)}), std::invalid_argument);
 	auto other = descriptor(2); other.key = descriptor(1).key;
@@ -114,7 +117,7 @@ TEST(OwnedUnitCreatureResolverTest, InvalidDuplicateIdentitiesNeverPublishDescri
 	other = descriptor(2); other.id = CreatureID::NONE;
 	EXPECT_THROW(Resolver({other}), std::invalid_argument);
 }
-TEST(OwnedUnitCreatureResolverTest, OrdinaryAndNestedMetadataNeverResolveThroughLibrary)
+TEST_F(OwnedUnitCreatureResolverTest, OrdinaryAndNestedMetadataNeverResolveThroughLibrary)
 {
 	Resolver values({descriptor(1), descriptor(2)}); Info info(values); GenericView view;
 	battle::CUnitStateDetached unit(&info, &view); view.subject = &unit;
@@ -131,7 +134,7 @@ TEST(OwnedUnitCreatureResolverTest, OrdinaryAndNestedMetadataNeverResolveThrough
 	EXPECT_EQ(nested.creatureLevel(), 2);
 	EXPECT_EQ(nested.getBattleStartMaximumAggregateHP(), 30);
 }
-TEST(OwnedUnitCreatureResolverTest, ActiveFormMetadataSaveLoadAndPendingRestoreUseOwnedKeys)
+TEST_F(OwnedUnitCreatureResolverTest, ActiveFormMetadataSaveLoadAndPendingRestoreUseOwnedKeys)
 {
 	Resolver values({descriptor(1), descriptor(2)}); Info info(values); GenericView view;
 	battle::CUnitStateDetached unit(&info, &view); view.subject = &unit;
@@ -159,7 +162,7 @@ TEST(OwnedUnitCreatureResolverTest, ActiveFormMetadataSaveLoadAndPendingRestoreU
 	EXPECT_EQ(unit.creatureLevel(), 2);
 	EXPECT_EQ(unit.getCount(), 3);
 }
-TEST(OwnedUnitCreatureResolverTest, MissingFormRefusesBeforeChangingCurrentIdentityOrHealth)
+TEST_F(OwnedUnitCreatureResolverTest, MissingFormRefusesBeforeChangingCurrentIdentityOrHealth)
 {
 	Resolver values({descriptor(1)}); Info info(values); GenericView view;
 	battle::CUnitStateDetached unit(&info, &view); view.subject = &unit;
@@ -175,7 +178,7 @@ TEST(OwnedUnitCreatureResolverTest, MissingFormRefusesBeforeChangingCurrentIdent
 	EXPECT_THROW(unit.load(invalid), std::logic_error);
 	EXPECT_EQ(unit.save(), before);
 }
-TEST(OwnedUnitCreatureResolverTest, UnknownNonpendingCurrentAndOriginalKeysPreserveWoundedState)
+TEST_F(OwnedUnitCreatureResolverTest, UnknownNonpendingCurrentAndOriginalKeysPreserveWoundedState)
 {
 	Resolver values({descriptor(1), descriptor(2)}); Info info(values); GenericView view;
 	battle::CUnitStateDetached unit(&info, &view); view.subject = &unit;

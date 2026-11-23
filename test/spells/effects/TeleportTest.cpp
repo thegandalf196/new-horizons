@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 
 #include "EffectFixture.h"
 
@@ -24,6 +25,7 @@ using namespace ::testing;
 class TeleportTest : public Test, public EffectFixture
 {
 public:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	TeleportTest()
 		: EffectFixture("core:teleport")
 	{
@@ -40,6 +42,7 @@ protected:
 class TeleportApplyTest : public Test, public EffectFixture
 {
 public:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	TeleportApplyTest()
 		: EffectFixture("core:teleport")
 	{

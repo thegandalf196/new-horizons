@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "HistoricalCapabilityRules.h"
 #include "../../lib/CCreatureHandler.h"
 #include "../../lib/GameLibrary.h"
@@ -45,6 +46,7 @@ JsonNode resolvedCapabilities()
 
 TEST(NewHorizonsCapabilityRules, HistoricalV4HasFullDeclaredMightAndMagicProfiles)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto rules = historicalCapabilityRulesV4();
 	ASSERT_TRUE(JsonUtils::validate(rules, "vcmi:newHorizonsCapabilities", "canonical capability data"));
 	ASSERT_NO_THROW(newHorizonsHeroes::validateCapabilityRules(rules, true));
@@ -84,6 +86,7 @@ TEST(NewHorizonsCapabilityRules, HistoricalV4HasFullDeclaredMightAndMagicProfile
 
 TEST(NewHorizonsCapabilityRules, SkeletonTransformerRequiresExplicitSavedMarkerAndPreservesIt)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const JsonNode rules(JsonPath::builtin("config/newHorizonsCapabilities"));
 	EXPECT_EQ(newHorizonsHeroes::capabilitySkeletonTransformerHealthPercent(rules), 50);
 	const auto resolved = newHorizonsHeroes::resolveCapabilityRules(rules,
@@ -108,6 +111,7 @@ TEST(NewHorizonsCapabilityRules, SkeletonTransformerRequiresExplicitSavedMarkerA
 
 TEST(NewHorizonsCapabilityRules, CanonicalLeadershipUsesIndependentPerSlotLimits)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto rules = historicalCapabilityRulesV4();
 	const auto knight = newHorizonsHeroes::resolveCapabilityRules(rules,
 		HeroClassID(HeroClassID::decode("core:knight")));
@@ -131,6 +135,7 @@ TEST(NewHorizonsCapabilityRules, CanonicalLeadershipUsesIndependentPerSlotLimits
 
 TEST(NewHorizonsCapabilityRules, EveryLoadedUpgradePreservesRequirementUsageAndPerSlotCapacity)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto rules = historicalCapabilityRulesV4();
 	const auto resolved = newHorizonsHeroes::resolveCapabilityRules(rules,
 		HeroClassID(HeroClassID::decode("core:knight")));
@@ -165,6 +170,7 @@ TEST(NewHorizonsCapabilityRules, EveryLoadedUpgradePreservesRequirementUsageAndP
 
 TEST(NewHorizonsCapabilityRules, MummyUpgradeUsesCurrentRequirementsWithoutReinterpretingHistoricalRules)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const CreatureID mummy(CreatureID::decode("core:mummy"));
 	const CreatureID royal(CreatureID::decode("new-horizons:royalMummy"));
 	ASSERT_TRUE(mummy.hasValue());
@@ -190,6 +196,7 @@ TEST(NewHorizonsCapabilityRules, MummyUpgradeUsesCurrentRequirementsWithoutReint
 
 TEST(NewHorizonsCapabilityRules, HistoricalUpgradeMultiplierAndExplicitOverridesSurviveRoundTrip)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto historical = historicalCapabilityRulesV4();
 	historical["leadership"]["upgradeMultiplierPercent"].Integer() = 120;
 	historical["leadership"]["upgradeRounding"].Integer() = 10;
@@ -220,6 +227,7 @@ TEST(NewHorizonsCapabilityRules, HistoricalUpgradeMultiplierAndExplicitOverrides
 
 TEST(NewHorizonsCapabilityRules, CanonicalSiegeOutputsUseExactRatingFormulas)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const JsonNode rules(JsonPath::builtin("config/newHorizonsCapabilities"));
 	const auto resolved = newHorizonsHeroes::resolveCapabilityRules(rules,
 		HeroClassID(HeroClassID::decode("core:knight")));
@@ -236,6 +244,7 @@ TEST(NewHorizonsCapabilityRules, CanonicalSiegeOutputsUseExactRatingFormulas)
 
 TEST(NewHorizonsCapabilityRules, SavedBlacksmithInventoryPricesAndLegacyFallbackAreDataDriven)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const JsonNode rules(JsonPath::builtin("config/newHorizonsCapabilities"));
 	const auto inventory = newHorizonsHeroes::capabilityWarMachineShopInventory(rules);
 	const std::array<ArtifactID, 3> expectedInventory = {
@@ -357,6 +366,7 @@ TEST(NewHorizonsCapabilityRules, NamedSchemaAndRealSettingsWrapperAcceptFullAndE
 
 TEST(NewHorizonsCapabilityRules, HistoricalV5WorldCoverageAndV4SnapshotsDoNotFollowNewDefaults)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const JsonNode original = historicalCapabilityRulesV5();
 	auto missing = original;
 	missing["armyCommand"]["classLevelIntervals"].Struct().erase(missing["armyCommand"]["classLevelIntervals"].Struct().begin());
@@ -442,6 +452,7 @@ TEST(NewHorizonsCapabilityRules, RejectsOutOfRangeRanksAndUntrainedCapabilityBon
 
 TEST(NewHorizonsCapabilityRules, OperationSiegeReadMatchesCapturedTablesAcrossFreshRanks)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	JsonNode authored(JsonPath::builtin("config/newHorizonsCapabilities"));
 	auto saved = newHorizonsHeroes::resolveCapabilityRules(authored,
 		HeroClassID(HeroClassID::decode("core:knight")));
@@ -490,6 +501,7 @@ TEST(NewHorizonsCapabilityRules, OperationSiegeReadPreservesLegacyAndRankErrors)
 
 TEST(NewHorizonsCapabilityRules, OperationSiegeReadRejectsMalformedContextBeforeRankArithmetic)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const JsonNode authored(JsonPath::builtin("config/newHorizonsCapabilities"));
 	auto bad = newHorizonsHeroes::resolveCapabilityRules(authored,
 		HeroClassID(HeroClassID::decode("core:knight")));

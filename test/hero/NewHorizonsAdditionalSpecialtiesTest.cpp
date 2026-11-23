@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "NewHorizonsHeroRulesFixture.h"
 #include "../mock/TinyMapGameTest.h"
 #include "../../lib/GameSettings.h"
@@ -40,7 +41,9 @@ protected:
 	}
 };
 }
-TEST(NewHorizonsAdditionalSpecialties, CapturesOnlyImplementedOptionalRowWithoutFillingAbsence)
+using NewHorizonsAdditionalSpecialties = vcmiTestData::OriginalDataTest;
+
+TEST_F(NewHorizonsAdditionalSpecialties, CapturesOnlyImplementedOptionalRowWithoutFillingAbsence)
 {
 	auto configured = withPhysician(testHeroRules());
 	ASSERT_NO_THROW(validateHeroRules(configured, true));
@@ -60,7 +63,7 @@ TEST(NewHorizonsAdditionalSpecialties, CapturesOnlyImplementedOptionalRowWithout
 	EXPECT_NO_THROW(validateResolvedHeroRules(noRow));
 	EXPECT_FALSE(fieldPhysicianRules(noRow));
 }
-TEST(NewHorizonsAdditionalSpecialties, RejectsNullMissingUnknownFutureSemanticsAndUnsafeBounds)
+TEST_F(NewHorizonsAdditionalSpecialties, RejectsNullMissingUnknownFutureSemanticsAndUnsafeBounds)
 {
 	const auto good = resolveHeroRules(withPhysician(testHeroRules()), HeroClassID(0));
 	std::vector<JsonNode> malformed(7, good);
@@ -80,7 +83,7 @@ TEST(NewHorizonsAdditionalSpecialties, RejectsNullMissingUnknownFutureSemanticsA
 	boundary["additionalSpecialties"]["fieldPhysician"]["healingMaximumPercent"].Integer() = 200;
 	EXPECT_NO_THROW(validateResolvedHeroRules(boundary));
 }
-TEST(NewHorizonsAdditionalSpecialties, RejectsUnsupportedCodecBeforeWriterPrefixAndBeforeReaderInstallation)
+TEST_F(NewHorizonsAdditionalSpecialties, RejectsUnsupportedCodecBeforeWriterPrefixAndBeforeReaderInstallation)
 {
 	const auto rules = withPhysician(testHeroRules());
 	GameSettings source;
@@ -103,7 +106,7 @@ TEST(NewHorizonsAdditionalSpecialties, RejectsUnsupportedCodecBeforeWriterPrefix
 	EXPECT_THROW(decoded.serialize(olderReader.iser), std::runtime_error);
 	EXPECT_EQ(decoded.getValue(EGameSettings::HEROES_NEW_HORIZONS), before);
 }
-TEST(NewHorizonsAdditionalSpecialties, GenericDescriptorsNeverAcquireRionIdentity)
+TEST_F(NewHorizonsAdditionalSpecialties, GenericDescriptorsNeverAcquireRionIdentity)
 {
 	CGHeroInstance hero(nullptr);
 	for(const auto type : {HeroTypeID::NONE, HeroTypeID::RANDOM, HeroTypeID(std::numeric_limits<int32_t>::max())})

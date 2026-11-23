@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt and AUTHORS. */
 #include "../../Global.h"
+#include "../OriginalDataRequirement.h"
 #include <gtest/gtest.h>
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/combatScripts/ICombatEventScript.h"
@@ -11,7 +12,9 @@
 
 // Deliberately requires no resource loader, game library, or Lua context.
 // Dispatch membership and forecast identity are properties of the fixed factory.
-TEST(NativeCombatEventDispatchTest, EveryShippedIdentityHasExactlyItsDeclaredEventsAndForecast)
+using NativeCombatEventDispatchTest = vcmiTestData::OriginalDataTest;
+
+TEST_F(NativeCombatEventDispatchTest, EveryShippedIdentityHasExactlyItsDeclaredEventsAndForecast)
 {
 	using Event = CombatEventType;
 	using Forecast = CombatEventForecastImplementation;

@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../PerkStateFixture.h"
 #include "../mock/TinyMapGameTest.h"
 #include "../../lib/entities/hero/HeroStartingProjection.h"
@@ -89,6 +90,7 @@ protected:
 
 TEST(StartingPerkDefaults, SkillsOnlyCustomRanksNeverBackfillAnyTier)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto perks = freshPerks();
 	initializeStartingHeroPerks(perks, skillsOnlyDevelopment(), HeroTypeID::NONE, {}, {}, authorityExpert);
 	EXPECT_TRUE(perks.getSelected().empty());
@@ -98,6 +100,7 @@ TEST(StartingPerkDefaults, SkillsOnlyCustomRanksNeverBackfillAnyTier)
 
 TEST(StartingPerkDefaults, SkillsOnlyCreationIgnoresPrototypeAndProfilePerkPreferences)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto perks = freshPerks();
 	const auto pool = perks.candidatesForSkillTier(AUTHORITY, 1);
 	ASSERT_GE(pool.size(), 2);
@@ -108,6 +111,7 @@ TEST(StartingPerkDefaults, SkillsOnlyCreationIgnoresPrototypeAndProfilePerkPrefe
 
 TEST(StartingPerkDefaults, SkillsOnlyInitializationNeverChangesEarnedSelections)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto perks = freshPerks();
 	const auto choice = perks.candidatesForSkillTier(AUTHORITY, 1).front().selection;
 	perks.select(choice.skillId, choice.perkId, 1);
@@ -123,6 +127,7 @@ TEST(StartingPerkDefaults, SkillsOnlyInitializationNeverChangesEarnedSelections)
 
 TEST(StartingPerkDefaults, HistoricalPoliciesRetainExplicitCompletionAndCodecIdentity)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	for(int version : {1, 2})
 	{
 		auto rules = historicalDevelopment(version);
@@ -143,6 +148,7 @@ TEST(StartingPerkDefaults, HistoricalPoliciesRetainExplicitCompletionAndCodecIde
 
 TEST(StartingPerkDefaults, EveryRegisteredAuthoredProjectionHasTwoBasicSkillsOnePerkAndSpellbook)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto configured = context();
 	const auto & profiles = configured.development["startingSkills"]["startingDevelopmentProfiles"].Struct();
 	ASSERT_EQ(profiles.size(), 163);
@@ -172,6 +178,7 @@ TEST(StartingPerkDefaults, EveryRegisteredAuthoredProjectionHasTwoBasicSkillsOne
 
 TEST(StartingPerkDefaults, AstralHasBasicSpellcraftMetamagicAndOneAuthoredPerk)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto id = HeroTypeID(HeroTypeID::decode("core:astral"));
 	const auto view = projectStartingHero(*id.toHeroType(), context());
 	EXPECT_EQ(view.skills, (std::vector<std::pair<SecondarySkill, ui8>>{
@@ -183,6 +190,7 @@ TEST(StartingPerkDefaults, AstralHasBasicSpellcraftMetamagicAndOneAuthoredPerk)
 
 TEST(StartingPerkDefaults, SkillsOnlyPolicyRejectsIncompleteRepeatedNonBasicAndPerkBearingDefaults)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto reject = [](const std::function<void(JsonNode &)> & corrupt)
 	{
 		auto starts = skillsOnlyDevelopment()["startingSkills"];
@@ -202,6 +210,7 @@ TEST(StartingPerkDefaults, SkillsOnlyPolicyRejectsIncompleteRepeatedNonBasicAndP
 
 TEST(StartingPerkDefaults, MalformedSkillsOnlyTypesRejectWithoutMutatingEarnedState)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto perks = freshPerks();
 	const auto before = perks.toJson();
 	auto rules = skillsOnlyDevelopment();
@@ -212,6 +221,7 @@ TEST(StartingPerkDefaults, MalformedSkillsOnlyTypesRejectWithoutMutatingEarnedSt
 
 TEST(StartingPerkDefaults, SkillsOnlyProfileDoesNotReadThePerkCatalogue)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto id = HeroTypeID(HeroTypeID::decode("core:astral"));
 	PerkState unavailable;
 	ASSERT_EQ(unavailable.compiledCatalogue(), nullptr); // No capture is needed for skills-only starts.
@@ -224,6 +234,7 @@ TEST(StartingPerkDefaults, SkillsOnlyProfileDoesNotReadThePerkCatalogue)
 
 TEST(StartingPerkDefaults, SkillsOnlyProfilesAreIndependentOfHistoricalNavigationMarker)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	for(const auto * identity : {"core:sylvia", "core:voy"})
 	{
 		const auto id = HeroTypeID(HeroTypeID::decode(identity));
@@ -314,6 +325,7 @@ TEST_F(FreshHeroInitializationTest, EveryRegisteredCoreHeroActuallyStartsWithTwo
 
 TEST(StartingPerkDefaults, SinglePerkScenarioFallbackDoesNotBackfillAdvancedRanks)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto perks = freshPerks();
 	initializeStartingHeroPerks(perks, development(), HeroTypeID(HeroTypeID::decode("core:astral")), {}, {}, authorityExpert);
 	ASSERT_EQ(perks.getSelected().size(), 1);
@@ -326,6 +338,7 @@ TEST(StartingPerkDefaults, SinglePerkScenarioFallbackDoesNotBackfillAdvancedRank
 
 TEST(StartingPerkDefaults, SinglePerkRejectsMissingDuplicateForeignParentAndAdvancedChoicesAtomically)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto corruptAndReject = [](const std::function<void(JsonNode &)> & corrupt)
 	{
 		auto rules = development();

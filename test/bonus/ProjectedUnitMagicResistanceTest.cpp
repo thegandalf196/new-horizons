@@ -5,6 +5,7 @@
  * Full text of license available in license.txt file, in main folder
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../mock/mock_battle_IBattleState.h"
 #include "../mock/mock_battle_Unit.h"
 #include "../../lib/CStack.h"
@@ -56,6 +57,7 @@ public:
 class ProjectedUnitMagicResistanceTest : public Test
 {
 protected:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	CStackBasicDescriptor descriptor{CreatureID(0), 8};
 	CStackInstance base{nullptr, CreatureID(0), 8, true};
 	CStack subject{&descriptor, PlayerColor(0), 17, BattleSide::ATTACKER};

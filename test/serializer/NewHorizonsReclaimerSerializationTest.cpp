@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../server/battles/FullGameSnapshotTypes.h"
 #include "../../lib/StartInfo.h"
 #include "../hero/NewHorizonsHeroRulesFixture.h"
@@ -155,6 +156,7 @@ TEST(NewHorizonsReclaimerSerialization, CurrentBattleResultsAppliedRoundtripReta
 }
 TEST(NewHorizonsReclaimerSerialization, GlobalAndResolvedPolicyCapturePreserveZeroAndAbsence)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto source = policy();
 	ASSERT_NO_THROW(newHorizonsHeroes::validateHeroRules(source, true));
 	const auto captured = newHorizonsHeroes::resolveHeroRules(source, HeroClassID(0));
@@ -167,6 +169,7 @@ TEST(NewHorizonsReclaimerSerialization, GlobalAndResolvedPolicyCapturePreserveZe
 }
 TEST(NewHorizonsReclaimerSerialization, PolicySettingsCurrentRoundtripAndOldPrefixRefusal)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	GameSettings source;
 	source.addOverride(EGameSettings::HEROES_NEW_HORIZONS, policy());
 	CMemorySerializer old;

@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 #include "../../PerkTestSetup.h"
 #include "../../../lib/GameLibrary.h"
 #include "../../../lib/GameConstants.h"
@@ -327,6 +328,7 @@ TEST(NewHorizonsMercenaryProtocolTest, MalformedOriginsRejectAndLegacyReaderClea
 }
 TEST(NewHorizonsMercenaryProtocolTest, MovementBonusAndCompositePacketOldPrefixesReject)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	RebalanceStacks move;
 	move.srcArmy = ObjectInstanceID(1); move.dstArmy = ObjectInstanceID(2);
 	move.srcSlot = SlotID(0); move.dstSlot = SlotID(0); move.count = 1;

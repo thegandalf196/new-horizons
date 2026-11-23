@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 
 #include "EffectFixture.h"
 
@@ -28,6 +29,7 @@ using namespace ::testing;
 class ObstacleTest : public Test, public EffectFixture
 {
 public:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	ObstacleTest()
 		: EffectFixture("core:obstacle")
 	{
@@ -143,6 +145,7 @@ TEST_F(ObstacleTest, MassiveSkipsHexCheck)
 class ObstacleApplyTest : public Test, public EffectFixture
 {
 public:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	ObstacleApplyTest()
 		: EffectFixture("core:obstacle")
 	{

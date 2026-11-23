@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/spells/NewHorizonsTimedBuffMagnitude.h"
 #include "../../lib/spells/NewHorizonsSorceryRevision.h"
 #include "../../lib/spells/CSpell.h"
@@ -23,6 +24,7 @@ TEST(NewHorizonsTimedBuffMagnitudeTest, SlowSharesBaseCapAndLateTowardZeroVarian
 
 TEST(NewHorizonsTimedBuffMagnitudeTest, LoadedHasteAndFortuneMasteryValuesAreReadFromTheEffectiveDefinition)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto * haste = SpellID(SpellID::HASTE).toSpell();
 	const auto * fortune = SpellID(SpellID::FORTUNE).toSpell();
 	ASSERT_NE(haste, nullptr);

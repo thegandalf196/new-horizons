@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../server/battles/FullGameSnapshotTypes.h"
 #include "../../lib/GameSettings.h"
 #include "../../lib/CStack.h"
@@ -92,6 +93,7 @@ TEST(NewHorizonsAerialSupremacySerialization, HistoricalAbsenceAndMalformedPolic
 
 TEST(NewHorizonsAerialSupremacySerialization, StackBattleAndStartRejectRoundStateBeforeEveryPrefix)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	for(const int round : {-2, 1})
 	{
 		auto stack = std::make_unique<CStack>();

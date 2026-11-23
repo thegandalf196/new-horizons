@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 #include "NewHorizonsSpecialtyProcFixture.h"
 #include "FullGameSnapshotTypes.h"
 #include "../../../lib/entities/hero/NewHorizonsHeroRules.h"
@@ -50,7 +51,9 @@ TEST_P(NewHorizonsStrikeCaptureTest, CurrentCapturedPolicyAndStartingDevelopment
 	EXPECT_EQ(hero->getSpecialtyPresentation().name, GetParam() ? "Nullifying Shot" : "Perfect Mount");
 }
 INSTANTIATE_TEST_SUITE_P(CurrentNativePolicies, NewHorizonsStrikeCaptureTest, ::testing::Bool());
-TEST(OrdinaryStrikeBonusSerialization, NewTargetMdrEnumRejects1144BeforeDirectAndPacketPrefixes)
+using OrdinaryStrikeBonusSerialization = vcmiTestData::OriginalDataTest;
+
+TEST_F(OrdinaryStrikeBonusSerialization, NewTargetMdrEnumRejects1144BeforeDirectAndPacketPrefixes)
 {
 	Bonus effect(BonusDuration::STACK_GETS_TURN, BonusType::TARGET_MAGICAL_DAMAGE_REDUCTION_PENETRATION,
 		BonusSource::OTHER, 20, BonusSourceID());
@@ -71,7 +74,7 @@ TEST(OrdinaryStrikeBonusSerialization, NewTargetMdrEnumRejects1144BeforeDirectAn
 	EXPECT_NO_THROW(current.iser & restored);
 	EXPECT_EQ(restored.toJsonNode(), effect.toJsonNode());
 }
-TEST(OrdinaryStrikeBonusSerialization, Legacy1144PacketRetainsExactFieldOrderAndRoundtrip)
+TEST_F(OrdinaryStrikeBonusSerialization, Legacy1144PacketRetainsExactFieldOrderAndRoundtrip)
 {
 	SetStackEffect packet;
 	packet.battleID = BattleID(0);

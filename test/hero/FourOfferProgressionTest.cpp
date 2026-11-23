@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../PerkStateFixture.h"
 #include "../../lib/entities/hero/NewHorizonsFourOfferProgression.h"
 #include "../../lib/entities/hero/NewHorizonsPerkOperation.h"
@@ -142,6 +143,7 @@ TEST(FourOfferProgression, HeldGroupIdentityExposesFullPoolAndRejectsForgedOrDup
 
 TEST(FourOfferProgression, RepliesPreserveFixedPositionsAndCapturedCatalogueIndices)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto state = perkState();
 	FourOfferProgressionOffer offers;
 	offers.skills[1] = SecondarySkill(3);
@@ -192,6 +194,7 @@ TEST(FourOfferProgression, ConnoisseurKeepsSlotCategoryAndHighestUpgradeRank)
 
 TEST(FourOfferProgression, CompleteSnapshotRoundTripsWithoutRedrawing)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	HeroLevelUp original;
 	original.fourOffers = prepareFourOfferProgression({skill(0, 2, 8, true, 4), skill(1, 0, 1, true)}, first);
 	original.restoredOffer = true;
@@ -217,6 +220,7 @@ TEST(FourOfferProgression, NewPayloadRejectsOlderWriterBeforeAnyPrefix)
 
 TEST(FourOfferProgression, ExternalExpertRankStillBeginsWithBasicPerks)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto state = perkState();
 	auto offers = eligible(state, 3);
 	ASSERT_EQ(offers.size(), 4);
@@ -235,6 +239,7 @@ TEST(FourOfferProgression, ExternalExpertRankStillBeginsWithBasicPerks)
 
 TEST(FourOfferProgression, RequiredPerkStagesGateNormalRankAdvancement)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto state = perkState();
 	EXPECT_FALSE(state.canAdvanceSkillNormally("new-horizons:offense", 1));
 	EXPECT_FALSE(state.canAdvanceSkillNormally("new-horizons:offense", 2));
@@ -252,6 +257,7 @@ TEST(FourOfferProgression, RequiredPerkStagesGateNormalRankAdvancement)
 
 TEST(FourOfferProgression, ExtraEarlierTierPerkIsLegalAndWarnsWithoutMutatingTheHero)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto state = perkState();
 	const auto first = eligible(state, 1).front();
 	EXPECT_FALSE(perkChoiceBlocksTierCompletion(state, first, 1));
@@ -271,6 +277,7 @@ TEST(FourOfferProgression, ExtraEarlierTierPerkIsLegalAndWarnsWithoutMutatingThe
 
 TEST(FourOfferProgression, HistoricalUnifiedPolicyRetainsItsOnePerTierAndMandatorySemantics)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto state = perkState(true);
 	const auto basic = eligible(state, 1).front();
 	state.select(basic.selection.skillId, basic.selection.perkId, 1);
@@ -284,6 +291,7 @@ TEST(FourOfferProgression, HistoricalUnifiedPolicyRetainsItsOnePerTierAndMandato
 
 TEST(FourOfferProgression, CapturedPolicyRejectsOlderStateWriterBeforeItsPrefix)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto state = perkState();
 	CMemorySerializer memory;
 	memory.oser.version = ESerializationVersion::NEW_HORIZONS_LEADERSHIP_EFFICIENCY;
@@ -294,6 +302,7 @@ TEST(FourOfferProgression, CapturedPolicyRejectsOlderStateWriterBeforeItsPrefix)
 
 TEST(FourOfferProgression, ProductionWriterRoundTripsNewPolicyAndMultipleEarlierTierChoices)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto state = perkState();
 	for(int count = 0; count < 2; ++count)
 	{
@@ -311,6 +320,7 @@ TEST(FourOfferProgression, ProductionWriterRoundTripsNewPolicyAndMultipleEarlier
 
 TEST(FourOfferProgression, Released1159DevelopedStateRemainsReadableWithoutChangingItsPolicy)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	PerkState state;
 	state.replaceRules(estatesTest::legacyEstatesPerks());
 	for(int tier = 1; tier <= 3; ++tier)

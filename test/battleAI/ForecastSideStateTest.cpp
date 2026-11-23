@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt and AUTHORS. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "ForecastSideTestFixture.h"
 #include "../../AI/BattleAI/ForecastSideState.h"
 #include "../../AI/BattleAI/ForecastSideTransitions.h"
@@ -189,6 +190,7 @@ public:
 };
 TEST(ForecastSideState, KnownAbsenceStaysDistinctFromHiddenAndNeverReadsHiddenHero)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	using namespace ::testing;
 	NiceMock<AbsentSideSource> source;
 	source.magic = nativeRules::CapturedRuleDocument::compile(nativeRules::CapturedRuleKind::WorldMagic,

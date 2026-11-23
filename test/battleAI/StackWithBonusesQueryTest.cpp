@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "ProjectedTargetHitFixture.h"
 #include "../../AI/BattleAI/InitialExportBattleSubject.h"
 #include "../../lib/battle/BattleLayout.h"
@@ -811,7 +812,9 @@ public:
 	}
 };
 }
-TEST(VisibleHeroPolicyValueTest, CopiesPreserveVisibleHiddenAbsentAndUnavailableWithoutCertifyingNullAsVisible)
+using VisibleHeroPolicyValueTest = vcmiTestData::OriginalDataTest;
+
+TEST_F(VisibleHeroPolicyValueTest, CopiesPreserveVisibleHiddenAbsentAndUnavailableWithoutCertifyingNullAsVisible)
 {
 	testing::NiceMock<BattleStateMock> battle; colors(battle);
 	CGHeroInstance hero(nullptr), other(nullptr);
@@ -835,7 +838,7 @@ TEST(VisibleHeroPolicyValueTest, CopiesPreserveVisibleHiddenAbsentAndUnavailable
 	const auto missing = unavailable.battleGetVisibleHeroPolicy(BattleSide::ATTACKER).informationOnly();
 	EXPECT_EQ(missing.kind(), Knowledge::UNAVAILABLE); EXPECT_FALSE(missing.matchesSuppliedHero(nullptr));
 }
-TEST(VisibleHeroPolicyValueTest, InformationOnlyValueOutlivesSourceAddressAndCallback)
+TEST_F(VisibleHeroPolicyValueTest, InformationOnlyValueOutlivesSourceAddressAndCallback)
 {
 	std::optional<VisibleHeroPolicy> copied;
 	{
@@ -847,7 +850,7 @@ TEST(VisibleHeroPolicyValueTest, InformationOnlyValueOutlivesSourceAddressAndCal
 	ASSERT_TRUE(copied); EXPECT_EQ(copied->kind(), Knowledge::VISIBLE_HERO);
 	EXPECT_THROW(copied->legacyHero(), std::logic_error); EXPECT_FALSE(copied->matchesSuppliedHero(nullptr));
 }
-TEST(VisibleHeroPolicyValueTest, EssentialsVirtualDispatchPreservesCopiedPresenceWithoutNativeHeroQuery)
+TEST_F(VisibleHeroPolicyValueTest, EssentialsVirtualDispatchPreservesCopiedPresenceWithoutNativeHeroQuery)
 {
 	testing::NiceMock<BattleStateMock> battle; colors(battle); CGHeroInstance hero(nullptr);
 	EXPECT_CALL(battle, getSideHero(BattleSide::ATTACKER)).Times(1).WillOnce(Return(&hero));
@@ -859,7 +862,7 @@ TEST(VisibleHeroPolicyValueTest, EssentialsVirtualDispatchPreservesCopiedPresenc
 	EXPECT_FALSE(policy.matchesSuppliedHero(nullptr));
 }
 
-TEST(VisibleHeroPolicyValueTest, ProxyForwardsInformationOnlyPolicyWithoutResurrectingHeroAddress)
+TEST_F(VisibleHeroPolicyValueTest, ProxyForwardsInformationOnlyPolicyWithoutResurrectingHeroAddress)
 {
 	testing::NiceMock<BattleStateMock> battle; colors(battle); CGHeroInstance hero(nullptr);
 	EXPECT_CALL(battle, getSideHero(BattleSide::ATTACKER)).Times(1).WillOnce(Return(&hero));

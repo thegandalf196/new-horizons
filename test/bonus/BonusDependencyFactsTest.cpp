@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/bonuses/BonusDependencyFacts.h"
 #include "../../lib/bonuses/CBonusSystemNode.h"
 #include "../../lib/bonuses/Updaters.h"
@@ -337,6 +338,7 @@ TEST(BonusDependencyFactsTest, IncompleteUpdaterTraceAndOversizedRuleDagFailClos
 
 TEST(BonusDependencyFactsTest, ActualNativeLimitationFiltersOrdinarySylvanSummonWithoutWildChance)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	CBonusSystemNode stack(BonusNodeType::STACK_BATTLE);
 	auto sf = facts();
 	const SecondarySkill sylvan(SecondarySkill::decode("new-horizons:sylvanLuck"));

@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 #include "EffectFixture.h"
 #include "../../../lib/spells/CSpell.h"
 #include "../../../lib/spells/NewHorizonsSorcerySpells.h"
@@ -34,6 +35,7 @@ public:
 class NewHorizonsSorceryEffects : public Test, public EffectFixture
 {
 protected:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	NiceMock<UnitEnvironmentMock> environment;
 	SpellID focus = SpellID::NONE;
 	NewHorizonsSorceryEffects() : EffectFixture("core:damage") {}

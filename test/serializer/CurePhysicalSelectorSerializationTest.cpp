@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/battle/BattleAction.h"
 #include "../../lib/battle/NewHorizonsCrisisCommand.h"
 #include "../../lib/networkPacks/PacksForServer.h"
@@ -101,6 +102,7 @@ template<class T> void rejectedHistoricalRead(T & owner)
 }
 TEST(CurePhysicalSelectorSerialization, GraveDustRejectsDirectAndEverySupportedActionOwnerBeforePrefix)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto direct = action("graveDust");
 	auto server = request("graveDust");
 	auto client = announcement("graveDust");
@@ -123,6 +125,7 @@ TEST(CurePhysicalSelectorSerialization, GraveDustRejectsDirectAndEverySupportedA
 }
 TEST(CurePhysicalSelectorSerialization, Exact1152DirectRequestAndAnnouncementRoundtripAndResaveKeepBytes)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto source = action("graveDust");
 	const auto bytes = encode(source, successor);
 	auto restored = decode<BattleAction>(bytes, successor);
@@ -147,6 +150,7 @@ TEST(CurePhysicalSelectorSerialization, Exact1152DirectRequestAndAnnouncementRou
 }
 TEST(CurePhysicalSelectorSerialization, HistoricalFieldBearingReadersRefuseGraveDustAcrossAllActionOwners)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto direct = action("graveDust"); auto server = request("graveDust"); auto client = announcement("graveDust");
 	auto returned = frame("graveDust"); auto state = suspension("graveDust"); auto update = transition("graveDust");
 	rejectedHistoricalRead(direct); rejectedHistoricalRead(server); rejectedHistoricalRead(client);
@@ -154,6 +158,7 @@ TEST(CurePhysicalSelectorSerialization, HistoricalFieldBearingReadersRefuseGrave
 }
 TEST(CurePhysicalSelectorSerialization, OnlyExactFrozenAndGraveDustNamesAreAdmitted)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	for(const std::string kind : {"poison", "disease", "stoneGaze", "GraveDust", "graveDust "})
 	{
 		auto direct = action(kind); auto server = request(kind); auto client = announcement(kind);
@@ -167,6 +172,7 @@ TEST(CurePhysicalSelectorSerialization, OnlyExactFrozenAndGraveDustNamesAreAdmit
 }
 TEST(CurePhysicalSelectorSerialization, MalformedDecodedNameFailsClosedWithoutInventingGenericAfflictionAdmission)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto source = action("graveDust");
 	auto bytes = encode(source, successor);
 	const std::string original = "graveDust", invalid = "stoneGaze";
@@ -182,6 +188,7 @@ TEST(CurePhysicalSelectorSerialization, MalformedDecodedNameFailsClosedWithoutIn
 }
 TEST(CurePhysicalSelectorSerialization, PreFrozenReadsClearReusedSelectorsAndFrozenBoundaryRemainsHistorical)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto empty = action("");
 	const auto bytes = encode(empty, beforeFrozen());
 	CMemorySerializer wire(bytes);
@@ -204,6 +211,7 @@ TEST(CurePhysicalSelectorSerialization, PreFrozenReadsClearReusedSelectorsAndFro
 }
 TEST(CurePhysicalSelectorSerialization, EmptyAndFrozen1151BytesStayIdenticalAt1152ForDirectAndOwnedForms)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	for(const std::string kind : {"", "frozen"})
 	{
 		auto direct = action(kind); auto server = request(kind); auto client = announcement(kind);
@@ -218,6 +226,7 @@ TEST(CurePhysicalSelectorSerialization, EmptyAndFrozen1151BytesStayIdenticalAt11
 }
 TEST(CurePhysicalSelectorSerialization, CrisisOwnedActionShapeIsRetainedAndCurrentResaveIsExact)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto source = suspension("graveDust");
 	ASSERT_NO_THROW(source.validateShape()); // Existing shape already permits completed HERO_SPELL actions.
 	const auto bytes = encode(source, successor);
@@ -239,6 +248,7 @@ TEST(CurePhysicalSelectorSerialization, ExistingUnrelatedWritePreflightStillReje
 }
 TEST(CurePhysicalSelectorSerialization, ReplayAnnouncementUsesDeclaredCodecWithoutApplyingAction)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto source = announcement("graveDust");
 	const auto bytes = encode(source, successor);
 	auto restored = decode<StartAction>(bytes, successor);

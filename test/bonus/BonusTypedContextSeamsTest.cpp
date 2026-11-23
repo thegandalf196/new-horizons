@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/bonuses/BonusEvaluationContext.h"
 #include "../../lib/bonuses/Limiters.h"
 #include "../../lib/battle/BattleBonusAcceptance.h"
@@ -41,6 +42,7 @@ TEST(BonusTypedContextSeamsTest, RankPreservesLazyTwoReadAndShortCircuitBoundari
 }
 TEST(BonusTypedContextSeamsTest, CommanderDirectAbsenceDiffersFromBattleCommanderDiscard)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	RankCounter commander(BonusNodeType::COMMANDER);
 	EXPECT_FALSE(BonusEvaluationContext(commander).matchesRank(0, 10));
 	CStackBasicDescriptor descriptor(CreatureID(0), 8);
@@ -51,6 +53,7 @@ TEST(BonusTypedContextSeamsTest, CommanderDirectAbsenceDiffersFromBattleCommande
 }
 TEST(BonusTypedContextSeamsTest, CreatureExactMatchNeedsNoUnrelatedFamilyLookup)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	CStackInstance native(nullptr, CreatureID(0), 8, true);
 	BonusEvaluationContext context(native);
 	EXPECT_EQ(context.matchesCreature(CreatureID(0), false), true);
@@ -84,6 +87,7 @@ TEST(BonusTypedContextSeamsTest, NativeTerrainAcceptedDependencyPrecedesFactionR
 }
 TEST(BonusTypedContextSeamsTest, NativeUnrelatedSourceAcceptanceDoesNotResolveHeroOrRegistry)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	CStackBasicDescriptor descriptor(CreatureID(0), 8);
 	CStack native(&descriptor, PlayerColor(0), 17, BattleSide::ATTACKER);
 	const Bonus bonus = value();

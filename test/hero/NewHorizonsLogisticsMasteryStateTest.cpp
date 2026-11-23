@@ -1,5 +1,6 @@
 /* Part of VCMI; GPL v2 or later, see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "NewHorizonsLogisticsMasteryFixture.h"
 #include "../../lib/serializer/CMemorySerializer.h"
 
@@ -7,6 +8,7 @@ using namespace newHorizonsHeroes;
 
 TEST(NewHorizonsLogisticsMasteryState, BothPreGainFamiliesOfferSequentiallyAndRoundtrip)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	MasteryState state;
 	state.rules = logisticsMasteryRules();
 	state.captureBeforeLevel(2, 3, 3);
@@ -38,6 +40,7 @@ TEST(NewHorizonsLogisticsMasteryState, BothPreGainFamiliesOfferSequentiallyAndRo
 
 TEST(NewHorizonsLogisticsMasteryState, NewlyExpertLogisticsWaitsAndLegacyNeverInventsFamily)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	MasteryState state;
 	state.rules = logisticsMasteryRules();
 	state.captureBeforeLevel(2, 0, 2);
@@ -54,6 +57,7 @@ TEST(NewHorizonsLogisticsMasteryState, NewlyExpertLogisticsWaitsAndLegacyNeverIn
 
 TEST(NewHorizonsLogisticsMasteryState, WrongFamilyAndUnsupportedVersionReject)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto rules = logisticsMasteryRules();
 	rules["rulesetVersion"].Integer() = 1;
 	EXPECT_THROW(validateMasteryRules(rules), std::runtime_error);
@@ -70,6 +74,7 @@ TEST(NewHorizonsLogisticsMasteryState, WrongFamilyAndUnsupportedVersionReject)
 
 TEST(NewHorizonsLogisticsMasteryState, OldArtilleryBinaryLoadsWithoutInventingLogisticsAndNewStateCannotDowngrade)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	MasteryState artillery;
 	artillery.rules = JsonNode(JsonPath::builtin("config/newHorizonsMasteries"));
 	artillery.captureBeforeLevel(2, 3);
@@ -136,6 +141,7 @@ TEST(NewHorizonsLogisticsMasteryState, OldFormatEmptyObjectRulesStayEmptyOnWrite
 
 TEST(NewHorizonsLogisticsMasteryState, OldFormatVersionInspectionPreservesIntegralFloatRepresentation)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	JsonNode rules(JsonPath::builtin("config/newHorizonsMasteries"));
 	rules["rulesetVersion"].Float() = 1.0;
 	checkOldRulesRoundtrip(rules);
@@ -143,6 +149,7 @@ TEST(NewHorizonsLogisticsMasteryState, OldFormatVersionInspectionPreservesIntegr
 
 TEST(NewHorizonsLogisticsMasteryState, CrossoverPreservesFloatRulesAndLegacyEmptyEnvelopes)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	MasteryState source;
 	auto captured = JsonNode(JsonPath::builtin("config/newHorizonsMasteries"));
 	captured["rulesetVersion"].Float() = 1.0;

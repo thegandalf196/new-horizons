@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 
 #include "../server/battles/BattleTestFixture.h"
 #include "../../lib/bonuses/Bonus.h"
@@ -42,6 +43,7 @@ void expectStatusMetadata(const Bonus & actual, const Bonus & expected)
 
 TEST(BonusStatusTagsTest, JsonRoundTripRejectsUnknownDuplicateAndMalformedMetadata)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	Bonus tagged = makeStatusBonus("test.slow.primary", -4, PlayerColor(0));
 	const JsonNode json = tagged.toJsonNode();
 	ASSERT_EQ(json["statusTags"].getType(), JsonNode::JsonType::DATA_VECTOR);
@@ -104,6 +106,7 @@ TEST(BonusStatusTagsTest, JsonRoundTripRejectsUnknownDuplicateAndMalformedMetada
 
 TEST(BonusStatusTagsTest, NonTransferableTagRoundTripsAndRejectsDuplicate)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	Bonus tagged = makeStatusBonus("test.slow.fixed", -4, PlayerColor(0));
 	tagged.statusTags.push_back(BonusStatusTag::NON_TRANSFERABLE);
 	const auto json = tagged.toJsonNode();
@@ -161,6 +164,7 @@ TEST(BonusStatusTagsTest, PolymorphMarkerRecognitionPreservesLegacyAndExplicitNo
 
 TEST(BonusStatusTagsTest, BonusAndStackEffectPacketRoundTripAndRejectLossyDownsave)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const Bonus tagged = makeStatusBonus("test.slow.primary", -4, PlayerColor(0));
 	Bonus invalidTag = tagged;
 	invalidTag.statusTags = {static_cast<BonusStatusTag>(255)};

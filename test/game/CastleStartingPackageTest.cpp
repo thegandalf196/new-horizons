@@ -7,6 +7,7 @@
  * Full text of license available in license.txt file, in main folder
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../mock/TinyMapGameTest.h"
 #include "../../lib/GameLibrary.h"
 #include "../../lib/CCreatureHandler.h"
@@ -242,7 +243,9 @@ INSTANTIATE_TEST_SUITE_P(OrdinaryCastleAndGriffinSpecialist, CastleStartingPacka
 	::testing::Values("core:orrin", "core:adela", "core:valeska", "core:edric"),
 	[](const auto & info) { return std::string(info.param).substr(5); });
 
-TEST(CastleStartingPackagePolicy, CapturedOptInIsStrictAndOlderCapturesRetainOriginalRows)
+using CastleStartingPackagePolicy = vcmiTestData::OriginalDataTest;
+
+TEST_F(CastleStartingPackagePolicy, CapturedOptInIsStrictAndOlderCapturesRetainOriginalRows)
 {
 	auto context = configured();
 	const auto & hero = prototype("core:orrin");
@@ -278,7 +281,7 @@ TEST(CastleStartingPackagePolicy, CapturedOptInIsStrictAndOlderCapturesRetainOri
 	}
 }
 
-TEST(CastleStartingPackagePolicy, BaseUpgradeFormsUseResolvedSpecialtyAndPreserveEveryOtherProjectionField)
+TEST_F(CastleStartingPackagePolicy, BaseUpgradeFormsUseResolvedSpecialtyAndPreserveEveryOtherProjectionField)
 {
 	const auto context = configured();
 	for(const char * key : {"core:orrin", "core:adela", "core:valeska", "core:edric", "core:pasis"})
@@ -316,7 +319,9 @@ TEST(CastleStartingPackagePolicy, BaseUpgradeFormsUseResolvedSpecialtyAndPreserv
 	}
 }
 
-TEST(CommandStartingPackagePolicy, SpecialUpgradeSpecialtiesPermitTargetsWithoutGrantingAllSources)
+using CommandStartingPackagePolicy = vcmiTestData::OriginalDataTest;
+
+TEST_F(CommandStartingPackagePolicy, SpecialUpgradeSpecialtiesPermitTargetsWithoutGrantingAllSources)
 {
 	const auto context = configured();
 	for(const auto & [key, target, sources] : std::vector<std::tuple<const char *, const char *, std::vector<const char *>>>{
@@ -345,7 +350,7 @@ TEST(CommandStartingPackagePolicy, SpecialUpgradeSpecialtiesPermitTargetsWithout
 	}
 }
 
-TEST(CommandStartingPackagePolicy, FixedCampaignCreatureLimitersRespectUpgradesAndCapturedRetargeting)
+TEST_F(CommandStartingPackagePolicy, FixedCampaignCreatureLimitersRespectUpgradesAndCapturedRetargeting)
 {
 	const auto context = configured();
 	for(const auto & [key, base, upgrade] : std::vector<std::tuple<const char *, const char *, const char *>>{
@@ -376,7 +381,7 @@ TEST(CommandStartingPackagePolicy, FixedCampaignCreatureLimitersRespectUpgradesA
 	}
 }
 
-TEST(CommandStartingPackagePolicy, FixedPermissionRequiresCreatureLimiterAndAuthoredUpgradeFlag)
+TEST_F(CommandStartingPackagePolicy, FixedPermissionRequiresCreatureLimiterAndAuthoredUpgradeFlag)
 {
 	const auto context = configured();
 	PackagePrototype hero(prototype("core:orrin"));
@@ -461,7 +466,7 @@ void expectPrototypeCommandLegality(const CHero & hero, const StartingHeroContex
 		}
 }
 
-TEST(CommandStartingPackagePolicy, EveryRegisteredPrototypeDefaultIsLegalAtCapturedLevelOne)
+TEST_F(CommandStartingPackagePolicy, EveryRegisteredPrototypeDefaultIsLegalAtCapturedLevelOne)
 {
 	const auto context = configured();
 	const newHorizonsCreatures::CreatureCategoryRules categories(

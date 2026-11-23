@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../server/battles/FullGameSnapshotTypes.h"
 #include "../HistoricalFactionPerkRules.h"
 #include "../server/battles/HistoricalNecromancy087Fixture.h"
@@ -78,6 +79,7 @@ TEST(NewHorizonsNecromancyCapture, RegistryRejectsMalformedPresentPolicyAndRetai
 
 TEST(NewHorizonsNecromancyCapture, PerkStateRefusesLossyWriterAndRoundTripsBothPolicyEpochs)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	newHorizonsHeroes::PerkState current;
 	current.replaceRules(capturedNecromancy());
 	rejectsBeforePrefix(current);
@@ -117,6 +119,7 @@ TEST(NewHorizonsNecromancyCapture, PerkStateRefusesLossyWriterAndRoundTripsBothP
 
 TEST(NewHorizonsNecromancyCapture, SettingsReaderRejectsBeforeReplacingExistingOverrides)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	GameSettings current;
 	const auto rules = capturedNecromancy();
 	current.addOverride(EGameSettings::HEROES_NEW_HORIZONS_PERKS, rules);
@@ -158,6 +161,7 @@ TEST(NewHorizonsNecromancyCapture, SettingsReaderRejectsBeforeReplacingExistingO
 
 TEST(NewHorizonsNecromancyCapture, HeroAndEnclosingMapWritersRefuseBeforeTheirPrefixes)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto hero = std::make_shared<CGHeroInstance>(nullptr);
 	hero->setHeroType(HeroTypeID(0));
 	// Explicit fixture capture; production continues to capture through its world.
@@ -190,6 +194,7 @@ TEST(NewHorizonsNecromancyCapture, HeroAndEnclosingMapWritersRefuseBeforeTheirPr
 
 TEST(NewHorizonsNecromancyCapture, WorldCaptureRejectsLossyWriterBeforePrefix)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	CGameState world;
 	world.replaceCapturedPerkRules(capturedNecromancy());
 	rejectsBeforePrefix(world);
@@ -197,6 +202,7 @@ TEST(NewHorizonsNecromancyCapture, WorldCaptureRejectsLossyWriterBeforePrefix)
 
 TEST(NewHorizonsNecromancyCapture, PublishedV1RulesRoundTripUnderTheirOriginalFormat)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto captured = necromancy087Test::rules();
 	const auto published = isolatedNecromancyRules(captured);
 	EXPECT_EQ(published["skills"]["new-horizons:necromancy"], captured["skills"]["new-horizons:necromancy"]);

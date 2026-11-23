@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/entities/hero/NewHorizonsHeroRules.h"
 #include "../../lib/entities/hero/NewHorizonsRuleValidation.h"
 #include <array>
@@ -96,6 +97,7 @@ std::string failure(const std::function<void()> & call)
 
 TEST(NewHorizonsSkillSpecialtyQueryTest, EverySupportedSubsetMatchesTheFrozenTypedOracle)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const std::array<const char *, 5> names = {"core:logistics", "core:armorer", "core:offence", "core:archery", "core:estates"};
 	const std::array<SecondarySkill, 6> queries = {SecondarySkill(SecondarySkill::LOGISTICS),
 		SecondarySkill(SecondarySkill::ARMORER), SecondarySkill(SecondarySkill::OFFENCE),
@@ -150,6 +152,7 @@ TEST(NewHorizonsSkillSpecialtyQueryTest, MalformedLateEntriesAndOrderingMatchThe
 
 TEST(NewHorizonsSkillSpecialtyQueryTest, MutableRulesAndNavigationRemainLiveWithoutCaches)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto rules = rulesWithSkills({"core:armorer", "core:logistics"});
 	const SecondarySkill armorer(SecondarySkill::ARMORER);
 	EXPECT_EQ(skillSpecialtyCoreBonusPercent(rules, armorer), 20);
@@ -170,6 +173,7 @@ TEST(NewHorizonsSkillSpecialtyQueryTest, MutableRulesAndNavigationRemainLiveWith
 
 TEST(NewHorizonsSkillSpecialtyQueryTest, RepeatedScalarQueriesPreserveTheFrozenOracleChecksum)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	// Construct the shared input before timing: no map or save setup.
 	const auto rules = rulesWithSkills({"core:logistics", "core:armorer", "core:offence", "core:archery", "core:estates"});
 	const auto before = rules;

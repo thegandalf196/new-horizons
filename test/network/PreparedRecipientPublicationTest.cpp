@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/network/NetworkConnection.h"
 #include "../../lib/network/PreparedNetworkBatch.h"
 #include "../../lib/serializer/GameConnection.h"
@@ -160,6 +161,7 @@ TEST_F(PreparedRecipientPublicationTest, TwoGameConnectionsCanAliasOneEndpointWi
 
 TEST_F(PreparedRecipientPublicationTest, LaterRecipientVersionRefusalPublishesNothingAndKeepsDictionaries)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto old = std::make_shared<GameConnection>(sender);
 	old->setSerializationVersion(static_cast<ESerializationVersion>(
 		static_cast<int>(ESerializationVersion::NEW_HORIZONS_PHOENIX_SPARK) - 1));
@@ -526,6 +528,7 @@ TEST_F(PreparedTcpPublicationTest, MixedBuiltInRecipientsAcceptOneOwnedBatch)
 
 TEST_F(PreparedTcpPublicationTest, LaterInternalVersionRefusalCannotPublishEarlierTcpPrefix)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	Recorder internalListener;
 	auto internalSender = std::make_shared<InternalConnection>(listener, context);
 	auto internalReceiver = std::make_shared<InternalConnection>(internalListener, context);

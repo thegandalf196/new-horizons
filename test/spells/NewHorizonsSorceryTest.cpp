@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 
 #include "../../lib/spells/NewHorizonsSorcery.h"
 #include "../../lib/spells/NewHorizonsSorceryRevision.h"
@@ -56,6 +57,7 @@ TEST(NewHorizonsSorceryTest, PhantomDamageSplitIsNotACloneApproximation)
 
 TEST(NewHorizonsSorceryRevisionTest, CapturedProfilesPassRealSchemaAndRoundTripWithoutInstalledFallback)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
 	ASSERT_TRUE(JsonUtils::validate(rules, "vcmi:newHorizonsMagicV3", "Sorcery revision schema"));
 	ASSERT_NO_THROW(newHorizonsMagic::validateRules(rules));
@@ -113,6 +115,7 @@ TEST(NewHorizonsSorceryRevisionTest, RejectsMalformedMisplacedAndUnsupportedRevi
 
 TEST(NewHorizonsSorceryRevisionTest, HistoricalCrusadeFixtureRestoresPreSorceryRosterWithoutMutatingInput)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const JsonNode current(JsonPath::builtin("config/newHorizonsMagic"));
 	for(const int version : {2, 3})
 	{

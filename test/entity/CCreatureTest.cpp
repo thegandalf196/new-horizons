@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 
 #include "../../lib/CCreatureHandler.h"
 #include "../../lib/json/JsonNode.h"
@@ -21,6 +22,7 @@ using namespace ::testing;
 class CCreatureTest : public Test
 {
 public:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	MOCK_METHOD4(registarCb, void(int32_t, int32_t, const std::string &, const std::string &));
 protected:
 	std::shared_ptr<CCreature> subject;

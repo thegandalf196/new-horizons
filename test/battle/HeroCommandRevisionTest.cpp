@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/battle/HeroCommand.h"
 #include "../../lib/battle/SideInBattle.h"
 #include "../server/battles/HeroCommandFixture.h"
@@ -48,6 +49,7 @@ TEST(HeroCommandRevision, CurrentRosterDoesNotReinterpretHistoricalIds)
 
 TEST(HeroCommandRevision, NominalVanguardUsesMinimumRatingAndExactStepBoundaries)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	EXPECT_EQ(vanguard(2, 74, 999, 0).revision->vanguardStatBonus, 1);
 	EXPECT_EQ(vanguard(2, 75, 999, 0).revision->vanguardStatBonus, 2);
 	EXPECT_EQ(vanguard(2, 999, 149, 0).revision->vanguardStatBonus, 2);
@@ -61,6 +63,7 @@ TEST(HeroCommandRevision, NominalVanguardUsesMinimumRatingAndExactStepBoundaries
 
 TEST(HeroCommandRevision, NominalDurationIncludesIssuingRoundAndClampsAtThree)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	for(const auto leadership : {0, 749, 750, 1499})
 		EXPECT_EQ(vanguard(7, 0, 0, leadership).revision->expiresAfterRound, 7);
 	EXPECT_EQ(vanguard(7, 0, 0, 1500).revision->expiresAfterRound, 8);
@@ -76,6 +79,7 @@ TEST(HeroCommandRevision, NominalDurationIncludesIssuingRoundAndClampsAtThree)
 
 TEST(HeroCommandRevision, NominalFeintCapsAtSixtyAndLastsOneRound)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto definition = revisedRules()["commands"]["feint"];
 	EXPECT_EQ(heroCommands::nominalRevisedOrderSnapshot(HeroCommand::FEINT, 3, 0, 0, 0, definition).feintReductionPercent, 15);
 	EXPECT_EQ(heroCommands::nominalRevisedOrderSnapshot(HeroCommand::FEINT, 3, 0, 0, 1000, definition).feintReductionPercent, 30);
@@ -85,6 +89,7 @@ TEST(HeroCommandRevision, NominalFeintCapsAtSixtyAndLastsOneRound)
 
 TEST(HeroCommandRevision, SameOrderRefreshReplacesSnapshotAndKeepsOtherOrders)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	SideInBattle side(nullptr);
 	side.upsertOrder(vanguard(4, 150, 150, 2250));
 	HeroOrderState charge;
@@ -143,6 +148,7 @@ TEST(HeroCommandRevision, ProfileGateAndMalformedSnapshotFailClosed)
 
 TEST(HeroCommandRevision, EfficiencyAffectsDerivedTermsAndUsesMinimumAfterIndividualAdjustment)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto rules = revisedRules();
 	const auto & definition = rules["commands"]["vanguard"];
 	const auto base = heroCommands::scaledRevisedOrderSnapshot(HeroCommand::VANGUARD, 4, 70, 100, 1500, definition, 100, 100, 100);
@@ -161,6 +167,7 @@ TEST(HeroCommandRevision, EfficiencyAffectsDerivedTermsAndUsesMinimumAfterIndivi
 
 TEST(HeroCommandRevision, LuckyDayFinalizationCapsOnceAndDoesNotScaleCompanionOrDuration)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	HeroOrderState order;
 	order.command = HeroCommand::FEINT;
 	order.issuedRound = 4;
@@ -198,6 +205,7 @@ TEST(HeroCommandRevision, LuckyDayFinalizationCapsOnceAndDoesNotScaleCompanionOr
 
 TEST(HeroCommandRevision, CrownVariantSnapshotRoundTripsAndRejectsMissingProvenance)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	HeroOrderState order;
 	order.command = HeroCommand::FEINT;
 	order.issuedRound = 4;

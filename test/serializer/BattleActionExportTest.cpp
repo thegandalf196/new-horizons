@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../tools/native/BattleActionExport.h"
 #include "../server/battles/BattleTestFixture.h"
 #include "../../lib/bonuses/NativeBonusGraphAccess.h"
@@ -62,6 +63,7 @@ std::vector<std::byte> bytes(const ReplayLog & replay)
 }
 TEST(BattleActionExportTest, SelectedIntervalRetainsExplicitOrderAndSeparateCastWithoutApplyingPackets)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto replay = log();
 	start(replay, 3);
 	StartAction action(BattleAction::makeHeroCommand(BattleSide::ATTACKER, HeroCommand::CHARGE));
@@ -95,6 +97,7 @@ TEST(BattleActionExportTest, SelectedIntervalRetainsExplicitOrderAndSeparateCast
 }
 TEST(BattleActionExportTest, AutomaticHeroCastRetainsCurrentProvenanceWithoutRetiredMetamagicFields)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto replay = log();
 	start(replay, 3);
 	BattleSpellCast cast;
@@ -126,6 +129,7 @@ TEST(BattleActionExportTest, AutomaticHeroCastRetainsCurrentProvenanceWithoutRet
 }
 TEST(BattleActionExportTest, SelectionIsAnExplicitRetainedStartIndex)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto replay = log();
 	start(replay, 5);
 	finish(replay, 5);
@@ -140,6 +144,7 @@ TEST(BattleActionExportTest, SelectionIsAnExplicitRetainedStartIndex)
 }
 TEST(BattleActionExportTest, IncompleteMissingDescriptorResultOrEndedCannotBecomeExhaustiveEvidence)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	for(const int missing : {0, 1, 2})
 	{
 		auto replay = log();
@@ -167,6 +172,7 @@ TEST(BattleActionExportTest, UnknownProvenanceMalformedPayloadAndDuplicateStarts
 }
 TEST(BattleActionExportTest, PacketIntervalAndOutputBudgetsFailClosed)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto replay = log();
 	start(replay, 0);
 	finish(replay, 0);
@@ -205,6 +211,7 @@ TEST(BattleActionExportTest, CatalogRetainsOrphansAndEmptyHistoryDoesNotInventAn
 
 TEST(BattleActionExportTest, CancelledBattleIsListedButNotExportedAsComplete)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto replay = log();
 	start(replay, 0);
 	BattleCancelled cancelled;
@@ -267,6 +274,7 @@ TEST_F(BattleActionExportContextTest, CompleteSelectedIntervalExportsActualNonem
 }
 TEST(BattleActionExportTest, MissingHistoricalSnapshotRefusesInsteadOfUsingFinalWorld)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	NativeBonusGraphAccess access;
 	auto replay = log();
 	CGameState historical;
@@ -276,6 +284,7 @@ TEST(BattleActionExportTest, MissingHistoricalSnapshotRefusesInsteadOfUsingFinal
 
 TEST(BattleActionExportTest, UnsummarizedBattleOwnershipAndInterleavingRemainExplicit)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto replay = log();
 	start(replay, 0);
 	start(replay, 9);

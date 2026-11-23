@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/bonuses/BonusParameters.h"
 #include "../../lib/bonuses/Propagators.h"
 #include "../../lib/bonuses/Updaters.h"
@@ -41,6 +42,7 @@ template<typename T> void expectPrefixRejectedWithCurrentRoundtrip(T & source)
 
 TEST(OwnedWorldBonusSerialization, ThreeRewardBonusListsGuardBeforeResources)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	for(size_t which = 0; which < 3; ++which)
 	{
 		Rewardable::Reward source;
@@ -53,6 +55,7 @@ TEST(OwnedWorldBonusSerialization, ThreeRewardBonusListsGuardBeforeResources)
 
 TEST(OwnedWorldBonusSerialization, VisitInfoGuardsBeforeLimiter)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	Rewardable::VisitInfo source{};
 	expectOldWritable(source);
 	source.reward.heroBonuses.push_back(marker());
@@ -61,6 +64,7 @@ TEST(OwnedWorldBonusSerialization, VisitInfoGuardsBeforeLimiter)
 
 TEST(OwnedWorldBonusSerialization, ConfigurationGuardsBeforeTextsAndVisitCount)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	Rewardable::Configuration source;
 	source.info.emplace_back();
 	expectOldWritable(source);
@@ -70,6 +74,7 @@ TEST(OwnedWorldBonusSerialization, ConfigurationGuardsBeforeTextsAndVisitCount)
 
 TEST(OwnedWorldBonusSerialization, RewardConfigurationPacketGuardsBeforeObjectId)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	SetRewardableConfiguration source;
 	source.configuration.info.emplace_back();
 	expectOldWritable(source);
@@ -79,6 +84,7 @@ TEST(OwnedWorldBonusSerialization, RewardConfigurationPacketGuardsBeforeObjectId
 
 TEST(OwnedWorldBonusSerialization, PlayerStoredAndBattleBonusPayloadsGuardBeforeColor)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	for(const bool battleList : {false, true})
 	{
 		PlayerState source(nullptr);

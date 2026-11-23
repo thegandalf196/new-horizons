@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/entities/hero/NewHorizonsReclaimer.h"
 #include "../../lib/entities/hero/NewHorizonsNecromancy.h"
 #include "../../lib/json/JsonNode.h"
@@ -72,6 +73,7 @@ TEST(NewHorizonsReclaimerRules, StrictPolicyRejectsUnsupportedMissingUnknownAndM
 }
 TEST(NewHorizonsReclaimerRules, ResidualFloorAndRemaindersConserveSkeletonEquivalents)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto base = ordinary(400);
 	const auto partial = newHorizonsNecromancy::reclaimResidualSkeletons(base, 25, 0, 100);
 	EXPECT_EQ(partial.skeletonsRaised, 31);
@@ -86,6 +88,7 @@ TEST(NewHorizonsReclaimerRules, ResidualFloorAndRemaindersConserveSkeletonEquiva
 }
 TEST(NewHorizonsReclaimerRules, OrdinaryCoreEliteAndChampionConversionsRemainFirst)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto base = newHorizonsNecromancy::resolve(2, 200, 60, false, false, true,
 		true, true, 0, 100, 30, true, true, CreatureID::NONE, {}, {}, true, true);
 	ASSERT_EQ(base.boneDragonsRaised, 1);
@@ -103,6 +106,7 @@ TEST(NewHorizonsReclaimerRules, OrdinaryCoreEliteAndChampionConversionsRemainFir
 }
 TEST(NewHorizonsReclaimerRules, ZeroSmallInactiveAndBlockedResultsDoNotGainOutputs)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	for(const int living : {0, 10, 20})
 	{
 		const auto base = ordinary(living);
@@ -124,6 +128,7 @@ TEST(NewHorizonsReclaimerRules, ZeroSmallInactiveAndBlockedResultsDoNotGainOutpu
 }
 TEST(NewHorizonsReclaimerRules, BlackHarvestAndSingleOutputIdentityUseFinalHeadcount)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto base = ordinary(120);
 	ASSERT_EQ(base.manaRecovered, 1);
 	const auto enhanced = newHorizonsNecromancy::reclaimResidualSkeletons(base, 100, 0, 100);
@@ -136,6 +141,7 @@ TEST(NewHorizonsReclaimerRules, BlackHarvestAndSingleOutputIdentityUseFinalHeadc
 }
 TEST(NewHorizonsReclaimerRules, SkeletonUpgradeRetainsOnlySurvivingSkeletonOutput)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto upgrade = CreatureID(CreatureID::decode("core:skeletonWarrior"));
 	auto base = ordinary(130);
 	base.skeletonCreature = upgrade;
@@ -149,6 +155,7 @@ TEST(NewHorizonsReclaimerRules, SkeletonUpgradeRetainsOnlySurvivingSkeletonOutpu
 }
 TEST(NewHorizonsReclaimerRules, WideBudgetArithmeticRetainsMaximumCountAndRejectsRepeatedConversion)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto base = newHorizonsNecromancy::resolve(3, std::numeric_limits<int32_t>::max(), 0,
 		false, false, false, true, true, 0, 100, 0, false, true, CreatureID::NONE, {}, {},
 		false, false, true, 100);
@@ -160,6 +167,7 @@ TEST(NewHorizonsReclaimerRules, WideBudgetArithmeticRetainsMaximumCountAndReject
 }
 TEST(NewHorizonsReclaimerRules, TypedSubsetValidityKeepsLegacyZeroAndRejectsInventedSources)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto legacy = ordinary(120);
 	EXPECT_TRUE(legacy.isReclaimerSummaryValid());
 	legacy.reclaimerZombiesRaised = -1;
@@ -178,6 +186,7 @@ TEST(NewHorizonsReclaimerRules, TypedSubsetValidityKeepsLegacyZeroAndRejectsInve
 
 TEST(NewHorizonsReclaimerRules, MalformedOrdinaryBatchCannotOverflowOrInventConvertedValue)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto invalid = ordinary(400);
 	invalid.zombiesRaised = std::numeric_limits<int32_t>::max();
 	EXPECT_THROW(newHorizonsNecromancy::reclaimResidualSkeletons(invalid, 100, 0, 100), std::invalid_argument);

@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 
 #include "../../lib/battle/OverwhelmingFormulaState.h"
 #include "../../lib/spells/CSpell.h"
@@ -49,6 +50,7 @@ std::shared_ptr<Bonus> reduction(BonusType type, int value, SpellSchool school)
 class OverwhelmingFormulaDamageTest : public ::testing::Test
 {
 protected:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	void SetUp() override
 	{
 		target.redirectBonusesToFake();

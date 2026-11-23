@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "NewHorizonsHeroRulesFixture.h"
 #include "../../lib/pathfinder/NewHorizonsMovement.h"
 #include "../../lib/json/JsonUtils.h"
@@ -19,7 +20,9 @@ JsonNode movementProfile()
 }
 }
 
-TEST(NewHorizonsMovementLevelGrowth, ApprovedDailyBudgetsAndWideLevelArithmetic)
+using NewHorizonsMovementLevelGrowth = vcmiTestData::OriginalDataTest;
+
+TEST_F(NewHorizonsMovementLevelGrowth, ApprovedDailyBudgetsAndWideLevelArithmetic)
 {
 	const auto rules = movementProfile();
 	for(const auto [level, expected] : {std::pair{1u, 200}, {10u, 209}, {20u, 219}, {30u, 229}})
@@ -33,7 +36,7 @@ TEST(NewHorizonsMovementLevelGrowth, ApprovedDailyBudgetsAndWideLevelArithmetic)
 		std::numeric_limits<int>::max());
 }
 
-TEST(NewHorizonsMovementLevelGrowth, CapturedPolicyIsIndependentAndHistoricalAbsenceStaysAbsent)
+TEST_F(NewHorizonsMovementLevelGrowth, CapturedPolicyIsIndependentAndHistoricalAbsenceStaysAbsent)
 {
 	auto rules = movementProfile();
 	ASSERT_TRUE(JsonUtils::validate(rules, "vcmi:newHorizonsHeroes", "daily Movement policy"));
@@ -50,7 +53,7 @@ TEST(NewHorizonsMovementLevelGrowth, CapturedPolicyIsIndependentAndHistoricalAbs
 	EXPECT_EQ(newHorizonsMovement::levelMovementBonus(historical, 20), 0);
 }
 
-TEST(NewHorizonsMovementLevelGrowth, PolicyRejectsMalformedOrUnsupportedData)
+TEST_F(NewHorizonsMovementLevelGrowth, PolicyRejectsMalformedOrUnsupportedData)
 {
 	for(const int points : {-1, 1001})
 	{

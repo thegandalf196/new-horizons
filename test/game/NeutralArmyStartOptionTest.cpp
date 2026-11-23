@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../mock/TinyMapGameTest.h"
 #include "../server/battles/FullGameSnapshotTypes.h"
 #include "../../lib/GameLibrary.h"
@@ -131,7 +132,9 @@ TEST_P(NeutralArmyStartOptionTest, FreshCaptureScalesOnceAndLoadIgnoresAnotherLo
 
 }
 INSTANTIATE_TEST_SUITE_P(AbsentAndExplicitBoundaries, NeutralArmyStartOptionTest, ::testing::Values(0, 1, 50, 75, 100));
-TEST(NeutralArmyStartOption, AbsentPreservesMapAndGlobalAndNonScenarioModesNeverApply)
+using NeutralArmyStartOption = vcmiTestData::OriginalDataTest;
+
+TEST_F(NeutralArmyStartOption, AbsentPreservesMapAndGlobalAndNonScenarioModesNeverApply)
 {
 	CMap map(nullptr);
 	map.overrideGameSetting(option, JsonNode(75));

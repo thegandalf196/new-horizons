@@ -9,6 +9,7 @@
  */
 
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 
 #include "../../lib/CBonusTypeHandler.h"
 #include "../../lib/CCreatureHandler.h"
@@ -26,6 +27,7 @@ namespace test
 class CombatScriptDescriptionTest : public ::testing::Test
 {
 public:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	static std::shared_ptr<Bonus> triggerBonus(const std::string & script, int value, const JsonNode & eventParameters = JsonNode())
 	{
 		auto scriptID = ScriptID(*LIBRARY->identifiers()->getIdentifier(ModScope::scopeGame(), "script", script, false));

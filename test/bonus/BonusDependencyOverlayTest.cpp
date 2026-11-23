@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/bonuses/BonusDependencyCapture.h"
 #include "../../lib/bonuses/OwnedRecipientBonusGraph.h"
 #include "../../lib/bonuses/Updaters.h"
@@ -34,7 +35,9 @@ OwnedRecipientBonusGraph::NodeInput baseInput()
 	return input;
 }
 }
-TEST(BonusDependencyOverlayTest, RecipientValuesDoNotRunLimitersUpdatersOrExtraStacking)
+using BonusDependencyOverlayTest = vcmiTestData::OriginalDataTest;
+
+TEST_F(BonusDependencyOverlayTest, RecipientValuesDoNotRunLimitersUpdatersOrExtraStacking)
 {
 	auto graph = OwnedRecipientBonusGraph::fromOwnedInputs({baseInput()}, 0);
 	auto layer = emptyLayer();
@@ -52,7 +55,7 @@ TEST(BonusDependencyOverlayTest, RecipientValuesDoNotRunLimitersUpdatersOrExtraS
 	const auto next = source.refresh(8, Change::Count, base, 0, &*first);
 	ASSERT_TRUE(next); EXPECT_EQ(next->prepared[0].unit.minDamage, 16);
 }
-TEST(BonusDependencyOverlayTest, NativeRawRemovalAliasesAndEarlierRecipientAdditionAliasesAreOwned)
+TEST_F(BonusDependencyOverlayTest, NativeRawRemovalAliasesAndEarlierRecipientAdditionAliasesAreOwned)
 {
 	auto graph = OwnedRecipientBonusGraph::fromOwnedInputs({baseInput()}, 0);
 	auto first = emptyLayer(), second = emptyLayer();
@@ -68,7 +71,7 @@ TEST(BonusDependencyOverlayTest, NativeRawRemovalAliasesAndEarlierRecipientAddit
 	const auto values = source.refresh(8, Change::Count, base, 0);
 	ASSERT_TRUE(values); EXPECT_EQ(values->prepared[0].unit.minDamage, 9);
 }
-TEST(BonusDependencyOverlayTest, SnapshotExpiryDoesNotResurrectNativeSpellRowsOnLaterCasualty)
+TEST_F(BonusDependencyOverlayTest, SnapshotExpiryDoesNotResurrectNativeSpellRowsOnLaterCasualty)
 {
 	auto input = baseInput();
 	auto spell = damage(6, BonusSource::SPELL_EFFECT);
@@ -94,7 +97,7 @@ TEST(BonusDependencyOverlayTest, SnapshotExpiryDoesNotResurrectNativeSpellRowsOn
 	const auto casualty = fresh.refresh(8, Change::Count, base, 0, &*newValues);
 	ASSERT_TRUE(casualty); EXPECT_EQ(casualty->prepared[0].unit.minDamage, 4);
 }
-TEST(BonusDependencyOverlayTest, UnresolvedNonProjectionRemovalAndRecipientPropagationFailClosed)
+TEST_F(BonusDependencyOverlayTest, UnresolvedNonProjectionRemovalAndRecipientPropagationFailClosed)
 {
 	auto graph = OwnedRecipientBonusGraph::fromOwnedInputs({baseInput()}, 0);
 	auto unknown = emptyLayer();

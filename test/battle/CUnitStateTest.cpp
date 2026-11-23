@@ -9,6 +9,7 @@
  */
 
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "mock/mock_BonusBearer.h"
 #include "mock/mock_UnitInfo.h"
 #include "mock/mock_UnitEnvironment.h"
@@ -31,6 +32,7 @@ static const int DEFAULT_DEFENCE = 63;
 class UnitStateTest : public Test
 {
 public:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	UnitInfoMock infoMock;
 	UnitEnvironmentMock envMock;
 	BonusBearerMock bonusMock;

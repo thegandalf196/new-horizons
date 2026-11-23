@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../OverkillRandomPrayerRules.h"
 #include "../../client/battle/CurrentFactionSkillPresentation.h"
 #include "../../lib/nativeRules/CapturedPerkRules.h"
@@ -22,6 +23,7 @@ TEST(CurrentFactionSkillPresentation, ShippingSkillsHaveExplicitRoutesWithoutLeg
 
 TEST(CurrentFactionSkillPresentation, CapturedCoreUsesCurrentRankNumbersWithoutCounters)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	// Overflow status text belongs to captured policy 6; Double Cast status is Phase 2 UI.
 	const auto owner = nativeRules::CapturedPerkRules::compile(overkillRandomPrayerRules());
 	const auto & rules = owner->metamagic();

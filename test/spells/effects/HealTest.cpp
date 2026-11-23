@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 
 #include "EffectFixture.h"
 
@@ -37,6 +38,7 @@ public:
 class HealTest : public Test, public EffectFixture
 {
 public:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 
 	HealTest()
 		: EffectFixture("core:heal")
@@ -402,6 +404,7 @@ TEST_F(HealTest, NotApplicableIfEffectValueTooLow)
 class HealApplyTest : public TestWithParam<::testing::tuple<EHealLevel, EHealPower>>, public EffectFixture
 {
 public:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	UnitEnvironmentMock unitEnvironmentMock;
 
 	EHealLevel healLevel;
@@ -575,6 +578,7 @@ INSTANTIATE_TEST_SUITE_P
 class HealApplyOneOffTest : public Test, public EffectFixture
 {
 public:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	UnitEnvironmentMock unitEnvironmentMock;
 
 	HealApplyOneOffTest()

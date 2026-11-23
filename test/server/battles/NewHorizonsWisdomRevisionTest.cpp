@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 #include "HeroCommandFixture.h"
 #include "../../../lib/GameLibrary.h"
 #include "../../../lib/ResourceSet.h"
@@ -47,6 +48,7 @@ TEST(NewHorizonsWisdomState, MomentumFirstCastEarnsForLaterCastsAndMissingRoundR
 }
 TEST(NewHorizonsWisdomState, CurrentWireRoundtripPreservesHistoryAndBranchCopiesAreIndependent)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	WisdomCombatState state;
 	state.recordCompletedCast(SpellID::HASTE, 1);
 	state.recordCompletedCast(SpellID::BLESS, 2);

@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "NewHorizonsHeroRulesFixture.h"
 #include "../../lib/entities/hero/NewHorizonsChosenSpecialties.h"
 #include "../../lib/entities/hero/HeroStartingProjection.h"
@@ -31,6 +32,7 @@ const CHero & heroType(std::string_view key)
 
 TEST(NewHorizonsChosenSpecialties, CapturesTuningAndPreservesHistoricalAbsence)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto installed = configuredRules();
 	const auto captured = resolveHeroRules(installed, HeroClassID(0));
 	ASSERT_TRUE(chosenSpecialtyRules(captured));
@@ -63,6 +65,7 @@ TEST(NewHorizonsChosenSpecialties, RejectsUnknownMalformedAndUnsupportedPolicy)
 
 TEST(NewHorizonsChosenSpecialties, CurrentStartingBooksReplaceOriginalInscriptionOnly)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto rules = configuredRules();
 	const JsonNode magic(JsonPath::builtin("config/newHorizonsMagic"));
 	const SpellID chosen(SpellID::decode("new-horizons:theChosen"));
@@ -78,6 +81,7 @@ TEST(NewHorizonsChosenSpecialties, CurrentStartingBooksReplaceOriginalInscriptio
 
 TEST(NewHorizonsChosenSpecialties, HistoricalStartingPolicyStillSelectsCrusade)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto rules = configuredRules();
 	rules.Struct().erase("chosenSpecialties");
 	for(const auto * hero : {"core:cuthbert", "core:loynis"}) // Book rows added with the 2026-11-20 Castle starts.
@@ -90,6 +94,7 @@ TEST(NewHorizonsChosenSpecialties, HistoricalStartingPolicyStillSelectsCrusade)
 
 TEST(NewHorizonsChosenSpecialties, SeparateRidersNeverScaleChosenAbilitiesOrLegacyCrusade)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto rules = configuredRules();
 	const SpellID chosen(SpellID::decode("new-horizons:theChosen"));
 	const SpellID crusade(SpellID::decode("new-horizons:crusade"));

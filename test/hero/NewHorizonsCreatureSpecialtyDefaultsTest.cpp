@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL v2.0 or later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "NewHorizonsHeroRulesFixture.h"
 #include "../mock/TinyMapGameTest.h"
 #include "../../lib/modding/CModHandler.h"
@@ -72,7 +73,9 @@ TEST_F(NewHorizonsCreatureSpecialtyDefaultsTest, ActualNewGameCapturesAllNineAnd
         EXPECT_EQ(restored.getHero(original->id)->getPrimaryGrowthRules(), original->getPrimaryGrowthRules());
     }
 }
-TEST(NewHorizonsCreatureSpecialtyDefaults, CapturedHistoricalAbsenceNeverReadsInstalledDefaults)
+using NewHorizonsCreatureSpecialtyDefaults = vcmiTestData::OriginalDataTest;
+
+TEST_F(NewHorizonsCreatureSpecialtyDefaults, CapturedHistoricalAbsenceNeverReadsInstalledDefaults)
 {
     // Deliberately construct only the five-feature-predecessor snapshot. This is
     // not a shared fixture rewrite and preserves every other captured field.

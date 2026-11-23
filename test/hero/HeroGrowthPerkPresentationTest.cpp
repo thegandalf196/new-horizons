@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../PerkStateFixture.h"
 
 #include "../../client/windows/HeroGrowthPerkPresentation.h"
@@ -74,6 +75,7 @@ void markPlanned(newHorizonsHeroes::PerkState & state, const std::string & id)
 
 TEST(HeroGrowthPerkPresentation, HistoricalSameTierAppearsInBothConsumersUntilCap)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto state = stateFor(true);
 	ASSERT_TRUE(newHorizonsHeroes::usesR2PerkOffers(state.getRules()));
 	ASSERT_FALSE(newHorizonsHeroes::usesStrictPerkProgression(state.getRules()));
@@ -99,6 +101,7 @@ TEST(HeroGrowthPerkPresentation, HistoricalSameTierAppearsInBothConsumersUntilCa
 
 TEST(HeroGrowthPerkPresentation, StrictAndPolicyOneRetainOnePerTier)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	for(const int policy : {1, 2})
 	{
 		auto state = stateFor();
@@ -128,6 +131,7 @@ TEST(HeroGrowthPerkPresentation, StrictAndPolicyOneRetainOnePerTier)
 
 TEST(HeroGrowthPerkPresentation, ExceptionalRanksAndRepeatedBasicDoNotSkipEarlierTiers)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	for(const bool historical : {false, true})
 	{
 		auto state = stateFor(historical);
@@ -150,6 +154,7 @@ TEST(HeroGrowthPerkPresentation, ExceptionalRanksAndRepeatedBasicDoNotSkipEarlie
 
 TEST(HeroGrowthPerkPresentation, PlannedAndSavedInactiveRemainVisibleWithoutAvailability)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto state = stateFor();
 	markPlanned(state, BASIC);
 	const auto before = state.toJson();
@@ -186,6 +191,7 @@ TEST(HeroGrowthPerkPresentation, PlannedAndSavedInactiveRemainVisibleWithoutAvai
 
 TEST(HeroGrowthPerkPresentation, AggregateCountsAndBrowserClassifierAgreeWithoutMutation)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	for(const bool historical : {false, true})
 	{
 		auto state = stateFor(historical);
@@ -227,6 +233,7 @@ TEST(HeroGrowthPerkPresentation, AggregateCountsAndBrowserClassifierAgreeWithout
 
 TEST(HeroGrowthPerkPresentation, MissingCapturedCatalogueFailsClosedEvenWithStaleDisplayDefinition)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto captured = stateFor();
 	const auto skill = skillFor(captured);
 	newHorizonsHeroes::PerkState legacy;
@@ -240,6 +247,7 @@ TEST(HeroGrowthPerkPresentation, MissingCapturedCatalogueFailsClosedEvenWithStal
 
 TEST(HeroGrowthPerkPresentation, FourOfferSummariesStartEmptyRetainOnePerTierAndRoundTrip)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto state = stateFor();
 	perkStateFixture::editRules(state, [&](JsonNode & rules)
 	{

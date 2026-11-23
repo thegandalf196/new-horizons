@@ -5,6 +5,7 @@
  * Full text of license available in license.txt file, in main folder
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../mock/mock_BonusBearer.h"
 #include "../mock/mock_UnitEnvironment.h"
 #include "../../lib/bonuses/ProjectedBonusGraph.h"
@@ -54,6 +55,7 @@ public:
 class ProjectedUnitInitializationTest : public Test
 {
 protected:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	CStackBasicDescriptor firstDescriptor{CreatureID(0), 8};
 	CStackBasicDescriptor secondDescriptor{CreatureID(0), 3};
 	CStack first{&firstDescriptor, PlayerColor(0), 17, BattleSide::ATTACKER};

@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/spells/NewHorizonsMetamagicResolution.h"
 
 namespace
@@ -93,6 +94,7 @@ TEST(NewHorizonsMetamagicResolution, EachRecipientEffectRollsOnceAcrossRepeatedH
 
 TEST(NewHorizonsMetamagicResolution, CreditRequiresCompleteActualRemovalAndCannotBeRepeated)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	battle::BattleEffectSnapshot before;
 	before.effects = {effect(SpellID(1)), effect(SpellID(11)), effect(SpellID(2))};
 	const auto candidates = collect(before);
@@ -115,6 +117,7 @@ TEST(NewHorizonsMetamagicResolution, CreditRequiresCompleteActualRemovalAndCanno
 
 TEST(NewHorizonsMetamagicResolution, StaleOrUnattemptedRemovalNeverEarnsPayment)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	battle::BattleEffectSnapshot before;
 	before.effects = {effect(SpellID(1))};
 	const auto candidate = collect(before).front();

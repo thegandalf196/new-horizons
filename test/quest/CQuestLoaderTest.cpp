@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 
 #include "QuestAssertions.h"
 #include "QuestScenarios.h"
@@ -171,7 +172,9 @@ EQuestMission classify(const std::function<void(Quest &)> & setup)
 }
 }
 
-TEST(QuestKind, classifiedByLimiterShape)
+using QuestKind = vcmiTestData::OriginalDataTest;
+
+TEST_F(QuestKind, classifiedByLimiterShape)
 {
 	EXPECT_EQ(classify([](Quest &){}),                                                                        EQuestMission::NONE);
 	EXPECT_EQ(classify([](Quest & q){ q.mission.heroLevel = 5; }),                                            EQuestMission::LEVEL);
@@ -217,7 +220,9 @@ TEST_F(QuestHotaLoaderTest, SeerDifficultyQuestRoundTrips)
 }
 
 // Limiter::serializeJson chess-name encoding of allowedDifficulties round-trips.
-TEST(QuestLimiterJsonTest, AllowedDifficultiesRoundTrips)
+using QuestLimiterJsonTest = vcmiTestData::OriginalDataTest;
+
+TEST_F(QuestLimiterJsonTest, AllowedDifficultiesRoundTrips)
 {
 	Rewardable::Limiter src;
 	src.allowedDifficulties = MapDifficultySet(
@@ -237,7 +242,7 @@ TEST(QuestLimiterJsonTest, AllowedDifficultiesRoundTrips)
 }
 
 // The unrestricted default writes no field (avoids "[]" on every limiter).
-TEST(QuestLimiterJsonTest, AllowedDifficultiesDefaultOmitted)
+TEST_F(QuestLimiterJsonTest, AllowedDifficultiesDefaultOmitted)
 {
 	Rewardable::Limiter src;
 	ASSERT_TRUE(src.allowedDifficulties.allowsAll());

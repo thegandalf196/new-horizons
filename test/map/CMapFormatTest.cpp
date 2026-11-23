@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 
 #include "../../lib/GameConstants.h"
 #include "../../lib/GameLibrary.h"
@@ -239,6 +240,9 @@ namespace
 {
 class MapScrollRoundTripTest : public ::testing::TestWithParam<std::string>
 {
+public:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
+private:
 };
 
 TEST_P(MapScrollRoundTripTest, KeepsExplicitSpellIdentity)

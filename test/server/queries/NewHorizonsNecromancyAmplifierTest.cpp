@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 
 #include "../battles/BattleTestFixture.h"
 #include "../../mock/GameHandlerTestServer.h"
@@ -183,7 +184,9 @@ protected:
 };
 }
 
-TEST(NewHorizonsNecromancyAmplifier, ResolverAddsPercentagePointsBeforeExactCasualtyFloor)
+using NewHorizonsNecromancyAmplifier = vcmiTestData::OriginalDataTest;
+
+TEST_F(NewHorizonsNecromancyAmplifier, ResolverAddsPercentagePointsBeforeExactCasualtyFloor)
 {
 	const auto ordinary = newHorizonsNecromancy::resolve(1, 100, 0, false, false, false,
 		true, true, 0, 0, 0, false, true, CreatureID::NONE, {}, {}, false, false, true, 0);

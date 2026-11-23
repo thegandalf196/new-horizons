@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 
 #include "../mock/BattleFake.h"
 #include "../mock/mock_battle_Unit.h"
@@ -154,6 +155,7 @@ public:
 
 TEST_F(SpellTargetEvaluatorTest, ReturnsEmptyForUnsupportedMultiDestinationShape)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	spellTargetTypes({AimType::CREATURE, AimType::CREATURE, AimType::LOCATION});
 	std::vector<Target> result = SpellTargetEvaluator::getViableTargets(&mechMock);
 	EXPECT_TRUE(result.empty());
@@ -161,6 +163,7 @@ TEST_F(SpellTargetEvaluatorTest, ReturnsEmptyForUnsupportedMultiDestinationShape
 
 TEST_F(SpellTargetEvaluatorTest, SingleCreatureTargetsPreserveDistinctIdentitiesOnTheSameHex)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	spellTargetTypes({AimType::CREATURE});
 	addStack(BattleHex(90), casterSide);
 	addStack(BattleHex(90), casterSide);
@@ -181,6 +184,7 @@ TEST_F(SpellTargetEvaluatorTest, SingleCreatureTargetsPreserveDistinctIdentities
 
 TEST_F(SpellTargetEvaluatorTest, SacrificePreservesCorpseIdentityAndValidatesEachOrderedVictimPair)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	spellTargetTypes({AimType::CREATURE, AimType::CREATURE});
 	addStack(BattleHex(90), casterSide);
 	addStack(BattleHex(90), casterSide); // Distinct corpse IDs on the same hex.
@@ -221,6 +225,7 @@ TEST_F(SpellTargetEvaluatorTest, SacrificePreservesCorpseIdentityAndValidatesEac
 
 TEST_F(SpellTargetEvaluatorTest, SacrificeDoesNotReturnAnEligiblePrefixWithoutACompleteLegalPair)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	spellTargetTypes({AimType::CREATURE, AimType::CREATURE});
 	addStack(BattleHex(90), casterSide);
 	addStack(BattleHex(71), casterSide);
@@ -286,6 +291,7 @@ TEST_F(SpellTargetEvaluatorTest, LifeDrainEnumeratesOnlyLegalEnemyThenLivingFrie
 
 TEST_F(SpellTargetEvaluatorTest, TeleportEnumeratesOnlyValidatedLandingsForAnEligibleExactUnit)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	spellTargetTypes({AimType::CREATURE, AimType::LOCATION});
 	addStack(BattleHex(90), casterSide);
 	addStack(BattleHex(106), enemySide);
@@ -322,6 +328,7 @@ TEST_F(SpellTargetEvaluatorTest, TeleportEnumeratesOnlyValidatedLandingsForAnEli
 
 TEST_F(SpellTargetEvaluatorTest, TeleportValidatesEachSourceDestinationPairSeparately)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	spellTargetTypes({AimType::CREATURE, AimType::LOCATION});
 	addStack(BattleHex(90), casterSide);
 	addStack(BattleHex(106), casterSide);
@@ -344,6 +351,7 @@ TEST_F(SpellTargetEvaluatorTest, TeleportValidatesEachSourceDestinationPairSepar
 
 TEST_F(SpellTargetEvaluatorTest, TeleportDoesNotOfferPartialOrUnchangedDestinations)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	spellTargetTypes({AimType::CREATURE, AimType::LOCATION});
 	addStack(BattleHex(90), casterSide);
 	ON_CALL(battleMock, battleGetAllUnits(false)).WillByDefault(Return(allUnits));
@@ -357,6 +365,7 @@ TEST_F(SpellTargetEvaluatorTest, TeleportDoesNotOfferPartialOrUnchangedDestinati
 
 TEST_F(SpellTargetEvaluatorTest, ReturnSingleEmptyDestinationIfTargetIsNone)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	spellTargetTypes({AimType::NOTHING});
 	std::vector<Target> result = SpellTargetEvaluator::getViableTargets(&mechMock);
 	EXPECT_EQ(result.size(), 1);
@@ -365,6 +374,7 @@ TEST_F(SpellTargetEvaluatorTest, ReturnSingleEmptyDestinationIfTargetIsNone)
 
 TEST_F(SpellTargetEvaluatorTest, ReturnsSuspectibleCreaturePositionsIfSpellTargetsCreatures)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	spellTargetTypes({AimType::CREATURE});
 
 	addStack(BattleHex(1), casterSide);
@@ -377,6 +387,7 @@ TEST_F(SpellTargetEvaluatorTest, ReturnsSuspectibleCreaturePositionsIfSpellTarge
 
 TEST_F(SpellTargetEvaluatorTest, ReturnsSuspectibleCreaturePositionsAndSingleRandomSurroundingHexForEachStackIfNeutralLocationSpell)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	spellTargetTypes({AimType::LOCATION});
 	ON_CALL(mechMock, isNeutralSpell()).WillByDefault(Return(true));
 
@@ -396,6 +407,7 @@ TEST_F(SpellTargetEvaluatorTest, ReturnsSuspectibleCreaturePositionsAndSingleRan
 
 TEST_F(SpellTargetEvaluatorTest, NeutralLocationSpellsEnumerateVisibleObstacleFootprintsWithoutUnitsOrDuplicates)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	spellTargetTypes({AimType::LOCATION});
 	ON_CALL(mechMock, isNeutralSpell()).WillByDefault(Return(true));
 	ON_CALL(battleMock, getPlayerID()).WillByDefault(Return(std::optional<PlayerColor>(PlayerColor(0))));
@@ -426,6 +438,7 @@ TEST_F(SpellTargetEvaluatorTest, NeutralLocationSpellsEnumerateVisibleObstacleFo
 
 TEST_F(SpellTargetEvaluatorTest, AreaSpellHarmFilterTracksControlRestorationAndCasterColor)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	spellTargetTypes({AimType::LOCATION});
 	ON_CALL(mechMock, isNegativeSpell()).WillByDefault(Return(true));
 	auto * originalAlly = addStack(BattleHex(90), casterSide);
@@ -451,6 +464,7 @@ TEST_F(SpellTargetEvaluatorTest, AreaSpellHarmFilterTracksControlRestorationAndC
 
 TEST_F(SpellTargetEvaluatorTest, NegativeAreaSpellPrefersCurrentEnemiesWithoutCurrentAlliedCollateral)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	spellTargetTypes({AimType::LOCATION});
 	ON_CALL(mechMock, isNegativeSpell()).WillByDefault(Return(true));
 	auto * enemy = addStack(BattleHex(90), enemySide);
@@ -468,6 +482,7 @@ TEST_F(SpellTargetEvaluatorTest, NegativeAreaSpellPrefersCurrentEnemiesWithoutCu
 
 TEST_F(SpellTargetEvaluatorTest, PositiveAreaSpellPrefersCurrentAlliesWithoutHelpingCurrentEnemies)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	spellTargetTypes({AimType::LOCATION});
 	ON_CALL(mechMock, isPositiveSpell()).WillByDefault(Return(true));
 	auto * ally = addStack(BattleHex(90), casterSide);
@@ -484,6 +499,7 @@ TEST_F(SpellTargetEvaluatorTest, PositiveAreaSpellPrefersCurrentAlliesWithoutHel
 
 TEST_F(SpellTargetEvaluatorTest, ReturnsOneCaseOfEachOptimalCastIfNegativeLocationSpell)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	spellTargetTypes({AimType::LOCATION});
 	ON_CALL(mechMock, isNegativeSpell()).WillByDefault(Return(true));
 

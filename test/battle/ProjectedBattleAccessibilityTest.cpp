@@ -5,6 +5,7 @@
  * Full text of license available in license.txt file, in main folder
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../bonus/ProjectedUnitEnvironmentFixture.h"
 #include "../../lib/battle/ProjectedBattleAccessibility.h"
 #include "../../lib/battle/OwnedBattleFrameRefusals.h"
@@ -55,6 +56,7 @@ void expectSameMap(const AccessibilityInfo & first, const AccessibilityInfo & se
 class ProjectedBattleAccessibilityTest : public Test, protected environmentFixture::Projection
 {
 protected:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	void SetUp() override
 	{
 		ON_CALL(source, getBattlefieldType()).WillByDefault(Return(BattleField::NONE));

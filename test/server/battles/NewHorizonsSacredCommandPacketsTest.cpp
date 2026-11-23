@@ -7,6 +7,7 @@
  * Full text of license available in license.txt file, in main folder
  */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 
 #include "../../../lib/battle/HeroCommand.h"
 #include "../../../lib/networkPacks/PacksForClientBattle.h"
@@ -104,6 +105,7 @@ TEST(NewHorizonsSacredCommandPacketsTest, EnclosingAcceptedOrderPacketsRoundTrip
 
 TEST(NewHorizonsSacredCommandPacketsTest, OnlyZeroAndTenAreValidSnapshots)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	for(const int32_t invalidPercent : {-10, 1, 9, 11, 20})
 	{
 		SCOPED_TRACE(invalidPercent);

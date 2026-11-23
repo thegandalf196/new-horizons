@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 #include "HeroCommandFixture.h"
 #include "FullGameSnapshotTypes.h"
 #include "../../../lib/battle/NewHorizonsCreatureSpecialtyCapabilities.h"
@@ -42,6 +43,7 @@ TEST(CreatureSpecialtyCapability, ReservedRangedProfileRequiresExactNumericVersi
 }
 TEST(CreatureSpecialtyCapability, ReservedRangedProfileRejectsUnsupportedCodecBeforePrefix)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto profile = rangedProfile();
 	CMemorySerializer current;
 	ASSERT_NO_THROW(profile.serialize(current.oser));

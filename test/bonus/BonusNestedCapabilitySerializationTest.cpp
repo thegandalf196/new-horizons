@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/bonuses/BonusParameters.h"
 #include "../../lib/bonuses/BonusList.h"
 #include "../../lib/bonuses/CBonusSystemNode.h"
@@ -60,6 +61,7 @@ template<typename T> void rejectCurrentWireAs1144(T & source)
 
 TEST(BonusNestedCapabilitySerialization, ParametersAndOuterBonusRejectNestedEnumIncludingZero)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	for(const int value : {0, 20})
 	{
 		auto source = ordinary();
@@ -88,6 +90,7 @@ TEST(BonusNestedCapabilitySerialization, ParametersAndOuterBonusRejectNestedEnum
 
 TEST(BonusNestedCapabilitySerialization, NestedFilterOnlyBonusProtectsParametersListAndNode)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto child = std::make_shared<Bonus>(ordinary());
 	auto filter = std::make_shared<UnitAdjacentLimiter>();
 	filter->targetUnit = CreatureID(0);
@@ -107,6 +110,7 @@ TEST(BonusNestedCapabilitySerialization, NestedFilterOnlyBonusProtectsParameters
 
 TEST(BonusNestedCapabilitySerialization, OrdinaryNestedPayloadSupportsBothVersionsAndNullSpellJsonAlternatives)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto source = ordinary();
 	auto parameters = effects(std::make_shared<Bonus>(ordinary()));
 	auto & event = parameters->toCustom<BonusParametersOnCombatEvent>();
@@ -161,6 +165,7 @@ TEST(BonusNestedCapabilitySerialization, SharedAliasesAndCyclesTerminateAndRetai
 
 TEST(BonusNestedCapabilitySerialization, DependencyLimiterDirectAggregateAndOuterRejectNewTypeAndTypedSubtype)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	for(const bool subtypeReference : {false, true})
 	{
 		HasAnotherBonusLimiter source(BonusType::STACKS_SPEED);
@@ -191,6 +196,7 @@ TEST(BonusNestedCapabilitySerialization, DependencyLimiterDirectAggregateAndOute
 
 TEST(BonusNestedCapabilitySerialization, TypedHatesTraitSubtypeRejectsWhileSameCustomNumberRemainsSupported)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto source = ordinary();
 	source.type = BonusType::HATES_TRAIT;
 	source.subtype = BonusTypeID(BonusType::TARGET_MAGICAL_DAMAGE_REDUCTION_PENETRATION);

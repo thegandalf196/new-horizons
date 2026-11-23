@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "HeroActionSelectionObserver.h"
 #include "../../AI/BattleAI/PossibleSpellcast.h"
 #include "../../AI/BattleAI/BattleExchangeVariant.h"
@@ -53,6 +54,7 @@ TEST(HeroActionSelectionTest, BaselineRetainsExactSentinelThresholdAndFloatBits)
 
 TEST(HeroActionSelectionTest, FirstExactTieRespectsSpellOrderRosterAndCopiedIdentity)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto * spell = SpellID(SpellID::MAGIC_ARROW).toSpell();
 	ASSERT_NE(spell, nullptr);
 	auto cast = value(7.0f);

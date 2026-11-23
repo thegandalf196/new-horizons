@@ -8,6 +8,7 @@
  *
  */
 #include "../StdInc.h"
+#include "../OriginalDataRequirement.h"
 
 #include "../../client/battle/NewHorizonsBattleStatus.h"
 #include "../../lib/spells/CSpell.h"
@@ -31,6 +32,7 @@ std::shared_ptr<Bonus> makeMarker(SpellID spell, BonusType type = BonusType::BIN
 class NewHorizonsEntangleStatusTest : public ::testing::Test
 {
 protected:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	void SetUp() override
 	{
 		entangleId = SpellID::decode(std::string(ENTANGLE_SPELL_KEY));

@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "CapturedSpecialtySnapshotFixture.h"
 #include "CurrentOrdinaryOwnerFixture.h"
 #include "../server/battles/HeroCommandFixture.h"
@@ -84,6 +85,7 @@ template<class T> void expectOldOwner(T & owner, bool reject)
 }
 TEST(OrdinaryMachineAdmission, NamedFlagAndExplicitZeroRemainStrictTo1150)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	static_assert(static_cast<int>(machineEpoch) == 1150);
 	static_assert(Version::CURRENT >= machineEpoch);
 	EXPECT_FALSE(newHorizonsHeroes::SpecialtySerializationContext{}.ordinaryMachineSpecialties);
@@ -105,6 +107,7 @@ TEST(OrdinaryMachineAdmission, NamedFlagAndExplicitZeroRemainStrictTo1150)
 
 TEST(OrdinaryMachineAdmission, UnchangedPriorPoliciesKeepTheirOwnBoundaries)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto rules = priorRules();
 	EXPECT_THROW(newHorizonsHeroes::validateCapturedSpecialtiesSerialization(rules, context(static_cast<Version>(1144))), std::runtime_error);
 	ASSERT_NO_THROW(newHorizonsHeroes::validateCapturedSpecialtiesSerialization(rules, context(static_cast<Version>(1145))));
@@ -161,6 +164,7 @@ TEST(OrdinaryMachineAdmission, CurrentStillRejectsBadMachineShapesAndUnknownKey)
 
 TEST(OrdinaryMachineAdmission, SettingsCurrentKeepsZeroAndOldReadRejectsBeforeInstalling)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	for(const auto & row : machinePolicies)
 	{
 		auto rules = priorRules();

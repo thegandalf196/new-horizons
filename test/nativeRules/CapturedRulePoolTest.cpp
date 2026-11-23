@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/nativeRules/CapturedRuleEnvelope.h"
 #include "../../lib/serializer/CMemorySerializer.h"
 #include "../../lib/spells/NewHorizonsMetamagicDoubleCast.h"
@@ -152,6 +153,7 @@ TEST(CapturedRulePool, ConsecratedArmsMinimumAndWriterRejectEarlierFormats)
 
 TEST(CapturedRulePool, DoubleCastAndChosenPrayerRulesRefuseTheConsecratedArmsFormat)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const JsonNode current(JsonPath::builtin("config/newHorizonsPerks"));
 	ASSERT_TRUE(newHorizonsMetamagic::requiresDoubleCastFormat(current));
 	EXPECT_FALSE(newHorizonsMetamagic::requiresDoubleCastFormat(overkillRandomPrayerRules()));
@@ -181,6 +183,7 @@ TEST(CapturedRulePool, DoubleCastAndChosenPrayerRulesRefuseTheConsecratedArmsFor
 
 TEST(CapturedRulePool, RevisedSpecialtyRulesRefuseTheDoubleCastFormat)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const JsonNode perks(JsonPath::builtin("config/newHorizonsPerks"));
 	const JsonNode heroes(JsonPath::builtin("config/newHorizonsHeroes"));
 	ASSERT_TRUE(newHorizonsHeroes::requiresRevisedSpecialtyFormat(perks));
@@ -209,6 +212,7 @@ TEST(CapturedRulePool, RevisedSpecialtyRulesRefuseTheDoubleCastFormat)
 
 TEST(CapturedRulePool, ActivatedOrdinaryCoefficientsRoundtripAndOlderCapturesStayWithoutThem)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto policy = [](const CapturedRulePool & pool, auto id) -> const JsonNode &
 	{
 		return pool.document(id, CapturedRuleKind::WorldDevelopment)->document()["additionalSpecialties"]["ordinaryCreatureSpecialties"];

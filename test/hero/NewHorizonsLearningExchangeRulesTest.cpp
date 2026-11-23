@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "NewHorizonsHeroRulesFixture.h"
 #include "../../lib/entities/hero/NewHorizonsLearningExchangeSpecialties.h"
 using namespace newHorizonsHeroes;
@@ -21,7 +22,9 @@ JsonNode exchangeRules()
 	return rules;
 }
 }
-TEST(NewHorizonsLearningExchangeRules, CaptureCopiesIndependentRowsAndKeepsHistoricalAbsence)
+using NewHorizonsLearningExchangeRules = vcmiTestData::OriginalDataTest;
+
+TEST_F(NewHorizonsLearningExchangeRules, CaptureCopiesIndependentRowsAndKeepsHistoricalAbsence)
 {
 	auto source = exchangeRules();
 	const auto captured = resolveHeroRules(source, HeroClassID(0));
@@ -38,7 +41,7 @@ TEST(NewHorizonsLearningExchangeRules, CaptureCopiesIndependentRowsAndKeepsHisto
 	EXPECT_FALSE(learningExchangeSpecialtyRules(historical, LearningExchangeSpecialtyKind::ECUMENICAL_SCHOLAR));
 	EXPECT_EQ(historical, before);
 }
-TEST(NewHorizonsLearningExchangeRules, StrictRowsRejectMissingNullUnknownFractionAndUnsafeBounds)
+TEST_F(NewHorizonsLearningExchangeRules, StrictRowsRejectMissingNullUnknownFractionAndUnsafeBounds)
 {
 	const auto valid = resolveHeroRules(exchangeRules(), HeroClassID(0));
 	std::vector<JsonNode> bad(12, valid);
@@ -60,7 +63,7 @@ TEST(NewHorizonsLearningExchangeRules, StrictRowsRejectMissingNullUnknownFractio
 		EXPECT_THROW(learningExchangeSpecialtyRules(value, LearningExchangeSpecialtyKind::ECUMENICAL_SCHOLAR), std::runtime_error);
 	}
 }
-TEST(NewHorizonsLearningExchangeRules, VersionOnlyAndExplicitZeroStayPresentWithoutInventingRows)
+TEST_F(NewHorizonsLearningExchangeRules, VersionOnlyAndExplicitZeroStayPresentWithoutInventingRows)
 {
 	auto source = exchangeRules();
 	source["learningExchangeSpecialties"].Struct().erase("occultScholar");
@@ -78,7 +81,7 @@ TEST(NewHorizonsLearningExchangeRules, VersionOnlyAndExplicitZeroStayPresentWith
 	EXPECT_FALSE(learningExchangeSpecialtyRules(versionOnly, LearningExchangeSpecialtyKind::ECUMENICAL_SCHOLAR));
 	EXPECT_FALSE(learningExchangeSpecialtyRules(versionOnly, LearningExchangeSpecialtyKind::OCCULT_SCHOLAR));
 }
-TEST(NewHorizonsLearningExchangeRules, UnsupportedCapabilityRejectsAnyPresentBlockButAllowsHistoricalAbsence)
+TEST_F(NewHorizonsLearningExchangeRules, UnsupportedCapabilityRejectsAnyPresentBlockButAllowsHistoricalAbsence)
 {
 	auto source = exchangeRules();
 	EXPECT_THROW(validateLearningExchangeSpecialtiesSerialization(source, false), std::runtime_error);

@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/bonuses/BonusDependencyCapture.h"
 #include "../../lib/bonuses/OwnedRecipientBonusGraph.h"
 #include "../../lib/bonuses/Updaters.h"
@@ -73,6 +74,7 @@ void equalNative(const BonusList & actual, const BonusList & expected)
 }
 TEST(BonusDependencyQueryFrameTest, BothNativeLanesRebindScratchCountBeforeOuterPublication)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto source = input(); auto graph = OwnedRecipientBonusGraph::fromOwnedInputs({source},0);
 	auto current = binding();
 	const auto program = captureNativeModifiers(*graph,graph->root()).bindQueries(current,{});
@@ -95,6 +97,7 @@ TEST(BonusDependencyQueryFrameTest, BothNativeLanesRebindScratchCountBeforeOuter
 }
 TEST(BonusDependencyQueryFrameTest, PairDependentHateKeepsOwnedQueryCapability)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto source = input(); source.local.push_back(row(BonusType::HATE,50));
 	auto graph = OwnedRecipientBonusGraph::fromOwnedInputs({source},0);
 	const auto context = binding();
@@ -108,6 +111,7 @@ TEST(BonusDependencyQueryFrameTest, PairDependentHateKeepsOwnedQueryCapability)
 }
 TEST(BonusDependencyQueryFrameTest, ForkedProgramsAndOldQueryLoansOutliveParentAndNativeGraph)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto graph = OwnedRecipientBonusGraph::fromOwnedInputs({input()},0); const auto context = binding();
 	auto parent = captureNativeModifiers(*graph,graph->root()).bindQueries(context,{});
 	const auto child = parent;
@@ -126,6 +130,7 @@ TEST(BonusDependencyQueryFrameTest, ForkedProgramsAndOldQueryLoansOutliveParentA
 }
 TEST(BonusDependencyQueryFrameTest, FixedBaseReplacesWholeOwnLeafAndExpiryCannotReappearAfterCount)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto source = input(); auto spell = row(BonusType::PERCENTAGE_DAMAGE_BOOST,17);
 	spell->source = BonusSource::SPELL_EFFECT; spell->sid = BonusSourceID(SpellID(SpellID::HASTE));
 	spell->duration = BonusDuration::N_TURNS; spell->turnsRemain = 2;
@@ -155,6 +160,7 @@ TEST(BonusDependencyQueryFrameTest, FixedBaseReplacesWholeOwnLeafAndExpiryCannot
 }
 TEST(BonusDependencyQueryFrameTest, FinalNativeUpdaterMetadataAndRawRemovalAliasArePreserved)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto source = input(); source.local.resize(1);
 	auto producer = std::make_shared<Bonus>(*source.local[0]);
 	producer->updater = std::make_shared<TimesStackLevelUpdater>();
@@ -171,6 +177,7 @@ TEST(BonusDependencyQueryFrameTest, FinalNativeUpdaterMetadataAndRawRemovalAlias
 }
 TEST(BonusDependencyQueryFrameTest, ForeignBindingProfileUnknownRemovalAndMissingCountDirtyFailClosed)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto graph = OwnedRecipientBonusGraph::fromOwnedInputs({input()},0); const auto context = binding();
 	const auto base = captureNativeModifiers(*graph,graph->root()).bindQueries(context,{}); ASSERT_TRUE(base);
 	const auto frame = base->refreshQueries(context,Change::None); ASSERT_TRUE(frame);
@@ -195,6 +202,7 @@ TEST(BonusDependencyQueryFrameTest, UnknownNativeModifierSubclassRefusesBeforeOw
 
 TEST(BonusDependencyQueryFrameTest, CurrentAncestorRecipientRowRemovalAndRepeatedOwnLeafKeepOrigin)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto graph = OwnedRecipientBonusGraph::fromOwnedInputs({input()},0); auto context = binding();
 	const auto root = captureNativeModifiers(*graph,graph->root()).bindQueries(context,{}); ASSERT_TRUE(root);
 	const auto original = root->refreshQueries(context,Change::None); ASSERT_TRUE(original);
@@ -217,6 +225,7 @@ TEST(BonusDependencyQueryFrameTest, CurrentAncestorRecipientRowRemovalAndRepeate
 }
 TEST(BonusDependencyQueryFrameTest, NativeDurationReplacementKeepsOriginInBothLanes)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto graph = OwnedRecipientBonusGraph::fromOwnedInputs({input()},0); const auto context = binding();
 	const auto root = captureNativeModifiers(*graph,graph->root()).bindQueries(context,{}); ASSERT_TRUE(root);
 	const auto original = root->refreshQueries(context,Change::None); ASSERT_TRUE(original);
@@ -241,6 +250,7 @@ TEST(BonusDependencyQueryFrameTest, NativeDurationReplacementKeepsOriginInBothLa
 }
 TEST(BonusDependencyQueryFrameTest, ForeignStaleLookalikeAndAliasedOwnershipRowsAreRefused)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto graph=OwnedRecipientBonusGraph::fromOwnedInputs({input()},0); auto context=binding();
 	const auto root=captureNativeModifiers(*graph,graph->root()).bindQueries(context,{}); ASSERT_TRUE(root);
 	const auto initial=root->refreshQueries(context,Change::None); ASSERT_TRUE(initial);
@@ -268,6 +278,7 @@ TEST(BonusDependencyQueryFrameTest, ForeignStaleLookalikeAndAliasedOwnershipRows
 
 TEST(BonusDependencyQueryFrameTest, StackedSnapshotValueCloneIsMappedWithoutInventedCrossLaneAlias)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto graph=OwnedRecipientBonusGraph::fromOwnedInputs({input()},0); const auto context=binding();
 	const auto root=captureNativeModifiers(*graph,graph->root()).bindQueries(context,{}); ASSERT_TRUE(root);
 	const auto start=root->refreshQueries(context,Change::None); ASSERT_TRUE(start);
@@ -291,6 +302,7 @@ TEST(BonusDependencyQueryFrameTest, StackedSnapshotValueCloneIsMappedWithoutInve
 
 TEST(BonusDependencyQueryFrameTest, ExplicitFixedSourceLeaseSupportsHeldThreeRowsAcrossEveryPrefixRebind)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto graph=OwnedRecipientBonusGraph::fromOwnedInputs({input()},0); auto context=binding();
 	const auto root=captureNativeModifiers(*graph,graph->root()).bindQueries(context,{}); ASSERT_TRUE(root);
 	const auto initial=root->refreshQueries(context,Change::None); ASSERT_TRUE(initial);
@@ -323,6 +335,7 @@ TEST(BonusDependencyQueryFrameTest, ExplicitFixedSourceLeaseSupportsHeldThreeRow
 }
 TEST(BonusDependencyQueryFrameTest, FixedSourceLeaseDoesNotAdmitOtherFramesOrForeignBasePrograms)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto graph=OwnedRecipientBonusGraph::fromOwnedInputs({input()},0); auto context=binding();
 	const auto root=captureNativeModifiers(*graph,graph->root()).bindQueries(context,{}); ASSERT_TRUE(root);
 	const auto initial=root->refreshQueries(context,Change::None); ASSERT_TRUE(initial);
@@ -357,6 +370,7 @@ TEST(BonusDependencyQueryFrameTest, FixedSourceLeaseDoesNotAdmitOtherFramesOrFor
 
 TEST(BonusDependencyQueryFrameTest, StaticCountRefreshKeepsReductionAndFreshRemovalEntitlements)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto source = input();
 	auto staticAttack = std::make_shared<Bonus>(*source.local[1]);
 	staticAttack->updater.reset();
@@ -413,6 +427,7 @@ TEST(BonusDependencyQueryFrameTest, StaticCountRefreshKeepsReductionAndFreshRemo
 
 TEST(BonusDependencyQueryFrameTest, CountDependentRefreshStillRebuildsCurrentScalarPayloads)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto graph = OwnedRecipientBonusGraph::fromOwnedInputs({input()}, 0);
 	auto context = binding();
 	const auto program = captureNativeModifiers(*graph, graph->root()).bindQueries(context, {});

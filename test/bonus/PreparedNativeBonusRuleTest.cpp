@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/nativeRules/NativeRulePilots.h"
 #include "../../lib/CSkillHandler.h"
 #include "../../lib/GameLibrary.h"
@@ -70,6 +71,7 @@ TEST(PreparedNativeBonusRule, ImmutablePrototypeProducesIndependentApplications)
 
 TEST(PreparedNativeBonusRule, RankAdapterPreservesDeferredIdentifierCallbackIdentity)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto original = std::make_shared<Bonus>(rankBonus());
 	const auto before = wire(*original);
 	const auto prepared = nativeRules::prepareSkillRankBonus(original);
@@ -84,6 +86,7 @@ TEST(PreparedNativeBonusRule, RankAdapterPreservesDeferredIdentifierCallbackIden
 
 TEST(PreparedNativeBonusRule, GenuineBonusBackedRanksKeepSourceDescriptionAndMagnitude)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	JsonNode definition;
 	definition["name"].String() = "Prepared rank pilot";
 	const std::array<std::string, 3> levels{"basic", "advanced", "expert"};
@@ -133,6 +136,7 @@ TEST(PreparedNativeBonusRule, ParentStatusMatchesExactExistingSourceAndNotAnUnre
 
 TEST(PreparedNativeBonusRule, SanctuaryTypedOutputMatchesTheExistingDescriptorExactly)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const SpellID source(SpellID::MAGIC_ARROW);
 	JsonNode descriptor;
 	descriptor["type"].String() = "MORALE";
@@ -184,6 +188,7 @@ TEST(PreparedNativeBonusRule, BundlesPreserveOperationOrderAndRejectMixedControl
 
 TEST(PreparedNativeBonusRule, FamilyFilteredPassiveKeepsItsExistingImmutableLimiterAndSource)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	Bonus prototype(BonusDuration::PERMANENT, BonusType::STACKS_SPEED, BonusSource::HERO_SPECIAL,
 		5, BonusSourceID(HeroTypeID(0)));
 	auto family = std::make_shared<CCreatureTypeLimiter>();
@@ -200,6 +205,7 @@ TEST(PreparedNativeBonusRule, FamilyFilteredPassiveKeepsItsExistingImmutableLimi
 
 TEST(PreparedNativeBonusRule, ExistingDirectMagicAuraRetainsOriginalArmyOrdinaryRecipientAndStrongestRules)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	Bonus expected(BonusDuration::PERMANENT, BonusType::SPELL_DAMAGE_REDUCTION,
 		BonusSource::HERO_SPECIAL, 15, BonusSourceID(HeroTypeID(0)));
 	expected.stacking = "native-aura-pilot";
@@ -224,6 +230,7 @@ TEST(PreparedNativeBonusRule, ExistingDirectMagicAuraRetainsOriginalArmyOrdinary
 
 TEST(PreparedNativeBonusRule, CurrentDisciplineUsesItsActualPreparedMoraleRankTemplates)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const int id = SecondarySkill::decode("new-horizons:discipline");
 	ASSERT_GE(id, 0);
 	const auto & skill = LIBRARY->skillh->objects.at(id);

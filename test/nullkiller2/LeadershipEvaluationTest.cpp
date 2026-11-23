@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../AI/PerkChoice.h"
 #include "../../AI/Nullkiller2/Helpers/LeadershipEvaluation.h"
 #include "../../AI/Nullkiller2/Helpers/ArmyFormation.h"
@@ -125,6 +126,7 @@ TEST_F(LeadershipArmyValueTest, CombiningTechnicalMaximumStacksPreservesWideCoun
 
 TEST(LeadershipArmyValue, WideArithmeticPreservesOrdinaryValuesAndSaturatesTotals)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	using namespace NK2AI::leadershipAI;
 	const auto maximum = std::numeric_limits<uint64_t>::max();
 	EXPECT_EQ(addPower(123, 456), 579u);

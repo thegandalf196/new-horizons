@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/entities/hero/NewHorizonsMasteryRules.h"
 #include "../../lib/json/JsonUtils.h"
 #include "../../lib/entities/hero/NewHorizonsMasteryState.h"
@@ -60,6 +61,7 @@ newHorizonsHeroes::MasteryOffer offer()
 
 TEST(NewHorizonsMasteryRules, EveryOfferSelectionAndReplySequencePreservesAllUnsignedBits)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	using namespace newHorizonsHeroes;
 	MasterySelection selection;
 	selection.skill = SecondarySkill::ARTILLERY;
@@ -101,6 +103,7 @@ TEST(NewHorizonsMasteryRules, MalformedSequenceHalvesRejectBeforeAssignment)
 
 TEST(NewHorizonsMasteryRules, SavedCounterPreservesExistingCrossoverLimitAndRejectsExhaustion)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	using namespace newHorizonsHeroes;
 	MasteryState original;
 	original.rules = JsonNode(JsonPath::builtin("config/newHorizonsMasteries"));
@@ -120,6 +123,7 @@ TEST(NewHorizonsMasteryRules, SavedCounterPreservesExistingCrossoverLimitAndReje
 
 TEST(NewHorizonsMasteryRules, CanonicalNamedSchemaAndSavedOptionsAreIndependentOfDefaults)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	using namespace newHorizonsHeroes;
 	JsonNode rules(JsonPath::builtin("config/newHorizonsMasteries"));
 	ASSERT_TRUE(JsonUtils::validate(rules, "vcmi:newHorizonsMasteries", "canonical mastery rules"));

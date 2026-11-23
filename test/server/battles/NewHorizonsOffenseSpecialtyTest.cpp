@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 #include "HeroCommandFixture.h"
 
 #include "../../../AI/BattleAI/StackWithBonuses.h"
@@ -552,7 +553,9 @@ TEST_F(NewHorizonsOffenseSpecialtyTest, MissingSavedRulePreservesLegacyAliasWith
 	EXPECT_EQ(specialtyMarkerCount(*loaded), 0);
 }
 
-TEST(NewHorizonsOffenseSpecialtyRulesTest, CurrentAndOlderSupportedListsRemainValidAndInvalidListsReject)
+using NewHorizonsOffenseSpecialtyRulesTest = vcmiTestData::OriginalDataTest;
+
+TEST_F(NewHorizonsOffenseSpecialtyRulesTest, CurrentAndOlderSupportedListsRemainValidAndInvalidListsReject)
 {
 	auto rules = JsonNode(JsonPath::builtin("config/newHorizonsHeroes"));
 	ASSERT_NO_THROW(newHorizonsHeroes::validateHeroRules(rules, true));

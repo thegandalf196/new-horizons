@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "NewHorizonsHeroRulesFixture.h"
 #include "../../lib/GameSettings.h"
 #include "../../lib/serializer/CMemorySerializer.h"
@@ -26,7 +27,9 @@ JsonNode recoveryRules()
 	return rules;
 }
 }
-TEST(NewHorizonsRecoverySpecialtyRules, CaptureCopiesOnlyPresentRowsAndPreservesHistoricalAbsence)
+using NewHorizonsRecoverySpecialtyRules = vcmiTestData::OriginalDataTest;
+
+TEST_F(NewHorizonsRecoverySpecialtyRules, CaptureCopiesOnlyPresentRowsAndPreservesHistoricalAbsence)
 {
 	auto source = recoveryRules();
 	source["recoverySpecialties"].Struct().erase("deepTrance");
@@ -43,7 +46,7 @@ TEST(NewHorizonsRecoverySpecialtyRules, CaptureCopiesOnlyPresentRowsAndPreserves
 	EXPECT_FALSE(recoverySpecialtyRules(legacy, RecoverySpecialtyKind::RITUAL_RESERVE));
 	EXPECT_EQ(legacy, before);
 }
-TEST(NewHorizonsRecoverySpecialtyRules, StrictVersionedRowsRejectMalformedUnknownAndUnsafeValues)
+TEST_F(NewHorizonsRecoverySpecialtyRules, StrictVersionedRowsRejectMalformedUnknownAndUnsafeValues)
 {
 	const auto valid = resolveHeroRules(recoveryRules(), HeroClassID(0));
 	std::vector<JsonNode> bad(9, valid);
@@ -62,7 +65,7 @@ TEST(NewHorizonsRecoverySpecialtyRules, StrictVersionedRowsRejectMalformedUnknow
 		EXPECT_THROW(recoverySpecialtyRules(rules, RecoverySpecialtyKind::INFERNAL_WELLSPRING), std::runtime_error);
 	}
 }
-TEST(NewHorizonsRecoverySpecialtyRules, ExplicitZeroIsCapturedAndOlderCapabilityRejectsPresentPolicy)
+TEST_F(NewHorizonsRecoverySpecialtyRules, ExplicitZeroIsCapturedAndOlderCapabilityRejectsPresentPolicy)
 {
 	auto source = recoveryRules();
 	for(const auto key : {"infernalWellspring", "ritualReserve", "deepTrance"})
@@ -80,7 +83,7 @@ TEST(NewHorizonsRecoverySpecialtyRules, ExplicitZeroIsCapturedAndOlderCapability
 	EXPECT_NO_THROW(validateRecoverySpecialtiesSerialization(absent, false));
 }
 
-TEST(NewHorizonsRecoverySpecialtyRules, ReplayPredecessorPolicyGuardRejectsBeforePrefixAndCurrentRetainsCapture)
+TEST_F(NewHorizonsRecoverySpecialtyRules, ReplayPredecessorPolicyGuardRejectsBeforePrefixAndCurrentRetainsCapture)
 {
 	const auto rules = recoveryRules();
 	GameSettings source;

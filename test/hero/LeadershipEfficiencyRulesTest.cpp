@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/entities/hero/NewHorizonsLeadership.h"
 #include "../../lib/entities/hero/NewHorizonsCapabilityRules.h"
 #include "../../lib/entities/hero/NewHorizonsNecromancyPolicy.h"
@@ -44,6 +45,7 @@ TEST(LeadershipEfficiencyRules, AdditivePercentagesRoundOnceAndSaturateWideInput
 
 TEST(LeadershipEfficiencyRules, All18ClassesUseTheirActualMartialGrowth)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	using namespace newHorizonsHeroes;
 	const JsonNode world(JsonPath::builtin("config/newHorizonsCapabilities"));
 	const JsonNode development(JsonPath::builtin("config/newHorizonsHeroes"));
@@ -67,6 +69,7 @@ TEST(LeadershipEfficiencyRules, All18ClassesUseTheirActualMartialGrowth)
 
 TEST(LeadershipEfficiencyRules, ResolvedRequirementsPreserveUpgradeParityAndExplicitExceptions)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	using namespace newHorizonsHeroes;
 	JsonNode world(JsonPath::builtin("config/newHorizonsCapabilities"));
 	const CreatureID base(CreatureID::SKELETON), upgraded(CreatureID::decode("core:skeletonWarrior"));

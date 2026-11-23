@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 #include "../../../lib/spells/ISpellMechanics.h"
 #include "../../../lib/spells/CSpell.h"
 
@@ -65,6 +66,7 @@ TEST(NewHorizonsLandMineTest, SpellPowerThresholdsSelectCanonicalMineCount)
 
 TEST(NewHorizonsLandMineTest, MultiHexActionRoundTripsOnlyOnCanonicalProtocol)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	BattleAction action;
 	action.side = BattleSide::ATTACKER;
 	action.actionType = EActionType::HERO_SPELL;
@@ -91,6 +93,7 @@ TEST(NewHorizonsLandMineTest, MultiHexActionRoundTripsOnlyOnCanonicalProtocol)
 
 TEST(NewHorizonsLandMineTest, SnapshotAndConsumptionStateRoundTripsAndFailsClosed)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	SpellCreatedObstacle obstacle;
 	obstacle.ID = SpellID::LAND_MINE;
 	obstacle.casterSpellPower = 100;

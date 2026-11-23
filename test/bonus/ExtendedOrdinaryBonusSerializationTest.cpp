@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../server/battles/BattleTestFixture.h"
 #include "../server/battles/FullGameSnapshotTypes.h"
 #include "../../lib/gameState/ReplayLog.h"
@@ -196,6 +197,7 @@ TEST_F(ExtendedOrdinaryBonusSerializationTest, ReplayReaderUsesPayloadVersionAnd
 }
 TEST(ExtendedOrdinaryBonusSerialization, GenericHealingTypeAndTypedReferencesGateIndependentlyOfSourceAndZero)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	for(const auto source : {BonusSource::OTHER, BonusSource::SPELL_EFFECT})
 		for(const int value : {0, 10000})
 		{
@@ -224,6 +226,7 @@ TEST(ExtendedOrdinaryBonusSerialization, GenericHealingTypeAndTypedReferencesGat
 }
 TEST(ExtendedOrdinaryBonusSerialization, DirectAndAggregateLimitersGateNewTypeAndTypedSubtypeBeforePrefix)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	for(const bool subtype : {false, true})
 	{
 		HasAnotherBonusLimiter source(subtype ? BonusType::HATES_TRAIT : BonusType::HEALING_RECEIVED_REDUCTION_BASIS_POINTS);

@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/json/JsonNode.h"
 #include "../../lib/json/JsonUtils.h"
 #include "../../lib/constants/StringConstants.h"
@@ -108,6 +109,7 @@ TEST(NewHorizonsCreatureCategorySchemaTest, ActualNamedConfigAndRealSettingsWrap
 
 TEST(NewHorizonsCreatureCategorySchemaTest, CanonicalRosterCoversEveryFactionLineAndUpgrade)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto rules = configuredCategories();
 	const auto expected = canonicalAssignments();
 	const auto & rows = rules["creatures"].Struct();

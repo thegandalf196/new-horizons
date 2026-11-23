@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "LegacyMapImportFixtures.h"
 
 #include "../mock/TinyH3MBuilder.h"
@@ -131,6 +132,7 @@ constexpr auto HIRE_SCRIPT = R"json({"format":"new-horizons-native-events","vers
 class MapScriptTest : public ::testing::Test, public ServerCallback, public MapListener
 {
 public:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	MapScriptTest()
 		: gameEventCallback(std::make_shared<MapScriptEventCallback>(this))
 	{

@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/nativeRules/MechanicsAuthoring.h"
 #include "../../lib/nativeRules/NativeRulePilots.h"
 #include "../../lib/nativeRules/MechanicsSourceAdapters.h"
@@ -91,6 +92,7 @@ TEST(MechanicsAuthoring, UnknownFieldsOperationSourceAndAllContractDimensionsRej
 }
 TEST(MechanicsAuthoring, FamilyResolvesExactlyOnceBeforeImmutableAttachment)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto definition = skill();
 	auto & row = definition["operations"].Vector()[0];
 	row["source"].String() = "heroSpecialty";
@@ -209,6 +211,7 @@ TEST(MechanicsAuthoring, RankAdapterPreservesLegacyDeferredIdentityAndNeverDoubl
 }
 TEST(MechanicsAuthoring, AuraMatchesNativePasisTemplateAndRejectsUnsupportedMatrix)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto definition = skill();
 	auto & row = definition["operations"].Vector()[0];
 	row["source"].String() = "heroSpecialty";

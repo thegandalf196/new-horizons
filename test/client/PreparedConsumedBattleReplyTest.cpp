@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../mock/TinyMapGameTest.h"
 #include "../../lib/GameLibrary.h"
 #include "../../client/replay/ClientReceiveAccess.h"
@@ -101,6 +102,7 @@ struct RetiredProbe final : CPackForClient
 
 TEST(PreparedConsumedBattleReplyTest, SameBatchMatchesActualUnconditionalOuterWithBothConfiguredModes)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	for(bool configured : {false, true})
 	{
 		auto state = world(configured);
@@ -130,6 +132,7 @@ TEST(PreparedConsumedBattleReplyTest, SameBatchMatchesActualUnconditionalOuterWi
 
 TEST(PreparedConsumedBattleReplyTest, CallerProjectionIsPublishedOnceWithoutBattleApplyOrGraphCAS)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto state = world();
 	ASSERT_TRUE(state->currentBattles.empty());
 	std::mutex mutex;
@@ -155,6 +158,7 @@ TEST(PreparedConsumedBattleReplyTest, CallerProjectionIsPublishedOnceWithoutBatt
 
 TEST(PreparedConsumedBattleReplyTest, MutatedCallerRefusesBothTailsAndDoesNotErasePrediction)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto state = world();
 	std::mutex mutex;
 	NetworkLagReplyState source(&mutex);
@@ -174,6 +178,7 @@ TEST(PreparedConsumedBattleReplyTest, MutatedCallerRefusesBothTailsAndDoesNotEra
 
 TEST(PreparedConsumedBattleReplyTest, ReplayInvalidationRefusesBeforeQueueUnlink)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto state = world();
 	std::mutex mutex;
 	NetworkLagReplyState source(&mutex);
@@ -191,6 +196,7 @@ TEST(PreparedConsumedBattleReplyTest, ReplayInvalidationRefusesBeforeQueueUnlink
 
 TEST(PreparedConsumedBattleReplyTest, QueueStalenessRefusesReplayAndCallerProjection)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto state = world();
 	std::mutex mutex;
 	NetworkLagReplyState source(&mutex);
@@ -209,6 +215,7 @@ TEST(PreparedConsumedBattleReplyTest, QueueStalenessRefusesReplayAndCallerProjec
 
 TEST(PreparedConsumedBattleReplyTest, SourceRetirementRefusesWithoutDanglingQueueAccess)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto state = world();
 	std::mutex mutex;
 	auto source = std::make_unique<NetworkLagReplyState>(&mutex);
@@ -226,6 +233,7 @@ TEST(PreparedConsumedBattleReplyTest, SourceRetirementRefusesWithoutDanglingQueu
 
 TEST(PreparedConsumedBattleReplyTest, WrongOrAbsentActualLockCannotStartCapture)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto state = world();
 	std::mutex first, second;
 	NetworkLagReplyState source(&first);
@@ -247,6 +255,7 @@ TEST(PreparedConsumedBattleReplyTest, WrongOrAbsentActualLockCannotStartCapture)
 
 TEST(PreparedConsumedBattleReplyTest, ForeignQueueBindingCannotUseTheRetainedReceiveLock)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto state = world();
 	std::mutex actual, foreign;
 	NetworkLagReplyState source(&foreign);
@@ -263,6 +272,7 @@ TEST(PreparedConsumedBattleReplyTest, ForeignQueueBindingCannotUseTheRetainedRec
 
 TEST(PreparedConsumedBattleReplyTest, MatchingPartialFrontKeepsLaterPacketAndRequestOrder)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto state = world();
 	std::mutex mutex;
 	NetworkLagReplyState source(&mutex);
@@ -283,6 +293,7 @@ TEST(PreparedConsumedBattleReplyTest, MatchingPartialFrontKeepsLaterPacketAndReq
 
 TEST(PreparedConsumedBattleReplyTest, WriterFailureLeavesNoReplayOrQueueAcceptanceAndKeepsLock)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto state = world();
 	std::mutex mutex;
 	NetworkLagReplyState source(&mutex);
@@ -303,6 +314,7 @@ TEST(PreparedConsumedBattleReplyTest, WriterFailureLeavesNoReplayOrQueueAcceptan
 
 TEST(PreparedConsumedBattleReplyTest, RetainedOriginalsRetireAfterNativeScopeAndBeforeInterfaceRelease)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto state = world();
 	std::mutex mutex;
 	NetworkLagReplyState source(&mutex);

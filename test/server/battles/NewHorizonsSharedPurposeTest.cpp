@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 #include "../../PerkTestSetup.h"
 #include "../../HistoricalFactionPerkRules.h"
 
@@ -482,7 +483,9 @@ TEST_F(NewHorizonsSharedPurposeTest, ExistingPurposeParentChildActivationKeepsSi
 	EXPECT_TRUE(hasPurpose(sibling->battleGetUnitByID(friendly->unitId())));
 }
 
-TEST(NewHorizonsSharedPurposeProtocolTest, GrantReceiptRoundTripLegacyDefaultsAndPreprefixRejection)
+using NewHorizonsSharedPurposeProtocolTest = vcmiTestData::OriginalDataTest;
+
+TEST_F(NewHorizonsSharedPurposeProtocolTest, GrantReceiptRoundTripLegacyDefaultsAndPreprefixRejection)
 {
 	using Ledger = HeroActionAllowanceState;
 	Ledger ledger;

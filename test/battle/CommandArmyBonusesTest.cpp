@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "mock/mock_BonusBearer.h"
 #include "mock/mock_UnitInfo.h"
 #include "../../lib/battle/CommandArmyBonuses.h"
@@ -26,6 +27,7 @@ struct Environment : battle::IUnitEnvironment
 class CommandArmyBonusesTest : public testing::Test
 {
 protected:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	UnitInfoMock info;
 	BonusBearerMock bonuses;
 	Environment environment;
@@ -157,7 +159,9 @@ TEST_F(CommandArmyBonusesTest, FortuneAndCourageRetainFinalLimitsAndImmunities)
 	EXPECT_EQ(unit.moraleVal(), 0);
 }
 
-TEST(CommandArmyProvenance, SlotNumberOnDescriptorDoesNotManufactureHeroTraining)
+using CommandArmyProvenance = vcmiTestData::OriginalDataTest;
+
+TEST_F(CommandArmyProvenance, SlotNumberOnDescriptorDoesNotManufactureHeroTraining)
 {
 	CStackBasicDescriptor descriptor(CreatureID(CreatureID::decode("core:pikeman")), 10);
 	CStack fabricated(&descriptor, PlayerColor(0), 1, BattleSide::ATTACKER, SlotID(0));
@@ -166,7 +170,7 @@ TEST(CommandArmyProvenance, SlotNumberOnDescriptorDoesNotManufactureHeroTraining
 	EXPECT_TRUE(fabricated.getExportedBonusList().empty());
 }
 
-TEST(CommandArmyProvenance, UnsupportedStackWriterRejectsFormationBonusesBeforePrefix)
+TEST_F(CommandArmyProvenance, UnsupportedStackWriterRejectsFormationBonusesBeforePrefix)
 {
 	CStackBasicDescriptor descriptor(CreatureID(CreatureID::decode("core:pikeman")), 10);
 	CStack stack(&descriptor, PlayerColor(0), 1, BattleSide::ATTACKER, SlotID(0));

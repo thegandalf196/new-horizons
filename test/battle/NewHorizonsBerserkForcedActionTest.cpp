@@ -7,6 +7,7 @@
  * Full text of license available in license.txt file, in main folder
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 
 #include "../../lib/CCreatureHandler.h"
 #include "../../lib/battle/CBattleInfoCallback.h"
@@ -101,6 +102,7 @@ private:
 class NewHorizonsBerserkForcedActionTest : public Test
 {
 public:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	class TestSubject : public CBattleInfoCallback
 	{
 	public:

@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "NewHorizonsHeroRulesFixture.h"
 #include "../../lib/entities/hero/NewHorizonsNecromancy.h"
 #include "../../lib/GameSettings.h"
@@ -30,6 +31,7 @@ JsonNode riderRules()
 
 TEST(NewHorizonsIndividualSpecialties, CapturesRulesWithoutFillingHistoricalAbsence)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto configured = riderRules();
 	ASSERT_NO_THROW(validateHeroRules(configured, true));
 	const auto captured = resolveHeroRules(configured, HeroClassID(0));
@@ -52,6 +54,7 @@ TEST(NewHorizonsIndividualSpecialties, CapturesRulesWithoutFillingHistoricalAbse
 
 TEST(NewHorizonsIndividualSpecialties, RejectsMalformedAndUnsupportedCaptures)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto valid = resolveHeroRules(riderRules(), HeroClassID(0));
 	EXPECT_THROW(validateIndividualSpecialtiesSerialization(valid, true, false), std::runtime_error);
 	std::vector<JsonNode> malformed(7, valid);
@@ -86,6 +89,7 @@ TEST(NewHorizonsIndividualSpecialties, LevelCapsAndSpellcraftContributionKeepFra
 
 TEST(NewHorizonsIndividualSpecialties, GraveReaperAddsBeforeFloorsWithoutChangingIndependentPools)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto resolve = [](int rank, bool bone, int amplifier, int specialty)
 	{
 		return newHorizonsNecromancy::resolve(rank, 99, 0, bone, false, false,
@@ -112,6 +116,7 @@ TEST(NewHorizonsIndividualSpecialties, GraveReaperAddsBeforeFloorsWithoutChangin
 
 TEST(NewHorizonsIndividualSpecialties, GlobalCodecRetainsCurrentAndRejectsPreviousBeforePrefix)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto global = riderRules();
 	GameSettings source;
 	source.addOverride(EGameSettings::HEROES_NEW_HORIZONS, global);
@@ -147,6 +152,7 @@ TEST(NewHorizonsIndividualSpecialties, GlobalCodecRetainsCurrentAndRejectsPrevio
 
 TEST(NewHorizonsIndividualSpecialties, MaximumFormulaPolicyFitsSchoolCastAndDamagePerkScalerBoundary)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto configured = riderRules();
 	configured["individualSpecialties"]["warlocksFormula"]["maximumPercent"].Integer() = 200;
 	ASSERT_NO_THROW(validateHeroRules(configured, true));
@@ -173,6 +179,7 @@ TEST(NewHorizonsIndividualSpecialties, MaximumFormulaPolicyFitsSchoolCastAndDama
 
 TEST(NewHorizonsIndividualSpecialties, EngineSchemaAdmitsBoundaryAndRejectsOutOfRangeOrNullPolicy)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto rules = riderRules();
 	rules["individualSpecialties"]["warlocksFormula"]["maximumPercent"].Integer() = 200;
 	EXPECT_TRUE(JsonUtils::validate(rules, "vcmi:newHorizonsHeroes", "individual specialty boundary"));

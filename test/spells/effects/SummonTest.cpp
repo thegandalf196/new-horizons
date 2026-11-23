@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 
 #include "EffectFixture.h"
 
@@ -39,6 +40,7 @@ public:
 class SummonTest : public TestWithParam<::testing::tuple<CreatureID, bool, bool>>, public EffectFixture
 {
 public:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	CreatureID toSummon;
 	CreatureID otherSummoned;
 	bool exclusive;
@@ -209,6 +211,7 @@ public:
 class SummonProductTest : public Test, public EffectFixture
 {
 public:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	SummonProductTest() : EffectFixture("core:summon") {}
 protected:
 	void SetUp() override
@@ -254,6 +257,7 @@ TEST_F(SummonProductTest, LuaEffectMultipliesPowerBeforeDivision)
 class SummonApplyTest : public TestWithParam<::testing::tuple<bool, bool>>, public EffectFixture
 {
 public:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	const CreatureID toSummon = CreatureID::AIR_ELEMENTAL;
 	bool permanent = false;
 	bool summonByHealth = false;

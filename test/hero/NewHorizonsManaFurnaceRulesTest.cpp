@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "NewHorizonsHeroRulesFixture.h"
 #include "../../lib/GameSettings.h"
 #include "../../lib/entities/hero/NewHorizonsAdditionalSpecialties.h"
@@ -19,7 +20,9 @@ JsonNode configuredFurnace()
 	return rules;
 }
 }
-TEST(NewHorizonsManaFurnaceRules, CapturesOwnOptionalRowAndDoesNotFillHistoricalAbsence)
+using NewHorizonsManaFurnaceRules = vcmiTestData::OriginalDataTest;
+
+TEST_F(NewHorizonsManaFurnaceRules, CapturesOwnOptionalRowAndDoesNotFillHistoricalAbsence)
 {
 	auto source = configuredFurnace();
 	ASSERT_NO_THROW(validateHeroRules(source, true));
@@ -37,7 +40,7 @@ TEST(NewHorizonsManaFurnaceRules, CapturesOwnOptionalRowAndDoesNotFillHistorical
 	EXPECT_FALSE(manaFurnaceRules(old));
 	EXPECT_EQ(old, before);
 }
-TEST(NewHorizonsManaFurnaceRules, StrictRowRejectsMalformedUnsafeAndPrerequisiteBypassConfiguration)
+TEST_F(NewHorizonsManaFurnaceRules, StrictRowRejectsMalformedUnsafeAndPrerequisiteBypassConfiguration)
 {
 	const auto valid = resolveHeroRules(configuredFurnace(), HeroClassID(0));
 	std::vector<JsonNode> malformed(6, valid);
@@ -57,7 +60,7 @@ TEST(NewHorizonsManaFurnaceRules, StrictRowRejectsMalformedUnsafeAndPrerequisite
 	maximum["additionalSpecialties"]["manaFurnace"]["maximumRestorePoints"].Integer() = 1000000;
 	EXPECT_NO_THROW(validateResolvedHeroRules(maximum));
 }
-TEST(NewHorizonsManaFurnaceRules, ExistingAdditionalCapabilityProtectsOptionalPolicy)
+TEST_F(NewHorizonsManaFurnaceRules, ExistingAdditionalCapabilityProtectsOptionalPolicy)
 {
 	const auto rules = configuredFurnace();
 	GameSettings source;

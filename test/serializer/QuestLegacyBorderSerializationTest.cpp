@@ -7,6 +7,7 @@
  * Full text of license available in license.txt file, in main folder
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 
 #include "../../lib/bonuses/BonusParameters.h"
 #include "../../lib/bonuses/Propagators.h"
@@ -109,6 +110,7 @@ void expectConverted(const QuestSource & actual, const CGObjectInstance & base, 
 
 TEST(QuestLegacyBorderSerializationTest, OldDirectGateWriterRejectsBeforeBytesOrDestinationMutation)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	for(const auto version : legacyVersions)
 	{
 		SCOPED_TRACE(static_cast<int>(version));
@@ -128,6 +130,7 @@ TEST(QuestLegacyBorderSerializationTest, OldDirectGateWriterRejectsBeforeBytesOr
 
 TEST(QuestLegacyBorderSerializationTest, DirectHelperWriterIsLoadOnlyEvenWithCurrentVersion)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	QuestGuard destination(nullptr);
 	setDestination(destination);
 	const auto before = currentBytes(destination);
@@ -139,6 +142,7 @@ TEST(QuestLegacyBorderSerializationTest, DirectHelperWriterIsLoadOnlyEvenWithCur
 
 TEST(QuestLegacyBorderSerializationTest, NullLegacyGateReaderRejectsBeforeBaseOrQuestMutation)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	for(const auto version : legacyVersions)
 	{
 		SCOPED_TRACE(static_cast<int>(version));
@@ -160,6 +164,7 @@ TEST(QuestLegacyBorderSerializationTest, NullLegacyGateReaderRejectsBeforeBaseOr
 
 TEST(QuestLegacyBorderSerializationTest, NullLegacyGuardTypeTenRejectsBeforeBaseOrQuestMutation)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	for(const auto version : legacyVersions)
 	{
 		SCOPED_TRACE(static_cast<int>(version));
@@ -182,6 +187,7 @@ TEST(QuestLegacyBorderSerializationTest, NullLegacyGuardTypeTenRejectsBeforeBase
 
 TEST(QuestLegacyBorderSerializationTest, ValidLegacyGateRetainsQuestAndSynthesizesEachRequiredKey)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	for(const auto version : legacyVersions)
 		for(int colour = 0; colour < 8; ++colour)
 		{
@@ -203,6 +209,7 @@ TEST(QuestLegacyBorderSerializationTest, ValidLegacyGateRetainsQuestAndSynthesiz
 
 TEST(QuestLegacyBorderSerializationTest, ValidLegacyGuardTypeTenRetainsQuestAndSynthesizesEachRequiredKey)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	for(const auto version : legacyVersions)
 		for(int colour = 0; colour < 8; ++colour)
 		{
@@ -225,6 +232,7 @@ TEST(QuestLegacyBorderSerializationTest, ValidLegacyGuardTypeTenRetainsQuestAndS
 
 TEST(QuestLegacyBorderSerializationTest, CurrentGateRoundtripRetainsExistingRequiredKeysAndLayout)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	QuestGate source(nullptr);
 	setDestination(source);
 	source.getQuest().mission.requiredKeys.push_back(MapObjectSubID(2));

@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 
 #include "QuestTest.h"
 
@@ -42,7 +43,9 @@ B gateScenario(TinyH3M::Quest mission)
 
 // ---- Toll classification (pure unit, no map) --------------------------------
 
-TEST(QuestGateToll, consumableLimiterIsTollPredicateIsNot)
+using QuestGateToll = vcmiTestData::OriginalDataTest;
+
+TEST_F(QuestGateToll, consumableLimiterIsTollPredicateIsNot)
 {
 	auto isToll = [](const std::function<void(Quest &)> & setup) {
 		Quest q;

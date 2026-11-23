@@ -6,6 +6,7 @@
  * Full text of license available in license.txt file, in main folder
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 
 #include "../../lib/spells/TargetCondition.h"
 #include "../../lib/spells/CSpell.h"
@@ -81,6 +82,7 @@ protected:
 
 TEST_F(TargetConditionTransferTest, BasicTraitInversionAndOrdinaryRegression)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	forbid(BonusType::NON_LIVING, "NON_LIVING");
 	EXPECT_EQ(subject.checkRecipient(context(), &recipient), RecipientConditionResult::ILLEGAL);
 	StrictMock<MechanicsMock> ordinary;
@@ -177,6 +179,7 @@ TEST_F(TargetConditionTransferTest, OriginalCasterProvenanceIsRequiredOnlyForBat
 
 TEST_F(TargetConditionTransferTest, ForgetfulnessV3UsesSavedRuleAndSourceNotFamily)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto shooter = factory->createConfigurable("game", "bonus", "SHOOTER");
 	ASSERT_NE(shooter, nullptr);
 	shooter->setExclusive(true);
@@ -226,6 +229,7 @@ TEST_F(TargetConditionTransferTest, UnknownCustomConditionCannotSilentlyPassOrBe
 
 TEST_F(TargetConditionTransferTest, CachedFactoryAndSpellForwardingRejectWrongSource)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	CSpellHandler handler;
 	auto ownedSource = std::make_shared<CSpell>();
 	handler.objects.push_back(ownedSource);

@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../server/battles/NewHorizonsMeleeSpecialtyFixture.h"
 #include "../server/battles/BattleStartSnapshotFixture.h"
 #include "../../server/battles/BattlePrimaryStrikeAftermath.h"
@@ -197,7 +198,9 @@ TEST_P(NewHorizonsMeleeSpecialtyTest, GripRefreshAndCurrentWorldRoundtripRetainO
 	EXPECT_EQ(loaded->getUnstackedBonuses(CSelector(newHorizonsSepulchralGrip::isEffect))->toJsonNode(), original);
 }
 INSTANTIATE_TEST_SUITE_P(CurrentHistoricalZero, NewHorizonsMeleeSpecialtyTest, ::testing::Values(0, 1, 2));
-TEST(NewHorizonsMeleeSpecialtyMarkers, ShieldAndSwordRetainsExactSingleTagAndRejectsMalformedLists)
+using NewHorizonsMeleeSpecialtyMarkers = vcmiTestData::OriginalDataTest;
+
+TEST_F(NewHorizonsMeleeSpecialtyMarkers, ShieldAndSwordRetainsExactSingleTagAndRejectsMalformedLists)
 {
 	Bonus effect(BonusDuration::UNTIL_NEXT_CREATURE_ACTIVATION, BonusType::GENERAL_DAMAGE_REDUCTION,
 		BonusSource::HERO_SPECIAL, 20, BonusSourceID(HeroTypeID(HeroTypeID::decode("core:sorsha"))),
@@ -217,7 +220,7 @@ TEST(NewHorizonsMeleeSpecialtyMarkers, ShieldAndSwordRetainsExactSingleTagAndRej
 	effect.stacking = "unrelated";
 	EXPECT_FALSE(newHorizonsShieldAndSword::isProtection(&effect));
 }
-TEST(NewHorizonsMeleeSpecialtyMarkers, SepulchralGripRetainsExactOrderedTagsAndRejectsMissingDuplicateOrExtraTags)
+TEST_F(NewHorizonsMeleeSpecialtyMarkers, SepulchralGripRetainsExactOrderedTagsAndRejectsMissingDuplicateOrExtraTags)
 {
 	Bonus effect(BonusDuration::STACK_ACTIVATION, BonusType::STACKS_MOVEMENT_RANGE,
 		BonusSource::HERO_SPECIAL, -1, BonusSourceID(HeroTypeID(HeroTypeID::decode("core:straker"))));

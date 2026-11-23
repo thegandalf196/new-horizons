@@ -7,13 +7,16 @@
  * Full text of license available in license.txt file, in main folder
  */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 
 #include "AI/Nullkiller2/Behaviors/RecruitHeroBehavior.h"
 #include "lib/constants/NumericConstants.h"
 #include "lib/mapObjects/CGHeroInstance.h"
 #include "lib/mapObjects/CGTownInstance.h"
 
-TEST(Nullkiller2_Behaviors_RecruitHeroBehavior, recruitDecisionAllowsMarkedNextTurnEmergencyUnderGoldPressure)
+using Nullkiller2_Behaviors_RecruitHeroBehavior = vcmiTestData::OriginalDataTest;
+
+TEST_F(Nullkiller2_Behaviors_RecruitHeroBehavior, recruitDecisionAllowsMarkedNextTurnEmergencyUnderGoldPressure)
 {
 	CGHeroInstance tavernHero(nullptr);
 
@@ -30,7 +33,7 @@ TEST(Nullkiller2_Behaviors_RecruitHeroBehavior, recruitDecisionAllowsMarkedNextT
 	) << "severe next-turn town threat should bypass gold pressure for an emergency recruit";
 }
 
-TEST(Nullkiller2_Behaviors_RecruitHeroBehavior, defensiveEmergencyRequiresMeaningfulNextTurnThreat)
+TEST_F(Nullkiller2_Behaviors_RecruitHeroBehavior, defensiveEmergencyRequiresMeaningfulNextTurnThreat)
 {
 	CGTownInstance threatenedTown(nullptr);
 	CGHeroInstance tavernHero(nullptr);
@@ -47,7 +50,7 @@ TEST(Nullkiller2_Behaviors_RecruitHeroBehavior, defensiveEmergencyRequiresMeanin
 	) << "weak next-turn threats should not force hero recruitment";
 }
 
-TEST(Nullkiller2_Behaviors_RecruitHeroBehavior, defensiveEmergencyAllowsSevereNextTurnThreatCoveredByHero)
+TEST_F(Nullkiller2_Behaviors_RecruitHeroBehavior, defensiveEmergencyAllowsSevereNextTurnThreatCoveredByHero)
 {
 	CGTownInstance threatenedTown(nullptr);
 	CGHeroInstance tavernHero(nullptr);

@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../mock/TinyMapGameTest.h"
 #include "../HistoricalFactionPerkRules.h"
 #include "../hero/HistoricalCapabilityRules.h"
@@ -207,7 +208,9 @@ TEST_F(NewHorizonsNeutralArmyWorldTest, SaveReloadResaveDoesNotHalveAgainAndOldE
 	EXPECT_EQ(reread->getMap().getObjects<CGResource>().front()->getStackCount(SlotID(0)), 4);
 }
 
-TEST(NewHorizonsNeutralArmySerialization, DefaultWorldAndUninitializedLobbyWritersAcceptOldAndCurrentFormats)
+using NewHorizonsNeutralArmySerialization = vcmiTestData::OriginalDataTest;
+
+TEST_F(NewHorizonsNeutralArmySerialization, DefaultWorldAndUninitializedLobbyWritersAcceptOldAndCurrentFormats)
 {
 	for(const auto version : {ESerializationVersion::NEW_HORIZONS_SORCERY_REVISION, ESerializationVersion::CURRENT})
 	{

@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 #include "HeroCommandFixture.h"
 #include "FullGameSnapshotTypes.h"
 #include "../../../lib/GameConstants.h"
@@ -1808,6 +1809,7 @@ TEST_F(HeroCommandTest, PerGameRulesSnapshotRoundTripsAndRefuseLossyLegacyWrites
 
 TEST(HeroCommandRulesTest, NamedSettingsArrayLoadsRealContent)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	GameSettings settings;
 	JsonNode files;
 	files.Vector().emplace_back("config/newHorizonsCombat");

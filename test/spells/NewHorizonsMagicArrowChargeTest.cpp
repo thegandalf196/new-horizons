@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/serializer/CMemorySerializer.h"
 #include <array>
@@ -21,6 +22,7 @@ const SpellID ARROW(SpellID::MAGIC_ARROW);
 
 TEST(NewHorizonsMagicArrowCharge, EveryLevelUsesRawPowerAndItsActualTotalPrice)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto rules = chargeRules();
 	const newHorizonsMagic::MagicArrowOverchargeModifiers overcharger{1};
 	constexpr std::array damage{220, 420, 620, 820, 1020, 1220, 1420};
@@ -38,6 +40,7 @@ TEST(NewHorizonsMagicArrowCharge, EveryLevelUsesRawPowerAndItsActualTotalPrice)
 
 TEST(NewHorizonsMagicArrowCharge, SchoolSpellcraftEmpowerAndSpecialtyScaleOnlyThePowerTermOnce)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto rules = chargeRules();
 	// Expert School (145%) x Expert Spellcraft (130%) = 18850 basis points.
 	EXPECT_EQ(newHorizonsMagic::magicArrowDamageBasisPoints(rules, ARROW, 200, 10, 2, {}, 18850), 1151);
@@ -48,6 +51,7 @@ TEST(NewHorizonsMagicArrowCharge, SchoolSpellcraftEmpowerAndSpecialtyScaleOnlyTh
 
 TEST(NewHorizonsMagicArrowCharge, CapacityUsesEveryRawPowerBoundaryAndOnlyOneOverchargerLevel)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto rules = chargeRules();
 	for(const auto [power, expected] : std::array<std::pair<int, int>, 8>{{
 		{0, 2}, {49, 2}, {50, 3}, {99, 3}, {100, 4}, {149, 4}, {150, 5}, {1000000, 5}}})
@@ -62,6 +66,7 @@ TEST(NewHorizonsMagicArrowCharge, CapacityUsesEveryRawPowerBoundaryAndOnlyOneOve
 
 TEST(NewHorizonsMagicArrowCharge, AffordableMaximumUsesTablePricesAndExactMana)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto rules = chargeRules();
 	EXPECT_EQ(newHorizonsMagic::magicArrowMaximumAffordableOvercharge(rules, ARROW, 200, 4, 29), 1);
 	EXPECT_EQ(newHorizonsMagic::magicArrowMaximumAffordableOvercharge(rules, ARROW, 200, 4, 30), 2);
@@ -85,6 +90,7 @@ TEST(NewHorizonsMagicArrowCharge, InvalidSelectionsAndOtherSpellsNeverReceiveCha
 
 TEST(NewHorizonsMagicArrowCharge, CurrentProfileRoundTripsAndRejectsUnsupportedSerialization)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto current = chargeRules();
 	CMemorySerializer memory;
 	memory.oser & current;
@@ -123,6 +129,7 @@ TEST(NewHorizonsMagicArrowCharge, UnknownVersionNullFractionalAndWrongIdentityPr
 
 TEST(NewHorizonsMagicArrowCharge, UnchangedDisintegrateHasTheActualCrossingAndEfficiencyRelationship)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto rules = chargeRules();
 	const auto disintegrate = newHorizonsMagic::spellDirectDamage(rules, "new-horizons:disintegrate");
 	ASSERT_TRUE(disintegrate);

@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../hero/HistoricalCapabilityRules.h"
 #include "../../lib/nativeRules/CompiledCapabilityRules.h"
 #include "../../lib/nativeRules/CapturedPerkRules.h"
@@ -9,7 +10,9 @@
 #include "../../lib/GameLibrary.h"
 #include "../../lib/CCreatureHandler.h"
 
-TEST(CompiledLeadershipRules, HistoricalAndCurrentRatingAndEveryCreatureRequirementMatchRaw)
+using CompiledLeadershipRules = vcmiTestData::OriginalDataTest;
+
+TEST_F(CompiledLeadershipRules, HistoricalAndCurrentRatingAndEveryCreatureRequirementMatchRaw)
 {
 	const JsonNode current(JsonPath::builtin("config/newHorizonsCapabilities"));
 	for(const auto & world : {historicalCapabilityRulesV4(), historicalCapabilityRulesV5(), current})
@@ -40,7 +43,7 @@ TEST(CompiledLeadershipRules, HistoricalAndCurrentRatingAndEveryCreatureRequirem
 		}
 }
 
-TEST(CompiledLeadershipRules, PerkCaptureDiscountsPreserveIndependentRankAndLordRounding)
+TEST_F(CompiledLeadershipRules, PerkCaptureDiscountsPreserveIndependentRankAndLordRounding)
 {
 	const JsonNode raw(JsonPath::builtin("config/newHorizonsPerks"));
 	const auto owner = nativeRules::CapturedPerkRules::compile(raw);
@@ -60,7 +63,7 @@ TEST(CompiledLeadershipRules, PerkCaptureDiscountsPreserveIndependentRankAndLord
 	EXPECT_EQ(absent.discountPercent(3, true), 0);
 }
 
-TEST(CompiledLeadershipRules, V1AggregateAndV2V3V6SlotProfilesRetainHistoricalArithmetic)
+TEST_F(CompiledLeadershipRules, V1AggregateAndV2V3V6SlotProfilesRetainHistoricalArithmetic)
 {
 	JsonNode first;
 	first["schemaVersion"].Integer() = 1;

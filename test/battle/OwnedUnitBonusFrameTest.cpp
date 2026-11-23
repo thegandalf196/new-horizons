@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/battle/OwnedUnitBonusFrame.h"
 #include "../../lib/battle/OwnedFrameBranchQueries.h"
 #include "../../lib/battle/NewHorizonsFrozen.h"
@@ -113,7 +114,9 @@ Frame::Inputs inputs(bool form = false, bool clone = false)
 	input.state = seed.save(); return input;
 }
 }
-TEST(OwnedUnitBonusFrameTest, RawConsumptionReevaluatesConditionalCastsMdrAndSourceLocalSpellProvenance)
+using OwnedUnitBonusFrameTest = vcmiTestData::OriginalDataTest;
+
+TEST_F(OwnedUnitBonusFrameTest, RawConsumptionReevaluatesConditionalCastsMdrAndSourceLocalSpellProvenance)
 {
 	auto frame = Frame::fromOwnedInputs(inputs());
 	WithoutLibrary absent;
@@ -129,7 +132,7 @@ TEST(OwnedUnitBonusFrameTest, RawConsumptionReevaluatesConditionalCastsMdrAndSou
 	EXPECT_EQ(repeated->unit().casts.available(), 3);
 	EXPECT_EQ(repeated->unit().getMaxHealth(), 10u); // Typed Spell/Creature payloads are shared owned inputs, never re-encoded.
 }
-TEST(OwnedUnitBonusFrameTest, MaterializedScratchKeepsFixedScalarAndLedgerAcrossParentChanges)
+TEST_F(OwnedUnitBonusFrameTest, MaterializedScratchKeepsFixedScalarAndLedgerAcrossParentChanges)
 {
 	auto frame = Frame::fromOwnedInputs(inputs());
 	WithoutLibrary absent;
@@ -145,7 +148,7 @@ TEST(OwnedUnitBonusFrameTest, MaterializedScratchKeepsFixedScalarAndLedgerAcross
 	EXPECT_EQ(consumed.unit().casts.available(), 3);
 	EXPECT_EQ(original.unit().casts.available(), 0);
 }
-TEST(OwnedUnitBonusFrameTest, FormedCloneTerminalRestoreUsesOwnedNativeSourceWithoutLibrary)
+TEST_F(OwnedUnitBonusFrameTest, FormedCloneTerminalRestoreUsesOwnedNativeSourceWithoutLibrary)
 {
 	auto frame = Frame::fromOwnedInputs(inputs(true, true));
 	WithoutLibrary absent;
@@ -161,7 +164,7 @@ TEST(OwnedUnitBonusFrameTest, FormedCloneTerminalRestoreUsesOwnedNativeSourceWit
 	EXPECT_NO_THROW(scratch.unit().save());
 	EXPECT_EQ(frame->unit().getCount(), 30); EXPECT_TRUE(frame->unit().hasBattleForm());
 }
-TEST(OwnedUnitBonusFrameTest, NestedLoansRetainExactAncestryAndRejectSiblingFormQueryBinding)
+TEST_F(OwnedUnitBonusFrameTest, NestedLoansRetainExactAncestryAndRejectSiblingFormQueryBinding)
 {
 	auto frame = Frame::fromOwnedInputs(inputs());
 	WithoutLibrary absent;
@@ -173,7 +176,7 @@ TEST(OwnedUnitBonusFrameTest, NestedLoansRetainExactAncestryAndRejectSiblingForm
 	EXPECT_EQ(nested.unit().getCount(), 2); EXPECT_EQ(nested.unit().casts.available(), 3);
 	EXPECT_EQ(nested.unit().getMaxHealth(), 10u);
 }
-TEST(OwnedUnitBonusFrameTest, InvalidRemovalBatchAndMissingFormKeepParentStateUnchanged)
+TEST_F(OwnedUnitBonusFrameTest, InvalidRemovalBatchAndMissingFormKeepParentStateUnchanged)
 {
 	auto frame = Frame::fromOwnedInputs(inputs());
 	auto missing = inputs(); missing.recipientPosition = 1;
@@ -186,7 +189,7 @@ TEST(OwnedUnitBonusFrameTest, InvalidRemovalBatchAndMissingFormKeepParentStateUn
 	EXPECT_THROW(frame->load(invalid), std::logic_error);
 	EXPECT_EQ(frame->save(), before);
 }
-TEST(OwnedUnitBonusFrameTest, NestedLoanDescriptorAndHealthRemainIsolatedAcrossParentFormChanges)
+TEST_F(OwnedUnitBonusFrameTest, NestedLoanDescriptorAndHealthRemainIsolatedAcrossParentFormChanges)
 {
 	auto frame = Frame::fromOwnedInputs(inputs());
 	WithoutLibrary absent;
@@ -206,7 +209,7 @@ TEST(OwnedUnitBonusFrameTest, NestedLoanDescriptorAndHealthRemainIsolatedAcrossP
 	EXPECT_EQ(formedChild.unit().casts.available(), 3);
 	EXPECT_EQ(ordinaryChild.unit().getMaxHealth(), 10u);
 }
-TEST(OwnedUnitBonusFrameTest, SameFormNativeUpdaterRunsCanonicalStagesWithoutDoubleAppend)
+TEST_F(OwnedUnitBonusFrameTest, SameFormNativeUpdaterRunsCanonicalStagesWithoutDoubleAppend)
 {
 	auto frame = Frame::fromOwnedInputs(inputs(true));
 	WithoutLibrary absent;
@@ -216,7 +219,7 @@ TEST(OwnedUnitBonusFrameTest, SameFormNativeUpdaterRunsCanonicalStagesWithoutDou
 	EXPECT_EQ(unstacked->front()->val, 1);
 	EXPECT_EQ(scratch.unit().getMaxHealth(), 1u);
 }
-TEST(OwnedUnitBonusFrameTest, MixedInfoAndForeignBonusProviderCannotBorrowOwnedNativeSource)
+TEST_F(OwnedUnitBonusFrameTest, MixedInfoAndForeignBonusProviderCannotBorrowOwnedNativeSource)
 {
 	auto frame = Frame::fromOwnedInputs(inputs());
 	WithoutLibrary absent;
@@ -227,7 +230,7 @@ TEST(OwnedUnitBonusFrameTest, MixedInfoAndForeignBonusProviderCannotBorrowOwnedN
 	EXPECT_THROW(frame->unit().ownedNativeFormBonuses(mixedUnit, Selector::all, true), std::logic_error);
 }
 
-TEST(OwnedUnitBonusFrameTest, DerivedScratchUsesRetainedEnvironmentWithoutAdmittingForeignOccurrences)
+TEST_F(OwnedUnitBonusFrameTest, DerivedScratchUsesRetainedEnvironmentWithoutAdmittingForeignOccurrences)
 {
 	auto frame = Frame::fromOwnedInputs(inputs());
 	WithoutLibrary absent;
@@ -247,7 +250,7 @@ TEST(OwnedUnitBonusFrameTest, DerivedScratchUsesRetainedEnvironmentWithoutAdmitt
 	EXPECT_EQ(child.unit().casts.available(), 3);
 }
 
-TEST(OwnedUnitBonusFrameTest, CopiedLegacyMoraleLimitsPreserveZeroWithoutLibraryFallback)
+TEST_F(OwnedUnitBonusFrameTest, CopiedLegacyMoraleLimitsPreserveZeroWithoutLibraryFallback)
 {
 	auto values = inputs(); values.environment.legacyMoraleLimits = std::pair<int32_t, int32_t>{-2, 4};
 	auto frame = Frame::fromOwnedInputs(std::move(values));
@@ -261,7 +264,7 @@ TEST(OwnedUnitBonusFrameTest, CopiedLegacyMoraleLimitsPreserveZeroWithoutLibrary
 	EXPECT_EQ(zero->unit().moraleValWithBonus(10), 0);
 	EXPECT_EQ(zero->unit().moraleValWithBonus(-10), 0);
 }
-TEST(OwnedUnitBonusFrameTest, UnknownOrInvalidLegacyMoraleLimitsRefuseOnlyWhenNeeded)
+TEST_F(OwnedUnitBonusFrameTest, UnknownOrInvalidLegacyMoraleLimitsRefuseOnlyWhenNeeded)
 {
 	auto unknown = Frame::fromOwnedInputs(inputs());
 	auto values = inputs(); values.environment.legacyMoraleLimits = std::pair<int32_t, int32_t>{1, 3};
@@ -272,7 +275,7 @@ TEST(OwnedUnitBonusFrameTest, UnknownOrInvalidLegacyMoraleLimitsRefuseOnlyWhenNe
 	EXPECT_EQ(invalid->unit().casts.available(), 0); // Unrelated canonical queries retain their old admission/order.
 }
 
-TEST(OwnedUnitBonusFrameTest, OrdinarySnapshotWithoutFormFieldsReplacesFormedFixedProviderNativeSource)
+TEST_F(OwnedUnitBonusFrameTest, OrdinarySnapshotWithoutFormFieldsReplacesFormedFixedProviderNativeSource)
 {
 	auto formed = Frame::fromOwnedInputs(inputs(true));
 	auto ordinary = Frame::fromOwnedInputs(inputs());
@@ -292,7 +295,7 @@ TEST(OwnedUnitBonusFrameTest, OrdinarySnapshotWithoutFormFieldsReplacesFormedFix
 	EXPECT_EQ(formed->unit().creatureId(), CreatureID(2));
 	EXPECT_EQ(formed->unit().getMaxHealth(), 1u);
 }
-TEST(OwnedUnitBonusFrameTest, PositionLimiterUsesFixedFrameUntilCurrentStateIsCommitted)
+TEST_F(OwnedUnitBonusFrameTest, PositionLimiterUsesFixedFrameUntilCurrentStateIsCommitted)
 {
 	auto values = inputs();
 	auto limited = value(BonusType::STACKS_SPEED, 7);
@@ -315,7 +318,7 @@ TEST(OwnedUnitBonusFrameTest, PositionLimiterUsesFixedFrameUntilCurrentStateIsCo
 }
 
 
-TEST(OwnedUnitBonusFrameTest, AdjacencyUsesOwnedCurrentOccurrencesAndLazyCanonicalTraits)
+TEST_F(OwnedUnitBonusFrameTest, AdjacencyUsesOwnedCurrentOccurrencesAndLazyCanonicalTraits)
 {
 	auto peerInputs = inputs(); peerInputs.identity.id = 18;
 	auto peer = Frame::fromOwnedInputs(std::move(peerInputs));
@@ -349,7 +352,7 @@ TEST(OwnedUnitBonusFrameTest, AdjacencyUsesOwnedCurrentOccurrencesAndLazyCanonic
 	EXPECT_EQ(historical->unit().valOfBonuses(BonusType::STACKS_SPEED), 12);
 	EXPECT_EQ(captured->unit().valOfBonuses(BonusType::STACKS_SPEED), 12); // Deep payloads unaffected by input mutation.
 }
-TEST(OwnedUnitBonusFrameTest, CopiedLuckLimitsUseCanonicalClampAndRetainedScratchEnvironmentWithoutLibrary)
+TEST_F(OwnedUnitBonusFrameTest, CopiedLuckLimitsUseCanonicalClampAndRetainedScratchEnvironmentWithoutLibrary)
 {
 	for(const int amount : {10, -10})
 	{
@@ -371,7 +374,7 @@ TEST(OwnedUnitBonusFrameTest, CopiedLuckLimitsUseCanonicalClampAndRetainedScratc
 	EXPECT_THROW(unknown->unit().luckVal(), std::logic_error);
 }
 
-TEST(OwnedUnitBonusFrameTest, PositiveNecromancyLuckUsesCopiedSourceOnlyAtExplanationStage)
+TEST_F(OwnedUnitBonusFrameTest, PositiveNecromancyLuckUsesCopiedSourceOnlyAtExplanationStage)
 {
 	const SecondarySkill necromancy(SecondarySkill::decode("new-horizons:necromancy"));
 	ASSERT_TRUE(necromancy.hasValue());
@@ -389,7 +392,7 @@ TEST(OwnedUnitBonusFrameTest, PositiveNecromancyLuckUsesCopiedSourceOnlyAtExplan
 	EXPECT_NO_THROW(unknown->unit().magicResistance());
 	EXPECT_THROW(unknown->unit().luckVal(), std::logic_error);
 }
-TEST(OwnedUnitBonusFrameTest, CanonicalValueCopyKeepsExactPrivateBindingsAcrossForkAndLoanRetirement)
+TEST_F(OwnedUnitBonusFrameTest, CanonicalValueCopyKeepsExactPrivateBindingsAcrossForkAndLoanRetirement)
 {
 	auto parent = Frame::fromOwnedInputs(inputs());
 	WithoutLibrary absent;
@@ -413,7 +416,7 @@ TEST(OwnedUnitBonusFrameTest, CanonicalValueCopyKeepsExactPrivateBindingsAcrossF
 	EXPECT_EQ(nested.unit().getMaxHealth(), 10u);
 }
 
-TEST(OwnedUnitBonusFrameTest, QueryStateGuardIncludesRemovalLedgerEvenWhenScalarSaveDoesNotChange)
+TEST_F(OwnedUnitBonusFrameTest, QueryStateGuardIncludesRemovalLedgerEvenWhenScalarSaveDoesNotChange)
 {
 	auto frame = Frame::fromOwnedInputs(inputs()); auto independent = Frame::fromOwnedInputs(inputs());
 	WithoutLibrary absent;
@@ -428,7 +431,7 @@ TEST(OwnedUnitBonusFrameTest, QueryStateGuardIncludesRemovalLedgerEvenWhenScalar
 	auto injury = frame->scratch(); int64_t damage = 10; injury.unit().damage(damage); frame->load(injury.unit().save());
 	EXPECT_FALSE(frame->hasSameQueryState(*updated));
 }
-TEST(OwnedUnitBonusFrameTest, QueryStateGuardDoesNotCertifyExternallyMutablePeerReferences)
+TEST_F(OwnedUnitBonusFrameTest, QueryStateGuardDoesNotCertifyExternallyMutablePeerReferences)
 {
 	auto peer = Frame::fromOwnedInputs(inputs()); auto values = inputs();
 	values.environmentUnits.push_back(std::shared_ptr<const battle::Unit>(peer, &peer->unit()));
@@ -488,7 +491,7 @@ Frame::Inputs withOpaquePeers(const std::vector<PeerFixture> & peers)
 	return result;
 }
 }
-TEST(OwnedUnitBonusFrameTest, OpaquePeerMissingRequiredAlternateTraitRemainsUnknownBeforeFamilyComparison)
+TEST_F(OwnedUnitBonusFrameTest, OpaquePeerMissingRequiredAlternateTraitRemainsUnknownBeforeFamilyComparison)
 {
 	auto peer = peerFixture(false, false);
 	peer.captured.query.facts.adjacencyTraits->erase(CreatureID(2));
@@ -499,7 +502,7 @@ TEST(OwnedUnitBonusFrameTest, OpaquePeerMissingRequiredAlternateTraitRemainsUnkn
 	EXPECT_THROW(child->unit().magicResistance(), std::logic_error);
 	EXPECT_EQ(frame->unit().magicResistance(), 25);
 }
-TEST(OwnedUnitBonusFrameTest, OpaquePeerAuraReevaluatesAgainstCurrentRecipientWithoutLeakingIntoFrozenScratch)
+TEST_F(OwnedUnitBonusFrameTest, OpaquePeerAuraReevaluatesAgainstCurrentRecipientWithoutLeakingIntoFrozenScratch)
 {
 	auto peer = peerFixture(false, false); auto frame = Frame::fromOwnedInputs(withOpaquePeers({peer}));
 	WithoutLibrary absent;
@@ -511,7 +514,7 @@ TEST(OwnedUnitBonusFrameTest, OpaquePeerAuraReevaluatesAgainstCurrentRecipientWi
 	frame->load(alive); EXPECT_EQ(frame->unit().magicResistance(), 25);
 	peer.source.reset(); EXPECT_EQ(frame->unit().magicResistance(), 25); // No peer source/env/descriptor alias retained.
 }
-TEST(OwnedUnitBonusFrameTest, OpaqueCartHypnosisUsesCanonicalOwnershipAndReevaluatesRecipientContext)
+TEST_F(OwnedUnitBonusFrameTest, OpaqueCartHypnosisUsesCanonicalOwnershipAndReevaluatesRecipientContext)
 {
 	auto cart = peerFixture(true, true); auto values = withOpaquePeers({cart});
 	values.extraRecords.push_back(value(BonusType::SHOOTER, 1));
@@ -523,7 +526,7 @@ TEST(OwnedUnitBonusFrameTest, OpaqueCartHypnosisUsesCanonicalOwnershipAndReevalu
 	EXPECT_FALSE(frame->unit().shots.isLimited()); // Conditional Hypnosis no longer accepted; original-side cart supplies ammo.
 	EXPECT_TRUE(frozen.unit().shots.isLimited());
 }
-TEST(OwnedUnitBonusFrameTest, OpaqueCartOrderKeepsFirstDeadMatchingOccurrence)
+TEST_F(OwnedUnitBonusFrameTest, OpaqueCartOrderKeepsFirstDeadMatchingOccurrence)
 {
 	auto dead = peerFixture(true, false, 18, true), live = peerFixture(true, false, 19);
 	auto values = withOpaquePeers({dead, live}); values.extraRecords.push_back(value(BonusType::SHOOTER, 1));
@@ -532,7 +535,7 @@ TEST(OwnedUnitBonusFrameTest, OpaqueCartOrderKeepsFirstDeadMatchingOccurrence)
 	WithoutLibrary absent;
 	EXPECT_TRUE(frame->unit().shots.isLimited()); // No alive-filter, sort or last-cart substitution.
 }
-TEST(OwnedUnitBonusFrameTest, ImmediateScalarCopyRetainsOnlyOwnedInfoBonusAndEnvironment)
+TEST_F(OwnedUnitBonusFrameTest, ImmediateScalarCopyRetainsOnlyOwnedInfoBonusAndEnvironment)
 {
 	auto source = Frame::fromOwnedInputs(inputs()); auto injury = source->scratch(); int64_t damage = 10; injury.unit().damage(damage);
 	auto captured = Frame::fromOwnedInputs(inputs(), injury.unit());
@@ -545,7 +548,7 @@ TEST(OwnedUnitBonusFrameTest, ImmediateScalarCopyRetainsOnlyOwnedInfoBonusAndEnv
 	EXPECT_EQ(captured->unit().getCount(), 2); // Canonical scalar copy, no mutable ancestor provider/values.
 }
 
-TEST(OwnedUnitBonusFrameTest, OpaquePeerRequiresExactConsumedScalarIdentityBeforePublishing)
+TEST_F(OwnedUnitBonusFrameTest, OpaquePeerRequiresExactConsumedScalarIdentityBeforePublishing)
 {
 	auto peer = peerFixture(false, false); auto values = withOpaquePeers({peer});
 	values.peerInputs->front().identity.id = 99;
@@ -558,7 +561,7 @@ TEST(OwnedUnitBonusFrameTest, OpaquePeerRequiresExactConsumedScalarIdentityBefor
 	EXPECT_EQ(peer.source->unit().getCount(), 3);
 }
 
-TEST(OwnedUnitBonusFrameTest, OpaqueFormedPeerAndRecipientFormChangesKeepFixedAndCurrentQueriesSeparate)
+TEST_F(OwnedUnitBonusFrameTest, OpaqueFormedPeerAndRecipientFormChangesKeepFixedAndCurrentQueriesSeparate)
 {
 	auto peer = peerFixture(false, false, 18, false, true);
 	auto frame = Frame::fromOwnedInputs(withOpaquePeers({peer}));
@@ -575,7 +578,7 @@ TEST(OwnedUnitBonusFrameTest, OpaqueFormedPeerAndRecipientFormChangesKeepFixedAn
 	auto repeated = child->fork(); EXPECT_EQ(repeated->unit().magicResistance(), 0);
 }
 
-TEST(OwnedUnitBonusFrameTest, OpaquePeerCaptureForkQueryAndRetirementKeepNativeGenerationAndCacheUntouched)
+TEST_F(OwnedUnitBonusFrameTest, OpaquePeerCaptureForkQueryAndRetirementKeepNativeGenerationAndCacheUntouched)
 {
 	auto peer = peerFixture(false, false); auto values = withOpaquePeers({peer});
 	CBonusSystemNode sentinel(BonusNodeType::UNKNOWN); sentinel.addNewBonus(value(BonusType::STACKS_SPEED, 7));
@@ -607,7 +610,7 @@ Frame::Inputs inheritedLimitedSpeedInputs()
 	return result;
 }
 }
-TEST(OwnedUnitBonusFrameTest, InheritedLimitedSpeedReevaluatesCurrentLedgerWithoutLibrary)
+TEST_F(OwnedUnitBonusFrameTest, InheritedLimitedSpeedReevaluatesCurrentLedgerWithoutLibrary)
 {
 	auto frame = Frame::fromOwnedInputs(inheritedLimitedSpeedInputs()); auto sibling = frame->fork();
 	WithoutLibrary absent;
@@ -619,7 +622,7 @@ TEST(OwnedUnitBonusFrameTest, InheritedLimitedSpeedReevaluatesCurrentLedgerWitho
 	auto scratch = sibling->scratch(); auto nested = scratch.nested();
 	EXPECT_EQ(nested.unit().valOfBonuses(BonusType::STACKS_SPEED), 7);
 }
-TEST(OwnedUnitBonusFrameTest, InheritedLimitedSpeedKeepsSourceSpellProvenanceAndNestedLifetime)
+TEST_F(OwnedUnitBonusFrameTest, InheritedLimitedSpeedKeepsSourceSpellProvenanceAndNestedLifetime)
 {
 	auto frame = Frame::fromOwnedInputs(inheritedLimitedSpeedInputs());
 	WithoutLibrary absent;
@@ -661,7 +664,7 @@ BatchFixture batchFixture(bool distinctUpstream)
 	return {{std::move(base), std::move(full), std::move(native)}, std::move(recipe)};
 }
 }
-TEST(OwnedUnitBonusFrameTest, BatchFormFullAndHypotheticalNativeUseDistinctRawUpstreamRecipes)
+TEST_F(OwnedUnitBonusFrameTest, BatchFormFullAndHypotheticalNativeUseDistinctRawUpstreamRecipes)
 {
 	auto values = batchFixture(true);
 	auto frames = Batch::fromOwnedInputs(std::move(values.graphs), {values.recipe}, OwnedBonusCaptureCodec::current());
@@ -677,7 +680,7 @@ TEST(OwnedUnitBonusFrameTest, BatchFormFullAndHypotheticalNativeUseDistinctRawUp
 	EXPECT_EQ(frame->unit().getMaxHealth(), 10u); EXPECT_EQ(frozen.unit().getMaxHealth(), 10u);
 	EXPECT_FALSE(frame->hasSameQueryState(*child));
 }
-TEST(OwnedUnitBonusFrameTest, BatchRejectsRepeatedBaseControlIdentityAndForeignAliasPools)
+TEST_F(OwnedUnitBonusFrameTest, BatchRejectsRepeatedBaseControlIdentityAndForeignAliasPools)
 {
 	auto values = batchFixture(false);
 	EXPECT_THROW(Batch::fromOwnedInputs(values.graphs, {values.recipe, values.recipe}, OwnedBonusCaptureCodec::current()), std::invalid_argument);
@@ -687,7 +690,7 @@ TEST(OwnedUnitBonusFrameTest, BatchRejectsRepeatedBaseControlIdentityAndForeignA
 	auto independent = inputs(); independent.forms.at(CreatureID(2)).fullGraph = std::move(alien);
 	EXPECT_THROW(Frame::fromOwnedInputs(std::move(independent)), std::invalid_argument);
 }
-TEST(OwnedUnitBonusFrameTest, BatchPeerArrivalVariantsFollowOnlyMainRecipientFormAndKeepForksIsolated)
+TEST_F(OwnedUnitBonusFrameTest, BatchPeerArrivalVariantsFollowOnlyMainRecipientFormAndKeepForksIsolated)
 {
 	auto peer = peerFixture(false, false); auto values = batchFixture(false);
 	values.recipe.inputs.state["state"]["position"].Integer() = 93;
@@ -737,7 +740,7 @@ Graph::SourceRelation attachSource(size_t exported)
 	return {true, std::move(source), {exported}, {0}};
 }
 }
-TEST(OwnedUnitBonusFrameTest, SourceRecipeBatchRebasesSpellExportAndDerivesExactFullNativeAndPeerQueries)
+TEST_F(OwnedUnitBonusFrameTest, SourceRecipeBatchRebasesSpellExportAndDerivesExactFullNativeAndPeerQueries)
 {
 	auto values = exactBatchFixture(); auto peer = peerFixture(false, false);
 	values.recipe.inputs.state["state"]["position"].Integer() = 93;
@@ -775,7 +778,7 @@ TEST(OwnedUnitBonusFrameTest, SourceRecipeBatchRebasesSpellExportAndDerivesExact
 	EXPECT_EQ(PreparedBonusGraphStorage::currentGeneration(), generation);
 }
 
-TEST(OwnedUnitBonusFrameTest, SourceRecipeBatchDerivesAdjacentTraitsAfterCloneAndKeepsExplicitExportRole)
+TEST_F(OwnedUnitBonusFrameTest, SourceRecipeBatchDerivesAdjacentTraitsAfterCloneAndKeepsExplicitExportRole)
 {
 	auto values = exactBatchFixture(); auto peer = peerFixture(false, false);
 	values.recipe.inputs.state["state"]["position"].Integer() = 93;
@@ -814,7 +817,7 @@ TEST(OwnedUnitBonusFrameTest, SourceRecipeBatchDerivesAdjacentTraitsAfterCloneAn
 	EXPECT_EQ(spells.front().sid, BonusSourceID(SpellID(SpellID::FORTUNE)));
 }
 
-TEST(OwnedUnitBonusFrameTest, MechanicsPresenceAdmissionAndAppendKeepBranchesIndependent)
+TEST_F(OwnedUnitBonusFrameTest, MechanicsPresenceAdmissionAndAppendKeepBranchesIndependent)
 {
 	using Branch = battle::OwnedFrameBranchQueries;
 	auto frame = Frame::fromOwnedInputs(inputs());
@@ -837,7 +840,7 @@ TEST(OwnedUnitBonusFrameTest, MechanicsPresenceAdmissionAndAppendKeepBranchesInd
 	EXPECT_FALSE(sibling->unit().mayHaveBonusType(BonusType::PHYSICAL_AFFLICTION));
 }
 
-TEST(OwnedUnitBonusFrameTest, MechanicsPresenceIncludesAlternateFormAndInheritedLimitedRecords)
+TEST_F(OwnedUnitBonusFrameTest, MechanicsPresenceIncludesAlternateFormAndInheritedLimitedRecords)
 {
 	auto values = inputs();
 	auto marker = value(BonusType::HYPNOTIZED, 1);

@@ -5,6 +5,7 @@
  * Full text of license available in license.txt file, in main folder
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/gameState/PreparedReplayAppend.h"
 #include "../../lib/gameState/CGameState.h"
 #include "../../lib/networkPacks/PacksForClientBattle.h"
@@ -305,6 +306,7 @@ TEST(PreparedReplayAppendTest, EmptySnapshotRoundtripPrecedesFreshReservation)
 
 TEST(PreparedReplayAppendTest, TypedGameStateFactoryRetainsExistingChapterBytes)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	CGameState gs;
 	gs.day = 3;
 	gs.replayLog = existingReplay();

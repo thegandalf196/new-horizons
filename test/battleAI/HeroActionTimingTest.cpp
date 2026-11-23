@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../AI/BattleAI/HeroActionTiming.h"
 #include "HeroActionTimingCapture.h"
 
@@ -662,7 +663,9 @@ TEST(HeroActionCallIntegrationTest, FreshProcessOptInAndCapOne)
 	EXPECT_EQ(row.at("submit_returned"), 1);
 }
 
-TEST(HeroActionDamageCacheCallIntegrationTest, FreshProcessOptInAndCapOne)
+using HeroActionDamageCacheCallIntegrationTest = vcmiTestData::OriginalDataTest;
+
+TEST_F(HeroActionDamageCacheCallIntegrationTest, FreshProcessOptInAndCapOne)
 {
 	heroTimingTest::Capture capture;
 	ASSERT_EQ(heroActionTiming::parseLimit(std::getenv("NH_RENDER_LOAD_TIMING_LIMIT")), 1u)
@@ -766,12 +769,12 @@ void expectEmptyCacheContinuationCall(size_t count)
 }
 }
 
-TEST(HeroActionDamageCacheCallIntegrationTest, FreshProcessZeroSlotsRetainsSchema)
+TEST_F(HeroActionDamageCacheCallIntegrationTest, FreshProcessZeroSlotsRetainsSchema)
 {
 	expectEmptyCacheContinuationCall(0);
 }
 
-TEST(HeroActionDamageCacheCallIntegrationTest, FreshProcessNoContinuationRetainsSchema)
+TEST_F(HeroActionDamageCacheCallIntegrationTest, FreshProcessNoContinuationRetainsSchema)
 {
 	expectEmptyCacheContinuationCall(2);
 }
@@ -933,6 +936,7 @@ void expectTypedRows(const TypeTimingCapture & capture)
 
 TEST(HeroActionTypeCallIntegrationTest, FreshProcessScopedTypesAndCapOne)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	TypeTimingCapture capture;
 	ASSERT_EQ(heroActionTiming::parseLimit(std::getenv("NH_RENDER_LOAD_TIMING_LIMIT")), 1u)
 		<< "Run this exact filter alone in a fresh process with limit=1, including OFF";

@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/battle/OwnedProspectiveCreatureDomain.h"
 #include "../../lib/GameLibrary.h"
 #include <stdexcept>
@@ -24,7 +25,9 @@ struct WithoutLibrary
 	~WithoutLibrary() { LIBRARY = saved; }
 };
 }
-TEST(OwnedProspectiveCreatureDomainTest, FullPoolPreservesRegistryOrderAndBothFootprintsWithoutNativeResolution)
+using OwnedProspectiveCreatureDomainTest = vcmiTestData::OriginalDataTest;
+
+TEST_F(OwnedProspectiveCreatureDomainTest, FullPoolPreservesRegistryOrderAndBothFootprintsWithoutNativeResolution)
 {
 	auto noHealth = species(1, 0, std::nullopt); noHealth.category.reset();
 	auto nonpositive = species(3, -1, std::nullopt); nonpositive.category.reset();
@@ -43,7 +46,7 @@ TEST(OwnedProspectiveCreatureDomainTest, FullPoolPreservesRegistryOrderAndBothFo
 	domain.forEach([&](const Creature * value, bool & stop) { visited.push_back(value->getId()); stop = true; });
 	ASSERT_EQ(visited.size(), 1u); EXPECT_EQ(visited.front(), CreatureID(9));
 }
-TEST(OwnedProspectiveCreatureDomainTest, KnownUnmappedCategoryIsDistinctFromUnknownAndNoCandidateIsSilentlyPruned)
+TEST_F(OwnedProspectiveCreatureDomainTest, KnownUnmappedCategoryIsDistinctFromUnknownAndNoCandidateIsSilentlyPruned)
 {
 	auto unknown = species(3, 20, Category::CORE); unknown.category.reset(); unknown.descriptor.baseHitPoints.reset();
 	Domain domain({species(7, 10, std::nullopt), species(9, 12, Category::CORE), unknown});
@@ -52,7 +55,7 @@ TEST(OwnedProspectiveCreatureDomainTest, KnownUnmappedCategoryIsDistinctFromUnkn
 	EXPECT_THROW(domain.formsFor(CreatureID(3)), std::logic_error);
 	EXPECT_THROW(domain.formsFor(CreatureID(9)), std::logic_error);
 }
-TEST(OwnedProspectiveCreatureDomainTest, BlueprintZeroIsCapturedAndSideBoundWhileMissingIsOnlyUnknown)
+TEST_F(OwnedProspectiveCreatureDomainTest, BlueprintZeroIsCapturedAndSideBoundWhileMissingIsOnlyUnknown)
 {
 	Domain domain({species(4, 10, Category::CORE)},
 		{{BattleSide::ATTACKER, CreatureID(4), 0}, {BattleSide::DEFENDER, CreatureID(4), 17}});

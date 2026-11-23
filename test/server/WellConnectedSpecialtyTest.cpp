@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "CastleAdventureSpecialtyFixture.h"
 #include "../../lib/mapObjects/EstatesRecruitmentQuote.h"
 
@@ -51,7 +52,9 @@ protected:
 };
 }
 
-TEST(WellConnectedQuote, DiscountAddsToConscriptionWithinTheCombinedCap)
+using WellConnectedQuote = vcmiTestData::OriginalDataTest;
+
+TEST_F(WellConnectedQuote, DiscountAddsToConscriptionWithinTheCombinedCap)
 {
 	using newHorizonsEstates::quoteRecruitment;
 	const auto unit = price(100, 1);

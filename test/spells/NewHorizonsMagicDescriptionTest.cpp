@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../mock/mock_IGameInfoCallback.h"
 #include "../server/battles/HeroCommandFixture.h"
 #include "../../lib/bonuses/Bonus.h"
@@ -67,6 +68,7 @@ constexpr auto spellcraftSuffix = "\n\nSpellcraft: 110% of normal strength from 
 class NewHorizonsMagicDescriptionTest : public ::testing::Test
 {
 protected:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	DescriptionRulesCallback callback;
 	CGHeroInstance hero{&callback};
 

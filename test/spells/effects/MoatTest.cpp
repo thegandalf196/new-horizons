@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 
 #include "EffectFixture.h"
 
@@ -47,6 +48,7 @@ JsonNode makeHexPatch(std::initializer_list<int> hexes)
 class MoatApplyTest : public Test, public EffectFixture
 {
 public:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	const SpellID testSpellId = SpellID::CURSE;
 
 	MoatApplyTest()

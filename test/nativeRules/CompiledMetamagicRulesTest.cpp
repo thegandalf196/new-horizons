@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../OverkillRandomPrayerRules.h"
 #include "../../lib/nativeRules/CompiledMetamagicRules.h"
 #include "../../lib/nativeRules/CapturedPerkRules.h"
@@ -193,6 +194,7 @@ void expectDefinition(const CompiledMetamagicEnergy & compiled, const JsonNode &
 
 TEST(CompiledMetamagicRules, CapturedRankHalonPayoutAndRefundPoliciesMatchRawArithmetic)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto owner = CapturedPerkRules::compile(perks());
 	const auto & typed = owner->metamagic();
 	const auto raw = newHorizonsMetamagic::resolutionPolicy(owner->document());
@@ -224,6 +226,7 @@ TEST(CompiledMetamagicRules, CapturedRankHalonPayoutAndRefundPoliciesMatchRawAri
 
 TEST(CompiledMetamagicRules, PolicyFourRemainsDistinctAndPolicyFiveAddsOnlyOverflow)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto historical = CapturedPerkRules::compile(metamagicProfile(4));
 	const auto current = CapturedPerkRules::compile(metamagicProfile(5));
 	const auto inactive = CapturedPerkRules::compile(JsonNode());
@@ -256,6 +259,7 @@ TEST(CompiledMetamagicRules, PolicyFourRemainsDistinctAndPolicyFiveAddsOnlyOverf
 
 TEST(CompiledMetamagicRules, AllCompleteProfilesMatchReaderAndDetachFromChangedDefaults)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	for(const int version : {4, 5, 6})
 	{
 		auto source = metamagicProfile(version);
@@ -274,6 +278,7 @@ TEST(CompiledMetamagicRules, AllCompleteProfilesMatchReaderAndDetachFromChangedD
 
 TEST(CompiledMetamagicRules, InvalidProfilesRejectBeforeReplacingAnExistingOwner)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	std::vector<JsonNode> invalid;
 	const auto changed = [&](int version, const std::function<void(JsonNode &)> & mutate)
 	{
@@ -337,6 +342,7 @@ TEST(CompiledMetamagicRules, InvalidProfilesRejectBeforeReplacingAnExistingOwner
 
 TEST(CompiledMetamagicRules, NonObjectPolicyNodesRejectWithoutReplacingAnExistingOwner)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	JsonNode emptyArray;
 	emptyArray.Vector();
 	JsonNode populatedArray;
@@ -375,6 +381,7 @@ TEST(CompiledMetamagicRules, RetiredPoliciesCannotAcquireOverflowExecution)
 
 TEST(CompiledMetamagicRules, ExactCurrentAndHistoricalPerkHandlesBelongToTheirCapturedOwner)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	constexpr std::array historical{
 		MetamagicPerk::ConservedFormula, MetamagicPerk::ManaRecycling, MetamagicPerk::DisruptiveCasting, MetamagicPerk::PurgingFormula,
 		MetamagicPerk::SpellSculpting, MetamagicPerk::HexWeaving, MetamagicPerk::WidenSpell, MetamagicPerk::Matterbreaker,
@@ -412,6 +419,7 @@ TEST(CompiledMetamagicRules, ExactCurrentAndHistoricalPerkHandlesBelongToTheirCa
 
 TEST(CompiledMetamagicRules, ChangedDefaultsAndInactiveCapturesCannotReplaceExistingPolicy)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto source = perks();
 	const auto current = CapturedPerkRules::compile(source);
 	source["metamagicPolicy"]["damagePerMana"].Integer() = 999;
@@ -426,6 +434,7 @@ TEST(CompiledMetamagicRules, ChangedDefaultsAndInactiveCapturesCannotReplaceExis
 
 TEST(CompiledMetamagicEnergy, EveryInstalledDefinitionMatchesTheSameCapturedDocument)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto source = magic();
 	const auto owner = CapturedRuleDocument::compile(CapturedRuleKind::WorldMagic, source);
 	const auto table = owner->metamagicEnergy();
@@ -440,6 +449,7 @@ TEST(CompiledMetamagicEnergy, EveryInstalledDefinitionMatchesTheSameCapturedDocu
 
 TEST(CompiledMetamagicEnergy, FamilyVariantsUseCapturedOrdinaryListedManaExactlyOnce)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto source = magic();
 	const auto owner = CapturedRuleDocument::compile(CapturedRuleKind::WorldMagic, source);
 	const auto table = owner->metamagicEnergy();
@@ -459,6 +469,7 @@ TEST(CompiledMetamagicEnergy, FamilyVariantsUseCapturedOrdinaryListedManaExactly
 
 TEST(CompiledMetamagicEnergy, MissingFreeUnknownAndInternalSourcesCannotManufactureFuel)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto source = magic();
 	source["spells"]["core:haste"].Struct().erase("costs");
 	const CompiledMetamagicEnergy missing(source);
@@ -483,6 +494,7 @@ TEST(CompiledMetamagicEnergy, MissingFreeUnknownAndInternalSourcesCannotManufact
 
 TEST(CompiledMetamagicEnergy, IndependentWorldOwnersAndRepeatedQueriesCannotRefreshFromChangedDefaults)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto source = magic();
 	const CompiledMetamagicEnergy first(source);
 	const auto * original = first.fuelDefinition(SpellID::HASTE);
@@ -501,6 +513,7 @@ TEST(CompiledMetamagicEnergy, IndependentWorldOwnersAndRepeatedQueriesCannotRefr
 
 TEST(CompiledMetamagicEnergy, RawCallbackBoundaryAdmitsBeforePublishingAndDetachesItsInput)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto source = magic();
 	const auto compiled = CompiledMetamagicEnergy::compileRawBoundary(source);
 	ASSERT_NE(compiled->fuelDefinition(SpellID::HASTE), nullptr);
@@ -540,6 +553,7 @@ TEST(CompiledMetamagicRules, RepeatedSealedQueriesPerformNoAdmissionOrIdentifier
 
 TEST(CompiledMetamagicEnergy, CallbackOwnerRequiresExactDocumentIdentityAndLegacyFallbackIsScoped)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	::testing::NiceMock<MagicSource> source;
 	source.owner = CapturedRuleDocument::compile(CapturedRuleKind::WorldMagic, magic());
 	const auto trusted = captureMetamagicEnergy(source);
@@ -560,6 +574,7 @@ TEST(CompiledMetamagicEnergy, CallbackOwnerRequiresExactDocumentIdentityAndLegac
 
 TEST(CompiledMetamagicEnergy, TypedMemoryPreservesPolarityForFreeNonFuelAndFamilyVariants)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto rules = magic();
 	// Free enchantments remain known identities and cannot manufacture fuel.
 	rules["spells"]["core:haste"]["costs"].Vector() = {JsonNode(0), JsonNode(0), JsonNode(0), JsonNode(0)};
@@ -590,6 +605,7 @@ TEST(CompiledMetamagicEnergy, TypedMemoryPreservesPolarityForFreeNonFuelAndFamil
 
 TEST(CompiledMetamagicRules, PolicySixCapturesIndependentCoreProcessesAndOptionalRemoval)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto source = perks();
 	const auto owner = CapturedPerkRules::compile(source);
 	const auto & rules = owner->metamagic();
@@ -618,6 +634,7 @@ TEST(CompiledMetamagicRules, PolicySixCapturesIndependentCoreProcessesAndOptiona
 }
 TEST(CompiledMetamagicRules, ColdSpellClassificationSeparatesDamageDebuffsAndDisplacement)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto owner = CapturedRuleDocument::compile(CapturedRuleKind::WorldMagic, magic());
 	const auto energy = owner->metamagicEnergy();
 	ASSERT_NE(energy, nullptr);
@@ -638,6 +655,7 @@ TEST(CompiledMetamagicRules, ColdSpellClassificationSeparatesDamageDebuffsAndDis
 
 TEST(CompiledMetamagicRules, DoubleCastBindsOnlyItsOwnRosterAndCapturedValues)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto owner = CapturedPerkRules::compile(installedPerks());
 	const auto & rules = owner->metamagic();
 	ASSERT_NE(rules.doubleCastPolicy(), nullptr);
@@ -684,6 +702,7 @@ TEST(CompiledMetamagicRules, DoubleCastBindsOnlyItsOwnRosterAndCapturedValues)
 
 TEST(CompiledMetamagicRules, CapturedOverkillProfilesNeverExecuteDoubleCast)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto owner = CapturedPerkRules::compile(perks());
 	const auto & rules = owner->metamagic();
 	ASSERT_NE(rules.policy(), nullptr);

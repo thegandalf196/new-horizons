@@ -1,5 +1,6 @@
 /* Part of VCMI engine; GNU General Public License v2.0 or later; see license.txt */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "NewHorizonsEstatesFixture.h"
 #include "../../lib/entities/building/CBuilding.h"
 #include "../../lib/entities/faction/CTownHandler.h"
@@ -23,7 +24,9 @@ public:
 using namespace estatesTest;
 }
 
-TEST(NewHorizonsEstatesPrices, AggregateCeilingChargesNineRareResourcesForTenUnits)
+using NewHorizonsEstatesPrices = vcmiTestData::OriginalDataTest;
+
+TEST_F(NewHorizonsEstatesPrices, AggregateCeilingChargesNineRareResourcesForTenUnits)
 {
     ResourceSet unit;
     unit[EGameResID::GOLD] = 13;
@@ -39,7 +42,7 @@ TEST(NewHorizonsEstatesPrices, AggregateCeilingChargesNineRareResourcesForTenUni
     EXPECT_THROW(newHorizonsEstates::recruitmentCost(unit, -1, true), std::runtime_error);
 }
 
-TEST(NewHorizonsEstatesPrices, ArchitectDiscountsOnlyGoldWoodAndOreWithCeiling)
+TEST_F(NewHorizonsEstatesPrices, ArchitectDiscountsOnlyGoldWoodAndOreWithCeiling)
 {
     ResourceSet base;
     for(const auto resource : {EGameResID::GOLD, EGameResID::WOOD, EGameResID::ORE,

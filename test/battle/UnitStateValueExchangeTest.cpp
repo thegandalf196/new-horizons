@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "mock/mock_BonusBearer.h"
 #include "mock/mock_UnitEnvironment.h"
 #include "mock/mock_UnitInfo.h"
@@ -37,6 +38,7 @@ using namespace ::testing;
 class UnitStateValueExchangeTest : public Test
 {
 protected:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	UnitInfoMock firstInfo, secondInfo;
 	UnitEnvironmentMock firstEnvironment, secondEnvironment;
 	BonusBearerMock firstBonuses, secondBonuses;

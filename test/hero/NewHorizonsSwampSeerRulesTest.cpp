@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "NewHorizonsHeroRulesFixture.h"
 #include "../../lib/entities/hero/NewHorizonsSwampSeer.h"
 using namespace newHorizonsHeroes;
@@ -20,7 +21,9 @@ JsonNode seerRules()
 	return rules;
 }
 }
-TEST(NewHorizonsSwampSeerRules, CapturedSingletonIsIndependentAndHistoricalAbsenceStaysAbsent)
+using NewHorizonsSwampSeerRules = vcmiTestData::OriginalDataTest;
+
+TEST_F(NewHorizonsSwampSeerRules, CapturedSingletonIsIndependentAndHistoricalAbsenceStaysAbsent)
 {
 	auto source = seerRules();
 	const auto captured = resolveHeroRules(source, HeroClassID(0));
@@ -34,7 +37,7 @@ TEST(NewHorizonsSwampSeerRules, CapturedSingletonIsIndependentAndHistoricalAbsen
 	EXPECT_FALSE(swampSeerRules(old));
 	EXPECT_EQ(old, before);
 }
-TEST(NewHorizonsSwampSeerRules, StrictRequiredFieldsRejectVersionOnlyNullUnknownFractionAndBounds)
+TEST_F(NewHorizonsSwampSeerRules, StrictRequiredFieldsRejectVersionOnlyNullUnknownFractionAndBounds)
 {
 	const auto valid = resolveHeroRules(seerRules(), HeroClassID(0));
 	std::vector<JsonNode> bad(10, valid);
@@ -54,7 +57,7 @@ TEST(NewHorizonsSwampSeerRules, StrictRequiredFieldsRejectVersionOnlyNullUnknown
 	versionOnly["swampSeerSpecialty"]["version"].Integer() = 1;
 	EXPECT_THROW(validateSwampSeerSerialization(versionOnly, true), std::runtime_error);
 }
-TEST(NewHorizonsSwampSeerRules, ExplicitZeroRemainsCapturedAndUnsupportedAnyPresenceRejects)
+TEST_F(NewHorizonsSwampSeerRules, ExplicitZeroRemainsCapturedAndUnsupportedAnyPresenceRejects)
 {
 	auto source = seerRules();
 	auto & row = source["swampSeerSpecialty"];

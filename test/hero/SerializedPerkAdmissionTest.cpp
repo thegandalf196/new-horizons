@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../PerkStateFixture.h"
 #include "PerkStateWriteReference.h"
 #include "../server/LegacyEstatesCapture.h"
@@ -58,6 +59,7 @@ std::vector<std::byte> rngBytes()
 
 TEST(SerializedPerkAdmissionTest, CurrentWriterMatchesOriginalBytesForHistoricalCapturedTierPrefixes)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto state = canonicalState();
 	const auto prefix = activePrefix(state.getRules());
 	const auto rngBefore = rngBytes();
@@ -91,6 +93,7 @@ TEST(SerializedPerkAdmissionTest, NullAndEmptyHistoricalRulesKeepCurrentAndEarli
 
 TEST(SerializedPerkAdmissionTest, UnrequestedMalformedRowAndIllegalSelectionsRefuseBeforeStatePrefix)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	for(const int failure : {0, 1, 2})
 	{
 		SCOPED_TRACE(failure);
@@ -126,6 +129,7 @@ TEST(SerializedPerkAdmissionTest, UnrequestedMalformedRowAndIllegalSelectionsRef
 
 TEST(SerializedPerkAdmissionTest, OlderCodecRefusesCapturedCurrentPoliciesBeforeStatePrefix)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto state = canonicalState();
 	for(const bool reference : {false, true})
 	{
@@ -139,6 +143,7 @@ TEST(SerializedPerkAdmissionTest, OlderCodecRefusesCapturedCurrentPoliciesBefore
 
 TEST(SerializedPerkAdmissionTest, RawWeightedAPIStillAdmitsEveryRowAndChecksEveryFeatureGate)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto state = canonicalState();
 	EXPECT_NO_THROW(validateWeightedPerkSerialization(state.getRules(), true, true, true, true, true));
 	{
@@ -159,6 +164,7 @@ TEST(SerializedPerkAdmissionTest, RawWeightedAPIStillAdmitsEveryRowAndChecksEver
 
 TEST(SerializedPerkAdmissionTest, NewOperationAndEqualSecondHeroCannotReuseTheFirstAdmission)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto first = canonicalState();
 	auto second = first;
 	EXPECT_EQ(write(first, ESerializationVersion::CURRENT, false), write(second, ESerializationVersion::CURRENT, false));

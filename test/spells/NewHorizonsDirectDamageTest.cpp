@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "effects/EffectFixture.h"
 #include "../../lib/spells/NewHorizonsDirectDamage.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
@@ -204,6 +205,7 @@ namespace test
 class LifeDrainScriptTest : public ::testing::Test, public EffectFixture
 {
 public:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	LifeDrainScriptTest() : EffectFixture("core:lifeDrainEffect") {}
 
 protected:

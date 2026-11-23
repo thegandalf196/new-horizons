@@ -9,6 +9,7 @@
  */
 
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 
 #include "../../lib/GameLibrary.h"
 #include "../../lib/logging/CLogger.h"
@@ -79,6 +80,7 @@ JsonNode spellConfig(const std::string & name, bool includeLegacyEffects)
 
 TEST(CSpellHandlerEffectFormatTest, OffensiveBattleEffectsAloneDoNotReportMixingButLegacyPayloadStillDoes)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto messages = std::make_shared<std::vector<std::string>>();
 	CLogger::getGlobalLogger()->addTarget(std::make_unique<MixingWarningLogTarget>(messages));
 	TestSpellHandler handler;

@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../HistoricalFactionPerkRules.h"
 #include "../../lib/battle/NewHorizonsDemonicGating.h"
 
@@ -131,7 +132,9 @@ TEST_F(NewHorizonsDemonicReserveTest, CannotMoveTheOnlyActiveStackIntoReserve)
 	EXPECT_TRUE(hero->getDemonicReserve().empty());
 }
 
-TEST(NewHorizonsDemonicReserveWire, SnapshotRoundTripsAndRejectsOlderWire)
+using NewHorizonsDemonicReserveWire = vcmiTestData::OriginalDataTest;
+
+TEST_F(NewHorizonsDemonicReserveWire, SnapshotRoundTripsAndRejectsOlderWire)
 {
 	SetNewHorizonsDemonicReserve outgoing;
 	outgoing.heroId = ObjectInstanceID(12);

@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/battle/NewHorizonsFocusMagic.h"
 #include "HeroActionSelectionState.h"
 #include "HeroActionTimingCapture.h"
@@ -125,6 +126,7 @@ void appendSpellReceipts(std::vector<std::byte> & bytes, const CBattleInfoCallba
 
 TEST(VinesCandidateValueReuseTest, ExactOrderedReceiptAndFullOptionsOnlyWithinOneFrame)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto cast = candidate();
 	ASSERT_NE(cast.spell, nullptr);
 	auto prepared = admission();
@@ -159,6 +161,7 @@ TEST(VinesCandidateValueReuseTest, ExactOrderedReceiptAndFullOptionsOnlyWithinOn
 
 TEST(VinesCandidateValueReuseTest, MissingProofDisabledAndInvalidValuesFailClosed)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto cast = candidate();
 	ASSERT_NE(cast.spell, nullptr);
 	auto prepared = admission();

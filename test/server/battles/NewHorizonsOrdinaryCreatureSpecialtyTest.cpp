@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 #include "HeroCommandFixture.h"
 #include "../../../lib/GameSettings.h"
 #include "../../../lib/CCreatureHandler.h"
@@ -421,7 +422,9 @@ TEST_F(DaceOrdinaryRetaliationTest, ExtendedCapturedHeroPolicyRejects1144BeforeH
 	EXPECT_TRUE(old.extractBuffer().empty());
 }
 
-TEST(NewHorizonsOrdinaryCreatureSpecialtyPolicy, CurrentSettingsRoundtripAndPreviousWriterAdmission)
+using NewHorizonsOrdinaryCreatureSpecialtyPolicy = vcmiTestData::OriginalDataTest;
+
+TEST_F(NewHorizonsOrdinaryCreatureSpecialtyPolicy, CurrentSettingsRoundtripAndPreviousWriterAdmission)
 {
 	JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
 	newHorizonsHeroes::validateOrdinaryCreatureSpecialtiesSerialization(rules, true);
@@ -440,7 +443,7 @@ TEST(NewHorizonsOrdinaryCreatureSpecialtyPolicy, CurrentSettingsRoundtripAndPrev
 	rules["additionalSpecialties"].Struct().erase("ordinaryCreatureSpecialties");
 	EXPECT_NO_THROW(newHorizonsHeroes::validateOrdinaryCreatureSpecialtiesSerialization(rules, false));
 }
-TEST(NewHorizonsOrdinaryCreatureSpecialtyPolicy, InvalidAndUnknownCoefficientsReject)
+TEST_F(NewHorizonsOrdinaryCreatureSpecialtyPolicy, InvalidAndUnknownCoefficientsReject)
 {
 	const JsonNode original(JsonPath::builtin("config/newHorizonsHeroes"));
 	for(const char * key : {"retaliationDamagePercent", "maximumHealthPercent", "resistanceAuraPoints"})
@@ -454,7 +457,7 @@ TEST(NewHorizonsOrdinaryCreatureSpecialtyPolicy, InvalidAndUnknownCoefficientsRe
 	rules["additionalSpecialties"]["ordinaryCreatureSpecialties"]["unknown"].Integer() = 1;
 	EXPECT_THROW(newHorizonsHeroes::validateOrdinaryCreatureSpecialtiesSerialization(rules, true), std::runtime_error);
 }
-TEST(NewHorizonsOrdinaryCreatureSpecialtyPolicy, Independent1144LeafRetainsRoundtripAndCurrentRecipesRejectBeforeSettingsPrefix)
+TEST_F(NewHorizonsOrdinaryCreatureSpecialtyPolicy, Independent1144LeafRetainsRoundtripAndCurrentRecipesRejectBeforeSettingsPrefix)
 {
 	const JsonNode installed(JsonPath::builtin("config/newHorizonsHeroes"));
 	const auto & captured = installed["additionalSpecialties"]["ordinaryCreatureSpecialties"];

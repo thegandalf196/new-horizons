@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "NewHorizonsHeroRulesFixture.h"
 #include "../../lib/GameSettings.h"
 #include "../../lib/entities/hero/NewHorizonsLearningSpecialties.h"
@@ -27,7 +28,9 @@ JsonNode learningRules()
 	return rules;
 }
 }
-TEST(NewHorizonsLearningSpecialtyRules, CapturedRowsAreIndependentAndHistoricalAbsenceStaysAbsent)
+using NewHorizonsLearningSpecialtyRules = vcmiTestData::OriginalDataTest;
+
+TEST_F(NewHorizonsLearningSpecialtyRules, CapturedRowsAreIndependentAndHistoricalAbsenceStaysAbsent)
 {
 	auto configured = learningRules();
 	const auto captured = resolveHeroRules(configured, HeroClassID(0));
@@ -45,7 +48,7 @@ TEST(NewHorizonsLearningSpecialtyRules, CapturedRowsAreIndependentAndHistoricalA
 	EXPECT_FALSE(learningSpecialtyRules(old, LearningSpecialtyKind::SPIRIT_TEACHER));
 	EXPECT_EQ(old, before);
 }
-TEST(NewHorizonsLearningSpecialtyRules, StrictRowsRejectUnsafeMalformedAndBypassInputs)
+TEST_F(NewHorizonsLearningSpecialtyRules, StrictRowsRejectUnsafeMalformedAndBypassInputs)
 {
 	const auto valid = resolveHeroRules(learningRules(), HeroClassID(0));
 	std::vector<JsonNode> invalid(7, valid);
@@ -59,7 +62,7 @@ TEST(NewHorizonsLearningSpecialtyRules, StrictRowsRejectUnsafeMalformedAndBypass
 	for(const auto & rules : invalid)
 		EXPECT_THROW(validateResolvedHeroRules(rules), std::runtime_error);
 }
-TEST(NewHorizonsLearningSpecialtyRules, SameUnpublishedCapabilityProtectsBothOptionalRows)
+TEST_F(NewHorizonsLearningSpecialtyRules, SameUnpublishedCapabilityProtectsBothOptionalRows)
 {
 	const auto rules = learningRules();
 	GameSettings source;
@@ -74,7 +77,7 @@ TEST(NewHorizonsLearningSpecialtyRules, SameUnpublishedCapabilityProtectsBothOpt
 	loaded.serialize(current.iser);
 	EXPECT_EQ(loaded.getValue(EGameSettings::HEROES_NEW_HORIZONS), rules);
 }
-TEST(NewHorizonsLearningSpecialtyRules, AncientOathsReplacesOnlyNimbusPersonalBonusAndPreservesCapturedAbsence)
+TEST_F(NewHorizonsLearningSpecialtyRules, AncientOathsReplacesOnlyNimbusPersonalBonusAndPreservesCapturedAbsence)
 {
 	auto configured = learningRules();
 	configured["additionalSpecialties"]["ancientOathsPolicyVersion"].Integer() = 1;

@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/entities/hero/NewHorizonsSpecialtySerialization.h"
 #include "../../lib/GameSettings.h"
 #include "../../lib/serializer/CMemorySerializer.h"
@@ -61,6 +62,7 @@ std::vector<std::byte> encode(GameSettings & source, Version version)
 }
 TEST(ExtendedOrdinaryPolicySerialization, PresenceIncludingZeroAndCompanionDomainsAreReadOnly)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	for(const auto * key : keys)
 	{
 		const bool positive = std::string(key) == "lanceFormationMaximumDefense" || std::string(key) == "stormWingsMinimumFlightDistance";
@@ -100,6 +102,7 @@ TEST(ExtendedOrdinaryPolicySerialization, FrozenKeyDomainsAndPairPresenceRejectM
 }
 TEST(ExtendedOrdinaryPolicySerialization, HistoricalAbsenceAndLegacyBytesStayExactWithoutDefaults)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto rules = captured(); const auto original = rules;
 	EXPECT_NO_THROW(validate(rules, old));
 	EXPECT_NO_THROW(validate(rules, admitted)); EXPECT_EQ(rules, original);
@@ -114,6 +117,7 @@ TEST(ExtendedOrdinaryPolicySerialization, HistoricalAbsenceAndLegacyBytesStayExa
 
 TEST(ExtendedOrdinaryPolicySerialization, ReusedSettingsReadReplacesFutureSnapshotWithHistoricalAbsence)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	GameSettings historical; historical.addOverride(EGameSettings::HEROES_NEW_HORIZONS, captured());
 	const auto bytes = encode(historical, old);
 	auto future = captured(); insert(future, "graveDustHealingReductionBasisPoints", 0);

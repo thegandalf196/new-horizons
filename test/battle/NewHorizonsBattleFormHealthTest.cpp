@@ -9,6 +9,7 @@
  */
 
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "mock/mock_BonusBearer.h"
 #include "mock/mock_UnitEnvironment.h"
 #include "mock/mock_UnitInfo.h"
@@ -137,6 +138,7 @@ void configureUnitInfo(UnitInfoMock & info, const CCreature * creature)
 
 TEST(NewHorizonsBattleFormHealthTest, PreservesHealthProvenanceAcrossRepartitionCopySaveAndExpiry)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	UnitEnvironmentMock environment;
 	UnitInfoMock sourceInfo;
 	FormHealthBonusBearer sourceBonuses;
@@ -277,6 +279,7 @@ TEST(NewHorizonsBattleFormHealthTest, PreservesHealthProvenanceAcrossRepartition
 
 TEST(NewHorizonsBattleFormHealthTest, AcquiredCStackStateUsesReplacementNativeBonusesAndRoundTrips)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const CreatureID sourceCreatureID = CreatureID::decode("core:angel");
 	const CreatureID formCreatureID = CreatureID::decode("core:imp");
 	const CCreature * sourceCreature = sourceCreatureID.toCreature();
@@ -342,6 +345,7 @@ TEST(NewHorizonsBattleFormHealthTest, AcquiredCStackStateUsesReplacementNativeBo
 
 TEST(NewHorizonsBattleFormHealthTest, ReversionRelocatesOriginalFootprintWithoutChangingHealthOrLiveStack)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const CreatureID original = CreatureID::decode("core:archangel");
 	const CreatureID replacement = CreatureID::decode("core:imp");
 	ASSERT_TRUE(original.toCreature()->isDoubleWide());
@@ -380,6 +384,7 @@ TEST(NewHorizonsBattleFormHealthTest, ReversionRelocatesOriginalFootprintWithout
 
 TEST(NewHorizonsBattleFormHealthTest, ImpossibleReversionDoesNotMutateTheStack)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const CreatureID original = CreatureID::decode("core:archangel");
 	const CreatureID replacement = CreatureID::decode("core:imp");
 	CStackBasicDescriptor descriptor(original, STACK_SIZE);
@@ -404,6 +409,7 @@ TEST(NewHorizonsBattleFormHealthTest, ImpossibleReversionDoesNotMutateTheStack)
 
 TEST(NewHorizonsBattleFormHealthTest, CloneKeepsOneHitDeathAndClearsFormProvenanceBeforeGhosting)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	UnitEnvironmentMock environment;
 	UnitInfoMock info;
 	FormHealthBonusBearer bonuses;
@@ -476,6 +482,7 @@ TEST(NewHorizonsBattleFormHealthTest, CloneKeepsOneHitDeathAndClearsFormProvenan
 
 TEST(NewHorizonsBattleFormHealthTest, IncomingReceiptUsesCommonRawCapOnceAndKeepsOriginalLedgerOnExpiry)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	UnitEnvironmentMock environment;
 	UnitInfoMock info;
 	FormHealthBonusBearer bonuses;

@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 #include "BattleTestFixture.h"
 #include "../../../lib/GameSettings.h"
 #include "../../../lib/CStack.h"
@@ -74,6 +75,7 @@ TEST(NewHorizonsMoraleActivationProtocolRulesTest, EveryOwningUnitEnvelopeReject
 
 TEST(NewHorizonsMoraleActivationProtocolRulesTest, CurrentPacketRoundTripPreservesExactOrigin)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto update = markedUpdate();
 	const auto originalPayload = update.data;
 	ASSERT_EQ(originalPayload["state"].Struct().size(), 2u);

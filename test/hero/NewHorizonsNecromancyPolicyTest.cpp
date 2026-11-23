@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/entities/hero/NewHorizonsNecromancyPolicy.h"
 #include "../../lib/entities/hero/NewHorizonsCommandAdmission.h"
 #include "../../lib/entities/hero/NewHorizonsPerkRules.h"
@@ -224,6 +225,7 @@ TEST(NewHorizonsNecromancyPolicy, VersionTwoFieldsAndSerializationRemainDistinct
 
 TEST(NewHorizonsNecromancyPolicy, ActualShippedRegistryPassesNativeValidationAndPreparationWithPolicyFour)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const JsonNode rules(JsonPath::builtin("config/newHorizonsPerks"));
 	ASSERT_NO_THROW(newHorizonsHeroes::validatePerkRules(rules));
 	EXPECT_NE(newHorizonsHeroes::preparePilotPerkRules(rules), nullptr);
@@ -281,6 +283,7 @@ TEST(NewHorizonsNecromancyPolicy, VersionThreeRejectsRetiredFieldsAndMalformedHe
 
 TEST(NewHorizonsNecromancyPolicy, VersionThreeRequiresItsEpochEvenWithoutTheCommandMarker)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const JsonNode v3Rules = capturedPolicyV3();
 	JsonNode bare;
 	bare["necromancyPolicy"] = v3Rules["necromancyPolicy"];

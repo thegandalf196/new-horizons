@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "NewHorizonsHeroRulesFixture.h"
 #include "../../lib/entities/hero/NewHorizonsPerkRules.h"
 #include "../../lib/json/JsonUtils.h"
@@ -30,6 +31,7 @@ bool newHorizonsModuleActive()
 
 TEST(NewHorizonsHeroRulesTest, NamedSchemaAcceptsFullAndEmptyAndRejectsMalformedFields)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto valid = [](const JsonNode & node)
 	{
 		return JsonUtils::validate(node, "vcmi:newHorizonsHeroes", "native future hero schema");
@@ -63,6 +65,7 @@ TEST(NewHorizonsHeroRulesTest, NamedSchemaAcceptsFullAndEmptyAndRejectsMalformed
 
 TEST(NewHorizonsHeroRulesTest, ArcanePreparationPolicyCapturesCoefficientsAndKeepsOlderAbsence)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const JsonNode configured(JsonPath::builtin("config/newHorizonsHeroes"));
 	auto rules = testHeroRules();
 	rules["arcanePreparationSpecialty"] = configured["arcanePreparationSpecialty"];
@@ -98,6 +101,7 @@ TEST(NewHorizonsHeroRulesTest, ArcanePreparationPolicyCapturesCoefficientsAndKee
 
 TEST(NewHorizonsHeroRulesTest, FortuneChildPolicyCapturesCoefficientsAndKeepsOlderAbsence)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const JsonNode configured(JsonPath::builtin("config/newHorizonsHeroes"));
 	auto rules = testHeroRules();
 	rules["fortuneChildSpecialty"] = configured["fortuneChildSpecialty"];
@@ -131,6 +135,7 @@ TEST(NewHorizonsHeroRulesTest, FortuneChildPolicyCapturesCoefficientsAndKeepsOld
 
 TEST(NewHorizonsHeroRulesTest, DruidPolicyCapturesExactCoefficientsAndKeepsOlderAbsence)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const JsonNode configured(JsonPath::builtin("config/newHorizonsHeroes"));
 	auto rules = testHeroRules();
 	rules["druidSpecialties"] = configured["druidSpecialties"];
@@ -229,6 +234,7 @@ TEST(NewHorizonsHeroRulesTest, FreshWeightedPerkCaptureRequiresWholeClassTableBu
 
 TEST(NewHorizonsHeroRulesTest, ResolvedSnapshotDoesNotFollowChangedInstalledProfile)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto rules = testHeroRules();
 	ASSERT_NO_THROW(validateHeroRules(rules, true));
 	const auto saved = resolveHeroRules(rules, HeroClassID(0));
@@ -242,6 +248,7 @@ TEST(NewHorizonsHeroRulesTest, ResolvedSnapshotDoesNotFollowChangedInstalledProf
 
 TEST(NewHorizonsHeroRulesTest, ExplicitProgressionVersionKeepsOldAndNewSnapshotsIndependent)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto rules = testHeroRules();
 	const auto oldSnapshot = resolveHeroRules(rules, HeroClassID(0));
 	auto & profile = rules["classProfiles"][HeroClassID::encode(0)];
@@ -276,6 +283,7 @@ TEST(NewHorizonsHeroRulesTest, ExplicitProgressionVersionKeepsOldAndNewSnapshots
 
 TEST(NewHorizonsHeroRulesTest, VersionThreeUsesOnlyOwnedConfiguredSkillGrowthChances)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto rules = testHeroRules();
 	auto & profile = rules["classProfiles"][HeroClassID::encode(0)];
 	profile["progressionVersion"].Integer() = 3;
@@ -524,6 +532,7 @@ TEST(NewHorizonsHeroRulesTest, NecropolisLegacySkillBecomesScopedFactionSkill)
 
 TEST(NewHorizonsHeroRulesTest, RuntimeChecksSemanticsBeyondSchema)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto rules = testHeroRules();
 	rules["classProfiles"].Struct().erase(rules["classProfiles"].Struct().begin());
 	EXPECT_THROW(validateHeroRules(rules, true), std::runtime_error);
@@ -544,6 +553,7 @@ TEST(NewHorizonsHeroRulesTest, RuntimeChecksSemanticsBeyondSchema)
 
 TEST(NewHorizonsHeroRulesTest, BottomlessMindCapturedPolicyIsStrictAndAbsenceStaysInert)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const JsonNode configured(JsonPath::builtin("config/newHorizonsHeroes"));
 	auto rules = testHeroRules();
 	rules["bottomlessMindSpecialty"] = configured["bottomlessMindSpecialty"];
@@ -589,6 +599,7 @@ TEST(NewHorizonsHeroRulesTest, BottomlessMindCapturedPolicyIsStrictAndAbsenceSta
 
 TEST(NewHorizonsHeroRulesTest, BottomlessMindGlobalSettingsCodecGuardsPreviousFormatAndPreservesAbsence)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	// No heroes are needed: the captured global policy itself needs the epoch.
 	auto rules = testHeroRules();
 	const JsonNode configured(JsonPath::builtin("config/newHorizonsHeroes"));
@@ -629,6 +640,7 @@ TEST(NewHorizonsHeroRulesTest, BottomlessMindGlobalSettingsCodecGuardsPreviousFo
 
 TEST(NewHorizonsHeroRulesTest, MasterSpellwardCapturesStrictGlobalAndResolvedPolicyWithoutOldFallback)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const JsonNode configured(JsonPath::builtin("config/newHorizonsHeroes"));
 	auto global = testHeroRules();
 	global["masterSpellwardSpecialty"] = configured["masterSpellwardSpecialty"];
@@ -688,6 +700,7 @@ TEST(NewHorizonsHeroRulesTest, MasterSpellwardCapturesStrictGlobalAndResolvedPol
 
 TEST(NewHorizonsHeroRulesTest, MasterSpellwardGlobalCodecRejectsUnsupportedPolicyBeforeInstallation)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto global = testHeroRules();
 	const JsonNode configured(JsonPath::builtin("config/newHorizonsHeroes"));
 	global["masterSpellwardSpecialty"] = configured["masterSpellwardSpecialty"];

@@ -1,5 +1,6 @@
 /* NewHorizonsTemporaryMagicDispelTest.cpp, part of VCMI; GPL v2.0 or later. */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 #include "../../../lib/mapObjects/CGHeroInstance.h"
 #include "../../../lib/GameSettings.h"
 #include "../../../lib/spells/CSpellHandler.h"
@@ -230,6 +231,7 @@ TEST(NewHorizonsTemporaryMagicDispelRulesTest, TemporaryLifetimeIncludesActivati
 
 TEST(NewHorizonsTemporaryMagicDispelRulesTest, PolicyIsExplicitAndStrictAndCannotCrossTheOldFormatBoundary)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
 	auto & row = rules["spells"]["core:dispel"];
 	row.Struct().erase("temporaryMagicalEffectsOnly");

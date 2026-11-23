@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../OverkillRandomPrayerRules.h"
 #include "../../client/battle/CurrentFactionSkillPresentation.h"
 #include "../../lib/nativeRules/CapturedPerkRules.h"
@@ -10,6 +11,7 @@ using namespace passiveFactionSkillPresentation;
 
 TEST(HeroMetamagicPresentation, OptionalUnravelReadoutUsesCapturedChanceWithoutRetiredPointBenefits)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto owner = nativeRules::CapturedPerkRules::compile(overkillRandomPrayerRules());
 	const auto & rules = owner->metamagic();
 	const int rank = 2;
@@ -26,6 +28,7 @@ TEST(HeroMetamagicPresentation, OptionalUnravelReadoutUsesCapturedChanceWithoutR
 
 TEST(HeroMetamagicPresentation, ReconstitutingAndCascadeDescribeTheirOwnSelectedEffects)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto owner = nativeRules::CapturedPerkRules::compile(overkillRandomPrayerRules());
 	const auto & rules = owner->metamagic();
 	const int rank = 3;

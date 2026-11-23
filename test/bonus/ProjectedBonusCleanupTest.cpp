@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "ProjectedUnitEnvironmentFixture.h"
 #include "../../lib/bonuses/PreparedBonusGraphFinalization.h"
 #include "../../lib/bonuses/Propagators.h"
@@ -268,7 +269,10 @@ TEST_F(ProjectedBonusCleanupTest, MalformedQueryOnlyChildCycleRefusesInsteadOfRe
 	EXPECT_THROW(graph.query(root, Selector::all, false), std::logic_error);
 }
 
-class ProjectedUnitCleanupEnvironmentTest : public Test, protected environmentFixture::Projection {};
+class ProjectedUnitCleanupEnvironmentTest : public Test, protected environmentFixture::Projection {
+public:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
+private:};
 
 TEST_F(ProjectedUnitCleanupEnvironmentTest, RecursiveCleanupFeedsLaterProjectedOwnershipAndBloodrageQueries)
 {

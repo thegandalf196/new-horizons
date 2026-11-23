@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/battle/OwnedFrameBranchQueries.h"
 #include "../../lib/battle/OwnedUnitBonusFrameBatch.h"
 #include "../../lib/bonuses/ProjectedBonusView.h"
@@ -107,7 +108,9 @@ struct WithoutLibrary
 	~WithoutLibrary() { LIBRARY = old; }
 };
 }
-TEST(OwnedFrameBranchQueriesTest, CurrentScalarTransactionKeepsStableAddressAndIsolatesSibling)
+using OwnedFrameBranchQueriesTest = vcmiTestData::OriginalDataTest;
+
+TEST_F(OwnedFrameBranchQueriesTest, CurrentScalarTransactionKeepsStableAddressAndIsolatesSibling)
 {
 	auto root = frame(); auto current = root->fork(); auto sibling = root->fork();
 	auto scratch = current->scratch(); scratch.unit().position = BattleHex(51);
@@ -120,7 +123,7 @@ TEST(OwnedFrameBranchQueriesTest, CurrentScalarTransactionKeepsStableAddressAndI
 	EXPECT_THROW(Bridge::synchronize(*current, {{current, nullptr}, {current, nullptr}}), std::invalid_argument);
 	EXPECT_EQ(current->save(), before);
 }
-TEST(OwnedFrameBranchQueriesTest, SourceRoleAndPendingBonusRemainSeparateFromQueryRole)
+TEST_F(OwnedFrameBranchQueriesTest, SourceRoleAndPendingBonusRemainSeparateFromQueryRole)
 {
 	auto root = frame();
 	WithoutLibrary absent;
@@ -134,7 +137,7 @@ TEST(OwnedFrameBranchQueriesTest, SourceRoleAndPendingBonusRemainSeparateFromQue
 	root.reset(); EXPECT_TRUE(retained->hasBonusOfType(BonusType::LUCK));
 }
 
-TEST(OwnedFrameBranchQueriesTest, RefreshPreservesExportOrderAndForkRetainsNestedMetadataOwner)
+TEST_F(OwnedFrameBranchQueriesTest, RefreshPreservesExportOrderAndForkRetainsNestedMetadataOwner)
 {
 	auto root = frame();
 	WithoutLibrary absent;
@@ -158,7 +161,7 @@ TEST(OwnedFrameBranchQueriesTest, RefreshPreservesExportOrderAndForkRetainsNeste
 	ASSERT_NE(aggregate, nullptr); EXPECT_EQ(aggregate->limiters.size(), 1u);
 }
 
-TEST(OwnedFrameBranchQueriesTest, CurrentPeerSourceLedgerAndHealthPublishAsOneRosterAndKeepFrozenLoan)
+TEST_F(OwnedFrameBranchQueriesTest, CurrentPeerSourceLedgerAndHealthPublishAsOneRosterAndKeepFrozenLoan)
 {
 	auto frames = pair(); auto frozen = frames[0]->scratch();
 	WithoutLibrary absent;

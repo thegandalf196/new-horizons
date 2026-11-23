@@ -1,5 +1,6 @@
 /* Part of VCMI; GPL v2 or later, see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 
 #include "../../lib/networkPacks/PacksForClient.h"
 #include "../../lib/serializer/CMemorySerializer.h"
@@ -15,6 +16,7 @@ newHorizonsHeroes::PerkOfferCandidate candidate()
 
 TEST(NewHorizonsPerkOfferWire, CurrentLevelUpPacketPreservesOrderedServerOfferAndSeed)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	HeroLevelUp outgoing;
 	outgoing.heroId = ObjectInstanceID(7);
 	outgoing.player = PlayerColor(0);
@@ -34,6 +36,7 @@ TEST(NewHorizonsPerkOfferWire, CurrentLevelUpPacketPreservesOrderedServerOfferAn
 
 TEST(NewHorizonsPerkOfferWire, OlderPacketOmitsEmptyOfferAndRejectsInformationLoss)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	HeroLevelUp legacy;
 	legacy.heroId = ObjectInstanceID(7);
 	legacy.player = PlayerColor(0);

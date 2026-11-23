@@ -10,8 +10,10 @@
 
 #include "StdInc.h"
 #include "CVcmiTestConfig.h"
+#include "OriginalDataRequirement.h"
 
 #include "../lib/GameLibrary.h"
+#include "../lib/filesystem/Filesystem.h"
 #include "../lib/modding/CModHandler.h"
 
 #include <algorithm>
@@ -121,6 +123,16 @@ void CVcmiTestConfig::SetUp()
 		if((useSkirmisherExport || usePositiveCueExport || useAuthoredCue || usePassiveSkillExport || useFourSkillExport)
 			&& std::find(mods.begin(), mods.end(), "core") == mods.end())
 			throw std::runtime_error("Ordinary Skirmisher export bootstrap requires the shipping core mod");
+	}
+	// Without the original Heroes III files the game library cannot load. Tests
+	// that need it are skipped; the exporters above always require it.
+	if(!useOrdinaryBootstrap && !CResourceHandler::get()->existsResource(ResourcePath("DATA/GENRLTXT.TXT")))
+	{
+		if(std::getenv("NH_TEST_REQUIRE_ORIGINAL_DATA"))
+			throw std::runtime_error("NH_TEST_REQUIRE_ORIGINAL_DATA is set, but the original Heroes III data was not found");
+		vcmiTestData::originalDataMissing() = true;
+		std::cout << "Original Heroes III data not found: the game library is not loaded and tests that need it are skipped." << std::endl;
+		return;
 	}
 	LIBRARY->initializeLibrary();
 }

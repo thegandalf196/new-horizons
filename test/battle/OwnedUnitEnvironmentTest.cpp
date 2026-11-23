@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/battle/OwnedUnitEnvironment.h"
 #include "../../lib/battle/OwnedUnitCreatureResolver.h"
 #include "../../lib/bonuses/BonusList.h"
@@ -75,6 +76,7 @@ std::shared_ptr<Bonus> bonus(BonusType type, int value)
 }
 TEST(OwnedUnitEnvironmentTest, FirstMatchingDeadCartAndOccurrenceOrderRemainAuthoritative)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	Resolver types({creature(false), creature(true)});
 	auto subject = std::make_shared<OwnedFixtureUnit>(1, BattleSide::ATTACKER, types.creature(CreatureID(1)));
 	auto dead = std::make_shared<OwnedFixtureUnit>(2, BattleSide::ATTACKER, types.creature(CreatureID(3))); dead->living = false;
@@ -87,6 +89,7 @@ TEST(OwnedUnitEnvironmentTest, FirstMatchingDeadCartAndOccurrenceOrderRemainAuth
 }
 TEST(OwnedUnitEnvironmentTest, EffectiveOwnerTransfersButAmmoTargetOriginalArmyRuleStaysAsymmetric)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	Resolver types({creature(false), creature(true)});
 	auto subject = std::make_shared<OwnedFixtureUnit>(1, BattleSide::ATTACKER, types.creature(CreatureID(1)));
 	auto cart = std::make_shared<OwnedFixtureUnit>(2, BattleSide::ATTACKER, types.creature(CreatureID(3)));
@@ -102,6 +105,7 @@ TEST(OwnedUnitEnvironmentTest, EffectiveOwnerTransfersButAmmoTargetOriginalArmyR
 }
 TEST(OwnedUnitEnvironmentTest, CopiedFortuneAndBloodrageUseCanonicalCurrentStateFormulas)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	Resolver types({creature(false)});
 	auto subject = std::make_shared<OwnedFixtureUnit>(17, BattleSide::ATTACKER, types.creature(CreatureID(1)));
 	auto values = facts(); auto & input = *values.inputs.at(BattleSide::ATTACKER);
@@ -122,6 +126,7 @@ TEST(OwnedUnitEnvironmentTest, CopiedFortuneAndBloodrageUseCanonicalCurrentState
 }
 TEST(OwnedUnitEnvironmentTest, ResistanceReevaluatesOwnedRawValuesAndCopiedRulesWithoutLibrary)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	Resolver types({creature(false)});
 	auto subject = std::make_shared<OwnedFixtureUnit>(1, BattleSide::ATTACKER, types.creature(CreatureID(1)), 93);
 	auto aura = std::make_shared<OwnedFixtureUnit>(2, BattleSide::ATTACKER, types.creature(CreatureID(1)), 94);
@@ -138,6 +143,7 @@ TEST(OwnedUnitEnvironmentTest, ResistanceReevaluatesOwnedRawValuesAndCopiedRules
 }
 TEST(OwnedUnitEnvironmentTest, UnknownPolicyDoesNotTurnIntoZeroAndNativeEarlyReturnsRemainLazy)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	Resolver types({creature(false)});
 	auto subject = std::make_shared<OwnedFixtureUnit>(1, BattleSide::ATTACKER, types.creature(CreatureID(1)));
 	auto values = facts(); values.inputs.at(BattleSide::ATTACKER).reset();
@@ -154,6 +160,7 @@ TEST(OwnedUnitEnvironmentTest, UnknownPolicyDoesNotTurnIntoZeroAndNativeEarlyRet
 }
 TEST(OwnedUnitEnvironmentTest, RetainedUnitOwnerAndRequiredRulesPreventDanglingOrUnknownConstruction)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	Resolver types({creature(false)});
 	auto unit = std::make_shared<OwnedFixtureUnit>(1, BattleSide::ATTACKER, types.creature(CreatureID(1)));
 	std::weak_ptr<OwnedFixtureUnit> weak = unit;
@@ -168,6 +175,7 @@ TEST(OwnedUnitEnvironmentTest, RetainedUnitOwnerAndRequiredRulesPreventDanglingO
 }
 TEST(OwnedUnitEnvironmentTest, CanonicalCopiedFamilyDelegateNeedsNoLibraryAndRetainsUnknownShortcuts)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto base = creature(false); base.id = CreatureID::SKELETON; base.key = "owned:skeleton";
 	auto upgraded = creature(false); upgraded.id = CreatureID(200); upgraded.key = "owned:upgrade";
 	auto unrelated = creature(false); unrelated.id = CreatureID(201); unrelated.key = "owned:other";
@@ -222,6 +230,7 @@ TEST(OwnedUnitEnvironmentTest, AffiliationPresenceDistinguishesMissingFromActual
 
 TEST(OwnedUnitEnvironmentTest, KnownAttunementUsesOwnedCreatureKeysWithoutGlobalLibrary)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto fire = creature(false); fire.key = "core:fireElemental";
 	Resolver types({fire});
 	auto subject = std::make_shared<OwnedFixtureUnit>(17, BattleSide::ATTACKER, types.creature(CreatureID(1)));
@@ -249,6 +258,7 @@ TEST(OwnedUnitEnvironmentTest, KnownAttunementUsesOwnedCreatureKeysWithoutGlobal
 }
 TEST(OwnedUnitEnvironmentTest, GenericFactsCannotInventObservedHiddenUnitEffects)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	Resolver types({creature(false)});
 	auto subject = std::make_shared<OwnedFixtureUnit>(17, BattleSide::ATTACKER, types.creature(CreatureID(1)));
 	auto sameIdForeign = std::make_shared<OwnedFixtureUnit>(17, BattleSide::ATTACKER, types.creature(CreatureID(1)));

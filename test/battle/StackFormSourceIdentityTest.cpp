@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/CStack.h"
 #include "../../lib/battle/StackFormSourceIdentity.h"
 #include "../../lib/bonuses/PreparedBonusGraphStorage.h"
@@ -14,7 +15,9 @@ std::unique_ptr<CStack> source(CreatureID creature)
 	return result;
 }
 }
-TEST(StackFormSourceIdentityTest, OrdinarySourceIsExactMetadataWithoutCreatingAFormSource)
+using StackFormSourceIdentityTest = vcmiTestData::OriginalDataTest;
+
+TEST_F(StackFormSourceIdentityTest, OrdinarySourceIsExactMetadataWithoutCreatingAFormSource)
 {
 	const CreatureID original(CreatureID::decode("core:peasant")); auto stack = source(original);
 	const auto generation = PreparedBonusGraphStorage::currentGeneration(); const auto version = stack->getTreeVersion();
@@ -22,7 +25,7 @@ TEST(StackFormSourceIdentityTest, OrdinarySourceIsExactMetadataWithoutCreatingAF
 	EXPECT_EQ(receipt.baseCreature, original); EXPECT_EQ(receipt.attached, nullptr);
 	EXPECT_EQ(PreparedBonusGraphStorage::currentGeneration(), generation); EXPECT_EQ(stack->getTreeVersion(), version);
 }
-TEST(StackFormSourceIdentityTest, FormedSourceRetainsBaseAndExactAttachedNodeWithoutInvalidation)
+TEST_F(StackFormSourceIdentityTest, FormedSourceRetainsBaseAndExactAttachedNodeWithoutInvalidation)
 {
 	const CreatureID original(CreatureID::decode("core:peasant")), alternate(CreatureID::decode("core:imp"));
 	ASSERT_NE(original, alternate); auto stack = source(original); stack->beginBattleForm(alternate, 2);

@@ -5,6 +5,7 @@
  * Full text of license available in license.txt file, in main folder
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../bonus/ProjectedUnitEnvironmentFixture.h"
 #include "../../lib/battle/ProjectedUnitRemoval.h"
 #include <stdexcept>
@@ -15,6 +16,7 @@ using namespace ::testing;
 class ProjectedUnitRemovalTest : public Test, protected environmentFixture::Projection
 {
 protected:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	std::vector<battle::ProjectedUnitRemoval::Binding> bindings()
 	{
 		std::vector<battle::ProjectedUnitRemoval::Binding> result;

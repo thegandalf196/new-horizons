@@ -5,6 +5,7 @@
  * Full text of license available in license.txt file, in main folder
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../mock/mock_UnitEnvironment.h"
 #include "../mock/mock_UnitInfo.h"
 #include "../../lib/CStack.h"
@@ -110,6 +111,7 @@ static_assert(!std::is_abstract_v<DispatchProjectedStage>);
 class ProjectedFormTransitionTest : public Test
 {
 protected:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	CStackBasicDescriptor descriptor{CreatureID(0), 8};
 	CStack original{&descriptor, PlayerColor(0), 17, BattleSide::ATTACKER};
 	CStackInstance base{nullptr, CreatureID(0), 8, true};

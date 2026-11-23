@@ -1,5 +1,6 @@
 /* NewHorizonsCrossSchoolFormulaTest.cpp, part of VCMI; GPL v2.0 or later. */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 #include "NewHorizonsElementalTerrainFixture.h"
 #include "../../../lib/CSkillHandler.h"
 #include "../../../lib/GameSettings.h"
@@ -141,7 +142,9 @@ TEST_F(NewHorizonsCrossSchoolFormulaTest, SameSchoolRefreshesAndWindowExpiresAft
 	EXPECT_EQ(battle()->getCrossSchoolFormulaState(BattleSide::ATTACKER), refreshed);
 }
 
-TEST(CrossSchoolMembershipTest, DifferentMeansNonemptyDisjointNotMerelyDifferentMembership)
+using CrossSchoolMembershipTest = vcmiTestData::OriginalDataTest;
+
+TEST_F(CrossSchoolMembershipTest, DifferentMeansNonemptyDisjointNotMerelyDifferentMembership)
 {
 	const SpellSchool nature(SpellSchool::decode("new-horizons:nature"));
 	const SpellSchool havoc(SpellSchool::decode("new-horizons:havoc"));

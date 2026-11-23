@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/battle/NewHorizonsCreatureBurn.h"
 #include "../../lib/bonuses/BonusParameters.h"
 #include "../../lib/GameLibrary.h"
@@ -12,7 +13,9 @@ struct WithoutLibrary
 	~WithoutLibrary() { LIBRARY = saved; }
 };
 }
-TEST(CreatureBurnIdentityFactsTest, RegisteredCapturedPairClassifiesBothHeroesAfterLibraryRetires)
+using CreatureBurnIdentityFactsTest = vcmiTestData::OriginalDataTest;
+
+TEST_F(CreatureBurnIdentityFactsTest, RegisteredCapturedPairClassifiesBothHeroesAfterLibraryRetires)
 {
 	const auto identities = newHorizonsCreatureBurn::captureIdentityFacts();
 	ASSERT_TRUE(identities.rashka.hasValue()); ASSERT_TRUE(identities.ignissa.hasValue());
@@ -25,7 +28,7 @@ TEST(CreatureBurnIdentityFactsTest, RegisteredCapturedPairClassifiesBothHeroesAf
 	EXPECT_TRUE(newHorizonsCreatureBurn::isBurnCaptured(&ignissa, identities));
 	EXPECT_FALSE(newHorizonsCreatureBurn::isBurnCaptured(nullptr, identities));
 }
-TEST(CreatureBurnIdentityFactsTest, UnknownFactsAreLazyForUnrelatedRecordsAndNeverAcceptClaimedBurn)
+TEST_F(CreatureBurnIdentityFactsTest, UnknownFactsAreLazyForUnrelatedRecordsAndNeverAcceptClaimedBurn)
 {
 	const auto identities = newHorizonsCreatureBurn::captureIdentityFacts();
 	auto claimed = newHorizonsCreatureBurn::marker(identities.rashka, 1, 5);

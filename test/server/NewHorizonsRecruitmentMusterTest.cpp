@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../PerkTestSetup.h"
 
 #include <gtest/gtest.h>
@@ -614,6 +615,7 @@ TEST(NewHorizonsRecruitmentMusterWire, StateRoundTripsAndOlderSavesRejectAuthore
 
 TEST(NewHorizonsRecruitmentMusterWire, SplitRequestRoundTripsAndLegacySoloRemainsCompatible)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	MusterCreatures outgoing(ObjectInstanceID(42), ObjectInstanceID(77), CreatureID(0), CreatureID(2), 1);
 	CMemorySerializer wire;
 	wire.oser.version = ESerializationVersion::CURRENT;

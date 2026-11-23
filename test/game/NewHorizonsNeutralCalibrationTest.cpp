@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../hero/HistoricalCapabilityRules.h"
 #include "../hero/CommandTestSupport.h"
 #include "../../lib/GameSettings.h"
@@ -235,6 +236,7 @@ void expectCurrentPikemanReference()
 
 TEST(NewHorizonsNeutralCalibration, ZeroRecruitmentUsesOnlyANonzeroReferenceAndKeepsActualGrowthZero)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	ASSERT_NO_FATAL_FAILURE(expectCurrentPikemanReference());
 	GameSettings zero;
 	GameSettings identity;
@@ -254,6 +256,7 @@ TEST(NewHorizonsNeutralCalibration, ZeroRecruitmentUsesOnlyANonzeroReferenceAndK
 
 TEST(NewHorizonsNeutralCalibration, PositiveRecruitmentKeepsTheExactFiftyPercentReferenceSnapshot)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	ASSERT_NO_FATAL_FAILURE(expectCurrentPikemanReference());
 	GameSettings half;
 	configureSingleKnightReference(half, 50);

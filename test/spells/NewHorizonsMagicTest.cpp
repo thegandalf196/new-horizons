@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/filesystem/ResourcePath.h"
@@ -15,6 +16,7 @@
 
 TEST(NewHorizonsMagicTest, LegacySchoolsCostsAndLevelsRemainOriginal)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const JsonNode legacy;
 	const SpellID arrow(SpellID::MAGIC_ARROW);
 	const auto * definition = arrow.toSpell();
@@ -29,6 +31,7 @@ TEST(NewHorizonsMagicTest, LegacySchoolsCostsAndLevelsRemainOriginal)
 
 TEST(NewHorizonsMagicTest, PhysicalReductionOptInIsValidatedAndAbsentForOlderSnapshots)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
 	EXPECT_NO_THROW(newHorizonsMagic::validateRules(rules));
 	EXPECT_EQ(newHorizonsMagic::physicalDamageReductionCapPercent(rules), 80);
@@ -47,6 +50,7 @@ TEST(NewHorizonsMagicTest, PhysicalReductionOptInIsValidatedAndAbsentForOlderSna
 
 TEST(NewHorizonsMagicTest, FixedSchoolMageGuildGenerationIsSavedAndValidated)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
 	ASSERT_NO_THROW(newHorizonsMagic::validateRules(rules));
 	ASSERT_TRUE(newHorizonsMagic::mageGuildGenerationActive(rules));
@@ -140,6 +144,7 @@ TEST(NewHorizonsMagicTest, UnsupportedSnapshotShapeAndVersionFailClosed)
 
 TEST(NewHorizonsMagicTest, SchoolsUseScopedCurrentSerializationAndReadLegacyNumeric)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	for(auto school : {SpellSchool::ANY, SpellSchool::AIR, SpellSchool::FIRE, SpellSchool::WATER, SpellSchool::EARTH})
 	{
 		CMemorySerializer current;
@@ -166,6 +171,7 @@ TEST(NewHorizonsMagicTest, SchoolsUseScopedCurrentSerializationAndReadLegacyNume
 
 TEST(NewHorizonsMagicTest, PointBlankPrecedenceIsExplicitBooleanAndPreservesAbsence)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
 	ASSERT_TRUE(rules["pointBlankPreservesAdjacentExemption"].Bool());
 	EXPECT_NO_THROW(newHorizonsMagic::validateRules(rules));

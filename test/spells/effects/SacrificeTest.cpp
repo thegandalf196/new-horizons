@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 
 #include "EffectFixture.h"
 
@@ -44,6 +45,7 @@ void expectHeroCasterByDefault(EffectFixture & fixture)
 class SacrificeTest : public Test, public EffectFixture
 {
 public:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 
 	SacrificeTest()
 		: EffectFixture("core:sacrifice")
@@ -237,6 +239,7 @@ struct AdjustTargetTypesParam
 class SacrificeAdjustTargetTypesTest : public TestWithParam<AdjustTargetTypesParam>, public EffectFixture
 {
 public:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	SacrificeAdjustTargetTypesTest() : EffectFixture("core:sacrifice") {}
 
 protected:
@@ -271,6 +274,7 @@ INSTANTIATE_TEST_SUITE_P(
 class SacrificeApplicableGeneralTest : public Test, public EffectFixture
 {
 public:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	SacrificeApplicableGeneralTest() : EffectFixture("core:sacrifice") {}
 
 protected:
@@ -358,6 +362,7 @@ TEST_F(SacrificeApplicableGeneralTest, PhantomUnitCasterCannotMakeSacrificeAppli
 class SacrificeApplicableTargetNegativeTest : public Test, public EffectFixture
 {
 public:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	SacrificeApplicableTargetNegativeTest() : EffectFixture("core:sacrifice") {}
 
 protected:
@@ -506,6 +511,7 @@ TEST_F(SacrificeApplicableTargetNegativeTest, ReturnsFalseWhenSacrificeVictimIsP
 class SacrificeGetHealthChangeTest : public Test, public EffectFixture
 {
 public:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	UnitEnvironmentMock unitEnvironmentMock;
 
 	SacrificeGetHealthChangeTest() : EffectFixture("core:sacrifice") {}
@@ -649,6 +655,7 @@ TEST_F(SacrificeGetHealthChangeTest, LuaEffectScalesFullStackPowerBeforeDivision
 class SacrificeApplyTest : public Test, public EffectFixture
 {
 public:
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	UnitEnvironmentMock unitEnvironmentMock;
 
 	SacrificeApplyTest()

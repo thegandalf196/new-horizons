@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/json/JsonNode.h"
 #include "../../lib/bonuses/OwnedRecipientBonusGraph.h"
 #include "../../lib/bonuses/PreparedBonusGraphStorage.h"
@@ -49,6 +50,7 @@ public:
 }
 TEST(OwnedSourceRelationRecipeTest, SharedUpdaterRemovalUsesOnePoolAndKeepsSiblingRawGraph)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto exported = effect(2);
 	exported->propagationUpdater = std::make_shared<OwnerUpdater>();
 	auto arrival = effect(9); arrival->propagationUpdater = exported->propagationUpdater;
@@ -116,6 +118,7 @@ TEST(OwnedSourceRelationRecipeTest, UnknownNativePredicateIsRejectedWithoutInvoc
 }
 TEST(OwnedSourceRelationRecipeTest, CaptureReplayAndRetirementKeepSourceAndGlobalGenerationExact)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto raw = effect(3); raw->propagationUpdater = std::make_shared<OwnerUpdater>();
 	const auto before = raw->toJsonNode(); auto root = stack();
 	const auto generation = PreparedBonusGraphStorage::currentGeneration();

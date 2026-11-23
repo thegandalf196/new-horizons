@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
 #include "HistoricalCrusadeRules.h"
@@ -133,6 +134,7 @@ JsonNode formulaRules()
 
 TEST(NewHorizonsMagicV2RulesTest, ActualV1AndV2DecodeWithoutChangingExistingSchoolsLevelsOrCosts)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto old = legacyRules();
 	const auto current = formulaRules();
 	EXPECT_FALSE(old.Struct().contains("mageGuildGeneration"));
@@ -155,7 +157,9 @@ TEST(NewHorizonsMagicV2RulesTest, ActualV1AndV2DecodeWithoutChangingExistingScho
 		EXPECT_EQ(newHorizonsMagic::spellCost(current, arrow, rank), newHorizonsMagic::spellCost(old, arrow, rank));
 }
 
-TEST(NewHorizonsMagicV3RulesTest, HavocStructuresRequireCanonicalTypedOptInAndPreserveOlderProfiles)
+using NewHorizonsMagicV3RulesTest = vcmiTestData::OriginalDataTest;
+
+TEST_F(NewHorizonsMagicV3RulesTest, HavocStructuresRequireCanonicalTypedOptInAndPreserveOlderProfiles)
 {
 	const auto current = originalRules();
 	const SpellID meteor(SpellID::METEOR_SHOWER);
@@ -205,6 +209,7 @@ TEST(NewHorizonsMagicV2RulesTest, V1StillRejectsFormulaAndUnsupportedEnvelopeFai
 
 TEST(NewHorizonsMagicV2RulesTest, V3SnapshotsSchoolFactorsAndV2KeepsOneHundredPercent)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto current = originalRules();
 	EXPECT_EQ(current["rulesetVersion"].Integer(), newHorizonsMagic::CURRENT_RULESET_VERSION);
 	EXPECT_NO_THROW(newHorizonsMagic::validateRules(current));
@@ -237,6 +242,7 @@ TEST(NewHorizonsMagicV2RulesTest, V3SnapshotsSchoolFactorsAndV2KeepsOneHundredPe
 
 TEST(NewHorizonsMagicV2RulesTest, OptionalSavedSpellcraftEfficiencyKeepsOlderV3AtOneHundredPercent)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto current = originalRules();
 	const std::array<int, 4> expected{100, 110, 120, 130};
 	ASSERT_EQ(current["spellcraftEfficiencyPercent"].Vector().size(), expected.size());
@@ -264,6 +270,7 @@ TEST(NewHorizonsMagicV2RulesTest, OptionalSavedSpellcraftEfficiencyKeepsOlderV3A
 
 TEST(NewHorizonsMagicV2RulesTest, SchoolAndSpellcraftFactorsComposeAsExactBasisPoints)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto current = originalRules();
 	const auto spellcraft = SecondarySkill(SecondarySkill::decode("new-horizons:spellcraft"));
 	ASSERT_NE(spellcraft, SecondarySkill::NONE);
@@ -320,6 +327,7 @@ TEST(NewHorizonsMagicV2RulesTest, SchoolAndSpellcraftFactorsComposeAsExactBasisP
 
 TEST(NewHorizonsMagicV2RulesTest, QuicksandPatchCountUsesSavedSchoolAndSpellcraftOnPowerTermOnly)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto current = originalRules();
 	const auto quicksand = SpellID(SpellID::decode(quicksandKey));
 	ASSERT_NE(quicksand, SpellID::NONE);
@@ -375,6 +383,7 @@ TEST(NewHorizonsMagicV2RulesTest, QuicksandPatchCountUsesSavedSchoolAndSpellcraf
 
 TEST(NewHorizonsMagicV2RulesTest, QuicksandSelectedPlacementIsStrictSavedV3OptIn)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto quicksand = SpellID(SpellID::decode(quicksandKey));
 	ASSERT_NE(quicksand, SpellID::NONE);
 	auto current = originalRules();
@@ -403,6 +412,7 @@ TEST(NewHorizonsMagicV2RulesTest, QuicksandSelectedPlacementIsStrictSavedV3OptIn
 
 TEST(NewHorizonsMagicV2RulesTest, UnregisteredHeroUsesOrdinaryFactorsWithoutSpecialtyCapture)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto current = originalRules();
 	const auto arrow = SpellID(SpellID::decode(arrowKey));
 	const auto schools = newHorizonsMagic::spellSchoolSkills(current, arrow);
@@ -426,6 +436,7 @@ TEST(NewHorizonsMagicV2RulesTest, UnregisteredHeroUsesOrdinaryFactorsWithoutSpec
 
 TEST(NewHorizonsMagicV2RulesTest, AdventureSpellsAndCreatureAbilitiesExcludeBothRankFactors)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto current = originalRules();
 	const auto spellcraft = SecondarySkill(SecondarySkill::decode("new-horizons:spellcraft"));
 	ASSERT_NE(spellcraft, SecondarySkill::NONE);
@@ -471,6 +482,7 @@ TEST(NewHorizonsMagicV2RulesTest, VenomancerScalesTheWholeStoredBaseAfterItsNorm
 
 TEST(NewHorizonsMagicV2RulesTest, ExpertMassRangeOverrideIsSavedV3AndSpellSpecific)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto v1 = legacyRules();
 	const auto v2 = formulaRules();
 	const auto v3 = originalRules();
@@ -516,6 +528,7 @@ TEST(NewHorizonsMagicV2RulesTest, V2RejectsMalformedFormulaBeforeUse)
 
 TEST(NewHorizonsMagicV2RulesTest, ActiveSpellMarkerMustBeBooleanAndOldRowsStayValid)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto rules = formulaRules();
 	EXPECT_NO_THROW(newHorizonsMagic::validateRules(rules));
 	rules["spells"]["core:clone"].Struct().erase("active");
@@ -526,6 +539,7 @@ TEST(NewHorizonsMagicV2RulesTest, ActiveSpellMarkerMustBeBooleanAndOldRowsStayVa
 
 TEST(NewHorizonsMagicV2RulesTest, RetiredWarcastingOptInIsRejected)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto rules = originalRules();
 	rules.Struct().erase("warcasting");
 	EXPECT_NO_THROW(newHorizonsMagic::validateRules(rules));
@@ -538,6 +552,7 @@ TEST(NewHorizonsMagicV2RulesTest, RetiredWarcastingOptInIsRejected)
 
 TEST(NewHorizonsMagicV2RulesTest, SpellPointOptInIsV2OnlyAndUsesSavedCapacityPercent)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto rules = originalRules();
 	ASSERT_TRUE(rules["spellPoints"].isStruct());
 	EXPECT_TRUE(newHorizonsMagic::spellPointRulesActive(rules));
@@ -569,6 +584,7 @@ TEST(NewHorizonsMagicV2RulesTest, SpellPointOptInIsV2OnlyAndUsesSavedCapacityPer
 
 TEST(NewHorizonsMagicV2RulesTest, AbsentSnapshotRowAndOptionalFormulaNeverUseInstalledDamage)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	EXPECT_FALSE(newHorizonsMagic::spellDirectDamage(JsonNode(), arrowKey));
 	EXPECT_FALSE(newHorizonsMagic::spellDirectDamage(JsonNode(JsonMap{}), arrowKey));
 	EXPECT_TRUE(newHorizonsMagic::spellDirectDamage(originalRules(), arrowKey));
@@ -610,6 +626,7 @@ TEST(NewHorizonsMagicV2RulesTest, SavedRowAccessUsesWidePrimitiveAndReturnsIndep
 
 TEST(NewHorizonsMagicV2RulesTest, JsonSnapshotRoundTripRetainsFormulaNotLaterSourceValues)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto source = formulaRules();
 	CMemorySerializer wire;
 	wire.oser & source;
@@ -623,6 +640,7 @@ TEST(NewHorizonsMagicV2RulesTest, JsonSnapshotRoundTripRetainsFormulaNotLaterSou
 
 TEST(NewHorizonsMagicV2RulesTest, QuicksandRawStepUsesDisplayedPowerAndAbsentStepPreservesCasterUnits)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto current = originalRules();
 	const SpellID spell(SpellID::QUICKSAND);
 	ASSERT_EQ(current["spells"][quicksandKey]["rawSpellPowerPerPatch"].Integer(), 60);
@@ -643,6 +661,7 @@ TEST(NewHorizonsMagicV2RulesTest, QuicksandRawStepUsesDisplayedPowerAndAbsentSte
 
 TEST(NewHorizonsMagicV2RulesTest, QuicksandRawStepRetainsModifiersAndSupportsCapturedTuning)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto current = originalRules();
 	const SpellID spell(SpellID::QUICKSAND);
 	CGHeroInstance hero(nullptr);
@@ -668,6 +687,7 @@ TEST(NewHorizonsMagicV2RulesTest, QuicksandRawStepRetainsModifiersAndSupportsCap
 
 TEST(NewHorizonsMagicV2RulesTest, QuicksandRawStepRejectsInvalidValuesRowsAndOlderPolicies)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto current = originalRules();
 	for(const auto & invalid : {JsonNode(), JsonNode(false), JsonNode(0), JsonNode(-1),
 		JsonNode(0.5), JsonNode(60.0), JsonNode(1000001), JsonNode(std::string("60"))})
@@ -689,6 +709,7 @@ TEST(NewHorizonsMagicV2RulesTest, QuicksandRawStepRejectsInvalidValuesRowsAndOld
 
 TEST(NewHorizonsMagicV2RulesTest, QuicksandJsonRoundTripRetainsRawAndMarkerlessCountSemantics)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	for(const bool rawStep : {false, true})
 	{
 		auto rules = originalRules();
@@ -707,6 +728,7 @@ TEST(NewHorizonsMagicV2RulesTest, QuicksandJsonRoundTripRetainsRawAndMarkerlessC
 
 TEST(NewHorizonsMagicV2RulesTest, HolyWrathCurrentAndCapturedEarlierCoefficientsRemainIndependent)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto current = originalRules();
 	constexpr auto key = "new-horizons:holyWrath";
 	ASSERT_EQ(current["spells"][key]["directDamage"]["powerCoefficient"].Integer(), 20);

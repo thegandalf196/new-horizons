@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/battle/HeroActionAllowanceState.h"
 #include "../../lib/battle/MetamagicDoubleCast.h"
 #include "../../lib/battle/MetamagicDoubleCastState.h"
@@ -35,6 +36,7 @@ Ledger ledgerWithOffer()
 
 TEST(MetamagicDoubleCastState, CurrentFormatRoundTripsCountersAndOpenOffer)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto state = openOffer();
 	CMemorySerializer bytes;
 	bytes.oser & state;

@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/bonuses/BonusParameters.h"
 #include "../../lib/bonuses/Propagators.h"
 #include "../../lib/bonuses/Updaters.h"
@@ -60,6 +61,7 @@ battle::BattleEffectExchange exchange()
 
 TEST(BonusCapabilitySerialization, OrdinaryPayloadRetainsCurrentAnd1144Bytes)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto source = ordinary();
 	CMemorySerializer current, historical;
 	historical.oser.version = previous;
@@ -107,6 +109,7 @@ TEST(BonusCapabilitySerialization, StoredListRejectsBeforeCountAfterOrdinaryEntr
 
 TEST(BonusCapabilitySerialization, NodeRejectsBeforeNodeTypeAndReadDoesNotExport)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	CBonusSystemNode source(BonusNodeType::ARMY);
 	source.addNewBonus(std::make_shared<Bonus>(ordinary()));
 	source.addNewBonus(std::make_shared<Bonus>(marker()));
@@ -150,6 +153,7 @@ TEST(BonusCapabilitySerialization, ParentAndCachedBonusesAreNotOwnedPayload)
 
 TEST(BonusCapabilitySerialization, FilterOnlyBonusUsesSameOuterCapability)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	BonusList source;
 	auto bonus = std::make_shared<Bonus>(ordinary());
 	auto limiter = std::make_shared<UnitAdjacentLimiter>();

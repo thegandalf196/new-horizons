@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 
 #include "../../lib/battle/HeroActionAllowanceState.h"
 #include "../../lib/serializer/CMemorySerializer.h"
@@ -25,6 +26,7 @@ using Source = Ledger::GrantSource;
 
 TEST(HeroActionAllowanceState, HeroicSpiritResolvesEachAcceptedFlexibleOrderOnceAndCannotPaySpells)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	Ledger ledger;
 	ledger.resetForRound(1);
 	const auto ordinary = ledger.eligibleAllowance(Action::ORDER, 1);
@@ -52,6 +54,7 @@ TEST(HeroActionAllowanceState, HeroicSpiritResolvesEachAcceptedFlexibleOrderOnce
 
 TEST(HeroActionAllowanceState, HeroicSpiritFailedRollCannotBeRetriedAndRoundResetExpiresReceipts)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	Ledger ledger;
 	ledger.resetForRound(2);
 	const auto receipt = ledger.consumeAllowance(ledger.eligibleAllowance(Action::ORDER, 2)->grantId, Action::ORDER, 2);
@@ -74,6 +77,7 @@ TEST(HeroActionAllowanceState, HeroicSpiritFailedRollCannotBeRetriedAndRoundRese
 
 TEST(HeroActionAllowanceState, DistinctFlexibleOrdersMayResolveWithoutAnInventedRoundCap)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	Ledger ledger;
 	ledger.resetForRound(1);
 	ledger.grantAllowance(Allowance::HERO, Source::ARTIFACT, 1);
@@ -93,6 +97,7 @@ TEST(HeroActionAllowanceState, DistinctFlexibleOrdersMayResolveWithoutAnInvented
 
 TEST(HeroActionAllowanceState, TypedDoubleCommandOrdersRemainFirstAndCannotTriggerHeroicSpirit)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	Ledger ledger;
 	ledger.resetForRound(1);
 	const auto ordinary = ledger.consumeAllowance(ledger.eligibleAllowance(Action::ORDER, 1)->grantId, Action::ORDER, 1);
@@ -114,6 +119,7 @@ TEST(HeroActionAllowanceState, TypedDoubleCommandOrdersRemainFirstAndCannotTrigg
 
 TEST(HeroActionAllowanceState, HeroicSpiritRejectsMalformedReceiptsAndDirectManufacturedGrants)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	Ledger ledger;
 	ledger.resetForRound(1);
 	const auto receipt = ledger.consumeAllowance(ledger.eligibleAllowance(Action::ORDER, 1)->grantId, Action::ORDER, 1);
@@ -142,6 +148,7 @@ TEST(HeroActionAllowanceState, HeroicSpiritRejectsMalformedReceiptsAndDirectManu
 
 TEST(HeroActionAllowanceState, HeroicSpiritCurrentRoundTripsAndOldWriterRefusesBeforePrefix)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	Ledger ledger;
 	ledger.resetForRound(1);
 	const auto receipt = ledger.consumeAllowance(ledger.eligibleAllowance(Action::ORDER, 1)->grantId, Action::ORDER, 1);
@@ -170,6 +177,7 @@ TEST(HeroActionAllowanceState, HeroicSpiritCurrentRoundTripsAndOldWriterRefusesB
 
 TEST(HeroActionAllowanceState, OldOrdinaryLedgerDecodesIntoPreviouslyHeroicSpiritDestination)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	Ledger ordinary;
 	ordinary.resetForRound(1);
 	CMemorySerializer old;

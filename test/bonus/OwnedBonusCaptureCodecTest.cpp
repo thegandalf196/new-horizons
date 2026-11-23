@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/bonuses/OwnedBonusCaptureCodec.h"
 #include "../../lib/bonuses/OwnedBonusPayloads.h"
 #include "../../lib/bonuses/OwnedRecipientBonusGraph.h"
@@ -44,6 +45,7 @@ struct WithoutLibrary
 }
 TEST(OwnedBonusCaptureCodecTest, Explicit1153CloneAdmitsCanonicalBurnWithoutChangingDefaultPersistence)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto codec = OwnedBonusCaptureCodec::fromCapturedSpecialties(captured(true), capabilities(Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES));
 	ASSERT_EQ(codec.version(), Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES);
 	auto marker = burn();
@@ -75,6 +77,7 @@ TEST(OwnedBonusCaptureCodecTest, UnknownPartialOrIncompatibleCapturedCapabilitie
 }
 TEST(OwnedBonusCaptureCodecTest, ExplicitGraphOwns1153RawMarkerAndQueriesAfterLibraryIsAbsent)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto codec = OwnedBonusCaptureCodec::fromCapturedSpecialties(captured(true), capabilities(Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES));
 	auto marker = burn();
 	OwnedRecipientBonusGraph::NodeInput input; input.local = {marker};
@@ -87,6 +90,7 @@ TEST(OwnedBonusCaptureCodecTest, ExplicitGraphOwns1153RawMarkerAndQueriesAfterLi
 
 TEST(OwnedBonusCaptureCodecTest, Stable1151RemainsTruthfulAndRefusesExtendedPayloadRegardlessOfCurrentWriter)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto legacy = capabilities(Version::NEW_HORIZONS_ORDINARY_COMBAT_SPECIALTIES);
 	const auto codec = OwnedBonusCaptureCodec::fromCapturedSpecialties(captured(false), legacy);
 	EXPECT_EQ(codec.version(), Version::NEW_HORIZONS_ORDINARY_COMBAT_SPECIALTIES);
@@ -103,6 +107,7 @@ TEST(OwnedBonusCaptureCodecTest, Stable1151RemainsTruthfulAndRefusesExtendedPayl
 
 TEST(OwnedBonusCaptureCodecTest, ExplicitKnownWireEpochsSelectConcreteBonusProfiles)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto ordinary = capabilities(Version::NEW_HORIZONS_ORDINARY_COMBAT_SPECIALTIES);
 	const auto extended = capabilities(Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES);
 	const auto optional = capabilities(Version::NEW_HORIZONS_OPTIONAL_QUICK_STUDY);
@@ -176,6 +181,7 @@ TEST(OwnedBonusCaptureCodecTest, WireEpochAndNamedBonusProfileMustBothMatch)
 
 TEST(OwnedBonusCaptureCodecTest, IdenticalBonusMaskDoesNotAuthorizeAnUnknownWireEpoch)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto unknown = static_cast<Version>(static_cast<int32_t>(Version::CURRENT) + 1);
 	const auto mask = capabilities(unknown);
 	EXPECT_EQ(mask, capabilities(Version::CURRENT));
@@ -185,6 +191,7 @@ TEST(OwnedBonusCaptureCodecTest, IdenticalBonusMaskDoesNotAuthorizeAnUnknownWire
 
 TEST(OwnedBonusCaptureCodecTest, OptionalQuickStudySourceUsesExistingBonusCloneRepresentation)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto mask = capabilities(Version::NEW_HORIZONS_OPTIONAL_QUICK_STUDY);
 	const auto codec = OwnedBonusCaptureCodec::fromSourceEpoch(Version::NEW_HORIZONS_OPTIONAL_QUICK_STUDY, mask);
 	EXPECT_EQ(codec.version(), Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES);
@@ -198,6 +205,7 @@ TEST(OwnedBonusCaptureCodecTest, OptionalQuickStudySourceUsesExistingBonusCloneR
 
 TEST(OwnedBonusCaptureCodecTest, Calibration1152Preserves1151BonusRepresentationAndRefusesObsoleteExtendedMask)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	EXPECT_EQ(static_cast<int32_t>(Version::NEW_HORIZONS_LEADERSHIP_NEUTRAL_CALIBRATION), 1152);
 	EXPECT_EQ(static_cast<int32_t>(Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES), 1153);
 	EXPECT_EQ(static_cast<int32_t>(Version::NEW_HORIZONS_OPTIONAL_QUICK_STUDY), 1154);
@@ -242,6 +250,7 @@ TEST(OwnedBonusCaptureCodecTest, Passive1155EpochCannotUseHistorical1153Or1154Ca
 
 TEST(OwnedBonusCaptureCodecTest, Revision1156SourceUses1155BonusOnlyProfileAndDefaultCloneWithoutChangingWriter)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto revised = capabilities(Version::NEW_HORIZONS_FACTION_SKILL_REVISIONS);
 	const auto passive = capabilities(Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS);
 	ASSERT_EQ(revised, passive);
@@ -273,6 +282,7 @@ TEST(OwnedBonusCaptureCodecTest, Revision1156SourceUses1155BonusOnlyProfileAndDe
 
 TEST(OwnedBonusCaptureCodecTest, Historical1157And1158ProfilesRemainSeparateFromCurrentPersistence)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto native = capabilities(Version::NEW_HORIZONS_COMMAND_AUTHORITY);
 	ASSERT_NE(native, capabilities(Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS));
 	const auto codec = OwnedBonusCaptureCodec::fromSourceEpoch(Version::NEW_HORIZONS_COMMAND_AUTHORITY, native);

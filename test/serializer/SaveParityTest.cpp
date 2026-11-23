@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../mock/TinyMapGameTest.h"
 #include "../map/LegacyMapImportFixtures.h"
 #include "../../tools/native/SaveParityInput.h"
@@ -90,7 +91,9 @@ struct TemporarySave
 	}
 };
 
-TEST(SaveFormatHeaderTest, PriorFormatIsRejectedBeforeReadingPayloadWithoutChangingFile)
+using SaveFormatHeaderTest = vcmiTestData::OriginalDataTest;
+
+TEST_F(SaveFormatHeaderTest, PriorFormatIsRejectedBeforeReadingPayloadWithoutChangingFile)
 {
 	TemporarySave save;
 	const auto unsupported = static_cast<int32_t>(ESerializationVersion::NEW_HORIZONS_PASSIVE_FACTION_SKILLS);

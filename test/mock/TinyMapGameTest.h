@@ -8,6 +8,7 @@
  */
 #pragma once
 
+#include "../OriginalDataRequirement.h"
 #include "TinyH3MBuilder.h"
 #include "mock_MapServiceTinyH3M.h"
 #include "mock_Services.h"
@@ -30,6 +31,8 @@ class IClient;
 class TinyMapGameTest : public ::testing::Test, public ServerCallback, public MapListener
 {
 public:
+	// Every derived suite builds a game state from the loaded game library.
+	static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }
 	void SetUp() override;
 	void TearDown() override;
 

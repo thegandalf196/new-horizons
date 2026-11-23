@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
 #include <limits>
 
@@ -30,6 +31,7 @@ JsonNode magicRulesForVersion(const int version)
 
 TEST(NewHorizonsRegenerationTest, CanonicalNatureSpellAndHerbalistPerkAreActive)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const JsonNode rules(JsonPath::builtin("config/newHorizonsMagic"));
 	ASSERT_NO_THROW(validateRules(rules));
 	const auto & regeneration = rules["spells"][std::string(NATURE_REGENERATION_SPELL)];

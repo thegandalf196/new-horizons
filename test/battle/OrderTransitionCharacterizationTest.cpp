@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../server/battles/HeroCommandFixture.h"
 #include "../../AI/BattleAI/StackWithBonuses.h"
 #include "../../lib/GameConstants.h"
@@ -192,6 +193,7 @@ protected:
 
 TEST(OrderTransitionCharacterizationTest, SourcePaymentMatrixKeepsCrisisOnlyAndMandateConjunctionDistinct)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const std::array grants{std::pair{Allowance::HERO, Source::ROUND},
 		std::pair{Allowance::HERO, Source::PERK}, std::pair{Allowance::HERO, Source::ARTIFACT},
 		std::pair{Allowance::HERO, Source::OTHER}, std::pair{Allowance::ORDER, Source::PERK},
@@ -248,6 +250,7 @@ TEST(OrderTransitionCharacterizationTest, SourcePaymentMatrixKeepsCrisisOnlyAndM
 
 TEST(OrderTransitionCharacterizationTest, PriorityExpiryAndStaleIdsPreserveFullLedger)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	Ledger ledger; ledger.resetForRound(1);
 	ledger.grantAllowance(Allowance::HERO, Source::PERK, 3);
 	ledger.grantAllowance(Allowance::ORDER, Source::OTHER, 3);
@@ -331,6 +334,7 @@ TEST(OrderTransitionCharacterizationTest, InvalidFutureGrantAndNegativeQueryReje
 
 TEST(OrderTransitionCharacterizationTest, CompoundCapacityRetainsActualPartialStagingAndMandatoryGrantOrder)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	JsonNode rows;
 	for(const uint32_t spare : {0u, 1u, 3u})
 		for(const bool mandate : {false, true})

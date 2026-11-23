@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../server/battles/FullGameSnapshotTypes.h"
 #include "../../lib/battle/DreadCavalryState.h"
 #include "../../lib/CStack.h"
@@ -137,6 +138,7 @@ BattleStart dreadBattleEntry(bool pending)
 }
 TEST(DreadCavalryState, BattleStartUsedOnlyRejects1139BeforeAnyOuterPrefix)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto entry = dreadBattleEntry(false);
 	const auto before = entry.info->stacks.front()->dreadCavalryState;
 	ASSERT_TRUE(before.usedThisActivation);
@@ -150,6 +152,7 @@ TEST(DreadCavalryState, BattleStartUsedOnlyRejects1139BeforeAnyOuterPrefix)
 }
 TEST(DreadCavalryState, BattleStartPendingActiveOwnerAndVictimReject1139BeforeAnyOuterPrefix)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto entry = dreadBattleEntry(true);
 	const auto before = entry.info->stacks.front()->dreadCavalryState;
 	ASSERT_TRUE(before.pending);
@@ -164,6 +167,7 @@ TEST(DreadCavalryState, BattleStartPendingActiveOwnerAndVictimReject1139BeforeAn
 }
 TEST(DreadCavalryState, BattleStartSupportedCurrentWritesBothPendingAndUsedOnly)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	for(const bool pending : {false, true})
 	{
 		auto entry = dreadBattleEntry(pending);
@@ -176,6 +180,7 @@ TEST(DreadCavalryState, BattleStartSupportedCurrentWritesBothPendingAndUsedOnly)
 }
 TEST(DreadCavalryState, BattleStartDefaultAndNullInfoRemainWritableAt1139)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	for(const bool withInfo : {false, true})
 	{
 		BattleStart entry;

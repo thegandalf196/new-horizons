@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../../OriginalDataRequirement.h"
 #include "NewHorizonsElementalTerrainFixture.h"
 #include "../../../AI/BattleAI/BattleEvaluator.h"
 #include "../../../AI/BattleAI/SpellTargetsEvaluator.h"
@@ -279,7 +280,9 @@ TEST_F(NewHorizonsElementalConvergenceTest, EarthBattleAISelectsPaidCastAtProvis
 	ASSERT_NO_FATAL_FAILURE(expectPaidAI(TerrainId::DIRT, "core:dirt_hills", 41));
 }
 
-TEST(NewHorizonsElementalTerrainRulesTest, AuthoredMappingIncludesApprovedRowsAndRejectsUnknownContext)
+using NewHorizonsElementalTerrainRulesTest = vcmiTestData::OriginalDataTest;
+
+TEST_F(NewHorizonsElementalTerrainRulesTest, AuthoredMappingIncludesApprovedRowsAndRejectsUnknownContext)
 {
 	using newHorizonsElementalTerrain::resolve;
 	const auto earth = CreatureID(CreatureID::decode("core:earthElemental"));

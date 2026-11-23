@@ -152,7 +152,14 @@ declarations with actual binary discovery before executing the acceptance suite.
 
 `new-horizons-linux-native-tests` builds `vcmitest` separately. Running native
 gameplay tests still requires their documented isolated TEST profile and original
-resources. Enabling test compilation does not authorize graphical launches,
+resources. Without the original Heroes III files, the test bootstrap does not
+load the game library. Cases that need it are then reported as skipped, and the
+other cases still run. A suite whose fixture needs the library declares
+`static void SetUpTestSuite() { VCMI_TEST_REQUIRE_ORIGINAL_DATA(); }`. A single
+case starts with `VCMI_TEST_REQUIRE_ORIGINAL_DATA();`. A plain `TEST` suite can
+use the `vcmiTestData::OriginalDataTest` fixture. These are declared in
+`test/OriginalDataRequirement.h`. Set `NH_TEST_REQUIRE_ORIGINAL_DATA=1` to make
+a missing data directory fail instead. Enabling test compilation does not authorize graphical launches,
 fixture exports or access to the ordinary player profile. The focused preset is
 not a full engine build, rendered test or platform acceptance campaign.
 

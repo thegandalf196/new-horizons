@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/json/JsonNode.h"
 #include "../../lib/json/JsonUtils.h"
 #include "../../lib/constants/StringConstants.h"
@@ -235,6 +236,7 @@ TEST(NewHorizonsMagicV2SchemaTest, OrdinaryAcquisitionMarkerIsOptionalBooleanAcr
 
 TEST(NewHorizonsMagicV2SchemaTest, RuntimeRejectsNullOrdinaryAcquisitionMarkers)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto rules = v3Rules();
 	ASSERT_NO_THROW(newHorizonsMagic::validateRules(rules));
 	rules["spells"]["core:magicArrow"]["ordinaryAcquisition"] = JsonNode();
@@ -409,6 +411,7 @@ TEST(NewHorizonsMagicV3SchemaTest, PointBlankPrecedenceRequiresBooleanAndAllowsA
 
 TEST(NewHorizonsMagicV2SchemaTest, ValidHistoricalRulesRejectEitherPresentPointBlankPolicy)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto rules = v2Rules();
 	ASSERT_FALSE(rules.Struct().contains("pointBlankPreservesAdjacentExemption"));
 	ASSERT_TRUE(v2(rules));

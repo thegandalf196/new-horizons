@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../OverkillRandomPrayerRules.h"
 #include "../PerkStateFixture.h"
 #include "../../lib/entities/hero/NewHorizonsFourOfferProgression.h"
@@ -184,7 +185,9 @@ void selectFirst(PerkState & value, int rank)
 }
 }
 
-TEST(ExclusivePerkProgression, BasicCompletedTierHasNoPerkGroupAndNextRankOffersAllAdvanced)
+using ExclusivePerkProgression = vcmiTestData::OriginalDataTest;
+
+TEST_F(ExclusivePerkProgression, BasicCompletedTierHasNoPerkGroupAndNextRankOffersAllAdvanced)
 {
 	auto value = state();
 	ASSERT_EQ(pool(value, 1).size(), 4);
@@ -201,7 +204,7 @@ TEST(ExclusivePerkProgression, BasicCompletedTierHasNoPerkGroupAndNextRankOffers
 	EXPECT_TRUE(offer.perkSkills[1].empty());
 }
 
-TEST(ExclusivePerkProgression, ExternalExpertRankAcquiresExactlyOnePerTierInOrder)
+TEST_F(ExclusivePerkProgression, ExternalExpertRankAcquiresExactlyOnePerTierInOrder)
 {
 	auto value = state();
 	for(int tier = 1; tier <= 3; ++tier)
@@ -216,7 +219,7 @@ TEST(ExclusivePerkProgression, ExternalExpertRankAcquiresExactlyOnePerTierInOrde
 	EXPECT_NO_THROW(value.validate());
 }
 
-TEST(ExclusivePerkProgression, DuplicateTierAndSkippedPrerequisiteRejectWithoutPublishingChanges)
+TEST_F(ExclusivePerkProgression, DuplicateTierAndSkippedPrerequisiteRejectWithoutPublishingChanges)
 {
 	auto value = state();
 	const auto basic = pool(value, 1);
@@ -232,7 +235,7 @@ TEST(ExclusivePerkProgression, DuplicateTierAndSkippedPrerequisiteRejectWithoutP
 	EXPECT_EQ(value.toJson(), before);
 }
 
-TEST(ExclusivePerkProgression, BasicAndAdvancedPerksStillGateNormalRankUp)
+TEST_F(ExclusivePerkProgression, BasicAndAdvancedPerksStillGateNormalRankUp)
 {
 	auto value = state();
 	EXPECT_FALSE(value.canAdvanceSkillNormally(SKILL, 1));
@@ -245,7 +248,7 @@ TEST(ExclusivePerkProgression, BasicAndAdvancedPerksStillGateNormalRankUp)
 	EXPECT_FALSE(value.canAdvanceSkillNormally(SKILL, 3));
 }
 
-TEST(ExclusivePerkProgression, DevelopedHistoricalFourOfferChoicesKeepCapturedPolicyAndBytes)
+TEST_F(ExclusivePerkProgression, DevelopedHistoricalFourOfferChoicesKeepCapturedPolicyAndBytes)
 {
 	auto historical = state();
 	perkStateFixture::editRules(historical, [&](JsonNode & rules) { rules["perkProgressionPolicyVersion"].Integer() = 1; });
@@ -264,7 +267,7 @@ TEST(ExclusivePerkProgression, DevelopedHistoricalFourOfferChoicesKeepCapturedPo
 	EXPECT_EQ(reencoded.extractBuffer(), memory.extractBuffer());
 }
 
-TEST(ExclusivePerkProgression, MetamagicV4RequiresExactCompleteCapturedProfile)
+TEST_F(ExclusivePerkProgression, MetamagicV4RequiresExactCompleteCapturedProfile)
 {
 	const auto historical = historicalMetamagicStateV4();
 	const auto profile = historical.getRules()["metamagicPolicy"];
@@ -299,7 +302,7 @@ TEST(ExclusivePerkProgression, MetamagicV4RequiresExactCompleteCapturedProfile)
 	EXPECT_THROW(validatePassiveFactionPolicies(wrong), std::runtime_error);
 }
 
-TEST(ExclusivePerkProgression, CapturedMetamagicV6RequiresItsCompleteProfile)
+TEST_F(ExclusivePerkProgression, CapturedMetamagicV6RequiresItsCompleteProfile)
 {
 	const auto current = state(overkillRandomPrayerRules());
 	const auto & profile = current.getRules()["metamagicPolicy"];

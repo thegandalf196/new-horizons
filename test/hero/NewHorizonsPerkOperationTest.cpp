@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../PerkStateFixture.h"
 #include "../server/LegacyEstatesCapture.h"
 #include "PerkInitializationReference.h"
@@ -57,6 +58,7 @@ static_assert(!std::is_constructible_v<newHorizonsHeroes::PerkSelectionOperation
 
 TEST(NewHorizonsPerkOperation, All163AuthoredHeroesMatchPreOptimizationTraversalAndBytes)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto rules = development();
 	const auto & profiles = rules["startingSkills"]["startingDevelopmentProfiles"].Struct();
 	ASSERT_EQ(profiles.size(), 163u);
@@ -72,6 +74,7 @@ TEST(NewHorizonsPerkOperation, All163AuthoredHeroesMatchPreOptimizationTraversal
 
 TEST(NewHorizonsPerkOperation, ExpertAndExplicitPreferencesPreserveCallbacksChoicesAndBytes)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const auto state = fresh();
 	const auto candidates = state.candidatesForSkillTier(AUTHORITY, 1);
 	ASSERT_GE(candidates.size(), 2u);
@@ -80,6 +83,7 @@ TEST(NewHorizonsPerkOperation, ExpertAndExplicitPreferencesPreserveCallbacksChoi
 
 TEST(NewHorizonsPerkOperation, CommitIsExplicitAndCannotTargetAnotherState)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto state = fresh();
 	const auto original = state.getSelected();
 	PerkSelectionOperation operation(state);
@@ -97,6 +101,7 @@ TEST(NewHorizonsPerkOperation, CommitIsExplicitAndCannotTargetAnotherState)
 
 TEST(NewHorizonsPerkOperation, FailedLaterSelectionPreservesWorkingAndPublishedChoices)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto state = fresh();
 	PerkSelectionOperation operation(state);
 	const auto choice = operation.candidates(AUTHORITY, 1).front().selection;
@@ -111,6 +116,7 @@ TEST(NewHorizonsPerkOperation, FailedLaterSelectionPreservesWorkingAndPublishedC
 
 TEST(NewHorizonsPerkOperation, InvalidUnrequestedCatalogueRowStillRejectsEveryRawBoundary)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto state = fresh();
 	const auto before = state.toJson();
 	auto malformed = state.getRules();
@@ -126,6 +132,7 @@ TEST(NewHorizonsPerkOperation, InvalidUnrequestedCatalogueRowStillRejectsEveryRa
 
 TEST(NewHorizonsPerkOperation, InvalidLateRankLeavesOriginalInitializerStateUntouched)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	auto state = fresh();
 	const auto original = state.toJson();
 	const auto lastSkill = state.getRules()["skills"].Struct().rbegin()->first;
