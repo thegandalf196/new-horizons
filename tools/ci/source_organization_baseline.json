@@ -25692,31 +25692,40 @@
       "sha256": "3fa028663d981d3f909e2a704b7d14ba8f4c2d1d033118086e27e792d86527ac"
     },
     "lib/json/JsonParser.cpp": {
-      "kind": "legacy",
+      "kind": "exception",
       "lines": 636,
       "owner": "engine_engineer",
-      "rationale": "Existing file owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 636 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "f6353b15760f8f00cf5340d8de8002e624fc355262a6637a35e5a4b1bd410c85"
+      "rationale": "Urgent correctness fix: every read of the current character goes through a bounds-checked accessor, because the parser read one character past the end of its input when a document ended inside a number (an MSVC checked-iterator abort). Unchanged line count; no new responsibility.",
+      "review": "PROPOSED-CLAUDE-JSON-PARSER-BOUNDS-20261123",
+      "review_scope": "Exact source only; urgent correctness change with no growth.",
+      "sha256": "bd0016cc264fc129dd141961b40fd66a39c5800cb8815f3599968e234fbf434f",
+      "prior_rationale": "Existing file owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 636 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
+      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
+      "deferral": "Before further growth, extract number parsing from extractFloat and member parsing from extractStruct into focused helpers and lower this baseline. No growth is authorized."
     },
     "lib/json/JsonParser.cpp::bool JsonParser::extractFloat(JsonNode & node)#1": {
-      "kind": "legacy",
+      "kind": "exception",
       "lines": 121,
       "owner": "engine_engineer",
-      "rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 121 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "90a85f2ba62546170c3dbf5d3457e715c233a9f6b39c5a674c484ac04ccfb84b"
+      "rationale": "Urgent correctness fix: every read of the current character goes through a bounds-checked accessor, because the parser read one character past the end of its input when a document ended inside a number (an MSVC checked-iterator abort). Unchanged line count; no new responsibility.",
+      "review": "PROPOSED-CLAUDE-JSON-PARSER-BOUNDS-20261123",
+      "review_scope": "Exact source only; urgent correctness change with no growth.",
+      "sha256": "0cdabad89f2778503d9e6a9073c3a7f26e032b65beccc4968a442b245fb7f613",
+      "prior_rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 121 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
+      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
+      "deferral": "Before further growth, extract number parsing from extractFloat and member parsing from extractStruct into focused helpers and lower this baseline. No growth is authorized."
     },
     "lib/json/JsonParser.cpp::bool JsonParser::extractStruct(JsonNode & node)#1": {
-      "kind": "legacy",
+      "kind": "exception",
       "lines": 86,
       "owner": "engine_engineer",
-      "rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 86 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "0e52cc9b2f6b753e34d2e7f45e81cff599736bb0056a08315ae449c684045e2e"
+      "rationale": "Urgent correctness fix: every read of the current character goes through a bounds-checked accessor, because the parser read one character past the end of its input when a document ended inside a number (an MSVC checked-iterator abort). Unchanged line count; no new responsibility.",
+      "review": "PROPOSED-CLAUDE-JSON-PARSER-BOUNDS-20261123",
+      "review_scope": "Exact source only; urgent correctness change with no growth.",
+      "sha256": "1464dcbc64d669109033b0f489418a5c42af9aaf2b95353891a530e19b246412",
+      "prior_rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 86 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
+      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
+      "deferral": "Before further growth, extract number parsing from extractFloat and member parsing from extractStruct into focused helpers and lower this baseline. No growth is authorized."
     },
     "lib/json/JsonValidator.cpp": {
       "kind": "legacy",

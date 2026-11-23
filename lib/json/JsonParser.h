@@ -23,6 +23,11 @@ class JsonParser
 	size_t lineStart; // Position of current line start
 	size_t pos; // Current position of parser
 
+	// Reads past the end yield '\0', which no JSON token accepts. The input is
+	// not null-terminated, and checked iterators reject an index at its end.
+	char at(size_t index) const { return index < input.size() ? input[index] : '\0'; }
+	char current() const { return at(pos); }
+
 	//Helpers
 	bool extractEscaping(std::string & str);
 	bool extractLiteral(std::string & literal);

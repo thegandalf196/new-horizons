@@ -74,7 +74,7 @@ bool JsonParser::extractSeparator()
 	if(!extractWhitespace())
 		return false;
 
-	if(input[pos] != ':')
+	if(current() != ':')
 		return error("Separator expected");
 
 	pos++;
@@ -86,7 +86,7 @@ bool JsonParser::extractValue(JsonNode & node)
 	if(!extractWhitespace())
 		return false;
 
-	switch(input[pos])
+	switch(current())
 	{
 		case '\"':
 		case '\'':
@@ -107,7 +107,7 @@ bool JsonParser::extractValue(JsonNode & node)
 			return extractFloat(node);
 		default:
 		{
-			if(input[pos] >= '0' && input[pos] <= '9')
+			if(current() >= '0' && current() <= '9')
 				return extractFloat(node);
 			return error("Value expected!");
 		}
@@ -121,9 +121,9 @@ bool JsonParser::extractWhitespace(bool verbose)
 
 	while(true)
 	{
-		while(pos < input.size() && static_cast<ui8>(input[pos]) <= ' ')
+		while(pos < input.size() && static_cast<ui8>(current()) <= ' ')
 		{
-			if(input[pos] == '\n')
+			if(current() == '\n')
 			{
 				lineCount++;
 				lineStart = pos + 1;
@@ -131,7 +131,7 @@ bool JsonParser::extractWhitespace(bool verbose)
 			pos++;
 		}
 
-		if(pos >= input.size() || input[pos] != '/')
+		if(pos >= input.size() || current() != '/')
 			break;
 
 		if(settings.mode == JsonParsingSettings::JsonFormatMode::JSON)
@@ -140,12 +140,12 @@ bool JsonParser::extractWhitespace(bool verbose)
 		pos++;
 		if(pos == input.size())
 			break;
-		if(input[pos] == '/')
+		if(current() == '/')
 			pos++;
 		else
 			error("Comments must consist of two slashes!", true);
 
-		while(pos < input.size() && input[pos] != '\n')
+		while(pos < input.size() && current() != '\n')
 			pos++;
 	}
 
@@ -159,10 +159,10 @@ bool JsonParser::extractEscaping(std::string & str)
 	// TODO: support unicode escaping:
 	// \u1234
 
-	switch(input[pos])
+	switch(current())
 	{
 		case '\r':
-			if(settings.mode == JsonParsingSettings::JsonFormatMode::JSON5 && input.size() > pos && input[pos+1] == '\n')
+			if(settings.mode == JsonParsingSettings::JsonFormatMode::JSON5 && at(pos + 1) == '\n')
 			{
 				pos += 2;
 				return true;
@@ -215,29 +215,29 @@ bool JsonParser::extractString(std::string & str)
 {
 	if(settings.mode < JsonParsingSettings::JsonFormatMode::JSON5)
 	{
-		if(input[pos] != '\"')
+		if(current() != '\"')
 			return error("String expected!");
 	}
 	else
 	{
-		if(input[pos] != '\"' && input[pos] != '\'')
+		if(current() != '\"' && current() != '\'')
 			return error("String expected!");
 	}
 
-	char lineTerminator = input[pos];
+	char lineTerminator = current();
 	pos++;
 
 	size_t first = pos;
 
 	while(pos != input.size())
 	{
-		if(input[pos] == lineTerminator) // Correct end of string
+		if(current() == lineTerminator) // Correct end of string
 		{
 			str.append(&input[first], pos - first);
 			pos++;
 			return true;
 		}
-		else if(input[pos] == '\\') // Escaping
+		else if(current() == '\\') // Escaping
 		{
 			str.append(&input[first], pos - first);
 			pos++;
@@ -247,12 +247,12 @@ bool JsonParser::extractString(std::string & str)
 			extractEscaping(str);
 			first = pos;
 		}
-		else if(input[pos] == '\n') // end-of-line
+		else if(current() == '\n') // end-of-line
 		{
 			str.append(&input[first], pos - first);
 			return error("Closing quote not found!", true);
 		}
-		else if(static_cast<unsigned char>(input[pos]) < ' ') // control character
+		else if(static_cast<unsigned char>(current()) < ' ') // control character
 		{
 			str.append(&input[first], pos - first);
 			pos++;
@@ -280,14 +280,14 @@ bool JsonParser::extractLiteral(std::string & literal)
 {
 	while(pos < input.size())
 	{
-		bool isUpperCase = input[pos] >= 'A' && input[pos] <= 'Z';
-		bool isLowerCase = input[pos] >= 'a' && input[pos] <= 'z';
-		bool isNumber = input[pos] >= '0' && input[pos] <= '9';
+		bool isUpperCase = current() >= 'A' && current() <= 'Z';
+		bool isLowerCase = current() >= 'a' && current() <= 'z';
+		bool isNumber = current() >= '0' && current() <= '9';
 
 		if(!isUpperCase && !isLowerCase && !isNumber)
 			break;
 
-		literal += input[pos];
+		literal += current();
 		pos++;
 	}
 
@@ -354,7 +354,7 @@ bool JsonParser::extractStruct(JsonNode & node)
 		return false;
 
 	//Empty struct found
-	if(input[pos] == '}')
+	if(current() == '}')
 	{
 		pos++;
 		return true;
@@ -375,7 +375,7 @@ bool JsonParser::extractStruct(JsonNode & node)
 		}
 		else
 		{
-			if(input[pos] == '\'' || input[pos] == '\"')
+			if(current() == '\'' || current() == '\"')
 			{
 				if(!extractString(key))
 					return false;
@@ -415,7 +415,7 @@ bool JsonParser::extractStruct(JsonNode & node)
 
 		node.Struct()[key].setOverrideFlag(overrideFlag);
 
-		if(input[pos] == '}')
+		if(current() == '}')
 		{
 			pos++;
 			return true;
@@ -441,7 +441,7 @@ bool JsonParser::extractArray(JsonNode & node)
 		return false;
 
 	//Empty array found
-	if(input[pos] == ']')
+	if(current() == ']')
 	{
 		pos++;
 		return true;
@@ -456,7 +456,7 @@ bool JsonParser::extractArray(JsonNode & node)
 		if(!extractElement(node.Vector().back(), ']'))
 			return false;
 
-		if(input[pos] == ']')
+		if(current() == ']')
 		{
 			pos++;
 			return true;
@@ -472,7 +472,7 @@ bool JsonParser::extractElement(JsonNode & node, char terminator)
 	if(!extractWhitespace())
 		return false;
 
-	bool comma = (input[pos] == ',');
+	bool comma = (current() == ',');
 	if(comma)
 	{
 		pos++;
@@ -480,7 +480,7 @@ bool JsonParser::extractElement(JsonNode & node, char terminator)
 			return false;
 	}
 
-	if(input[pos] == terminator)
+	if(current() == terminator)
 	{
 		if(comma && settings.mode < JsonParsingSettings::JsonFormatMode::JSON5)
 			error("Extra comma found!", true);
@@ -499,46 +499,46 @@ bool JsonParser::extractFloat(JsonNode & node)
 	//TODO: JSON5 - hexacedimal support
 	//TODO: JSON5 - Numbers may be IEEE 754 positive infinity, negative infinity, and NaN (why?)
 
-	assert(input[pos] == '-' || (input[pos] >= '0' && input[pos] <= '9'));
+	assert(current() == '-' || (current() >= '0' && current() <= '9'));
 	bool negative = false;
 	double result = 0;
 	si64 integerPart = 0;
 	bool isFloat = false;
 
-	if(input[pos] == '+')
+	if(current() == '+')
 	{
 		if(settings.mode < JsonParsingSettings::JsonFormatMode::JSON5)
 			error("Positive numbers should not have plus sign!", true);
 		pos++;
 	}
-	else if(input[pos] == '-')
+	else if(current() == '-')
 	{
 		pos++;
 		negative = true;
 	}
 
-	if(input[pos] < '0' || input[pos] > '9')
+	if(current() < '0' || current() > '9')
 	{
-		if(input[pos] != '.' && settings.mode < JsonParsingSettings::JsonFormatMode::JSON5)
+		if(current() != '.' && settings.mode < JsonParsingSettings::JsonFormatMode::JSON5)
 			return error("Number expected!");
 	}
 
 	//Extract integer part
-	while(input[pos] >= '0' && input[pos] <= '9')
+	while(current() >= '0' && current() <= '9')
 	{
-		integerPart = integerPart * 10 + (input[pos] - '0');
+		integerPart = integerPart * 10 + (current() - '0');
 		pos++;
 	}
 
 	result = static_cast<double>(integerPart);
 
-	if(input[pos] == '.')
+	if(current() == '.')
 	{
 		//extract fractional part
 		isFloat = true;
 		pos++;
 
-		if(settings.mode < JsonParsingSettings::JsonFormatMode::JSON5 && (input[pos] < '0' || input[pos] > '9'))
+		if(settings.mode < JsonParsingSettings::JsonFormatMode::JSON5 && (current() < '0' || current() > '9'))
 			return error("Decimal part expected!");
 
 		// largest integer a double still holds exactly
@@ -547,12 +547,12 @@ bool JsonParser::extractFloat(JsonNode & node)
 		si64 mantissa = integerPart;
 		int fractionDigits = 0;
 
-		while(input[pos] >= '0' && input[pos] <= '9')
+		while(current() >= '0' && current() <= '9')
 		{
 			// once the mantissa is full, further digits can no longer change the resulting double
 			if(mantissa <= (maxExactMantissa - 9) / 10)
 			{
-				mantissa = mantissa * 10 + (input[pos] - '0');
+				mantissa = mantissa * 10 + (current() - '0');
 				fractionDigits++;
 			}
 			pos++;
@@ -563,7 +563,7 @@ bool JsonParser::extractFloat(JsonNode & node)
 		result = static_cast<double>(mantissa) / std::pow(10, fractionDigits);
 	}
 
-	if(input[pos] == 'e')
+	if(current() == 'e')
 	{
 		//extract exponential part
 		pos++;
@@ -571,22 +571,22 @@ bool JsonParser::extractFloat(JsonNode & node)
 		bool powerNegative = false;
 		double power = 0;
 
-		if(input[pos] == '-')
+		if(current() == '-')
 		{
 			pos++;
 			powerNegative = true;
 		}
-		else if(input[pos] == '+')
+		else if(current() == '+')
 		{
 			pos++;
 		}
 
-		if(input[pos] < '0' || input[pos] > '9')
+		if(current() < '0' || current() > '9')
 			return error("Exponential part expected!");
 
-		while(input[pos] >= '0' && input[pos] <= '9')
+		while(current() >= '0' && current() <= '9')
 		{
-			power = power * 10 + (input[pos] - '0');
+			power = power * 10 + (current() - '0');
 			pos++;
 		}
 
