@@ -7,6 +7,62 @@ and revisions as the game develops.
 For individual perk effects, spell formulas, creature statistics and Order rules,
 read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 
+## 0.93.2 Beta
+
+Rampart's heroes get their revised specialties.
+
+- New Rampart specialties:
+  - **Jenova, Patroness:** the first time each week she enters each of your
+    towns, she collects part of that town's daily income.
+  - **Mephala, Use the Ground:** her stacks standing next to an obstacle, a
+    wall or a closed gate take less physical damage.
+  - **Kyrre, Elusive:** she can move next to neutral guards without being
+    attacked (Core guards at first, Elite from level 10, Champion from level
+    20). Stepping onto a guard still starts the fight.
+  - **Coronius, Giant-Slayer:** his creatures deal more damage to targets of a
+    higher rank, and his Holy Wrath hits higher-ranked targets harder.
+  - **Uland, Living Remedy:** his Cure also gives the target Regeneration for
+    2 rounds.
+  - **Gem, Sorceress of Enroth:** her first spell each combat costs no Mana,
+    up to a spell level that rises with her level.
+  - **Alagar, Brittle:** his Ice Bolt and Frost Ring end the target's Defend;
+    until it next acts it cannot Defend and takes more physical damage.
+  - **Melodia, Against the Odds:** against a stronger army, her stacks gain
+    Luck for the combat.
+  - **Aeris, Perfect Mount:** Pegasi take less magical damage, and are immune
+    from level 20.
+  - **Ryland, Treantmoot:** his Dendroids also take less physical damage.
+  - **Ivor, Forest Ambush:** the shot from hiding deals more damage as he
+    levels.
+- Aeris now starts with Fleetfoot and Clancy with Hunting Pack.
+- The AI uses the new Rampart specialties.
+- Adelaide's Frost Mantle no longer chills an enemy immune to Frost Ring, and
+  an empty ring centred on such a stack can no longer be cast.
+- The launcher:
+  - A Beta package now opens on the Beta track with its own saves. The first
+    Beta start copies your saves into the Beta profile; your stable saves are
+    not moved or changed.
+  - The Beta track offers only betas, never a Stable release.
+  - Windows: the Version track list and the What's new scroll bars are dark.
+- The hero window:
+  - Under the class name it shows the class's Might/Magic balance.
+  - Leadership, Mana, Regen, Movement and Vision share one row.
+  - "Experience" is spelled correctly on every install.
+- Painted icons replace the flat creature ability, quick save/load, hero
+  growth, Spells/Cancel and artillery icons. Frost Mantle, Brittle and Living
+  Remedy have their own status icons.
+- Fixes:
+  - The game's data (JSON) reader no longer reads past the end of its input.
+  - Damaged or mismatched saved data is rejected with an error instead of
+    being misread.
+  - Computer opponents no longer keep sending moves after a refused one, which
+    made them abandon their route in AI-only games.
+  - Several internal checks that could stop the game on malformed data now
+    reject the data instead.
+- Games saved in 0.92.x, 0.93.0 and 0.93.1 load and keep their original rules,
+  so Rampart heroes in those games keep their old specialties. The new
+  specialties apply to new games.
+
 ## 0.93.1 Beta
 
 Castle's heroes get their revised specialties and starts.

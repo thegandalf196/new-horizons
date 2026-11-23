@@ -313,7 +313,9 @@ The extended ordinary creature coefficients (format 1153 and later) are shipped
 from 0.93.1 for every extended row whose accepted design is unchanged; new games
 capture them, while 1164 and 1165 captures keep their absence and the generic
 creature-line rider. Lorelei's and Alkin's rows stay absent until their revised
-designs are implemented.
+designs are implemented. The eleven Rampart rows shipped from 0.93.2 add no saved
+state: a 1166 capture made before them, such as a 0.93.1 save, has no Rampart
+rows and keeps every historical Rampart specialty.
 
 ## Captured recovery specialties
 
