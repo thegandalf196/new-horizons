@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import sys
 from PIL import Image
+from .nhart_flat_interface_repaint import superseding_replacement
 
 ROOT = Path(__file__).resolve().parents[2]
 RECORD = 'assets/new-horizons/creature-ability-art-selections.json'
@@ -40,6 +41,15 @@ def validate_ability_art(wave, entries, reader):
     for row in exports:
         name = row['resource']
         data = reader(name)
+        successor = superseding_replacement(name)
+        if successor is not None:
+            # A later selected repaint replaced this payload; its exact predecessor stays recorded.
+            if (successor['previous']['sha256'] != row['sha256'] or not row['masterSha256']
+                    or lookup[name]['sha256'] != successor['current']['sha256']
+                    or hashlib.sha256(data).hexdigest() != successor['current']['sha256']):
+                raise ValueError('Creature ability artwork successor changed')
+            paintings.add(hashlib.sha256(data).hexdigest())
+            continue
         if (hashlib.sha256(data).hexdigest() != row['sha256']
                 or lookup[name]['sha256'] != row['sha256'] or not row['masterSha256']):
             raise ValueError('Creature ability artwork bytes or origin changed')

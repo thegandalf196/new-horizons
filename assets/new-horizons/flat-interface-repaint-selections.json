@@ -1,0 +1,738 @@
+{
+  "format": 1,
+  "selection": "Owner-approved flat interface icon repaint 2026-11-23",
+  "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
+  "entries": [
+    {
+      "resource": "SPRITES/NH_ability_long_reach.png",
+      "previousSha256": "5bd744ad8caa2fd121ec7a6be4c99bec2a99c9c24c3d497cb5b3f76a34c3f1e6",
+      "sha256": "27f84669ee788667817c27b924af167d5e80bf6004e1e491a27ea52d5848f899",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        42,
+        41
+      ],
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
+      "sourceMasterSha256": "61c0d3fbaccf6f2feb986a54210e4114513af60a1ca44ec84c8090fbdb68b510"
+    },
+    {
+      "resource": "SPRITES/NH_cancel_disabled.png",
+      "previousSha256": "a5252bcdc28c3ebe3cde93a1b336aadc1462eea33225352bc73cd72a53ac7af0",
+      "sha256": "89a9113a7a38db41f134c9f27ad2e62bbe03a509897bde7272d8e2b72af6210a",
+      "dimensions": [
+        64,
+        64
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        62,
+        62
+      ],
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
+      "sourceMasterSha256": "dc8091119d73af3f73f9254aeb611b41344640e7adcadad34e320814f233d754"
+    },
+    {
+      "resource": "SPRITES/NH_cancel_highlighted.png",
+      "previousSha256": "9176362963b754813390d7c2a111940e2fd813b186d8da6108c9f621fb2e0d91",
+      "sha256": "1b383f20831feee2df4c3efb26aef189bf2701ca974ae5ee911befe44df381a8",
+      "dimensions": [
+        64,
+        64
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        62,
+        62
+      ],
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
+      "sourceMasterSha256": "dc8091119d73af3f73f9254aeb611b41344640e7adcadad34e320814f233d754"
+    },
+    {
+      "resource": "SPRITES/NH_cancel_normal.png",
+      "previousSha256": "a90725231d1ee005f99f9a95148d35df8e1545bf0de9b6645618000ae210201d",
+      "sha256": "c17a7d6deb48b0e61589038fc74b2a5f240dba711a57e5112c9175eb98c8d111",
+      "dimensions": [
+        64,
+        64
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        62,
+        62
+      ],
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
+      "sourceMasterSha256": "dc8091119d73af3f73f9254aeb611b41344640e7adcadad34e320814f233d754"
+    },
+    {
+      "resource": "SPRITES/NH_cancel_pressed.png",
+      "previousSha256": "d83581738cbeac1983574eb97fc7523bdfa6ec61539512ca3e25ffa06d8a8910",
+      "sha256": "761f03886dac0e3471ce061e70294fea49ba8b0412105f14872572abf2592c70",
+      "dimensions": [
+        64,
+        64
+      ],
+      "alphaBoundingBox": [
+        2,
+        3,
+        62,
+        63
+      ],
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
+      "sourceMasterSha256": "dc8091119d73af3f73f9254aeb611b41344640e7adcadad34e320814f233d754"
+    },
+    {
+      "resource": "SPRITES/NH_hero_attack_32.png",
+      "previousSha256": "ab0cedb3d86f891f44187062fcc9bdce4612d2fd750db6a3fc4d4d2209fa28c8",
+      "sha256": "10c36a6777e3116dea8909d59e36b492d7f08e2566008dbe1a2fd8412a50b57f",
+      "dimensions": [
+        32,
+        32
+      ],
+      "alphaBoundingBox": [
+        1,
+        1,
+        30,
+        31
+      ],
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
+      "sourceMasterSha256": "b10d89ffb4cb7e3638b2cfc8547c71cfb1c17b71835a88d5dae2d37a59d6e0ee"
+    },
+    {
+      "resource": "SPRITES/NH_hero_defense_32.png",
+      "previousSha256": "ddfcfbf51d9b523ef6a9d34a6a4f509e2b1e1865f993f1176e0ad4a4e6a3af4c",
+      "sha256": "96ec05fff14fc1873d8d13d94e84c06323398e1a93d812c492e997a24b6d4ca5",
+      "dimensions": [
+        32,
+        32
+      ],
+      "alphaBoundingBox": [
+        3,
+        1,
+        28,
+        31
+      ],
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
+      "sourceMasterSha256": "787aae702536979caa3ddd21cbaf05e0c8831adfbc605a99a30b53d4d1907a93"
+    },
+    {
+      "resource": "SPRITES/NH_hero_growth_entry_disabled.png",
+      "previousSha256": "5942d5a4719c656e24d02c6bb7ade0775a166549f1631fb5cd2f1bf1fa8e78de",
+      "sha256": "0ffd4e1c846c8b11d58822ac2cf60d20e10199a77a7c863b76218d1a12b4dc60",
+      "dimensions": [
+        24,
+        24
+      ],
+      "alphaBoundingBox": [
+        0,
+        0,
+        23,
+        23
+      ],
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
+      "sourceMasterSha256": "48ce578e2ff33f984396918662f3ef0e680df287ef7945dd226baeadd20a59a7"
+    },
+    {
+      "resource": "SPRITES/NH_hero_growth_entry_highlighted.png",
+      "previousSha256": "116a9fcaf4a55a80c74126c210811c03e464de2c00f7386aa565b4898687bf98",
+      "sha256": "f6a5ae1236bca3bcd8da79cbd1c94454534eaf2774622d65415e8975579889f8",
+      "dimensions": [
+        24,
+        24
+      ],
+      "alphaBoundingBox": [
+        0,
+        0,
+        23,
+        23
+      ],
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
+      "sourceMasterSha256": "48ce578e2ff33f984396918662f3ef0e680df287ef7945dd226baeadd20a59a7"
+    },
+    {
+      "resource": "SPRITES/NH_hero_growth_entry_normal.png",
+      "previousSha256": "d211f227cefa6602b70f600f0c3bfab6faf7fe1b85e5eb9cdb8a3c0dc15fd0e8",
+      "sha256": "cb7e76eea0d8f9dd4420af9a53308b7062fdc0428c8055ea20e5bcfd93ce72b4",
+      "dimensions": [
+        24,
+        24
+      ],
+      "alphaBoundingBox": [
+        0,
+        0,
+        23,
+        23
+      ],
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
+      "sourceMasterSha256": "48ce578e2ff33f984396918662f3ef0e680df287ef7945dd226baeadd20a59a7"
+    },
+    {
+      "resource": "SPRITES/NH_hero_growth_entry_pressed.png",
+      "previousSha256": "98b9cce9bdffc3cc026c3372d6d950eff9610a50b5e09fd210dbae7252893485",
+      "sha256": "bad3bb3769554f31f2d1a1de0eaea304d6bb1e561a956ac423bfe2e74fff9b4c",
+      "dimensions": [
+        24,
+        24
+      ],
+      "alphaBoundingBox": [
+        0,
+        0,
+        23,
+        23
+      ],
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
+      "sourceMasterSha256": "48ce578e2ff33f984396918662f3ef0e680df287ef7945dd226baeadd20a59a7"
+    },
+    {
+      "resource": "SPRITES/NH_hero_knowledge_32.png",
+      "previousSha256": "2a43c81491c4b0aac73aa289a2c9ff9c83d6da32f9457b66fabdf5a2433e9b5c",
+      "sha256": "0b478d37e8679e23ce29b3a02685f8e9fde179cb819ac2645a031de9fbfa03d1",
+      "dimensions": [
+        32,
+        32
+      ],
+      "alphaBoundingBox": [
+        3,
+        1,
+        28,
+        31
+      ],
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
+      "sourceMasterSha256": "23facb861c753229de80e18c8deda06f711791c4322343828a3fc21aebd99ef1"
+    },
+    {
+      "resource": "SPRITES/NH_hero_luck_32.png",
+      "previousSha256": "35adcfdac44c44fff15a34ebeba8ec0039683f5de9570baab26a4e1c6695047a",
+      "sha256": "c46346348e7d567920a733f5a12c1df60c0a039e53ca0458c43726eca1a895ee",
+      "dimensions": [
+        32,
+        32
+      ],
+      "alphaBoundingBox": [
+        2,
+        1,
+        30,
+        31
+      ],
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
+      "sourceMasterSha256": "2f7530cb8f3aefcbbc495b80384971dbfeae22fab31c8f179dceb6e578bbda32"
+    },
+    {
+      "resource": "SPRITES/NH_hero_mana_32.png",
+      "previousSha256": "40e3eeeab411bf6fecee4858a02e114987a57d6a28499cc22cc0473263888080",
+      "sha256": "d8b71ff449a4f9c1591bcde187f6d2c1a6bd03eeb2e22887420a4f569b90b499",
+      "dimensions": [
+        32,
+        32
+      ],
+      "alphaBoundingBox": [
+        5,
+        1,
+        27,
+        31
+      ],
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
+      "sourceMasterSha256": "b76bc342889ed5c320cf623859e2a12b80a5faf92980b6efeae6cfa467755dba"
+    },
+    {
+      "resource": "SPRITES/NH_hero_morale_32.png",
+      "previousSha256": "98dc2a8144dd83e30061e90b2d99359bd164a4f3d4e59f4abaa52eb759653956",
+      "sha256": "fcee0b51a885e5d0522ee34ff1a2fd76f18e6b6e7ea614fcf8bc4c78692eff37",
+      "dimensions": [
+        32,
+        32
+      ],
+      "alphaBoundingBox": [
+        1,
+        1,
+        30,
+        31
+      ],
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
+      "sourceMasterSha256": "502ce7fa6996a7d922d231dbe26d49490fa99a3f2635ea000b81b0fe4db66a85"
+    },
+    {
+      "resource": "SPRITES/NH_hero_movement_painted_32.png",
+      "previousSha256": "7400a684b89e2ca4e22e453d4505c91894f808a3a3fd3144d47b9d2e0028752f",
+      "sha256": "dcaedf4388bf99a5142cb06843635cfd72548c111715e5d6bb5c092729628841",
+      "dimensions": [
+        32,
+        32
+      ],
+      "alphaBoundingBox": [
+        1,
+        1,
+        31,
+        30
+      ],
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
+      "sourceMasterSha256": "56deda01f13c0ecf3f118eb39ba54a1b5add4fd882e7200c0628f141b1a00ba7"
+    },
+    {
+      "resource": "SPRITES/NH_hero_power_32.png",
+      "previousSha256": "ae0aa02bc0e8af150c4e5e66058e433dbb2d27918fab741af2e36e47a95ce67c",
+      "sha256": "3bf0a9b52698b57d3911659f238bc0f75b0ba825277fdadb2b64f6981a341163",
+      "dimensions": [
+        32,
+        32
+      ],
+      "alphaBoundingBox": [
+        2,
+        1,
+        30,
+        31
+      ],
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
+      "sourceMasterSha256": "6c7521c3d5387d0958ace5e57231f1b490c801ccb6f8239abf09467075ffe40d"
+    },
+    {
+      "resource": "SPRITES/NH_mastery_artilleryPrecision_32.png",
+      "previousSha256": "9c5322044162d73dce49acb403667e33d86e70184f98c58722bf4e4621b6fd1f",
+      "sha256": "8a0d5f569c0521b180f6363caf03ca61060791c0e725874ac2a9d5e306ae6ed7",
+      "dimensions": [
+        32,
+        32
+      ],
+      "alphaBoundingBox": [
+        1,
+        2,
+        31,
+        30
+      ],
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
+      "sourceMasterSha256": "1ee17fd8acc4ac28c75e869798bc3d6da0ec92796560c7a59a525ece01befe0c"
+    },
+    {
+      "resource": "SPRITES/NH_mastery_artilleryPrecision_64.png",
+      "previousSha256": "e9117817e3c288d960fbd4ddc5f636cb638d0e87fa128bb25962ebfeb70b9cf2",
+      "sha256": "f61836f32a4afe34eb8a8db36849550236eab43f0a7c14adde0678fd252ec8c9",
+      "dimensions": [
+        64,
+        64
+      ],
+      "alphaBoundingBox": [
+        2,
+        3,
+        62,
+        60
+      ],
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
+      "sourceMasterSha256": "1ee17fd8acc4ac28c75e869798bc3d6da0ec92796560c7a59a525ece01befe0c"
+    },
+    {
+      "resource": "SPRITES/NH_mastery_artilleryRepair_32.png",
+      "previousSha256": "02403baa7a8f4230a1db73ac4b96ba86fa020ef810e6e373e118197a38099add",
+      "sha256": "9a4ba340561acadc6e6605516b6f89d2984bec6f918f09d8d177e0bc3a3c0e3d",
+      "dimensions": [
+        32,
+        32
+      ],
+      "alphaBoundingBox": [
+        1,
+        1,
+        31,
+        31
+      ],
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
+      "sourceMasterSha256": "de85fe4c6a830b9a1901ad8304713323184b7368842a2fbe36e32647c19e78b7"
+    },
+    {
+      "resource": "SPRITES/NH_mastery_artilleryRepair_64.png",
+      "previousSha256": "eba942c495a3b1d38f617c47f8b6e94039ce955aa20c593406f26afbd33ffce2",
+      "sha256": "0a6726fbcf9fdeee9ebca596733fbe0716ffe624099d6e254b7457e13ed6b539",
+      "dimensions": [
+        64,
+        64
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        61,
+        62
+      ],
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
+      "sourceMasterSha256": "de85fe4c6a830b9a1901ad8304713323184b7368842a2fbe36e32647c19e78b7"
+    },
+    {
+      "resource": "SPRITES/NH_mastery_artilleryVolley_32.png",
+      "previousSha256": "6592f5b27438dbb082f3ee508184fbcbab6d5713e5eea25ad1a2d46fdaa86832",
+      "sha256": "640249b1d335a4f3bb11c062cee43a82e45684ec13c90041ca3b444bce622814",
+      "dimensions": [
+        32,
+        32
+      ],
+      "alphaBoundingBox": [
+        1,
+        1,
+        30,
+        31
+      ],
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
+      "sourceMasterSha256": "fd34fe26672ded06507ea483134a9426868fe892f48d6034f048355020e36366"
+    },
+    {
+      "resource": "SPRITES/NH_mastery_artilleryVolley_64.png",
+      "previousSha256": "12220d2c195f6bf5e6a6f9d57b1592ab4a158f935019547838b0977e14c8bee5",
+      "sha256": "90029cd1bf9067d6d4f91ef104e7d5118295e8a1b3439d16575a62f180ee9a10",
+      "dimensions": [
+        64,
+        64
+      ],
+      "alphaBoundingBox": [
+        3,
+        2,
+        61,
+        62
+      ],
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
+      "sourceMasterSha256": "fd34fe26672ded06507ea483134a9426868fe892f48d6034f048355020e36366"
+    },
+    {
+      "resource": "SPRITES/NH_qload_32_disabled.png",
+      "previousSha256": "55ff1bdb150fceabdc2a5d10484eb35024df1968cb9b3975cb631ba53a1339eb",
+      "sha256": "9fd58f7c24dfbfca40a9de0834dce822aea14d977234be7e5d752c0a96861360",
+      "dimensions": [
+        32,
+        32
+      ],
+      "alphaBoundingBox": [
+        0,
+        0,
+        32,
+        32
+      ],
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
+      "sourceMasterSha256": "75c27281d60035c46062d5756ee7da531084e55b301f847c5fe795250302cd6e"
+    },
+    {
+      "resource": "SPRITES/NH_qload_32_highlighted.png",
+      "previousSha256": "a34d77759a92b966972d361cb710fe7e903d9da2cb4982ecf45dfe2cf456a5fe",
+      "sha256": "40148565b84c0015ff6ae09546b9429b812062934a54d10dbd8ccbeb70be2625",
+      "dimensions": [
+        32,
+        32
+      ],
+      "alphaBoundingBox": [
+        0,
+        0,
+        32,
+        32
+      ],
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
+      "sourceMasterSha256": "75c27281d60035c46062d5756ee7da531084e55b301f847c5fe795250302cd6e"
+    },
+    {
+      "resource": "SPRITES/NH_qload_32_normal.png",
+      "previousSha256": "7ba6de770eff9b71a60d736da6d3878fe6fc034d2c2b9c3a10095c5134e6e553",
+      "sha256": "c4685df6340667542a97f870c6e699e938183bef65651868862ec6e79a0661ed",
+      "dimensions": [
+        32,
+        32
+      ],
+      "alphaBoundingBox": [
+        0,
+        0,
+        32,
+        32
+      ],
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
+      "sourceMasterSha256": "75c27281d60035c46062d5756ee7da531084e55b301f847c5fe795250302cd6e"
+    },
+    {
+      "resource": "SPRITES/NH_qload_32_pressed.png",
+      "previousSha256": "59ea850eec24bf80c0589aa08d4ec02ecff222c42d0d6ead406da589831ad9f5",
+      "sha256": "396857b9a14eb9cb321f8d2ee0a3d6cf99a4caa5b42352b47a29966a935bb887",
+      "dimensions": [
+        32,
+        32
+      ],
+      "alphaBoundingBox": [
+        0,
+        0,
+        32,
+        32
+      ],
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
+      "sourceMasterSha256": "75c27281d60035c46062d5756ee7da531084e55b301f847c5fe795250302cd6e"
+    },
+    {
+      "resource": "SPRITES/NH_qload_64x32_disabled.png",
+      "previousSha256": "8da6120a540d4cf959a2e2aa5e447e3188dc98b55a5dfa4a41e8591276ebf7ff",
+      "sha256": "5e0259ba50a951a7424d8045c7ed3f3b4dc2b6377f95361194d4f6ea5b4597bf",
+      "dimensions": [
+        64,
+        32
+      ],
+      "alphaBoundingBox": [
+        0,
+        0,
+        64,
+        32
+      ],
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
+      "sourceMasterSha256": "75c27281d60035c46062d5756ee7da531084e55b301f847c5fe795250302cd6e"
+    },
+    {
+      "resource": "SPRITES/NH_qload_64x32_highlighted.png",
+      "previousSha256": "f5c85e16b42fa68a5974a4d8eed5875a8612bbf22c013b67f501c8d90e2ad950",
+      "sha256": "b1b17244152340d155716fea458ee8a852c2026085a23cb4bcf0a0e32e7e5157",
+      "dimensions": [
+        64,
+        32
+      ],
+      "alphaBoundingBox": [
+        0,
+        0,
+        64,
+        32
+      ],
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
+      "sourceMasterSha256": "75c27281d60035c46062d5756ee7da531084e55b301f847c5fe795250302cd6e"
+    },
+    {
+      "resource": "SPRITES/NH_qload_64x32_normal.png",
+      "previousSha256": "30fb68aa775ebd13da410dd01ef9d37466eb0b031e8a46748659165acee425c5",
+      "sha256": "a9941515b12ecedeec543e0b1726dad5c5f7e18a9f017da9b4f58ecf7fd80bdd",
+      "dimensions": [
+        64,
+        32
+      ],
+      "alphaBoundingBox": [
+        0,
+        0,
+        64,
+        32
+      ],
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
+      "sourceMasterSha256": "75c27281d60035c46062d5756ee7da531084e55b301f847c5fe795250302cd6e"
+    },
+    {
+      "resource": "SPRITES/NH_qload_64x32_pressed.png",
+      "previousSha256": "9fa22a8d5a444840ea089fa8af37574b93116e7b888aec3b50ddd4059b5e6afd",
+      "sha256": "c69d42f19056581907a708944a4be07bc200f5e8dab1e3ecef704693c907b3b5",
+      "dimensions": [
+        64,
+        32
+      ],
+      "alphaBoundingBox": [
+        0,
+        0,
+        64,
+        32
+      ],
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
+      "sourceMasterSha256": "75c27281d60035c46062d5756ee7da531084e55b301f847c5fe795250302cd6e"
+    },
+    {
+      "resource": "SPRITES/NH_qsave_32_disabled.png",
+      "previousSha256": "362421ae0431fa146d670fba7e86e688dcfd285a429dd799920cbc34ea9b710a",
+      "sha256": "a610f9f159245da817e1d5b21c0e344ed49b537ff9cb8c24a1d9bdbc528a4546",
+      "dimensions": [
+        32,
+        32
+      ],
+      "alphaBoundingBox": [
+        0,
+        0,
+        32,
+        32
+      ],
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
+      "sourceMasterSha256": "5abb0d56bddd30bed6c26daf67fa48c35bca990d32fb4511ac88dbf2de7125e8"
+    },
+    {
+      "resource": "SPRITES/NH_qsave_32_highlighted.png",
+      "previousSha256": "6b31b0978c20071782eabbc3faa5f5d66c6ac381b4324e3b4a292486fcb52d8c",
+      "sha256": "3c580dafdd873c6a6fd8aa984993070576279e2b9b7c2e2a3b151d46552ff54b",
+      "dimensions": [
+        32,
+        32
+      ],
+      "alphaBoundingBox": [
+        0,
+        0,
+        32,
+        32
+      ],
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
+      "sourceMasterSha256": "5abb0d56bddd30bed6c26daf67fa48c35bca990d32fb4511ac88dbf2de7125e8"
+    },
+    {
+      "resource": "SPRITES/NH_qsave_32_normal.png",
+      "previousSha256": "a63f498506d8e2c7c4ab6dca1bc9cac9e1a8ddccba27cfdfa89d7a789aa446ec",
+      "sha256": "9525b5349f5c8a4a632fb9473b40fbe449bede2637c4dcea2f107358b2bf9775",
+      "dimensions": [
+        32,
+        32
+      ],
+      "alphaBoundingBox": [
+        0,
+        0,
+        32,
+        32
+      ],
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
+      "sourceMasterSha256": "5abb0d56bddd30bed6c26daf67fa48c35bca990d32fb4511ac88dbf2de7125e8"
+    },
+    {
+      "resource": "SPRITES/NH_qsave_32_pressed.png",
+      "previousSha256": "884545718e53283e69a2a89128bef6273099e4b4b633336ca86b75113bc9415e",
+      "sha256": "04198f5e485d9fdbfafd21b5a6f1553f80b7c6aec5005e6c77962665fe9f67c0",
+      "dimensions": [
+        32,
+        32
+      ],
+      "alphaBoundingBox": [
+        0,
+        0,
+        32,
+        32
+      ],
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
+      "sourceMasterSha256": "5abb0d56bddd30bed6c26daf67fa48c35bca990d32fb4511ac88dbf2de7125e8"
+    },
+    {
+      "resource": "SPRITES/NH_qsave_64x32_disabled.png",
+      "previousSha256": "ec0f1918dbe9a5ed47c5b9b7b09273d86a592f0fe7289b4549fe27eabcdab4d9",
+      "sha256": "5f47ceeb2d8bce5a4543c9169313bf253391519fa94871c37b25de67687c2a0c",
+      "dimensions": [
+        64,
+        32
+      ],
+      "alphaBoundingBox": [
+        0,
+        0,
+        64,
+        32
+      ],
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
+      "sourceMasterSha256": "5abb0d56bddd30bed6c26daf67fa48c35bca990d32fb4511ac88dbf2de7125e8"
+    },
+    {
+      "resource": "SPRITES/NH_qsave_64x32_highlighted.png",
+      "previousSha256": "8ce28cb54be891194288d26a5c0ca37e467706b7232539739cb60e430cec3805",
+      "sha256": "bbebb03d98ae4d1b1b27a2d7871bb259eefd068c2c1ae6a2d43a2d70146e6695",
+      "dimensions": [
+        64,
+        32
+      ],
+      "alphaBoundingBox": [
+        0,
+        0,
+        64,
+        32
+      ],
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
+      "sourceMasterSha256": "5abb0d56bddd30bed6c26daf67fa48c35bca990d32fb4511ac88dbf2de7125e8"
+    },
+    {
+      "resource": "SPRITES/NH_qsave_64x32_normal.png",
+      "previousSha256": "f4e56a6019e496accf927730864528ca430e3e03fb217b2d0e413b915ea38155",
+      "sha256": "0a228d67c26a9605145b74e688a525ff11bfcf7abcb321fb582595373f20454a",
+      "dimensions": [
+        64,
+        32
+      ],
+      "alphaBoundingBox": [
+        0,
+        0,
+        64,
+        32
+      ],
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
+      "sourceMasterSha256": "5abb0d56bddd30bed6c26daf67fa48c35bca990d32fb4511ac88dbf2de7125e8"
+    },
+    {
+      "resource": "SPRITES/NH_qsave_64x32_pressed.png",
+      "previousSha256": "28145a13d998981d545d3560629ff4de6e045b06fcefc1e564afd3a82dfde8f0",
+      "sha256": "15ea5eb79b392e398c871d49cd868b6de0151b06ee74fe7515cba48fe3981fbf",
+      "dimensions": [
+        64,
+        32
+      ],
+      "alphaBoundingBox": [
+        0,
+        0,
+        64,
+        32
+      ],
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
+      "sourceMasterSha256": "5abb0d56bddd30bed6c26daf67fa48c35bca990d32fb4511ac88dbf2de7125e8"
+    },
+    {
+      "resource": "SPRITES/NH_spells_disabled.png",
+      "previousSha256": "9562a1c985a34cdd5e99c0d923a41234c66dad39dffd61e68398e7038f58daed",
+      "sha256": "5796825bb6d792100e2751b5fc745007c06fe529bd293793657db0ae28681160",
+      "dimensions": [
+        64,
+        64
+      ],
+      "alphaBoundingBox": [
+        2,
+        10,
+        62,
+        53
+      ],
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
+      "sourceMasterSha256": "9e336900cef99e559680eaa9f4a45b9144d623750fd34abf455c63df5e4c1dcb"
+    },
+    {
+      "resource": "SPRITES/NH_spells_highlighted.png",
+      "previousSha256": "386210b1ba73e9bfabacda7e62fdca03d4f46e7209f426679fa956c87c1caf18",
+      "sha256": "a4703fbe88043381b7fc71125e3126cb77e4ed489978cd65f3bc90c2c9478453",
+      "dimensions": [
+        64,
+        64
+      ],
+      "alphaBoundingBox": [
+        2,
+        10,
+        62,
+        53
+      ],
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
+      "sourceMasterSha256": "9e336900cef99e559680eaa9f4a45b9144d623750fd34abf455c63df5e4c1dcb"
+    },
+    {
+      "resource": "SPRITES/NH_spells_normal.png",
+      "previousSha256": "ce91560393d0e12e4672f0d71c2f9d5ecf53f562f8ee9062c868f5ad3131ea1f",
+      "sha256": "afb12f6891ba3281935ad36755e97b0249b2df184e97a44a303eb4dbe40c49d1",
+      "dimensions": [
+        64,
+        64
+      ],
+      "alphaBoundingBox": [
+        2,
+        10,
+        62,
+        53
+      ],
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
+      "sourceMasterSha256": "9e336900cef99e559680eaa9f4a45b9144d623750fd34abf455c63df5e4c1dcb"
+    },
+    {
+      "resource": "SPRITES/NH_spells_pressed.png",
+      "previousSha256": "e8551cecaf23f9e13d5cec2ece59a7089c7098d8956ca8d96da5bad69c86b64f",
+      "sha256": "871ae06d1f59391859f9767a97c801841dbd9da686cf0b11c0017185fd149973",
+      "dimensions": [
+        64,
+        64
+      ],
+      "alphaBoundingBox": [
+        2,
+        11,
+        62,
+        54
+      ],
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
+      "sourceMasterSha256": "9e336900cef99e559680eaa9f4a45b9144d623750fd34abf455c63df5e4c1dcb"
+    }
+  ]
+}

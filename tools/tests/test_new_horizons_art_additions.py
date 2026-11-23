@@ -27,6 +27,7 @@ from .nhart_living_armor_backdrop import validate_backdrop
 from .nhart_creature_ability_art import validate_ability_art
 from .nhart_interface_status_art import validate_interface_status_art
 from .nhart_status_icon_repaint import validate_repaint
+from .nhart_flat_interface_repaint import validate_flat_repaint
 from .nhart_released_history import (authority_before_leadership_rework,
     released_predecessor_entries, baseline_payload_proof)
 from .nhart_config_revisions import config_at_revision, wave_config_revision
@@ -506,6 +507,9 @@ class ArtAdditionsTest(unittest.TestCase):
             if current_faction_perk_wave(wave):
                 self.assertEqual(wave['baselineHeaderSha256'],
                                  '824fbc555e13220abb7f9e8b3db648fc3fa35ea0411234bba6c17953a6f73bbf')
+                continue
+            if 'flatInterfaceRepaint' in wave:
+                validate_flat_repaint(wave, self.manifest['entries'], read_resource)
                 continue
             if 'statusIconRepaint' in wave:
                 validate_repaint(wave, self.manifest['entries'], read_resource)

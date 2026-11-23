@@ -11,10 +11,12 @@
   },
   "master_metadata": "caBX carrier removed; IHDR/IDAT/IEND and decoded pixels unchanged",
   "runtime": {
-    "NH_hero_movement_painted_32.png": {"source": "movement-master.png", "size": 32, "sha256": "7400a684b89e2ca4e22e453d4505c91894f808a3a3fd3144d47b9d2e0028752f"},
     "NH_hero_movement_44.png": {"source": "movement-master.png", "size": 44, "sha256": "0c2e81bf1e1aa916c86f35881a4c050101893fe94d100bdf87a23e9af19e53df"},
     "NH_hero_leadership_44.png": {"source": "leadership-master.png", "size": 44, "sha256": "b8aa6e64d87d20caf34345a8040c530d71547cd24834fb4deba6a8163355dabc"},
     "NH_hero_leadership_24.png": {"source": "leadership-master.png", "size": 24, "sha256": "d32edaf7c1e4b48e2aa7e597442d1821ce2e318241ec74e330f68b867cb28a00"}
   },
-  "consumers": ["client/windows/CHeroWindow.cpp", "client/windows/HeroGrowthWindow.cpp"]
+  "superseded": {
+    "NH_hero_movement_painted_32.png": {"source": "movement-master.png", "size": 32, "sha256": "7400a684b89e2ca4e22e453d4505c91894f808a3a3fd3144d47b9d2e0028752f", "replacedBy": "assets/new-horizons/flat-interface-repaint-selections.json (transparent painted emblem, 2026-11-23)"}
+  },
+  "consumers": ["client/windows/CHeroWindow.cpp"]
 }
