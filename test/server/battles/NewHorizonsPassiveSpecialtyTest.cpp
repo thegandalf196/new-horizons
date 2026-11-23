@@ -27,6 +27,19 @@ class PassiveSpecialtyTest : public HeroCommandFixture
 protected:
 	CStack * actor = nullptr;
 	CStack * victim = nullptr;
+	/// Revised specialty rows erased to pin a historical (0.93.1) capture.
+	std::vector<std::string> historicalRows;
+	void mapLoaded(CMap * map) override
+	{
+		HeroCommandFixture::mapLoaded(map);
+		if(historicalRows.empty())
+			return;
+		JsonNode heroes(JsonPath::builtin("config/newHorizonsHeroes"));
+		for(const auto & key : historicalRows)
+			heroes["revisedSpecialties"].Struct().erase(key);
+		heroes.setOverrideFlag(true);
+		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, heroes);
+	}
 	void prepare(const char * hero, const char * family, int count = 100)
 	{
 		useRevisedOrders = true;
@@ -541,6 +554,7 @@ TEST_F(PassiveSpecialtyTest, ChillingPresenceHasOneMeleePenaltyAndUnrestrictedMo
 }
 TEST_F(PassiveSpecialtyTest, PerfectMountBlocksMagicalDamageAfterPenetrationAndSoulExecutionButKeepsOtherEffects)
 {
+	historicalRows = {"perfectMount"}; // The historical immunity; the revised row reduces until level 20.
 	prepare("core:aeris", "core:silverPegasus", 10);
 	ASSERT_TRUE(newHorizonsPassiveSpecialties::magicalDamageImmune(*actor));
 	EXPECT_TRUE(newHorizonsPassiveSpecialties::hasDynamicDamagePassive(*actor));

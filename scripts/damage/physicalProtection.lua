@@ -125,6 +125,7 @@ local function getPhysicalDamageReductionFactor(info)
 	end
 	table.insert(reductions, { info.runicEnduranceReductionPercent or 0, 100 })
 	table.insert(reductions, { info.ironHideReductionPercent or 0, 100 })
+	table.insert(reductions, { info.useTheGroundReductionBasisPoints or 0, 10000 })
 	table.insert(reductions, { info.formationFightingReductionPercent or 0, 100 })
 	table.insert(reductions, { info.paviseDamageReductionPercent or 0, 100 })
 	local defendReductionRemainingFraction = getDefendReductionRemainingFraction(info)

@@ -538,6 +538,7 @@ function Script:calculate(battle, info)
 		sylvanDefenseMultiplier = sylvanDefenseMultiplier * math.max(0, value / 100)
 	end
 	local ordinaryCreatureSpecialtyMultiplier = (info.ordinaryCreatureSpecialtyDamagePercent or 100) / 100
+		* math.max(0, info.rampartSpecialtyDamageMultiplier or 1)
 	local finalLuckMultiplier = 1.0
 	if info.newHorizonsFinalLuck and info.luckyStrike then
 		finalLuckMultiplier = 2.0

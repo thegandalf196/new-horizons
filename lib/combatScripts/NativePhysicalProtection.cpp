@@ -150,6 +150,7 @@ double physicalDamageReductionFactor(const DamageAttackInfo & info, const Physic
 	if(info.intrinsicPhysicalDamageReductionPercent > 0) reduce(info.intrinsicPhysicalDamageReductionPercent, 100);
 	reduce(info.runicEnduranceReductionPercent, 100);
 	reduce(info.ironHideReductionPercent, 100);
+	reduce(info.useTheGroundReductionBasisPoints, 10000);
 	reduce(info.formationFightingReductionPercent, 100);
 	reduce(info.paviseDamageReductionPercent, 100);
 	const double defend = defendRemaining(info);

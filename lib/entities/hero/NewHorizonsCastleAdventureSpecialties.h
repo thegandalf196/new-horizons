@@ -23,6 +23,7 @@ struct DLL_LINKAGE LevelScaledValue
 	int perLevel = 0;
 	int maximum = 0;
 	int at(int level) const;
+	bool operator==(const LevelScaledValue &) const = default;
 };
 
 /// Castle adventure-map specialties revised on 2026-11-20 (captured under

@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../../../lib/battle/NewHorizonsRampartSpecialties.h"
 #include "../../OriginalDataRequirement.h"
 #include "NewHorizonsSpecialtyProcFixture.h"
 #include "FullGameSnapshotTypes.h"
@@ -22,7 +23,9 @@ TEST_F(NewHorizonsOrdinaryStrikeSpecialtyTest, PerfectMountDoesNotCreateTheRetir
 	EXPECT_EQ(enemy->getInitiative(0), initiative);
 	EXPECT_FALSE(enemy->hasBonus(CSelector([](const Bonus * bonus)
 	{ return bonus && bonus->statusIdentity == "wingbeat"; })));
-	EXPECT_TRUE(actor->hasBonusOfType(BonusType::MAGICAL_DAMAGE_IMMUNITY));
+	// Revised Perfect Mount (0.93.2): reduced magical damage until immunity at level 20.
+	EXPECT_TRUE(actor->hasBonusOfType(BonusType::MAGICAL_DAMAGE_IMMUNITY)
+		|| newHorizonsRampart::perfectMountReductionPercent(*actor) > 0);
 }
 TEST_F(NewHorizonsOrdinaryStrikeSpecialtyTest, NullifyingShotDoesNotCreateTheRetiredDirectMdrStrip)
 {

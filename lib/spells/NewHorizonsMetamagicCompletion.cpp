@@ -128,6 +128,11 @@ void disrupt(ServerCallback & server, const CBattleInfoCallback & battle, const 
 }
 }
 
+void cancelDefend(ServerCallback & server, const CBattleInfoCallback & battle, const battle::Unit & unit)
+{
+	disrupt(server, battle, unit);
+}
+
 RecipientSnapshots captureRecipients(const CBattleInfoCallback & battle, const spells::Mechanics & mechanics)
 {
 	RecipientSnapshots result;

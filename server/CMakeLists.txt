@@ -42,6 +42,8 @@ set(vcmiservercommon_SRCS
 	battles/BattleRelentlessBarrage.cpp
 	battles/BattleVolleyCommand.cpp
 	battles/BattleCastleSpecialtyCasts.cpp
+	battles/BattleRampartSpecialtyCasts.cpp
+	battles/BattleRampartSpecialtyCasts.h
 	battles/BattlePrimaryAttackCasting.cpp
 	battles/BattleStunActivation.cpp
 	battles/BattleActivationDispatch.cpp
@@ -81,6 +83,7 @@ set(vcmiservercommon_SRCS
 
 		processors/HeroPoolProcessor.cpp
 		processors/ForcedMarchWeek.cpp
+		processors/PatronessVisit.cpp
 		processors/NewTurnProcessor.cpp
 		processors/TownRecruitmentGrowth.cpp
 		processors/DwellingRecruitmentGrowth.cpp
@@ -167,6 +170,7 @@ set(vcmiservercommon_HEADERS
 
 		processors/HeroPoolProcessor.h
 		processors/ForcedMarchWeek.h
+		processors/PatronessVisit.h
 		processors/NewTurnProcessor.h
 		processors/PlayerMessageProcessor.h
 		processors/TurnOrderProcessor.h

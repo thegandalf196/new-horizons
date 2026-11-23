@@ -172,6 +172,114 @@
 								"donationPercentPerLevel": {"type": "integer", "minimum": 0, "maximum": 100},
 								"maximumDonationPercent": {"type": "integer", "minimum": 1, "maximum": 100}
 							}
+						},
+						"useTheGround": {
+							"type": "object", "additionalProperties": false,
+							"description": "Mephala: physical damage reduction in permille for her stacks next to an obstacle or a standing castle wall.",
+							"required": ["reductionPermille", "reductionPermillePerLevel", "maximumReductionPermille"],
+							"properties": {
+								"reductionPermille": {"type": "integer", "minimum": 1, "maximum": 750},
+								"reductionPermillePerLevel": {"type": "integer", "minimum": 0, "maximum": 750},
+								"maximumReductionPermille": {"type": "integer", "minimum": 1, "maximum": 750}
+							}
+						},
+						"elusive": {
+							"type": "object", "additionalProperties": false,
+							"description": "Kyrre: hero levels from which she passes beside Elite and Champion neutral guards (Core from level 1).",
+							"required": ["eliteLevel", "championLevel"],
+							"properties": {
+								"eliteLevel": {"type": "integer", "minimum": 1, "maximum": 100},
+								"championLevel": {"type": "integer", "minimum": 1, "maximum": 100}
+							}
+						},
+						"patroness": {
+							"type": "object", "additionalProperties": false,
+							"description": "Jenova: share of a town's daily income, in permille, collected on her first entry each week.",
+							"required": ["incomePermille", "incomePermillePerLevel", "maximumIncomePermille"],
+							"properties": {
+								"incomePermille": {"type": "integer", "minimum": 1, "maximum": 1000},
+								"incomePermillePerLevel": {"type": "integer", "minimum": 0, "maximum": 1000},
+								"maximumIncomePermille": {"type": "integer", "minimum": 1, "maximum": 1000}
+							}
+						},
+						"giantSlayer": {
+							"type": "object", "additionalProperties": false,
+							"description": "Coronius: extra damage in permille per rank step the target is above the attacker; Holy Wrath counts the target's steps above Core.",
+							"required": ["damagePermillePerStep", "damagePermillePerStepPerLevel", "maximumDamagePermillePerStep"],
+							"properties": {
+								"damagePermillePerStep": {"type": "integer", "minimum": 1, "maximum": 1000},
+								"damagePermillePerStepPerLevel": {"type": "integer", "minimum": 0, "maximum": 1000},
+								"maximumDamagePermillePerStep": {"type": "integer", "minimum": 1, "maximum": 1000}
+							}
+						},
+						"livingRemedy": {
+							"type": "object", "additionalProperties": false,
+							"description": "Uland: Regeneration his Cure grants, in basis points of the stack's full Health per round.",
+							"required": ["rounds", "healingBasisPoints", "healingBasisPointsPerLevel", "maximumHealingBasisPoints"],
+							"properties": {
+								"rounds": {"type": "integer", "minimum": 1, "maximum": 5},
+								"healingBasisPoints": {"type": "integer", "minimum": 1, "maximum": 10000},
+								"healingBasisPointsPerLevel": {"type": "integer", "minimum": 0, "maximum": 10000},
+								"maximumHealingBasisPoints": {"type": "integer", "minimum": 1, "maximum": 10000}
+							}
+						},
+						"sorceressOfEnroth": {
+							"type": "object", "additionalProperties": false,
+							"description": "Gem: her first spell each combat is free up to spell level baseSpellLevel + floor(hero level / heroLevelsPerSpellLevel), at most 5.",
+							"required": ["baseSpellLevel", "heroLevelsPerSpellLevel"],
+							"properties": {
+								"baseSpellLevel": {"type": "integer", "minimum": 1, "maximum": 5},
+								"heroLevelsPerSpellLevel": {"type": "integer", "minimum": 1, "maximum": 100}
+							}
+						},
+						"brittle": {
+							"type": "object", "additionalProperties": false,
+							"description": "Alagar: extra physical damage in permille taken by an enemy stack his ice spell hit, until its next activation.",
+							"required": ["damagePermille", "damagePermillePerLevel", "maximumDamagePermille"],
+							"properties": {
+								"damagePermille": {"type": "integer", "minimum": 1, "maximum": 1000},
+								"damagePermillePerLevel": {"type": "integer", "minimum": 0, "maximum": 1000},
+								"maximumDamagePermille": {"type": "integer", "minimum": 1, "maximum": 1000}
+							}
+						},
+						"againstTheOdds": {
+							"type": "object", "additionalProperties": false,
+							"description": "Melodia: Luck for all her stacks when the enemy army is stronger, + 1 per levelsPerLuck hero levels.",
+							"required": ["luck", "levelsPerLuck", "maximumLuck"],
+							"properties": {
+								"luck": {"type": "integer", "minimum": 1, "maximum": 10},
+								"levelsPerLuck": {"type": "integer", "minimum": 1, "maximum": 100},
+								"maximumLuck": {"type": "integer", "minimum": 1, "maximum": 10}
+							}
+						},
+						"perfectMount": {
+							"type": "object", "additionalProperties": false,
+							"description": "Aeris: Pegasus magical damage reduction in percent; 100 is immunity.",
+							"required": ["reductionPercent", "reductionPercentPerLevel", "maximumReductionPercent"],
+							"properties": {
+								"reductionPercent": {"type": "integer", "minimum": 1, "maximum": 100},
+								"reductionPercentPerLevel": {"type": "integer", "minimum": 0, "maximum": 100},
+								"maximumReductionPercent": {"type": "integer", "minimum": 1, "maximum": 100}
+							}
+						},
+						"treantmoot": {
+							"type": "object", "additionalProperties": false,
+							"description": "Ryland: Dendroid physical damage reduction in percent, beside the unchanged Treantmoot protection.",
+							"required": ["dendroidReductionPercent", "dendroidReductionPercentPerLevel", "maximumDendroidReductionPercent"],
+							"properties": {
+								"dendroidReductionPercent": {"type": "integer", "minimum": 1, "maximum": 75},
+								"dendroidReductionPercentPerLevel": {"type": "integer", "minimum": 0, "maximum": 75},
+								"maximumDendroidReductionPercent": {"type": "integer", "minimum": 1, "maximum": 75}
+							}
+						},
+						"forestAmbush": {
+							"type": "object", "additionalProperties": false,
+							"description": "Ivor: extra damage of the Forest Ambush shot from hiding, in percent per hero level.",
+							"required": ["shotDamagePercentPerLevel", "maximumShotDamagePercent"],
+							"properties": {
+								"shotDamagePercentPerLevel": {"type": "integer", "minimum": 1, "maximum": 10},
+								"maximumShotDamagePercent": {"type": "integer", "minimum": 1, "maximum": 500}
+							}
 						}
 					}
 				},

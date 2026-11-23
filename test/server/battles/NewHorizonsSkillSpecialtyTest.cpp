@@ -65,6 +65,11 @@ protected:
 			ASSERT_EQ(selections.front()["perk"].String(), "new-horizons:logistics.scouting");
 			selections.front()["perk"].String() = NAVIGATION_PERK;
 		}
+		// These scenarios pin Kyrre's and Mephala's historical Logistics and Armorer
+		// skill specialties; their revised 0.93.2 rows (Elusive, Use the Ground) retire them.
+		heroRules["revisedSpecialties"].Struct().erase("elusive");
+		heroRules["revisedSpecialties"].Struct().erase("useTheGround");
+		heroRules.setOverrideFlag(true);
 		if(!includeSpecialtyRules)
 		{
 			heroRules.Struct().erase("skillSpecialties");

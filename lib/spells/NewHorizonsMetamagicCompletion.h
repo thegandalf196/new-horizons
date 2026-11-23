@@ -9,6 +9,7 @@ class ServerCallback;
 class CSpell;
 struct BattleStackAttacked;
 namespace spells { class Mechanics; }
+namespace battle { class Unit; }
 
 namespace newHorizonsMetamagic
 {
@@ -37,6 +38,9 @@ struct DLL_LINKAGE ManaPayment
 	int32_t temporaryBuffer = 0;
 	int64_t total() const { return static_cast<int64_t>(normal) + permanentBuffer + temporaryBuffer; }
 };
+/// Ends an ordinary Defend stance (Disruptive Casting, Alagar's Brittle); Armorer's
+/// Last Stand and stacks that are not Defending are left unchanged.
+DLL_LINKAGE void cancelDefend(ServerCallback &, const CBattleInfoCallback &, const battle::Unit &);
 DLL_LINKAGE RecipientSnapshots captureRecipients(const CBattleInfoCallback &, const spells::Mechanics &);
 DLL_LINKAGE bool singleTargetFormula(const CSpell &, int32_t mastery);
 /// Guaranteed consequences are shared by authoritative and detached castEval paths.

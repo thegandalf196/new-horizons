@@ -34,6 +34,7 @@ const char * spellCostStageTextKey(SpellCostStage::Kind kind)
 		case SpellCostStage::Kind::MINIMUM_COST: return "new-horizons.spellCost.modifier.minimumCost";
 		case SpellCostStage::Kind::METAMAGIC_ARCANE_ECONOMY: return "new-horizons.spellCost.modifier.arcaneEconomy";
 		case SpellCostStage::Kind::METAMAGIC_SPELLSTORM: return "new-horizons.spellCost.modifier.spellstorm";
+		case SpellCostStage::Kind::SORCERESS_OF_ENROTH: return "new-horizons.spellCost.modifier.sorceressOfEnroth";
 	}
 	return "new-horizons.spellCost.current";
 }

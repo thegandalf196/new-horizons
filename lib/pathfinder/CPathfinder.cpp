@@ -31,6 +31,7 @@
 #include "../spells/CSpellHandler.h"
 #include "../spells/ISpellMechanics.h"
 #include "../spells/NewHorizonsMagic.h"
+#include "NewHorizonsElusive.h"
 
 
 bool CPathfinderHelper::canMoveFromNode(const PathNodeInfo & source) const
@@ -535,9 +536,9 @@ bool CPathfinderHelper::passOneTurnLimitCheck(const PathNodeInfo & source) const
 int CPathfinderHelper::getGuardiansCount(int3 tile) const
 {
 	auto guardians = gameInfo.getGuardingCreatures(tile);
-	std::erase_if(guardians, [this](const CGObjectInstance * guardian)
+	std::erase_if(guardians, [this, &tile](const CGObjectInstance * guardian)
 	{
-		return guardian->passableFor(hero);
+		return hero ? newHorizonsElusive::ignoresGuard(gameInfo, *hero, *guardian, tile) : guardian->passableFor(hero);
 	});
 	return guardians.size();
 }

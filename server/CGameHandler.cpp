@@ -13,6 +13,8 @@
 #include "../lib/battle/NewHorizonsBloodrage.h"
 #include "../lib/pathfinder/NewHorizonsProtectedMobility.h"
 #include "../lib/pathfinder/NewHorizonsLighthouse.h"
+#include "../lib/pathfinder/NewHorizonsElusive.h"
+#include "processors/PatronessVisit.h"
 #include "../lib/mapObjects/NewHorizonsAcademicStudy.h"
 #include "../lib/mapObjects/NewHorizonsSage.h"
 #include "CGameHandler.h"
@@ -847,8 +849,12 @@ bool CGameHandler::moveHero(ObjectInstanceID hid, int3 dst, EMovementMode moveme
 			if(candidateVisitablePos == preferredGuardPos)
 				preferredGuardian = candidate;
 
-			if(candidate->passableFor(h))
+			if(newHorizonsElusive::ignoresGuard(gameState(), *h, *candidate, hmpos))
+			{
+				if(!candidate->passableFor(h))
+					logGlobal->debug("Elusive: %s moves beside the guard at %s without a fight", h->getNameTextID(), candidate->visitablePos().toString());
 				continue;
+			}
 
 			if(!guardian || candidateVisitablePos == preferredGuardPos)
 			{
@@ -1488,6 +1494,8 @@ void CGameHandler::heroVisitCastle(const CGTownInstance * obj, const CGHeroInsta
 		if(academicExperience > 0)
 			giveExperience(hero, academicExperience);
 	}
+	if(arrival)
+		newHorizonsPatroness::collectOnArrival(*this, *obj, *hero);
 	visitCastleObjects(obj, hero);
 
 	if (obj->getVisitingHero() && obj->getGarrisonHero())

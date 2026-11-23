@@ -66,6 +66,7 @@
 
 #include <vstd/RNG.h>
 #include "../../lib/spells/NewHorizonsTimedMagnitudes.h"
+#include "BattleRampartSpecialtyCasts.h"
 
 namespace
 {
@@ -371,6 +372,8 @@ void BattleFlowProcessor::castOpeningSpells(const CBattleInfoCallback & battle)
 
 void BattleFlowProcessor::onTacticsEnded(const CBattleInfoCallback & battle)
 {
+	// Melodia's Against the Odds compares the armies that start the combat.
+	battleRampartSpecialties::grantAgainstTheOdds(*gameHandler, battle);
 	//initial stacks appearance triggers, e.g. built-in bonus spells
 	auto initialStacks = battle.battleGetAllStacks(true);
 

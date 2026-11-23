@@ -146,6 +146,10 @@ protected:
 			ASSERT_EQ(starts.front()["perk"].String(), "new-horizons:armorer.ironDiscipline");
 			starts.front()["perk"] = JsonNode("new-horizons:armorer.pavise");
 		}
+		// These scenarios pin Mephala's historical Armorer skill specialty; her revised
+		// 0.93.2 row (Use the Ground) retires it.
+		rules["revisedSpecialties"].Struct().erase("useTheGround");
+		rules.setOverrideFlag(true);
 		if(omitSkillSpecialtyRules)
 		{
 			rules.Struct().erase("skillSpecialties");

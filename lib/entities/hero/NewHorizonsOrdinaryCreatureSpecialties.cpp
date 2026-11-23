@@ -26,6 +26,7 @@
 #include "../../battle/NewHorizonsCombatSkills.h"
 #include "../../battle/Unit.h"
 #include "../../battle/CUnitState.h"
+#include "../../battle/NewHorizonsRampartSpecialties.h"
 namespace newHorizonsHeroes
 {
 namespace
@@ -374,6 +375,8 @@ bool ordinaryCreatureDamageIsStateful(const CBattleInfoCallback & battle)
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
 		const auto * hero = battle.battleGetFightingHero(side);
+		if(newHorizonsRampart::heroDamageIsStateful(battle, side, hero))
+			return true;
 		if(!hero || !hero->getHeroType() || (hero->getHeroType()->getJsonKey() != "core:tyraxor"
 			&& hero->getHeroType()->getJsonKey() != "core:jabarkas"
 			&& hero->getHeroType()->getJsonKey() != "core:christian"

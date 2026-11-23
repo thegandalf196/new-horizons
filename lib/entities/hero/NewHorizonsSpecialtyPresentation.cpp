@@ -28,6 +28,7 @@
 #include "NewHorizonsChosenSpecialties.h"
 #include "NewHorizonsRevisedSpecialties.h"
 #include "NewHorizonsCastleSpecialties.h"
+#include "NewHorizonsRampartSpecialties.h"
 #include "CHero.h"
 #include "../../mapObjects/CGHeroInstance.h"
 #include "../../CSkillHandler.h"
@@ -337,6 +338,7 @@ SpecialtyPresentation resolveSpecialtyPresentation(const CHero & hero,
 	if(resolveManaLeechesPresentation(hero, development, result))
 		return result;
 	if(resolveCastleSpecialtyPresentation(hero, development, capturedHero, result)
+		|| resolveRampartSpecialtyPresentation(hero, development, capturedHero, result)
 		|| resolveAerialSupremacyPresentation(hero, development, result)
 		|| resolveChosenSpecialtyPresentation(hero, development, magic, result)
 		|| resolveFocusPresentation(hero, magic, capturedHero, result)

@@ -25,6 +25,7 @@
 #include "../battle/NewHorizonsPassiveSpecialties.h"
 #include "../battle/Unit.h"
 #include "../mapObjects/CGHeroInstance.h"
+#include "../battle/NewHorizonsRampartSpecialties.h"
 #include <limits>
 namespace spells
 {
@@ -114,6 +115,8 @@ int64_t BaseMechanics::adjustEffectValueImpl(const battle::Unit * target, const 
 		holdReductionBasisPoints, finalDamageMultiplierPercent, useIndependentMagicalDamageReduction,
 		usesNewHorizonsMagicV3(), true, perkReductionBasisPoints,
 		useIndependentMagicalDamageReduction ? penetrations : std::vector<int>{});
+	if(hero && target && cb)
+		adjustedDamage = newHorizonsRampart::holyWrathDamage(*cb, hero, *owner, *target, adjustedDamage);
 	adjustedDamage = newHorizonsMetamagic::spellDamage(adjustedDamage, getMetamagicCastProfile(), *cb,
 		target, cb->sideToPlayer(getEffectCasterSide()), magicalHpDamage);
 	if(applyExecution && target && soulReaper)

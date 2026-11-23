@@ -14,6 +14,7 @@
 #include "../../lib/battle/HeroCommand.h"
 #include "../../lib/networkPacks/PacksForClientBattle.h"
 #include "../../lib/networkPacks/SetStackEffect.h"
+#include "../../lib/battle/NewHorizonsRampartSpecialties.h"
 bool BattleActionProcessor::doDefendAction(const CBattleInfoCallback & battle, const BattleAction & ba)
 {
 	const CStack * stack = battle.battleGetStackByID(ba.stackNumber);
@@ -27,6 +28,9 @@ bool BattleActionProcessor::applyDefendStance(const CBattleInfoCallback & battle
 	bool voluntary)
 {
 	if(!stack || !stack->alive())
+		return false;
+	// Alagar's Brittle prevents Defending until the stack's next activation.
+	if(newHorizonsRampart::brittlePermille(*stack) > 0)
 		return false;
 
 	//defensive stance, TODO: filter out spell boosts from bonus (stone skin etc.)

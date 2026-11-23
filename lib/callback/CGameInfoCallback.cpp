@@ -28,6 +28,7 @@
 #include "../IGameSettings.h"
 #include "../mapping/CMap.h"
 #include "../CPlayerState.h"
+#include "../pathfinder/NewHorizonsElusive.h"
 
 #define ASSERT_IF_CALLED_WITH_PLAYER if(!getPlayerID()) {logGlobal->error(BOOST_CURRENT_FUNCTION); assert(0);}
 
@@ -81,9 +82,9 @@ std::vector<const CGObjectInstance *> IGameInfoCallback::getGuardingCreatures(in
 		return {};
 
 	auto guardians = getGuardingCreatures(pos);
-	std::erase_if(guardians, [hero](const CGObjectInstance * guardian)
+	std::erase_if(guardians, [this, hero, &pos](const CGObjectInstance * guardian)
 	{
-		return guardian->passableFor(hero);
+		return newHorizonsElusive::ignoresGuard(*this, *hero, *guardian, pos);
 	});
 	return guardians;
 }

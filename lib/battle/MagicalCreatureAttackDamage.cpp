@@ -2,6 +2,7 @@
 #include "StdInc.h"
 #include "NewHorizonsPassiveSpecialties.h"
 #include "MagicalCreatureAttackDamage.h"
+#include "NewHorizonsRampartSpecialties.h"
 #include "ArcaneInspiration.h"
 #include "BattleAttackInfo.h"
 #include "CBattleInfoCallback.h"
@@ -30,6 +31,8 @@ void applyMagicalAttackReduction(const CBattleInfoCallback & callback,
 	const int intrinsic = attack.defender->intrinsicMagicalDamageReductionPercent();
 	if(intrinsic > 0)
 		reductions.push_back(std::clamp(intrinsic, 0, 100) * 100);
+	if(const int mount = newHorizonsRampart::perfectMountReductionPercent(*attack.defender))
+		reductions.push_back(mount * 100);
 	const int spellward = newHorizonsMagicalAbilityDamage::spellwardReductionBasisPoints(
 		callback.battleGetOwnerHero(attack.defender));
 	if(spellward > 0)

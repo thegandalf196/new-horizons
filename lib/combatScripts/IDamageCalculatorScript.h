@@ -59,6 +59,10 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 	int stormWingsDefenseIgnorePercent = 0; // Exact first-primary voluntary-flight contribution.
 	int runicEnduranceReductionPercent = 0; // Independent attack-sequence protection source.
 	int ironHideReductionPercent = 0; // Independent first-primary-melee-hit protection this round.
+	/// Mephala's Use the Ground: independent physical protection beside an obstacle or wall, in basis points.
+	int useTheGroundReductionBasisPoints = 0;
+	/// Rampart specialty final factor: Giant-Slayer, Brittle and Ivor's Forest Ambush shot.
+	double rampartSpecialtyDamageMultiplier = 1.0;
 	double leadershipEfficiency = 1.0; // Square-root Leadership stack damage efficiency (0.0 to 1.0).
 	/// Heavenly Gale's independent ranged physical reduction in basis points (10000 = 100%).
 	int heavenlyGaleDamageReductionBasisPoints = 0;
@@ -218,6 +222,10 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 			"Attack-local percentage of combined capped physical damage reduction ignored.");
 		s("runicEnduranceReductionPercent", runicEnduranceReductionPercent, "Captured independent physical protection against additional blows in one ordinary action.");
 		s("ironHideReductionPercent", ironHideReductionPercent, "Captured independent physical protection against the first primary melee hit this round.");
+		s("useTheGroundReductionBasisPoints", useTheGroundReductionBasisPoints,
+			"Use the Ground's independent physical protection beside an obstacle or wall, in basis points.");
+		s("rampartSpecialtyDamageMultiplier", rampartSpecialtyDamageMultiplier,
+			"Final Rampart specialty factor: Giant-Slayer, Brittle and the Forest Ambush shot.");
 		s("leadershipEfficiency", leadershipEfficiency, "Leadership stack damage efficiency (0.0 to 1.0).");
 		s("intrinsicPhysicalDamageReductionPercent", intrinsicPhysicalDamageReductionPercent,
 			"Independent intrinsic physical reduction before the shared cap and final floor.");

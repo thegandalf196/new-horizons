@@ -276,6 +276,7 @@ set(lib_MAIN_SRCS
 	battle/NewHorizonsManaLeeches.cpp
 	battle/NewHorizonsSerpentsEmbrace.cpp
 	battle/NewHorizonsForestAmbush.cpp
+	battle/NewHorizonsRampartSpecialties.cpp
 	battle/NewHorizonsForestAmbushState.cpp
 	battle/NewHorizonsPetrifyingBlood.cpp
 	battle/NewHorizonsLivingInferno.cpp
@@ -288,6 +289,8 @@ set(lib_MAIN_SRCS
 		entities/hero/NewHorizonsCastleSpecialties.cpp
 		entities/hero/NewHorizonsPariahLearning.cpp
 		entities/hero/NewHorizonsCastleAdventureSpecialties.cpp
+		entities/hero/NewHorizonsRampartSpecialties.cpp
+		entities/hero/NewHorizonsRampartSpecialtyPresentation.cpp
 		entities/hero/NewHorizonsGenieSage.cpp
 		entities/hero/NewHorizonsGenieAbilities.cpp
 	battle/NewHorizonsSoulHarvest.cpp
@@ -897,6 +900,7 @@ set(lib_MAIN_SRCS
 	pathfinder/CGPathNode.cpp
 	pathfinder/CPathfinder.cpp
 	pathfinder/NewHorizonsTravelSafety.cpp
+	pathfinder/NewHorizonsElusive.cpp
 	pathfinder/NodeStorage.cpp
 	pathfinder/PathfinderCache.cpp
 	pathfinder/PathfinderOptions.cpp
@@ -1364,6 +1368,7 @@ set(lib_MAIN_HEADERS
 	battle/NewHorizonsManaLeeches.h
 	battle/NewHorizonsSerpentsEmbrace.h
 	battle/NewHorizonsForestAmbush.h
+	battle/NewHorizonsRampartSpecialties.h
 	battle/NewHorizonsForestAmbushState.h
 	battle/NewHorizonsPetrifyingBlood.h
 	battle/NewHorizonsLivingInferno.h
@@ -1374,6 +1379,7 @@ set(lib_MAIN_HEADERS
 		entities/hero/NewHorizonsCastleSpecialties.h
 		entities/hero/NewHorizonsPariahLearning.h
 		entities/hero/NewHorizonsCastleAdventureSpecialties.h
+		entities/hero/NewHorizonsRampartSpecialties.h
 		entities/hero/NewHorizonsGenieSage.h
 	battle/NewHorizonsSoulHarvest.h
 	battle/NewHorizonsOrdinaryStrike.h
@@ -1851,6 +1857,7 @@ set(lib_MAIN_HEADERS
 	pathfinder/CGPathNode.h
 	pathfinder/CPathfinder.h
 	pathfinder/NewHorizonsTravelSafety.h
+	pathfinder/NewHorizonsElusive.h
 	pathfinder/NodeStorage.h
 	pathfinder/PathfinderCache.h
 	pathfinder/PathfinderOptions.h

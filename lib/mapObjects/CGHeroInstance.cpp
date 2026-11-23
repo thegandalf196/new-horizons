@@ -16,6 +16,7 @@
 #include "../entities/hero/NewHorizonsChosenSpecialties.h"
 #include "../entities/hero/NewHorizonsRevisedSpecialties.h"
 #include "../entities/hero/NewHorizonsCastleSpecialties.h"
+#include "../entities/hero/NewHorizonsRampartSpecialties.h"
 #include "../entities/hero/NewHorizonsPariahLearning.h"
 #include "../entities/hero/NewHorizonsCastleAdventureSpecialties.h"
 #include "../pathfinder/NewHorizonsProtectedMobility.h"
@@ -757,8 +758,8 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 			getHeroClass()->isMagicHero(), getFactionID(), secSkills);
 	}
 	const CHero * heroType = getHeroType();
-	// A revised Castle adventure specialty replaces the converted skill specialty.
-	const auto skillSpecialties = newHorizonsHeroes::retiresHistoricalCastleSpecialty(*this)
+	// A revised Castle or Rampart specialty replaces the converted skill specialty.
+	const auto skillSpecialties = newHorizonsHeroes::revisedSpecialtyRetiresHistorical(*this)
 		? std::nullopt : compiledDevelopment()->skillSpecialty;
 	const bool hasNavigationSpecialty = skillSpecialties && heroType->navigationSpecialtyProducer
 		&& compiledDevelopment()->usesNavigationStartReplacement()
@@ -771,7 +772,6 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 		addNewBonus(newHorizonsHeroes::skillSpecialtyMarker::make(heroType->getId(), SecondarySkill(SecondarySkill::LOGISTICS)));
 	}
 	const bool hasSupportedSkillSpecialty = skillSpecialties.has_value()
-		&& !newHorizonsHeroes::castleSpecialtyRetiresHistorical(*this)
 		&& heroType->secondarySkillSpecialtyAlias
 		&& std::ranges::find(skillSpecialties->skills, heroType->secondarySkillSpecialtyAlias->skill)
 			!= skillSpecialties->skills.end();
@@ -1931,7 +1931,7 @@ std::optional<newHorizonsHeroes::DruidSpecialtyRules> CGHeroInstance::getDruidSp
 	case newHorizonsHeroes::DruidSpecialtyKind::RESTORATIVE_SORCERESS: identity = "core:gem"; break;
 	case newHorizonsHeroes::DruidSpecialtyKind::NATURAL_PHILOSOPHER: identity = "core:malcom"; break;
 	}
-	if(!identity || heroType->getJsonKey() != identity)
+	if(!identity || heroType->getJsonKey() != identity || newHorizonsHeroes::rampartSpecialtyRetiresHistorical(*this))
 		return std::nullopt;
 	return rules;
 }

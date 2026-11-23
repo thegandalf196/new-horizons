@@ -108,6 +108,19 @@ Haart's discount is part of the shared recruitment quote
 payment all use; it never advances the Conscription ledger. Caitlin's treasure-chest
 donation (`lib/rewardable/NewHorizonsChestDonation`) is paid before the chest Experience,
 from the declined Gold option after Tax Collector.
+The Rampart rows (`useTheGround`, `elusive`, `patroness`, `giantSlayer`, `livingRemedy`,
+`sorceressOfEnroth`, `brittle`, `againstTheOdds`, `perfectMount`, `treantmoot`,
+`forestAmbush`) are parsed by `lib/entities/hero/NewHorizonsRampartSpecialties`. The
+New and Replaced rows retire that hero's historical specialty; `perfectMount`,
+`treantmoot` and `forestAmbush` revise or scale the existing one. Combat rules shared
+by the authority, the client and the battle AI live in
+`lib/battle/NewHorizonsRampartSpecialties` (damage factors, Brittle and Living Remedy
+bonuses, Gem's free first spell in the battle spell cost); the server applies the cast
+riders and Melodia's battle-start Luck in `server/battles/BattleRampartSpecialtyCasts`.
+Kyrre's Elusive is one check, `lib/pathfinder/NewHorizonsElusive`, used by the per-hero
+guard query and the server movement guard check, so the adventure AI inherits it.
+Jenova's weekly collection is marked with an ordinary `ONE_WEEK` hero bonus per town,
+so no state is added to the save format.
 
 ### Historical perk-offer policy2
 

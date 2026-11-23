@@ -60,7 +60,8 @@ DamageEstimation calculate(const DamageAttackInfo & info, const Facts & facts)
 	const double sylvan = multiplyPercents(info.sylvanAttackMultipliers);
 	const double sylvanDefense = multiplyPercents(info.sylvanDefenseMultipliers)
 		* nonnegativePercent(info.commandBeneficiaryDamageMultiplierPercent);
-	const double specialty = static_cast<double>(info.ordinaryCreatureSpecialtyDamagePercent) / 100;
+	const double specialty = static_cast<double>(info.ordinaryCreatureSpecialtyDamagePercent) / 100
+		* std::max(0.0, info.rampartSpecialtyDamageMultiplier);
 	double finalLuck = 1.0;
 	if(info.newHorizonsFinalLuck && info.luckyStrike)
 		finalLuck = 2.0 + facts.attacker.value(BonusType::LUCKY_STRIKE_DAMAGE_PERCENTAGE) / 100;

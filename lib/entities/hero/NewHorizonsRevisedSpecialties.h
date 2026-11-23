@@ -58,6 +58,10 @@ DLL_LINKAGE std::optional<LordOfTheCryptsRules> lordOfTheCryptsRules(const JsonN
 DLL_LINKAGE int lordOfTheCryptsGrowth(const CGHeroInstance & steward, const CGTownInstance & town, int level);
 /// True when the hero's captured revised specialty replaces this prototype specialty bonus.
 DLL_LINKAGE bool retiresSpecialtyBonus(const CGHeroInstance & hero, const Bonus & bonus);
+/// True when a captured revised (Castle or Rampart) specialty replaces this hero's
+/// whole historical specialty: its prototype bonuses, skill-specialty markers and
+/// identity-bound historical rules.
+DLL_LINKAGE bool revisedSpecialtyRetiresHistorical(const CGHeroInstance & hero);
 /// True when this hero's revised specialty gains value from being a steward.
 DLL_LINKAGE bool benefitsFromStewardship(const CGHeroInstance & hero, const CGTownInstance & town);
 DLL_LINKAGE bool resolveRevisedSpecialtyPresentation(const CHero & hero, const JsonNode & development,

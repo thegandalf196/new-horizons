@@ -13,10 +13,20 @@ class NativePassiveSpecialtyProjectionTest : public HeroQueueSelectorTest
 {
 protected:
 	std::string attackerHeroIdentity = "core:orrin";
+	/// Revised specialty rows erased to pin a historical (0.93.1) capture.
+	std::vector<std::string> historicalRows;
 	NativePassiveSpecialtyProjectionTest() { useRevisedOrders = true; }
 	void mapLoaded(CMap * map) override
 	{
 		HeroQueueSelectorTest::mapLoaded(map);
+		if(!historicalRows.empty())
+		{
+			JsonNode heroes(JsonPath::builtin("config/newHorizonsHeroes"));
+			for(const auto & key : historicalRows)
+				heroes["revisedSpecialties"].Struct().erase(key);
+			heroes.setOverrideFlag(true);
+			map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, heroes);
+		}
 		auto * hero = findHeroByOwner(PlayerColor(0));
 		ASSERT_NE(hero, nullptr);
 		hero->setHeroType(HeroTypeID(HeroTypeID::decode(attackerHeroIdentity)));
@@ -198,6 +208,7 @@ TEST_F(NativePassiveSpecialtyProjectionTest, MalformedTreantmootCannotBroadenOpa
 }
 TEST_F(NativePassiveSpecialtyProjectionTest, AerisMagicImmunityDoesNotSuppressPhysicalHeroPoisonTick)
 {
+	historicalRows = {"perfectMount"}; // The historical immunity; the revised row reduces until level 20.
 	ASSERT_NO_FATAL_FAILURE(prepare("core:aeris"));
 	const auto * pegasus = addStack(BattleSide::ATTACKER, creatureByName("core:silverPegasus"), BattleHex(6, 3), 100);
 	ASSERT_NE(pegasus, nullptr);

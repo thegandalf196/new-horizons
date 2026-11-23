@@ -3209,6 +3209,59 @@
 						"donationPercent": 20,
 						"donationPercentPerLevel": 2,
 						"maximumDonationPercent": 60
+					},
+					"useTheGround": {
+						"reductionPermille": 50,
+						"reductionPermillePerLevel": 5,
+						"maximumReductionPermille": 150
+					},
+					"elusive": {
+						"eliteLevel": 10,
+						"championLevel": 20
+					},
+					"patroness": {
+						"incomePermille": 250,
+						"incomePermillePerLevel": 25,
+						"maximumIncomePermille": 1000
+					},
+					"giantSlayer": {
+						"damagePermillePerStep": 100,
+						"damagePermillePerStepPerLevel": 5,
+						"maximumDamagePermillePerStep": 200
+					},
+					"livingRemedy": {
+						"rounds": 2,
+						"healingBasisPoints": 200,
+						"healingBasisPointsPerLevel": 25,
+						"maximumHealingBasisPoints": 700
+					},
+					"sorceressOfEnroth": {
+						"baseSpellLevel": 1,
+						"heroLevelsPerSpellLevel": 5
+					},
+					"brittle": {
+						"damagePermille": 50,
+						"damagePermillePerLevel": 5,
+						"maximumDamagePermille": 150
+					},
+					"againstTheOdds": {
+						"luck": 1,
+						"levelsPerLuck": 10,
+						"maximumLuck": 3
+					},
+					"perfectMount": {
+						"reductionPercent": 43,
+						"reductionPercentPerLevel": 3,
+						"maximumReductionPercent": 100
+					},
+					"treantmoot": {
+						"dendroidReductionPercent": 10,
+						"dendroidReductionPercentPerLevel": 1,
+						"maximumDendroidReductionPercent": 30
+					},
+					"forestAmbush": {
+						"shotDamagePercentPerLevel": 2,
+						"maximumShotDamagePercent": 100
 					}
 				},
 				"creatureLineSpecialties": {
@@ -3827,8 +3880,8 @@
 						],
 						"core:aeris": [
 							{
-								"skill": "new-horizons:logistics",
-								"perk": "new-horizons:logistics.pathfinding"
+								"skill": "new-horizons:sylvanLuck",
+								"perk": "new-horizons:sylvanLuck.forestSFavor"
 							}
 						],
 						"core:adelaide": [
@@ -3881,8 +3934,8 @@
 						],
 						"core:clancy": [
 							{
-								"skill": "new-horizons:logistics",
-								"perk": "new-horizons:logistics.pathfinding"
+								"skill": "new-horizons:sylvanLuck",
+								"perk": "new-horizons:sylvanLuck.elvenPrecision"
 							}
 						],
 						"core:piquedram": [
@@ -13921,6 +13974,7 @@
 		"new-horizons.spellCost.modifier.minimumCost": "Minimum cost",
 		"new-horizons.spellCost.modifier.arcaneEconomy": "Arcane Economy follow-up",
 		"new-horizons.spellCost.modifier.spellstorm": "Spellstorm",
+		"new-horizons.spellCost.modifier.sorceressOfEnroth": "Sorceress of Enroth",
 		"new-horizons.combat.chainLightning.previewHeader": "%SPELL: damage/kills (no resistance assumed)",
 		"new-horizons.combat.naturesWrath.previewHeader": "%SPELL: damage/kills or +HP healing (no resistance assumed)",
 		"new-horizons.combat.naturesWrath.healed": "Nature's Wrath restores %d health to %s.",

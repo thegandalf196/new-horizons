@@ -129,6 +129,8 @@ TEST_F(NewHorizonsSpecialtyArtBindingTest, AbsentCapturedPoliciesDoNotSelectInst
 		SCOPED_TRACE(row.hero);
 		auto historical = configured;
 		historical.Struct().erase(row.policy);
+		// A capture without the policy also predates the revised (Castle, Rampart) rows.
+		historical.Struct().erase("revisedSpecialties");
 		const auto view = newHorizonsHeroes::resolveSpecialtyPresentation(
 			prototype(row.hero), historical, magic, std::nullopt);
 		EXPECT_FALSE(view.artwork);
@@ -475,10 +477,11 @@ protected:
 		HeroCommandFixture::mapLoaded(loaded);
 		JsonNode development(JsonPath::builtin("config/newHorizonsHeroes"));
 		// These cases bind the selected art of the governing historical policies.
-		// The revised Castle rows replace several of them and own their own art.
-		for(const auto * castle : {"volleyCommand", "aerialSupremacy", "benedictionOfArms", "pariah", "frostMantle",
-			"quickStudy", "sermon"})
-			development["revisedSpecialties"].Struct().erase(castle);
+		// The revised Castle and Rampart rows replace several of them and own their own art.
+		for(const auto * revised : {"volleyCommand", "aerialSupremacy", "benedictionOfArms", "pariah", "frostMantle",
+			"quickStudy", "sermon", "useTheGround", "elusive", "patroness", "giantSlayer", "livingRemedy",
+			"sorceressOfEnroth", "brittle", "againstTheOdds", "perfectMount", "treantmoot", "forestAmbush"})
+			development["revisedSpecialties"].Struct().erase(revised);
 		if(historical)
 		{
 			const std::string_view policy = resolvedArtCases.at(GetParam()).policy;

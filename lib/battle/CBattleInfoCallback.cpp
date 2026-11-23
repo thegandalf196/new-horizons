@@ -81,6 +81,7 @@
 #include "../BattleFieldHandler.h"
 #include "../Rect.h"
 #include "../spells/effects/Effect.h"
+#include "NewHorizonsRampartSpecialties.h"
 
 namespace
 {
@@ -3242,6 +3243,8 @@ int32_t CBattleInfoCallback::calculateBattleSpellCost(const spells::Spell * sp, 
 	int32_t finalCost = std::max(minimum, beforeMinimum);
 	if(finalCost != beforeMinimum)
 		recordStage(SpellCostStage::Kind::MINIMUM_COST, beforeMinimum, finalCost);
+	if(finalCost > 0 && newHorizonsRampart::sorceressCastIsFree(*this, *caster, *sp))
+		recordStage(SpellCostStage::Kind::SORCERESS_OF_ENROTH, std::exchange(finalCost, 0), 0);
 
 	if(breakdown)
 		breakdown->finalCost = finalCost;

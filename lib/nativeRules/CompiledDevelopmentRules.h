@@ -13,6 +13,7 @@
 #include "../entities/hero/NewHorizonsRevisedSpecialties.h"
 #include "../entities/hero/NewHorizonsCastleSpecialties.h"
 #include "../entities/hero/NewHorizonsCastleAdventureSpecialties.h"
+#include "../entities/hero/NewHorizonsRampartSpecialties.h"
 
 #include <set>
 #include <string_view>
@@ -117,6 +118,7 @@ public:
 	std::optional<newHorizonsHeroes::SpecialtyLevelScaling> levelScaling;
 	newHorizonsHeroes::CastleSpecialtyRules castleSpecialties;
 	std::optional<newHorizonsHeroes::CastleAdventureSpecialties> castleAdventure;
+	newHorizonsHeroes::RampartSpecialtyRules rampartSpecialties;
 	std::optional<int> manaLeeches;
 	std::optional<newHorizonsHeroes::LivingInfernoRules> livingInferno;
 	std::optional<newHorizonsHeroes::HerbalSurgeonRules> herbalSurgeon;

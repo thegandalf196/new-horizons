@@ -22,6 +22,7 @@ void CompiledDevelopmentRules::compileCombatPolicies(const JsonNode & rules)
 	levelScaling = newHorizonsHeroes::specialtyLevelScaling(rules);
 	castleSpecialties = newHorizonsHeroes::castleSpecialtyRules(rules);
 	castleAdventure = newHorizonsHeroes::castleAdventureSpecialties(rules);
+	rampartSpecialties = newHorizonsHeroes::rampartSpecialtyRules(rules);
 	manaLeeches = newHorizonsHeroes::manaLeechesAmount(rules);
 	livingInferno = newHorizonsHeroes::livingInfernoRules(rules);
 	herbalSurgeon = newHorizonsHeroes::herbalSurgeonRules(rules);

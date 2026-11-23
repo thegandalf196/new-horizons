@@ -98,6 +98,7 @@
 #include "../../lib/spells/Problem.h"
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/entities/hero/NewHorizonsCastleSpecialties.h"
+#include "BattleRampartSpecialtyCasts.h"
 
 #include <vstd/RNG.h>
 
@@ -1046,8 +1047,10 @@ bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle
 		if(const auto luck = gameHandler->randomizer->rollHeroLuck(h->id, h->luckVal()))
 			parameters.setHeroLuck(*luck);
 	const auto castleCast = prepareCastleSpecialtyCast(battle, *s, target);
+	const auto rampartCast = battleRampartSpecialties::prepareCast(battle, *h, *s, *m, target);
 	parameters.cast(gameHandler->spellcastEnvironment(), target);
 	completeCastleSpecialtyCast(battle, ba, *h, *s, castleCast);
+	battleRampartSpecialties::completeCast(*gameHandler, battle, *h, *s, ba.side, rampartCast);
 	if(s->getId() == newHorizonsPurify::spellID())
 		completeHeroPurifyAction(*gameHandler, battle, ba, h, purifyingMandate,
 			automatic, sharedPurposePurifyAction);

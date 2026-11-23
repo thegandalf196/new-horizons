@@ -2,6 +2,7 @@
 #include "StdInc.h"
 #include "NewHorizonsPassiveSpecialtyBonuses.h"
 #include "NewHorizonsCreatureSpecialtyCapabilities.h"
+#include "NewHorizonsRampartSpecialties.h"
 #include "../../spells/NewHorizonsRunicReflection.h"
 #include "CHero.h"
 #include "../../mapObjects/CGHeroInstance.h"
@@ -134,13 +135,30 @@ std::vector<std::shared_ptr<Bonus>> passiveCreatureSpecialtyBonuses(const CGHero
 		return {bonus};
 	}
 	if(identity == "core:ryland" && has("treantmootProtection"))
-		return {Builder(hero, "core:dendroidGuard").treantmoot()};
+	{
+		const Builder builder(hero, "core:dendroidGuard");
+		Bundle result{builder.treantmoot()};
+		// Revised Treantmoot: the Dendroids themselves also take less physical damage.
+		if(const auto percent = treantmootPercent(hero))
+			result.push_back(builder.familyBonus(BonusType::PHYSICAL_DAMAGE_REDUCTION_BASIS_POINTS, *percent * 100,
+				"dendroidProtection"));
+		return result;
+	}
 	if(identity == "core:charna" && has("chillingPresenceMoraleReduction"))
 		return chillingPresence(Builder(hero, "core:wight"));
 	if(identity == "core:galthran" && has("boneFormationFirstBandSize"))
 		return boneFormation(Builder(hero, "core:skeleton"));
 	if(identity == "core:aeris" && has("perfectMountMagicalDamageImmunity"))
-		return {Builder(hero, "core:pegasus").familyBonus(BonusType::MAGICAL_DAMAGE_IMMUNITY, 1, "magicalImmunity")};
+	{
+		// Revised Perfect Mount: reduced magical damage below 100%, immunity from 100%.
+		const auto percent = perfectMountPercent(hero);
+		if(!percent || *percent >= 100)
+			return {Builder(hero, "core:pegasus").familyBonus(BonusType::MAGICAL_DAMAGE_IMMUNITY, 1, "magicalImmunity")};
+		auto reduction = Builder(hero, "core:pegasus").familyBonus(BonusType::SPELL_DAMAGE_REDUCTION, *percent,
+			"magicalImmunity");
+		reduction->subtype = BonusSubtypeID(SpellSchool::ANY);
+		return {reduction};
+	}
 	if(identity == "core:jabarkas" && has("furyOfTheHordeAttack"))
 		return furyOfTheHorde(Builder(hero, "core:orc"));
 	auto capability = creatureSpecialtyCapabilityBonuses(hero);
