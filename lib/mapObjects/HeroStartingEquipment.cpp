@@ -167,7 +167,7 @@ void CGHeroInstance::initArmy(vstd::RNG & rand, IArmyDescriptor * dst)
 					count = newHorizonsHeroes::clampStartingArmyCount(count, capacity->maximum);
 				}
 			}
-			dst->setCreature(SlotID(stackNo-warMachinesGiven), stack.creature, count);
+			if(count > 0) dst->setCreature(SlotID(stackNo-warMachinesGiven), stack.creature, count); // capacity 0 places nothing
 		}
 	}
 	if(getArmyCommand())

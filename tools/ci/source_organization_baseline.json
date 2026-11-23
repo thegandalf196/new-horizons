@@ -26075,11 +26075,12 @@
       "kind": "exception",
       "lines": 92,
       "owner": "gameplay_engineer",
-      "rationale": "Single expanded specialty resolver call decouples accepted starting package from retired Command placement. Count generation/RNG remains unchanged.",
-      "review": "IR-LEADERSHIP-1159-INDEPENDENT-20261113-V1-UNITS",
+      "rationale": "Single expanded specialty resolver call decouples accepted starting package from retired Command placement. Count generation/RNG remains unchanged. A zero Leadership capacity now places no stack instead of erasing an empty slot; same line count.",
+      "review": "PROPOSED-CLAUDE-ASSERT-SWEEP-20261123",
       "review_scope": "Only exact source organization, measured bounds and stated responsibility. Native/rendered/performance/gameplay/publication acceptance not established.",
-      "review_status": "INDEPENDENT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
-      "sha256": "2d5b4fd6e414cc6ae8f3fd64b2cd0d5cf9c0ab9773e90c17936b3c70a99d28b9"
+      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
+      "sha256": "c8c66d7646ba248a2ecb2e356865940b500c8eb5b3892d49d578bf778319936a",
+      "prior_review": "IR-LEADERSHIP-1159-INDEPENDENT-20261113-V1-UNITS"
     },
     "lib/mapObjects/IMarket.cpp::bool IMarket::getOffer(int id1, int id2, int &val1, int &val2, EMarketMode mode) const#1": {
       "kind": "legacy",
