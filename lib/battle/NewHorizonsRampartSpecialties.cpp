@@ -237,10 +237,7 @@ bool heroDamageIsStateful(const CBattleInfoCallback & battle, BattleSide side, c
 			{ return candidate->unitSide() == side && candidate->alive(); }))
 			if(newHorizonsForestAmbush::entitled(battle, unit))
 				return true;
-	if(rules->brittlePermille && newHorizonsHeroes::brittlePermille(hero) > 0)
-		for(const auto * unit : battle.battleGetUnitsIf([](const battle::Unit * candidate) { return candidate->alive(); }))
-			if(brittlePermille(*unit) > 0)
-				return true;
+	// Brittle marks are tracked per unit with the other temporary combat modifiers.
 	return false;
 }
 }

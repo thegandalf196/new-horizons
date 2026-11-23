@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../lib/battle/NewHorizonsRampartSpecialties.h"
 #include "SearchBudget.h"
 #include "../../lib/battle/ConsecratedArms.h"
 #include "HypotheticBattle.h"
@@ -65,6 +66,7 @@ bool hasTemporaryCombatModifier(const battle::Unit * unit)
 			|| newHorizonsChargeSpecialties::isLanceFormation(bonus)
 			|| newHorizonsReactiveDefense::isSolidarityProtection(bonus)
 			|| newHorizonsReactiveDefense::isIronHideSpent(bonus)
+			|| newHorizonsRampart::isBrittleMarker(bonus)
 			|| bonus->source == BonusSource::HERO_COMMAND
 			|| bonus->source == BonusSource::SPELL_EFFECT
 			|| consecratedArms::identity(bonus).has_value();
