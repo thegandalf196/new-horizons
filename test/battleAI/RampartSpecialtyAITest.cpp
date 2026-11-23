@@ -1,7 +1,7 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
 #if ENABLE_BATTLE_AI
-#include "../server/battles/CastleSpecialtyFixture.h"
+#include "../server/battles/RampartCombatSpecialtyFixture.h"
 #include "../../lib/battle/BattleAttackInfo.h"
 #include "../../lib/battle/NewHorizonsRampartSpecialties.h"
 #include "../../lib/bonuses/BonusSelector.h"
@@ -19,7 +19,7 @@ constexpr auto DEFENDER = BattleSide::DEFENDER;
 /// The battle AI sees and uses the revised Rampart specialties where it decides:
 /// riders on Uland's Cure and Alagar's ice spells, Gem's free first spell, and the
 /// shared damage rules (Giant-Slayer, Use the Ground) in its damage cache.
-class RampartSpecialtyAITest : public CastleSpecialtyTest
+class RampartSpecialtyAITest : public rampartCombatTest::RampartCombatSpecialtyTest
 {
 protected:
 	std::vector<heroActionSelection::CandidateValue> candidateValues()
@@ -184,9 +184,38 @@ TEST_F(RampartSpecialtyAITest, GiantSlayerAndUseTheGroundReachTheAIDamageCache)
 	const auto plain = cachedDamage(centaurs, angels);
 	ASSERT_GT(plain, 0);
 	EXPECT_NEAR(static_cast<double>(boosted) / plain, 1.2, 0.05) << "Target choice sees Giant-Slayer";
-	// Mephala: the cache bypasses its pair entries while her position rule can change them.
+	// Mephala: the cache bypasses its pair entries while she fights, since obstacles
+	// can appear or vanish (Force Field, Remove Obstacle) and stacks move.
 	attackerSideHero->setHeroType(HeroTypeID(HeroTypeID::decode("core:mephala")));
-	EXPECT_FALSE(newHorizonsHeroes::ordinaryCreatureDamageIsStateful(*battle())) << "No obstacle, nothing to track";
+	EXPECT_TRUE(newHorizonsHeroes::ordinaryCreatureDamageIsStateful(*battle())) << "Her presence alone, not the field";
+}
+
+TEST_F(RampartSpecialtyAITest, UseTheGroundCachedDamageFollowsAnObstacleThatVanishes)
+{
+	ASSERT_NO_FATAL_FAILURE(specialist("core:mephala"));
+	ASSERT_NO_FATAL_FAILURE(emptyField());
+	auto * guarded = place(ATTACKER, "core:dwarf", BattleHex(5, 5), 20, 1000);
+	auto * enemyDwarves = place(DEFENDER, "core:dwarf", BattleHex(6, 5), 20, 400);
+	ASSERT_TRUE(guarded && enemyDwarves);
+	ASSERT_NO_FATAL_FAILURE(forceField(BattleHex(4, 5)));
+	ASSERT_NO_FATAL_FAILURE(beginCombat());
+	ASSERT_TRUE(newHorizonsRampart::besideObstacleOrWall(*battle(), *guarded));
+	board();
+	DamageCache cache;
+	cache.buildDamageCache(parent, DEFENDER);
+	const auto protectedHit = cache.getDamage(parent->battleGetUnitByID(enemyDwarves->unitId()),
+		parent->battleGetUnitByID(guarded->unitId()), parent);
+	ASSERT_GT(protectedHit, 0);
+	BattleObstaclesChanged removal;
+	removal.battleID = BattleID(0);
+	removal.change = ObstacleChanges(900 + BattleHex(4, 5).toInt(), BattleChanges::EOperation::REMOVE);
+	gameHandler->sendAndApply(removal);
+	ASSERT_FALSE(newHorizonsRampart::besideObstacleOrWall(*battle(), *guarded));
+	board();
+	const auto openHit = cache.getDamage(parent->battleGetUnitByID(enemyDwarves->unitId()),
+		parent->battleGetUnitByID(guarded->unitId()), parent);
+	EXPECT_GT(openHit, protectedHit) << "The entry filled beside the obstacle is not reused once it is gone";
+	EXPECT_NEAR(static_cast<double>(protectedHit) / openHit, 0.95, 0.02);
 }
 
 TEST_F(RampartSpecialtyAITest, AgainstTheOddsLuckIsVisibleToTheAI)

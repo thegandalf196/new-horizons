@@ -45,15 +45,6 @@ bool hasWalls(const CBattleInfoCallback & battle)
 	return battle.battleGetFortifications().wallsHealth > 0;
 }
 
-/// True when a blocking obstacle stands anywhere, so Use the Ground can apply.
-bool hasBlockingObstacle(const CBattleInfoCallback & battle)
-{
-	for(const auto & obstacle : battle.battleGetAllObstacles())
-		if(obstacle && obstacle->blocksTiles())
-			return true;
-	return false;
-}
-
 int rank(const CBattleInfoCallback & battle, const battle::Unit & unit)
 {
 	const auto * state = battle.getBattle();
@@ -229,8 +220,9 @@ bool heroDamageIsStateful(const CBattleInfoCallback & battle, BattleSide side, c
 	const auto * rules = captured(hero);
 	if(!rules)
 		return false;
-	if(rules->useTheGroundPermille && newHorizonsHeroes::useTheGroundPermille(hero) > 0
-		&& (hasWalls(battle) || hasBlockingObstacle(battle)))
+	// Use the Ground depends on positions and on obstacles that can appear or vanish
+	// (Force Field, Remove Obstacle), so a pair entry is never reused while she fights.
+	if(rules->useTheGroundPermille && newHorizonsHeroes::useTheGroundPermille(hero) > 0)
 		return true;
 	if(rules->forestAmbushShotPercent && newHorizonsHeroes::forestAmbushShotPercent(hero) > 0)
 		for(const auto * unit : battle.battleGetUnitsIf([side](const battle::Unit * candidate)

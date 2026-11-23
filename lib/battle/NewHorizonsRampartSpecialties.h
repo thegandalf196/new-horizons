@@ -61,6 +61,6 @@ DLL_LINKAGE int64_t armyValue(const CBattleInfoCallback & battle, BattleSide sid
 DLL_LINKAGE std::optional<Bonus> againstTheOdds(const CBattleInfoCallback & battle, BattleSide side);
 
 /// True when this side's Rampart hero makes all cached pair damage depend on state: Use the
-/// Ground on a field with obstacles or walls, or Ivor's Elves that can shoot from hiding.
+/// Ground (positions and obstacles change) or Ivor's Elves that can shoot from hiding.
 DLL_LINKAGE bool heroDamageIsStateful(const CBattleInfoCallback & battle, BattleSide side, const CGHeroInstance * hero);
 }
