@@ -33,9 +33,10 @@ function Get-NHLatestPlayerOffer([string]$MetadataPath, [string]$Channel = 'stab
     # release of either kind. Returns $null when the beta track has none.
     $release = Get-NHPublishedRelease $MetadataPath $Channel
     if ($null -eq $release) { return $null }
-    if ($release.tag_name -isnot [string] -or
-        $release.tag_name -cnotmatch '^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$') {
-        throw 'The published release does not have a stable product version.'
+    # A stable release has no -beta.N suffix; a beta always has one.
+    $version = Get-UpdateReleaseVersionText $release
+    if ($null -eq $version -or (Test-NHBetaVersion $version) -ne ($Channel -ceq 'beta')) {
+        throw 'The published release does not have a valid product version for its track.'
     }
     $assets = @($release.assets | Where-Object { $_.name -cmatch '^New-Horizons-Windows-x64-[a-f0-9]{12}\.zip$' })
     if ($assets.Count -ne 1) { throw 'The release does not have one Windows playable archive.' }
@@ -43,7 +44,7 @@ function Get-NHLatestPlayerOffer([string]$MetadataPath, [string]$Channel = 'stab
     if ($asset.digest -isnot [string] -or $asset.digest -cnotmatch '^sha256:[a-f0-9]{64}$') {
         throw 'The published archive has no authenticated SHA-256 digest.'
     }
-    $offer = [PSCustomObject]@{format=1;version=$release.tag_name.Substring(1);name=$asset.name;
+    $offer = [PSCustomObject]@{format=1;version=$version;name=$asset.name;
         url=$asset.browser_download_url;bytes=$asset.size;sha256=$asset.digest.Substring(7)}
     if ($Channel -ceq 'beta') {
         $offer.format = 2
@@ -71,7 +72,7 @@ function Install-NHPlayerOffer([string]$Original, [string]$Request, [string]$Sta
     try {
         $current = (Select-NHPortableRelease $Original $false).runtime
         $updated = Install-NHRequestedRelease $Original $current $store $Request $StatusPath $CodeRoot
-        return [PSCustomObject]@{runtime=$updated;version=(Get-NHProductVersion $updated).ToString()}
+        return [PSCustomObject]@{runtime=$updated;version=(Get-NHProductVersionText $updated)}
     } finally { $lock.Dispose() }
 }
 

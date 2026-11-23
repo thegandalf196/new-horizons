@@ -10,7 +10,6 @@ $script:NHNotesMaximumInput = 200000
 $script:NHNotesShortened = "`n`n[Release notes shortened.]"
 $script:NHNotesOffline = 'Release notes are not available offline.'
 $script:NHNotesMissing = 'No release notes are available for this version.'
-$script:NHNotesVersionPattern = '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'
 # Control, zero-width and bidirectional formatting characters never reach the window.
 $script:NHNotesUnsafe = '[\x00-\x08\x0B-\x1F\x7F-\x9F\u200B-\u200F\u202A-\u202E\u2060-\u2069\uFEFF]'
 
@@ -71,9 +70,8 @@ function Get-NHRetainedReleaseNotes($Releases, [string[]]$Versions) {
     # Plain notes of the published releases whose versions are wanted.
     $notes = @{}
     foreach ($release in @($Releases)) {
-        $version = Get-UpdateReleaseVersion $release
-        if ($null -eq $version) { continue }
-        $name = $version.ToString()
+        $name = Get-UpdateReleaseVersionText $release
+        if ($null -eq $name) { continue }
         if ($Versions -cnotcontains $name -or $notes.ContainsKey($name)) { continue }
         $draft = $release.PSObject.Properties['draft']
         $body = $release.PSObject.Properties['body']
@@ -106,7 +104,7 @@ function Read-NHReleaseNotesFile([string]$Path) {
         $value = [IO.File]::ReadAllText($Path, [Text.Encoding]::UTF8) | ConvertFrom-Json
         if ($null -eq $value -or $value -is [string] -or $value -is [ValueType] -or $value -is [Array]) { return $notes }
         foreach ($property in $value.PSObject.Properties) {
-            if ($property.Name -cmatch $script:NHNotesVersionPattern -and $property.Value -is [string] -and
+            if ($null -ne (ConvertTo-NHReleaseVersion $property.Name) -and $property.Value -is [string] -and
                 $property.Value.Length -le $script:NHNotesMaximumChars + 64) { $notes[$property.Name] = $property.Value }
         }
     } catch { } # Missing or malformed notes show the bundled text instead.
@@ -122,7 +120,8 @@ function Get-NHBundledReleaseNotes([string]$Runtime, [string]$Version) {
         if (-not [IO.File]::Exists($path) -or (New-Object IO.FileInfo($path)).Length -gt 1048576) { return $null }
         $text = [IO.File]::ReadAllText($path, [Text.Encoding]::UTF8).Replace("`r`n", "`n")
     } catch { return $null }
-    $heading = [regex]::Match($text, '^##[ \t]+v?' + [regex]::Escape($Version) + '(?![0-9.])[^\n]*$', 'Multiline')
+    # 0.94.0 must not take the heading of 0.94.0-beta.1, nor beta.1 that of beta.10.
+    $heading = [regex]::Match($text, '^##[ \t]+v?' + [regex]::Escape($Version) + '(?![0-9A-Za-z.-])[^\n]*$', 'Multiline')
     if (-not $heading.Success) { return $null }
     $start = $heading.Index + $heading.Length
     $next = [regex]::Match($text.Substring($start), '^##?[ \t]', 'Multiline')
@@ -140,13 +139,13 @@ function Format-NHReleaseNotes([string]$Track, [string]$Installed, [string]$Offe
     if ($Track -ceq 'beta') { $sections.Add('Beta track') } else { $sections.Add('Stable track') }
     # A beta package starts with an empty stable track.
     if (-not $Installed) { $sections.Add($(if ($Track -ceq 'beta') { 'No beta is installed yet.' } else { 'No stable version is installed yet.' })) }
-    foreach ($version in @($entries.Keys | Sort-Object { [Version]$_ } -Descending)) {
+    foreach ($version in @($entries.Keys | Sort-Object { ConvertTo-NHReleaseVersion $_ } -Descending)) {
         $text = $null
         if ($null -ne $Fetched -and $Fetched.ContainsKey($version)) { $text = $Fetched[$version] }
         if (-not $text -and $version -ceq $Installed) { $text = $Offline }
         if (-not $text -and $null -ne $Fetched) { $text = $script:NHNotesMissing }
         if (-not $text) { $text = $script:NHNotesOffline }
-        $heading = 'Version ' + $version + ' (' + $entries[$version] + ')'
+        $heading = 'Version ' + (Format-NHVersionLabel $version) + ' (' + $entries[$version] + ')'
         $sections.Add($heading + "`n" + ('=' * $heading.Length) + "`n`n" + $text)
     }
     return ($sections -join "`n`n`n")
@@ -155,7 +154,7 @@ function Format-NHReleaseNotes([string]$Track, [string]$Installed, [string]$Offe
 function Get-NHPlayerInstalledVersion($View, [string]$Track) {
     $runtime = $View.State.Runtimes[$Track]
     if ($null -eq $runtime) { return '' }
-    return (Get-NHProductVersion $runtime).ToString()
+    return Get-NHProductVersionText $runtime
 }
 
 function Get-NHPlayerNotesArguments($View, [string]$Path) {

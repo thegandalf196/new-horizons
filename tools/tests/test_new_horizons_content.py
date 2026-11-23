@@ -1609,7 +1609,7 @@ class NewHorizonsContentTest(unittest.TestCase):
                               'newHorizonsMasteries': load('config/newHorizonsMasteries.json'),
                               'newHorizonsPerks': load('config/newHorizonsPerks.json')}
         self.assertEqual(module['settings'], settings)
-        self.assertEqual(module['version'], load('config/newHorizonsVersion.json')['version'])
+        self.assertEqual(module['version'], load('config/newHorizonsVersion.json')['version'].split('-', 1)[0])
         self.assertEqual(module['heroes'], [
             'config/heroes/fixedCreatureSpecialties.json',
             'config/heroes/biographies.json',

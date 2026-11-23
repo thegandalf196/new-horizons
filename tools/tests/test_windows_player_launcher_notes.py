@@ -129,15 +129,30 @@ Require ($text.Contains('No stable version is installed yet.') -and $text.Contai
         self.execute(r'''
 $script:Downloads=0
 function Invoke-UpdateDownload($URL,$Output,$MaximumBytes){$script:Downloads++;[IO.File]::WriteAllText($Output,$script:ReleaseText)}
-$list=@((New-FixtureRelease '0.93.1' $true '- **Offer**'),(New-FixtureRelease '0.93.0' $true 'Installed'),
+$list=@((New-FixtureRelease '0.94.0-rc.1' $true '- **Offer**'),(New-FixtureRelease '0.94.0-beta.2' $true 'Installed'),
     (New-FixtureRelease '0.92.9' $false 'Other'))
 $script:ReleaseText=ConvertTo-Json -InputObject $list -Depth 6
 $Operation='Check'; $Original=$runtime; $Channel='beta'
-$Output=Join-Path $env:FIXTURE 'result.json'; $NotesOutput=Join-Path $env:FIXTURE 'notes.json'; $NotesFor='0.93.0'
+$Output=Join-Path $env:FIXTURE 'result.json'; $NotesOutput=Join-Path $env:FIXTURE 'notes.json'; $NotesFor='0.94.0-beta.2'
 Require ((Invoke-NHPlayerOperation) -eq 0) 'Check failed'
 Require ($script:Downloads -eq 1) 'Notes used another request'
 $notes=Read-NHReleaseNotesFile $NotesOutput
-Require ($notes.Count -eq 2 -and $notes['0.93.1'] -ceq ([string][char]0x2022 + ' Offer') -and $notes['0.93.0'] -ceq 'Installed') 'Wrong notes'
+Require ($notes.Count -eq 2 -and $notes['0.94.0-rc.1'] -ceq ([string][char]0x2022 + ' Offer') -and $notes['0.94.0-beta.2'] -ceq 'Installed') 'Wrong notes'
+$text=Format-NHReleaseNotes 'beta' '0.94.0-beta.9' '0.94.0-rc.1' @{} ''
+Require ($text.IndexOf('Version 0.94.0 Release Candidate 1 (available update)') -ge 0 -and
+    $text.IndexOf('Version 0.94.0 Release Candidate 1') -lt $text.IndexOf('Version 0.94.0 Beta 9 (installed)')) 'Wrong rc notes order or names'
+$text=Format-NHReleaseNotes 'beta' '0.94.0-beta.9' '0.94.0-beta.10' @{} ''
+Require ($text.IndexOf('Version 0.94.0 Beta 10') -lt $text.IndexOf('Version 0.94.0 Beta 9')) 'Betas sorted as text'
+$log=Join-Path $env:FIXTURE 'changelog'
+$null=[IO.Directory]::CreateDirectory($log)
+[IO.File]::WriteAllText((Join-Path $log 'CHANGELOG-New-Horizons.md'),("## 0.94.0`n`nStable.`n`n## 0.94.0-rc.1`n`nCandidate.`n`n## 0.94.0-beta.10 Beta`n`nTenth.`n`n## 0.94.0-beta.1 Beta`n`nFirst.`n`n" +
+    "## 0.93.1 Beta`n`nLegacy beta.`n`n## 0.92.8 Early Access`n`nEarly access.`n"))
+# Installed older versions keep their legacy headings; a longer version never matches a prefix.
+Require ((Get-NHBundledReleaseNotes $log '0.93.1') -ceq 'Legacy beta.' -and (Get-NHBundledReleaseNotes $log '0.92.8') -ceq 'Early access.' -and
+    $null -eq (Get-NHBundledReleaseNotes $log '0.92.80')) 'Legacy changelog headings not found exactly'
+Require ((Get-NHBundledReleaseNotes $log '0.94.0') -ceq 'Stable.' -and (Get-NHBundledReleaseNotes $log '0.94.0-rc.1') -ceq 'Candidate.' -and
+    (Get-NHBundledReleaseNotes $log '0.94.0-beta.1') -ceq 'First.' -and (Get-NHBundledReleaseNotes $log '0.94.0-beta.10') -ceq 'Tenth.' -and
+    $null -eq (Get-NHBundledReleaseNotes $log '0.94.0-beta.2')) 'Changelog section lookup took a neighbouring version'
 ''')
 
     def test_offline_click_shows_bundled_notes(self):

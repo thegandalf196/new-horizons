@@ -13,6 +13,13 @@ import PortableLauncherLog as launcher_log
 import PortableReleaseLauncher as release
 import PortableReleaseNotes as release_notes
 from PortableLauncherProcess import StartupCancellation, run_process
+from PortableReleaseUpdate import version_label
+
+
+def beta_name(version):
+    """A suffixed beta names itself (0.94.0 Beta 3); an older unsuffixed one is 'Beta 0.93.1'."""
+    label = version_label(version)
+    return label if label != version else 'Beta ' + version
 
 
 READY = 'NH_LAUNCHER_READY_V1'
@@ -107,12 +114,12 @@ class LauncherWindow(Gtk.ApplicationWindow):
     def refresh_version(self):
         package = self.packages[self.channel]
         if self.channel == 'stable':
-            self.version_label.set_text('Installed version ' + '.'.join(map(str, release.version(package))) if package
+            self.version_label.set_text('Installed version ' + version_label(release.version_text(package)) if package
                                         else 'No stable version installed yet. Check for updates to find one.')
             self.version_label.remove_css_class('beta')
             return
         self.version_label.add_css_class('beta')
-        self.version_label.set_text('Beta ' + '.'.join(map(str, release.version(package))) + ' · separate saves'
+        self.version_label.set_text(beta_name(release.version_text(package)) + ' · separate saves'
                                     if package else 'No beta installed yet. Check for updates to find one.')
 
     def track_changed(self, dropdown, parameter):
@@ -205,7 +212,7 @@ class LauncherWindow(Gtk.ApplicationWindow):
 
     def installed_version(self, channel):
         package = self.packages[channel]
-        return '.'.join(map(str, release.version(package))) if package else None
+        return release.version_text(package) if package else None
 
     def checked(self, channel, offer, notes):
         if channel != self.channel:
@@ -214,7 +221,8 @@ class LauncherWindow(Gtk.ApplicationWindow):
         self.fetched[channel] = {**(self.fetched[channel] or {}), **notes}
         self.install.set_sensitive(offer is not None)
         if offer:
-            self.status.set_text(('Beta ' if channel == 'beta' else 'Version ') + offer['version'] + ' is available.')
+            name = beta_name(offer['version']) if channel == 'beta' else 'Version ' + version_label(offer['version'])
+            self.status.set_text(name + ' is available.')
         elif channel == 'beta':
             self.status.set_text('No beta newer than your installed versions is available right now.')
         elif self.package is None:

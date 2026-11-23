@@ -156,7 +156,7 @@ function Update-NHOriginalLauncher([string]$Runtime) {
             . (Join-Path $child.runtime 'Portable-Release-Launcher.ps1')
         }
         Assert-NHUpdateChildSelected $child
-        $backup = Join-Path $child.store ('launcher-backup-' + (Get-NHProductVersion $child.original).ToString())
+        $backup = Join-Path $child.store ('launcher-backup-' + (Get-NHProductVersionText $child.original))
         Assert-PlainPath $backup
         if ([IO.Directory]::Exists($backup)) { return }
         $lockPath = Join-Path $child.store 'lock'

@@ -284,7 +284,7 @@ class CapabilityDataTest(unittest.TestCase):
         schema = json.loads((ROOT / 'config/schemas/gameSettings.json').read_text())
         self.assertEqual(schema['properties']['heroes']['properties']['newHorizonsCapabilities']['$ref'], 'newHorizonsCapabilities.json')
         module = json.loads((ROOT / 'Mods/new-horizons/mod.json').read_text())
-        productVersion = json.loads((ROOT / 'config/newHorizonsVersion.json').read_text())['version']
+        productVersion = json.loads((ROOT / 'config/newHorizonsVersion.json').read_text())['version'].split('-', 1)[0]
         self.assertEqual(module['version'], productVersion)
         self.assertEqual(module['settings']['heroes']['newHorizonsCapabilities'], self.rules)
 

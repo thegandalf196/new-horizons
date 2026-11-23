@@ -57,7 +57,25 @@ class LinuxStageTest(unittest.TestCase):
             self.assertFalse((package / 'PortableReleaseLauncher.py').exists())
             verify_candidate(package)
 
+    def add_product_version(self, version):
+        path = self.root / 'config/newHorizonsVersion.json'
+        path.parent.mkdir(exist_ok=True)
+        path.write_text(json.dumps({'version': version}))  # The fixture lists it in the candidate manifest.
+
+    def test_release_track_must_match_the_product_version(self):
+        self.add_product_version('0.94.0-rc.1')
+        for channel in ('stable', 'beta'):
+            with self.subTest(channel=channel), tempfile.TemporaryDirectory() as temporary:
+                fixture = StageFixture(Path(temporary), self.root, providers=())
+                if channel == 'stable':
+                    with self.assertRaisesRegex(ValueError, 'does not match the product version 0.94.0-rc.1'):
+                        fixture.run(main, options=('--release-channel', channel))
+                    self.assertFalse(fixture.arguments['output'].exists())
+                else:
+                    fixture.run(main, options=('--release-channel', channel))
+
     def test_official_archive_option_invokes_verified_linux_archive_producer(self):
+        self.add_product_version('0.94.0-beta.1')
         with tempfile.TemporaryDirectory() as temporary:
             fixture = StageFixture(Path(temporary), self.root, providers=())
             destination = Path(temporary) / 'release'

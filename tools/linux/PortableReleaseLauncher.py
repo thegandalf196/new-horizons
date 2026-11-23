@@ -16,8 +16,9 @@ import tempfile
 import time
 
 from PortableReleaseUpdate import (ASSET_NAME, CHANNELS, MAX_ARCHIVE_BYTES, PACKAGE_ROOT as INSTALL_NAME,
-                                   ReleaseRedirects, latest_release, private_directory, recent_releases,
-                                   validate_release_metadata, verify_player_files)
+                                   ReleaseRedirects, is_beta_version, latest_release, private_directory,
+                                   recent_releases, release_version, validate_release_metadata,
+                                   verify_player_files, version_key)
 from urllib.request import build_opener
 from PortableLauncherProcess import run_process
 import PortableLauncherLog as launcher_log
@@ -30,7 +31,6 @@ PROFILES = {'stable': 'new-horizons-play', 'beta': 'new-horizons-play-beta'}
 SELF_TEST = 'NH_PORTABLE_LAUNCHER_V2'
 # Set when an older installed launcher handed over to this newer copy.
 CODE_ROOT = None
-VERSION = re.compile(r'(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)')
 DIGEST = re.compile(r'[0-9a-f]{64}')
 MAX_IDENTITY = 2 * 1024 * 1024  # A release identity, which lists every packaged library.
 # Two capped notes, JSON-escaped, plus the offer.
@@ -64,11 +64,16 @@ def small_json(path):
     return json.loads(value)
 
 
-def version(path):
+def version_text(path):
     value = small_json(path / 'config/newHorizonsVersion.json')['version']
-    if not isinstance(value, str) or len(value) > 32 or not VERSION.fullmatch(value):
+    if version_key(value) is None:
         raise ValueError('Invalid product version')
-    return tuple(map(int, value.split('.')))
+    return value
+
+
+def version(path):
+    """The installed product version's semantic-version precedence key."""
+    return version_key(version_text(path))
 
 
 def package_channel(package):
@@ -89,8 +94,7 @@ def selected_package(store, selection):
     if selection['format'] != 1 or not isinstance(digest, str) or not DIGEST.fullmatch(digest):
         raise ValueError('Invalid installed update identity')
     package = plain(store / 'releases' / digest / INSTALL_NAME, directory=True)
-    actual = '.'.join(map(str, version(package)))
-    if actual != selection['version']:
+    if version_text(package) != selection['version']:
         raise ValueError('Installed update version differs from its selection')
     verify_player_files(package)
     return package
@@ -114,9 +118,9 @@ def prepare_update(original, store, request, current, progress=None, cancel=None
     if not isinstance(wanted, dict) or not isinstance(wanted.get('version'), str):
         raise ValueError('Invalid update request')
     release = wanted['version']
-    if len(release) > 32 or not VERSION.fullmatch(release):
+    if version_key(release) is None:
         raise ValueError('Invalid requested version')
-    if current is not None and tuple(map(int, release.split('.'))) <= version(current):
+    if current is not None and version_key(release) <= version(current):
         return current
     worker = plain((CODE_ROOT or original) / 'PortableReleaseUpdate.py')
     prepared = run_worker(worker, store, request, progress=progress, cancel=cancel)
@@ -210,22 +214,16 @@ def update_lock(original):
         yield store
 
 
-def release_version(release):
-    tag = release.get('tag_name', '') if isinstance(release, dict) else ''
-    wanted = tag.removeprefix('v') if isinstance(tag, str) else ''
-    return wanted if len(wanted) <= 32 and VERSION.fullmatch(wanted) else None
-
-
 def newest_beta(releases):
-    """The newest published prerelease that carries a Linux package; never a stable release."""
+    """The newest published prerelease with a -beta.N version and a Linux package; never a stable release."""
     def eligible(release):
         return (isinstance(release, dict) and release.get('draft') is False and release.get('prerelease') is True
-                and release_version(release)
+                and is_beta_version(release_version(release))
                 and isinstance(release.get('assets'), list)
                 and sum(isinstance(asset, dict) and isinstance(asset.get('name'), str)
                         and bool(ASSET_NAME.fullmatch(asset['name'])) for asset in release['assets']) == 1)
     candidates = [release for release in releases if eligible(release)]
-    return max(candidates, key=lambda release: tuple(map(int, release_version(release).split('.'))), default=None)
+    return max(candidates, key=lambda release: version_key(release_version(release)), default=None)
 
 
 def check_release(current, opener=None, channel='stable', notes=None):
@@ -253,9 +251,9 @@ def release_offer(current, release, channel):
     if release.get('draft') is not False or release.get('prerelease') is not (channel == 'beta'):
         raise ValueError('Expected a published beta' if channel == 'beta' else 'Expected an official stable release')
     wanted = release_version(release)
-    if wanted is None:
+    if wanted is None or is_beta_version(wanted) != (channel == 'beta'):
         raise ValueError('Invalid official release version')
-    if current is not None and tuple(map(int, wanted.split('.'))) <= version(current):
+    if current is not None and version_key(wanted) <= version(current):
         return None
     assets = release.get('assets', [])
     if not isinstance(assets, list) or len(assets) > 128:
@@ -295,7 +293,7 @@ def check_release_notes_bounded(current, installed, cancel=None, channel='stable
     offer, notes = result['offer'], result['notes']
     if offer is not None and not isinstance(offer, dict) or not isinstance(notes, dict):
         raise ValueError('Invalid update-check response')
-    return offer, {key: value for key, value in notes.items() if isinstance(key, str) and VERSION.fullmatch(key)
+    return offer, {key: value for key, value in notes.items() if version_key(key) is not None
                    and isinstance(value, str) and len(value) <= release_notes.MAX_CHARS + 64}
 
 
@@ -445,7 +443,7 @@ def main(argv=None):
 
 def launcher_version(code):
     try:
-        return '.'.join(map(str, version(code)))
+        return version_text(code)
     except (OSError, ValueError, KeyError):
         return 'unknown'
 
@@ -472,7 +470,7 @@ def newer_launcher(original):
 
 def check_child(original, channel, notes_for):
     """The owned update-check process: one JSON answer on stdout, phases on stderr."""
-    if notes_for is not None and (len(notes_for) > 2 or not all(VERSION.fullmatch(value) for value in notes_for)):
+    if notes_for is not None and (len(notes_for) > 2 or not all(version_key(value) for value in notes_for)):
         raise ValueError('Invalid release notes version')
     launcher_log.join_session('check', report_phases=True)
     started = time.monotonic()

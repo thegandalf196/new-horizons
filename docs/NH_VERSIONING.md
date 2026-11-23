@@ -16,6 +16,28 @@ Product version, VCMI engine revision, save-schema version and Git commit are se
 
 Before 1.0 use `0.MINOR.PATCH`: meaningful player capability checkpoints increase MINOR/reset PATCH; fixes/compatibility/packaging increase PATCH. Reserve 1.0 for explicit scope and delivery acceptance, not the value alone. The menu label uses native small yellow text anchored within the loaded menu background.
 
+### Version numbers
+
+Stable releases are `MAJOR.MINOR.PATCH`. Beta-track prereleases carry a
+semantic-version suffix: `-beta.N` for betas and `-rc.N` for release
+candidates, with N from 1 and no leading zeros (nine digits at most). No other
+suffix is accepted. Tags are `v` plus the version, for example
+`v0.94.0-beta.1`. Versions compare by semantic-version precedence, never as
+text: 0.93.2 < 0.94.0-beta.1 < 0.94.0-beta.9 < 0.94.0-beta.10 < 0.94.0-rc.1 <
+0.94.0-rc.2 < 0.94.0 < 0.94.1. A suffixed version is always a GitHub
+prerelease and a plain version never is; the launchers ignore or reject a
+release whose flag and version disagree, and the release build refuses a tag
+whose `release_channel` does not match its version. The launchers show
+`0.94.0-beta.3` as "0.94.0 Beta 3" and `0.94.0-rc.1` as "0.94.0 Release
+Candidate 1". `Mods/new-horizons/mod.json` keeps the plain `MAJOR.MINOR.PATCH`,
+because VCMI mod versions are numeric.
+
+Rampart, 0.94.0-beta.1, is the first suffixed beta; Academy follows as
+0.94.0-beta.2, up to 0.94.0-beta.9. 0.93.2 was never published. Packages up to
+0.93.x and 0.92.x cannot read suffixed versions, so their launchers never offer
+0.94.0-beta.1: players of those packages download 0.94.0-beta.1 manually once,
+after which updates arrive as usual.
+
 ## Stable and Beta tracks
 
 The repository has two long-lived branches. `beta` is the development and Beta
@@ -25,23 +47,25 @@ only Stable promotions and Stable hotfixes. `main` is currently at 0.92.8
 (Stable).
 
 Stable releases are ordinary GitHub releases; the launchers' Stable track only
-accepts the official latest release. Beta releases are GitHub prereleases built
-from tags on `beta`, numbered like any other release: while stable continues on
-`0.MINOR.PATCH`, betas use the next MINOR (for example 0.93.x beside 0.92.x).
-The Beta track offers only prereleases: the newest published prerelease, when
-it is newer than both installed tracks (an empty Beta track therefore needs a
-beta newer than the installed stable). A Stable release is never offered there,
-even when it was promoted from a beta: after 0.93.5 becomes Stable 0.94.0, a
-player on beta 0.93.6 keeps it and waits for the next beta (0.95.0), while the
-Stable track offers 0.94.0. A beta install revalidates that its release is still
-a prerelease. The Beta track installs beside the stable version and plays with
+accepts the official latest release, never a release candidate. Betas are
+GitHub prereleases built from tags on `beta`, versioned `MAJOR.MINOR.0-beta.N`
+for the next stable MINOR (0.94.0-beta.1 … while Stable is 0.92.x). Release
+candidates are prereleases built on `main` (see below). The Beta track offers
+only prereleases with a `-beta.N` or `-rc.N` version: the newest one, when it is
+newer than both installed tracks (an empty Beta track therefore needs one newer
+than the installed stable). A Stable release is never offered there, even when
+it was promoted from a beta: after 0.94.0 ships, a player on 0.94.0-beta.6 keeps
+it and waits for 0.95.0-beta.1, while the Stable track offers 0.94.0. A beta
+install revalidates that its release is still a prerelease with a suffixed
+version. The Beta track installs beside the stable version and plays with
 a separate profile. The first start that creates the beta profile copies
 the stable saves into it.
 
 Each player package records its track as `release_channel` in
 `BUILD-IDENTITY.json`; a package without it is stable. Dispatch the Windows
-workflow for a release tag with `release_channel` set to `beta` for a
-prerelease or `stable` otherwise (tag builds without it fail), and pass the
+workflow for a release tag with `release_channel` set to `beta` for a `-beta.N`
+or `-rc.N` prerelease or `stable` for a plain version (tag builds without it or
+with the other value fail), and pass the
 same value to `tools/ci/stage_linux_client.py --release-channel`. Publish the
 GitHub release with the matching prerelease flag. A beta package opens on the
 Beta track and plays it from its own folder with the beta profile; its Stable
@@ -54,37 +78,38 @@ A stable release promotes a beta that held up. Do not cut a stable release from
 the head of `beta` while an experiment is still in beta.
 
 - **What to promote.** The owner picks a published beta whose changes they
-  want, for example 0.93.5. It does not have to be the newest beta.
-- **When.** The default checkpoint is the end of a beta series (for the 0.93
-  faction series, after 0.93.9). The chosen beta must have been available for
-  about one to two weeks with no open crash, corruption or save-loss report.
-  Any earlier beta can be promoted at the owner's request.
-- **How.** The stable release is the chosen beta's exact source. On `main`,
-  create one commit whose tree is the beta tag's tree and whose parents are
-  `main` and the tag, then add one commit that changes only the version
-  metadata (the next MINOR, for example 0.94.0) and the changelog:
+  want, for example 0.94.0-beta.5. It does not have to be the newest beta.
+- **When.** The default checkpoint is the end of a beta series (after
+  0.94.0-beta.9 for the faction series). Any earlier beta can be promoted at the
+  owner's request.
+- **Release candidate.** The chosen beta's exact source goes onto `main` as
+  `0.94.0-rc.1`, a prerelease. On `main`, create one commit whose tree is the
+  beta tag's tree and whose parents are `main` and the tag, then one commit
+  that changes only the version metadata and the changelog:
 
   ```sh
   git checkout main
-  git merge --ff-only $(git commit-tree 'v0.93.5^{tree}' -p main \
-      -p 'v0.93.5^{commit}' -m "Promote 0.93.5 to Stable")
-  # edit config/newHorizonsVersion.json and the changelog, then commit
+  git merge --ff-only $(git commit-tree 'v0.94.0-beta.5^{tree}' -p main \
+      -p 'v0.94.0-beta.5^{commit}' -m "Promote 0.94.0-beta.5 to 0.94.0-rc.1")
+  # set config/newHorizonsVersion.json to 0.94.0-rc.1, add the changelog section, commit
   ```
 
-  `main` moves forward without a force push. Tag `v0.94.0` on `main`, push
-  `main` and the tag, build it with `release_channel=stable` and publish it as
-  an ordinary, non-prerelease GitHub release. Fixes for confirmed bugs in that
-  beta can be added as later commits on `main`, but no new mechanics.
-- **Later betas.** Changes from betas after the promoted one (0.93.6 onward in
-  the example) stay on `beta`. A change the owner rejects is reverted or
-  reworked on `beta`; it never reaches Stable unless a later beta that contains
-  it is promoted. Because the Beta track only offers releases newer than both
-  installed tracks, the next beta after a promotion uses the next MINOR after
-  the new stable one (0.95.0 after 0.94.0).
+  `main` moves forward without a force push. Tag `v0.94.0-rc.1`, push `main`
+  and the tag, build it with `release_channel=beta` and publish it as a GitHub
+  prerelease; Beta-track players receive it. Only fixes for confirmed bugs
+  follow, as 0.94.0-rc.2 and onward; no new mechanics.
+- **Stable.** After about one to two weeks with no open crash, corruption or
+  save-loss report, the same code ships as 0.94.0 with only the version and
+  changelog changed: tag `v0.94.0`, build it with `release_channel=stable` and
+  publish an ordinary, non-prerelease release.
+- **Meanwhile.** Development continues on `beta` as 0.95.0-beta.N. Changes from
+  betas after the promoted one stay on `beta`; a change the owner rejects is
+  reverted or reworked there and reaches Stable only through a later promoted
+  beta.
 - **Saves.** Stable saves from the previous stable line load in the new stable
   release as usual. Beta saves stay in the beta profile. A save made by a later
-  beta (0.93.6 in the example) may use a newer format than the promoted stable
-  release can read.
+  beta (0.94.0-beta.6 in the example) may use a newer format than the promoted
+  stable release can read.
 - **Stable fixes.** Urgent fixes are commits on `main`, tagged there, for
   example 0.94.1. Copy each one to `beta` with `git cherry-pick`. Never merge
   `main` into `beta`.

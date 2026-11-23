@@ -80,20 +80,25 @@ Require $rejected 'Prerelease accepted'
 $metadata=Join-Path $env:FIXTURE 'metadata.json'
 $script:Downloads=@()
 function Invoke-UpdateDownload($URL,$Output,$MaximumBytes){$script:Downloads+=$URL;[IO.File]::WriteAllText($Output,$script:ReleaseText)}
-$missing=New-FixtureRelease '0.93.2' $true $false
+# A beta needs a -beta.N or -rc.N version and the prerelease flag; either alone is ignored.
+$missing=New-FixtureRelease '0.94.0-beta.4' $true $false
 $missing.Remove('prerelease')
-$list=@((New-FixtureRelease '0.94.0' $false $false),(New-FixtureRelease '0.93.1' $true $true),$missing,
-    (New-FixtureRelease '0.93.0' $true $false),@{tag_name='nonsense'},'not a release')
+$list=@((New-FixtureRelease '0.94.0' $false $false),(New-FixtureRelease '0.94.0-beta.3' $false $false),
+    (New-FixtureRelease '0.94.0-beta.2' $true $true),$missing,(New-FixtureRelease '0.93.9' $true $false),
+    (New-FixtureRelease '0.94.0-beta.1' $true $false),@{tag_name='nonsense'},'not a release')
 $script:ReleaseText=ConvertTo-Json -InputObject $list -Depth 6
 $offer=Get-NHLatestPlayerOffer $metadata 'beta'
 Require ($script:Downloads[0] -ceq $script:ReleaseListAPI) 'Beta did not list recent releases'
-Require ($offer.version -ceq '0.93.0' -and $offer.channel -ceq 'beta' -and $offer.format -eq 2) 'Wrong beta offer'
+Require ($offer.version -ceq '0.94.0-beta.1' -and $offer.channel -ceq 'beta' -and $offer.format -eq 2) 'Wrong beta offer'
 Require (-not [IO.File]::Exists($metadata+'.offer')) 'Validation scratch survived'
-$script:ReleaseText=(New-FixtureRelease '0.93.0' $true $false)|ConvertTo-Json -Depth 6
-$rejected=$false
-try{$null=Get-NHLatestPlayerOffer $metadata}catch{$rejected=$true}
-Require $rejected 'Stable accepted a prerelease'
-$script:ReleaseText=ConvertTo-Json -InputObject @((New-FixtureRelease '0.92.3' $true $false)) -Depth 6
+foreach ($release in @((New-FixtureRelease '0.94.0-beta.1' $true $false),(New-FixtureRelease '0.94.0-rc.1' $true $false),
+                       (New-FixtureRelease '0.94.0-rc.1' $false $false))) {
+    $script:ReleaseText=$release|ConvertTo-Json -Depth 6
+    $rejected=$false
+    try{$null=Get-NHLatestPlayerOffer $metadata}catch{$rejected=$true}
+    Require $rejected ('Stable accepted ' + $release.tag_name)
+}
+$script:ReleaseText=ConvertTo-Json -InputObject @((New-FixtureRelease '0.92.3-beta.1' $true $false)) -Depth 6
 $view=New-FixtureView
 $view.State.Track='beta'
 $view.State.Runtime=$null
@@ -105,12 +110,31 @@ Require ($null -eq (Get-NHLatestPlayerOffer $metadata 'beta')) 'A stable release
 $script:ReleaseText='[]'
 Require ($null -eq (Get-NHLatestPlayerOffer $metadata 'beta')) 'Empty release list produced an offer'
 Complete-NHPlayerCheck $view $offer
-Require ($view.State.Offer.version -ceq '0.93.0' -and $view.Status.Text -ceq 'Beta 0.93.0 is available.') 'Beta offer hidden'
+Require ($view.State.Offer.version -ceq '0.94.0-beta.1' -and $view.Status.Text -ceq '0.94.0 Beta 1 is available.') 'Beta offer hidden'
+# The Beta track also offers a release candidate, named for players.
+$script:ReleaseText=ConvertTo-Json -InputObject @((New-FixtureRelease '0.94.0-rc.1' $true $false),(New-FixtureRelease '0.94.0-beta.10' $true $false)) -Depth 6
+Complete-NHPlayerCheck $view (Get-NHLatestPlayerOffer $metadata 'beta')
+Require ($view.Status.Text -ceq '0.94.0 Release Candidate 1 is available.') ('Wrong rc status: ' + $view.Status.Text)
+''')
+
+    def test_version_labels_name_betas_and_release_candidates(self):
+        self.execute(r'''
+foreach ($case in @(@('0.94.0-beta.3','0.94.0 Beta 3'),@('0.94.0-rc.1','0.94.0 Release Candidate 1'),@('0.94.0','0.94.0'),
+                    @('0.94.0-gamma.1','0.94.0-gamma.1'))) {
+    Require ((Format-NHVersionLabel $case[0]) -ceq $case[1]) ('Wrong label for ' + $case[0])
+}
+Require ((Get-NHBetaName '0.94.0-rc.2') -ceq '0.94.0 Release Candidate 2' -and (Get-NHBetaName '0.93.1') -ceq 'Beta 0.93.1') 'Wrong beta names'
+$view=New-FixtureView
+$view.State.Track='beta'
+[IO.File]::WriteAllText((Join-Path $runtime 'config/newHorizonsVersion.json'),'{"version":"0.94.0-rc.1"}')
+$view.State.Runtimes['beta']=$runtime
+Update-NHPlayerVersion $view
+Require ($view.Version.Text -ceq ('0.94.0 Release Candidate 1 ' + [char]0x00B7 + ' separate saves')) ('Wrong version line: ' + $view.Version.Text)
 ''')
 
     def test_promoted_stable_is_never_offered_to_a_beta_player(self):
         self.execute(r'''
-# 0.93.5 was promoted to Stable 0.94.0; the beta player on 0.93.6 waits for 0.95.0.
+# 0.94.0-beta.5 was promoted to Stable 0.94.0; the beta player waits for 0.95.0-beta.1.
 $metadata=Join-Path $env:FIXTURE 'metadata.json'
 function Invoke-UpdateDownload($URL,$Output,$MaximumBytes){[IO.File]::WriteAllText($Output,$script:ReleaseText)}
 function New-FixtureRuntime([string]$Name,[string]$Version) {
@@ -119,24 +143,30 @@ function New-FixtureRuntime([string]$Name,[string]$Version) {
     [IO.File]::WriteAllText((Join-Path $path 'config/newHorizonsVersion.json'),('{"version":"'+$Version+'"}'))
     return $path
 }
-$published=@((New-FixtureRelease '0.94.0' $false $false),(New-FixtureRelease '0.93.6' $true $false),
-    (New-FixtureRelease '0.93.5' $true $false),(New-FixtureRelease '0.92.8' $false $false))
+$published=@((New-FixtureRelease '0.94.0' $false $false),(New-FixtureRelease '0.94.0-beta.5' $true $false),
+    (New-FixtureRelease '0.94.0-beta.4' $true $false),(New-FixtureRelease '0.92.8' $false $false))
 $script:ReleaseText=ConvertTo-Json -InputObject $published -Depth 6
 $view=New-FixtureView
 $view.State.Track='beta'
-$view.State.Runtimes['beta']=New-FixtureRuntime 'beta-0936' '0.93.6'
+$view.State.Runtimes['beta']=New-FixtureRuntime 'beta-5' '0.94.0-beta.5'
 $view.State.Runtime=$view.State.Runtimes['beta']
 Complete-NHPlayerCheck $view (Get-NHLatestPlayerOffer $metadata 'beta')
 Require ($null -eq $view.State.Offer) 'The promoted stable or an older beta was offered'
 Require ($view.Status.Text -ceq 'No beta newer than your installed versions is available right now.') 'Wrong waiting status'
-$script:ReleaseText=ConvertTo-Json -InputObject (@((New-FixtureRelease '0.95.0' $true $false)) + $published) -Depth 6
+$script:ReleaseText=ConvertTo-Json -InputObject (@((New-FixtureRelease '0.95.0-beta.1' $true $false)) + $published) -Depth 6
 Complete-NHPlayerCheck $view (Get-NHLatestPlayerOffer $metadata 'beta')
-Require ($view.State.Offer.version -ceq '0.95.0' -and $view.State.Offer.channel -ceq 'beta') 'The next beta was not offered'
+Require ($view.State.Offer.version -ceq '0.95.0-beta.1' -and $view.State.Offer.channel -ceq 'beta') 'The next beta was not offered'
+# A 0.93.x beta with this launcher moves to the first suffixed beta: 0.93.2 < 0.94.0-beta.1.
+$view.State.Offer=$null
+$view.State.Runtimes['beta']=New-FixtureRuntime 'beta-0932' '0.93.2'
+$script:ReleaseText=ConvertTo-Json -InputObject @((New-FixtureRelease '0.94.0-beta.1' $true $false),(New-FixtureRelease '0.93.1' $true $false)) -Depth 6
+Complete-NHPlayerCheck $view (Get-NHLatestPlayerOffer $metadata 'beta')
+Require ($view.State.Offer.version -ceq '0.94.0-beta.1') 'No upgrade from 0.93.2 to the first suffixed beta'
 # An empty beta track still needs a beta newer than the installed stable (0.92.3).
 $view.State.Offer=$null
 $view.State.Runtimes['beta']=$null
 $view.State.Runtime=$null
-$script:ReleaseText=ConvertTo-Json -InputObject @((New-FixtureRelease '0.92.2' $true $false),(New-FixtureRelease '0.94.0' $false $false)) -Depth 6
+$script:ReleaseText=ConvertTo-Json -InputObject @((New-FixtureRelease '0.92.3-beta.1' $true $false),(New-FixtureRelease '0.94.0' $false $false)) -Depth 6
 Complete-NHPlayerCheck $view (Get-NHLatestPlayerOffer $metadata 'beta')
 Require ($null -eq $view.State.Offer) 'An empty beta took a stable or an older beta'
 # The Stable track still takes the promoted release.

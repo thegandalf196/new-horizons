@@ -13,12 +13,17 @@ function Read-NHSmallUpdateJson([string]$Path) {
     return [IO.File]::ReadAllText($Path, [Text.Encoding]::UTF8) | ConvertFrom-Json
 }
 
-function Get-NHProductVersion([string]$Runtime) {
+function Get-NHProductVersionText([string]$Runtime) {
     $metadata = Read-NHSmallUpdateJson (Join-Path $Runtime 'config\newHorizonsVersion.json')
-    if ($metadata.version -isnot [string] -or $metadata.version -cnotmatch '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$') {
+    if ($metadata.version -isnot [string] -or $null -eq (ConvertTo-NHReleaseVersion $metadata.version)) {
         throw 'Invalid New Horizons product version.'
     }
-    return [Version]$metadata.version
+    return $metadata.version
+}
+
+function Get-NHProductVersion([string]$Runtime) {
+    # The installed version's precedence key (ConvertTo-NHReleaseVersion); display Get-NHProductVersionText.
+    return ConvertTo-NHReleaseVersion (Get-NHProductVersionText $Runtime)
 }
 
 function Get-NHSelectedUpdateRuntime([string]$Store, $Selection) {
@@ -26,7 +31,7 @@ function Get-NHSelectedUpdateRuntime([string]$Store, $Selection) {
         throw 'Invalid installed update selection.'
     }
     $runtime = Join-Path (Join-Path (Join-Path $Store 'r') ($Selection.sha256.Substring(0,24))) 'runtime'
-    if ((Get-NHProductVersion $runtime).ToString() -cne $Selection.version) {
+    if ((Get-NHProductVersionText $runtime) -cne $Selection.version) {
         throw 'Installed update version differs from its selection.'
     }
     foreach ($name in @('new-horizons.exe','VCMI_lib.dll','Start-New-Horizons.ps1','BUILD-IDENTITY.json',
@@ -100,7 +105,7 @@ function Set-NHUpdateSelection([string]$Store, $Selection, [string]$Name = 'curr
 function Install-NHRequestedRelease([string]$Original, [string]$Current, [string]$Store, [string]$Request,
     [string]$StatusPath, [string]$CodeRoot = '') {
     $wanted = Read-NHSmallUpdateJson $Request
-    if ($wanted.version -isnot [string] -or $wanted.version -cnotmatch '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$') {
+    if ($wanted.version -isnot [string] -or $null -eq (ConvertTo-NHReleaseVersion $wanted.version)) {
         throw 'Invalid requested update version.'
     }
     $channel = Get-UpdateRequestChannel $wanted
@@ -108,7 +113,7 @@ function Install-NHRequestedRelease([string]$Original, [string]$Current, [string
     # be newer than stable; an empty stable track (a beta package) takes any stable.
     $track = Get-NHTrackRuntime $Original $channel
     if ($track) { $Current = $track } elseif ($channel -ceq 'stable') { $Current = '' }
-    if ($Current -and [Version]$wanted.version -le (Get-NHProductVersion $Current)) { return $Current }
+    if ($Current -and (ConvertTo-NHReleaseVersion $wanted.version) -le (Get-NHProductVersion $Current)) { return $Current }
     # A launcher handed over from an older original runs its own update worker.
     $workerRoot = $Original
     if ($CodeRoot) { $workerRoot = $CodeRoot }
@@ -219,7 +224,7 @@ function Get-NHNewerLauncher([string]$Original) {
         $entry = Join-Path $runtime 'Start-New-Horizons.ps1'
         Assert-PlainPath $entry
         if (-not [IO.File]::Exists($entry) -or -not (Test-NHLauncherSelfTest $runtime)) { return $null }
-        Write-UpdateLog ('Handing over to the launcher of the selected update ' + (Get-NHProductVersion $runtime))
+        Write-UpdateLog ('Handing over to the launcher of the selected update ' + (Get-NHProductVersionText $runtime))
         return $entry
     } catch {
         Write-UpdateLog 'The selected update launcher is unavailable; keeping this launcher' $_

@@ -95,9 +95,9 @@ function Update-NHPlayerVersion($View) {
         $name = if ($View.State.Track -ceq 'beta') { 'beta' } else { 'stable version' }
         $View.Version.Text = 'No ' + $name + ' installed yet. Check for updates to find one.'
     } elseif ($View.State.Track -ceq 'stable') {
-        $View.Version.Text = 'Installed version: ' + (Get-NHProductVersion $runtime).ToString()
+        $View.Version.Text = 'Installed version: ' + (Format-NHVersionLabel (Get-NHProductVersionText $runtime))
     } else {
-        $View.Version.Text = 'Beta ' + (Get-NHProductVersion $runtime).ToString() + ' ' + [char]0x00B7 + ' separate saves'
+        $View.Version.Text = (Get-NHBetaName (Get-NHProductVersionText $runtime)) + ' ' + [char]0x00B7 + ' separate saves'
     }
     # As on Linux, the beta track's version line is blue.
     if ($View.Version.PSObject.Properties['ForeColor']) {
@@ -145,12 +145,12 @@ function Set-NHPlayerTrack($View, [string]$Original, [int]$Index) {
 
 function Complete-NHPlayerCheck($View, $Offer) {
     $beta = $View.State.Track -ceq 'beta'
-    if ($null -ne $Offer -and [Version]$Offer.version -gt (Get-NHTrackBaseline $View)) {
+    if ($null -ne $Offer -and (ConvertTo-NHReleaseVersion $Offer.version) -gt (Get-NHTrackBaseline $View)) {
         $View.State.Offer = $Offer
         if ($beta) {
-            $View.Status.Text = 'Beta ' + $Offer.version + ' is available.'
+            $View.Status.Text = (Get-NHBetaName $Offer.version) + ' is available.'
         } else {
-            $View.Status.Text = 'Version ' + $Offer.version + ' is available. Select Install update to accept.'
+            $View.Status.Text = 'Version ' + (Format-NHVersionLabel $Offer.version) + ' is available. Select Install update to accept.'
         }
     } elseif ($beta) {
         $View.Status.Text = 'No beta newer than your installed versions is available right now.'

@@ -167,10 +167,13 @@ class WindowsPreviewDispatchTest(unittest.TestCase):
         names = [row.get('name') for row in self.job['steps']]
         self.assertLess(names.index('Select the package release track'),
                         names.index('Install upstream MSVC v142 toolset'))
-        cases = (('refs/tags/v0.93.2', 'beta', 'beta'), ('refs/tags/v0.92.9', 'stable', 'stable'),
-                 ('refs/heads/beta', '', ''), ('refs/heads/beta', 'beta', 'beta'),
-                 ('refs/tags/v0.93.2', '', None), ('refs/heads/beta', 'nightly', None),
-                 ('refs/tags/v0.93.2', 'Beta', None))
+        cases = (('refs/tags/v0.94.0-beta.1', 'beta', 'beta'), ('refs/tags/v0.94.0-rc.2', 'beta', 'beta'),
+                 ('refs/tags/v0.94.0', 'stable', 'stable'), ('refs/heads/beta', '', ''),
+                 ('refs/heads/beta', 'beta', 'beta'), ('refs/tags/v0.94.0-beta.1', '', None),
+                 ('refs/heads/beta', 'nightly', None), ('refs/tags/v0.94.0-beta.1', 'Beta', None),
+                 # The tag's version decides its track: suffixed tags are beta, plain ones stable.
+                 ('refs/tags/v0.94.0-rc.1', 'stable', None), ('refs/tags/v0.94.0', 'beta', None),
+                 ('refs/tags/v0.94.0-alpha.1', 'beta', None))
         for ref, channel, recorded in cases:
             with self.subTest(ref=ref, channel=channel), tempfile.TemporaryDirectory() as temporary:
                 environment = Path(temporary) / 'env'

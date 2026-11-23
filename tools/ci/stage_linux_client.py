@@ -14,7 +14,7 @@ import subprocess
 from binary_privacy import inspect_bytes, require_clean
 from client_features import client_feature_files
 from linux_snapshot_binaries import SETUP_NAME, setup_metadata, admit_setup_evidence
-from release_channel import CHANNELS
+from release_channel import CHANNELS, require_version_channel
 from stage_runtime_libraries import admit_runtime_libraries, relocate_runtime_evidence, runtime_records
 
 
@@ -132,6 +132,9 @@ def main():
         raise RuntimeError('Refusing to replace an existing stage')
     sources = source_archives((args.engine_source, args.dependency_source, args.packaging_source))
     identity = verify_candidate(args.candidate)
+    if args.release_channel:
+        product = json.loads((args.candidate / 'config/newHorizonsVersion.json').read_text())['version']
+        require_version_channel(product, args.release_channel, 'the product version ' + product)
     if sources[args.engine_source.name]['sha256'] != identity['source_archive_sha256']:
         raise RuntimeError('Engine source archive differs from candidate identity')
     reports = {name: public_evidence(json.loads(source.read_text()), args.candidate)

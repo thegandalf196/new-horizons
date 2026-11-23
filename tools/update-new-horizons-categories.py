@@ -23,7 +23,8 @@ def main():
         parser.error('refusing existing output or symlink')
     build.mkdir(exist_ok=True)
     metadata = json.loads((ROOT / 'Mods/new-horizons/mod.json').read_text())
-    product_version = json.loads((ROOT / 'config/newHorizonsVersion.json').read_text())['version']
+    # mod.json keeps MAJOR.MINOR.PATCH of a -beta.N or -rc.N product version.
+    product_version = json.loads((ROOT / 'config/newHorizonsVersion.json').read_text())['version'].split('-', 1)[0]
     rules = json.loads((ROOT / 'config/newHorizonsCreatureCategories.json').read_text())
     texts = json.loads((ROOT / 'config/newHorizonsCreatureCategoryTexts.json').read_text())
     if metadata['version'] != product_version or metadata['settings'].get('creatures') != {'newHorizonsCategories': rules}:

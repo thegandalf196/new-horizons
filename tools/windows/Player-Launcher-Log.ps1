@@ -145,7 +145,7 @@ function Get-NHLauncherLogPath {
 
 function Write-NHLauncherLogHeader([string]$Code) {
     $version = 'unknown'
-    try { $version = (Get-NHProductVersion $Code).ToString() } catch { }
+    try { $version = Get-NHProductVersionText $Code } catch { }
     Write-NHLauncherLog ('New Horizons launcher ' + $version + ' (Windows), code ' + $Code + ', pid ' + $PID)
     $bits = if ([Environment]::Is64BitOperatingSystem) { '64-bit' } else { '32-bit' }
     Write-NHLauncherLog ('Windows: ' + [Environment]::OSVersion.VersionString + ' ' + $bits)

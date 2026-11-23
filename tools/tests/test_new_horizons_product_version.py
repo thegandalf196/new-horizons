@@ -21,12 +21,22 @@ spec.loader.exec_module(generator)
 class ProductVersionTests(unittest.TestCase):
     def test_live_module_and_generator_share_the_root_version(self):
         version_config = json.loads((ROOT / 'config' / 'newHorizonsVersion.json').read_text(encoding='utf-8'))
-        self.assertRegex(version_config['version'], r'^\d+\.\d+\.\d+$')
+        self.assertRegex(version_config['version'], r'^\d+\.\d+\.\d+(-(beta|rc)\.[1-9]\d*)?$')
         self.assertEqual(generator.load_product_version(ROOT), version_config['version'])
-        self.assertEqual(generator.resolve_module_version(version_config['version']), version_config['version'])
+        module_version = version_config['version'].split('-', 1)[0]
+        self.assertEqual(generator.resolve_module_version(version_config['version']), module_version)
 
         live_module = json.loads((ROOT / 'Mods' / 'new-horizons' / 'mod.json').read_text(encoding='utf-8'))
-        self.assertEqual(live_module['version'], version_config['version'])
+        self.assertEqual(live_module['version'], module_version)
+
+    def test_prerelease_product_versions_keep_a_numeric_module_version(self):
+        # VCMI mod versions are X.Y.Z, so mod.json keeps a prerelease's MAJOR.MINOR.PATCH.
+        for product, module in (('0.94.0-beta.1', '0.94.0'), ('0.94.0-rc.2', '0.94.0'), ('0.94.0', '0.94.0'),
+                                ('0.94.0-beta.10', '0.94.0')):
+            self.assertEqual(generator.resolve_module_version(product), module)
+        for invalid in ('0.94.0-alpha.1', '0.94.0-beta.0', '0.94', '0.94.0-rc', 'v0.94.0'):
+            with self.subTest(version=invalid), self.assertRaises(ValueError):
+                generator.module_version_of(invalid)
 
     def test_historical_diagnostic_module_versions_remain_isolated(self):
         product_version = generator.load_product_version(ROOT)

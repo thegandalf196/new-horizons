@@ -11,6 +11,8 @@ from pathlib import Path
 import re
 import stat
 
+from PortableReleaseUpdate import release_version, version_key, version_label
+
 BUNDLED_NAME = 'CHANGELOG-New-Horizons.md'
 MAX_CHARS = 20000
 MAX_INPUT_CHARS = 200000
@@ -18,7 +20,6 @@ MAX_BUNDLED_BYTES = 1024 ** 2
 SHORTENED = '\n\n[Release notes shortened.]'
 OFFLINE = 'Release notes are not available offline.'
 MISSING = 'No release notes are available for this version.'
-VERSION = re.compile(r'(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\Z')
 
 # Control, zero-width and bidirectional formatting characters never reach the window.
 UNSAFE = re.compile(r'[\x00-\x08\x0b-\x1f\x7f-\x9f\u200b-\u200f\u202a-\u202e\u2060-\u2069\ufeff]')
@@ -78,18 +79,12 @@ def flatten(markdown, limit=MAX_CHARS):
     return shorten(text, limit) if text.strip() else None
 
 
-def release_version(release):
-    tag = release.get('tag_name') if isinstance(release, dict) else None
-    version = tag[1:] if isinstance(tag, str) and tag.startswith('v') else ''
-    return version if len(version) <= 32 and VERSION.match(version) else None
-
-
 def retained(releases, versions):
     """Plain notes of the published releases whose versions are wanted."""
     notes = {}
     for release in releases if isinstance(releases, list) else ():
         version = release_version(release)
-        if version in versions and version not in notes and release.get('draft') is False:
+        if version is not None and version in versions and version not in notes and release.get('draft') is False:
             text = flatten(release.get('body'))
             if text:
                 notes[version] = text
@@ -113,16 +108,13 @@ def bundled(package, version):
 
 
 def changelog_section(text, version):
-    heading = re.compile(r'^##[ \t]+v?' + re.escape(version) + r'(?![0-9.])[^\n]*$', re.M)
+    # 0.94.0 must not take the heading of 0.94.0-beta.1, nor beta.1 that of beta.10.
+    heading = re.compile(r'^##[ \t]+v?' + re.escape(version) + r'(?![0-9A-Za-z.-])[^\n]*$', re.M)
     found = heading.search(text)
     if found is None:
         return None
     following = re.compile(r'^##?[ \t]', re.M).search(text, found.end())
     return flatten(text[found.end():following.start() if following else len(text)])
-
-
-def version_key(version):
-    return tuple(map(int, version.split('.')))
 
 
 def compose(track, installed, offer=None, fetched=None, offline=None):
@@ -142,6 +134,6 @@ def compose(track, installed, offer=None, fetched=None, offline=None):
         sections.append('No beta is installed yet.' if track == 'beta' else 'No stable version is installed yet.')
     for version in sorted(entries, key=version_key, reverse=True):
         text = (fetched or {}).get(version) or (offline if version == installed else None)
-        heading = f'Version {version} ({entries[version]})'
+        heading = f'Version {version_label(version)} ({entries[version]})'
         sections.append(heading + '\n' + '=' * len(heading) + '\n\n' + (text or (MISSING if fetched is not None else OFFLINE)))
     return '\n\n\n'.join(sections)

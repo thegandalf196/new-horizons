@@ -19,12 +19,24 @@ DIAGNOSTIC_MODULE_VERSIONS = {
 }
 
 
+# The product version: MAJOR.MINOR.PATCH, with -beta.N or -rc.N for Beta-track prereleases.
+PRODUCT_VERSION = re.compile(r'((?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*))(?:-(?:beta|rc)\.[1-9][0-9]{0,8})?')
+
+
 def load_product_version(root):
     version_config = json.loads((root / 'config' / 'newHorizonsVersion.json').read_text(encoding='utf-8'))
     version = version_config.get('version')
-    if not isinstance(version, str) or not version.strip():
-        raise ValueError('config/newHorizonsVersion.json must provide a non-empty product version string')
+    if not isinstance(version, str) or not PRODUCT_VERSION.fullmatch(version):
+        raise ValueError('config/newHorizonsVersion.json must provide MAJOR.MINOR.PATCH with an optional -beta.N or -rc.N')
     return version
+
+
+def module_version_of(product_version):
+    """The mod.json version: VCMI mod versions are X.Y.Z, so a prerelease keeps its MAJOR.MINOR.PATCH."""
+    found = PRODUCT_VERSION.fullmatch(product_version)
+    if found is None:
+        raise ValueError('Invalid New Horizons product version: ' + product_version)
+    return found.group(1)
 
 
 def get_diagnostic_kind(args):
@@ -39,7 +51,7 @@ def get_diagnostic_kind(args):
 
 def resolve_module_version(product_version, diagnostic_kind=None):
     if diagnostic_kind is None:
-        return product_version
+        return module_version_of(product_version)
     try:
         return DIAGNOSTIC_MODULE_VERSIONS[diagnostic_kind]
     except KeyError as error:

@@ -67,7 +67,7 @@ class LinuxPortableReleaseLauncherTest(unittest.TestCase):
         self.assertEqual(launcher.choose_runtime(self.original), self.updated)
         self.assertFalse(self.request.exists())
         self.assertEqual(list(self.store.glob('.accepted-update-*.json')), [])
-        self.assertEqual(launcher.version(self.original), (0, 92, 3))
+        self.assertEqual(launcher.version_text(self.original), '0.92.3')
 
     def test_failed_probe_leaves_current_version_and_cleans_ephemeral_request(self):
         offer = self.accept()
@@ -292,48 +292,92 @@ class LinuxPortableReleaseLauncherTest(unittest.TestCase):
                             'browser_download_url': root + 'download/v' + version + '/' + name}]}
 
     def test_beta_check_offers_only_the_newest_published_prerelease(self):
-        releases = [self.release('0.94.0'), self.release('0.93.1', draft=True, prerelease=True),
-                    self.release('0.93.0', prerelease=True), {'tag_name': 'nonsense'}, 'not a release']
+        # A beta needs both a -beta.N version and the prerelease flag; either alone is ignored.
+        releases = [self.release('0.94.0'), self.release('0.94.0-beta.3'), self.release('0.94.0-beta.2', draft=True, prerelease=True),
+                    self.release('0.94.0-beta.1', prerelease=True), self.release('0.93.9', prerelease=True),
+                    {'tag_name': 'nonsense'}, 'not a release']
         with patch.object(launcher, 'recent_releases', return_value=releases) as listed:
             offer = launcher.check_release(self.original, channel='beta')
         self.assertEqual(listed.call_args.kwargs['timeout'], launcher.REQUEST_TIMEOUT)
-        self.assertEqual((offer['version'], offer['channel'], offer['format']), ('0.93.0', 'beta', 2))
-        missing = dict(self.release('0.93.2'))
+        self.assertEqual((offer['version'], offer['channel'], offer['format']), ('0.94.0-beta.1', 'beta', 2))
+        missing = dict(self.release('0.94.0-beta.4'))
         del missing['prerelease']
-        self.assertEqual(launcher.release_version(launcher.newest_beta([*releases, missing])), '0.93.0')
+        self.assertEqual(launcher.release_version(launcher.newest_beta([*releases, missing])), '0.94.0-beta.1')
         self.assertIsNone(launcher.newest_beta([self.release('0.94.0')]))
         with self.assertRaisesRegex(ValueError, 'Expected a published beta'):
             launcher.release_offer(self.original, self.release('0.94.0'), 'beta')
+        with self.assertRaisesRegex(ValueError, 'Invalid official release version'):
+            launcher.release_offer(self.original, self.release('0.93.9', prerelease=True), 'beta')
+        with self.assertRaisesRegex(ValueError, 'Invalid official release version'):
+            launcher.release_offer(self.original, self.release('0.94.0-beta.1'), 'stable')
+
+    def test_beta_precedence_sorts_betas_before_their_release(self):
+        releases = [self.release(version, prerelease=True)
+                    for version in ('0.94.0-beta.9', '0.94.0-beta.10', '0.94.0-beta.2', '0.93.2-beta.11')]
+        self.assertEqual(launcher.release_version(launcher.newest_beta(releases)), '0.94.0-beta.10')
+
+    def test_beta_track_offers_a_release_candidate_and_stable_never_does(self):
+        releases = [self.release('0.94.0-rc.2'), self.release('0.94.0-rc.1', prerelease=True),
+                    self.release('0.94.0-beta.10', prerelease=True)]
+        with patch.object(launcher, 'recent_releases', return_value=releases):
+            self.assertEqual(launcher.check_release(self.original, channel='beta')['version'], '0.94.0-rc.1')
+        with patch.object(launcher, 'latest_release', return_value=self.release('0.94.0-rc.1', prerelease=True)):
+            with self.assertRaises(ValueError):
+                launcher.check_release(self.original)
+        # A release candidate without the prerelease flag is a flag mismatch, never a stable offer.
+        with patch.object(launcher, 'latest_release', return_value=self.release('0.94.0-rc.2')):
+            with self.assertRaisesRegex(ValueError, 'Invalid official release version'):
+                launcher.check_release(self.original)
+        import PortableLauncherWindow as desktop
+        status = unittest.mock.Mock()
+        state = SimpleNamespace(channel='beta', offer=None, fetched={'beta': None}, install=unittest.mock.Mock(),
+                                status=status, package=self.original)
+        desktop.LauncherWindow.checked(state, 'beta', {'version': '0.94.0-rc.1'}, {})
+        status.set_text.assert_called_with('0.94.0 Release Candidate 1 is available.')
+        desktop.LauncherWindow.checked(state, 'beta', {'version': '0.93.1'}, {})
+        status.set_text.assert_called_with('Beta 0.93.1 is available.')
 
     def test_promoted_stable_is_never_offered_to_a_beta_player(self):
-        # 0.93.5 was promoted to Stable 0.94.0; the beta player on 0.93.6 waits for 0.95.0.
-        offer = dict(self.accept('0.93.6'), channel='beta', format=2)
-        self.make_package(self.updated, '0.93.6')
+        # 0.94.0-beta.5 was promoted to Stable 0.94.0; the beta player waits for 0.95.0-beta.1.
+        offer = dict(self.accept('0.94.0-beta.5'), channel='beta', format=2)
+        self.make_package(self.updated, '0.94.0-beta.5')
         launcher.install_release(self.original, offer)
         baseline = launcher.track_baseline(self.original, 'beta')
         self.assertEqual(baseline, self.updated)
-        published = [self.release('0.94.0'), self.release('0.93.6', prerelease=True),
-                     self.release('0.93.5', prerelease=True), self.release('0.92.8')]
+        published = [self.release('0.94.0'), self.release('0.94.0-beta.5', prerelease=True),
+                     self.release('0.94.0-beta.4', prerelease=True), self.release('0.92.8')]
         with patch.object(launcher, 'recent_releases', return_value=published):
             self.assertIsNone(launcher.check_release(baseline, channel='beta'))
-        with patch.object(launcher, 'recent_releases', return_value=[self.release('0.95.0', prerelease=True), *published]):
-            self.assertEqual(launcher.check_release(baseline, channel='beta')['version'], '0.95.0')
-        # An empty beta track still needs a beta newer than the installed stable.
+        with patch.object(launcher, 'recent_releases', return_value=[self.release('0.95.0-beta.1', prerelease=True), *published]):
+            self.assertEqual(launcher.check_release(baseline, channel='beta')['version'], '0.95.0-beta.1')
+        # An empty beta track still needs a beta newer than the installed stable (0.92.3).
         self.assertEqual(launcher.track_baseline(self.original, 'stable'), self.original)
-        with patch.object(launcher, 'recent_releases', return_value=[self.release('0.92.2', prerelease=True)]):
+        with patch.object(launcher, 'recent_releases', return_value=[self.release('0.92.3-beta.1', prerelease=True)]):
             self.assertIsNone(launcher.check_release(self.original, channel='beta'))
         # The Stable track still takes the promoted release.
         with patch.object(launcher, 'latest_release', return_value=self.release('0.94.0')):
             self.assertEqual(launcher.check_release(self.original)['version'], '0.94.0')
-        with patch.object(launcher, 'latest_release', return_value=self.release('0.93.0', prerelease=True)):
+
+    def test_new_launcher_on_an_unsuffixed_beta_moves_to_the_first_suffixed_beta(self):
+        # A 0.93.x beta package with the new launcher: 0.93.2 < 0.94.0-beta.1.
+        self.make_beta_package('0.93.2')
+        with patch.object(launcher, 'recent_releases', return_value=[self.release('0.94.0-beta.1', prerelease=True)]):
+            offer = launcher.check_release(launcher.track_baseline(self.original, 'beta'), channel='beta')
+        self.assertEqual(offer['version'], '0.94.0-beta.1')
+        offer = self.accept('0.94.0-beta.1') | {'channel': 'beta', 'format': 2}
+        self.make_package(self.updated, '0.94.0-beta.1')
+        self.assertEqual(launcher.install_release(self.original, offer), self.updated)
+        self.assertEqual(launcher.version_text(launcher.choose_runtime(self.original, 'beta')), '0.94.0-beta.1')
+
+        with patch.object(launcher, 'latest_release', return_value=self.release('0.94.0-beta.1', prerelease=True)):
             with self.assertRaises(ValueError):
                 launcher.check_release(self.original)
-        with patch.object(launcher, 'recent_releases', return_value=[self.release('0.92.3', prerelease=True)]):
+        with patch.object(launcher, 'recent_releases', return_value=[self.release('0.92.3-beta.1', prerelease=True)]):
             self.assertIsNone(launcher.check_release(self.original, channel='beta'))
 
     def test_beta_install_selects_only_the_beta_track(self):
-        offer = dict(self.accept('0.93.0'), channel='beta')
-        self.make_package(self.updated, '0.93.0')
+        offer = dict(self.accept('0.94.0-beta.1'), channel='beta')
+        self.make_package(self.updated, '0.94.0-beta.1')
         self.assertIsNone(launcher.choose_runtime(self.original, 'beta'))
         self.assertEqual(launcher.install_release(self.original, offer), self.updated)
         self.assertFalse(self.selection.exists())
@@ -364,7 +408,7 @@ class LinuxPortableReleaseLauncherTest(unittest.TestCase):
         self.assertNotIn('--assets', chooser)
         self.assertNotIn('--assets', own)
 
-    def make_beta_package(self, version='0.93.1'):
+    def make_beta_package(self, version='0.94.0-beta.1'):
         self.make_package(self.original, version)
         (self.original / 'BUILD-IDENTITY.json').write_text(json.dumps({'source_commit': 'a' * 40, 'release_channel': 'beta'}))
 
@@ -410,10 +454,10 @@ class LinuxPortableReleaseLauncherTest(unittest.TestCase):
 
     def test_beta_package_installs_newer_betas_and_plays_the_beta_profile(self):
         self.make_beta_package()
-        offer = dict(self.accept('0.93.1'), channel='beta', format=2)
+        offer = dict(self.accept('0.94.0-beta.1'), channel='beta', format=2)
         self.assertEqual(launcher.install_release(self.original, offer), self.original)
-        offer = dict(self.accept('0.93.2'), channel='beta', format=2)
-        self.make_package(self.updated, '0.93.2')
+        offer = dict(self.accept('0.94.0-beta.2'), channel='beta', format=2)
+        self.make_package(self.updated, '0.94.0-beta.2')
         self.assertEqual(launcher.install_release(self.original, offer), self.updated)
         self.assertFalse(self.selection.exists())
         self.assertEqual(launcher.choose_runtime(self.original, 'beta'), self.updated)
@@ -443,7 +487,7 @@ class LinuxPortableReleaseLauncherTest(unittest.TestCase):
                                 check_clicked=unittest.mock.Mock())
         state.refresh_version = lambda: desktop.LauncherWindow.refresh_version(state)
         state.refresh_version()
-        label.set_text.assert_called_with('Beta 0.93.1 · separate saves')
+        label.set_text.assert_called_with('0.94.0 Beta 1 · separate saves')
         desktop.LauncherWindow.track_changed(state, SimpleNamespace(get_selected=lambda: 0), None)
         self.assertIsNone(state.package)
         label.set_text.assert_called_with('No stable version installed yet. Check for updates to find one.')

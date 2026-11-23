@@ -144,7 +144,7 @@ class CreatureCategoryDataTest(unittest.TestCase):
                     self.assertFalse(missing.exists())
         self.assertNotEqual(subprocess.run([sys.executable, str(script), '--output', str(live)], capture_output=True).returncode, 0)
         self.assertEqual(live.read_bytes(), before)
-        self.assertEqual(json.loads(before)['version'], load('config/newHorizonsVersion.json')['version'])
+        self.assertEqual(json.loads(before)['version'], load('config/newHorizonsVersion.json')['version'].split('-', 1)[0])
         self.assertEqual(json.loads(before)['settings']['creatures'],
                          {'newHorizonsCategories': self.rules})
 

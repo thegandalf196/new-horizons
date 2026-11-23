@@ -34,7 +34,7 @@ DOWNLOAD_FIXTURE = r'''function Invoke-UpdateDownload([string]$URL, [string]$Out
 # Serves the beta tag metadata and the archive; any other release API is an error.
 BETA_TAG_FIXTURE = r'''function Invoke-UpdateDownload([string]$URL, [string]$Output, [long]$MaximumBytes, [long]$ExactBytes = 0) {
     [IO.File]::AppendAllText($env:NH_UPDATE_DOWNLOAD_LOG, $URL + [Environment]::NewLine)
-    if ($URL -ceq (Get-UpdateReleaseTagAPI '0.93.0')) { [IO.File]::Copy($env:NH_UPDATE_METADATA, $Output); return }
+    if ($URL -ceq (Get-UpdateReleaseTagAPI $env:NH_UPDATE_VERSION)) { [IO.File]::Copy($env:NH_UPDATE_METADATA, $Output); return }
     if ($URL.StartsWith('https://api.github.com/')) { throw 'Unexpected release metadata request' }
     [IO.File]::Copy($env:NH_UPDATE_ARCHIVE, $Output)
 }
@@ -57,8 +57,12 @@ class WindowsPortableReleaseUpdateTest(unittest.TestCase):
         self.metadata = self.root / 'metadata.json'
         self.revision = 'a' * 40
         self.name = 'New-Horizons-Windows-x64-' + self.revision[:12] + '.zip'
-        self.offer = {'format': 1, 'version': '0.93.0', 'name': self.name,
-                      'url': 'https://github.com/thegandalf196/new-horizons/releases/download/v0.93.0/' + self.name,
+        self.use_version('0.93.0')
+
+    def use_version(self, version):
+        self.version = version
+        self.offer = {'format': 1, 'version': version, 'name': self.name,
+                      'url': 'https://github.com/thegandalf196/new-horizons/releases/download/v' + version + '/' + self.name,
                       'bytes': 1, 'sha256': 'a' * 64}
 
     def archive(self, changes=None, extra=None, duplicate=None, broken_hash=False, missing=None):
@@ -76,7 +80,7 @@ class WindowsPortableReleaseUpdateTest(unittest.TestCase):
                  'runtime/Mods/new-horizons/NewHorizons.nhart': struct.pack('<8sIIQQ', b'NHART\r\n\x1a', 1, 0, 32, 1),
                  'runtime/config/newHorizonsCombat.json': b'{}', 'runtime/config/schemas/newHorizonsCombat.json': b'{}',
                  'runtime/config/newHorizonsMagic.json': b'{}', 'runtime/config/schemas/newHorizonsMagic.json': b'{}',
-                 'runtime/config/newHorizonsVersion.json': json.dumps({'version': '0.93.0'}).encode(),
+                 'runtime/config/newHorizonsVersion.json': json.dumps({'version': self.version}).encode(),
                  'runtime/BUILD-IDENTITY.json': json.dumps({'project': 'Heroes III: New Horizons',
                      'platform': 'Windows x64', 'source_commit': self.revision}).encode()}
         files.update(changes or {})
@@ -102,7 +106,8 @@ class WindowsPortableReleaseUpdateTest(unittest.TestCase):
     def write_inputs(self, metadata_changes=None):
         self.request.write_text(json.dumps(self.offer))
         release = {'draft': False, 'prerelease': False, 'published_at': '2026-11-19T00:00:00Z',
-                   'tag_name': 'v0.93.0', 'html_url': 'https://github.com/thegandalf196/new-horizons/releases/tag/v0.93.0',
+                   'tag_name': 'v' + self.version,
+                   'html_url': 'https://github.com/thegandalf196/new-horizons/releases/tag/v' + self.version,
                    'assets': [{'name': self.offer['name'], 'state': 'uploaded', 'size': self.offer['bytes'],
                        'digest': 'sha256:' + self.offer['sha256'], 'browser_download_url': self.offer['url']}]}
         release.update(metadata_changes or {})
@@ -119,7 +124,7 @@ $ErrorActionPreference = 'Stop'
         environment = dict(os.environ, NH_UPDATE_WORKER=str(WORKER), NH_UPDATE_METADATA=str(self.metadata),
                            NH_UPDATE_ARCHIVE=str(self.source), NH_UPDATE_STORE=str(self.store),
                            NH_UPDATE_REQUEST=str(self.request), NH_UPDATE_FAIL=str(int(download_failure)),
-                           NH_UPDATE_DOWNLOAD_LOG=str(self.root / 'downloads.txt'))
+                           NH_UPDATE_DOWNLOAD_LOG=str(self.root / 'downloads.txt'), NH_UPDATE_VERSION=self.version)
         environment.update(extra_env or {})
         return subprocess.run([POWERSHELL, '-NoLogo', '-NoProfile', '-NonInteractive', '-File', str(harness)],
                               env=environment, text=True, capture_output=True, timeout=30, check=False)
@@ -533,6 +538,7 @@ try { Write-Output 'released failed member' } finally { $exclusive.Dispose() }
         self.assert_rejected()
 
     def test_beta_request_revalidates_its_own_tag_and_accepts_only_a_prerelease(self):
+        self.use_version('0.94.0-beta.1')
         self.offer.update(format=2, channel='beta')
         self.archive()
         self.write_inputs({'prerelease': True, 'draft': True})
@@ -543,8 +549,8 @@ try { Write-Output 'released failed member' } finally { $exclusive.Dispose() }
         self.write_inputs({'prerelease': True})
         result = self.execute(BETA_TAG_FIXTURE)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertEqual(json.loads(result.stdout)['version'], '0.93.0')
-        tag = 'https://api.github.com/repos/thegandalf196/new-horizons/releases/tags/v0.93.0'
+        self.assertEqual(json.loads(result.stdout)['version'], '0.94.0-beta.1')
+        tag = 'https://api.github.com/repos/thegandalf196/new-horizons/releases/tags/v0.94.0-beta.1'
         # Both rejected requests and the accepted one each read the tag once; only the beta downloads.
         self.assertEqual((self.root / 'downloads.txt').read_text().splitlines(), [tag, tag, tag, self.offer['url']])
 
@@ -565,6 +571,39 @@ try { Write-Output 'released failed member' } finally { $exclusive.Dispose() }
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertNotIn('/tags/', (self.root / 'downloads.txt').read_text())
         self.assertNotEqual(self.execute("Get-UpdateReleaseTagAPI '0.93.0/../latest'").returncode, 0)
+
+    def test_version_precedence_and_track_suffix_rules(self):
+        ordered = ['0.92.8', '0.93.2', '0.94.0-beta.1', '0.94.0-beta.2', '0.94.0-beta.9', '0.94.0-beta.10',
+                   '0.94.0-rc.1', '0.94.0-rc.2', '0.94.0-rc.10', '0.94.0', '0.94.1', '0.95.0-beta.1', '1.0.0']
+        invalid = ['0.94.0-beta.0', '0.94.0-beta.01', '0.94.0-beta', '0.94.0-rc.0', '0.94.0-rc', '0.94.0-alpha.1',
+                   '0.94.0-Beta.1', '0.94.0-RC.1', '0.94.0+1', '0.94', '00.94.0', 'v0.94.0', '0.94.0-beta.1 ', '',
+                   '0.94.0-beta.1.1', '0.94.0-rc.1-beta.1', '0.94.0-beta.1234567890', '9' * 20 + '.0.0']
+        result = self.execute(r'''
+$ordered = ConvertFrom-Json $env:NH_ORDERED
+$sorted = @(@($ordered)[($ordered.Count - 1)..0] | Sort-Object { ConvertTo-NHReleaseVersion $_ })
+$invalid = @((ConvertFrom-Json $env:NH_INVALID) | Where-Object { $null -ne (ConvertTo-NHReleaseVersion $_) })
+[ordered]@{sorted=$sorted; accepted=$invalid; beta=(Test-NHBetaVersion '0.94.0-beta.1') -and (Test-NHBetaVersion '0.94.0-rc.1');
+    stable=(Test-NHBetaVersion '0.94.0');
+    tag=(Get-UpdateReleaseTagAPI '0.94.0-beta.1');
+    text=(Get-UpdateReleaseVersionText ([PSCustomObject]@{tag_name='v0.94.0-beta.3'}));
+    untagged=(Get-UpdateReleaseVersionText ([PSCustomObject]@{tag_name='0.94.0'}))} | ConvertTo-Json -Compress
+''', extra_env={'NH_ORDERED': json.dumps(ordered), 'NH_INVALID': json.dumps(invalid)})
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        report = json.loads(result.stdout)
+        self.assertEqual(report['sorted'], ordered)
+        self.assertIn(report['accepted'], ([], None))
+        self.assertEqual((report['beta'], report['stable']), (True, False))
+        self.assertEqual(report['tag'], 'https://api.github.com/repos/thegandalf196/new-horizons/releases/tags/v0.94.0-beta.1')
+        self.assertEqual((report['text'], report['untagged']), ('0.94.0-beta.3', None))
+        # A beta request names a -beta.N version; a stable request never does.
+        self.archive()
+        accepted = dict(self.offer)
+        for change in ({'format': 2, 'channel': 'beta'}, {'version': '0.94.0-beta.1'}, {'version': '0.94.0-rc.1'},
+                       {'format': 2, 'channel': 'stable', 'version': '0.94.0-rc.1'}):
+            with self.subTest(change=change):
+                self.offer = dict(accepted, **change)
+                self.write_inputs()
+                self.assertNotEqual(self.execute('$null = Read-UpdateRequest $env:NH_UPDATE_REQUEST').returncode, 0)
 
     def test_partial_download_is_cleaned_without_replacing_existing_content(self):
         self.archive()

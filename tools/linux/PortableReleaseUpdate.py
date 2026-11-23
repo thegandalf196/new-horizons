@@ -39,7 +39,9 @@ MAX_JSON_BYTES = 1024 ** 2
 MAX_MANIFEST_BYTES = 8 * 1024 ** 2
 CHUNK_BYTES = 1024 ** 2
 ASSET_NAME = re.compile(r'New-Horizons-Linux-x64-([0-9a-f]{12})\.tar\.gz\Z')
-VERSION = re.compile(r'(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\Z')
+# Stable releases are MAJOR.MINOR.PATCH; Beta-track prereleases add -beta.N or -rc.N.
+VERSION = re.compile(r'(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-(beta|rc)\.([1-9][0-9]{0,8}))?\Z')
+PRERELEASES = {'beta': (0, 'Beta'), 'rc': (1, 'Release Candidate')}  # (precedence, player-facing name)
 SHA256 = re.compile(r'[0-9a-f]{64}\Z')
 DOWNLOAD_HOSTS = frozenset(('github.com', 'objects.githubusercontent.com', 'release-assets.githubusercontent.com'))
 PLAYER_EXECUTABLES = ('Play-New-Horizons.sh', 'new-horizons', 'new-horizons-setup', 'new-horizons-launch.sh')
@@ -49,6 +51,37 @@ PLAYER_FILES = (*PLAYER_EXECUTABLES, 'PortableReleaseLauncher.py', 'PortableRele
                 'config/newHorizonsCombat.json', 'config/newHorizonsMagic.json', 'config/newHorizonsVersion.json',
                 'Mods/vcmi/mod.json', 'Mods/new-horizons/mod.json', 'Mods/new-horizons/NewHorizons.nhart',
                 'BUILD-IDENTITY.json', 'new-horizons.features')
+
+
+def version_key(text):
+    """Semantic-version precedence of a release version, or None for anything else:
+    0.94.0-beta.9 < 0.94.0-beta.10 < 0.94.0-rc.1 < 0.94.0-rc.2 < 0.94.0."""
+    found = VERSION.match(text) if isinstance(text, str) and len(text) <= 32 else None
+    if found is None:
+        return None
+    major, minor, patch, kind, number = found.groups()
+    rank = (PRERELEASES[kind][0], int(number)) if kind else (2, 0)
+    return (int(major), int(minor), int(patch), *rank)
+
+
+def is_beta_version(text):
+    """Whether a version belongs on the Beta track: a -beta.N or -rc.N prerelease."""
+    key = version_key(text)
+    return key is not None and key[3] < 2
+
+
+def version_label(text):
+    """The player-facing name: 0.94.0-beta.3 is 0.94.0 Beta 3, 0.94.0-rc.1 is 0.94.0 Release Candidate 1."""
+    found = VERSION.match(text) if version_key(text) else None
+    if found is None or not found.group(4):
+        return text
+    return f'{text.split("-", 1)[0]} {PRERELEASES[found.group(4)][1]} {found.group(5)}'
+
+
+def release_version(release):
+    """The version of a release-shaped object tagged vVERSION, or None."""
+    tag = release.get('tag_name') if isinstance(release, dict) else None
+    return tag[1:] if isinstance(tag, str) and tag.startswith('v') and version_key(tag[1:]) else None
 
 
 def require(condition, message):
@@ -88,7 +121,7 @@ class ReleaseRedirects(HTTPRedirectHandler):
 
 
 def tag_url(version):
-    require(isinstance(version, str) and VERSION.fullmatch(version), 'Invalid release version')
+    require(version_key(version) is not None, 'Invalid release version')
     return API_ROOT + '/tags/v' + version
 
 
@@ -137,8 +170,9 @@ def request_data(path):
             'Unsupported update request')
     request.setdefault('channel', 'stable')
     require(request['channel'] in CHANNELS, 'Unknown release track')
-    require(isinstance(request['version'], str) and len(request['version']) <= 32
-            and VERSION.fullmatch(request['version']), 'Invalid release version')
+    require(version_key(request['version']) is not None, 'Invalid release version')
+    # The Beta track takes -beta.N and -rc.N versions; a stable release has no suffix.
+    require(is_beta_version(request['version']) == (request['channel'] == 'beta'), 'Release version differs from its track')
     require(isinstance(request['name'], str) and ASSET_NAME.fullmatch(request['name']), 'Invalid Linux release name')
     require(type(request['bytes']) is int and 0 < request['bytes'] <= MAX_ARCHIVE_BYTES, 'Invalid release size')
     require(isinstance(request['sha256'], str) and SHA256.fullmatch(request['sha256']), 'Invalid release digest')

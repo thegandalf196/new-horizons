@@ -159,14 +159,37 @@ class CheckNotesTest(unittest.TestCase):
         self.assertEqual(wanted, {'0.92.7': 'Installed'})
 
     def test_beta_check_retains_installed_beta_and_offer_but_not_drafts_or_others(self):
-        releases = [release('0.93.2', 'Draft', prerelease=True, draft=True), release('0.93.1', 'Offer', prerelease=True),
-                    release('0.93.0', 'Installed beta', prerelease=True), release('0.92.9', 'Other'),
+        releases = [release('0.94.0-beta.3', 'Draft', prerelease=True, draft=True),
+                    release('0.94.0-beta.2', 'Offer', prerelease=True),
+                    release('0.94.0-beta.1', 'Installed beta', prerelease=True), release('0.92.9', 'Other'),
                     release('0.92.8', {'not': 'text'}), 'nonsense']
-        wanted = dict.fromkeys(['0.93.0', '0.92.8'])
+        wanted = dict.fromkeys(['0.94.0-beta.1', '0.92.8'])
         with patch.object(launcher, 'recent_releases', return_value=releases):
             offer = launcher.check_release(self.package, channel='beta', notes=wanted)
-        self.assertEqual(offer['version'], '0.93.1')
-        self.assertEqual(wanted, {'0.93.0': 'Installed beta', '0.92.8': None, '0.93.1': 'Offer'})
+        self.assertEqual(offer['version'], '0.94.0-beta.2')
+        self.assertEqual(wanted, {'0.94.0-beta.1': 'Installed beta', '0.92.8': None, '0.94.0-beta.2': 'Offer'})
+
+    def test_changelog_sections_never_take_a_neighbouring_suffixed_version(self):
+        text = ('# Changelog\n\n## 0.94.0\n\nStable notes.\n\n## 0.94.0-beta.10 Beta\n\nTenth.\n\n'
+                '## 0.94.0-beta.1 Beta\n\nFirst.\n\n## 0.93.2 Beta\n\nOld.\n')
+        self.assertEqual(notes.changelog_section(text, '0.94.0'), 'Stable notes.')
+        self.assertEqual(notes.changelog_section(text, '0.94.0-beta.1'), 'First.')
+        self.assertEqual(notes.changelog_section(text, '0.94.0-beta.10'), 'Tenth.')
+        self.assertIsNone(notes.changelog_section(text, '0.94.0-beta.2'))
+        self.assertEqual(notes.changelog_section(text + '\n## 0.94.0-rc.1\n\nCandidate.\n', '0.94.0-rc.1'), 'Candidate.')
+        # Installed older versions keep their legacy headings.
+        legacy = text + '\n## 0.93.1 Beta\n\nLegacy beta.\n\n## 0.92.8 Early Access\n\nEarly access.\n'
+        self.assertEqual(notes.changelog_section(legacy, '0.93.1'), 'Legacy beta.')
+        self.assertEqual(notes.changelog_section(legacy, '0.92.8'), 'Early access.')
+        self.assertIsNone(notes.changelog_section(legacy, '0.92.80'))
+        # Newest first by precedence, not by text, under player-facing names.
+        composed = notes.compose('beta', '0.94.0-beta.9', '0.94.0-rc.1', {})
+        self.assertLess(composed.index('Version 0.94.0 Release Candidate 1 (available update)'),
+                        composed.index('Version 0.94.0 Beta 9 (installed)'))
+        composed = notes.compose('beta', '0.94.0-beta.9', '0.94.0-beta.10', {})
+        self.assertLess(composed.index('Version 0.94.0 Beta 10'), composed.index('Version 0.94.0 Beta 9'))
+        composed = notes.compose('stable', '0.94.0', None, None, 'x')
+        self.assertIn('Version 0.94.0 (installed)', composed)
 
     def test_check_worker_prints_offer_and_notes_only_when_asked(self):
         def check(original, channel, notes=None):

@@ -293,10 +293,25 @@ class LinuxPortableUpdateTest(unittest.TestCase):
         self.metadata['assets'] *= 2
         self.rejected()
 
+    def use_version(self, version):
+        self.files['config/newHorizonsVersion.json'] = json.dumps({'version': version}).encode()
+        self.archive = self.make_archive()
+
+    def tagged(self, version, **changes):
+        release = self.latest()
+        release.update(tag_name='v' + version, html_url=update.RELEASE_ROOT + 'tag/v' + version, **changes)
+        release['assets'][0]['browser_download_url'] = self.request['url']
+        return release
+
     def test_beta_request_revalidates_its_own_tag_and_accepts_only_a_prerelease(self):
-        self.request = self.write_request(format=2, channel='beta')
-        self.metadata = dict(self.latest(), prerelease=True)
-        tag = update.tag_url('0.93.0')
+        version = '0.94.0-beta.1'
+        self.use_version(version)
+        self.request = self.write_request(format=2, channel='beta', version=version, bytes=len(self.archive),
+                                          sha256=checksum(self.archive),
+                                          url=update.RELEASE_ROOT + 'download/v' + version + '/' + self.request['name'])
+        self.metadata = self.tagged(version, prerelease=True)
+        tag = update.tag_url(version)
+        self.assertEqual(tag, update.API_ROOT + '/tags/v0.94.0-beta.1')
         def transport(request, timeout):
             if request.full_url == tag:
                 self.calls.append(request.full_url)
@@ -304,7 +319,7 @@ class LinuxPortableUpdateTest(unittest.TestCase):
             self.assertNotEqual(request.full_url, update.LATEST_URL)
             return self.transport(request, timeout)
         result = update.prepare_update(self.store, self.request_path, transport)
-        self.assertEqual((result['version'], self.calls[0]), ('0.93.0', tag))
+        self.assertEqual((result['version'], self.calls[0]), (version, tag))
         self.metadata['draft'] = True
         with self.assertRaises(ValueError):
             update.prepare_update(self.store, self.request_path, transport)
@@ -312,6 +327,31 @@ class LinuxPortableUpdateTest(unittest.TestCase):
         self.metadata.update(draft=False, prerelease=False)
         with self.assertRaisesRegex(ValueError, 'Expected a published beta'):
             update.prepare_update(self.store, self.request_path, transport)
+
+    def test_version_precedence_and_track_suffix_rules(self):
+        ordered = ['0.92.8', '0.93.2', '0.94.0-beta.1', '0.94.0-beta.2', '0.94.0-beta.9', '0.94.0-beta.10',
+                   '0.94.0-rc.1', '0.94.0-rc.2', '0.94.0-rc.10', '0.94.0', '0.94.1', '0.95.0-beta.1', '1.0.0']
+        self.assertEqual(sorted(reversed(ordered), key=update.version_key), ordered)
+        for text in ('0.94.0-beta.0', '0.94.0-beta.01', '0.94.0-beta', '0.94.0-rc.0', '0.94.0-rc', '0.94.0-alpha.1',
+                     '0.94.0-Beta.1', '0.94.0-RC.1', '0.94.0+1', '0.94', '00.94.0', 'v0.94.0', '0.94.0-beta.1 ', '',
+                     None, 94, '0.94.0-beta.1.1', '0.94.0-rc.1-beta.1', '0.94.0-beta.1234567890', '9' * 33):
+            with self.subTest(text=text):
+                self.assertIsNone(update.version_key(text))
+        self.assertTrue(update.is_beta_version('0.94.0-beta.1'))
+        self.assertTrue(update.is_beta_version('0.94.0-rc.1'))
+        self.assertFalse(update.is_beta_version('0.94.0'))
+        for text, label in (('0.94.0-beta.3', '0.94.0 Beta 3'), ('0.94.0-rc.1', '0.94.0 Release Candidate 1'),
+                            ('0.94.0', '0.94.0'), ('0.93.1', '0.93.1')):
+            self.assertEqual(update.version_label(text), label)
+        self.assertEqual(update.release_version({'tag_name': 'v0.94.0-beta.3'}), '0.94.0-beta.3')
+        self.assertIsNone(update.release_version({'tag_name': '0.94.0'}))
+        # A beta request names a -beta.N version; a stable request never does.
+        for change in ({'format': 2, 'channel': 'beta'}, {'version': '0.94.0-beta.1'}, {'version': '0.94.0-rc.1'},
+                       {'format': 2, 'channel': 'stable', 'version': '0.94.0-rc.1'}):
+            with self.subTest(change=change):
+                self.request = self.write_request(**change)
+                with self.assertRaisesRegex(ValueError, 'Release version differs from its track'):
+                    update.request_data(self.request_path)
 
     def test_track_requests_cannot_mix_formats_name_unknown_tracks_or_take_a_stable_prerelease(self):
         for change in ({'format': 1, 'channel': 'beta'}, {'format': 2}, {'format': 2, 'channel': 'nightly'}):

@@ -82,7 +82,7 @@ class MasteryDataTest(unittest.TestCase):
         self.assertEqual(schema['definitions']['option']['properties']['effect']['enum'],
                          ['volley', 'precision', 'repair'])
         module = load('Mods/new-horizons/mod.json')
-        self.assertEqual(module['version'], load('config/newHorizonsVersion.json')['version'])
+        self.assertEqual(module['version'], load('config/newHorizonsVersion.json')['version'].split('-', 1)[0])
         self.assertEqual(module['settings']['heroes']['newHorizonsMasteries'], load('config/newHorizonsMasteries.json'))
         expected = load('config/newHorizonsMasteryTexts.json')
         expected.update(load('config/newHorizonsCreatureCategoryTexts.json'))

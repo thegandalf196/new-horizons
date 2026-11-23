@@ -78,8 +78,9 @@ class StageFixture:
 
     def write_candidate(self):
         (self.candidate / 'BUILD-IDENTITY.json').write_text(json.dumps(self.identity))
-        paths = sorted(p for p in self.candidate.iterdir() if p.is_file() and p.name != 'SHA256SUMS')
-        (self.candidate / 'SHA256SUMS').write_text(''.join(digest(p.read_bytes()) + '  ' + p.name + '\n' for p in paths))
+        paths = sorted(p for p in self.candidate.rglob('*') if p.is_file() and p != self.candidate / 'SHA256SUMS')
+        (self.candidate / 'SHA256SUMS').write_text(''.join(digest(p.read_bytes()) + '  ' + p.relative_to(self.candidate).as_posix()
+                                                           + '\n' for p in paths))
 
     def run(self, main, libraries=None, git_payload=None, options=()):
         for key, value in (('elf-audit', self.elf), ('inventory', self.inventory), ('build-provenance', self.provenance)):

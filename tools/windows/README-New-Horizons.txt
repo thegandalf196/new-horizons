@@ -24,9 +24,12 @@ are never touched. On its first Play, Beta copies the stable imported game
 files; use Original game files while Beta is selected to choose another folder.
 The first time that folder is created, Beta also starts with a copy of your
 stable saves (betas read older saves); the stable saves stay where they are.
-Installing a beta never changes the stable version. Beta offers only betas:
-a stable release, even one promoted from a beta, appears on the Stable track
-only, and a beta player waits for the next beta.
+Installing a beta never changes the stable version. Beta offers only betas
+and release candidates (0.94.0-beta.3 shows as 0.94.0 Beta 3, 0.94.0-rc.1 as
+0.94.0 Release Candidate 1): a stable release, even one promoted from a beta,
+appears on the Stable track only, and a beta player waits for the next beta.
+Launchers of 0.93.x and older cannot see suffixed versions; download
+0.94.0-beta.1 once by hand to move to them.
 
 A beta download (a GitHub prerelease) opens on the Beta track and checks for
 newer betas. Its Stable track starts empty and offers the latest stable
