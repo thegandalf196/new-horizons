@@ -51,6 +51,14 @@ int rank(const CBattleInfoCallback & battle, const battle::Unit & unit)
 	return state ? newHorizonsHeroes::specialtyRank(state->getCreatureCategoryRules(), unit.creatureId()) : -1;
 }
 
+/// The hero of the side that currently controls the unit (Puppet Master and similar
+/// control effects move a stack to the other side's specialties).
+const CGHeroInstance * controllingHero(const CBattleInfoCallback & battle, const battle::Unit & unit)
+{
+	const auto side = battle.playerToSide(battle.battleGetActionController(&unit));
+	return side == BattleSide::ATTACKER || side == BattleSide::DEFENDER ? battle.battleGetFightingHero(side) : nullptr;
+}
+
 bool ordinaryCreature(const battle::Unit & unit)
 {
 	return unit.alive() && !unit.isGhost() && !unit.isTurret() && !unit.hasBonusOfType(BonusType::SIEGE_WEAPON);
@@ -74,7 +82,7 @@ int useTheGroundBasisPoints(const CBattleInfoCallback & battle, const BattleAtta
 {
 	if(!attack.physicalDamage || !attack.defender || !attack.defender->alive())
 		return 0;
-	const int permille = newHorizonsHeroes::useTheGroundPermille(battle.battleGetOwnerHero(attack.defender));
+	const int permille = newHorizonsHeroes::useTheGroundPermille(controllingHero(battle, *attack.defender));
 	if(permille <= 0)
 		return 0;
 	const auto position = attack.defenderPos.isValid() ? attack.defenderPos : attack.defender->getPosition();
@@ -94,7 +102,7 @@ double attackDamageMultiplier(const CBattleInfoCallback & battle, const BattleAt
 		return 1.0;
 	double result = 1.0;
 	const auto * attackingHero = battle.battleGetOwnerHero(attack.attacker);
-	if(const int perStep = newHorizonsHeroes::giantSlayerPermillePerStep(attackingHero))
+	if(const int perStep = newHorizonsHeroes::giantSlayerPermillePerStep(controllingHero(battle, *attack.attacker)))
 		result *= 1.0 + perStep * rankSteps(battle, *attack.attacker, *attack.defender) / 1000.0;
 	if(attack.physicalDamage)
 		if(const int brittle = brittlePermille(*attack.defender))
