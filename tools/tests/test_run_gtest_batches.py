@@ -18,17 +18,18 @@ import run_gtest_batches as runner
 # filter. Alpha.Crash aborts the process and Beta.Slow fails.
 FAKE = '''#!{python}
 import os, sys
-cases = ["Alpha.One", "Alpha.Crash", "Alpha.Two", "Beta.Slow", "Beta.Skip", "Gamma/P.Case/0", "Delta.DISABLED_Off"]
+cases = ["Alpha.One", "Alpha.Crash", "Alpha.Two", "Beta.Slow", "Beta.Skip", "Gamma/P.Case/0", "Delta.DISABLED_Off",
+         "Set/DISABLED_Bench.Run/0"]
 if "--gtest_list_tests" in sys.argv:
     print("Running main() from fake")
-    for suite in ("Alpha", "Beta", "Gamma/P", "Delta"):
+    for suite in ("Alpha", "Beta", "Gamma/P", "Delta", "Set/DISABLED_Bench"):
         print(suite + ".")
         for case in cases:
             if case.startswith(suite + "."):
                 print("  " + case.split(".", 1)[1] + ("  # GetParam() = (1, 2)" if "/" in case else ""))
     sys.exit(0)
 pattern = next(a for a in sys.argv if a.startswith("--gtest_filter=")).split("=", 1)[1].split(":")
-selected = [c for c in cases if not c.split(".", 1)[1].startswith("DISABLED_")
+selected = [c for c in cases if "DISABLED_" not in c
             and any(c == p or (p.endswith(".*") and c.startswith(p[:-1])) for p in pattern)]
 failed = False
 for case in selected:
@@ -80,6 +81,7 @@ class RunGtestBatchesTest(unittest.TestCase):
         suites = runner.list_tests(str(self.binary), self.root)
         self.assertEqual(suites['Gamma/P'], ['Case/0'])
         self.assertNotIn('Delta', suites)
+        self.assertNotIn('Set/DISABLED_Bench', suites)
 
     def test_long_filters_are_split(self):
         patterns = [f'Suite{index:05}.*' for index in range(2000)]

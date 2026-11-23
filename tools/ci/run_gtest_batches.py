@@ -31,7 +31,7 @@ def list_tests(binary, cwd):
         if not line.startswith(' '):
             suite = name.rstrip('.')
             suites.setdefault(suite, [])
-        elif suite and not suite.startswith('DISABLED_') and not name.startswith('DISABLED_'):
+        elif suite and not any(part.startswith('DISABLED_') for part in (*suite.split('/'), name)):
             suites[suite].append(name)
     return {suite: cases for suite, cases in suites.items() if cases}
 
