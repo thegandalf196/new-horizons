@@ -176,7 +176,7 @@ jobs:
           -DCMAKE_BUILD_TYPE=Debug
           '-DCMAKE_C_FLAGS_DEBUG=-Ob0 -Od -RTC1'
           '-DCMAKE_CXX_FLAGS_DEBUG=-Ob0 -Od -RTC1 -D_ITERATOR_DEBUG_LEVEL=2'
-          -DENABLE_TEST=ON -Dgtest_force_shared_crt=ON
+          -DENABLE_TEST=ON -Dgtest_force_shared_crt=ON -DCOPY_CONFIG_ON_BUILD=ON
           -DCMAKE_GTEST_DISCOVER_TESTS_DISCOVERY_MODE=PRE_TEST
           -DENABLE_PCH=OFF -DENABLE_NH_UNITY_BUILD=ON -DNH_UNITY_BUILD_BATCH_SIZE=8
           -DENABLE_CCACHE=ON -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
@@ -233,6 +233,40 @@ jobs:
           cases=$(grep -c '^  ' "$LOG_ROOT/vcmitest-cases.txt" || true)
           echo "vcmitest lists $cases cases"
           test "$cases" -gt 0
+
+      - name: Run vcmitest without the original Heroes III data
+        id: no-data
+        if: ${{ !cancelled() && steps.vcmitest.outcome == 'success' }}
+        timeout-minutes: 45
+        # Cases that need the game library skip themselves with a stated reason.
+        run: |
+          set -euo pipefail
+          mkdir -p "$LOG_ROOT"
+          logs="$(pwd)/$LOG_ROOT"
+          report="$(cygpath -w "$logs/vcmitest-no-data.xml")"
+          status=0
+          (cd "$BUILD_ROOT/bin" && ./vcmitest.exe "--gtest_output=xml:$report") \
+            > "$logs/vcmitest-no-data.log" 2>&1 || status=$?
+          tail -n 30 "$logs/vcmitest-no-data.log"
+          python - "$logs/vcmitest-no-data.xml" >> "$GITHUB_STEP_SUMMARY" <<'PY'
+          import collections, sys, xml.etree.ElementTree as ElementTree
+          counts, failed = collections.Counter(), []
+          for case in ElementTree.parse(sys.argv[1]).getroot().iter('testcase'):
+              name = case.get('classname') + '.' + case.get('name')
+              if case.find('failure') is not None:
+                  counts['failed'] += 1
+                  failed.append(name)
+              elif case.get('result') == 'skipped' or case.find('skipped') is not None:
+                  counts['skipped'] += 1
+              elif case.get('status') == 'notrun':
+                  counts['disabled'] += 1
+              else:
+                  counts['passed'] += 1
+          print('## vcmitest without original data')
+          print(', '.join(f'{key}: {counts[key]}' for key in ('passed', 'failed', 'skipped', 'disabled')))
+          print(''.join(f'\n- `{name}`' for name in failed[:200]))
+          PY
+          exit "$status"
 
       - name: Stop the compiler cache server before the cache is saved
         if: always()

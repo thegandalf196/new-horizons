@@ -330,12 +330,13 @@ The build turns off PCH so that sccache can cache objects. Both caches are saved
 even when a later step fails, so each run warms the next one.
 
 The job runs `ctest -L nh-pure` and a short list of other standalone checks
-that need no game data. It then compiles `vcmitest` and lists its cases. A
-listing loads every DLL and runs all static initializers. It does not run the
-`vcmitest` cases, because they initialize the game library, and that needs the
-original Heroes III files. Those files are not available in CI. The
-`Windows-test-logs` artifact keeps the CTest logs, JUnit files, the case list
-and `.ninja_log`.
+that need no game data. It then compiles `vcmitest`, lists its cases and runs
+them. The original Heroes III files are not available in CI, so cases that need
+the game library skip themselves, as described in
+[Building on Linux](Building_Linux.md). The job summary counts the passed,
+failed and skipped cases. The `Windows-test-logs` artifact keeps the CTest
+logs, JUnit files, the `vcmitest` log and XML report, the case list and
+`.ninja_log`.
 
 ## Updating an existing checkout
 
