@@ -99,7 +99,7 @@ struct SpecialtyEncounter
 inline std::vector<SpecialtyEncounter> specialtyEncounters()
 {
 	using A = SpecialtyEncounter::ArmyFactory;
-	const A castle = mirrorCastleArmy, inferno = infernoArmy;
+	const A castle = mirrorCastleArmy, inferno = infernoArmy, rampart = mirrorRampartArmy;
 	return {
 		{"Adela", "core:adela", castle, castle, "core:rion", {"core:bless", "core:shield"}, false},
 		{"Loynis", "core:loynis", castle, castle, "core:rion", {"core:bless", "new-horizons:sanctuary"}, false},
@@ -122,6 +122,17 @@ inline std::vector<SpecialtyEncounter> specialtyEncounters()
 		{"Drakon", "core:drakon", fortressArmy, fortressArmy, "core:ivor", {}, true},
 		{"Ignissa", "core:ignissa", confluxArmy, confluxArmy, "core:ivor", {}, true},
 		{"Monere", "core:monere", confluxArmy, confluxArmy, "core:ivor", {}, true},
+		{"Mephala", "core:mephala", rampart, castle, "core:rion", {}, true},
+		{"Coronius", "core:coronius", rampart, castle, "core:rion", {}, true},
+		{"Uland", "core:uland", rampart, castle, "core:rion", {"core:cure"}, false},
+		{"Gem", "core:gem", rampart, castle, "core:rion", {"core:cure", "core:bless"}, false},
+		{"Alagar", "core:alagar", rampart, castle, "core:rion", {"core:iceBolt", "core:frostRing"}, false},
+		{"Melodia", "core:melodia", rampart, +[] { return withSlot(mirrorCastleArmy(), 6, "core:archangel", 2); },
+			"core:rion", {}, true},
+		{"Aeris", "core:aeris", +[] { return withSlot(mirrorRampartArmy(), 4, "core:silverPegasus", 8); }, castle,
+			"core:rion", {}, true},
+		{"Ryland", "core:ryland", +[] { return withSlot(mirrorRampartArmy(), 3, "core:dendroidSoldier", 6); }, castle,
+			"core:rion", {}, true},
 	};
 }
 }
