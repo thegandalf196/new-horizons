@@ -34,6 +34,7 @@ TEST(CreatureAbilityGrouping, OnHitEffectsShareOneCardAndKeepDistinctChances)
 }
 
 #include "../../client/windows/SylvanStatusArt.h"
+#include "../OriginalDataRequirement.h"
 
 TEST(SylvanStatusArt, RowsGetPerkIconAndTimingHelp)
 {
@@ -59,6 +60,7 @@ Bonus noneMarker(const char * stacking, const char * icon = "")
 
 TEST(CreatureStatusCardGrouping, BrittleKeepsItsOwnCardBesideOtherNoneMarkers)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA(); // the prayer markers resolve mod identifiers
 	const auto brittle = noneMarker(newHorizonsRampart::BRITTLE_STACKING, "NH_status_brittle.png");
 	const auto other = noneMarker("new-horizons:arcane-inspiration");
 	EXPECT_TRUE(creatureStatusCardGrouping::ownsCard(brittle));
