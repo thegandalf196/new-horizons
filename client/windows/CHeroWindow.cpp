@@ -12,6 +12,7 @@
 #include "CHeroWindow.h"
 #include "HeroSpecialtyPresentation.h"
 #include "HeroWindowLabelText.h"
+#include "HeroClassLeanIndicator.h"
 #include "NewHorizonsPerkBrowser.h"
 #include "NewHorizonsSylvanHybridPerkIcons.h"
 #include "NewHorizonsPerkHelp.h"
@@ -127,6 +128,7 @@ CHeroWindow::CHeroWindow(const CGHeroInstance * hero)
 	const bool showsPerks = newHorizonsHeroes::usesPerkRules(hero->getPerkState().getRules());
 	const bool showsDevelopment = showsGrowth || showsCapabilities || showsMasteries || showsPerks;
 	title = std::make_shared<CLabel>(showsDevelopment ? 175 : 190, 65, EFonts::FONT_MEDIUM, ETextAlignment::CENTER, Colors::WHITE, "", showsDevelopment ? 180 : 0);
+	classLean = std::make_shared<HeroClassLeanIndicator>();
 	if(showsDevelopment)
 	{
 		growthButton = std::make_shared<CButton>(Point(273, 53), AnimationPath::builtin("NH_hero_growth_entry"),
@@ -356,6 +358,7 @@ void CHeroWindow::refreshHero(bool refreshArtifactInteraction)
 	titleText.replaceTextID(curHero->getClassNameTextID());
 	const auto fullTitle = titleText.toString(&GAME->translator());
 	const bool titleElided = heroWindowLabelText::setTitle(*title, fullTitle, newHorizonsLayout);
+	classLean->setHero(*curHero, *title);
 
 	const auto specialty = heroSpecialtyPresentation(*curHero);
 	specArea->text = specialty.description;

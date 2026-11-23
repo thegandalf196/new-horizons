@@ -20501,18 +20501,18 @@
       "hybrid_predecessor_review": "IR-0911-BOUNDED-DIRECT-MAP-COMPOSITION-V3",
       "inherited_deferral": "Owner: ui_developer / gameplay_engineer. Bounded exception for Major System Rework: Leadership attribute restoration, square-root damage scaling, and hero UI panel integration. Hotspots remain subject to ongoing shrinking and modularization policy.\nExact source-list bound only. Before substantive build logic, extract a cohesive target configuration section. Verify source/link membership once and retain no duplicate translation units. Prior stricter obligations remain in inherited_deferral, where present.\n\nBefore introducing conditional build logic, extract a cohesive target helper; retain exact source/link membership, one registration per translation unit and existing inherited obligations.",
       "kind": "exception",
-      "lines": 781,
+      "lines": 784,
       "owner": "ui_developer",
       "previous_exact_review": "IR-PERFORMANCE-STEP2-BUILD-ORG-V1",
       "previous_proposal_review": "PROPOSED-EXACT-REGISTRY-SIX-SOURCE-20261103",
-      "previous_review": "CLAUDE-METAMAGIC6-PHASE5-20261120",
+      "previous_review": "CLAUDE-SPECIALTIES-0931",
       "prior_deferral": "Before substantive build-control growth, extract a cohesive target helper; retain all inherited deferrals and one registration per translation unit.",
       "proposal_predecessor_review": "PROPOSED-CLIENT225-BOUNDED-20261103",
-      "rationale": "Exact successor for 0.93.1 beta step 1 (Precise Casting resistance halving, core Stewardship and Lord of the Crypts, +3%/level specialty scaling, activation of unchanged extended ordinary specialties): bounded routing hooks and focused owners only. Existing extraction deferrals retained; no future growth credit.",
-      "review": "CLAUDE-SPECIALTIES-0931",
+      "rationale": "Exact successor for 0.93.1 beta step 1 (Precise Casting resistance halving, core Stewardship and Lord of the Crypts, +3%/level specialty scaling, activation of unchanged extended ordinary specialties): bounded routing hooks and focused owners only. Existing extraction deferrals retained; no future growth credit. Hero class lean (Might/Magic) row: three source-list lines register the focused HeroClassLean.h, HeroClassLeanIndicator.h/.cpp owner. 781 to 784 lines; no future growth credit.",
+      "review": "CLAUDE-HERO-CLASS-LEAN-20261123",
       "review_scope": "Exact bounded source organization and failure-path review only; native/rendered acceptance and future growth unapproved.",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_ONLY",
-      "sha256": "c44129c7c27c3e322eab102afc2303d53ffcff78673298a6f90e181f367540e2",
+      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
+      "sha256": "bf5746baa1da2a1ac1273cf19f0351b9d202bc694dea8d912f8ffdc967c6ef7a",
       "inherited_deferral_step2": "Exact current size only. Retain all prior obligations below; further renderer/cache expansion must extract its specific presentation or map-cache policy behind a focused interface and verify clipping, zoom, wrap, retained ownership, both backends and guarded scene/quit behavior before accepting it."
     },
     "client/CPlayerInterface.cpp": {
@@ -22577,15 +22577,15 @@
       "hybrid_predecessor_review": "IR-PUBLIC-EC360-RELEASE-DELTA-INDEPENDENT-20261113-V1",
       "inherited_deferral": "Owner: ui_developer / gameplay_engineer. Bounded exception for Major System Rework: Leadership attribute restoration, square-root damage scaling, and hero UI panel integration. Hotspots remain subject to ongoing shrinking and modularization policy.",
       "kind": "exception",
-      "lines": 743,
+      "lines": 746,
       "owner": "ui_developer",
-      "previous_review": "PROPOSED-0920-EXACT-SOURCE-ORGANIZATION",
+      "previous_review": "IR-NH092-ORG-3E82D142-20261116",
       "proposal_predecessor_review": "PROPOSED-CLIENT225-BOUNDED-20261103",
-      "rationale": "Exact 743 to 743-line scope. Client presentation/input routing integrates current spell/action receipts and validated captured views. Preserve command submission, session/teardown ownership, native layout and ordinary input behavior; no direct gameplay mutation is introduced.",
-      "review": "IR-NH092-ORG-3E82D142-20261116",
+      "rationale": "Exact 743 to 743-line scope. Client presentation/input routing integrates current spell/action receipts and validated captured views. Preserve command submission, session/teardown ownership, native layout and ordinary input behavior; no direct gameplay mutation is introduced. Hero class lean (Might/Magic) row: one include, one construction line and one refresh call hook into the focused HeroClassLeanIndicator owner, which positions itself from the class line, so no layout method grows. 743 to 746 lines; no future growth credit.",
+      "review": "CLAUDE-HERO-CLASS-LEAN-20261123",
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "f2e8d761adaad71abffb2e289f06c5505740d4b9f37d5d41a583f293e9b6df93"
+      "sha256": "123d4662c23ea00f1eaa19fa15f5c543a8b079b715620ef92684d9ae1cb47028"
     },
     "client/windows/CHeroWindow.cpp::CHeroWindow::CHeroWindow(const CGHeroInstance * hero) : CWindowObject(useNewHorizonsHeroLayout(hero) ? BORDERED : PLAYER_COLORED, ImagePath::builtin(useNewHorizonsHeroLayout(hero) ? \"newHorizonsHeroBackground\" : ENGINE->isRoeData() ? \"HeroScr3\" : \"HeroScr4\"))#1": {
       "completed_p_predecessor": {
@@ -22597,15 +22597,15 @@
       },
       "deferral": "Owner: ui_developer / gameplay_engineer. Bounded exception for Major System Rework: Leadership attribute restoration, square-root damage scaling, and hero UI panel integration. Hotspots remain subject to ongoing shrinking and modularization policy.",
       "kind": "exception",
-      "lines": 202,
+      "lines": 203,
       "owner": "ui_developer",
-      "previous_review": "IR-MAJOR-REWORK-LEADERSHIP-UI-20261112",
+      "previous_review": "IR-NH092-ORG-3E82D142-20261116",
       "proposal_predecessor_review": "PROPOSED-CLIENT225-BOUNDED-20261103",
-      "rationale": "Exact 202 to 202-line scope. Client presentation/input routing integrates current spell/action receipts and validated captured views. Preserve command submission, session/teardown ownership, native layout and ordinary input behavior; no direct gameplay mutation is introduced.",
-      "review": "IR-NH092-ORG-3E82D142-20261116",
+      "rationale": "Exact 202 to 202-line scope. Client presentation/input routing integrates current spell/action receipts and validated captured views. Preserve command submission, session/teardown ownership, native layout and ordinary input behavior; no direct gameplay mutation is introduced. Hero class lean (Might/Magic) row: one line constructs the focused HeroClassLeanIndicator beside the class line. 202 to 203 lines; no future growth credit.",
+      "review": "CLAUDE-HERO-CLASS-LEAN-20261123",
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "1703686d0a9e1871dacbee30e896f87e37f6ae8947800cfc81e2914ad2de3ceb"
+      "sha256": "0ad0ba056819db6c2adc8199686cfefc2aee08f3b096318225d086c8a72ddff2"
     },
     "client/windows/CHeroWindow.cpp::void CHeroWindow::refreshHero(bool refreshArtifactInteraction)#1": {
       "completed_p_predecessor": {
@@ -22619,15 +22619,15 @@
       "hybrid_predecessor_review": "IR-LEADERSHIP-1159-INDEPENDENT-20261113-HEAD-SUPPLEMENT",
       "inherited_deferral": "Owner: ui_developer / gameplay_engineer. Bounded exception for Major System Rework: Leadership attribute restoration, square-root damage scaling, and hero UI panel integration. Hotspots remain subject to ongoing shrinking and modularization policy.",
       "kind": "exception",
-      "lines": 354,
+      "lines": 355,
       "owner": "ui_developer",
-      "previous_review": "PROPOSED-0920-EXACT-SOURCE-ORGANIZATION",
+      "previous_review": "IR-NH092-ORG-3E82D142-20261116",
       "proposal_predecessor_review": "PROPOSED-CLIENT225-BOUNDED-20261103",
-      "rationale": "Exact 354 to 354-line scope. Client presentation/input routing integrates current spell/action receipts and validated captured views. Preserve command submission, session/teardown ownership, native layout and ordinary input behavior; no direct gameplay mutation is introduced.",
-      "review": "IR-NH092-ORG-3E82D142-20261116",
+      "rationale": "Exact 354 to 354-line scope. Client presentation/input routing integrates current spell/action receipts and validated captured views. Preserve command submission, session/teardown ownership, native layout and ordinary input behavior; no direct gameplay mutation is introduced. Hero class lean (Might/Magic) row: one call refreshes the focused HeroClassLeanIndicator from the class line after the title is set. 354 to 355 lines; no future growth credit.",
+      "review": "CLAUDE-HERO-CLASS-LEAN-20261123",
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "33cf54dbd969efc61f1b4c2fa1833821ea83fef3bd60114bf808d003fb0e01a6"
+      "sha256": "a59be5889c8477ba851d07c50122622ab434220b69b1469675ff8e512b1ccac1"
     },
     "client/windows/CHeroWindowLayout.cpp::void CHeroWindow::configureNewHorizonsLayout()#1": {
       "completed_p_predecessor": {

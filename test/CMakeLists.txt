@@ -454,6 +454,7 @@ set(test_SRCS
 		hero/SerializedPerkAdmissionTest.cpp
 		hero/NewHorizonsPerkAvailabilityTest.cpp
 		hero/HeroGrowthPerkPresentationTest.cpp
+		hero/HeroClassLeanTest.cpp
 		hero/NewHorizonsPerkIconPresentationTest.cpp
 		hero/NewHorizonsPerkOfferWireTest.cpp
 		hero/NewHorizonsLogisticsMasteryStateTest.cpp

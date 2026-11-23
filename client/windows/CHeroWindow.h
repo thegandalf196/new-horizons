@@ -31,6 +31,7 @@ class CGStatusBar;
 class CTextBox;
 class CGarrisonInt;
 class CSlider;
+class HeroClassLeanIndicator;
 
 /// Button which switches hero selection
 class CHeroSwitcher : public CIntObject
@@ -48,6 +49,7 @@ class CHeroWindow : public CStatusbarWindow, public IGarrisonHolder, public CWin
 {
 	std::shared_ptr<CLabel> name;
 	std::shared_ptr<CLabel> title;
+	std::shared_ptr<HeroClassLeanIndicator> classLean;
 
 	std::shared_ptr<CAnimImage> banner;
 

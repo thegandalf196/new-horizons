@@ -230,6 +230,7 @@ set(vcmiclientcommon_SRCS
 	windows/HeroStartingPreview.cpp
 	windows/CHeroWindow.cpp
 	windows/CHeroWindowLayout.cpp
+	windows/HeroClassLeanIndicator.cpp
 	windows/HeroExperienceBar.cpp
 	windows/HeroWindowCommandReadout.cpp
 	windows/CHeroDemonicReserve.cpp
@@ -588,6 +589,8 @@ set(vcmiclientcommon_HEADERS
 	windows/HeroStartingPreview.h
 	windows/HeroSpecialtyPresentation.h
 	windows/HeroWindowLabelText.h
+	windows/HeroClassLean.h
+	windows/HeroClassLeanIndicator.h
 	windows/HeroExperienceBar.h
 	windows/CHeroWindow.h
 	windows/HeroGrowthWindow.h
