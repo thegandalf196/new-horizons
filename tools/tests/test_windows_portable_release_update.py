@@ -532,17 +532,21 @@ try { Write-Output 'released failed member' } finally { $exclusive.Dispose() }
         self.metadata.write_text(json.dumps(release))
         self.assert_rejected()
 
-    def test_beta_request_revalidates_its_own_tag_and_accepts_a_prerelease(self):
+    def test_beta_request_revalidates_its_own_tag_and_accepts_only_a_prerelease(self):
         self.offer.update(format=2, channel='beta')
         self.archive()
         self.write_inputs({'prerelease': True, 'draft': True})
+        self.assert_rejected(command=BETA_TAG_FIXTURE)
+        # A stable release is never installed on the Beta track.
+        self.write_inputs({'prerelease': False})
         self.assert_rejected(command=BETA_TAG_FIXTURE)
         self.write_inputs({'prerelease': True})
         result = self.execute(BETA_TAG_FIXTURE)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(json.loads(result.stdout)['version'], '0.93.0')
         tag = 'https://api.github.com/repos/thegandalf196/new-horizons/releases/tags/v0.93.0'
-        self.assertEqual((self.root / 'downloads.txt').read_text().splitlines(), [tag, tag, self.offer['url']])
+        # Both rejected requests and the accepted one each read the tag once; only the beta downloads.
+        self.assertEqual((self.root / 'downloads.txt').read_text().splitlines(), [tag, tag, tag, self.offer['url']])
 
     def test_track_requests_cannot_mix_formats_name_unknown_tracks_or_take_a_stable_prerelease(self):
         self.archive()

@@ -293,7 +293,7 @@ class LinuxPortableUpdateTest(unittest.TestCase):
         self.metadata['assets'] *= 2
         self.rejected()
 
-    def test_beta_request_revalidates_its_own_tag_and_accepts_a_prerelease(self):
+    def test_beta_request_revalidates_its_own_tag_and_accepts_only_a_prerelease(self):
         self.request = self.write_request(format=2, channel='beta')
         self.metadata = dict(self.latest(), prerelease=True)
         tag = update.tag_url('0.93.0')
@@ -307,6 +307,10 @@ class LinuxPortableUpdateTest(unittest.TestCase):
         self.assertEqual((result['version'], self.calls[0]), ('0.93.0', tag))
         self.metadata['draft'] = True
         with self.assertRaises(ValueError):
+            update.prepare_update(self.store, self.request_path, transport)
+        # A stable release is never installed on the Beta track.
+        self.metadata.update(draft=False, prerelease=False)
+        with self.assertRaisesRegex(ValueError, 'Expected a published beta'):
             update.prepare_update(self.store, self.request_path, transport)
 
     def test_track_requests_cannot_mix_formats_name_unknown_tracks_or_take_a_stable_prerelease(self):

@@ -28,9 +28,14 @@ Stable releases are ordinary GitHub releases; the launchers' Stable track only
 accepts the official latest release. Beta releases are GitHub prereleases built
 from tags on `beta`, numbered like any other release: while stable continues on
 `0.MINOR.PATCH`, betas use the next MINOR (for example 0.93.x beside 0.92.x).
-The Beta track offers the newest published release of either kind that is newer
-than both installed tracks, installs it beside the stable version, and plays it
-with a separate profile. The first start that creates the beta profile copies
+The Beta track offers only prereleases: the newest published prerelease, when
+it is newer than both installed tracks (an empty Beta track therefore needs a
+beta newer than the installed stable). A Stable release is never offered there,
+even when it was promoted from a beta: after 0.93.5 becomes Stable 0.94.0, a
+player on beta 0.93.6 keeps it and waits for the next beta (0.95.0), while the
+Stable track offers 0.94.0. A beta install revalidates that its release is still
+a prerelease. The Beta track installs beside the stable version and plays with
+a separate profile. The first start that creates the beta profile copies
 the stable saves into it.
 
 Each player package records its track as `release_channel` in

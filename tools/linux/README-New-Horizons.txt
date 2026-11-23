@@ -20,7 +20,9 @@ settings never mix with stable ones. It uses your stable Heroes III folder
 until you choose another one for beta with Original game files. Its first
 start copies your stable saves into the new beta profile (betas read older
 saves); the stable saves stay where they are. Switch back to Stable at any
-time; the stable version and its saves are unchanged.
+time; the stable version and its saves are unchanged. Beta offers only betas:
+a stable release, even one promoted from a beta, appears on the Stable track
+only, and a beta player waits for the next beta.
 
 A beta download (a GitHub prerelease) opens on the Beta track, plays the beta
 profile and checks for newer betas. Its Stable track starts empty and offers

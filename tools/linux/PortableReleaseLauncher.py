@@ -217,9 +217,10 @@ def release_version(release):
 
 
 def newest_beta(releases):
-    """The newest published release of either kind that carries a Linux package."""
+    """The newest published prerelease that carries a Linux package; never a stable release."""
     def eligible(release):
-        return (isinstance(release, dict) and release.get('draft') is False and release_version(release)
+        return (isinstance(release, dict) and release.get('draft') is False and release.get('prerelease') is True
+                and release_version(release)
                 and isinstance(release.get('assets'), list)
                 and sum(isinstance(asset, dict) and isinstance(asset.get('name'), str)
                         and bool(ASSET_NAME.fullmatch(asset['name'])) for asset in release['assets']) == 1)
@@ -249,8 +250,8 @@ def check_release(current, opener=None, channel='stable', notes=None):
 def release_offer(current, release, channel):
     if not isinstance(release, dict):
         raise ValueError('Invalid official release response')
-    if release.get('draft') is not False or (channel == 'stable' and release.get('prerelease') is not False):
-        raise ValueError('Expected an official stable release')
+    if release.get('draft') is not False or release.get('prerelease') is not (channel == 'beta'):
+        raise ValueError('Expected a published beta' if channel == 'beta' else 'Expected an official stable release')
     wanted = release_version(release)
     if wanted is None:
         raise ValueError('Invalid official release version')

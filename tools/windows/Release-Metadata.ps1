@@ -2,7 +2,8 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # Windows PowerShell 5.1. Keep this file ASCII. Dot-sourced by Prepare-NHReleaseUpdate.ps1.
 $script:ReleaseAPIRoot = 'https://api.github.com/repos/thegandalf196/new-horizons/releases'
-# Beta releases are ordinary GitHub prereleases; their track lists recent releases.
+# Beta releases are ordinary GitHub prereleases; their track lists recent releases
+# and only ever offers a prerelease, never a stable release.
 $script:ReleaseListAPI = $script:ReleaseAPIRoot + '?per_page=30'
 $script:ReleaseVersionPattern = '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'
 $script:ReleaseAssetPattern = '^New-Horizons-Windows-x64-[a-f0-9]{12}\.zip$'
@@ -66,12 +67,12 @@ function Assert-UpdateReleaseObject($Offer, $Release) {
     $beta = (Get-UpdateRequestChannel $Offer) -ceq 'beta'
     $published = [DateTimeOffset]::MinValue
     if ($Release.draft -isnot [bool] -or $Release.draft -or $Release.prerelease -isnot [bool] -or
-        ($Release.prerelease -and -not $beta) -or $Release.tag_name -cne ('v' + $Offer.version) -or
+        $Release.prerelease -ne $beta -or $Release.tag_name -cne ('v' + $Offer.version) -or
         $Release.html_url -cne ($script:ReleaseRoot + 'tag/v' + $Offer.version) -or
         $Release.published_at -isnot [string] -or $Release.published_at -cnotmatch '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$' -or
         -not [DateTimeOffset]::TryParse($Release.published_at, [ref]$published) -or
         $Release.assets -isnot [Array] -or $Release.assets.Count -gt 128) {
-        if ($beta) { throw 'The selected beta is no longer a published release.' }
+        if ($beta) { throw 'The selected beta is no longer a published beta release.' }
         throw 'The selected update is no longer the published stable release.'
     }
     $archives = @($Release.assets | Where-Object { $_.name -cmatch $script:ReleaseAssetPattern })
@@ -112,15 +113,18 @@ function Get-UpdateReleaseVersion($Release) {
 }
 
 function Select-UpdateBetaRelease($Releases) {
-    # The newest published release of either kind that carries one Windows package.
+    # The newest published prerelease that carries one Windows package. A stable
+    # release, even one promoted from a beta, is never offered on the Beta track.
     $best = $null
     $bestVersion = $null
     foreach ($release in @($Releases)) {
         $version = Get-UpdateReleaseVersion $release
         if ($null -eq $version) { continue }
         $draft = $release.PSObject.Properties['draft']
+        $prerelease = $release.PSObject.Properties['prerelease']
         $assets = $release.PSObject.Properties['assets']
         if ($null -eq $draft -or $draft.Value -isnot [bool] -or $draft.Value -or
+            $null -eq $prerelease -or $prerelease.Value -isnot [bool] -or -not $prerelease.Value -or
             $null -eq $assets -or $assets.Value -isnot [Array]) { continue }
         $packages = @($assets.Value | Where-Object {
             $null -ne $_ -and $_ -isnot [string] -and $null -ne $_.PSObject.Properties['name'] -and

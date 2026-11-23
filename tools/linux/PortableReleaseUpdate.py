@@ -26,7 +26,8 @@ import PortableLauncherLog as launcher_log
 
 API_ROOT = 'https://api.github.com/repos/thegandalf196/new-horizons/releases'
 LATEST_URL = API_ROOT + '/latest'
-# Beta releases are ordinary GitHub prereleases; their track lists recent releases.
+# Beta releases are ordinary GitHub prereleases; their track lists recent releases
+# and only ever offers a prerelease, never a stable release.
 LIST_URL = API_ROOT + '?per_page=30'
 CHANNELS = ('stable', 'beta')
 RELEASE_ROOT = 'https://github.com/thegandalf196/new-horizons/releases/'
@@ -166,8 +167,8 @@ def recent_releases(opener, timeout=30):
 def validate_release_metadata(request, release):
     beta = request.get('channel', 'stable') == 'beta'
     require(isinstance(release, dict) and release.get('draft') is False
-            and isinstance(release.get('prerelease'), bool) and (beta or release['prerelease'] is False),
-            'Expected a published stable release' if not beta else 'Expected a published release')
+            and release.get('prerelease') is beta,
+            'Expected a published stable release' if not beta else 'Expected a published beta')
     tag = 'v' + request['version']
     require(release.get('tag_name') == tag and release.get('html_url') == RELEASE_ROOT + 'tag/' + tag,
             'Selected release is no longer the official latest version')
