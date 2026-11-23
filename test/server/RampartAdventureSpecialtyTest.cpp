@@ -5,6 +5,8 @@
 #include "../../lib/entities/hero/NewHorizonsRampartSpecialties.h"
 #include "../../lib/mapObjects/CGCreature.h"
 #include "../../lib/networkPacks/PacksForClient.h"
+#include "../../lib/networkPacks/PacksForClientBattle.h"
+#include "../../lib/mapping/CMap.h"
 #include "../../lib/pathfinder/NewHorizonsElusive.h"
 #include "../../lib/gameState/CGameState.h"
 #include "../../lib/GameLibrary.h"
@@ -67,6 +69,34 @@ protected:
 	int gold() const
 	{
 		return gameState()->getPlayerState(PLAYER)->resources[EGameResID::GOLD];
+	}
+
+	/// Jenova beside the entrance of a town of `owner`; player 1 keeps a town of its own,
+	/// so a capture does not end the game.
+	void besideTown(PlayerColor owner, std::vector<std::pair<CreatureID, uint16_t>> garrison)
+	{
+		TinyH3M::TinyH3MBuilder builder(EMapFormat::SOD);
+		builder.size(36).playerActive(PLAYER).playerActive(PlayerColor(1))
+			.town({12, 12, 0}, FactionID::RAMPART, owner).townGarrison(std::move(garrison))
+			.town({30, 30, 0}, FactionID::CASTLE, PlayerColor(1)).townGarrison({})
+			.hero({20, 20, 0}, HeroTypeID(HeroTypeID::decode("core:jenova")), PLAYER)
+				.heroGarrison({{creature("core:centaur"), 5}});
+		startWithMap(std::move(builder));
+		specialist = findHeroAt({20, 20, 0});
+		town = expectAt<CGTownInstance>({12, 12, 0});
+		ASSERT_TRUE(specialist && town);
+		map()->moveObject(specialist->id, town->visitablePos() + int3(0, 1, 0) + specialist->getVisitableOffset());
+		ASSERT_EQ(specialist->visitablePos(), town->visitablePos() + int3(0, 1, 0));
+		server = std::make_unique<GameHandlerTestServer>(gameState(), PLAYER);
+		handler = std::make_unique<CGameHandler>(*server, gameState());
+		gameState()->actingPlayers.insert(PLAYER);
+		handler->setMovePoints(specialist->id, 20000);
+	}
+
+	/// Level-1 Patroness: 25% of the town's daily income.
+	int expectedCollection() const
+	{
+		return town->dailyIncome()[EGameResID::GOLD] * 250 / 1000;
 	}
 
 	void leave()
@@ -210,4 +240,34 @@ TEST_F(RampartAdventureSpecialtyTest, PatronessCollectionAndRowsSurviveSaveAndLo
 	EXPECT_EQ(newHorizonsHeroes::patronessPermille(loaded), newHorizonsHeroes::patronessPermille(specialist));
 	EXPECT_GT(newHorizonsHeroes::patronessPermille(loaded), 0) << "The captured Rampart row is saved with the world";
 	EXPECT_TRUE(newHorizonsHeroes::patronessCollection(*loaded, *loadedTown).empty()) << "This week's collection stays spent";
+}
+
+TEST_F(RampartAdventureSpecialtyTest, PatronessCollectsOnAnUnguardedCapture)
+{
+	ASSERT_NO_FATAL_FAILURE(besideTown(PlayerColor::NEUTRAL, {}));
+	const auto before = gold();
+	// onHeroVisit -> onTownCaptured -> heroVisitCastle
+	ASSERT_TRUE(handler->moveHero(specialist->id, specialist->convertFromVisitablePos(town->visitablePos()),
+		EMovementMode::STANDARD, false, PLAYER, EPathfindingLayer::LAND));
+	ASSERT_EQ(town->getOwner(), PLAYER);
+	ASSERT_EQ(town->getVisitingHero(), specialist);
+	ASSERT_GT(expectedCollection(), 0);
+	EXPECT_EQ(gold(), before + expectedCollection()) << "The captured town is now hers";
+}
+
+TEST_F(RampartAdventureSpecialtyTest, PatronessCollectsWhenSheEntersAfterASiegeWin)
+{
+	ASSERT_NO_FATAL_FAILURE(besideTown(PlayerColor(1), {{creature("core:pikeman"), 1}}));
+	BattleResult result;
+	result.winner = BattleSide::ATTACKER;
+	town->battleFinished(*handler, specialist, result);
+	ASSERT_EQ(town->getOwner(), PLAYER);
+	const auto before = gold();
+	// The movement that started the siege finishes its visit after the victory
+	// (CHeroMovementQuery::visitDestAfterVictory -> visitObjectOnTile).
+	map()->moveObject(specialist->id, town->visitablePos() + specialist->getVisitableOffset());
+	handler->visitObjectOnTile(map()->getTile(town->visitablePos()), specialist);
+	ASSERT_EQ(town->getVisitingHero(), specialist);
+	ASSERT_GT(expectedCollection(), 0);
+	EXPECT_EQ(gold(), before + expectedCollection());
 }
