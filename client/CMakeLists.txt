@@ -233,6 +233,7 @@ set(vcmiclientcommon_SRCS
 	windows/HeroClassLeanIndicator.cpp
 	windows/HeroExperienceBar.cpp
 	windows/HeroWindowCommandReadout.cpp
+	windows/HeroWindowStatRow.cpp
 	windows/CHeroDemonicReserve.cpp
 	windows/HeroGrowthWindow.cpp
 	windows/HeroSkillOddsWindow.cpp
@@ -590,6 +591,7 @@ set(vcmiclientcommon_HEADERS
 	windows/HeroSpecialtyPresentation.h
 	windows/HeroWindowLabelText.h
 	windows/HeroClassLean.h
+	windows/HeroStatRowLayout.h
 	windows/HeroClassLeanIndicator.h
 	windows/HeroExperienceBar.h
 	windows/CHeroWindow.h

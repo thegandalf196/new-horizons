@@ -20504,18 +20504,18 @@
       "hybrid_predecessor_review": "IR-0911-BOUNDED-DIRECT-MAP-COMPOSITION-V3",
       "inherited_deferral": "Owner: ui_developer / gameplay_engineer. Bounded exception for Major System Rework: Leadership attribute restoration, square-root damage scaling, and hero UI panel integration. Hotspots remain subject to ongoing shrinking and modularization policy.\nExact source-list bound only. Before substantive build logic, extract a cohesive target configuration section. Verify source/link membership once and retain no duplicate translation units. Prior stricter obligations remain in inherited_deferral, where present.\n\nBefore introducing conditional build logic, extract a cohesive target helper; retain exact source/link membership, one registration per translation unit and existing inherited obligations.",
       "kind": "exception",
-      "lines": 784,
+      "lines": 786,
       "owner": "ui_developer",
       "previous_exact_review": "IR-PERFORMANCE-STEP2-BUILD-ORG-V1",
       "previous_proposal_review": "PROPOSED-EXACT-REGISTRY-SIX-SOURCE-20261103",
-      "previous_review": "CLAUDE-SPECIALTIES-0931",
+      "previous_review": "CLAUDE-HERO-CLASS-LEAN-20261123",
       "prior_deferral": "Before substantive build-control growth, extract a cohesive target helper; retain all inherited deferrals and one registration per translation unit.",
       "proposal_predecessor_review": "PROPOSED-CLIENT225-BOUNDED-20261103",
-      "rationale": "Exact successor for 0.93.1 beta step 1 (Precise Casting resistance halving, core Stewardship and Lord of the Crypts, +3%/level specialty scaling, activation of unchanged extended ordinary specialties): bounded routing hooks and focused owners only. Existing extraction deferrals retained; no future growth credit. Hero class lean (Might/Magic) row: three source-list lines register the focused HeroClassLean.h, HeroClassLeanIndicator.h/.cpp owner. 781 to 784 lines; no future growth credit.",
-      "review": "CLAUDE-HERO-CLASS-LEAN-20261123",
+      "rationale": "Exact successor for 0.93.1 beta step 1 (Precise Casting resistance halving, core Stewardship and Lord of the Crypts, +3%/level specialty scaling, activation of unchanged extended ordinary specialties): bounded routing hooks and focused owners only. Existing extraction deferrals retained; no future growth credit. Hero class lean (Might/Magic) row: three source-list lines register the focused HeroClassLean.h, HeroClassLeanIndicator.h/.cpp owner. 781 to 784 lines; no future growth credit. Hero window stat row: Leadership, Mana, Regen, Movement and Vision merge into one row owned by the focused HeroWindowStatRow.cpp/HeroStatRowLayout.h (shared with the generated background); the class line and lean row move up 4 px; the skills panel moves up one row. 784 to 786 lines; no future growth credit.",
+      "review": "CLAUDE-HERO-WINDOW-STAT-ROW-20261123",
       "review_scope": "Exact bounded source organization and failure-path review only; native/rendered acceptance and future growth unapproved.",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "bf5746baa1da2a1ac1273cf19f0351b9d202bc694dea8d912f8ffdc967c6ef7a",
+      "sha256": "a6281a2bee109e3d31430b4a05c94e0e793e81333d9541f0be87767ce1c074ca",
       "inherited_deferral_step2": "Exact current size only. Retain all prior obligations below; further renderer/cache expansion must extract its specific presentation or map-cache policy behind a focused interface and verify clipping, zoom, wrap, retained ownership, both backends and guarded scene/quit behavior before accepting it."
     },
     "client/CPlayerInterface.cpp": {
@@ -21904,7 +21904,7 @@
       "deferral": "Before further affected artwork-generation growth, extract the next cohesive panel background generator. Preserve native geometry, external assets, texture origin and rendered comparison; exact current file freeze only. Prior stricter obligations remain recorded in inherited_deferral, where present.",
       "inherited_deferral": "Owner: ui_developer / gameplay_engineer. Bounded exception for Major System Rework: Leadership attribute restoration, square-root damage scaling, and hero UI panel integration. Hotspots remain subject to ongoing shrinking and modularization policy.",
       "kind": "exception",
-      "lines": 2582,
+      "lines": 2580,
       "next_bounded_extraction": {
         "acceptance": "Compare admitted/refused portrait recipes, bounds/alpha/native pixel composition and resource lookup; later verify normal distribution rendering. Measure source and destination, preserving public resource/provenance obligations.",
         "interface": "Explicit source locator/frame/crop, backdrop, native dimensions and inset through the existing render/resource interfaces return a private CanvasPtr or refusal. No retained private authoring input.",
@@ -21925,9 +21925,9 @@
         ]
       },
       "owner": "ui_developer",
-      "previous_review": "FINAL-STAT-PRESENTATION-BOUNDED-SOURCE-20261114",
-      "rationale": "Exact 2594 to 2582-line scope. Client presentation/input routing integrates current spell/action receipts and validated captured views. Preserve command submission, session/teardown ownership, native layout and ordinary input behavior; no direct gameplay mutation is introduced.",
-      "review": "IR-NH092-ORG-3E82D142-20261116",
+      "previous_review": "IR-NH092-ORG-3E82D142-20261116",
+      "rationale": "Exact 2594 to 2582-line scope. Client presentation/input routing integrates current spell/action receipts and validated captured views. Preserve command submission, session/teardown ownership, native layout and ordinary input behavior; no direct gameplay mutation is introduced. Hero window stat row: Leadership, Mana, Regen, Movement and Vision merge into one row owned by the focused HeroWindowStatRow.cpp/HeroStatRowLayout.h (shared with the generated background); the class line and lean row move up 4 px; the skills panel moves up one row. 2582 to 2580 lines; no future growth credit.",
+      "review": "CLAUDE-HERO-WINDOW-STAT-ROW-20261123",
       "review_history": [
         {
           "kind": "legacy",
@@ -21939,7 +21939,7 @@
       ],
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "e58672384cb26f973aed635e1ee6910a0a8b98b70ec66303f13f96676bbf9695"
+      "sha256": "7a0baffd685da284ea7f0be6c8f61ee003dd47730d041e4784a22fca61e5384b"
     },
     "client/render/AssetGenerator.cpp::AssetGenerator::AnimationLayoutMap AssetGenerator::createAdventureOptionsButton(const ImagePath & overlay)#1": {
       "kind": "legacy",
@@ -21989,7 +21989,7 @@
     "client/render/AssetGenerator.cpp::AssetGenerator::CanvasPtr AssetGenerator::createNewHorizonsHeroBackground() const#1": {
       "deferral": "Owner: ui_developer / gameplay_engineer. Bounded exception for Major System Rework: Leadership attribute restoration, square-root damage scaling, and hero UI panel integration. Hotspots remain subject to ongoing shrinking and modularization policy.",
       "kind": "exception",
-      "lines": 101,
+      "lines": 98,
       "next_bounded_extraction": {
         "acceptance": "Compare complete native pixels and tile-edge clipping/phase, then later inspect native and scaled hero-window rendering. No flattened mockup or automatic art approval substitutes for evidence.",
         "interface": "Canvas, texture and bounded destination rectangles with explicit canvas-origin phase; no widget/control input.",
@@ -22009,8 +22009,8 @@
         ]
       },
       "owner": "ui_developer",
-      "rationale": "Major system rework: restore Leadership secondary attribute, square-root stack efficiency, and redesign hero UI with Mana, Mana Regen, Vision, and Movement.",
-      "review": "IR-MAJOR-REWORK-LEADERSHIP-UI-20261111",
+      "rationale": "Major system rework: restore Leadership secondary attribute, square-root stack efficiency, and redesign hero UI with Mana, Mana Regen, Vision, and Movement. Hero window stat row: Leadership, Mana, Regen, Movement and Vision merge into one row owned by the focused HeroWindowStatRow.cpp/HeroStatRowLayout.h (shared with the generated background); the class line and lean row move up 4 px; the skills panel moves up one row. 101 to 98 lines; no future growth credit.",
+      "review": "CLAUDE-HERO-WINDOW-STAT-ROW-20261123",
       "review_history": [
         {
           "kind": "legacy",
@@ -22021,8 +22021,9 @@
         }
       ],
       "review_scope": "Complete independent reading of the exact listed source unit and its responsibility boundaries at f86a363b65005005fde9d6d53151ab97d7f03fa4; unchanged pre-existing bytes only, no future growth allowance.",
-      "review_status": "INDEPENDENT_SOURCE_ORGANIZATION_LEGACY_FREEZE_ONLY",
-      "sha256": "2dc72fda4822680efa76abd210e21c8d98013677d7f12ed9f508110bd08eb400"
+      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
+      "sha256": "38550eb26ccb3a6bb55962d2c0513244c1735542c3c299bfaf39bdc26bed078b",
+      "previous_review": "IR-MAJOR-REWORK-LEADERSHIP-UI-20261111"
     },
     "client/render/AssetGenerator.cpp::AssetGenerator::CanvasPtr AssetGenerator::createNewHorizonsMenuTitleImage(const std::string & resource) const#1": {
       "kind": "legacy",
@@ -22582,13 +22583,13 @@
       "kind": "exception",
       "lines": 746,
       "owner": "ui_developer",
-      "previous_review": "IR-NH092-ORG-3E82D142-20261116",
+      "previous_review": "CLAUDE-HERO-CLASS-LEAN-20261123",
       "proposal_predecessor_review": "PROPOSED-CLIENT225-BOUNDED-20261103",
-      "rationale": "Exact 743 to 743-line scope. Client presentation/input routing integrates current spell/action receipts and validated captured views. Preserve command submission, session/teardown ownership, native layout and ordinary input behavior; no direct gameplay mutation is introduced. Hero class lean (Might/Magic) row: one include, one construction line and one refresh call hook into the focused HeroClassLeanIndicator owner, which positions itself from the class line, so no layout method grows. 743 to 746 lines; no future growth credit.",
-      "review": "CLAUDE-HERO-CLASS-LEAN-20261123",
+      "rationale": "Exact 743 to 743-line scope. Client presentation/input routing integrates current spell/action receipts and validated captured views. Preserve command submission, session/teardown ownership, native layout and ordinary input behavior; no direct gameplay mutation is introduced. Hero class lean (Might/Magic) row: one include, one construction line and one refresh call hook into the focused HeroClassLeanIndicator owner, which positions itself from the class line, so no layout method grows. 743 to 746 lines; no future growth credit. Hero window stat row: Leadership, Mana, Regen, Movement and Vision merge into one row owned by the focused HeroWindowStatRow.cpp/HeroStatRowLayout.h (shared with the generated background); the class line and lean row move up 4 px; the skills panel moves up one row. 746 to 746 lines; no future growth credit.",
+      "review": "CLAUDE-HERO-WINDOW-STAT-ROW-20261123",
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "123d4662c23ea00f1eaa19fa15f5c543a8b079b715620ef92684d9ae1cb47028"
+      "sha256": "06f980a886f3effa34cd2ee673a1c63e92a3ce58349f0eeba9e7b5923bb8f767"
     },
     "client/windows/CHeroWindow.cpp::CHeroWindow::CHeroWindow(const CGHeroInstance * hero) : CWindowObject(useNewHorizonsHeroLayout(hero) ? BORDERED : PLAYER_COLORED, ImagePath::builtin(useNewHorizonsHeroLayout(hero) ? \"newHorizonsHeroBackground\" : ENGINE->isRoeData() ? \"HeroScr3\" : \"HeroScr4\"))#1": {
       "completed_p_predecessor": {
@@ -22602,13 +22603,13 @@
       "kind": "exception",
       "lines": 203,
       "owner": "ui_developer",
-      "previous_review": "IR-NH092-ORG-3E82D142-20261116",
+      "previous_review": "CLAUDE-HERO-CLASS-LEAN-20261123",
       "proposal_predecessor_review": "PROPOSED-CLIENT225-BOUNDED-20261103",
-      "rationale": "Exact 202 to 202-line scope. Client presentation/input routing integrates current spell/action receipts and validated captured views. Preserve command submission, session/teardown ownership, native layout and ordinary input behavior; no direct gameplay mutation is introduced. Hero class lean (Might/Magic) row: one line constructs the focused HeroClassLeanIndicator beside the class line. 202 to 203 lines; no future growth credit.",
-      "review": "CLAUDE-HERO-CLASS-LEAN-20261123",
+      "rationale": "Exact 202 to 202-line scope. Client presentation/input routing integrates current spell/action receipts and validated captured views. Preserve command submission, session/teardown ownership, native layout and ordinary input behavior; no direct gameplay mutation is introduced. Hero class lean (Might/Magic) row: one line constructs the focused HeroClassLeanIndicator beside the class line. 202 to 203 lines; no future growth credit. Hero window stat row: Leadership, Mana, Regen, Movement and Vision merge into one row owned by the focused HeroWindowStatRow.cpp/HeroStatRowLayout.h (shared with the generated background); the class line and lean row move up 4 px; the skills panel moves up one row. 203 to 203 lines; no future growth credit.",
+      "review": "CLAUDE-HERO-WINDOW-STAT-ROW-20261123",
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "0ad0ba056819db6c2adc8199686cfefc2aee08f3b096318225d086c8a72ddff2"
+      "sha256": "67f530bc52af53c568ccb2075a619d5eed7b7c32a7a312fdda6de099fb771dce"
     },
     "client/windows/CHeroWindow.cpp::void CHeroWindow::refreshHero(bool refreshArtifactInteraction)#1": {
       "completed_p_predecessor": {
@@ -22643,16 +22644,16 @@
       "deferral": "UI owner: before further layout-body growth, extract one cohesive secondary-skill/perk grid construction or restoration group with explicit coordinates; preserve legacy resize, child lifetimes, selection panels and rendered fit. Exact185-line shrinking boundary only; no growth allowance. Earlier obligations remain in prior_deferral/inherited_deferral.",
       "inherited_deferral": "Owner: ui_developer / gameplay_engineer. Bounded exception for hero window UI alignment and layout anchoring.",
       "kind": "exception",
-      "lines": 185,
+      "lines": 140,
       "owner": "ui_developer",
-      "previous_review": "IR-LEADERSHIP-1159-INDEPENDENT-20261113-HEAD-SUPPLEMENT",
+      "previous_review": "IR-NEXT-RELEASE-PROTECTION-MOVEMENT-SOURCE",
       "prior_deferral": "Before further layout-body growth, extract one cohesive secondary-skill/perk grid construction group with existing explicit coordinates. Preserve legacy resize restoration, child lifetimes, selection panels and native rendered fit; exact193 only. Prior stricter obligations remain recorded in inherited_deferral, where present.",
       "proposal_predecessor_review": "IR-MAJOR-REWORK-LEADERSHIP-UI-20261111",
-      "rationale": "193 to185 lines: existing Movement construction/hide sequence extracted to focused18/11-line methods, with one captured-growth label. Existing secondary-skill/perk grids and legacy lifecycle remain in their current owner. Previous deferrals/history retained verbatim.",
-      "review": "IR-NEXT-RELEASE-PROTECTION-MOVEMENT-SOURCE",
+      "rationale": "193 to185 lines: existing Movement construction/hide sequence extracted to focused18/11-line methods, with one captured-growth label. Existing secondary-skill/perk grids and legacy lifecycle remain in their current owner. Previous deferrals/history retained verbatim. Hero window stat row: Leadership, Mana, Regen, Movement and Vision merge into one row owned by the focused HeroWindowStatRow.cpp/HeroStatRowLayout.h (shared with the generated background); the class line and lean row move up 4 px; the skills panel moves up one row. 185 to 140 lines; no future growth credit.",
+      "review": "CLAUDE-HERO-WINDOW-STAT-ROW-20261123",
       "review_scope": "Exact shrinking layout-method ratchet only; no future growth, native/rendered/balance or release acceptance.",
-      "review_status": "INDEPENDENTLY_REVIEWED_SOURCE_ONLY",
-      "sha256": "6d54b7d21be3019417cb06a261917661fb4719161d00d03dc5c5c0cc1eff2f19"
+      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
+      "sha256": "1ef2014160627129851c56a1d87a16fc920dfd034356a0e12f8703f762ee3415"
     },
     "client/windows/CHeroWindowLayout.cpp::void CHeroWindow::restoreLegacyLayout()#1": {
       "completed_p_predecessor": {
@@ -22666,14 +22667,14 @@
       "kind": "exception",
       "lines": 169,
       "owner": "ui_developer",
-      "previous_review": "IR-HERO-WINDOW-ALIGNMENT-FIX-20261112",
+      "previous_review": "IR-NEXT-RELEASE-PROTECTION-MOVEMENT-SOURCE",
       "prior_deferral": "Owner: ui_developer / gameplay_engineer. Bounded exception for hero window UI alignment and layout anchoring.",
       "proposal_predecessor_review": "IR-MAJOR-REWORK-LEADERSHIP-UI-20261111",
-      "rationale": "174 to169 lines: existing Movement construction/hide sequence extracted to focused18/11-line methods, with one captured-growth label. Existing secondary-skill/perk grids and legacy lifecycle remain in their current owner. Previous deferrals/history retained verbatim.",
-      "review": "IR-NEXT-RELEASE-PROTECTION-MOVEMENT-SOURCE",
+      "rationale": "174 to169 lines: existing Movement construction/hide sequence extracted to focused18/11-line methods, with one captured-growth label. Existing secondary-skill/perk grids and legacy lifecycle remain in their current owner. Previous deferrals/history retained verbatim. Hero window stat row: Leadership, Mana, Regen, Movement and Vision merge into one row owned by the focused HeroWindowStatRow.cpp/HeroStatRowLayout.h (shared with the generated background); the class line and lean row move up 4 px; the skills panel moves up one row. 169 to 169 lines; no future growth credit.",
+      "review": "CLAUDE-HERO-WINDOW-STAT-ROW-20261123",
       "review_scope": "Exact shrinking layout-method ratchet only; no future growth, native/rendered/balance or release acceptance.",
-      "review_status": "INDEPENDENTLY_REVIEWED_SOURCE_ONLY",
-      "sha256": "518cc51b59738871a64bffe8eab047d7c559d3e9cb55028f9ddb2d785b7146e3"
+      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
+      "sha256": "9d2bea42e17f8348134bc3ce8efa97c65b65df0acf95958f54364076eb2c2d71"
     },
     "client/windows/CKingdomInterface.cpp": {
       "deferral": "UI owner: before further substantive Kingdom help growth, extract InfoBoxHeroData presentation/help construction into a focused hero-info owner, preserving unchanged town/custom implementations, native components, empty slots and captured hero rules. Characterize info click vs popup before moving ownership.",

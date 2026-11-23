@@ -136,7 +136,8 @@ class CHeroWindow : public CStatusbarWindow, public IGarrisonHolder, public CWin
 	void refreshCommandReadout();
 	void refreshMiddlePaneReadout();
 	void refreshMovementReadout();
-	void initializeMovementReadout();
+	void configureStatRow();
+	void fitStatRow();
 	void hideMovementReadout();
 	void refreshLegacyCommandReadout();
 	void alignAttributeReadouts();

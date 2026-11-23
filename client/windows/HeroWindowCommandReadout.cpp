@@ -3,6 +3,7 @@
 #include "CHeroWindow.h"
 #include "CommandPresentation.h"
 #include "HeroExperienceBar.h"
+#include "HeroStatRowLayout.h"
 #include "SpellPointPresentation.h"
 #include "../GameEngine.h"
 #include "../GameInstance.h"
@@ -102,8 +103,10 @@ void CHeroWindow::alignAttributeReadouts()
 	};
 	for(size_t i = 0; i < primSkillValues.size(); ++i)
 		centerGroup(primSkillValues[i], growthValues[i], 277 + static_cast<int>(i) * 82, 80);
+	fitStatRow();
 	if(movementValue && movementGrowthValue)
-		centerGroup(movementValue, movementGrowthValue, 138, 194);
+		centerGroup(movementValue, movementGrowthValue,
+			heroStatRow::textCenter(heroStatRow::MOVEMENT), heroStatRow::VALUE_Y);
 }
 
 void CHeroWindow::refreshMiddlePaneReadout()

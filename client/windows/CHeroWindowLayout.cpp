@@ -11,6 +11,7 @@
 #include "CHeroWindow.h"
 #include "HeroExperienceBar.h"
 #include "HeroWindowLabelText.h"
+#include "HeroStatRowLayout.h"
 #include "../GameEngine.h"
 #include "../gui/TextAlignment.h"
 #include "../gui/Shortcut.h"
@@ -35,7 +36,7 @@ void CHeroWindow::configureNewHorizonsLayout()
 	banner->disable();
 	move(name, Point(139, 32));
 	name->setMaxWidth(114);
-	move(title, Point(152, 61));
+	move(title, Point(152, 57));
 	title->setMaxWidth(140);
 	move(portraitImage, Point(16, 18));
 	move(portraitArea, Point(16, 18));
@@ -68,9 +69,6 @@ void CHeroWindow::configureNewHorizonsLayout()
 	move(expArea, Point(154, 88));
 	expArea->pos.w = 278;
 	expArea->pos.h = 44;
-	move(spellPointsArea, Point(152, 136));
-	spellPointsArea->pos.w = 140;
-	spellPointsArea->pos.h = 38;
 
 	// Three compact native glyphs share the leather band ending at 728.
 	// The blue hero-list strip starts at 734 and is never a status cell.
@@ -107,50 +105,8 @@ void CHeroWindow::configureNewHorizonsLayout()
 	xpProgressBar = std::make_shared<HeroExperienceBar>(Point(204, 114), Point(220, 12));
 	move(xpProgressBar, Point(204, 114));
 
-	// Row 2: Leadership, Mana, Mana Regen
-	const std::string_view fieldName = "Leadership";
-	const auto iconKey = fieldName == "Leadership" ? "NH_hero_leadership_44" : "NH_hero_movement_44";
-	leadershipImage = std::make_shared<CAnimImage>(AnimationPath::builtin(iconKey), 0, Rect(16, 138, 34, 34));
-	move(leadershipImage, Point(16, 138));
-	capabilityIcons.push_back(leadershipImage);
-	commandArea = std::make_shared<LRClickableAreaWText>(Rect(12, 136, 140, 38), LIBRARY->generaltexth->translate("new-horizons.command.description"));
-	move(commandArea, Point(12, 136));
-	leadershipLabel = std::make_shared<CLabel>(101, 138, FONT_SMALL, ETextAlignment::TOPCENTER, Colors::YELLOW, "Leadership", 76);
-	move(leadershipLabel, Point(101, 138));
-	commandValue = std::make_shared<CLabel>(101, 154, FONT_SMALL, ETextAlignment::TOPCENTER, Colors::WHITE, "", 76);
-	move(commandValue, Point(101, 154));
-
-	manaOrbImage = std::make_shared<CPicture>(ImagePath::builtin("heroWindow/manaOrb"), 156, 140);
-	move(manaOrbImage, Point(156, 140));
-	labels[6]->alignment = ETextAlignment::TOPCENTER;
-	move(labels[6], Point(241, 138));
-	labels[6]->pos.w = 0;
-	labels[6]->pos.h = 0;
-	labels[6]->setMaxWidth(76);
-	labels[6]->setText("Mana");
-	manaValue = std::make_shared<CLabel>(241, 154, FONT_SMALL, ETextAlignment::TOPCENTER, Colors::WHITE, "", 76);
-	move(manaValue, Point(241, 154));
-
-	manaRegenImage = std::make_shared<CPicture>(ImagePath::builtin("heroWindow/manaRegen"), 296, 140);
-	move(manaRegenImage, Point(296, 140));
-	manaRegenArea = std::make_shared<LRClickableAreaWText>(Rect(292, 136, 140, 38), "");
-	move(manaRegenArea, Point(292, 136));
-	manaRegenLabel = std::make_shared<CLabel>(381, 138, FONT_SMALL, ETextAlignment::TOPCENTER, Colors::YELLOW, "Mana Regen", 76);
-	move(manaRegenLabel, Point(381, 138));
-	manaRegenValue = std::make_shared<CLabel>(381, 154, FONT_SMALL, ETextAlignment::TOPCENTER, Colors::WHITE, "", 76);
-	move(manaRegenValue, Point(381, 154));
-
-	// Row 3: Movement, Vision
-	initializeMovementReadout();
-
-	visionImage = std::make_shared<CPicture>(ImagePath::builtin("heroWindow/visionTelescope"), 230, 180);
-	move(visionImage, Point(230, 180));
-	visionArea = std::make_shared<LRClickableAreaWText>(Rect(222, 174, 210, 38), "Vision radius");
-	move(visionArea, Point(222, 174));
-	visionLabel = std::make_shared<CLabel>(351, 178, FONT_SMALL, ETextAlignment::TOPCENTER, Colors::YELLOW, "Vision", 110);
-	move(visionLabel, Point(351, 178));
-	visionValue = std::make_shared<CLabel>(351, 194, FONT_SMALL, ETextAlignment::TOPCENTER, Colors::WHITE, "", 110);
-	move(visionValue, Point(351, 194));
+	// One row: Leadership, Mana, Regen, Movement, Vision
+	configureStatRow();
 
 	// Siege and Morale / Luck
 	legacySiegeArea = std::make_shared<LRClickableAreaWText>(Rect(674, 12, 54, 76), "Siege rating available to this hero");
@@ -171,14 +127,14 @@ void CHeroWindow::configureNewHorizonsLayout()
 	move(luckLabel, Point(646, 21));
 	labels.push_back(luckLabel);
 
-	const auto skillsHeading = std::make_shared<CLabel>(16, 219, FONT_SMALL, ETextAlignment::TOPLEFT,
+	const auto skillsHeading = std::make_shared<CLabel>(16, heroStatRow::SKILLS_TOP + 1, FONT_SMALL, ETextAlignment::TOPLEFT,
 		Colors::YELLOW, "Skills / learned perks", 376);
-	move(skillsHeading, Point(16, 219));
+	move(skillsHeading, Point(16, heroStatRow::SKILLS_TOP + 1));
 	labels.push_back(skillsHeading);
-	move(growthButton, Point(14 + static_cast<int>(skillsHeading->getWidth()), 219));
+	move(growthButton, Point(14 + static_cast<int>(skillsHeading->getWidth()), heroStatRow::SKILLS_TOP + 1));
 	for(size_t i = 0; i < secSkills.size(); ++i)
 	{
-		const int y = 236 + static_cast<int>(i) * 38;
+		const int y = heroStatRow::SKILLS_TOP + 18 + static_cast<int>(i) * 38;
 		move(secSkills[i], Point(14, y + 2));
 		move(secSkillValues[i], Point(52, y + 2));
 		secSkillNames[i] = heroWindowLabelText::makeSkillName(*this, Point(52, y + 18), 82, true);
@@ -237,9 +193,9 @@ void CHeroWindow::restoreLegacyLayout()
 	move(banner, Point(606, 8));
 	move(name, Point(190, 38));
 	name->setMaxWidth(0);
-	move(title, Point(175, 65));
+	move(title, Point(175, 61));
 	title->setMaxWidth(180);
-	move(growthButton, Point(273, 53));
+	move(growthButton, Point(273, 49));
 	move(portraitImage, Point(19, 19));
 	move(portraitArea, Point(18, 18));
 	move(portraitWikiArea, Point(18, 18));
@@ -380,25 +336,6 @@ void CHeroWindow::restoreLegacyLayout()
 			Point(right ? 212 : 68, y + 24), right && secSkillSlider ? 71 : 87, false);
 		secSkillValues[i]->setMaxWidth(right && secSkillSlider ? 71 : 87);
 	}
-}
-
-void CHeroWindow::initializeMovementReadout()
-{
-	const auto move = [this](const auto & widget, Point point)
-	{
-		widget->moveTo(pos.topLeft() + point);
-	};
-	movementDynamicImage = std::make_shared<CAnimImage>(AnimationPath::builtin("NH_hero_movement_44"), 0, Rect(20, 178, 34, 34));
-	move(movementDynamicImage, Point(20, 178));
-	capabilityIcons.push_back(movementDynamicImage);
-	movementArea = std::make_shared<LRClickableAreaWText>(Rect(12, 174, 210, 38), "Movement points");
-	move(movementArea, Point(12, 174));
-	movementDynamicLabel = std::make_shared<CLabel>(138, 178, FONT_SMALL, ETextAlignment::TOPCENTER, Colors::YELLOW, "Movement", 110);
-	move(movementDynamicLabel, Point(138, 178));
-	movementValue = std::make_shared<CLabel>(138, 194, FONT_SMALL, ETextAlignment::TOPCENTER, Colors::WHITE, "", 110);
-	move(movementValue, Point(138, 194));
-	movementGrowthValue = std::make_shared<CLabel>(138, 194, FONT_SMALL, ETextAlignment::TOPCENTER, Colors::GREEN, "", 32);
-	move(movementGrowthValue, Point(138, 194));
 }
 
 void CHeroWindow::hideMovementReadout()

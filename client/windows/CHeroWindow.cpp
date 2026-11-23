@@ -127,11 +127,11 @@ CHeroWindow::CHeroWindow(const CGHeroInstance * hero)
 	const bool showsMasteries = hero->getMasteryView().has_value();
 	const bool showsPerks = newHorizonsHeroes::usesPerkRules(hero->getPerkState().getRules());
 	const bool showsDevelopment = showsGrowth || showsCapabilities || showsMasteries || showsPerks;
-	title = std::make_shared<CLabel>(showsDevelopment ? 175 : 190, 65, EFonts::FONT_MEDIUM, ETextAlignment::CENTER, Colors::WHITE, "", showsDevelopment ? 180 : 0);
+	title = std::make_shared<CLabel>(showsDevelopment ? 175 : 190, 61, EFonts::FONT_MEDIUM, ETextAlignment::CENTER, Colors::WHITE, "", showsDevelopment ? 180 : 0);
 	classLean = std::make_shared<HeroClassLeanIndicator>();
 	if(showsDevelopment)
 	{
-		growthButton = std::make_shared<CButton>(Point(273, 53), AnimationPath::builtin("NH_hero_growth_entry"),
+		growthButton = std::make_shared<CButton>(Point(273, 49), AnimationPath::builtin("NH_hero_growth_entry"),
 			CButton::tooltip("Class skill odds", "View class weights for secondary-skill offers. Actual next-level probabilities depend on eligible choices."),
 			[this]
 			{
