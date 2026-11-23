@@ -19,16 +19,16 @@
 #include "../entities/building/CBuilding.h"
 #include "../entities/faction/CTownHandler.h"
 
-int32_t CGTownInstance::getStewardGoldBeforeHandicap() const
+int32_t CGTownInstance::getStewardGoldBeforeHandicap(const CGHeroInstance * excluded) const
 {
 	if(!getOwner().isValidPlayer())
 		return 0;
 	if(const auto * steward = newHorizonsEstates::townSteward(*this))
-		return newHorizonsEstates::stewardGold(*steward);
+		return steward == excluded ? 0 : newHorizonsEstates::stewardGold(*steward);
 	constexpr int32_t goldPerHero = 250;
-	const auto qualifies = [this](const CGHeroInstance * hero)
+	const auto qualifies = [this, excluded](const CGHeroInstance * hero)
 	{
-		return hero && hero->getVisitedTown() == this && hero->getOwner() == getOwner()
+		return hero && hero != excluded && hero->getVisitedTown() == this && hero->getOwner() == getOwner()
 			&& !newHorizonsEstates::usesRevisedPolicy(hero->getPerkState().getRules())
 			&& hero->hasActivePerk("new-horizons:estates", "new-horizons:estates.stewardship");
 	};

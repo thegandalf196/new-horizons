@@ -12,6 +12,8 @@
 #include "../../mapObjects/CGTownInstance.h"
 #include "../../bonuses/Bonus.h"
 #include "../../ResourceSet.h"
+#include "../../StartInfo.h"
+#include "../../callback/IGameInfoCallback.h"
 #include "../../nativeRules/CompiledDevelopmentRules.h"
 
 #include <array>
@@ -247,6 +249,12 @@ ResourceSet patronessCollection(const CGHeroInstance & hero, const CGTownInstanc
 		{ return bonus && bonus->type == BonusType::NONE && bonus->stacking == stacking; }))
 		return {};
 	ResourceSet result = town.dailyIncome();
+	// Her own steward Gold is not the town's income to share with her.
+	const int64_t ownStewardGold = town.getStewardGoldBeforeHandicap() - town.getStewardGoldBeforeHandicap(&hero);
+	if(ownStewardGold > 0 && town.cb)
+		if(const auto * settings = town.cb->getPlayerSettings(town.getOwner()))
+			result[EGameResID::GOLD] = std::max<TResourceCap>(0,
+				result[EGameResID::GOLD] - ownStewardGold * settings->handicap.percentIncome / 100);
 	for(auto & amount : result)
 		amount = amount > 0 ? static_cast<TResourceCap>(static_cast<int64_t>(amount) * permille / 1000) : 0;
 	return result;

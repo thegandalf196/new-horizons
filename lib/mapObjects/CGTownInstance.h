@@ -324,7 +324,8 @@ public:
 	ResourceSet getBuildingCost(const BuildingID & buildingID) const;
 	/// Current resident projection, sampled by NewTurn at the day boundary.
 	/// Included in dailyIncome; this subtotal precedes the ordinary handicap.
-	int32_t getStewardGoldBeforeHandicap() const;
+	/// `excluded` leaves out that hero's own steward Gold (Jenova's Patroness).
+	int32_t getStewardGoldBeforeHandicap(const CGHeroInstance * excluded = nullptr) const;
 	ResourceSet dailyIncome() const override;
 	const newHorizonsEconomy::MagnateIncome & getNewHorizonsMagnateIncome() const { return newHorizonsMagnateIncome; }
 	void setNewHorizonsMagnateIncome(const newHorizonsEconomy::MagnateIncome & snapshot)

@@ -271,3 +271,18 @@ TEST_F(RampartAdventureSpecialtyTest, PatronessCollectsWhenSheEntersAfterASiegeW
 	ASSERT_GT(expectedCollection(), 0);
 	EXPECT_EQ(gold(), before + expectedCollection());
 }
+
+TEST_F(RampartAdventureSpecialtyTest, PatronessLeavesOutJenovasOwnStewardGold)
+{
+	ASSERT_NO_FATAL_FAILURE(startWith("core:jenova"));
+	server = std::make_unique<GameHandlerTestServer>(gameState(), PLAYER);
+	handler = std::make_unique<CGameHandler>(*server, gameState());
+	const auto plain = newHorizonsHeroes::patronessCollection(*specialist, *town)[EGameResID::GOLD];
+	ASSERT_TRUE(handler->assignTownSteward(town->id, specialist->id, PLAYER));
+	ASSERT_GT(town->getStewardGoldBeforeHandicap(), 0);
+	EXPECT_EQ(newHorizonsHeroes::patronessCollection(*specialist, *town)[EGameResID::GOLD], plain)
+		<< "Her own steward Gold is not shared back to her";
+	ASSERT_TRUE(handler->assignTownSteward(town->id, ordinary->id, PLAYER));
+	EXPECT_GT(newHorizonsHeroes::patronessCollection(*specialist, *town)[EGameResID::GOLD], plain)
+		<< "Another hero's steward Gold is part of the town's income";
+}
