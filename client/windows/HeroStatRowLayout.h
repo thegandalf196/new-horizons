@@ -25,7 +25,7 @@ constexpr int LEFT = 12;
 constexpr int TOP = 136;
 constexpr int WIDTH = 420;
 constexpr int HEIGHT = 38;
-constexpr int ICON_HEIGHT = 22;
+constexpr int ICON_HEIGHT = 20;
 constexpr int LABEL_Y = TOP + 2;
 constexpr int VALUE_Y = TOP + 18;
 /// The skills panel starts right below this single row.
@@ -33,8 +33,9 @@ constexpr int SKILLS_TOP = TOP + HEIGHT + 6;
 
 // Widths fit the widest usual label/value in the original small font
 // ("Leadership", "200 / 200 +1"); longer values fall back to the tiny font.
+// The last cell keeps a few pixels between "Vision" and the equipment panel.
 constexpr std::array<Geometry, COUNT> CELLS = {{
-	{LEFT, 90, 22}, {102, 77, 25}, {179, 80, 26}, {259, 101, 22}, {360, 72, 29}}};
+	{LEFT, 88, 20}, {100, 76, 23}, {176, 78, 23}, {254, 100, 20}, {354, 78, 27}}};
 
 constexpr int iconLeft(Cell cell) { return CELLS[cell].x + 3; }
 constexpr int iconTop() { return TOP + (HEIGHT - ICON_HEIGHT) / 2; }

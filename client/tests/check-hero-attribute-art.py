@@ -13,6 +13,7 @@ IMAGES = ArtPath()
 HERO = (ROOT / "client/windows/CHeroWindow.cpp").read_text(encoding="utf-8")
 HERO += (ROOT / "client/windows/CHeroWindowLayout.cpp").read_text(encoding="utf-8")
 HERO += (ROOT / "client/windows/HeroWindowCommandReadout.cpp").read_text(encoding="utf-8")
+HERO += (ROOT / "client/windows/HeroWindowStatRow.cpp").read_text(encoding="utf-8")
 GROWTH = (ROOT / "client/windows/HeroGrowthWindow.cpp").read_text(encoding="utf-8")
 
 
@@ -34,12 +35,12 @@ def main() -> None:
     require(HERO, "Rect(410, 404, 24, 24)", "legacy Leadership display dimensions")
     require(HERO, '"NH_hero_leadership_44"', "hero-pane Leadership binding")
     require(HERO, '"NH_hero_movement_44"', "hero-pane Movement binding")
-    require(HERO, 'Rect(12, 136, 140, 38)', "Leadership tooltip area dimensions")
-    require(HERO, 'Rect(12, 174, 210, 38)', "Movement tooltip area dimensions")
+    require(HERO, 'commandArea = std::make_shared<LRClickableAreaWText>(cellRect(Cell::LEADERSHIP)', "Leadership tooltip area")
+    require(HERO, 'movementArea = std::make_shared<LRClickableAreaWText>(cellRect(Cell::MOVEMENT)', "Movement tooltip area")
     require(HERO, '"Movement points remaining / current limit: "', "Movement tooltip readout")
     # Read the captured policy rather than assuming every historical hero gains Movement.
     require(HERO, "levelMovementBonus(curHero->getPrimaryGrowthRules(), 2)", "captured per-level Movement growth")
-    require(HERO, "centerGroup(movementValue, movementGrowthValue, 138, 194)", "centered Movement value and growth")
+    require(HERO, "heroStatRow::textCenter(heroStatRow::MOVEMENT), heroStatRow::VALUE_Y", "centered Movement value and growth")
     require(HERO, "movementGrowthValue->disable()", "legacy Movement growth visibility")
     require(HERO, "currentDailyMovementBreakdown(curHero, false)", "shared land Movement breakdown")
     require(HERO, "currentDailyMovementBreakdown(curHero, true)", "shared sea Movement breakdown")
