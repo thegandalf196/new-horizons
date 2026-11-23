@@ -177,8 +177,10 @@ private:
 	{
 		uint8_t read;
 		load(read);
-		assert(read == 0 || read == 1);
-		data = static_cast<bool>(read);
+		// The writer stores 0 or 1; anything else is corrupt or misread data.
+		if(read > 1)
+			throw std::runtime_error("Saved data has an invalid boolean value");
+		data = read != 0;
 	}
 
 	/// raw blob of bytes, e.g. a gamestate snapshot - read in bulk instead of byte by byte.
