@@ -37,8 +37,25 @@ def shipping_wave():
 
 
 def retired_row_proof(row):
-    """True only for an exact retired manifest row."""
-    return row in shipping_wave()['retiredEntries']
+    """True for an exact retired manifest row, or one whose recorded successors were retired."""
+    from .nhart_test_resources import later_art_waves
+    waves = later_art_waves()
+    successors = {replacement['previous']['resource']: [] for wave in waves for replacement in wave.get('replacedEntries', [])}
+    for wave in waves:
+        for replacement in wave.get('replacedEntries', []):
+            successors[replacement['previous']['resource']].append(replacement)
+    retired = [entry for wave in waves for entry in wave.get('retiredEntries', [])]
+    seen = 0
+    while row not in retired:
+        step = next((r['current'] for r in successors.get(row['resource'], []) if r['previous'] == row), None)
+        if step is None or seen > len(waves):
+            return False
+        row, seen = step, seen + 1
+    return True
+
+
+def retired_count(waves):
+    return sum(len(wave.get('retiredEntries', [])) for wave in waves)
 
 
 def validate_retirement(wave, entries, index):

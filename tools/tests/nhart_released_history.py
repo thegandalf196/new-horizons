@@ -16,6 +16,7 @@ from .nhart_interface_status_art import interface_status_wave
 from .nhart_status_icon_repaint import repaint_wave
 from .nhart_flat_interface_repaint import flat_repaint_wave
 from .nhart_retired_interface_icons import retirement_wave
+from .nhart_retired_custom_buttons import custom_button_retirement_wave
 
 AUTHORITY_CURRENT = (
     ('massedRanks', 'offensive_drills'), ('veteranCadre', 'defensive_drills'),
@@ -91,6 +92,7 @@ def released_predecessor_entries(entries, waves, digest):
     repaint_wave(waves)
     flat_repaint_wave(waves)
     retirement_wave(waves)
+    custom_button_retirement_wave(waves)
     matches = [i for i, wave in enumerate(waves) if wave['baselineArchiveSha256'] == BRIDGE_NEXT_ARCHIVE]
     if len(matches) != 1 or matches[0] == 0:
         raise ValueError('Missing exact released-art bridge boundary')

@@ -1,0 +1,67 @@
+{
+  "format": 1,
+  "selection": "Owner-directed return to original Heroes III close, cancel and spellbook buttons 2026-11-23",
+  "preservation": "Exact shipped bytes preserved in private authoring storage before removal; hashes below.",
+  "entries": [
+    {
+      "resource": "SPRITES/NH_cancel_button.json",
+      "sha256": "8d81cb3b6c1549de833f15f6a8a736904dec7e85cdad70d0327c4ca3a72240d5",
+      "size": 373,
+      "reason": "Replaced by the original Heroes III IOKAY/ICANCEL buttons in every window that used it."
+    },
+    {
+      "resource": "SPRITES/NH_cancel_disabled.png",
+      "sha256": "89a9113a7a38db41f134c9f27ad2e62bbe03a509897bde7272d8e2b72af6210a",
+      "size": 7024,
+      "reason": "Replaced by the original Heroes III IOKAY/ICANCEL buttons in every window that used it."
+    },
+    {
+      "resource": "SPRITES/NH_cancel_highlighted.png",
+      "sha256": "1b383f20831feee2df4c3efb26aef189bf2701ca974ae5ee911befe44df381a8",
+      "size": 6787,
+      "reason": "Replaced by the original Heroes III IOKAY/ICANCEL buttons in every window that used it."
+    },
+    {
+      "resource": "SPRITES/NH_cancel_normal.png",
+      "sha256": "c17a7d6deb48b0e61589038fc74b2a5f240dba711a57e5112c9175eb98c8d111",
+      "size": 7469,
+      "reason": "Replaced by the original Heroes III IOKAY/ICANCEL buttons in every window that used it."
+    },
+    {
+      "resource": "SPRITES/NH_cancel_pressed.png",
+      "sha256": "761f03886dac0e3471ce061e70294fea49ba8b0412105f14872572abf2592c70",
+      "size": 7469,
+      "reason": "Replaced by the original Heroes III IOKAY/ICANCEL buttons in every window that used it."
+    },
+    {
+      "resource": "SPRITES/NH_spells_button.json",
+      "sha256": "3172b80fbcf691dcb30bce073c210291ca6e7aa8ffd6d7eb8c5f5c978933df64",
+      "size": 373,
+      "reason": "Replaced by the original battle Cast Spell button (icm005) in the hero action window."
+    },
+    {
+      "resource": "SPRITES/NH_spells_disabled.png",
+      "sha256": "5796825bb6d792100e2751b5fc745007c06fe529bd293793657db0ae28681160",
+      "size": 5640,
+      "reason": "Replaced by the original battle Cast Spell button (icm005) in the hero action window."
+    },
+    {
+      "resource": "SPRITES/NH_spells_highlighted.png",
+      "sha256": "a4703fbe88043381b7fc71125e3126cb77e4ed489978cd65f3bc90c2c9478453",
+      "size": 6419,
+      "reason": "Replaced by the original battle Cast Spell button (icm005) in the hero action window."
+    },
+    {
+      "resource": "SPRITES/NH_spells_normal.png",
+      "sha256": "afb12f6891ba3281935ad36755e97b0249b2df184e97a44a303eb4dbe40c49d1",
+      "size": 6760,
+      "reason": "Replaced by the original battle Cast Spell button (icm005) in the hero action window."
+    },
+    {
+      "resource": "SPRITES/NH_spells_pressed.png",
+      "sha256": "871ae06d1f59391859f9767a97c801841dbd9da686cf0b11c0017185fd149973",
+      "size": 6760,
+      "reason": "Replaced by the original battle Cast Spell button (icm005) in the hero action window."
+    }
+  ]
+}

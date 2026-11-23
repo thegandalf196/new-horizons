@@ -23,8 +23,8 @@ SCALE = 4
 APPROVED_MANIFEST = HERE / 'approved-six-school-assets.json'
 APPROVED_FILES = json.loads(APPROVED_MANIFEST.read_text())['files']
 # Retired outputs have no consumer; a regeneration must never bring them back.
-RETIRED = {Path(row['resource']).stem for row in
-           json.loads((HERE / 'retired-interface-icons.json').read_text())['entries']}
+RETIRED = {Path(row['resource']).stem for record in ('retired-interface-icons.json', 'retired-custom-buttons.json')
+           for row in json.loads((HERE / record).read_text())['entries']}
 
 
 def preserve_approved(path):

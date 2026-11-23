@@ -21,7 +21,8 @@ from nhart_test_resources import ArtPath
 
 ROOT = Path(__file__).resolve().parents[2]
 SCHOOLS = ("light", "nature", "sorcery", "havoc", "shadow", "chaos")
-BUTTONS = ("charge", "holdTheLine", "spells", "cancel")
+# Spells/Cancel use the original Heroes III buttons (retired-custom-buttons.json).
+BUTTONS = ("charge", "holdTheLine")
 SKILL_SIZES = {"small": (32, 32), "medium": (44, 44), "large": (82, 93), "scenarioBonus": (58, 64)}
 # Only the 32 px glyphs the hero growth window binds remain; the unused 64 px set,
 # stance buttons and placeholder entries were retired (retired-interface-icons.json).

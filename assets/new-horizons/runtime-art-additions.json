@@ -20507,6 +20507,138 @@
         }
       ],
       "approval": "Owner-approved retirement; no runtime consumer"
+    },
+    {
+      "baselineArchiveSha256": "9228a5f7fbf4f5ec25bc1a5e967dd75f7d9c304f483a50a1d422f0fd458bd466",
+      "baselineManifestSha256": "d0927f26b0fa1c6a3c248a05596a1709a48c6b51711f3ed63fc0d098971e49f2",
+      "baselineEntriesSha256": "77bc18d3639d1939f965507effe100bf5b64596eee859cf43d916e03618cb4e6",
+      "baselineCount": 6543,
+      "entryCount": 6533,
+      "newArchiveSha256": "ba8732aec00cab7d78cc70afe1b2f4c8e1f3e7e678364f641223ec9ef7245f7c",
+      "resources": [],
+      "retiredEntries": [
+        {
+          "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
+          "family": "builtin-skills-perks-orders-and-ui",
+          "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
+          "resource": "SPRITES/NH_cancel_button.json",
+          "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
+          "sha256": "8d81cb3b6c1549de833f15f6a8a736904dec7e85cdad70d0327c4ca3a72240d5",
+          "size": 373,
+          "source": "Mods/new-horizons/Images/NH_cancel_button.json"
+        },
+        {
+          "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
+          "family": "builtin-skills-perks-orders-and-ui",
+          "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
+          "resource": "SPRITES/NH_cancel_disabled.png",
+          "selection": "Owner-approved flat interface icon repaint 2026-11-23",
+          "sha256": "89a9113a7a38db41f134c9f27ad2e62bbe03a509897bde7272d8e2b72af6210a",
+          "size": 7024,
+          "source": "Mods/new-horizons/Images/NH_cancel_disabled.png"
+        },
+        {
+          "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
+          "family": "builtin-skills-perks-orders-and-ui",
+          "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
+          "resource": "SPRITES/NH_cancel_highlighted.png",
+          "selection": "Owner-approved flat interface icon repaint 2026-11-23",
+          "sha256": "1b383f20831feee2df4c3efb26aef189bf2701ca974ae5ee911befe44df381a8",
+          "size": 6787,
+          "source": "Mods/new-horizons/Images/NH_cancel_highlighted.png"
+        },
+        {
+          "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
+          "family": "builtin-skills-perks-orders-and-ui",
+          "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
+          "resource": "SPRITES/NH_cancel_normal.png",
+          "selection": "Owner-approved flat interface icon repaint 2026-11-23",
+          "sha256": "c17a7d6deb48b0e61589038fc74b2a5f240dba711a57e5112c9175eb98c8d111",
+          "size": 7469,
+          "source": "Mods/new-horizons/Images/NH_cancel_normal.png"
+        },
+        {
+          "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
+          "family": "builtin-skills-perks-orders-and-ui",
+          "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
+          "resource": "SPRITES/NH_cancel_pressed.png",
+          "selection": "Owner-approved flat interface icon repaint 2026-11-23",
+          "sha256": "761f03886dac0e3471ce061e70294fea49ba8b0412105f14872572abf2592c70",
+          "size": 7469,
+          "source": "Mods/new-horizons/Images/NH_cancel_pressed.png"
+        },
+        {
+          "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
+          "family": "builtin-skills-perks-orders-and-ui",
+          "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
+          "resource": "SPRITES/NH_spells_button.json",
+          "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
+          "sha256": "3172b80fbcf691dcb30bce073c210291ca6e7aa8ffd6d7eb8c5f5c978933df64",
+          "size": 373,
+          "source": "Mods/new-horizons/Images/NH_spells_button.json"
+        },
+        {
+          "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
+          "family": "builtin-skills-perks-orders-and-ui",
+          "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
+          "resource": "SPRITES/NH_spells_disabled.png",
+          "selection": "Owner-approved flat interface icon repaint 2026-11-23",
+          "sha256": "5796825bb6d792100e2751b5fc745007c06fe529bd293793657db0ae28681160",
+          "size": 5640,
+          "source": "Mods/new-horizons/Images/NH_spells_disabled.png"
+        },
+        {
+          "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
+          "family": "builtin-skills-perks-orders-and-ui",
+          "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
+          "resource": "SPRITES/NH_spells_highlighted.png",
+          "selection": "Owner-approved flat interface icon repaint 2026-11-23",
+          "sha256": "a4703fbe88043381b7fc71125e3126cb77e4ed489978cd65f3bc90c2c9478453",
+          "size": 6419,
+          "source": "Mods/new-horizons/Images/NH_spells_highlighted.png"
+        },
+        {
+          "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
+          "family": "builtin-skills-perks-orders-and-ui",
+          "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
+          "resource": "SPRITES/NH_spells_normal.png",
+          "selection": "Owner-approved flat interface icon repaint 2026-11-23",
+          "sha256": "afb12f6891ba3281935ad36755e97b0249b2df184e97a44a303eb4dbe40c49d1",
+          "size": 6760,
+          "source": "Mods/new-horizons/Images/NH_spells_normal.png"
+        },
+        {
+          "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
+          "family": "builtin-skills-perks-orders-and-ui",
+          "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
+          "resource": "SPRITES/NH_spells_pressed.png",
+          "selection": "Owner-approved flat interface icon repaint 2026-11-23",
+          "sha256": "871ae06d1f59391859f9767a97c801841dbd9da686cf0b11c0017185fd149973",
+          "size": 6760,
+          "source": "Mods/new-horizons/Images/NH_spells_pressed.png"
+        }
+      ],
+      "perks": [],
+      "statuses": [],
+      "reusedBindings": [],
+      "retiredCustomButtons": [
+        {
+          "retired": [
+            "SPRITES/NH_cancel_button.json",
+            "SPRITES/NH_cancel_disabled.png",
+            "SPRITES/NH_cancel_highlighted.png",
+            "SPRITES/NH_cancel_normal.png",
+            "SPRITES/NH_cancel_pressed.png",
+            "SPRITES/NH_spells_button.json",
+            "SPRITES/NH_spells_disabled.png",
+            "SPRITES/NH_spells_highlighted.png",
+            "SPRITES/NH_spells_normal.png",
+            "SPRITES/NH_spells_pressed.png"
+          ],
+          "selectionRecordSha256": "2e63a657773e796144537f9696d58f18b56629b1b6ba6c66990a7f57703b02f7"
+        }
+      ],
+      "approval": "Owner-directed retirement; replaced by original Heroes III buttons"
     }
   ]
 }

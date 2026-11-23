@@ -78,8 +78,16 @@ def validate_flat_repaint(wave, entries, reader):
     for replacement in wave['replacedEntries']:
         previous, current = replacement['previous'], replacement['current']
         row = selected[current['resource']]
-        if (lookup.get(current['resource']) != current or previous['source'] != current['source']
+        if (previous['source'] != current['source']
                 or previous['sha256'] != row['previousSha256'] or current['sha256'] != row['sha256']):
+            raise ValueError('Flat interface repaint record changed')
+        if current['resource'] not in lookup:
+            # A later owner-directed retirement removed this repaint; only its exact row remains.
+            from .nhart_retired_interface_icons import retired_row_proof
+            if not retired_row_proof(current):
+                raise ValueError('Flat interface repaint disappeared without a retirement record')
+            continue
+        if lookup[current['resource']] != current:
             raise ValueError('Flat interface repaint record changed')
         data = historical_payload(wave, replacement, reader(current['resource']))
         with Image.open(BytesIO(data)) as image:

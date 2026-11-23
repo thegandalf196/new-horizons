@@ -4,7 +4,8 @@ import json
 from pathlib import Path
 import unittest
 from .nhart_flat_interface_repaint import COUNT, flat_repaint_wave, flat_replacement_proof, validate_flat_repaint
-from .nhart_test_resources import later_art_waves, read_resource
+from .nhart_test_resources import later_art_waves, read_resource, verified_index
+from .nhart_retired_interface_icons import retired_row_proof
 
 MANIFEST = Path(__file__).resolve().parents[2] / 'assets/new-horizons/runtime-art-manifest.json'
 
@@ -22,7 +23,12 @@ class FlatInterfaceRepaintTest(unittest.TestCase):
 
     def test_flat_originals_have_only_a_typed_proof(self):
         wave = flat_repaint_wave(later_art_waves())
+        shipped = verified_index()
         for replacement in wave['replacedEntries']:
+            if replacement['current']['resource'] not in shipped:
+                # Later retired (original-button switch): only the record proof remains.
+                self.assertTrue(retired_row_proof(replacement['previous']))
+                continue
             payload = read_resource(replacement['current']['resource'])
             self.assertTrue(flat_replacement_proof(replacement['previous'], payload))
             self.assertFalse(flat_replacement_proof(replacement['current'], payload))
