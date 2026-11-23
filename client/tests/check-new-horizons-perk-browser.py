@@ -62,10 +62,11 @@ def main() -> None:
     column_left, column_stride, column_width = 12, 208, 200
     panel_top, panel_height = 77, 381
     cards_top, cards_bottom = 116, 450
-    close_top, footer_top = 462, 477
+    close_top, footer_top = 500 - 38, 477  # original 64x30 checkmark, 8 px inside the corner
     assert column_left + 2 * column_stride + column_width <= window_width
     assert panel_top < cards_top < cards_bottom < panel_top + panel_height
-    assert cards_top < cards_bottom < close_top < footer_top < window_height
+    assert cards_top < cards_bottom < panel_top + panel_height < close_top < footer_top < window_height
+    assert close_top + 30 <= window_height and (window_width - 72) + 64 <= window_width
 
     # The live registry has a 4/4/2 rank split. Each 56px card can fit a wrapped
     # two-line name followed by independent Learned and implementation lines.

@@ -240,9 +240,8 @@ CBlacksmithDialog::CBlacksmithDialog(ObjectInstanceID townId, ObjectInstanceID h
 	elements.push_back(std::make_shared<CLabel>(20, 443, FONT_TINY, ETextAlignment::TOPLEFT,
 		Colors::WHITE, weeklyStatus.empty()
 			? "Prices use the lowest configured town offer; duplicate machines appear once." : weeklyStatus, 510));
-	cancel = std::make_shared<CButton>(Point(555, 433), AnimationPath::builtin("NH_cancel_button"),
+	cancel = std::make_shared<CButton>(Point(pos.w - 72, pos.h - 38), AnimationPath::builtin("ICANCEL"),
 		CButton::tooltip("Close", "Return to the town."), [this]() { close(); }, EShortcut::GLOBAL_CANCEL);
-	cancel->setHoverable(true);
 	elements.push_back(cancel);
 
 	Rect barRect(8, pos.h - 21, pos.w - 120, 18);

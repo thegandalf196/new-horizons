@@ -236,9 +236,9 @@ NewHorizonsPerkBrowser::NewHorizonsPerkBrowser(const CGHeroInstance & hero, cons
 
 	elements.push_back(std::make_shared<CLabel>(16, 477, FONT_TINY, ETextAlignment::TOPLEFT,
 		Colors::WHITE, "Click a perk for its explanation; use i for details.", 500));
-	closeButton = std::make_shared<CButton>(Point(555, 462), AnimationPath::builtin("NH_cancel_button"),
+	// Read-only information window: the original checkmark closes it (Enter or Escape).
+	closeButton = std::make_shared<CButton>(Point(pos.w - 72, pos.h - 38), AnimationPath::builtin("IOKAY"),
 		CButton::tooltip("Close", "Return to the hero screen without changing any Skills or perks."),
-		[this] { close(); }, EShortcut::GLOBAL_CANCEL);
-	closeButton->setHoverable(true);
+		[this] { close(); }, EShortcut::GLOBAL_RETURN);
 	updateShadow();
 }

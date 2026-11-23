@@ -3421,9 +3421,8 @@ void CMageGuildAdventureSpellWindow::updateSpells(ObjectInstanceID tID)
 
 	elements.push_back(std::make_shared<CLabel>(22, 400, FONT_TINY, ETextAlignment::TOPLEFT,
 		Colors::WHITE, "Right-click a spell for its description and town purchase terms.", 490));
-	closeButton = std::make_shared<CButton>(Point(555, 391), AnimationPath::builtin("NH_cancel_button"),
+	closeButton = std::make_shared<CButton>(Point(pos.w - 72, pos.h - 38), AnimationPath::builtin("ICANCEL"),
 		CButton::tooltip("Close", "Return to the Mage Guild."), [this] { close(); }, EShortcut::GLOBAL_CANCEL);
-	closeButton->setHoverable(true);
 	updateShadow();
 }
 

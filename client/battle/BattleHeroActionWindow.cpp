@@ -72,10 +72,10 @@ BattleHeroActionWindow::BattleHeroActionWindow(const std::shared_ptr<BattleInter
 	labels.push_back(std::make_shared<CLabel>(320, 57, FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, "Orders use the shared Hero Action; no Mana or Command is spent."));
 	state = std::make_shared<CLabel>(320, 80, FONT_SMALL, ETextAlignment::CENTER, Colors::YELLOW, "");
 
-	spellButton = std::make_shared<CButton>(Point(36, 110), AnimationPath::builtin("NH_spells_button"),
+	// The battle's own Cast Spell button (48x36), centred where the larger custom button stood.
+	spellButton = std::make_shared<CButton>(Point(44, 124), AnimationPath::builtin("icm005"),
 		CButton::tooltip("Spells", "Open the existing spellbook. Casting shares the hero's action with Orders."),
 		[this] { chooseSpell(); });
-	spellButton->setHoverable(true);
 	labels.push_back(std::make_shared<CLabel>(120, 115, FONT_MEDIUM, ETextAlignment::TOPLEFT, Colors::WHITE, "Spells"));
 	labels.push_back(std::make_shared<CMultiLineLabel>(Rect(120, 143, 470, 38), FONT_SMALL, ETextAlignment::TOPLEFT,
 		Colors::WHITE, "Your learned magic. Normal spellbook, mana and targeting requirements still apply."));
@@ -104,9 +104,8 @@ BattleHeroActionWindow::BattleHeroActionWindow(const std::shared_ptr<BattleInter
 	}
 	labels.push_back(std::make_shared<CMultiLineLabel>(Rect(28, 463, 472, 41), FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE,
 		"Commands affect current troops only; no war machines.\nLater summons and clones do not inherit effects."));
-	cancel = std::make_shared<CButton>(Point(548, 445), AnimationPath::builtin("NH_cancel_button"),
+	cancel = std::make_shared<CButton>(Point(pos.w - 72, pos.h - 38), AnimationPath::builtin("ICANCEL"),
 		CButton::tooltip("Cancel", "Return to battle without spending an action."), [this] { cancelSelection(); }, EShortcut::GLOBAL_CANCEL);
-	cancel->setHoverable(true);
 	refresh();
 }
 
@@ -155,9 +154,9 @@ void BattleHeroActionWindow::createOrdersLayout()
 		? "Most Orders end this round; Vanguard uses displayed duration"
 		: "Orders end with this round";
 	labels.push_back(std::make_shared<CLabel>(320, 463, FONT_SMALL, ETextAlignment::CENTER, Colors::YELLOW, footer));
-	cancel = std::make_shared<CButton>(Point(548, 443), AnimationPath::builtin("NH_cancel_button"),
+	// Cancelling the choice uses the original framed cancel button.
+	cancel = std::make_shared<CButton>(Point(pos.w - 72, pos.h - 38), AnimationPath::builtin("ICANCEL"),
 		CButton::tooltip("Cancel", "Return to battle without spending an action."), [this] { cancelSelection(); }, EShortcut::GLOBAL_CANCEL);
-	cancel->setHoverable(true);
 }
 
 void BattleHeroActionWindow::cancelSelection()

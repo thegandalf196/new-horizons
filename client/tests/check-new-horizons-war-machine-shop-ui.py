@@ -54,8 +54,9 @@ def geometry_checks(body: str) -> None:
 	# The help target occupies x=34..506 while the tactile buy control begins at x=535.
 	require(constants["iconLeft"] + 472 < constants["buyLeft"], "machine help area intercepts the buy button")
 	# The footer status bar ends before the close button's native position.
-	require(8 + (640 - 120) < 555, "footer status bar overlaps the close button")
-	require(433 + 64 <= 500 and 555 + 64 <= 640, "the close button exceeds the 640x500 panel bounds")
+	# The original 64x30 cancel button sits 8 px inside the bottom-right corner.
+	require(8 + (640 - 120) < 640 - 72, "footer status bar overlaps the close button")
+	require((500 - 38) + 30 <= 500 and (640 - 72) + 64 <= 640, "the close button exceeds the 640x500 panel bounds")
 	require(78 + 352 < 443, "shop frame overlaps the footer instruction")
 
 
@@ -99,8 +100,8 @@ def check(source: str, header: str) -> None:
 		"non-default offers do not retain distinct numeric keyboard choices")
 	require("offer.artifact == preferredArtifact ? EShortcut::GLOBAL_ACCEPT" in body,
 		"Enter no longer accepts the machine associated with the clicked shop")
-	require('AnimationPath::builtin("NH_cancel_button")' in body,
-		"the New Horizons close control is missing")
+	require('AnimationPath::builtin("ICANCEL")' in body and "NH_cancel_button" not in body,
+		"leaving the shop must use the original framed cancel button")
 	geometry_checks(body)
 
 

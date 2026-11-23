@@ -22385,12 +22385,13 @@
     },
     "client/windows/CBlacksmithDialog.cpp::CBlacksmithDialog::CBlacksmithDialog(ObjectInstanceID townId, ObjectInstanceID hid, ArtifactID preferredArtifact): CWindowObject(BORDERED, ImagePath::builtin(\"newHorizonsOrdersBackground.png\"))#1": {
       "kind": "review",
-      "lines": 138,
-      "rationale": "Native blacksmith dialog construction is extracted from the large castle owner into a focused dialog component. It consumes shared quotes rather than implementing price arithmetic; the constructor stays below the150-line ceiling. Exact measured unit only; no future growth credit.",
-      "review": "PROPOSED-0920-EXACT-SOURCE-ORGANIZATION",
+      "lines": 137,
+      "rationale": "Native blacksmith dialog construction is extracted from the large castle owner into a focused dialog component. It consumes shared quotes rather than implementing price arithmetic; the constructor stays below the150-line ceiling. Exact measured unit only; no future growth credit. Original Heroes III buttons: the custom NH Cancel/Spells buttons are replaced in place by IOKAY (read-only windows), ICANCEL (choices) or the battle Cast Spell button; no new responsibility. 138 to 137 lines; no future growth credit.",
+      "review": "CLAUDE-ORIGINAL-CLOSE-BUTTONS-20261123",
       "review_scope": "Proposed source organization and exact bound only; native/rendered/runtime acceptance remains separate.",
-      "review_status": "PROPOSED_AWAITING_INDEPENDENT_REVIEW",
-      "sha256": "081fd5582c562db939a873082f4e80c5a9f666e85c075e10d991b9cfea97a7fd"
+      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
+      "sha256": "ffd3c68f14bda2b4266fca2fa29ed676aacab861a2f4e78b2ad9f08974ba5b41",
+      "previous_review": "PROPOSED-0920-EXACT-SOURCE-ORGANIZATION"
     },
     "client/windows/CCastleInterface.cpp": {
       "completed_p_predecessor": {
@@ -22402,14 +22403,14 @@
       },
       "deferral": "UI owner: before further substantive expansion of this affected purchase panel, extract CMageGuildAdventureSpellWindow and its exclusive price/help presentation into a focused town-purchase component, preserving public callback interface, authoritative refresh/ownership/turn/affordability ordering and native geometry. Verify owner-visiting/no-visitor/garrison-only price agreement with shared authority and guarded rendered transitions; no general file/function growth credit. Before further substantive expansion, owning engine/gameplay/UI specialist must extract the next coherent touched policy, ordered stage, codec family or widget responsibility into a focused owner, preserving callback visibility, rejection atomicity, serialized field order, payment and RNG/packet order. This exact bounded migration/registry/validation routing gives no future growth credit. Exact bounded declaration/include/UI removal only; no new rule responsibilities. Preserve prior UI extraction duties before future substantive affected growth.",
       "kind": "legacy",
-      "lines": 3540,
+      "lines": 3539,
       "owner": "ui_developer",
-      "previous_review": "IR-REACH-CURSOR-FORT-ENTRY-EDGE-INDEPENDENT-20261113-V1",
-      "rationale": "Exact3541 to3540-line successor removes only the redundant Town Hall steward-button construction; existing Gold-menu and S-key administration paths remain. Prior marketplace extraction, accepted income refresh and other purchase/visibility obligations remain binding. No economic state, payment or assignment mutation in this change.",
-      "review": "IR-NH0923-FOLLOWUP-TOOLTIPS-ABILITY-20261118",
+      "previous_review": "IR-NH0923-FOLLOWUP-TOOLTIPS-ABILITY-20261118",
+      "rationale": "Exact3541 to3540-line successor removes only the redundant Town Hall steward-button construction; existing Gold-menu and S-key administration paths remain. Prior marketplace extraction, accepted income refresh and other purchase/visibility obligations remain binding. No economic state, payment or assignment mutation in this change. Original Heroes III buttons: the custom NH Cancel/Spells buttons are replaced in place by IOKAY (read-only windows), ICANCEL (choices) or the battle Cast Spell button; no new responsibility. 3540 to 3539 lines; no future growth credit.",
+      "review": "CLAUDE-ORIGINAL-CLOSE-BUTTONS-20261123",
       "review_scope": "Exact bounded source organization and failure-path review only; native/rendered acceptance and future growth unapproved.",
-      "review_status": "INDEPENDENT_SOURCE_REVIEW_NATIVE_RENDERED_UNRUN",
-      "sha256": "36467c35ef5959bd9fad03a81cf6c78a493052f65e3a0a6e89151b61d6690113"
+      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
+      "sha256": "62beff9a8fafac9a9ee2e3c52f9dc6d6f33b4ab2bae080a073b52711f7cbd16a"
     },
     "client/windows/CCastleInterface.cpp::CFortScreen::CFortScreen(const CGTownInstance * town): CWindowObject(PLAYER_COLORED | BORDERED, {})#1": {
       "kind": "legacy",
@@ -22452,14 +22453,14 @@
     "client/windows/CCastleInterface.cpp::void CMageGuildAdventureSpellWindow::updateSpells(ObjectInstanceID tID)#1": {
       "deferral": "UI owner: before further substantive expansion of this affected purchase panel, extract CMageGuildAdventureSpellWindow and its exclusive price/help presentation into a focused town-purchase component, preserving public callback interface, authoritative refresh/ownership/turn/affordability ordering and native geometry. Verify owner-visiting/no-visitor/garrison-only price agreement with shared authority and guarded rendered transitions; no general file/function growth credit.",
       "kind": "exception",
-      "lines": 142,
+      "lines": 141,
       "owner": "ui_developer",
-      "previous_review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "rationale": "Exact 142 to 142 physical lines. Mage Guild UI delegates price calculation to the shared Wisdom visiting-hero helper; display, affordability and purchase text keep the same cost value, existing ownership/turn guards and validated asynchronous callback. No local25percent arithmetic or garrison/besthero selection. The file gains only its shared header include and the142-line panel method stays same-sized.",
-      "review": "IR-WISDOM-UI-SHARED-PRICE-EXACT-SOURCE-20261103",
+      "previous_review": "IR-WISDOM-UI-SHARED-PRICE-EXACT-SOURCE-20261103",
+      "rationale": "Exact 142 to 142 physical lines. Mage Guild UI delegates price calculation to the shared Wisdom visiting-hero helper; display, affordability and purchase text keep the same cost value, existing ownership/turn guards and validated asynchronous callback. No local25percent arithmetic or garrison/besthero selection. The file gains only its shared header include and the142-line panel method stays same-sized. Original Heroes III buttons: the custom NH Cancel/Spells buttons are replaced in place by IOKAY (read-only windows), ICANCEL (choices) or the battle Cast Spell button; no new responsibility. 142 to 141 lines; no future growth credit.",
+      "review": "CLAUDE-ORIGINAL-CLOSE-BUTTONS-20261123",
       "review_scope": "Exact one shared-price call and one include only; no new UI math/state or future growth allowance. Requires matching reviewed gameplay API/content before coherent compile.",
-      "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_RENDERED_UNRUN",
-      "sha256": "74cc6e8d5b52af617fa1b9cc6439cae20b40a1effbbcd774f59e88685afe64b4"
+      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
+      "sha256": "5e016344dcbe18a52a6e5fd5afec66ecc8e3f462dd2abe5df701da28e83fccdf"
     },
     "client/windows/CCastleInterface.h": {
       "deferral": "Before further town-purchase interface expansion, extract the affected nested declaration family into the focused Fort presentation owner while preserving existing public callbacks and all inherited purchase/visibility obligations.",
@@ -22961,14 +22962,14 @@
       "deferral": "Extract read-only perk-skill panel construction into a focused UI presentation owner returning card widgets; preserve event lifetime, selection/page state, positions and native rendered equivalence. Remaining 397-line refresh/515-line window remains debt; future affected expansion requires characterization and independent review, not restored old limits.",
       "hybrid_predecessor_review": "IR-LEADERSHIP-CURRENT-UI-READOUT-20261114",
       "kind": "exception",
-      "lines": 516,
+      "lines": 515,
       "owner": "ui_developer",
-      "previous_review": "IR-SYLVAN-HYBRID-ALL-ICON-CONSUMERS-20261116",
-      "rationale": "Exact 516 to 516-line scope. Client presentation/input routing integrates current spell/action receipts and validated captured views. Preserve command submission, session/teardown ownership, native layout and ordinary input behavior; no direct gameplay mutation is introduced.",
-      "review": "IR-NH092-ORG-3E82D142-20261116",
+      "previous_review": "IR-NH092-ORG-3E82D142-20261116",
+      "rationale": "Exact 516 to 516-line scope. Client presentation/input routing integrates current spell/action receipts and validated captured views. Preserve command submission, session/teardown ownership, native layout and ordinary input behavior; no direct gameplay mutation is introduced. Original Heroes III buttons: the custom NH Cancel/Spells buttons are replaced in place by IOKAY (read-only windows), ICANCEL (choices) or the battle Cast Spell button; no new responsibility. 516 to 515 lines; no future growth credit.",
+      "review": "CLAUDE-ORIGINAL-CLOSE-BUTTONS-20261123",
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "691a02e4625df35705995f5ffa279af1b33bd9228f4fb9e4026dcb4c70980704"
+      "sha256": "c24a7b5ddfe2099f0239cbf2c9ed98f8b3b46c65dfb00dc5bd11c5387245b833"
     },
     "client/windows/HeroGrowthWindow.cpp::void HeroGrowthWindow::refresh(const CGHeroInstance & hero)#1": {
       "completed_p_predecessor": {
@@ -22982,14 +22983,14 @@
       "hybrid_predecessor_kind": "legacy",
       "hybrid_predecessor_review": "IR-LEADERSHIP-CURRENT-UI-READOUT-20261114",
       "kind": "exception",
-      "lines": 384,
+      "lines": 383,
       "owner": "ui_developer",
-      "previous_review": "IR-SYLVAN-HYBRID-ALL-ICON-CONSUMERS-20261116",
-      "rationale": "Exact 384 to 384-line scope. Client presentation/input routing integrates current spell/action receipts and validated captured views. Preserve command submission, session/teardown ownership, native layout and ordinary input behavior; no direct gameplay mutation is introduced.",
-      "review": "IR-NH092-ORG-3E82D142-20261116",
+      "previous_review": "IR-NH092-ORG-3E82D142-20261116",
+      "rationale": "Exact 384 to 384-line scope. Client presentation/input routing integrates current spell/action receipts and validated captured views. Preserve command submission, session/teardown ownership, native layout and ordinary input behavior; no direct gameplay mutation is introduced. Original Heroes III buttons: the custom NH Cancel/Spells buttons are replaced in place by IOKAY (read-only windows), ICANCEL (choices) or the battle Cast Spell button; no new responsibility. 384 to 383 lines; no future growth credit.",
+      "review": "CLAUDE-ORIGINAL-CLOSE-BUTTONS-20261123",
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "27d51b9046bd68f167e1e409a04f4496b606c61a55a3bdf027537c508f2e213c"
+      "sha256": "511bf8ff3a9f6c735fedaeb102617cc534182c30e32e3b8aa4c40c0d07c90dc0"
     },
     "client/windows/HeroSkillOddsWindow.cpp::HeroSkillOddsWindow::HeroSkillOddsWindow(const CGHeroInstance & hero) : CWindowObject(BORDERED)#1": {
       "deferral": "Owner: ui_developer. Before further odds-window layout/label expansion, extract cohesive captured Skill display rows through existing shared presentation, with explicit hero and existing measured weights as input and immutable label/help rows as output. Preserve filtering, stable sorting, probability arithmetic and fallback text; require old/current captured-label and unchanged-weight comparisons. Exact103-line existing-hotspot renewal below150, not ceiling permission.",
@@ -23056,13 +23057,13 @@
       "kind": "exception",
       "lines": 117,
       "owner": "ui_developer",
-      "previous_review": "IR-SYLVAN-HYBRID-POLICY3-BOUNDED-SOURCE-20261116",
+      "previous_review": "IR-NH092-ORG-3E82D142-20261116",
       "proposal_predecessor_review": "PROPOSED-CLIENT225-BOUNDED-20261103",
-      "rationale": "Exact 117 to 117-line scope. Client presentation/input routing integrates current spell/action receipts and validated captured views. Preserve command submission, session/teardown ownership, native layout and ordinary input behavior; no direct gameplay mutation is introduced.",
-      "review": "IR-NH092-ORG-3E82D142-20261116",
+      "rationale": "Exact 117 to 117-line scope. Client presentation/input routing integrates current spell/action receipts and validated captured views. Preserve command submission, session/teardown ownership, native layout and ordinary input behavior; no direct gameplay mutation is introduced. Original Heroes III buttons: the custom NH Cancel/Spells buttons are replaced in place by IOKAY (read-only windows), ICANCEL (choices) or the battle Cast Spell button; no new responsibility. 117 to 117 lines; no future growth credit.",
+      "review": "CLAUDE-ORIGINAL-CLOSE-BUTTONS-20261123",
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "d3ca616aca1596711784053317f01fb5f17de315c324799aa189a01de0c9c384"
+      "sha256": "f94484a1b8b85b8057a0fad8f6420b1a1859a341ee8bafc9ebb507103bb63ebe"
     },
     "client/windows/QuickRecruitmentWindow.cpp::void QuickRecruitmentWindow::setCreaturePurchaseCards()#1": {
       "deferral": "Before further layout growth, extract category/card layout preparation with explicit row and variants inputs; preserve category grouping, native geometry, one card per row and slider/cycling ownership. Exact93-line adapter change only; no future allowance.",

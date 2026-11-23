@@ -110,7 +110,8 @@ def main() -> None:
     row_left, row_top, row_width, row_height, row_gap = 18, 79, 604, 56, 3
     text_left, text_width = 83, 454
     buy_left, buy_width = 548, 64
-    close_left, close_top, footer_top = 555, 391, 400
+    # The original 64x30 cancel button sits 8 px inside the bottom-right corner.
+    close_left, close_top, footer_top = 640 - 72, 440 - 38, 400
     last_row_bottom = row_top + 4 * (row_height + row_gap) + row_height
     list_right = list_left + list_width
     assert list_left + list_width <= 640 and list_top + list_height <= 440
@@ -122,8 +123,8 @@ def main() -> None:
         assert buy_left + buy_width <= list_right
         assert 4 + 48 <= row_height
     assert last_row_bottom < close_top
-    assert close_left >= 0 and close_left + 64 <= 640
-    assert close_top < footer_top < 440
+    assert close_left >= 0 and close_left + 64 <= 640 and close_top + 30 <= 440
+    assert last_row_bottom < footer_top < 440 and text_left + text_width < close_left
 
     print("PASS: cached arched hotspot, popup-only spell component, saved tier costs, purchase callback, and compact panel bounds")
     print("Source wiring only; rendered appearance and runtime purchase remain unverified")

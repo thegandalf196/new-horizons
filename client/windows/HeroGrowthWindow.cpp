@@ -177,7 +177,6 @@ void HeroGrowthWindow::refresh(const CGHeroInstance & hero)
 	constexpr int perkCardHeight = 26;
 	constexpr int perkCardGap = 1;
 	constexpr int perkCardRows = 5;
-	constexpr int perkCloseTop = perkCardTop + perkCardRows * (perkCardHeight + perkCardGap) + 10;
 	pos = Rect(0, 0, 700, showPerkPool ? 600 : 560);
 	const ColorRGBA panelColor(52, 46, 43);
 	const ColorRGBA rimColor(180, 154, 98);
@@ -508,9 +507,9 @@ void HeroGrowthWindow::refresh(const CGHeroInstance & hero)
 			: "Totals are current hero attributes; no saved primary growth profile.\nDevelopment details are read-only values from this hero's saved rules.\nSelect a section above for its scope and limitations.";
 		elements.push_back(std::make_shared<CTextBox>(footer, Rect(22, 484, 560, 58), 0, FONT_SMALL, ETextAlignment::TOPLEFT, Colors::WHITE));
 	}
-	closeButton = std::make_shared<CButton>(Point(614, showPerkPool ? perkCloseTop : 485), AnimationPath::builtin("NH_cancel_button"),
-		CButton::tooltip("Close", "Return to the hero screen without changing anything."), [this] { close(); }, EShortcut::GLOBAL_CANCEL);
-	closeButton->setHoverable(true);
+	// Read-only information window: the original checkmark closes it (Enter or Escape).
+	closeButton = std::make_shared<CButton>(Point(pos.w - 72, pos.h - 38), AnimationPath::builtin("IOKAY"),
+		CButton::tooltip("Close", "Return to the hero screen without changing anything."), [this] { close(); }, EShortcut::GLOBAL_RETURN);
 	updateShadow();
 	center();
 }
