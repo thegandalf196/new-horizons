@@ -200,14 +200,8 @@ def main():
         parser.error('Authoring output must be outside the checkout')
     for name, draw in STATUS.items():
         p=Paint(50);draw(p);p.save(root,f'NH_status_{name}_50')
-    for name,load in (('qsave',False),('qload',True)):
-        frames=[]
-        for state in ('normal','pressed','disabled','highlighted'):
-            p=Paint(24,state=='disabled');button(p,load,state)
-            stem=f'NH_{name}_24_{state}';p.save(root,stem);frames.append(stem+'.png')
-        path=root/'Mods/new-horizons/Images'/f'NH_{name}_24.json'
-        path.write_text(json.dumps({'images':[{'group':0,'frame':i,'file':f} for i,f in enumerate(frames)]},indent=2)+'\n',encoding='utf-8')
-    print('Exported 18 original SVG/PNG pairs and two button animations; no gameplay or input acceptance implied.')
+    # The 24 px quick save/load buttons were retired unused (retired-interface-icons.json).
+    print('Exported 10 original SVG/PNG pairs; no gameplay or input acceptance implied.')
 
 if __name__ == '__main__':
     main()

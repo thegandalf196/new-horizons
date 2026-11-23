@@ -205,9 +205,8 @@ def main() -> None:
         for suffix, size in (("_normal", 44), ("_32", 32)):
             with (images / f"NH_capability_{capability}{suffix}.png").open_image() as image:
                 assert image.size == (size, size)
-    movement = json.loads((images / "NH_hero_movement_32.json").read_text())
-    assert movement["images"] == [{"group": 0, "frame": 0, "file": "NH_hero_movement_32.png"}]
-    with (images / "NH_hero_movement_32.png").open_image() as image:
+    # NH_hero_movement_32 was retired unused; the growth window binds NH_hero_movement_painted_32.
+    with (images / "NH_hero_movement_painted_32.png").open_image() as image:
         assert image.size == (32, 32)
     print(f"New Horizons compact layout and {len(active)} active icon paths passed "
           f"({len(painted)} distinct paintings; {len(active) - len(painted)} neutral placeholders; not rendered acceptance)")

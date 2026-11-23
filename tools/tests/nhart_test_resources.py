@@ -32,6 +32,10 @@ def entries_before_wave(entries, waves, index):
     if len(previous) != len(entries):
         raise ValueError('Duplicate selected resource')
     for wave in reversed(waves[index:]):
+        for row in wave.get('retiredEntries', []):
+            if row['resource'] in previous:
+                raise ValueError('Retired resource is still selected')
+            previous[row['resource']] = row
         for replacement in wave.get('replacedEntries', []):
             old, current = replacement['previous'], replacement['current']
             name = current['resource']
@@ -46,7 +50,12 @@ def entries_before_wave(entries, waves, index):
 
 
 def resource_before_wave(name, waves, index, reader=None):
-    """Reconstruct a descriptor's exact old bytes from a reversible append."""
+    """Reconstruct a descriptor's exact old bytes from a reversible append.
+
+    A resource retired by a later wave has no shipped payload: return None and
+    let the caller prove the row from the retirement record instead."""
+    if any(row['resource'] == name for wave in waves[index:] for row in wave.get('retiredEntries', [])):
+        return None
     payload = (reader or read_resource)(name)
     for wave in reversed(waves[index:]):
         for replacement in reversed(wave.get('replacedEntries', [])):

@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 import unittest
 from .nhart_skill_rank_art import skill_rank_wave, validate_skill_rank_art
-from .nhart_test_resources import later_art_waves, entries_before_wave, read_resource
+from .nhart_test_resources import later_art_waves, entries_before_wave, read_resource, resource_before_wave
 from .nhart_released_history import baseline_payload_proof
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -29,8 +29,9 @@ class SkillRankArtPackageTest(unittest.TestCase):
         self.assertEqual(self.wave['entryCount'], len(before) + 132)
         for entry in before:
             # A later selected repaint keeps only a typed proof of the replaced payload.
-            self.assertIn(baseline_payload_proof(entry, read_resource(entry['resource'])),
-                          ('verified-matching-payload', 'verified-selected-replacement'))
+            payload = resource_before_wave(entry['resource'], self.waves, self.waves.index(self.wave))
+            self.assertIn(baseline_payload_proof(entry, payload),
+                          ('verified-matching-payload', 'verified-selected-replacement', 'verified-retired-entry'))
 
     def test_changed_wave_provenance_missing_or_duplicate_selection_is_rejected(self):
         for field in ('baselineArchiveSha256', 'newArchiveSha256', 'resources', 'approval'):

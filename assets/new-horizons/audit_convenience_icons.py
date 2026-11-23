@@ -53,18 +53,13 @@ def audit(root, baseline):
     images = root / 'Mods/new-horizons/Images'
     sources = root / 'assets/new-horizons/svg'
     stems = [(f'NH_status_{trait}_50', 50, False) for trait in TRAITS]
-    stems += [(f'NH_{name}_24_{state}', 24, True) for name in ('qsave', 'qload') for state in STATES]
     for stem, size, button in stems:
         image = Image.open(images / (stem + '.png'))
         check_image(image, size, button)
         check_svg((sources / (stem + '.svg')).read_text(), size)
         for p in (images / (stem + '.png'), sources / (stem + '.svg')):
             hashes[str(p.relative_to(root))] = hashlib.sha256(p.read_bytes()).hexdigest()
-    assert len({hashes[str((images/(stem+'.png')).relative_to(root))] for stem, _, _ in stems}) == 18, 'duplicate imagery/state'
-    for name in ('qsave', 'qload'):
-        p = images / f'NH_{name}_24.json'
-        check_animation(json.loads(p.read_text()), name)
-        hashes[str(p.relative_to(root))] = hashlib.sha256(p.read_bytes()).hexdigest()
+    assert len({hashes[str((images/(stem+'.png')).relative_to(root))] for stem, _, _ in stems}) == 10, 'duplicate imagery'
     for p, expected in baseline.items():
         assert p not in hashes, 'name collides with prior artwork'
         assert hashlib.sha256((root/p).read_bytes()).hexdigest() == expected, f'prior file changed: {p}'
@@ -75,13 +70,10 @@ def audit(root, baseline):
     rejects(lambda: check_image(opaque, 50))
     edge = valid.copy(); edge.putpixel((0,25), (255,255,255,255))
     rejects(lambda: check_image(edge, 50))
-    animation = json.loads((images/'NH_qsave_24.json').read_text())
-    animation['images'][0]['file'], animation['images'][2]['file'] = animation['images'][2]['file'], animation['images'][0]['file']
-    rejects(lambda: check_animation(animation, 'qsave'))
     svg = (sources/'NH_status_undead_50.svg').read_text()
     rejects(lambda: check_svg(svg.replace('</svg>', '<image href="external.png"/></svg>'), 50))
     return {'scope': 'Offline structure and negative controls only; not compiled hook, GUI, quality or Windows acceptance',
-            'outputs': hashes, 'prior_unchanged': len(baseline), 'negative_controls_rejected': 6}
+            'outputs': hashes, 'prior_unchanged': len(baseline), 'negative_controls_rejected': 5}
 
 def main():
     parser = argparse.ArgumentParser()

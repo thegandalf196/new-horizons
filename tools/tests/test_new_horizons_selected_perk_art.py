@@ -11,6 +11,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from import_new_horizons_art_wave import entries_digest
 from tools.tests.nhart_released_history import initial_selection_history
+from tools.tests.nhart_retired_interface_icons import retirement_wave
 
 if __package__:
     from .nhart_perk_presentations import REWORKED_PERK_REBINDINGS
@@ -78,7 +79,9 @@ class SelectedPerkArtTest(unittest.TestCase):
         self.assertEqual(len(baseline), 3137)
         self.assertEqual(hashlib.sha256(json.dumps(baseline, sort_keys=True, separators=(',', ':')).encode()).hexdigest(),
                          self.selection['baselineEntriesSha256'])
-        self.assertEqual(len(legacy), 3795 + len(legacy_later) + 51)
+        # Retired rows leave the current projection; the history restores them.
+        retired = len(retirement_wave(later_art_waves())['retiredEntries'])
+        self.assertEqual(len(legacy), 3795 + len(legacy_later) + 51 - retired)
 
     def test_public_provenance_has_no_private_paths_or_loose_runtime_images(self):
         text = json.dumps(self.selection)

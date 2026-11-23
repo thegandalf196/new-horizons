@@ -15,6 +15,7 @@ from .nhart_creature_ability_art import ability_wave
 from .nhart_interface_status_art import interface_status_wave
 from .nhart_status_icon_repaint import repaint_wave
 from .nhart_flat_interface_repaint import flat_repaint_wave
+from .nhart_retired_interface_icons import retirement_wave
 
 AUTHORITY_CURRENT = (
     ('massedRanks', 'offensive_drills'), ('veteranCadre', 'defensive_drills'),
@@ -89,6 +90,7 @@ def released_predecessor_entries(entries, waves, digest):
     interface_status_wave(waves)
     repaint_wave(waves)
     flat_repaint_wave(waves)
+    retirement_wave(waves)
     matches = [i for i, wave in enumerate(waves) if wave['baselineArchiveSha256'] == BRIDGE_NEXT_ARCHIVE]
     if len(matches) != 1 or matches[0] == 0:
         raise ValueError('Missing exact released-art bridge boundary')
@@ -112,6 +114,11 @@ def released_predecessor_entries(entries, waves, digest):
 
 def baseline_payload_proof(row, payload):
     """Return an explicit proof kind; never fabricate an unavailable old payload."""
+    if payload is None:
+        from .nhart_retired_interface_icons import retired_row_proof
+        if retired_row_proof(row):
+            return 'verified-retired-entry'
+        raise ValueError('Historical baseline payload missing')
     actual_hash = hashlib.sha256(payload).hexdigest()
     replacement = WISP_REPLACEMENTS.get(row['resource'])
     if replacement and (row['sha256'], row['size'], row['approval']) == (replacement[0], replacement[1], OLD_WISP_APPROVAL):

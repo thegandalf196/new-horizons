@@ -22,6 +22,9 @@ SOURCE = OUTPUT_ROOT / 'assets/new-horizons/svg'
 SCALE = 4
 APPROVED_MANIFEST = HERE / 'approved-six-school-assets.json'
 APPROVED_FILES = json.loads(APPROVED_MANIFEST.read_text())['files']
+# Retired outputs have no consumer; a regeneration must never bring them back.
+RETIRED = {Path(row['resource']).stem for row in
+           json.loads((HERE / 'retired-interface-icons.json').read_text())['entries']}
 
 
 def preserve_approved(path):
@@ -112,6 +115,8 @@ class Art:
                 if kind=='line':self.line(pts,color,3*size/64)
                 else:self.polygon(pts,'#282527' if not disabled else '#333332',color,2*size/64)
     def save(self,name):
+        if name in RETIRED:
+            return
         SOURCE.mkdir(parents=True,exist_ok=True);OUT.mkdir(parents=True,exist_ok=True)
         (SOURCE/(name+'.svg')).write_text('\n'.join(self.svg+['</svg>'])+'\n')
         raster = self.image.resize((self.w,self.h),Image.Resampling.LANCZOS)
@@ -126,6 +131,8 @@ class Art:
             raster.save(output)
 
 def animation(name,frames):
+    if name in RETIRED:
+        return
     output = OUT/(name+'.json')
     if not preserve_approved(output):
         output.write_text(json.dumps({'images':[{'group':0,'frame':i,'file':f} for i,f in enumerate(frames)]},indent=2)+'\n')

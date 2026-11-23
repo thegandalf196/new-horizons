@@ -16,6 +16,7 @@ from .nhart_test_resources import (open_image, read_resource, verified_index,
 from .nhart_config_revisions import config_at_revision
 from .nhart_sorcery_config_transition import before_sorcery
 from .nhart_released_history import initial_selection_history, baseline_payload_proof
+from .nhart_retired_interface_icons import retirement_wave
 from import_new_horizons_art_wave import entries_digest
 
 
@@ -58,13 +59,15 @@ class SelectedSpellArtTest(unittest.TestCase):
         baseline = sorted((row for row in historical if row['resource'] not in new | later),
                           key=lambda row: row['resource'].encode())
         self.assertEqual(len(baseline), 3795)
-        self.assertEqual(len(legacy), self.selection['entryCount'] + len(legacy_later))
+        # Retired rows leave the current projection; the history restores them.
+        retired = len(retirement_wave(waves)['retiredEntries'])
+        self.assertEqual(len(legacy), self.selection['entryCount'] + len(legacy_later) - retired)
         digest = hashlib.sha256(json.dumps(baseline, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
         self.assertEqual(digest, self.selection['baselineEntriesSha256'])
         for row in baseline:
             self.assertIn(baseline_payload_proof(row, resource_before_wave(row['resource'], waves, 0)),
                           ('verified-matching-payload', 'verified-released-replacement',
-                           'verified-selected-replacement'))
+                           'verified-selected-replacement', 'verified-retired-entry'))
         if waves:
             self.assertEqual(waves[0]['baselineArchiveSha256'], self.selection['newArchiveSha256'])
         else:

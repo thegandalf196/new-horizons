@@ -27,7 +27,7 @@
   "requiredFamilyCounts": {
     "academy-town-and-portrait-ui": 353,
     "bug-report-interface-icon": 1,
-    "builtin-skills-perks-orders-and-ui": 3814,
+    "builtin-skills-perks-orders-and-ui": 3755,
     "cabir-and-master": 218,
     "casting-glows": 864,
     "conflux-hero-portraits": 10,
@@ -4230,126 +4230,6 @@
       "source": "Mods/new-horizons/Images/NH_academy_village_small_normal.png"
     },
     {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_advance_button.json",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "a2de732020f5642ff7941ba3da58e79a5c9988f7010d24996b56ea4c5f0148f6",
-      "size": 377,
-      "source": "Mods/new-horizons/Images/NH_advance_button.json"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_advance_disabled.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "9f064121523ad4560d9eb80b8be38c73eb674b11058b14018151a01929c2cae3",
-      "size": 3215,
-      "source": "Mods/new-horizons/Images/NH_advance_disabled.png"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_advance_highlighted.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "9eaa5cd225c594ed9d64bed117e8ccd66eae4381c13ab0151ffb799160147269",
-      "size": 3831,
-      "source": "Mods/new-horizons/Images/NH_advance_highlighted.png"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_advance_icon.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "9f60a4af37a06496f94936ed8c576792d77276d934788cd00081d47aaacea8ee",
-      "size": 7030,
-      "source": "Mods/new-horizons/Images/NH_advance_icon.png"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_advance_normal.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "2bee35d9521825f4a9b8c1d0c2aa8c2f08a92f20f5b446126f16561e57cdcd65",
-      "size": 3806,
-      "source": "Mods/new-horizons/Images/NH_advance_normal.png"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_advance_pressed.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "e519a7bad0690aa0da3fd2f079932ee0a80cfec22d476feaa47ecda21656a147",
-      "size": 3864,
-      "source": "Mods/new-horizons/Images/NH_advance_pressed.png"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_aggressive_button.json",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "e81e69ab89fcf055ee8985ae0c4e66abae073cf89e8aeec0b38ef2ce1cfd1e01",
-      "size": 389,
-      "source": "Mods/new-horizons/Images/NH_aggressive_button.json"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_aggressive_disabled.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "790809b9124e2a9733ce3cad5b1f937138a22da09f17ba18ddf9e79fa1cf1adf",
-      "size": 3517,
-      "source": "Mods/new-horizons/Images/NH_aggressive_disabled.png"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_aggressive_highlighted.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "10be20251764fbbdef889ec46bf9a9f18516be69092031dd900c0037e02ac921",
-      "size": 4089,
-      "source": "Mods/new-horizons/Images/NH_aggressive_highlighted.png"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_aggressive_icon.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "cff0896ebc9f153c5dc91327be61512e1d42ef56eb426a1ca3425f7aca2bef64",
-      "size": 7315,
-      "source": "Mods/new-horizons/Images/NH_aggressive_icon.png"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_aggressive_normal.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "e511490b61c35cbda6e857af78b672a221427f12e0c2158bfdb9d7abf3ee6673",
-      "size": 4071,
-      "source": "Mods/new-horizons/Images/NH_aggressive_normal.png"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_aggressive_pressed.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "343570df8666f9903b165948e2f9804784274dc5a67f0f6e16e5514e0fa261c9",
-      "size": 4094,
-      "source": "Mods/new-horizons/Images/NH_aggressive_pressed.png"
-    },
-    {
       "approval": "Provisional; no Final approval; in-game rendered acceptance pending",
       "family": "builtin-skills-perks-orders-and-ui",
       "origin": "owner-supplied RGBA sheet; owner-confirmed ChatGPT-generated; technical export, not generation by this agent; native modder-tools-pack mixed-origin leather and selected Battlecraft rank-marker composites; inherited terms retained",
@@ -4930,16 +4810,6 @@
       "source": "Mods/new-horizons/Images/NH_cancel_highlighted.png"
     },
     {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_cancel_icon.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "a989e5bbc4d1dc1da7f6f169a4e5d0cca2c453d5f641931913b29b7fd8c57e16",
-      "size": 4733,
-      "source": "Mods/new-horizons/Images/NH_cancel_icon.png"
-    },
-    {
       "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
       "family": "builtin-skills-perks-orders-and-ui",
       "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
@@ -5478,66 +5348,6 @@
       "sha256": "53d2cb5007351a9b59bac942fcb5141192436dd714867b14055523a9143b7af2",
       "size": 568,
       "source": "Mods/new-horizons/Images/NH_creature_rank_20.png"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_defensive_button.json",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "4c3fc0d4652e30762e66f0341078351c5273482f268558af50eed4f1ad3478e1",
-      "size": 385,
-      "source": "Mods/new-horizons/Images/NH_defensive_button.json"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_defensive_disabled.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "6acc1a5b649b09c3549a59188523fce0a685ca6a422746696d84abce5962ef49",
-      "size": 2619,
-      "source": "Mods/new-horizons/Images/NH_defensive_disabled.png"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_defensive_highlighted.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "44598d29c284974665b0952fba5ca39c226caeb5668b852ef485d076edb751fb",
-      "size": 3290,
-      "source": "Mods/new-horizons/Images/NH_defensive_highlighted.png"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_defensive_icon.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "ecd0227aa2a3f5dd602918d251b94c3edc09868b514782ae32e8c1153583b94d",
-      "size": 6332,
-      "source": "Mods/new-horizons/Images/NH_defensive_icon.png"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_defensive_normal.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "feaa12358208e2f3ac53a3879fce47ba4799001b47e6a9b31da1c77ef8acfd73",
-      "size": 3270,
-      "source": "Mods/new-horizons/Images/NH_defensive_normal.png"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_defensive_pressed.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "4914068f33d561bc9d13858219ef435246ffb1bb6d72bda43c6343dee0b367ee",
-      "size": 3306,
-      "source": "Mods/new-horizons/Images/NH_defensive_pressed.png"
     },
     {
       "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
@@ -6400,56 +6210,6 @@
       "source": "Mods/new-horizons/Images/NH_hero_actions_back.png"
     },
     {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_hero_actions_entry.json",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "1b53acae6bdede2ef2e91c2030caae964fc6a152d575505900f966bc1a58b546",
-      "size": 421,
-      "source": "Mods/new-horizons/Images/NH_hero_actions_entry.json"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_hero_actions_entry_disabled.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "7de1fe8e9f7f1e48b0f16d7b4175842ea4a4e7291db3414ab5394850676aeb8c",
-      "size": 1727,
-      "source": "Mods/new-horizons/Images/NH_hero_actions_entry_disabled.png"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_hero_actions_entry_highlighted.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "e69d079d6d6d427c4318bc862f66fdc15bd5f9967ce4fce305817ac44191a458",
-      "size": 2141,
-      "source": "Mods/new-horizons/Images/NH_hero_actions_entry_highlighted.png"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_hero_actions_entry_normal.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "eecb252cc0d6824b5ac2cd640cdf73b4724c765f03d22db51451dfb7169c004e",
-      "size": 2131,
-      "source": "Mods/new-horizons/Images/NH_hero_actions_entry_normal.png"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_hero_actions_entry_pressed.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "5f9607cf2b2410ac4dce55688c0f626085b72cb69090ad16725de7cb119b5636",
-      "size": 2129,
-      "source": "Mods/new-horizons/Images/NH_hero_actions_entry_pressed.png"
-    },
-    {
       "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
       "family": "builtin-skills-perks-orders-and-ui",
       "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
@@ -6460,56 +6220,6 @@
       "source": "Mods/new-horizons/Images/NH_hero_attack_32.png"
     },
     {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_hero_attack_64.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "bfc24a1e1aa1d9369be2dd99ece15b5f07267f341c661b9d214494267771ad35",
-      "size": 5250,
-      "source": "Mods/new-horizons/Images/NH_hero_attack_64.png"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_hero_champion_32.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "2ad0e4ad45e4d956d8a6ac38d2a510239a5b57cd43074952c1f236ece554a7ba",
-      "size": 2591,
-      "source": "Mods/new-horizons/Images/NH_hero_champion_32.png"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_hero_champion_64.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "0ac30b7046737ca2f16c591419efb1afb68260b017daad069648ffe8831527ce",
-      "size": 6482,
-      "source": "Mods/new-horizons/Images/NH_hero_champion_64.png"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_hero_core_32.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "844176641d4d627f9b0f7662afcc5df915a87fd87d544d4593edfcb99672ebc6",
-      "size": 2687,
-      "source": "Mods/new-horizons/Images/NH_hero_core_32.png"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_hero_core_64.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "fd248797eaacf9c184af7bc0a8e892eb47469a7b951e6c6a379704314a1e3823",
-      "size": 6103,
-      "source": "Mods/new-horizons/Images/NH_hero_core_64.png"
-    },
-    {
       "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
       "family": "builtin-skills-perks-orders-and-ui",
       "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
@@ -6518,56 +6228,6 @@
       "sha256": "96ec05fff14fc1873d8d13d94e84c06323398e1a93d812c492e997a24b6d4ca5",
       "size": 2268,
       "source": "Mods/new-horizons/Images/NH_hero_defense_32.png"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_hero_defense_64.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "80a456c359831a5494a9d4cc5b270cfd5a947d986718805a238ed33b9478f161",
-      "size": 6212,
-      "source": "Mods/new-horizons/Images/NH_hero_defense_64.png"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_hero_elite_32.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "65f7bd74949396d672df8cb492e8bc857921df185c0a0e361239de0724008b9e",
-      "size": 2758,
-      "source": "Mods/new-horizons/Images/NH_hero_elite_32.png"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_hero_elite_64.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "524c79bb6317e827c902c4eb4c0a2f3265bfb4706b9c61dd28c6054bddea5689",
-      "size": 6548,
-      "source": "Mods/new-horizons/Images/NH_hero_elite_64.png"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_hero_growth_32.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "1ac5557d2724dd11e4b881c9b72bb84b92d7652baf71d34cd994e1fb5a13ce7b",
-      "size": 2141,
-      "source": "Mods/new-horizons/Images/NH_hero_growth_32.png"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_hero_growth_64.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "ca47ba58feac99719c4bde4366be645f661b19e3342a183a1719278b1bb9fae7",
-      "size": 4963,
-      "source": "Mods/new-horizons/Images/NH_hero_growth_64.png"
     },
     {
       "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
@@ -6633,16 +6293,6 @@
       "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
       "family": "builtin-skills-perks-orders-and-ui",
       "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_hero_knowledge_64.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "3c2454299f399c87fe6c000c4ac38b58221cacd8d41f55f6892c6fbfe9872600",
-      "size": 4845,
-      "source": "Mods/new-horizons/Images/NH_hero_knowledge_64.png"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
       "resource": "SPRITES/NH_hero_leadership_24.json",
       "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
       "sha256": "f3fa3dab032b762165daea8a9064b1287ae46ce3c307e1c6603944ba872077dd",
@@ -6658,16 +6308,6 @@
       "sha256": "d32edaf7c1e4b48e2aa7e597442d1821ce2e318241ec74e330f68b867cb28a00",
       "size": 1350,
       "source": "Mods/new-horizons/Images/NH_hero_leadership_24.png"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_hero_leadership_32.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "a3cf92ae8f69dc9754c81cc39645bef5facbdebe1102c71313798d0c2ebc5f6e",
-      "size": 2674,
-      "source": "Mods/new-horizons/Images/NH_hero_leadership_32.png"
     },
     {
       "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
@@ -6690,16 +6330,6 @@
       "source": "Mods/new-horizons/Images/NH_hero_leadership_44.png"
     },
     {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_hero_leadership_64.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "63fee8e3a0ab3d21912aef9519d3ca3cc56dd13d8020dcab34d314752264e0bc",
-      "size": 6784,
-      "source": "Mods/new-horizons/Images/NH_hero_leadership_64.png"
-    },
-    {
       "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
       "family": "builtin-skills-perks-orders-and-ui",
       "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
@@ -6708,16 +6338,6 @@
       "sha256": "c46346348e7d567920a733f5a12c1df60c0a039e53ca0458c43726eca1a895ee",
       "size": 2725,
       "source": "Mods/new-horizons/Images/NH_hero_luck_32.png"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_hero_luck_64.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "08e9ed0a966404fcc9e69c136398546f932681e0d1af5e84c6d7ad025ba1ceb3",
-      "size": 7118,
-      "source": "Mods/new-horizons/Images/NH_hero_luck_64.png"
     },
     {
       "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
@@ -6730,36 +6350,6 @@
       "source": "Mods/new-horizons/Images/NH_hero_mana_32.png"
     },
     {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_hero_mana_64.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "ea3db210b524513a508babcf7f78c682f2dde9a32acdd08e2794a8efa4722c76",
-      "size": 5741,
-      "source": "Mods/new-horizons/Images/NH_hero_mana_64.png"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_hero_mastery_32.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "0509de1e703ffe3ebb7e1ad5f31c5ea272560f3c0d358456016dfef2fc71db23",
-      "size": 2420,
-      "source": "Mods/new-horizons/Images/NH_hero_mastery_32.png"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_hero_mastery_64.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "f5a2c7324f2cd2cb99749e729da181781805a2e9d3362b6864350f83f9d43ae9",
-      "size": 5972,
-      "source": "Mods/new-horizons/Images/NH_hero_mastery_64.png"
-    },
-    {
       "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
       "family": "builtin-skills-perks-orders-and-ui",
       "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the recovered existing frame or state treatment",
@@ -6768,36 +6358,6 @@
       "sha256": "fcee0b51a885e5d0522ee34ff1a2fd76f18e6b6e7ea614fcf8bc4c78692eff37",
       "size": 2197,
       "source": "Mods/new-horizons/Images/NH_hero_morale_32.png"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_hero_morale_64.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "c90ca47b592d4894b0281bd951bbd9448ca05b402c8f60c628c9167d2100c573",
-      "size": 5240,
-      "source": "Mods/new-horizons/Images/NH_hero_morale_64.png"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_hero_movement_32.json",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "7ef4e6382b4df05d14a53a3b9761792522f0b21001addf8ed0eada597042e95d",
-      "size": 88,
-      "source": "Mods/new-horizons/Images/NH_hero_movement_32.json"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_hero_movement_32.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "3777eb3bff3deb52edd6d8db91b115ea30dcd865fcfeddbca8f38fa623e703fe",
-      "size": 2382,
-      "source": "Mods/new-horizons/Images/NH_hero_movement_32.png"
     },
     {
       "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
@@ -6818,16 +6378,6 @@
       "sha256": "0c2e81bf1e1aa916c86f35881a4c050101893fe94d100bdf87a23e9af19e53df",
       "size": 4113,
       "source": "Mods/new-horizons/Images/NH_hero_movement_44.png"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_hero_movement_64.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "d1a4de4128245a2cc877b8baa896d7dec8d7e2bdcebb759c7cf27cf64936722f",
-      "size": 5664,
-      "source": "Mods/new-horizons/Images/NH_hero_movement_64.png"
     },
     {
       "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
@@ -6858,36 +6408,6 @@
       "sha256": "3bf0a9b52698b57d3911659f238bc0f75b0ba825277fdadb2b64f6981a341163",
       "size": 1661,
       "source": "Mods/new-horizons/Images/NH_hero_power_32.png"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_hero_power_64.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "36257fec5d093dfe17b36db3c9d628a34f001d2897661c605e528b678df13335",
-      "size": 6700,
-      "source": "Mods/new-horizons/Images/NH_hero_power_64.png"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_hero_siege_32.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "cf7d0747dd7ddc128813cfcb02d00aba814ff8ab27a3141d387ed73d58d87c88",
-      "size": 2586,
-      "source": "Mods/new-horizons/Images/NH_hero_siege_32.png"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_hero_siege_64.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "7456602dd5552b1fd8e23329a48d6c5f121f3b1fbfcf12fce40b06c40d686d38",
-      "size": 6535,
-      "source": "Mods/new-horizons/Images/NH_hero_siege_64.png"
     },
     {
       "approval": "Provisional integration authorized; visual Final approval and in-game rendered acceptance pending.",
@@ -39103,56 +38623,6 @@
       "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
       "family": "builtin-skills-perks-orders-and-ui",
       "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_qload_24.json",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "83c10b4c27dbedb48b1af02e18e6b55ad2fdad00b1e0c7b17a3393d6748cb222",
-      "size": 381,
-      "source": "Mods/new-horizons/Images/NH_qload_24.json"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_qload_24_disabled.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "334b74abba1b192588c7c722822bc58323943bd334501a4e3420dc417fca369c",
-      "size": 1033,
-      "source": "Mods/new-horizons/Images/NH_qload_24_disabled.png"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_qload_24_highlighted.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "7c8a62b9d6c104d2a33cf2403fb93cdd743fe9f39e4429ba842e99b4ce5ba815",
-      "size": 1316,
-      "source": "Mods/new-horizons/Images/NH_qload_24_highlighted.png"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_qload_24_normal.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "c23c50e7587942f1e5222884c49d87900577106988485e642d17d4ed6d63ff94",
-      "size": 1329,
-      "source": "Mods/new-horizons/Images/NH_qload_24_normal.png"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_qload_24_pressed.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "6bbe34bfa7c236be1bdc75652f8985983f1dd4a2359dd88ed86f32ad384e05b2",
-      "size": 1278,
-      "source": "Mods/new-horizons/Images/NH_qload_24_pressed.png"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
       "resource": "SPRITES/NH_qload_32.json",
       "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
       "sha256": "7514254380aa15f908f5e899f440e4a76436cfd50e4c37f1d2bf64c5379cfad5",
@@ -39248,56 +38718,6 @@
       "sha256": "c69d42f19056581907a708944a4be07bc200f5e8dab1e3ecef704693c907b3b5",
       "size": 2036,
       "source": "Mods/new-horizons/Images/NH_qload_64x32_pressed.png"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_qsave_24.json",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "b4bce53c21068c870004aa97582645f4b73d4698c70ccc6a44cd479bc25d6c17",
-      "size": 381,
-      "source": "Mods/new-horizons/Images/NH_qsave_24.json"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_qsave_24_disabled.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "8213889f13a273a03b292d46700292286849436273e6e34f53a71ade276d56b2",
-      "size": 1016,
-      "source": "Mods/new-horizons/Images/NH_qsave_24_disabled.png"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_qsave_24_highlighted.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "c465405c3df320413936cb68f68b34345174bc83e085b782d7225e4034268622",
-      "size": 1322,
-      "source": "Mods/new-horizons/Images/NH_qsave_24_highlighted.png"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_qsave_24_normal.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "675c55a5f74cd9a3c156a48892c992fbbe2a90c717e2a66932a02dc07deb8118",
-      "size": 1337,
-      "source": "Mods/new-horizons/Images/NH_qsave_24_normal.png"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_qsave_24_pressed.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "39534181b382fc9d7edb571360a25cf8fd89cc5e8d7c8e988d32cadf541c4c80",
-      "size": 1318,
-      "source": "Mods/new-horizons/Images/NH_qsave_24_pressed.png"
     },
     {
       "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
@@ -41608,16 +41028,6 @@
       "sha256": "a4703fbe88043381b7fc71125e3126cb77e4ed489978cd65f3bc90c2c9478453",
       "size": 6419,
       "source": "Mods/new-horizons/Images/NH_spells_highlighted.png"
-    },
-    {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
-      "family": "builtin-skills-perks-orders-and-ui",
-      "origin": "selected-mixed-original-based-UI-and-independently-authored-icons",
-      "resource": "SPRITES/NH_spells_icon.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "6247680b38b9c465f759882bff86b96bfdfc914a702f71a9c9993f13956b0e31",
-      "size": 6536,
-      "source": "Mods/new-horizons/Images/NH_spells_icon.png"
     },
     {
       "approval": "Selected provisional runtime; not Final; rendered acceptance pending",

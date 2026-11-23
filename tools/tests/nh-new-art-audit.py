@@ -21,10 +21,11 @@ from nhart_test_resources import ArtPath
 
 ROOT = Path(__file__).resolve().parents[2]
 SCHOOLS = ("light", "nature", "sorcery", "havoc", "shadow", "chaos")
-BUTTONS = ("charge", "holdTheLine", "advance", "aggressive", "defensive", "spells", "cancel")
+BUTTONS = ("charge", "holdTheLine", "spells", "cancel")
 SKILL_SIZES = {"small": (32, 32), "medium": (44, 44), "large": (82, 93), "scenarioBonus": (58, 64)}
-HERO_GLYPHS = ("attack", "defense", "power", "knowledge", "mana", "leadership", "movement",
-               "morale", "luck", "siege", "mastery", "core", "elite", "champion", "growth")
+# Only the 32 px glyphs the hero growth window binds remain; the unused 64 px set,
+# stance buttons and placeholder entries were retired (retired-interface-icons.json).
+HERO_GLYPHS = ("attack", "defense", "power", "knowledge", "mana", "morale", "luck")
 CUSTOM_ANIMATIONS = {
     "NH_orders_gauntlet": (48, 36),
     "NH_perk_bone_collector": (44, 44),
@@ -126,7 +127,7 @@ def audit(reproduce, hero_growth=False, authoring_root=None):
         (p for p in images.glob("*.json")
         if p.stem in {*(f"NH_{name}_button" for name in BUTTONS),
                       *(f"NH_{school}_bookmark" for school in SCHOOLS),
-                      "NH_hero_actions_entry", "NH_hero_growth_entry"}), key=lambda p: p.name
+                      "NH_hero_growth_entry"}), key=lambda p: p.name
     )
     require(bool(animations), "Missing shipping artwork")
     if source:
@@ -150,10 +151,7 @@ def audit(reproduce, hero_growth=False, authoring_root=None):
         bookmark = path.stem.endswith("_bookmark")
         require(len(frames) == (2 if bookmark else 4), f"Wrong state count: {path.name}")
         entry_sizes = {
-            "NH_hero_actions_entry": (48, 36),
             "NH_hero_growth_entry": (24, 24),
-            "NH_qload_24": (24, 24),
-            "NH_qsave_24": (24, 24),
             "NH_qload_32": (32, 32),
             "NH_qsave_32": (32, 32),
             "NH_qload_64x32": (64, 32),
@@ -183,7 +181,6 @@ def audit(reproduce, hero_growth=False, authoring_root=None):
                 require(image.size == expected_size, f"Wrong custom state dimensions: {frame['file']}")
     for name in BUTTONS:
         require((images / f"NH_{name}_button.json").is_file(), f"Missing command control: {name}")
-    require((images / "NH_hero_actions_entry.json").is_file(), "Missing entry animation")
     if hero_growth:
         require((images / "NH_hero_growth_entry.json").is_file(), "Missing growth entry animation")
         states = ("normal", "pressed", "disabled", "highlighted")
@@ -198,9 +195,8 @@ def audit(reproduce, hero_growth=False, authoring_root=None):
             require(image.getchannel("A").crop((0, 0, 160, 28)).getextrema() == (0, 0),
                     f"Nontransparent top28 header rows: {school}")
     for glyph in HERO_GLYPHS:
-        for size in (32, 64):
-            with (images / f"NH_hero_{glyph}_{size}.png").open_image() as image:
-                require(image.size == (size, size), f"Wrong hero display glyph size: {glyph}/{size}")
+        with (images / f"NH_hero_{glyph}_32.png").open_image() as image:
+            require(image.size == (32, 32), f"Wrong hero display glyph size: {glyph}/32")
     for school in SCHOOLS:
         for rank, rank_name in enumerate(("basic", "advanced", "expert"), start=1):
             for size_name, size in SKILL_SIZES.items():

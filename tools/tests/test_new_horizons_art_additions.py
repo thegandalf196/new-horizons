@@ -28,6 +28,7 @@ from .nhart_creature_ability_art import validate_ability_art
 from .nhart_interface_status_art import validate_interface_status_art
 from .nhart_status_icon_repaint import validate_repaint
 from .nhart_flat_interface_repaint import validate_flat_repaint
+from .nhart_retired_interface_icons import validate_retirement
 from .nhart_released_history import (authority_before_leadership_rework,
     released_predecessor_entries, baseline_payload_proof)
 from .nhart_config_revisions import config_at_revision, wave_config_revision
@@ -341,11 +342,12 @@ class ArtAdditionsTest(unittest.TestCase):
             baseline = entries_before_wave(entries, history, index)
             self.assertEqual(len(baseline), wave['baselineCount'])
             self.assertEqual(importer.entries_digest(baseline), wave['baselineEntriesSha256'])
-            self.assertEqual(wave['entryCount'], wave['baselineCount'] + len(wave['resources']))
+            self.assertEqual(wave['entryCount'], wave['baselineCount'] + len(wave['resources'])
+                             - len(wave.get('retiredEntries', [])))
             for row in baseline:
                 proof = baseline_payload_proof(row, resource_before_wave(row['resource'], self.waves, index))
                 self.assertIn(proof, ('verified-matching-payload', 'verified-released-replacement',
-                                      'verified-selected-replacement'))
+                                      'verified-selected-replacement', 'verified-retired-entry'))
             if index and index != self.bridgeIndex:
                 self.assertEqual(wave['baselineArchiveSha256'], self.waves[index - 1]['newArchiveSha256'])
         self.assertEqual(len(verified_index()), self.waves[-1]['entryCount'])
@@ -507,6 +509,9 @@ class ArtAdditionsTest(unittest.TestCase):
             if current_faction_perk_wave(wave):
                 self.assertEqual(wave['baselineHeaderSha256'],
                                  '824fbc555e13220abb7f9e8b3db648fc3fa35ea0411234bba6c17953a6f73bbf')
+                continue
+            if 'retiredInterfaceIcons' in wave:
+                validate_retirement(wave, self.manifest['entries'], verified_index())
                 continue
             if 'flatInterfaceRepaint' in wave:
                 validate_flat_repaint(wave, self.manifest['entries'], read_resource)
