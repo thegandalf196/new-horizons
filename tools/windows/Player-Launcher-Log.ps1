@@ -37,7 +37,12 @@ function Set-NHLogRedactions {
                          @($env:USERPROFILE, '%USERPROFILE%'))) {
         $value = [string]$entry[0]
         if ($value.Length -lt 4) { continue }
-        $pairs += [PSCustomObject]@{Value=$value.TrimEnd('\', '/'); Name=$entry[1]}
+        # Also the expanded form: Windows may report a folder by its 8.3 short name.
+        $forms = @($value)
+        try { $forms += [IO.Path]::GetFullPath($value) } catch { }
+        foreach ($form in ($forms | Select-Object -Unique)) {
+            $pairs += [PSCustomObject]@{Value=$form.TrimEnd('\', '/'); Name=$entry[1]}
+        }
     }
     $script:NHLogRedactions = @($pairs | Sort-Object { $_.Value.Length } -Descending)
 }

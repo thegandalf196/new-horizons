@@ -157,7 +157,7 @@ Require (-not $idle.Cancel) 'Idle window kept open'
     def test_session_log_rotates_redacts_personal_folders_and_is_bounded(self):
         self.execute(r'''
 $path=Get-NHLauncherLogPath
-Require ($path -ceq ($env:LOCALAPPDATA + $sep + 'HeroesIII-NewHorizons' + $sep + 'logs' + $sep + 'launcher.log')) $path
+Require ($path -ceq ([IO.Path]::GetFullPath($env:LOCALAPPDATA) + $sep + 'HeroesIII-NewHorizons' + $sep + 'logs' + $sep + 'launcher.log')) $path
 Start-NHLauncherSession $runtime
 Write-NHLauncherLog ('Profile ' + $env:USERPROFILE + '\Downloads and temp ' + $env:TEMP + '\x' + "`nsecond")
 $first=Read-Log
