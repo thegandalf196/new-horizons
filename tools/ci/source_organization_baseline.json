@@ -19890,7 +19890,7 @@
       "review": "CLAUDE-RAMPART-0932",
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "13d2f78dbc96b2a1a8d9ce81cd511551b6c94221f86bdf54ff5529bfb5b202ae",
+      "sha256": "53f255cc0fdd142b6daf6f26957e802056a2add37d58ebb0a39b8899d3dd7ed9",
       "inherited_rampart_deferral": "Before further repeated strength/loss branching, extract the next path-strength comparison adapter. Preserve locks, endpoint/transition semantics, neutral/commander behavior and isolated exchange evaluation. Prior stricter obligations remain in inherited_deferral, where present."
     },
     "AI/Nullkiller2/AIUtility.cpp::NK2AI::bool shouldVisit(const Nullkiller * aiNk, const CGHeroInstance * hero, const CGObjectInstance * obj)#1": {
@@ -19903,7 +19903,7 @@
       "review": "CLAUDE-RAMPART-0932",
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "69599b7a72cb87197095101fcdbae51eb332c2e8e02ab61695467a05e62a92e3",
+      "sha256": "4b10960313a49d47169fca89c12807a32a1cf147ea67c974535f5349364ac47e",
       "inherited_rampart_deferral": "Next substantive visit admission change must extract the affected object-specific predicate using visible callback, actual hero/object and shared quote/reward result; preserve relation/revisit checks, target identity and no RNG. Current focused admission/planner tests remain required."
     },
     "AI/Nullkiller2/AIUtility.cpp::NK2AI::double getArtifactBonusRelevance(const CGHeroInstance * hero, const std::shared_ptr<Bonus> & bonus)#1": {
@@ -20123,7 +20123,7 @@
       "review": "CLAUDE-RAMPART-0932",
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "5d3367e02f4bc637324f771c023c7adfd62c04dbb037a5681dfaac27bc571da8",
+      "sha256": "79b56962de872d8eacd5c656c396212e29ac5348541419466b7ee9cb15165703",
       "inherited_rampart_deferral": "Before further upgrade-reward growth, extract getUpgradeArmyReward into the focused upgrade valuation boundary. Preserve bounded request counts versus full power and ordinary/saturation tests; no future file growth allowance. Prior stricter obligations remain in inherited_deferral, where present."
     },
     "AI/Nullkiller2/Engine/PriorityEvaluator.cpp::NK2AI::BuildThisEvaluationContextBuilder::void buildEvaluationContext(EvaluationContext & evaluationContext, Goals::TSubgoal task) const override#1": {
