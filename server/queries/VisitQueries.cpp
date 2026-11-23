@@ -19,6 +19,7 @@
 #include "../../lib/mapObjects/TownBuildingInstance.h"
 #include "../CGameHandler.h"
 #include "QueriesProcessor.h"
+#include "../processors/PatronessVisit.h"
 
 VisitQuery::VisitQuery(CGameHandler * owner, const CGObjectInstance * Obj, const CGHeroInstance * Hero, QueryType type)
 	: CQuery(owner, type)
@@ -48,6 +49,8 @@ void MapObjectVisitQuery::onExposure(QueryPtr topQuery)
 
 	if(auto battleQuery = std::dynamic_pointer_cast<CBattleQuery>(topQuery))
 	{
+		if(object && hero && !processingDeferredBattleLevelUps)
+			newHorizonsPatroness::collectAfterBattle(*gh, *object, *hero);
 		auto levelUps = battleQuery->takeDeferredLevelUps();
 		deferredBattleLevelUps.insert(deferredBattleLevelUps.end(), levelUps.begin(), levelUps.end());
 	}

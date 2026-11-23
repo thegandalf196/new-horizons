@@ -33,4 +33,11 @@ void collectOnArrival(CGameHandler & handler, const CGTownInstance & town, const
 			info.components.emplace_back(ComponentType::RESOURCE, resource, static_cast<int>(collection[resource]));
 	handler.sendAndApply(info);
 }
+
+void collectAfterBattle(CGameHandler & handler, const CGObjectInstance & object, const CGHeroInstance & hero)
+{
+	// Only a town her player now owns pays; the weekly marker prevents a second collection.
+	if(const auto * town = dynamic_cast<const CGTownInstance *>(&object))
+		collectOnArrival(handler, *town, hero);
+}
 }

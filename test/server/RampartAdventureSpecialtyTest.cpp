@@ -10,6 +10,9 @@
 #include "../../lib/pathfinder/NewHorizonsElusive.h"
 #include "../../lib/gameState/CGameState.h"
 #include "../../lib/GameLibrary.h"
+#include "../../server/battles/BattleProcessor.h"
+#include "../../server/queries/CQuery.h"
+#include "../../server/queries/QueriesProcessor.h"
 
 namespace
 {
@@ -270,6 +273,28 @@ TEST_F(RampartAdventureSpecialtyTest, PatronessCollectsWhenSheEntersAfterASiegeW
 	ASSERT_EQ(town->getVisitingHero(), specialist);
 	ASSERT_GT(expectedCollection(), 0);
 	EXPECT_EQ(gold(), before + expectedCollection());
+}
+
+TEST_F(RampartAdventureSpecialtyTest, PatronessCollectsOnTheCaptureThatEndsAnOrdinarySiege)
+{
+	ASSERT_NO_FATAL_FAILURE(besideTown(PlayerColor(1), {{creature("core:pikeman"), 1}}));
+	const auto before = gold();
+	// No wandering guard: the move starts the siege itself.
+	ASSERT_TRUE(handler->moveHero(specialist->id, specialist->convertFromVisitablePos(town->visitablePos()),
+		EMovementMode::STANDARD, false, PLAYER, EPathfindingLayer::LAND));
+	ASSERT_NE(gameState()->getBattle(PLAYER), nullptr) << "The garrison defends the town";
+	handler->battles->cheatBattleVictory(PLAYER);
+	for(const auto player : {PLAYER, PlayerColor(1)})
+		if(const auto dialog = handler->queries->topQuery(player); dialog && dialog->getType() == QueryType::BattleDialog)
+			ASSERT_TRUE(handler->queryReply(dialog->queryID, 0, player));
+	ASSERT_EQ(gameState()->getBattle(PLAYER), nullptr);
+	ASSERT_EQ(town->getOwner(), PLAYER) << "battleFinished captured the town";
+	const auto collected = gold() - before;
+	ASSERT_GT(expectedCollection(), 0);
+	EXPECT_EQ(collected, expectedCollection()) << "The capture is her arrival";
+	map()->moveObject(specialist->id, town->visitablePos() + specialist->getVisitableOffset());
+	handler->heroVisitCastle(town, specialist);
+	EXPECT_EQ(gold(), before + collected) << "Entering the captured town this week collects nothing more";
 }
 
 TEST_F(RampartAdventureSpecialtyTest, PatronessLeavesOutJenovasOwnStewardGold)
