@@ -104,12 +104,11 @@ function Install-NHRequestedRelease([string]$Original, [string]$Current, [string
         throw 'Invalid requested update version.'
     }
     $channel = Get-UpdateRequestChannel $wanted
-    if ($channel -ceq 'beta') {
-        # A beta replaces the installed beta; with none it must still be newer than stable.
-        $beta = Get-NHTrackRuntime $Original 'beta'
-        if ($beta) { $Current = $beta }
-    }
-    if ([Version]$wanted.version -le (Get-NHProductVersion $Current)) { return $Current }
+    # A release replaces its own track's runtime. An empty beta track must still
+    # be newer than stable; an empty stable track (a beta package) takes any stable.
+    $track = Get-NHTrackRuntime $Original $channel
+    if ($track) { $Current = $track } elseif ($channel -ceq 'stable') { $Current = '' }
+    if ($Current -and [Version]$wanted.version -le (Get-NHProductVersion $Current)) { return $Current }
     # A launcher handed over from an older original runs its own update worker.
     $workerRoot = $Original
     if ($CodeRoot) { $workerRoot = $CodeRoot }
@@ -126,13 +125,30 @@ function Install-NHRequestedRelease([string]$Original, [string]$Current, [string
     return $updated
 }
 
+function Get-NHPackageChannel([string]$Runtime) {
+    # The release track a package was published on. Packages without the
+    # marker predate it and are stable; any doubt is stable too.
+    try {
+        $path = Join-Path $Runtime 'BUILD-IDENTITY.json'
+        Assert-PlainPath $path
+        $file = New-Object IO.FileInfo($path)
+        if (-not $file.Exists -or $file.Length -gt 2097152) { return 'stable' }
+        $identity = [IO.File]::ReadAllText($path, [Text.Encoding]::UTF8) | ConvertFrom-Json
+        $marker = $identity.PSObject.Properties['release_channel']
+        if ($null -ne $marker -and $marker.Value -ceq 'beta') { return 'beta' }
+    } catch { }
+    return 'stable'
+}
+
 function Get-NHTrackRuntime([string]$Original, [string]$Channel) {
-    # Stable falls back to the original installation; an empty beta track has no package.
+    # A track plays its selected update, else the original installation when it
+    # was published on that track. The other track starts empty.
     $name = Get-NHTrackSelectionName $Channel
-    if ($Channel -ceq 'stable') { return (Select-NHPortableRelease $Original $false).runtime }
+    $fallback = $null
+    if ((Get-NHPackageChannel $Original) -ceq $Channel) { $fallback = $Original }
     try {
         Assert-PlainPath $Original
-        if (-not (Test-Path -LiteralPath (Join-Path $Original 'BUILD-IDENTITY.json') -PathType Leaf)) { return $null }
+        if (-not (Test-Path -LiteralPath (Join-Path $Original 'BUILD-IDENTITY.json') -PathType Leaf)) { return $fallback }
         $store = Get-NHUpdateStore $Original
         Assert-PlainPath $store
         $selection = Join-Path $store $name
@@ -140,27 +156,15 @@ function Get-NHTrackRuntime([string]$Original, [string]$Channel) {
             return Get-NHSelectedUpdateRuntime $store (Read-NHSmallUpdateJson $selection)
         }
     } catch {
-        [Console]::Error.WriteLine('New Horizons: Selected beta update is unavailable.')
+        [Console]::Error.WriteLine('New Horizons: The selected ' + $Channel + ' update is unavailable.')
     }
-    return $null
+    return $fallback
 }
 
 function Select-NHPortableRelease([string]$Original, [bool]$ApplyRequest = $false) {
-    # Read-only selection. Retired in-game request.json files are never consumed.
-    $result = [PSCustomObject]@{ runtime = $Original; request = $null }
-    try {
-        Assert-PlainPath $Original
-        if (-not (Test-Path -LiteralPath (Join-Path $Original 'BUILD-IDENTITY.json') -PathType Leaf)) { return $result }
-        $store = Get-NHUpdateStore $Original
-        Assert-PlainPath $store
-        $selection = Join-Path $store 'current.json'
-        if (Test-Path -LiteralPath $selection -PathType Leaf) {
-            $result.runtime = Get-NHSelectedUpdateRuntime $store (Read-NHSmallUpdateJson $selection)
-        }
-    } catch {
-        [Console]::Error.WriteLine('New Horizons: Selected update is unavailable. Using the original installation.')
-    }
-    return $result
+    # Read-only selection of the original's own track. Retired in-game request.json
+    # files are never consumed.
+    return [PSCustomObject]@{ runtime = (Get-NHTrackRuntime $Original (Get-NHPackageChannel $Original)); request = $null }
 }
 
 # The selected package's launcher prints this token when its code loads.
@@ -206,8 +210,9 @@ function Test-NHLauncherSelfTest([string]$Runtime, [int]$TimeoutMilliseconds = 3
 }
 
 function Get-NHNewerLauncher([string]$Original) {
-    # Hand over to the launcher inside the selected stable update, so launcher
-    # improvements arrive with updates. Any doubt keeps this launcher.
+    # Hand over to the launcher inside the selected update of the original's own
+    # track, so launcher improvements arrive with updates. Any doubt keeps this
+    # launcher; an older release on the other track never takes over.
     try {
         $runtime = (Select-NHPortableRelease $Original $false).runtime
         if ($runtime -ieq $Original -or (Get-NHProductVersion $runtime) -le (Get-NHProductVersion $Original)) { return $null }

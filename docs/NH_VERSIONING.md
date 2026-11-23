@@ -24,7 +24,20 @@ from `main`, numbered like any other release: while stable continues on
 `0.MINOR.PATCH`, betas use the next MINOR (for example 0.93.x beside 0.92.x).
 The Beta track offers the newest published release of either kind that is newer
 than both installed tracks, installs it beside the stable version, and plays it
-with a separate profile. A stable release promotes a beta that held up; do not
+with a separate profile. The first start that creates the beta profile copies
+the stable saves into it.
+
+Each player package records its track as `release_channel` in
+`BUILD-IDENTITY.json`; a package without it is stable. Dispatch the Windows
+workflow for a release tag with `release_channel` set to `beta` for a
+prerelease or `stable` otherwise (tag builds without it fail), and pass the
+same value to `tools/ci/stage_linux_client.py --release-channel`. Publish the
+GitHub release with the matching prerelease flag. A beta package opens on the
+Beta track and plays it from its own folder with the beta profile; its Stable
+track starts empty and offers the latest stable release even when it is older.
+Hand-over only follows the installation's own track.
+
+A stable release promotes a beta that held up; do not
 cut a stable release from `main` while an experiment is still in beta. An urgent
 stable fix during a beta may use a temporary branch from the stable tag.
 

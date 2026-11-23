@@ -337,6 +337,95 @@ class LinuxPortableReleaseLauncherTest(unittest.TestCase):
         self.assertNotIn('--assets', chooser)
         self.assertNotIn('--assets', own)
 
+    def make_beta_package(self, version='0.93.1'):
+        self.make_package(self.original, version)
+        (self.original / 'BUILD-IDENTITY.json').write_text(json.dumps({'source_commit': 'a' * 40, 'release_channel': 'beta'}))
+
+    def test_package_channel_reads_the_release_marker_and_defaults_to_stable(self):
+        self.assertEqual(launcher.package_channel(self.original), 'stable')
+        for identity, channel in (({'release_channel': 'beta'}, 'beta'), ({'release_channel': 'stable'}, 'stable'),
+                                  ({'release_channel': 'Beta'}, 'stable'), (['release_channel'], 'stable')):
+            (self.original / 'BUILD-IDENTITY.json').write_text(json.dumps(identity))
+            self.assertEqual(launcher.package_channel(self.original), channel)
+        (self.original / 'BUILD-IDENTITY.json').write_text('{"release_channel": "beta"' + ' ' * launcher.MAX_IDENTITY + '}')
+        self.assertEqual(launcher.package_channel(self.original), 'stable')
+
+    def test_beta_package_is_the_beta_track_and_starts_with_an_empty_stable_track(self):
+        self.make_beta_package()
+        self.assertEqual(launcher.choose_runtime(self.original, 'beta'), self.original)
+        self.assertIsNone(launcher.choose_runtime(self.original))
+        self.assertIsNone(launcher.track_baseline(self.original, 'stable'))
+        self.assertEqual(launcher.track_baseline(self.original, 'beta'), self.original)
+        # The empty stable track is offered the latest stable even though it is older than the beta.
+        with patch.object(launcher, 'latest_release', return_value=self.release('0.92.8')):
+            self.assertIsNone(launcher.check_release(self.original))
+            offer = launcher.check_release(None)
+        self.assertEqual((offer['version'], offer.get('channel')), ('0.92.8', None))
+        result = subprocess.CompletedProcess([], 0, json.dumps({'offer': None, 'notes': {}}), '')
+        with patch.object(launcher, 'run_process', return_value=result) as owned:
+            launcher.check_release_notes_bounded(None, None)
+        self.assertIn('--any-version', owned.call_args.args[0])
+        with patch.object(launcher, 'check_release', return_value=None) as check, patch('builtins.print'):
+            launcher.main(['--package', str(ROOT / 'tools/linux'), '--any-version', '--check-release'])
+        self.assertIsNone(check.call_args.args[0])
+        # Installing that stable never touches the beta.
+        offer = self.accept('0.92.8')
+        self.make_package(self.updated, '0.92.8')
+        self.assertEqual(launcher.install_release(self.original, offer), self.updated)
+        self.assertFalse((self.store / 'beta.json').exists())
+        self.assertEqual(launcher.choose_runtime(self.original), self.updated)
+        self.assertEqual(launcher.choose_runtime(self.original, 'beta'), self.original)
+        self.assertEqual(launcher.track_baseline(self.original, 'stable'), self.updated)
+        self.assertEqual(launcher.track_baseline(self.original, 'beta'), self.original)
+        # The older stable launcher never takes over the beta package's window.
+        (self.updated / 'PortableReleaseLauncher.py').write_text(f'print({launcher.SELF_TEST!r})\n')
+        self.assertIsNone(launcher.newer_launcher(self.original))
+
+    def test_beta_package_installs_newer_betas_and_plays_the_beta_profile(self):
+        self.make_beta_package()
+        offer = dict(self.accept('0.93.1'), channel='beta', format=2)
+        self.assertEqual(launcher.install_release(self.original, offer), self.original)
+        offer = dict(self.accept('0.93.2'), channel='beta', format=2)
+        self.make_package(self.updated, '0.93.2')
+        self.assertEqual(launcher.install_release(self.original, offer), self.updated)
+        self.assertFalse(self.selection.exists())
+        self.assertEqual(launcher.choose_runtime(self.original, 'beta'), self.updated)
+        self.assertIsNone(launcher.choose_runtime(self.original))
+        code = self.updated / 'PortableReleaseLauncher.py'
+        code.write_text(f'print({launcher.SELF_TEST!r})\n')
+        self.assertEqual(launcher.newer_launcher(self.original), code)
+        players = self.root / 'players'
+        desktop = unittest.mock.Mock()
+        with patch.dict('os.environ', {'XDG_DATA_HOME': str(players)}), \
+                patch.object(launcher, 'newer_launcher', return_value=None), patch.object(launcher.os, 'execve') as execute:
+            launcher.main(['--package', str(self.original), '--', '--verify-only'])
+            with patch.dict(sys.modules, {'PortableLauncherWindow': desktop}):
+                launcher.main(['--package', str(self.original)])
+        arguments = execute.call_args.args[1]
+        self.assertEqual(arguments[1], str(self.updated / 'linux_assets_setup.py'))
+        self.assertEqual(arguments[-3:], ['--profile', str(players / 'new-horizons-play-beta'), '--verify-only'])
+        desktop.run_window.assert_called_once_with(self.original, self.updated)
+
+    def test_window_shows_and_checks_an_empty_stable_track(self):
+        import PortableLauncherWindow as desktop
+        self.make_beta_package()
+        label, status = unittest.mock.Mock(), unittest.mock.Mock()
+        state = SimpleNamespace(channel='beta', packages={'stable': None, 'beta': self.original}, package=self.original,
+                                offer=None, busy=False, version_label=label, status=status, fetched={'stable': None},
+                                install=unittest.mock.Mock(), set_busy=unittest.mock.Mock(),
+                                check_clicked=unittest.mock.Mock())
+        state.refresh_version = lambda: desktop.LauncherWindow.refresh_version(state)
+        state.refresh_version()
+        label.set_text.assert_called_with('Beta 0.93.1 · separate saves')
+        desktop.LauncherWindow.track_changed(state, SimpleNamespace(get_selected=lambda: 0), None)
+        self.assertIsNone(state.package)
+        label.set_text.assert_called_with('No stable version installed yet. Check for updates to find one.')
+        state.check_clicked.assert_called_once_with(None)
+        desktop.LauncherWindow.checked(state, 'stable', None, {})
+        status.set_text.assert_called_with('No stable release is available right now.')
+        desktop.LauncherWindow.checked(state, 'stable', {'version': '0.92.8'}, {})
+        status.set_text.assert_called_with('Version 0.92.8 is available.')
+
     def test_launcher_hands_over_to_the_selected_stable_launcher_after_its_self_test(self):
         self.assertIsNone(launcher.newer_launcher(self.original))
         offer = self.accept()

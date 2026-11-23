@@ -610,7 +610,7 @@ def main():
         # Explicit allowlist: never copy a user profile, Data, Maps, Saves, demo or optional mods.
         stage_windows_binaries(install, package)
         stage_engine_resources(install, package)
-        from windows_portable_layout import stage_frontend
+        from windows_portable_layout import release_identity, stage_frontend
         stage_frontend(root, helpers, package)
         runtime_roots, media_provenance = media_runtime_roots(args.conan_graph)
         write_json(package / "MEDIA-RUNTIME.json", {
@@ -645,8 +645,7 @@ def main():
             "dependency_source_archive": dependency_source_name,
             "dependency_source_sha256": sha256(args.output_dir / dependency_source_name),
             "submodules": run("git", "submodule", "status", "--recursive").splitlines(),
-            "platform": "Windows x64", "configuration": "RelWithDebInfo",
-            "run_id": os.environ.get("GITHUB_RUN_ID"), "run_attempt": os.environ.get("GITHUB_RUN_ATTEMPT"),
+            "platform": "Windows x64", "configuration": "RelWithDebInfo", **release_identity(os.environ),
             "compiler": "MSVC v142; Conan msvc-x64", "transport": "authoritative in-process simulation",
             "preset": "new-horizons-windows-x64", "render_backend": "SDL3",
             "engine_resource_scope": list(CURATED_RESOURCE_TREES),

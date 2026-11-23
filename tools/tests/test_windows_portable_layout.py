@@ -50,12 +50,25 @@ class PortableLayoutTest(unittest.TestCase):
         frontend = self.root / 'frontend'
         frontend.mkdir()
         layout.stage_frontend(repository, helpers, frontend)
-        for name in ('Player-Launcher.ps1', 'Player-Launcher-Notes.ps1', 'Player-Launcher-Log.ps1', 'Player-Launcher-Operation.ps1',
+        for name in ('Track-Data.ps1', 'Player-Launcher.ps1', 'Player-Launcher-Notes.ps1', 'Player-Launcher-Log.ps1',
+                     'Player-Launcher-Operation.ps1',
                      'Portable-Release-Launcher.ps1', 'Prepare-NHReleaseUpdate.ps1', 'Release-Metadata.ps1',
                      'Update-NHOriginalLauncher.ps1'):
             self.assertEqual((frontend / name).read_bytes(), (helpers / name).read_bytes())
         self.assertEqual((frontend / 'CHANGELOG-New-Horizons.md').read_bytes(),
                          (repository / 'docs/NEW_HORIZONS_CHANGELOG.md').read_bytes())
+
+    def test_release_identity_records_the_dispatched_track_and_requires_it_for_tags(self):
+        run = {'GITHUB_RUN_ID': '7', 'GITHUB_RUN_ATTEMPT': '1'}
+        for ref, channel in (('refs/tags/v0.93.2', 'beta'), ('refs/tags/v0.92.9', 'stable'), ('refs/heads/main', 'beta')):
+            self.assertEqual(layout.release_identity(dict(run, GITHUB_REF=ref, NH_RELEASE_CHANNEL=channel)),
+                             {'run_id': '7', 'run_attempt': '1', 'release_channel': channel})
+        # An untagged preview may omit the track; launchers read a package without one as stable.
+        self.assertEqual(layout.release_identity(dict(run, GITHUB_REF='refs/heads/main')), {'run_id': '7', 'run_attempt': '1'})
+        for environment in ({'GITHUB_REF': 'refs/tags/v0.93.2'}, {'GITHUB_REF': 'refs/tags/v0.93.2', 'NH_RELEASE_CHANNEL': ''},
+                            {'GITHUB_REF': 'refs/heads/main', 'NH_RELEASE_CHANNEL': 'nightly'}):
+            with self.subTest(environment=environment), self.assertRaises(RuntimeError):
+                layout.release_identity(dict(run, **environment))
 
     def test_release_path_budget_counts_real_deep_member_relative_to_installed_root(self):
         runtime = self.assemble()

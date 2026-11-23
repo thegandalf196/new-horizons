@@ -34,7 +34,7 @@ function New-FixtureView {
         Play=[PSCustomObject]@{Enabled=$true};Check=[PSCustomObject]@{Enabled=$true};
         Assets=[PSCustomObject]@{Enabled=$true};Install=[PSCustomObject]@{Enabled=$false};
         Track=[PSCustomObject]@{Enabled=$true;SelectedIndex=0};Notes=[PSCustomObject]@{Enabled=$true};
-        State=[PSCustomObject]@{Runtime=$runtime;Offer=$null;Busy=$false;ExitCode=0;Track='stable';
+        State=[PSCustomObject]@{Runtime=$runtime;Offer=$null;Busy=$false;ExitCode=0;Track='stable';Own='stable';
             Runtimes=@{stable=$runtime;beta=$null};Code=(Join-Path $env:SOURCE 'tools/windows');Notes=@{};
             Checking=$false;PlayRequested=$false;CloseRequested=$false;Launches=0}}
 }

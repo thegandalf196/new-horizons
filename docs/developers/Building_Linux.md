@@ -211,7 +211,9 @@ cannot pass the public binary privacy check.
 Stage the Linux x64 player package with `tools/ci/stage_linux_client.py` using its audited Linux candidate, matching source archives
 and packaging revision. Official player staging includes the desktop launcher
 and updater by default; `--legacy-core-only` is reserved for explicit legacy
-diagnostics. The front end uses the distribution's Python 3 and
+diagnostics. `--release-channel stable|beta` records the release track the
+launcher opens the package on (`beta` for a GitHub prerelease); official
+release archives require it. The front end uses the distribution's Python 3 and
 GTK 4 bindings (`python3-gi` and `gir1.2-gtk-4.0` on Ubuntu). Run
 `tools/ci/archive_linux_player_release.py --stage
 STAGE/New-Horizons-Linux-x64 --output-dir OUTPUT` with the verified Python

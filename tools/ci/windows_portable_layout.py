@@ -132,10 +132,25 @@ def assert_portable_layout(package, *, require_setup=False):
             raise RuntimeError('Incomplete portable runtime: ' + name)
 
 
+def release_identity(environ):
+    """The GitHub run and the release track the launchers read from BUILD-IDENTITY.json.
+
+    A release tag build names its track (beta for a GitHub prerelease); other
+    builds may omit it, and launchers treat a package without one as stable.
+    """
+    from release_channel import release_channel  # Only release packaging needs the track.
+    try:
+        channel = release_channel(environ.get('NH_RELEASE_CHANNEL', ''), environ.get('GITHUB_REF', ''))
+    except ValueError as error:
+        raise RuntimeError(str(error)) from None
+    return {'run_id': environ.get('GITHUB_RUN_ID'), 'run_attempt': environ.get('GITHUB_RUN_ATTEMPT'),
+            **({'release_channel': channel} if channel else {})}
+
+
 def stage_frontend(root, helpers, package):
     """Stage the launcher, setup helpers and project license notices."""
     for filename in ('Play-New-Horizons.cmd', 'Start-New-Horizons.ps1', 'Launch-Process.ps1',
-                     'Setup-Progress.ps1', 'Complete-Assets.ps1', 'Player-Launcher.ps1',
+                     'Setup-Progress.ps1', 'Complete-Assets.ps1', 'Track-Data.ps1', 'Player-Launcher.ps1',
                      'Player-Launcher-Notes.ps1', 'Player-Launcher-Log.ps1', 'Player-Launcher-Operation.ps1',
                      'Update-NHOriginalLauncher.ps1',
                      'Portable-Release-Launcher.ps1', 'Prepare-NHReleaseUpdate.ps1', 'Release-Metadata.ps1',

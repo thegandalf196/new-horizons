@@ -138,7 +138,8 @@ function Format-NHReleaseNotes([string]$Track, [string]$Installed, [string]$Offe
     if ($Offer -and $Offer -cne $Installed) { $entries[$Offer] = 'available update' }
     $sections = New-Object Collections.Generic.List[string]
     if ($Track -ceq 'beta') { $sections.Add('Beta track') } else { $sections.Add('Stable track') }
-    if ($Track -ceq 'beta' -and -not $Installed) { $sections.Add('No beta is installed yet.') }
+    # A beta package starts with an empty stable track.
+    if (-not $Installed) { $sections.Add($(if ($Track -ceq 'beta') { 'No beta is installed yet.' } else { 'No stable version is installed yet.' })) }
     foreach ($version in @($entries.Keys | Sort-Object { [Version]$_ } -Descending)) {
         $text = $null
         if ($null -ne $Fetched -and $Fetched.ContainsKey($version)) { $text = $Fetched[$version] }
@@ -148,7 +149,6 @@ function Format-NHReleaseNotes([string]$Track, [string]$Installed, [string]$Offe
         $heading = 'Version ' + $version + ' (' + $entries[$version] + ')'
         $sections.Add($heading + "`n" + ('=' * $heading.Length) + "`n`n" + $text)
     }
-    if ($entries.Count -eq 0 -and $Track -cne 'beta') { $sections.Add($script:NHNotesOffline) }
     return ($sections -join "`n`n`n")
 }
 

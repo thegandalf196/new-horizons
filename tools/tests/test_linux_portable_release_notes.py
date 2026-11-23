@@ -95,6 +95,11 @@ class ComposeTest(unittest.TestCase):
         self.assertIn('Bundled', offline)
         self.assertIn(notes.OFFLINE, offline)
         self.assertIn('No beta is installed yet.', notes.compose('beta', None))
+        # A beta package starts with an empty stable track.
+        text = notes.compose('stable', None, '0.92.8', {'0.92.8': 'Stable things'})
+        self.assertIn('No stable version is installed yet.', text)
+        self.assertIn('Stable things', text)
+        self.assertNotIn(notes.OFFLINE, text)
         self.assertIn('Version 0.93.2 (available update)', notes.compose('beta', None, '0.93.2', {'0.93.2': 'x'}))
 
 

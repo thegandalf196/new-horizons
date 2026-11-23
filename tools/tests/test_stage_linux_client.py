@@ -64,8 +64,28 @@ class LinuxStageTest(unittest.TestCase):
             destination.mkdir()
             archive = destination / 'New-Horizons-Linux-x64-aaaaaaaaaaaa.tar.gz'
             with patch('archive_linux_player_release.archive_stage', return_value=(archive, 'a' * 64)) as make:
-                fixture.run(main, options=('--release-archive-dir', str(destination)))
+                fixture.run(main, options=('--release-archive-dir', str(destination), '--release-channel', 'beta'))
             make.assert_called_once_with(fixture.arguments['output'] / 'New-Horizons-Linux-x64', destination)
+            # The launcher opens a beta package on the beta track with its separate profile.
+            staged = verify_candidate(fixture.arguments['output'] / 'New-Horizons-Linux-x64')
+            self.assertEqual(staged['release_channel'], 'beta')
+
+    def test_official_archive_requires_its_release_track(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            fixture = StageFixture(Path(temporary), self.root, providers=())
+            destination = Path(temporary) / 'release'
+            destination.mkdir()
+            with patch('archive_linux_player_release.archive_stage') as make, self.assertRaises(RuntimeError):
+                fixture.run(main, options=('--release-archive-dir', str(destination)))
+            make.assert_not_called()
+            self.assertFalse(fixture.arguments['output'].exists())
+
+    def test_preview_stage_records_no_release_track(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            fixture = StageFixture(Path(temporary), self.root, providers=())
+            fixture.run(main)
+            staged = verify_candidate(fixture.arguments['output'] / 'New-Horizons-Linux-x64')
+            self.assertNotIn('release_channel', staged)
 
     def test_staging_preserves_exact_binary_bound_optional_feature_marker(self):
         with tempfile.TemporaryDirectory() as temporary:

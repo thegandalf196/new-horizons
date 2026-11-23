@@ -4,6 +4,7 @@
 . (Join-Path $PSScriptRoot 'Setup-Progress.ps1')
 . (Join-Path $PSScriptRoot 'Player-Launcher-Notes.ps1')
 . (Join-Path $PSScriptRoot 'Player-Launcher-Log.ps1')
+. (Join-Path $PSScriptRoot 'Track-Data.ps1')
 # Covers a cold PowerShell start, antivirus scans and one GitHub request that has
 # its own 20-second bound. Play never waits for it.
 $script:NHCheckDeadlineSeconds = 45
@@ -88,36 +89,13 @@ function Set-NHPlayerBusy($View, [bool]$Busy, [bool]$Checking = $false) {
     $View.Bar.Visible = $Busy
 }
 
-function Get-NHTrackLocalData([string]$Track) {
-    # Beta keeps its own profile, saves, settings, cache and logs below this root.
-    if ($Track -ceq 'stable') { return '' }
-    if ($Track -cne 'beta') { throw 'Unknown release track.' }
-    $local = [Environment]::GetEnvironmentVariable('LOCALAPPDATA', 'Process')
-    if ([string]::IsNullOrWhiteSpace($local) -or -not [IO.Path]::IsPathRooted($local)) {
-        throw 'LOCALAPPDATA is unavailable. Run as your normal Windows user.'
-    }
-    $root = Join-Path ([IO.Path]::GetFullPath($local)) 'NewHorizons-Beta'
-    Assert-PlainPath $root
-    return $root
-}
-
-function Get-NHBetaAssetArguments([string]$BetaLocalData) {
-    # Beta reuses the stable verified copy of the original game files until the
-    # player imports or selects its own. Setup verifies the copy as usual.
-    $own = Join-Path $BetaLocalData 'HeroesIII-NewHorizons\content\.nh-assets.json'
-    if ([IO.File]::Exists($own)) { return @() }
-    $local = [IO.Path]::GetFullPath([Environment]::GetEnvironmentVariable('LOCALAPPDATA', 'Process'))
-    $stable = Join-Path $local 'HeroesIII-NewHorizons\content'
-    if (-not [IO.File]::Exists((Join-Path $stable '.nh-assets.json'))) { return @() }
-    return @('-AssetsPath', $stable)
-}
-
 function Update-NHPlayerVersion($View) {
     $runtime = $View.State.Runtime
-    if ($View.State.Track -ceq 'stable') {
+    if ($null -eq $runtime) {
+        $name = if ($View.State.Track -ceq 'beta') { 'beta' } else { 'stable version' }
+        $View.Version.Text = 'No ' + $name + ' installed yet. Check for updates to find one.'
+    } elseif ($View.State.Track -ceq 'stable') {
         $View.Version.Text = 'Installed version: ' + (Get-NHProductVersion $runtime).ToString()
-    } elseif ($null -eq $runtime) {
-        $View.Version.Text = 'No beta installed yet. Check for updates to find one.'
     } else {
         $View.Version.Text = 'Beta ' + (Get-NHProductVersion $runtime).ToString() + ' ' + [char]0x00B7 + ' separate saves'
     }
@@ -128,12 +106,16 @@ function Update-NHPlayerVersion($View) {
 }
 
 function Get-NHTrackBaseline($View) {
-    # A beta is offered only when newer than both installed tracks.
-    $baseline = Get-NHProductVersion $View.State.Runtimes['stable']
-    $beta = $View.State.Runtimes['beta']
-    if ($View.State.Track -ceq 'beta' -and $null -ne $beta) {
-        $betaVersion = Get-NHProductVersion $beta
-        if ($betaVersion -gt $baseline) { $baseline = $betaVersion }
+    # Stable is offered when newer than the installed stable, or any stable when
+    # none is installed (a beta package); a beta only when newer than both tracks.
+    $baseline = [Version]'0.0.0'
+    $tracks = @('stable')
+    if ($View.State.Track -ceq 'beta') { $tracks += 'beta' }
+    foreach ($track in $tracks) {
+        $runtime = $View.State.Runtimes[$track]
+        if ($null -eq $runtime) { continue }
+        $version = Get-NHProductVersion $runtime
+        if ($version -gt $baseline) { $baseline = $version }
     }
     return $baseline
 }
@@ -154,10 +136,11 @@ function Set-NHPlayerTrack($View, [string]$Original, [int]$Index) {
     Set-NHPlayerBusy $View $false
     if ($track -ceq 'beta') {
         $View.Status.Text = 'Beta builds try experimental changes and keep their own saves and settings.'
-        if ($null -eq $View.State.Runtime) { Invoke-NHPlayerUpdate $View $Original $false }
     } else {
         $View.Status.Text = 'Ready to play.'
     }
+    # An empty track looks for its first release.
+    if ($null -eq $View.State.Runtime) { Invoke-NHPlayerUpdate $View $Original $false }
 }
 
 function Complete-NHPlayerCheck($View, $Offer) {
@@ -171,13 +154,14 @@ function Complete-NHPlayerCheck($View, $Offer) {
         }
     } elseif ($beta) {
         $View.Status.Text = 'No beta newer than your installed versions is available right now.'
+    } elseif ($null -eq $View.State.Runtime) {
+        $View.Status.Text = 'No stable release is available right now.'
     } else { $View.Status.Text = 'You have the latest stable release.' }
 }
 
 function Complete-NHPlayerInstall($View, [string]$Original) {
     # Re-read both selections; installing one track never changes the other.
-    $View.State.Runtimes['stable'] = (Select-NHPortableRelease $Original $false).runtime
-    $View.State.Runtimes['beta'] = Get-NHTrackRuntime $Original 'beta'
+    foreach ($track in @('stable','beta')) { $View.State.Runtimes[$track] = Get-NHTrackRuntime $Original $track }
     $View.State.Runtime = $View.State.Runtimes[$View.State.Track]
     Update-NHPlayerVersion $View
     $View.Status.Text = 'Update installed. Select Play to start.'
@@ -283,10 +267,10 @@ function Invoke-NHPlayerGame($View, [bool]$Setup) {
         $arguments = @()
         if ($Setup) { $arguments = @('-SelectAssets','-SetupOnly') }
         $runtime = $View.State.Runtime
-        # An empty beta track never plays the original; it can still choose game files.
+        # An empty track never plays the other track's release; it can still choose game files.
         if ($null -eq $runtime) {
-            if (-not $Setup) { throw 'No beta is installed.' }
-            $runtime = $View.State.Runtimes['stable']
+            if (-not $Setup) { throw $(if ($View.State.Track -ceq 'beta') { 'No beta is installed.' } else { 'No stable version is installed.' }) }
+            $runtime = $View.State.Runtimes[$View.State.Own]
         }
         $localData = Get-NHTrackLocalData $View.State.Track
         if ($localData -and -not $Setup) { $arguments = @(Get-NHBetaAssetArguments $localData) }
@@ -344,7 +328,7 @@ function New-NHPlayerTitle($Form) {
     $Form.Controls.Add($title)
 }
 
-function New-NHPlayerTrack($Form) {
+function New-NHPlayerTrack($Form, [string]$Track) {
     $null = New-NHPlayerLabel $Form 'Version track' 22 70 104 26
     $track = New-Object Windows.Forms.ComboBox
     $track.DropDownStyle = 'DropDownList'
@@ -355,12 +339,12 @@ function New-NHPlayerTrack($Form) {
     $track.Size = New-Object Drawing.Size(406,24)
     $null = $track.Items.Add('Stable')
     $null = $track.Items.Add('Beta (experimental, separate saves)')
-    $track.SelectedIndex = 0
+    $track.SelectedIndex = [int]($Track -ceq 'beta')
     $Form.Controls.Add($track)
     return $track
 }
 
-function New-NHPlayerView($Runtimes, [string]$CodeRoot) {
+function New-NHPlayerView($Runtimes, [string]$CodeRoot, [string]$Own = 'stable') {
     # Same rows as the Linux launcher: title, track, version and notes, a
     # wrapping status, progress, then Play and the other actions two by two.
     Initialize-NHWindowsLook
@@ -371,7 +355,7 @@ function New-NHPlayerView($Runtimes, [string]$CodeRoot) {
     $form.FormBorderStyle = 'FixedDialog'
     $form.MaximizeBox = $false
     New-NHPlayerTitle $form
-    $track = New-NHPlayerTrack $form
+    $track = New-NHPlayerTrack $form $Own
     $version = New-NHPlayerLabel $form '' 22 108 396 32
     $notes = New-NHPlayerButton $form "What's new" 428 106 110
     $status = New-NHPlayerLabel $form 'Ready to play.' 22 150 516 54
@@ -390,8 +374,8 @@ function New-NHPlayerView($Runtimes, [string]$CodeRoot) {
         Install=(New-NHPlayerButton $form 'Install update' 22 278 253);
         Assets=(New-NHPlayerButton $form 'Original game files' 285 278 253);
         Notes=$notes;
-        State=[PSCustomObject]@{Runtime=$Runtimes['stable'];Offer=$null;Busy=$false;ExitCode=0;
-            Track='stable';Runtimes=$Runtimes;Code=$CodeRoot;Notes=@{};Checking=$false;PlayRequested=$false;
+        State=[PSCustomObject]@{Runtime=$Runtimes[$Own];Offer=$null;Busy=$false;ExitCode=0;
+            Track=$Own;Own=$Own;Runtimes=$Runtimes;Code=$CodeRoot;Notes=@{};Checking=$false;PlayRequested=$false;
             CloseRequested=$false;Launches=0}}
     $view.Install.Enabled = $false
     Update-NHPlayerVersion $view
@@ -401,9 +385,11 @@ function New-NHPlayerView($Runtimes, [string]$CodeRoot) {
     return $view
 }
 
-function Test-NHLauncherAutoCheck {
+function Test-NHLauncherAutoCheck([string]$Track = 'stable') {
     try {
-        $settings = Join-Path $env:LOCALAPPDATA 'HeroesIII-NewHorizons\config\settings.json'
+        $local = Get-NHTrackLocalData $Track
+        if (-not $local) { $local = $env:LOCALAPPDATA }
+        $settings = Join-Path $local 'HeroesIII-NewHorizons\config\settings.json'
         if ([IO.File]::Exists($settings)) {
             Assert-PlainPath $settings
             $info = New-Object IO.FileInfo($settings)
@@ -424,10 +410,13 @@ function Show-NHPlayerLauncher([string]$Original, [string]$CodeRoot = '') {
     # CodeRoot is this launcher's own package; it differs from Original after a hand-over.
     if (-not $CodeRoot) { $CodeRoot = $Original }
     Start-NHLauncherSession $CodeRoot
-    $runtimes = @{stable=(Select-NHPortableRelease $Original $false).runtime; beta=(Get-NHTrackRuntime $Original 'beta')}
-    Write-NHLauncherLog ('Installation ' + $Original + '; stable plays ' + $runtimes['stable'] + '; beta ' +
-        $(if ($runtimes['beta']) { 'plays ' + $runtimes['beta'] } else { 'not installed' }))
-    $view = New-NHPlayerView $runtimes $CodeRoot
+    # The launcher opens on the track the installation was published on.
+    $own = Get-NHPackageChannel $Original
+    $runtimes = @{stable=(Get-NHTrackRuntime $Original 'stable'); beta=(Get-NHTrackRuntime $Original 'beta')}
+    $plays = { param($track) if ($runtimes[$track]) { 'plays ' + $runtimes[$track] } else { 'not installed' } }
+    Write-NHLauncherLog ('Installation ' + $Original + ' (' + $own + ' package); stable ' + (& $plays 'stable') +
+        '; beta ' + (& $plays 'beta'))
+    $view = New-NHPlayerView $runtimes $CodeRoot $own
     try {
         $view.Form.add_FormClosing({ param($sender,$event) Request-NHPlayerClose $view $event })
         $view.Play.add_Click({ Request-NHPlayerGame $view })
@@ -436,7 +425,7 @@ function Show-NHPlayerLauncher([string]$Original, [string]$CodeRoot = '') {
         $view.Install.add_Click({ Invoke-NHPlayerUpdate $view $Original $true })
         $view.Notes.add_Click({ Show-NHPlayerNotes $view $Original })
         $view.Track.add_SelectedIndexChanged({ Set-NHPlayerTrack $view $Original $view.Track.SelectedIndex })
-        $view.Form.add_Shown({ if (Test-NHLauncherAutoCheck) { Invoke-NHPlayerUpdate $view $Original $false } })
+        $view.Form.add_Shown({ if (Test-NHLauncherAutoCheck $own) { Invoke-NHPlayerUpdate $view $Original $false } })
         $null = $view.Form.ShowDialog()
         Write-NHLauncherLog ('Launcher window closed; exit code ' + $view.State.ExitCode)
         return [int]$view.State.ExitCode

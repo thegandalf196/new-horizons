@@ -17,6 +17,7 @@ $launchExitCode = 0
 . (Join-Path $PSScriptRoot 'Launch-Process.ps1')
 . (Join-Path $PSScriptRoot 'Setup-Progress.ps1')
 . (Join-Path $PSScriptRoot 'Complete-Assets.ps1')
+. (Join-Path $PSScriptRoot 'Track-Data.ps1')
 $importProgress = $null
 
 function Test-ReportableGameExit {
@@ -222,6 +223,8 @@ try {
                 exit (Show-NHPlayerLauncher $launcherOriginal $packageRoot)
             }
             $selectedRelease = Select-NHPortableRelease $packageRoot $false
+            # A beta package plays its own track with the beta saves and settings.
+            if ((Get-NHPackageChannel $packageRoot) -ceq 'beta') { $env:LOCALAPPDATA = Get-NHTrackLocalData 'beta' }
             if ($selectedRelease.runtime -cne $packageRoot) {
                 $env:NH_WINDOWS_PORTABLE_UPDATE_CHILD = $selectedRelease.runtime
                 $env:NH_WINDOWS_BOOTSTRAP_ARGUMENTS_V1 = $argumentEnvelope
@@ -257,6 +260,7 @@ try {
     if ([string]::IsNullOrWhiteSpace($localData) -or -not [IO.Path]::IsPathRooted($localData)) {
         throw 'LOCALAPPDATA is unavailable. Run as your normal Windows user; do not run as administrator.'
     }
+    Copy-NHStableSavesToBeta $localData
     $profileRoot = [IO.Path]::GetFullPath((Join-Path $localData 'HeroesIII-NewHorizons'))
     $content = Join-Path $profileRoot 'content'
     # Refuse mismatched profiles rather than silently writing one and launching another.

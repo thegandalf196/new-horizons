@@ -22,7 +22,14 @@ for trying experimental changes. It keeps its own saves, settings, cache, logs
 and imported game files below %LOCALAPPDATA%\NewHorizons-Beta\, so stable saves
 are never touched. On its first Play, Beta copies the stable imported game
 files; use Original game files while Beta is selected to choose another folder.
+The first time that folder is created, Beta also starts with a copy of your
+stable saves (betas read older saves); the stable saves stay where they are.
 Installing a beta never changes the stable version.
+
+A beta download (a GitHub prerelease) opens on the Beta track and checks for
+newer betas. Its Stable track starts empty and offers the latest stable
+release, even when that is older than the beta; installing it leaves the beta
+unchanged. Setup.exe of a beta download chooses the beta's game files.
 
 What's new shows the release notes of the installed version on the selected
 track and of the update on offer, as plain text. It reuses the update check;

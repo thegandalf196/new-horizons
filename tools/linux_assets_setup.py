@@ -9,6 +9,7 @@ import argparse
 import json
 import os
 from pathlib import Path
+import shutil
 import stat
 import subprocess
 import sys
@@ -16,6 +17,11 @@ import tempfile
 
 ARCHIVES = ('h3bitmap.lod', 'h3sprite.lod', 'h3ab_bmp.lod', 'h3ab_spr.lod')
 PICKER_NAME = 'new-horizons-setup'
+# The desktop launcher's track profiles (PROFILES in PortableReleaseLauncher.py)
+# and the managed launcher's profile marker (new-horizons-launch.sh).
+STABLE_PROFILE, BETA_PROFILE = 'new-horizons-play', 'new-horizons-play-beta'
+PROFILE_MARKER = 'New Horizons launcher profile v1\n'
+SAVES = Path('data/new-horizons/Saves')
 
 
 def matching_child(directory, name, folder):
@@ -169,6 +175,39 @@ def upgrade_launcher(resources):
     upgrade_original(resources)
 
 
+def copy_plain_saves(source, destination):
+    """Ordinary folders and files only; links and special files are never followed or copied."""
+    destination.mkdir(mode=0o700, parents=True)
+    for entry in source.iterdir():
+        mode = entry.lstat().st_mode
+        if stat.S_ISDIR(mode):
+            copy_plain_saves(entry, destination / entry.name)
+        elif stat.S_ISREG(mode):
+            shutil.copyfile(entry, destination / entry.name, follow_symlinks=False)
+
+
+def seed_beta_profile(profile):
+    """The first start that creates the beta profile seeds it with a copy of the stable
+    saves: 0.93.0 and 0.93.1 beta packages kept theirs there, and a beta reads older
+    saves. The stable saves are never moved or changed."""
+    source = profile.with_name(STABLE_PROFILE) / SAVES
+    if profile.name != BETA_PROFILE or os.path.lexists(profile) or not source.is_dir() or source.is_symlink():
+        return
+    stage = Path(tempfile.mkdtemp(prefix='.' + BETA_PROFILE + '.copying-', dir=profile.parent))
+    try:
+        copy_plain_saves(source, stage / SAVES)
+        (stage / '.nh-profile').write_text(PROFILE_MARKER)
+        if os.path.lexists(profile):
+            raise OSError('the beta profile appeared during the copy')
+        # One rename on the same filesystem: the profile appears complete or not at all.
+        os.rename(stage, profile)
+        print(f'Copied your saves to the beta: {profile / SAVES}', file=sys.stderr)
+    except OSError as error:
+        raise OSError(f'Could not copy your saves to the beta ({error}). Your saves are unchanged.') from error
+    finally:
+        shutil.rmtree(stage, ignore_errors=True)
+
+
 def run(args):
     upgrade_launcher(args.resources)
     inputs = [args.resources, args.client.parent]
@@ -209,6 +248,7 @@ def run(args):
         write_selection(args.profile, assets)
     if args.setup_only:
         return 0
+    seed_beta_profile(args.profile)
     if os.environ.get('NH_LAUNCHER_STATUS') == '1':
         print('NH_LAUNCHER_PREPARING_ART_V1', flush=True)
     os.execv(str(args.launcher), command + ['--', *args.client_args])

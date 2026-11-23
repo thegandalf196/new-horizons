@@ -102,6 +102,57 @@ class LinuxAssetsSetupTest(unittest.TestCase):
         choose.assert_not_called()
         self.assertEqual(execute.call_args.args[1][-4:], ['--', '--testmap', 'Maps/a ü map.h3m', ''])
 
+    def stable_saves(self):
+        saves = self.root / setup.STABLE_PROFILE / setup.SAVES
+        (saves / 'campaign').mkdir(parents=True)
+        (saves / 'first.vsgm1').write_bytes(b'save one')
+        (saves / 'campaign/second.vsgm1').write_bytes(b'save two')
+        (saves / 'linked.vsgm1').symlink_to(saves / 'first.vsgm1')
+        return saves
+
+    def test_first_beta_start_copies_the_stable_saves_once(self):
+        saves = self.stable_saves()
+        before = {path: path.read_bytes() for path in saves.rglob('*') if path.is_file() and not path.is_symlink()}
+        beta = self.root / setup.BETA_PROFILE
+        self.profile = beta
+        with mock.patch.object(setup.subprocess, 'run', return_value=mock.Mock(returncode=0)), \
+                mock.patch.object(setup.os, 'execv') as execute, mock.patch('sys.stderr'):
+            setup.run(self.args('--assets', str(self.assets), '--setup-only'))
+            self.assertFalse(beta.exists())
+            setup.run(self.args('--assets', str(self.assets)))
+        execute.assert_called_once()
+        copied = beta / setup.SAVES
+        self.assertEqual((copied / 'first.vsgm1').read_bytes(), b'save one')
+        self.assertEqual((copied / 'campaign/second.vsgm1').read_bytes(), b'save two')
+        self.assertFalse(os.path.lexists(copied / 'linked.vsgm1'))
+        # The managed launcher admits the seeded profile by its marker.
+        self.assertEqual((beta / '.nh-profile').read_text(), setup.PROFILE_MARKER)
+        self.assertEqual({path: path.read_bytes() for path in before}, before)
+        self.assertEqual([path.name for path in self.root.glob('.' + setup.BETA_PROFILE + '*')], [])
+        # Later starts keep the beta's own saves.
+        (saves / 'first.vsgm1').write_bytes(b'changed in stable')
+        setup.seed_beta_profile(beta)
+        self.assertEqual((copied / 'first.vsgm1').read_bytes(), b'save one')
+
+    def test_only_a_new_beta_profile_is_seeded_and_a_failed_copy_leaves_nothing(self):
+        saves = self.stable_saves()
+        setup.seed_beta_profile(self.profile)
+        setup.seed_beta_profile(self.root / setup.STABLE_PROFILE)
+        self.assertFalse(self.profile.exists())
+        (saves / 'first.vsgm1').chmod(0)
+        self.addCleanup((saves / 'first.vsgm1').chmod, 0o600)
+        beta = self.root / setup.BETA_PROFILE
+        if os.access(saves / 'first.vsgm1', os.R_OK):
+            self.skipTest('Unreadable files are readable to this user')
+        with self.assertRaisesRegex(OSError, 'Could not copy your saves to the beta'):
+            setup.seed_beta_profile(beta)
+        self.assertFalse(beta.exists())
+        self.assertEqual([path.name for path in self.root.glob('.' + setup.BETA_PROFILE + '*')], [])
+        empty = self.root / 'empty'
+        empty.mkdir()
+        setup.seed_beta_profile(empty / setup.BETA_PROFILE)
+        self.assertEqual(list(empty.iterdir()), [])
+
     def test_moved_selection_prompts_and_preflight_failure_preserves_previous(self):
         old = self.root / 'moved originals'
         setup.write_selection(self.profile, old)

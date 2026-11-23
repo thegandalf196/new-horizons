@@ -14,7 +14,7 @@ WINDOWS = ROOT / 'tools/windows'
 POWERSHELL = os.environ.get('NH_TEST_POWERSHELL') or shutil.which('powershell') or shutil.which('pwsh')
 SHA256 = 'c' * 64
 LAUNCHER_FILES = ('Release-Metadata.ps1', 'Launch-Process.ps1', 'Setup-Progress.ps1', 'Complete-Assets.ps1',
-                  'Prepare-NHReleaseUpdate.ps1', 'Player-Launcher-Notes.ps1', 'Player-Launcher-Log.ps1', 'Player-Launcher.ps1',
+                  'Track-Data.ps1', 'Prepare-NHReleaseUpdate.ps1', 'Player-Launcher-Notes.ps1', 'Player-Launcher-Log.ps1', 'Player-Launcher.ps1',
                   'Player-Launcher-Operation.ps1', 'Update-NHOriginalLauncher.ps1', 'Portable-Release-Launcher.ps1',
                   'Start-New-Horizons.ps1')
 # Launcher scripts of a 0.92.4/0.92.5 original that differ from the current set.
@@ -115,7 +115,7 @@ class WindowsOriginalLauncherUpgradeTest(unittest.TestCase):
         self.assertIn('launcher was upgraded', result.stdout)
         self.assertEqual(self.self_tests(), 1)
         replaced = set(OLD_FILES) | {'Release-Metadata.ps1', 'Update-NHOriginalLauncher.ps1', 'Player-Launcher-Notes.ps1',
-                                     'Player-Launcher-Log.ps1'}
+                                     'Player-Launcher-Log.ps1', 'Track-Data.ps1'}
         after = self.snapshot()
         for name in LAUNCHER_FILES:
             self.assertEqual(after[name], (WINDOWS / name).read_bytes(), name)

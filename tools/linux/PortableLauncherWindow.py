@@ -38,8 +38,9 @@ textview, textview text { background: #2b231b; color: #e9dfcc; }
 class LauncherWindow(Gtk.ApplicationWindow):
     def __init__(self, application, original, package):
         super().__init__(application=application, title='New Horizons')
-        self.original, self.package, self.channel = original, package, 'stable'
-        self.packages = {'stable': package, 'beta': release.choose_runtime(original, 'beta')}
+        # The window opens on the track the installation was published on.
+        self.original, self.package, self.channel = original, package, release.package_channel(original)
+        self.packages = {track: release.choose_runtime(original, track) for track in ('stable', 'beta')}
         self.offer, self.busy, self.closed = None, False, False
         # Play selected during an update check stops the check, then starts the game.
         self.play_after, self.started = False, time.monotonic()
@@ -64,6 +65,7 @@ class LauncherWindow(Gtk.ApplicationWindow):
         track = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
         track.append(Gtk.Label(label='Version track', xalign=0))
         self.track = Gtk.DropDown.new_from_strings(['Stable', 'Beta (experimental, separate saves)'])
+        self.track.set_selected(1 if self.channel == 'beta' else 0)
         self.track.set_hexpand(True)
         self.track.connect('notify::selected', self.track_changed)
         track.append(self.track)
@@ -93,7 +95,7 @@ class LauncherWindow(Gtk.ApplicationWindow):
         self.cancel_button.connect('clicked', self.cancel_clicked)
         panel.append(self.cancel_button)
         self.set_busy(False)
-        if release.automatic_checks():
+        if release.automatic_checks(self.channel):
             GLib.idle_add(self.check_clicked, None)
 
     def button(self, grid, label, callback, column, row):
@@ -105,7 +107,8 @@ class LauncherWindow(Gtk.ApplicationWindow):
     def refresh_version(self):
         package = self.packages[self.channel]
         if self.channel == 'stable':
-            self.version_label.set_text('Installed version ' + '.'.join(map(str, release.version(package))))
+            self.version_label.set_text('Installed version ' + '.'.join(map(str, release.version(package))) if package
+                                        else 'No stable version installed yet. Check for updates to find one.')
             self.version_label.remove_css_class('beta')
             return
         self.version_label.add_css_class('beta')
@@ -122,7 +125,7 @@ class LauncherWindow(Gtk.ApplicationWindow):
         self.set_busy(False)
         self.status.set_text('Beta builds try experimental changes and keep their own saves and settings.'
                              if self.channel == 'beta' else 'Ready to play.')
-        if self.channel == 'beta' and self.package is None:
+        if self.package is None:  # An empty track looks for its first release.
             self.check_clicked(None)
 
     def set_busy(self, busy):
@@ -214,6 +217,8 @@ class LauncherWindow(Gtk.ApplicationWindow):
             self.status.set_text(('Beta ' if channel == 'beta' else 'Version ') + offer['version'] + ' is available.')
         elif channel == 'beta':
             self.status.set_text('No beta newer than your installed versions is available right now.')
+        elif self.package is None:
+            self.status.set_text('No stable release is available right now.')
         else:
             self.status.set_text('You have the latest version.')
 
@@ -279,7 +284,7 @@ class LauncherWindow(Gtk.ApplicationWindow):
             if result.returncode:
                 raise RuntimeError(result.stderr[-1500:] or 'Original game file selection failed')
             self.status.set_text('Original game file selection completed.')
-        package, channel = self.package or self.packages['stable'], self.channel
+        package, channel = self.package or self.packages['stable'] or self.packages['beta'], self.channel
         self.begin('assets', lambda: run_process(release.setup_command(package, ('--select-assets', '--setup-only'), channel),
                                                cancel=self.cancel), selected)
 

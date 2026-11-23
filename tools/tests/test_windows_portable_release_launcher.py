@@ -136,6 +136,72 @@ $unknown = Test-Rejected { Install-NHRequestedRelease $env:TEST_RUNTIME $stable 
         self.assertEqual(json.loads((self.store / 'beta.json').read_text()),
                          {'format': 1, 'version': '0.92.4', 'sha256': SHA256})
 
+    def make_beta_original(self, version='0.93.1'):
+        (self.original / 'config/newHorizonsVersion.json').write_text(json.dumps({'version': version}))
+        (self.original / 'BUILD-IDENTITY.json').write_text(json.dumps({'source_commit': 'a' * 40, 'release_channel': 'beta'}))
+
+    def test_package_channel_reads_the_release_marker_and_defaults_to_stable(self):
+        report = self.run_tracks(r'''
+$values=@()
+foreach ($text in @('Fixture only','{}','{"release_channel":"stable"}','{"release_channel":"Beta"}','{"release_channel":"beta"}')) {
+    [IO.File]::WriteAllText((Join-Path $env:TEST_RUNTIME 'BUILD-IDENTITY.json'), $text)
+    $values += Get-NHPackageChannel $env:TEST_RUNTIME
+}
+[IO.File]::Delete((Join-Path $env:TEST_RUNTIME 'BUILD-IDENTITY.json'))
+$values += Get-NHPackageChannel $env:TEST_RUNTIME
+ConvertTo-Json -InputObject @{values=$values} -Compress
+''')
+        self.assertEqual(report['values'], ['stable', 'stable', 'stable', 'stable', 'beta', 'stable'])
+
+    def test_beta_original_is_the_beta_track_and_installs_an_older_stable_beside_it(self):
+        self.make_beta_original()
+        stable = self.offer_update('0.92.8')
+        self.request.write_text(json.dumps({'version': '0.92.8', 'sha256': SHA256}))
+        report = self.run_tracks(r'''
+$before=[ordered]@{stable=(Get-NHTrackRuntime $env:TEST_RUNTIME 'stable');beta=(Get-NHTrackRuntime $env:TEST_RUNTIME 'beta');
+    selected=(Select-NHPortableRelease $env:TEST_RUNTIME $false).runtime;newer=(Get-NHNewerLauncher $env:TEST_RUNTIME)}
+$current=(Select-NHPortableRelease $env:TEST_RUNTIME $false).runtime
+$installed=Install-NHRequestedRelease $env:TEST_RUNTIME $current $env:TEST_STORE $env:TEST_REQUEST
+[ordered]@{before=$before;installed=$installed;stable=(Get-NHTrackRuntime $env:TEST_RUNTIME 'stable');
+    beta=(Get-NHTrackRuntime $env:TEST_RUNTIME 'beta');selected=(Select-NHPortableRelease $env:TEST_RUNTIME $false).runtime;
+    newer=(Get-NHNewerLauncher $env:TEST_RUNTIME)} | ConvertTo-Json -Compress -Depth 4
+''')
+        self.assertEqual(report['before'], {'stable': None, 'beta': str(self.original), 'selected': str(self.original),
+                                            'newer': None})
+        self.assertTrue(Path(report['installed']).samefile(stable))
+        self.assertTrue(Path(report['stable']).samefile(stable))
+        self.assertEqual(Path(report['beta']), self.original)
+        # The older stable launcher never takes over the beta installation.
+        self.assertEqual(Path(report['selected']), self.original)
+        self.assertIsNone(report['newer'])
+        self.assertFalse((self.store / 'beta.json').exists())
+        self.assertEqual(json.loads(self.selector.read_text()), {'format': 1, 'version': '0.92.8', 'sha256': SHA256})
+
+    def test_beta_original_installs_only_newer_betas_and_hands_over_to_them(self):
+        self.make_beta_original()
+        newer = self.offer_update('0.93.2')
+        report = self.run_tracks(r'''
+function Test-NHLauncherSelfTest([string]$Runtime) { return $true }
+$current=(Select-NHPortableRelease $env:TEST_RUNTIME $false).runtime
+[IO.File]::WriteAllText($env:TEST_REQUEST, '{"version":"0.93.1","sha256":"' + ('c' * 64) + '","channel":"beta"}')
+$same=Install-NHRequestedRelease $env:TEST_RUNTIME $current $env:TEST_STORE $env:TEST_REQUEST
+$sameSelected=[IO.File]::Exists((Join-Path $env:TEST_STORE 'beta.json'))
+[IO.File]::WriteAllText($env:TEST_REQUEST, '{"version":"0.93.2","sha256":"' + ('c' * 64) + '","channel":"beta"}')
+$installed=Install-NHRequestedRelease $env:TEST_RUNTIME $current $env:TEST_STORE $env:TEST_REQUEST
+$selected=(Select-NHPortableRelease $env:TEST_RUNTIME $false).runtime
+[ordered]@{same=$same;sameSelected=$sameSelected;installed=$installed;selected=$selected;
+    stable=(Get-NHTrackRuntime $env:TEST_RUNTIME 'stable');newer=(Get-NHNewerLauncher $env:TEST_RUNTIME);
+    resolved=(Resolve-NHLauncherOriginal $selected $env:TEST_RUNTIME)} | ConvertTo-Json -Compress
+''')
+        self.assertEqual(Path(report['same']), self.original)
+        self.assertFalse(report['sameSelected'])
+        self.assertTrue(Path(report['installed']).samefile(newer))
+        self.assertTrue(Path(report['selected']).samefile(newer))
+        self.assertIsNone(report['stable'])
+        self.assertTrue(Path(report['newer']).samefile(newer / 'Start-New-Horizons.ps1'))
+        self.assertTrue(Path(report['resolved']).samefile(self.original))
+        self.assertFalse(self.selector.exists())
+
     @unittest.skipUnless(WINDOWS_POWERSHELL, 'The launcher self-test child is Windows PowerShell 5.1')
     def test_launcher_hands_over_to_the_selected_stable_launcher_after_its_self_test(self):
         hand_over = "$newer = Get-NHNewerLauncher $env:TEST_RUNTIME; ConvertTo-Json -InputObject @{newer=$newer} -Compress"

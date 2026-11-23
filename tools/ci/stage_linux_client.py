@@ -14,6 +14,7 @@ import subprocess
 from binary_privacy import inspect_bytes, require_clean
 from client_features import client_feature_files
 from linux_snapshot_binaries import SETUP_NAME, setup_metadata, admit_setup_evidence
+from release_channel import CHANNELS
 from stage_runtime_libraries import admit_runtime_libraries, relocate_runtime_evidence, runtime_records
 
 
@@ -94,6 +95,20 @@ def source_archives(paths):
     return sources
 
 
+def copy_player_files(root, package, revision, portable_updates):
+    """Copy the player entry points and texts, and the desktop launcher modules, from the packaging revision."""
+    player_files = list(PLAYER_SUPPORT_FILES)
+    if portable_updates:
+        player_files.extend((f'tools/linux/{name}', name) for name in PORTABLE_LAUNCHER_MODULES)
+    for source, name in player_files:
+        data = subprocess.check_output(['git', '-C', str(root), 'show', revision + ':' + source])
+        if (package / name).exists():
+            (package / name).chmod(0o644)
+        (package / name).write_bytes(data)
+    (package / 'Play-New-Horizons.sh').chmod(0o755)
+    (package / 'new-horizons-launch.sh').chmod(0o755)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ('candidate', 'notices', 'header-supplement', 'elf-audit', 'inventory',
@@ -108,9 +123,11 @@ def main():
                         help='Write the updater-compatible official Linux archive after staging verification')
     parser.add_argument('--runtime-library', type=Path, action='append', default=[],
                         help='regular ELF provider named by its incoming SONAME; repeat for the complete declared set')
+    parser.add_argument('--release-channel', choices=CHANNELS,
+                        help='Release track the launcher opens the package on (beta for a GitHub prerelease)')
     args = parser.parse_args()
-    if args.release_archive_dir is not None and not args.portable_updates:
-        raise RuntimeError('Official release archives require the desktop launcher')
+    if args.release_archive_dir is not None and not (args.portable_updates and args.release_channel):
+        raise RuntimeError('Official release archives require the desktop launcher and --release-channel')
     if args.output.exists() or args.output.is_symlink():
         raise RuntimeError('Refusing to replace an existing stage')
     sources = source_archives((args.engine_source, args.dependency_source, args.packaging_source))
@@ -137,16 +154,7 @@ def main():
         (package / name).chmod(0o644)
     for name, record in libraries.items():
         (package / name).write_bytes(record['payload'])  # Owned verified bytes; never modify the input provider.
-    player_files = list(PLAYER_SUPPORT_FILES)
-    if args.portable_updates:
-        player_files.extend((f'tools/linux/{name}', name) for name in PORTABLE_LAUNCHER_MODULES)
-    for source, name in player_files:
-        data = subprocess.check_output(['git', '-C', str(root), 'show', args.packaging_revision + ':' + source])
-        if (package / name).exists():
-            (package / name).chmod(0o644)
-        (package / name).write_bytes(data)
-    (package / 'Play-New-Horizons.sh').chmod(0o755)
-    (package / 'new-horizons-launch.sh').chmod(0o755)
+    copy_player_files(root, package, args.packaging_revision, args.portable_updates)
     if (package / SETUP_NAME).exists():
         identity['setup'] = setup_metadata(package, {p.name: sha256(p) for p in package.iterdir() if p.is_file()})
     copy_plain_tree(args.notices, package / 'licenses/system')
@@ -162,7 +170,8 @@ def main():
     identity.update({'scope': 'Ubuntu26.04 system-dependent Linux preview; acceptance evidence is separate',
                      'packaging_commit': args.packaging_revision, 'source_archives': sources,
                      'bundled_runtime_libraries': runtime_records(libraries),
-                     'packaged_elfs': reports['ELF-DEPENDENCIES.json']['packaged_elfs']})
+                     'packaged_elfs': reports['ELF-DEPENDENCIES.json']['packaged_elfs'],
+                     **({'release_channel': args.release_channel} if args.release_channel else {})})
     (package / 'BUILD-IDENTITY.json').write_text(json.dumps(identity, indent=2) + '\n')
     sums = package / 'SHA256SUMS'
     sums.write_text(''.join(f'{sha256(p)}  {p.relative_to(package).as_posix()}\n'

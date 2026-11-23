@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[2]
 BRANCH = 'refs/heads/performance/quick-combat-and-ci'
 CONTROLS = {'preflight_only': False, 'use_precompiled_headers': True,
             'use_hot_header_pch': False, 'build_jobs': 4,
-            'pch_off_cache_seed': '', 'repack_run_id': '', 'use_unity_build': False,
+            'pch_off_cache_seed': '', 'repack_run_id': '', 'release_channel': '', 'use_unity_build': False,
             'skip_pch_cache_save': False}
 
 
@@ -81,7 +81,7 @@ class WindowsPreviewDispatchTest(unittest.TestCase):
             result, summary = self.run_controls(raw)
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertIn(json.dumps(dict(CONTROLS, use_unity_build=unity), sort_keys=True), summary)
-        for omitted in ('pch_off_cache_seed', 'repack_run_id'):
+        for omitted in ('pch_off_cache_seed', 'repack_run_id', 'release_channel'):
             raw = dict(CONTROLS)
             del raw[omitted]
             result, _ = self.run_controls(raw)
@@ -109,7 +109,8 @@ class WindowsPreviewDispatchTest(unittest.TestCase):
     def test_bad_types_and_noncanonical_values_are_not_coerced(self):
         invalid = {'build_jobs': [4.0, 6.0, True, False, None, 0, 5, 10, '04', '06', '4.0', '+4', ' 4', '4 ', [], {}],
                    'pch_off_cache_seed': [None, False, 0, [], 'cold'],
-                   'repack_run_id': [None, False, 0, [], '123']}
+                   'repack_run_id': [None, False, 0, [], '123'],
+                   'release_channel': [None, False, 0, [], 'beta', 'stable']}
         for name in ('preflight_only', 'use_precompiled_headers', 'use_hot_header_pch',
                      'skip_pch_cache_save', 'use_unity_build'):
             invalid[name] = [0, 1, 'true', 'false', None]
@@ -155,8 +156,35 @@ class WindowsPreviewDispatchTest(unittest.TestCase):
         self.assertIs(inputs['use_unity_build']['default'], True)
         for name in ('use_hot_header_pch', 'skip_pch_cache_save'):
             self.assertIs(inputs[name]['default'], False)
-        for name in ('pch_off_cache_seed', 'repack_run_id'):
+        for name in ('pch_off_cache_seed', 'repack_run_id', 'release_channel'):
             self.assertEqual(inputs[name]['default'], '')
+            self.assertEqual(inputs[name]['type'], 'string')
+
+    def test_release_tags_must_name_their_track_before_any_dependency_build(self):
+        step = self.steps['Select the package release track']
+        self.assertEqual(step['env'], {'RELEASE_CHANNEL': '${{ inputs.release_channel }}'})
+        self.assertEqual(step['run'], 'python tools/ci/release_channel.py')
+        names = [row.get('name') for row in self.job['steps']]
+        self.assertLess(names.index('Select the package release track'),
+                        names.index('Install upstream MSVC v142 toolset'))
+        cases = (('refs/tags/v0.93.2', 'beta', 'beta'), ('refs/tags/v0.92.9', 'stable', 'stable'),
+                 ('refs/heads/main', '', ''), ('refs/heads/main', 'beta', 'beta'),
+                 ('refs/tags/v0.93.2', '', None), ('refs/heads/main', 'nightly', None),
+                 ('refs/tags/v0.93.2', 'Beta', None))
+        for ref, channel, recorded in cases:
+            with self.subTest(ref=ref, channel=channel), tempfile.TemporaryDirectory() as temporary:
+                environment = Path(temporary) / 'env'
+                result = subprocess.run([sys.executable, '-B', str(ROOT / 'tools/ci/release_channel.py')],
+                                        text=True, capture_output=True, check=False,
+                                        env=dict(os.environ, GITHUB_REF=ref, RELEASE_CHANNEL=channel,
+                                                 GITHUB_ENV=str(environment)))
+                if recorded is None:
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertIn('::error::', result.stdout)
+                    self.assertFalse(environment.exists())
+                else:
+                    self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                    self.assertEqual(environment.read_text(), 'NH_RELEASE_CHANNEL=' + recorded + '\n')
 
     def test_unmatched_controls_fail_before_any_dependency_build(self):
         changes = {'preflight_only': True, 'use_precompiled_headers': False,

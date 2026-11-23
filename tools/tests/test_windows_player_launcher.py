@@ -37,7 +37,7 @@ function New-FixtureView {
         Play=[PSCustomObject]@{Enabled=$true};Check=[PSCustomObject]@{Enabled=$true};
         Assets=[PSCustomObject]@{Enabled=$true};Install=[PSCustomObject]@{Enabled=$false};
         Track=[PSCustomObject]@{Enabled=$true;SelectedIndex=0};Notes=[PSCustomObject]@{Enabled=$true};
-        State=[PSCustomObject]@{Runtime=$runtime;Offer=$null;Busy=$false;ExitCode=0;Track='stable';
+        State=[PSCustomObject]@{Runtime=$runtime;Offer=$null;Busy=$false;ExitCode=0;Track='stable';Own='stable';
             Runtimes=@{stable=$runtime;beta=$null};Code=(Join-Path $env:SOURCE 'tools/windows');Notes=@{};
             Checking=$false;PlayRequested=$false;CloseRequested=$false;Launches=0}}
 }
@@ -173,6 +173,112 @@ Set-NHPlayerTrack $view $runtime 1
 Require ($script:Checks -eq 1 -and $view.Play.Enabled) 'Installed beta was not playable'
 Require ($view.Version.Text -ceq ('Beta 0.92.3 ' + [char]0x00B7 + ' separate saves')) 'Wrong installed beta label'
 ''')
+
+    def test_beta_package_opens_on_beta_and_offers_an_older_stable_on_its_empty_stable_track(self):
+        self.execute(r'''
+$view=New-FixtureView
+$view.State.Own='beta'
+$view.State.Track='beta'
+$view.State.Runtimes=@{stable=$null;beta=$runtime}
+Update-NHPlayerVersion $view
+Require ($view.Version.Text -ceq ('Beta 0.92.3 ' + [char]0x00B7 + ' separate saves')) 'Beta package not shown as beta'
+$script:Checks=0
+function Invoke-NHPlayerUpdate($View,$Original,$Install){ $script:Checks++ }
+Complete-NHPlayerCheck $view ([PSCustomObject]@{version='0.92.2'})
+Require ($null -eq $view.State.Offer) 'An older beta was offered'
+Set-NHPlayerTrack $view $runtime 0
+Require ($view.State.Track -ceq 'stable' -and $null -eq $view.State.Runtime -and -not $view.Play.Enabled) 'Empty stable playable'
+Require ($script:Checks -eq 1) 'Empty stable did not check'
+Require ($view.Version.Text -ceq 'No stable version installed yet. Check for updates to find one.') 'Wrong empty stable label'
+Require ((Get-NHTrackBaseline $view) -eq [Version]'0.0.0') 'Empty stable kept a floor'
+Complete-NHPlayerCheck $view $null
+Require ($view.Status.Text -ceq 'No stable release is available right now.') 'Wrong empty stable status'
+Complete-NHPlayerCheck $view ([PSCustomObject]@{version='0.92.1'})
+Require ($view.State.Offer.version -ceq '0.92.1' -and $view.Status.Text.StartsWith('Version 0.92.1 is available.')) 'Older stable not offered'
+$script:Calls=@()
+function New-NHPlayerProcess($Runtime,$Script,$Arguments,$LocalData){
+    $script:Calls+=[PSCustomObject]@{Runtime=$Runtime;Arguments=(@($Arguments) -join '|');LocalData=$LocalData}
+    $p=[PSCustomObject]@{Id=4242}
+    $p|Add-Member ScriptMethod Dispose {}
+    return $p
+}
+function Wait-NHPlayerProcess { return 0 }
+Invoke-NHPlayerGame $view $false
+Require ($view.Status.Text.Contains('No stable version is installed.') -and $script:Calls.Count -eq 0) 'Empty stable played the beta'
+Invoke-NHPlayerGame $view $true
+Require ($script:Calls[0].Runtime -ceq $runtime -and $script:Calls[0].LocalData -ceq '') 'Empty stable chooser'
+$view.State.Track='beta'
+$view.State.Runtime=$runtime
+Invoke-NHPlayerGame $view $false
+Require ($script:Calls[1].LocalData -ceq (Join-Path ([IO.Path]::GetFullPath($env:LOCALAPPDATA)) 'NewHorizons-Beta')) 'Beta package used the stable profile'
+''')
+
+    def test_automatic_check_preference_is_read_from_the_opening_track(self):
+        self.execute(r'''
+$local=[IO.Path]::GetFullPath($env:LOCALAPPDATA)
+$config=Join-Path $local 'NewHorizons-Beta\HeroesIII-NewHorizons\config'
+$null=[IO.Directory]::CreateDirectory($config)
+[IO.File]::WriteAllText((Join-Path $config 'settings.json'),'{"general":{"updateChecks":false}}')
+Require (Test-NHLauncherAutoCheck 'stable') 'Stable read the beta preference'
+Require (-not (Test-NHLauncherAutoCheck 'beta')) 'Beta ignored its own preference'
+''')
+
+    def test_first_beta_start_copies_the_stable_saves_once_and_never_changes_them(self):
+        self.execute(r'''
+$local=[IO.Path]::GetFullPath($env:LOCALAPPDATA)
+$saves=Join-Path $local 'new-horizons\Saves'
+$null=[IO.Directory]::CreateDirectory((Join-Path $saves 'campaign'))
+[IO.File]::WriteAllText((Join-Path $saves 'first.vsgm1'),'save one')
+[IO.File]::WriteAllText((Join-Path $saves 'campaign\second.vsgm1'),'save two')
+$beta=Join-Path $local 'NewHorizons-Beta'
+Copy-NHStableSavesToBeta $local
+Copy-NHStableSavesToBeta (Join-Path $local 'Other')
+Require (-not [IO.Directory]::Exists($beta) -and -not [IO.Directory]::Exists((Join-Path $local 'Other'))) 'A stable root was seeded'
+Copy-NHStableSavesToBeta $beta
+$copied=Join-Path $beta 'new-horizons\Saves'
+Require ([IO.File]::ReadAllText((Join-Path $copied 'first.vsgm1')) -ceq 'save one') 'Save not copied'
+Require ([IO.File]::ReadAllText((Join-Path $copied 'campaign\second.vsgm1')) -ceq 'save two') 'Nested save not copied'
+Require ([IO.File]::ReadAllText((Join-Path $saves 'first.vsgm1')) -ceq 'save one') 'Stable save changed'
+Require (@(Get-ChildItem -LiteralPath $local -Filter 'NewHorizons-Beta.copying-*').Count -eq 0) 'Staging copy left behind'
+[IO.File]::WriteAllText((Join-Path $saves 'first.vsgm1'),'changed in stable')
+Copy-NHStableSavesToBeta $beta
+Require ([IO.File]::ReadAllText((Join-Path $copied 'first.vsgm1')) -ceq 'save one') 'An existing beta root was reseeded'
+$other=Join-Path $env:FIXTURE 'other-local'
+$null=[IO.Directory]::CreateDirectory($other)
+Copy-NHStableSavesToBeta (Join-Path $other 'NewHorizons-Beta')
+Require (@(Get-ChildItem -LiteralPath $other).Count -eq 0) 'Beta root created without stable saves'
+''')
+
+    def test_failed_save_copy_leaves_no_beta_root_and_stops_the_start(self):
+        if os.name == 'nt':
+            self.skipTest('The unreadable fixture uses POSIX permissions')
+        self.execute(r'''
+$local=[IO.Path]::GetFullPath($env:LOCALAPPDATA)
+$saves=Join-Path $local 'new-horizons\Saves'
+$null=[IO.Directory]::CreateDirectory($saves)
+$save=Join-Path $saves 'first.vsgm1'
+[IO.File]::WriteAllText($save,'save one')
+[IO.File]::SetUnixFileMode($save, [IO.UnixFileMode]::None)
+$message=''
+try { Copy-NHStableSavesToBeta (Join-Path $local 'NewHorizons-Beta') } catch { $message=$_.Exception.Message }
+[IO.File]::SetUnixFileMode($save, [IO.UnixFileMode]'UserRead,UserWrite')
+Require ($message.StartsWith('Could not copy your saves to the beta') -and $message.Contains('Your saves are unchanged.')) ('Wrong failure: ' + $message)
+Require (-not [IO.Directory]::Exists((Join-Path $local 'NewHorizons-Beta'))) 'A partial beta root remained'
+Require (@(Get-ChildItem -LiteralPath $local -Filter 'NewHorizons-Beta.copying-*').Count -eq 0) 'Staging copy left behind'
+''')
+
+    def test_game_start_seeds_the_beta_root_before_creating_any_profile(self):
+        source = (ROOT / 'tools/windows/Start-New-Horizons.ps1').read_text()
+        self.assertIn(". (Join-Path $PSScriptRoot 'Track-Data.ps1')", source)
+        seed = source.index('Copy-NHStableSavesToBeta $localData')
+        self.assertLess(source.index("$localData = [Environment]::GetEnvironmentVariable('LOCALAPPDATA', 'Process')"), seed)
+        self.assertLess(seed, source.index('$null = [IO.Directory]::CreateDirectory($profileRoot)'))
+        # A beta package's own command-line and setup starts use the beta root, after the
+        # update store (keyed by the real LOCALAPPDATA) chose the runtime.
+        select = source.index('$selectedRelease = Select-NHPortableRelease $packageRoot $false')
+        route = source.index("if ((Get-NHPackageChannel $packageRoot) -ceq 'beta') { $env:LOCALAPPDATA = Get-NHTrackLocalData 'beta' }")
+        self.assertLess(select, route)
+        self.assertLess(route, source.index("& (Join-Path $selectedRelease.runtime 'Start-New-Horizons.ps1') @PSBoundParameters"))
 
     def test_install_requires_explicit_offer_and_busy_prevents_reentry(self):
         self.execute(r'''

@@ -32,6 +32,7 @@ SELF_TEST = 'NH_PORTABLE_LAUNCHER_V2'
 CODE_ROOT = None
 VERSION = re.compile(r'(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)')
 DIGEST = re.compile(r'[0-9a-f]{64}')
+MAX_IDENTITY = 2 * 1024 * 1024  # A release identity, which lists every packaged library.
 # Two capped notes, JSON-escaped, plus the offer.
 MAX_NOTES_RESPONSE = 512 * 1024
 # The whole owned check child: interpreter start, one GitHub request and parsing.
@@ -70,6 +71,17 @@ def version(path):
     return tuple(map(int, value.split('.')))
 
 
+def package_channel(package):
+    """The track a package was published on. Packages without the marker predate it and are stable."""
+    try:
+        with plain(package / 'BUILD-IDENTITY.json').open('rb') as source:
+            data = source.read(MAX_IDENTITY + 1)
+        identity = json.loads(data) if len(data) <= MAX_IDENTITY else None
+    except (OSError, ValueError):
+        return 'stable'
+    return 'beta' if isinstance(identity, dict) and identity.get('release_channel') == 'beta' else 'stable'
+
+
 def selected_package(store, selection):
     if not isinstance(selection, dict) or set(selection) != {'format', 'version', 'sha256'}:
         raise ValueError('Invalid installed update selection')
@@ -104,7 +116,7 @@ def prepare_update(original, store, request, current, progress=None, cancel=None
     release = wanted['version']
     if len(release) > 32 or not VERSION.fullmatch(release):
         raise ValueError('Invalid requested version')
-    if tuple(map(int, release.split('.'))) <= version(current):
+    if current is not None and tuple(map(int, release.split('.'))) <= version(current):
         return current
     worker = plain((CODE_ROOT or original) / 'PortableReleaseUpdate.py')
     prepared = run_worker(worker, store, request, progress=progress, cancel=cancel)
@@ -151,8 +163,8 @@ def run_worker(worker, store, request, timeout=1800, progress=None, cancel=None)
 
 
 def current_package(original, store, channel='stable'):
-    """The stable track falls back to the original install; an empty beta track has no package."""
-    fallback = original if channel == 'stable' else None
+    """A track falls back to the original install when published on it; the other track starts empty."""
+    fallback = original if package_channel(original) == channel else None
     try:
         return selected_package(store, small_json(store / SELECTIONS[channel]))
     except FileNotFoundError:
@@ -164,7 +176,7 @@ def current_package(original, store, channel='stable'):
 
 def choose_runtime(original, channel='stable'):
     store = original / STORE_NAME
-    fallback = original if channel == 'stable' else None
+    fallback = original if package_channel(original) == channel else None
     try:
         plain(original, directory=True)
         plain(original / 'BUILD-IDENTITY.json')
@@ -178,10 +190,10 @@ def choose_runtime(original, channel='stable'):
 
 
 def track_baseline(original, channel):
-    """A beta is offered only when newer than both installed tracks."""
-    stable = choose_runtime(original)
-    beta = choose_runtime(original, 'beta') if channel == 'beta' else None
-    return max((stable, beta), key=lambda package: version(package) if package else ()) if beta else stable
+    """The package an offer must be newer than: the installed stable, or the newer of both
+    tracks for a beta. None when stable starts empty (a beta package): any stable is offered."""
+    packages = [choose_runtime(original)] + ([choose_runtime(original, 'beta')] if channel == 'beta' else [])
+    return max(filter(None, packages), key=version, default=None)
 
 
 @contextmanager
@@ -242,7 +254,7 @@ def release_offer(current, release, channel):
     wanted = release_version(release)
     if wanted is None:
         raise ValueError('Invalid official release version')
-    if tuple(map(int, wanted.split('.'))) <= version(current):
+    if current is not None and tuple(map(int, wanted.split('.'))) <= version(current):
         return None
     assets = release.get('assets', [])
     if not isinstance(assets, list) or len(assets) > 128:
@@ -287,8 +299,9 @@ def check_release_notes_bounded(current, installed, cancel=None, channel='stable
 
 
 def bounded_check(current, cancel, channel, extra, limit, deadline=CHECK_DEADLINE):
-    command = [sys.executable, str(Path(__file__).absolute()), '--package', str(current), '--check-release',
-               '--channel', channel, *extra]
+    # Without a baseline the child takes any release; --package then only names this code.
+    floor = ('--package', str(current)) if current else ('--package', str(Path(__file__).absolute().parent), '--any-version')
+    command = [sys.executable, str(Path(__file__).absolute()), *floor, '--check-release', '--channel', channel, *extra]
     phase, errors = ['launch'], []
     def receive(line):
         try:
@@ -333,7 +346,10 @@ def install_release(original, offer, progress=None, cancel=None):
                 json.dump(offer, stream)
                 stream.flush()
                 os.fsync(stream.fileno())
-            current = current_package(original, store, channel) or current_package(original, store)
+            # Newer than the track's own package; an empty beta beats stable, an empty stable takes any.
+            current = current_package(original, store, channel)
+            if current is None and channel == 'beta':
+                current = current_package(original, store)
             return prepare_update(original, store, request, current, progress, cancel, channel)
         finally:
             request.unlink(missing_ok=True)
@@ -367,9 +383,9 @@ def setup_command(package, forward=(), channel='stable'):
     return [*command, *forward]
 
 
-def automatic_checks():
+def automatic_checks(channel='stable'):
     try:
-        path = plain(profile_path() / 'config/vcmi/settings.json')
+        path = plain(profile_path(channel) / 'config/vcmi/settings.json')
         with path.open('rb') as stream:
             data = stream.read(1024 * 1024 + 1)
         if len(data) > 1024 * 1024:
@@ -385,6 +401,7 @@ def main(argv=None):
     parser.add_argument('--check-release', action='store_true', help=argparse.SUPPRESS)
     parser.add_argument('--channel', choices=CHANNELS, default='stable', help=argparse.SUPPRESS)
     parser.add_argument('--notes-for', nargs='*', help=argparse.SUPPRESS)
+    parser.add_argument('--any-version', action='store_true', help=argparse.SUPPRESS)
     parser.add_argument('--delegated', action='store_true', help=argparse.SUPPRESS)
     parser.add_argument('--self-test', action='store_true', help=argparse.SUPPRESS)
     parser.add_argument('arguments', nargs=argparse.REMAINDER)
@@ -397,7 +414,7 @@ def main(argv=None):
     if args.check_release:
         if forward:
             raise ValueError('Update checks do not accept game arguments')
-        return check_child(original, args.channel, args.notes_for)
+        return check_child(None if args.any_version else original, args.channel, args.notes_for)
     if not forward:
         # The window's session log starts before a hand-over and records its self-test.
         code = Path(__file__).absolute().parent
@@ -413,14 +430,16 @@ def main(argv=None):
             environment.pop('NH_PORTABLE_UPDATE_REQUEST', None)
             os.execve(sys.executable, [sys.executable, '-B', str(newer), '--package', str(original),
                                        '--delegated', '--', *forward], environment)
-    package = choose_runtime(original)
+    # An installation plays its own track: a beta package plays the beta profile.
+    own = package_channel(original)
+    package = choose_runtime(original, own)
     if not forward:
-        launcher_log.write(f'Installation {original}; stable plays {package}')
+        launcher_log.write(f'Installation {original} ({own} package); {own} plays {package}')
         from PortableLauncherWindow import run_window
         return run_window(original, package)
     environment = dict(os.environ)
     environment.pop('NH_PORTABLE_UPDATE_REQUEST', None)
-    os.execve(sys.executable, setup_command(package, forward), environment)
+    os.execve(sys.executable, setup_command(package, forward, own), environment)
 
 
 def launcher_version(code):
@@ -431,9 +450,9 @@ def launcher_version(code):
 
 
 def newer_launcher(original):
-    """Hand over to the launcher inside the selected stable update, so launcher
-    improvements arrive with updates. Any doubt keeps this launcher."""
-    package = choose_runtime(original)
+    """Hand over to the launcher inside the selected update of the installation's own
+    track, so launcher improvements arrive with updates. Any doubt keeps this launcher."""
+    package = choose_runtime(original, package_channel(original))
     if package == original:
         return None
     started = time.monotonic()

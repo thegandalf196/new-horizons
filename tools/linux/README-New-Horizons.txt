@@ -17,8 +17,15 @@ Version track chooses between Stable and Beta. Beta installs experimental
 releases (GitHub prereleases) beside the stable version; Play then starts the
 beta. Beta keeps its own profile, new-horizons-play-beta, so its saves and
 settings never mix with stable ones. It uses your stable Heroes III folder
-until you choose another one for beta with Original game files. Switch back to
-Stable at any time; the stable version and its saves are unchanged.
+until you choose another one for beta with Original game files. Its first
+start copies your stable saves into the new beta profile (betas read older
+saves); the stable saves stay where they are. Switch back to Stable at any
+time; the stable version and its saves are unchanged.
+
+A beta download (a GitHub prerelease) opens on the Beta track, plays the beta
+profile and checks for newer betas. Its Stable track starts empty and offers
+the latest stable release, even when that is older than the beta; installing
+it leaves the beta unchanged.
 
 What's new shows the release notes of the installed version on the selected
 track and of the update on offer, as plain text. It reuses the update check;

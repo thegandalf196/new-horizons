@@ -137,12 +137,11 @@ def compose(track, installed, offer=None, fetched=None, offline=None):
     if offer and offer != installed:
         entries[offer] = 'available update'
     sections = ['Beta track' if track == 'beta' else 'Stable track']
-    if track == 'beta' and not installed:
-        sections.append('No beta is installed yet.')
+    if not installed:
+        # A beta package starts with an empty stable track.
+        sections.append('No beta is installed yet.' if track == 'beta' else 'No stable version is installed yet.')
     for version in sorted(entries, key=version_key, reverse=True):
         text = (fetched or {}).get(version) or (offline if version == installed else None)
         heading = f'Version {version} ({entries[version]})'
         sections.append(heading + '\n' + '=' * len(heading) + '\n\n' + (text or (MISSING if fetched is not None else OFFLINE)))
-    if not entries and track != 'beta':
-        sections.append(OFFLINE)
     return '\n\n\n'.join(sections)

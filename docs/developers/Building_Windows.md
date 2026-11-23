@@ -273,6 +273,12 @@ existing four-job limits. Ninja response files are
 retained with `-d keeprsp`. Dependency preparation, installation, packaging and
 runtime checks remain separate steps.
 
+For a release tag, set the dispatch input `release_channel` to `beta` for a
+GitHub prerelease or `stable` for an ordinary release; a tag build without it
+fails before compiling. The package records it as `release_channel` in
+`BUILD-IDENTITY.json`, and the launcher opens a beta package on the Beta track
+with separate saves.
+
 The workflow dispatch input `use_precompiled_headers` defaults to `true`. Set it to
 `false` to configure the normal build with `ENABLE_PCH=OFF`: sccache 0.10 can cache
 ordinary MSVC object compilations without PCH. A cold build may be slower; this

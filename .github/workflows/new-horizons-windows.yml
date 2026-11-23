@@ -35,6 +35,10 @@ on:
         description: Optional historical upstream-decoder build run for notice-only repair
         type: string
         default: ''
+      release_channel:
+        description: Release track the package is published on, stable or beta (a GitHub prerelease); required for release tags
+        type: string
+        default: ''
 permissions:
   contents: read
   actions: read
@@ -76,6 +80,11 @@ jobs:
         run: >-
           python tools/ci/windows_preview_controls.py
           --report build/new-horizons-windows-x64/compile-diagnostics/trial-controls.json
+
+      - name: Select the package release track
+        env:
+          RELEASE_CHANNEL: ${{ inputs.release_channel }}
+        run: python tools/ci/release_channel.py
 
       - name: Verify preserved dependency recipes without upstream lookup
         run: python tools/ci/verify_vendored_dependencies.py

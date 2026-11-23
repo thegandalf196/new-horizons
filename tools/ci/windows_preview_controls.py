@@ -11,7 +11,7 @@ import subprocess
 
 BRANCH = 'refs/heads/performance/quick-combat-and-ci'
 FIXED_CONTROLS = {'preflight_only': False, 'use_precompiled_headers': True,
-                  'pch_off_cache_seed': '', 'repack_run_id': ''}
+                  'pch_off_cache_seed': '', 'repack_run_id': '', 'release_channel': ''}
 BOOLEAN_CONTROLS = ('use_unity_build', 'skip_pch_cache_save', 'use_hot_header_pch')
 # Each tuple is (Unity, jobs, skip cache save, hot-header PCH).
 PROFILES = {
@@ -41,7 +41,7 @@ def normalize_controls(raw):
     # GitHub sends numeric dispatch inputs as strings and can omit empty strings.
     if type(controls.get('build_jobs')) is str and controls['build_jobs'] in {'4', '6'}:
         controls['build_jobs'] = int(controls['build_jobs'])
-    for name in ('pch_off_cache_seed', 'repack_run_id'):
+    for name in ('pch_off_cache_seed', 'repack_run_id', 'release_channel'):
         controls.setdefault(name, '')
     expected_names = FIXED_CONTROLS.keys() | set(BOOLEAN_CONTROLS) | {'build_jobs'}
     if controls.keys() != expected_names:

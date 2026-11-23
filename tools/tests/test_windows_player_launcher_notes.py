@@ -120,6 +120,9 @@ Require ($text.IndexOf('Version 0.93.0 (available update)') -lt $text.IndexOf('V
 Require ($text.Contains('New things') -and $text.Contains('Installed things')) 'Notes missing'
 Require ((Format-NHReleaseNotes 'stable' '0.92.7' '' $null '').Contains($script:NHNotesOffline)) 'Offline'
 Require ((Format-NHReleaseNotes 'beta' '' '' $null '').Contains('No beta is installed yet.')) 'Empty beta'
+$text=Format-NHReleaseNotes 'stable' '' '0.92.8' @{'0.92.8'='Stable things'} ''
+Require ($text.Contains('No stable version is installed yet.') -and $text.Contains('Stable things') -and
+    -not $text.Contains($script:NHNotesOffline)) 'Empty stable of a beta package'
 ''')
 
     def test_check_operation_writes_notes_from_its_one_download(self):
@@ -145,7 +148,7 @@ $view=[PSCustomObject]@{Form=$form;Version=[PSCustomObject]@{Text=''};Status=[PS
     Bar=[PSCustomObject]@{Visible=$false};Play=[PSCustomObject]@{Enabled=$true};Check=[PSCustomObject]@{Enabled=$true};
     Assets=[PSCustomObject]@{Enabled=$true};Install=[PSCustomObject]@{Enabled=$false};Notes=[PSCustomObject]@{Enabled=$true};
     Track=[PSCustomObject]@{Enabled=$true;SelectedIndex=0};
-    State=[PSCustomObject]@{Runtime=$runtime;Offer=$null;Busy=$false;ExitCode=0;Track='stable';
+    State=[PSCustomObject]@{Runtime=$runtime;Offer=$null;Busy=$false;ExitCode=0;Track='stable';Own='stable';
         Runtimes=@{stable=$runtime;beta=$null};Code=(Join-Path $env:SOURCE 'tools/windows');Notes=@{};
         Checking=$false;PlayRequested=$false;CloseRequested=$false;Launches=0}}
 $script:Checks=0
