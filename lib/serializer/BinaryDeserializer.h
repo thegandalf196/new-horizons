@@ -409,7 +409,10 @@ private:
 
 		if(length < 0)
 		{
-			int32_t stringID = -length - 1; // -1, -2 ... -> 0, 1 ...
+			const int64_t stringID = -static_cast<int64_t>(length) - 1; // -1, -2 ... -> 0, 1 ...
+			// Corrupt or mismatched data must not read past the strings loaded so far.
+			if(stringID >= static_cast<int64_t>(loadedStrings.size()))
+				throw std::runtime_error("Saved data refers to a string that was not loaded");
 			data = loadedStrings[stringID];
 		}
 		if(length == 0)
