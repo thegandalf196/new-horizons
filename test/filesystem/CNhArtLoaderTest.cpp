@@ -8,6 +8,7 @@
 #include "../../lib/filesystem/CNhArtLoader.h"
 #include "../../lib/filesystem/NhArtSha256.h"
 #include "../../lib/filesystem/NhArtCache.h"
+#include "../../lib/filesystem/NhArtNativePath.h"
 #include "../../lib/filesystem/Filesystem.h"
 #include "../../lib/filesystem/CInputStream.h"
 #include "../../lib/texts/TextOperations.h"
@@ -404,16 +405,18 @@ TEST_F(CNhArtLoaderTest, DeepCachePathPreparesReusesAndRejectsExtraOrCorruptPayl
 		CNhArtLoader reused("",path,deepRoot);
 		EXPECT_EQ(readAll(*reused.load(ResourcePath("art.png"))),(Bytes{1,2,3}));
 	}
+	// These paths exceed MAX_PATH, so the test also needs the extended Windows syntax.
+	const auto native=[](const boost::filesystem::path & item){ return nhart::detail::nativeCachePath(item.native()); };
 	const auto extra=preparedPath/"unexpected";
-	ASSERT_TRUE(boost::filesystem::create_directory(extra));
+	ASSERT_TRUE(std::filesystem::create_directory(native(extra)));
 	EXPECT_THROW(CNhArtLoader("",path,deepRoot),std::runtime_error);
-	ASSERT_TRUE(boost::filesystem::remove(extra));
+	ASSERT_TRUE(std::filesystem::remove(native(extra)));
 	const auto payload=preparedPath/nhart::cacheFileName(0);
-	boost::filesystem::resize_file(payload,1);
+	std::filesystem::resize_file(native(payload),1);
 	EXPECT_THROW(CNhArtLoader("",path,deepRoot),std::runtime_error);
-	EXPECT_TRUE(boost::filesystem::exists(payload));
-	for(const auto & entry:boost::filesystem::directory_iterator(version))
-		EXPECT_EQ(entry.path(),preparedPath); // No stale stage/lock or broad deletion after rejection.
+	EXPECT_TRUE(std::filesystem::exists(native(payload)));
+	for(const auto & entry:std::filesystem::directory_iterator(native(version)))
+		EXPECT_EQ(entry.path().filename(),native(preparedPath).filename()); // No stale stage/lock or broad deletion after rejection.
 }
 
 TEST_F(CNhArtLoaderTest, InterruptedPreparationDoesNotBlockTheNextLaunch)
