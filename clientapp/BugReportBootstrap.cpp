@@ -8,6 +8,7 @@
 #include "../lib/logging/CBasicLogConfigurator.h"
 #include "../lib/CConfigHandler.h"
 #include "../lib/json/JsonNode.h"
+#include "../Version.h"
 #include <boost/program_options.hpp>
 
 void BugReportBootstrap::addOptions(boost::program_options::options_description & options)
@@ -82,17 +83,22 @@ void BugReportBootstrap::deconfigure()
 
 void BugReportBootstrap::captureProductIdentity()
 {
-	if(!session)
-		return;
+	// The product version lives in the mod file system, so this is the first
+	// point in client start-up where the log can name it.
+	std::string version;
 	try
 	{
 		const JsonNode identity(JsonPath::builtin("config/newHorizonsVersion.json"));
-		session->recordProductIdentity(identity["version"].String());
+		version = identity["version"].String();
 	}
 	catch(const std::exception &)
 	{
-		logGlobal->warn("Report product identity could not be captured; version remains unknown");
+		logGlobal->warn("Product version could not be read; version remains unknown");
 	}
+	logGlobal->info("Starting New Horizons %s (VCMI %s engine)", version.empty() ? std::string("(version unknown)") : version,
+		GameConstants::VCMI_VERSION);
+	if(session && !version.empty())
+		session->recordProductIdentity(version);
 }
 
 void BugReportBootstrap::finishCleanly()

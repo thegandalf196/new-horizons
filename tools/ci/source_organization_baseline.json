@@ -3653,10 +3653,10 @@
           "end": 523
         }
       ],
-      "rationale": "Complete exact523-line conditional entry inventory:11 bodies including full144-506 Windows/Mobile/ordinary entrypoint and all OS/SDL/integration alternatives. Ten retained non-entry bodies remap byte-identically from reviewed532-line preimage; the five-line testFile lambda is removed and its five ordered diagnostics move to67-line parsed ClientStartup owner. Whole entrypoint shrinks373 to363 lines, not branch-selected fragments; new menu-ready notification adds no callable. Resource check ordering/messages, startup failure and normal cleanup ordering inspected; inherited stronger lifecycle deferrals retained. Source review only.",
-      "review": "IR-NEXT-BUILD-FROZEN-PLAYER-LAUNCHER-ORG-20261119",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
-      "sha256": "9e6b35116d6a14315950eb2a03399d60d1ba246bb5a6b4e8eef88f58eb658013",
+      "rationale": "Complete exact523-line conditional entry inventory:11 bodies including full144-506 Windows/Mobile/ordinary entrypoint and all OS/SDL/integration alternatives. Ten retained non-entry bodies remap byte-identically from reviewed532-line preimage; the five-line testFile lambda is removed and its five ordered diagnostics move to67-line parsed ClientStartup owner. Whole entrypoint shrinks373 to363 lines, not branch-selected fragments; new menu-ready notification adds no callable. Resource check ordering/messages, startup failure and normal cleanup ordering inspected; inherited stronger lifecycle deferrals retained. Source review only. Exact successor: the first start-up log line is replaced in place; all eleven spans unchanged.",
+      "review": "PROPOSED-CLAUDE-CLIENT-START-LOG-PRODUCT-20261124",
+      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
+      "sha256": "4a57c423a29a32fae959d7bd6995341c35d440b1f29ad1c548627b33c0c1128d",
       "review_scope": "Exact independent source organization and reused prior source review only; no native compilation, GUI, Windows execution, performance, promotion or future growth permission."
     },
     "clientapp/ios/GameChatKeyboardHandler.h": {
@@ -23399,24 +23399,24 @@
       "kind": "exception",
       "lines": 523,
       "owner": "engine_engineer",
-      "previous_review": "isolated-bug-report-bounded-capture-and-reviewed-attachment",
-      "rationale": "Exact532 to523-line ratchet: ordered game-resource checks move into cohesive67-line ClientStartup.cpp; readiness is a narrow notification after existing ordinary menu initialization. No new action, background thread, initialization reordering or cleanup owner. Header8lines and one source/header CMake registration included. Preserve inherited lifecycle/extraction obligations; no future growth credit.",
-      "review": "IR-NEXT-BUILD-FROZEN-PLAYER-LAUNCHER-ORG-20261119",
+      "previous_review": "IR-NEXT-BUILD-FROZEN-PLAYER-LAUNCHER-ORG-20261119",
+      "rationale": "Exact532 to523-line ratchet: ordered game-resource checks move into cohesive67-line ClientStartup.cpp; readiness is a narrow notification after existing ordinary menu initialization. No new action, background thread, initialization reordering or cleanup owner. Header8lines and one source/header CMake registration included. Preserve inherited lifecycle/extraction obligations; no future growth credit. The first start-up log line names New Horizons and the VCMI engine version in place of the upstream project name; the product version is logged by BugReportBootstrap once the file system is ready. One line replaced in place; exact 523 to 523 lines, no growth.",
+      "review": "PROPOSED-CLAUDE-CLIENT-START-LOG-PRODUCT-20261124",
       "review_scope": "Exact independent source organization and reused prior source review only; no native compilation, GUI, Windows execution, performance, promotion or future growth permission.",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
-      "sha256": "9e6b35116d6a14315950eb2a03399d60d1ba246bb5a6b4e8eef88f58eb658013"
+      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
+      "sha256": "4a57c423a29a32fae959d7bd6995341c35d440b1f29ad1c548627b33c0c1128d"
     },
     "clientapp/EntryPoint.cpp::conditional entrypoint wmain(int argc, wchar_t* argv[]) | SDL_main(int argc, char *argv[]) | main(int argc, char * argv[])#1": {
       "deferral": "Urgent correctness exception only; retain characterized extraction obligation before further substantive shared-entrypoint growth, shrinking this385-line entrypoint and546-line file together. Preserve every platform branch, initialization ordering, GUI/network temporary-unlock wait contracts, destruction/async ordering and rendered transition verification. No generic function ceiling increase or testing/gameplay expansion admitted. Current exact534-file/373-entrypoint bounds ratchet inherited546/385 historical figures downward; inherited initialization, cleanup and extraction obligations remain binding. Exact v5 bounded follow-up: Before further affected expansion, owning specialist must extract the next cohesive query/selection/ordered-transition responsibility; preserve all inherited source/ownership/order/RNG/lifecycle obligations and shrinking baselines. No unrelated or future growth credit.",
       "kind": "exception",
       "lines": 363,
       "owner": "engine_engineer",
-      "previous_review": "isolated-bug-report-bounded-capture-and-reviewed-attachment",
-      "rationale": "Exact373 to363-line whole conditional entrypoint ratchet at144-506. Five ordered installation diagnostics extracted to a focused owner; menu-ready notification stays after ordinary menu initialization. All Windows/Mobile/ordinary signatures and inherited lock, async teardown, shutdown and reports branches remain covered by complete manual inventory. No broad function-ceiling exception or future expansion approval; retain prior characterization/extraction obligations.",
-      "review": "IR-NEXT-BUILD-FROZEN-PLAYER-LAUNCHER-ORG-20261119",
+      "previous_review": "IR-NEXT-BUILD-FROZEN-PLAYER-LAUNCHER-ORG-20261119",
+      "rationale": "Exact373 to363-line whole conditional entrypoint ratchet at144-506. Five ordered installation diagnostics extracted to a focused owner; menu-ready notification stays after ordinary menu initialization. All Windows/Mobile/ordinary signatures and inherited lock, async teardown, shutdown and reports branches remain covered by complete manual inventory. No broad function-ceiling exception or future expansion approval; retain prior characterization/extraction obligations. The start-up log line names New Horizons and the VCMI engine version; one line replaced in place, same span, no growth.",
+      "review": "PROPOSED-CLAUDE-CLIENT-START-LOG-PRODUCT-20261124",
       "review_scope": "Exact independent source organization and reused prior source review only; no native compilation, GUI, Windows execution, performance, promotion or future growth permission.",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
-      "sha256": "91f08c6f752974fe73a259e3e7d1bf20133f9ba52c96c2b198756680f63b195e"
+      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
+      "sha256": "b8d7bc547dd6816b2fe46ceb6b7c7209d2f483e92fdecb44a181d521c17fea30"
     },
     "clientapp/PrivateWineStartupWitness.h::privateWineStartup::inline int verifyBeforeSDL()#1": {
       "kind": "legacy",

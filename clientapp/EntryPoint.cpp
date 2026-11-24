@@ -246,7 +246,7 @@ int main(int argc, char * argv[])
 	reports.configureDefault();
 	if(reports.isReporter())
 		return reports.runReporter();
-	logGlobal->info("Starting client of '%s'", GameConstants::VCMI_PROJECT_NAME_VERSIONED);
+	logGlobal->info("Starting New Horizons client (VCMI %s engine); the product version is logged once the file system is ready", GameConstants::VCMI_VERSION);
 	logGlobal->info("Creating console and configuring logger: %d ms", pomtime.getDiff());
 	logGlobal->info("The log file will be saved to %s", logPath);
 
