@@ -75,11 +75,9 @@ it. Resource getters do not spend search work.
 
 ## Build and package contract
 
-Production targets do not link Lua. `ENABLE_LUA_ORACLE` defaults to `OFF`; enabling
-it requires tests and the full library, and builds the historical backend only for
-differential tests. Old `.lua` sources stay in the checkout as reference inputs and
-are excluded from native distributions. On macOS, install LuaJIT separately only
-when building that optional oracle; it is not part of the default Brewfile.
+No target links Lua and the checkout carries no Lua rule sources. The retired Lua
+backend, its reference scripts and the native-versus-Lua differential tests remain
+available only in Git history; the native tests below are the maintained coverage.
 
 Curated packaging expects a matching native binary and facade built from these
 sources. Supplying an arbitrary older Lua-dependent executable to the new resource
@@ -115,13 +113,7 @@ gameplay and save/load checks remain necessary before accepting a release.
 ## Verification boundaries
 
 Standalone map-import, registration and event-dispatch tests require no original
-game assets. The optional JSON parity test exercises the real historical Lua
-conversion boundary. `test/nativeDamage` compares production arithmetic against
-the old script chain with synthetic observations; its benchmark excludes live
-fact capture and is not a complete damage-call or battle speed measurement.
-
-`ENABLE_NATIVE_MIGRATION_TESTS=ON`, with tests and the oracle enabled, builds
-`nhNativeMigrationTest`. It links the changed resource-backed map, combat, spell,
-damage-capture and AI fixtures with normal game initialization. Original game data
-is required. These fixtures also remain in `vcmitest`; the focused executable does
-not replace the full regression suite or gameplay acceptance.
+game assets. `test/nativeDamage` checks the native calculator's boundary arithmetic.
+Resource-backed map, combat, spell, damage-capture and AI fixtures run in
+`vcmitest` with normal game initialization and original game data; they do not
+replace gameplay acceptance.

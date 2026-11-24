@@ -22,7 +22,8 @@ To compile, the following packages (and their development counterparts) are need
 - Optional:
   - if you want to enable MMAI: `onnxruntime`
   - to speed up recompilation: `Ccache`
-  - for `ENABLE_LUA_ORACLE` differential tests: LuaJIT or a supported Lua development package. Production uses [native rules](Native_Rules.md) and does not require Lua.
+
+Game rules are [native C++](Native_Rules.md); no build requires Lua.
 
 ### On Debian-based systems (e.g. Ubuntu)
 
@@ -33,8 +34,6 @@ For Ubuntu and Debian you need to:
     ```sh
     sudo apt-get install cmake g++ clang libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev libsdl2-mixer-dev zlib1g-dev libavformat-dev libswscale-dev libboost-dev libboost-filesystem-dev libboost-program-options-dev libboost-date-time-dev libboost-iostreams-dev qt6-base-dev qt6-base-dev-tools qt6-tools-dev qt6-tools-dev-tools qt6-l10n-tools qt6-svg-dev libtbb-dev liblzma-dev libsqlite3-dev libminizip-dev libsquish-dev libfmt-dev libcurl4-openssl-dev ninja-build ccache
     ```
-
-   For optional Lua oracle tests, additionally install `libluajit-5.1-dev`.
 
 2. Optionally, install `onnxruntime`:
 
@@ -92,7 +91,7 @@ stdenv.mkDerivation {
     boost zlib minizip xz
     SDL2 SDL2_ttf SDL2_net SDL2_image SDL2_sound SDL2_mixer SDL2_gfx
     ffmpeg tbb vulkan-headers libxkbcommon
-    qt6.full luajit onnxruntime
+    qt6.full onnxruntime
   ];
 }
 ```

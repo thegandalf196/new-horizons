@@ -97,7 +97,7 @@ Engine documentation: (NOTE: may be outdated)
 - [Bonus System](developers/Bonus_System.md)
 - [Code Structure](developers/Code_Structure.md)
 - [Logging API](developers/Logging_API.md)
-- [Lua Scripting System](developers/Lua_Scripting_System.md)
+- [Fixed native rules](developers/Native_Rules.md)
 - [Serialization](developers/Serialization.md)
 
 ## Documentation and guidelines for maintainers

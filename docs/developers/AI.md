@@ -156,16 +156,12 @@ rebirth allocation and once-per-side reactions can depend on recipient order.
 The AI additionally binds effective cast options and allowances to its unchanged
 parent, caster and scoring context. Unsupported casts break the reuse sequence.
 
-Lua effect capabilities attest the actual reviewed root and imported source
-bytes loaded by that context, not effect names or a script-supplied flag. The
-standard timed-effect capability includes its exact ordered Shield and Bind
-patches; those patches preserve Vines behavior. Unknown patch chains or dependencies,
-changed bytes or execution failures must fail closed to ordinary evaluation.
-Reviewed digest constants are implementation contracts:
-changing them requires renewed equivalence review, not automatic regeneration.
-The reviewed damage-calculator layer chain and reachable scripted Focus Magic or
-Hex of Pain reactions must also be certified before skipping continuation work.
-Attested Lua source paths use LF checkout attributes on every platform.
+Effect capabilities attest the loaded native implementation, not effect names
+or a configured flag. The standard timed-effect capability includes its exact
+ordered Shield and Bind patch identities; those patches preserve Vines behavior.
+Unknown implementations, patch chains or dependencies must fail closed to
+ordinary evaluation. The damage calculator and reachable Focus Magic or Hex of
+Pain reactions must also be certified before skipping continuation work.
 
 Validate all candidate values, chosen actions, complete state and both RNG streams
 with reuse enabled and disabled. Work counters may legitimately differ; timing

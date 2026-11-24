@@ -8,11 +8,11 @@ Supported archive names/variants come from `config/filesystem.json`; not every
 named variant must coexist. Startup without music/video is not full-content
 acceptance. Original executables are not needed to play via VCMI.
 
-Ship matching `config/`, `scripts/`, `Mods/vcmi`, curated New Horizons config
+Ship matching `config/`, `Mods/vcmi`, curated New Horizons config
 and NewHorizons.nhart with licenses/notices. `vcmi` essential files are not the
 optional Extras download. Preserve internal dependency/version checks.
 The client links the `vcmi` facade with simulation and enabled AI implementations;
-Lua and the damage script are required for this checkout's ordinary full-game route.
+Game rules, including the damage calculator, are native; no Lua runtime or script files ship.
 Qt launcher/editor and optional MMAI are separate build choices.
 
 ## Contamination and admission

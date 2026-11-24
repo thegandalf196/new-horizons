@@ -44,24 +44,12 @@ Every scripted ability shares the same `COMBAT_EVENT_TRIGGER` bonus type, so the
 }
 ```
 
-## Writing a script
+## Implementations
 
-Scripts extend `combatScript` and define a method only for the events they actually react to. An event whose method the script does not define is never handed to it:
-
-```lua
-local Base = require("combat/combatScript")
-local Script = setmetatable({}, {__index = Base})
-Script.__index = Script
-
-function Script:onAfterAttacked(server, battle, unit, other)
-    if other and other:isAlive() then
-        -- Pass the bearer as source when this damage is caused by that unit.
-        server:damageUnit(battle, other, self.damage, false, unit)
-    end
-end
-
-return Script
-```
+The engine implements each combat event script natively, as described in
+[script types](Script_Types.md#implementations). The handlers below are the
+event points those implementations react to; New Horizons does not execute
+authored Lua handlers.
 
 ## Assumptions and guarantees
 
@@ -74,28 +62,14 @@ VCMI guarantees the following:
 
 ## Event handlers
 
-All handlers share the same signature and return nothing:
-
-Signature: `function Script:on<Event>(server, battle, unit, other, payload)`
-
-The parameters stored in the bonus initialize the script, so every property defined there is available as a field of `self` - for example `addInfo` of `{ "poison" : true }` is read as `self.poison`. The magnitude of the ability lives in the bonus value rather than in the parameters, and is read as `self.val`.
+Every handler is given the unit carrying the bonus, the unit on the opposite side of the event (if any), and the attack payload described below. The parameters stored in the bonus configure the script; the magnitude of the ability lives in the bonus value rather than in the parameters.
 
 When several bonuses on the same unit grant the same script, each of them runs the script once, with its own `val` - the values are not summed into a single run. An ability whose effect is proportional to `val` therefore adds up on its own, while one that rolls a chance rolls once per bonus rather than once at the combined chance. When only the strongest source should apply instead, give every bonus granting the script the same [`stacking`](../Bonus_Format.md) group, the way core content does for fire shield.
 
 Parameters:
 
-Stored trigger parameters can be inspected with `bonus:getParametersAsJson()`.
-This returns a copy of a `COMBAT_EVENT_TRIGGER` bonus's JSON `addInfo`, or `nil`
-for other bonus types or absent parameters. Editing that copy does not mutate
-the bonus; persistent changes still require authoritative bonus packets.
-Use `battle:getControllingSide(unit)` when an effect depends on the current
-controller (including temporary control changes). `unit:getSide()` describes
-the unit's original battle side instead.
-
-- `server` - used to apply actual changes to the battle state. See [BattleServer](../Lua_Reference/BattleServer.md).
-- `battle` - state of the battle this event happened in. See [Battle](../Lua_Reference/Battle.md).
-- `unit` - the unit carrying the bonus, which this event happened to. See [Unit](../Lua_Reference/Unit.md).
-- `other` - the unit on the opposite side of the event, such as the attacker. May be nil.
+- `unit` - the unit carrying the bonus, which this event happened to.
+- `other` - the unit on the opposite side of the event, such as the attacker. May be absent.
 - `payload` - data about the attack that caused this event. Every event is handed one, and the fields an event does not fill keep their empty value, so a handler may read the fields it cares about without checking which event fired:
   - `ranged` - whether the attack was a shot
   - `isCounter` - whether the attack is a counterattack, either a first strike or a regular retaliation
@@ -108,16 +82,16 @@ Handlers:
 
 - `onBeforeAttack` - called on the attacker before every one of its attacks, retaliations included
 - `onBeforeAttacked` - called on every unit the attack is about to reach, not only its primary target, before every attack
-- `onAfterAttack` - called on the attacker once its attack is resolved. The attacker may be dead by then, killed by a reaction to its own attack, so a script that must not act from beyond the grave checks `unit:isAlive()` itself
+- `onAfterAttack` - called on the attacker once its attack is resolved. The attacker may be dead by then, killed by a reaction to its own attack, so a script that must not act from beyond the grave checks that its bearer is alive
 - `onAfterAttacked` - called on every unit the attack hit, once that attack is resolved. Fires even when the attack killed `unit`, so that a reflecting ability still answers a lethal blow; a script that should not react from a dead unit has to check for itself
 - `onWait` - called when `unit` waits
 - `onDefend` - called when `unit` defends
 - `onBeforeMove` - called before `unit` starts movement
 - `onAfterMove` - called after `unit` ends movement
 - `onUnitSpellcast` - called after `unit` casts a spell
-- `onBattleSetup` - called once for every unit as the battle is laid out, before tactics and before anything else happens to it. `other` is nil
-- `onBattleStart` - called once for every unit present when the battle starts, after tactics are over and before any opening spell is cast. `other` is nil
-- `onRoundStart` - called for every alive unit at the start of each round after the first. The first round is covered by `onBattleStart`. `other` is nil
+- `onBattleSetup` - called once for every unit as the battle is laid out, before tactics and before anything else happens to it. `other` is absent
+- `onBattleStart` - called once for every unit present when the battle starts, after tactics are over and before any opening spell is cast. `other` is absent
+- `onRoundStart` - called for every alive unit at the start of each round after the first. The first round is covered by `onBattleStart`. `other` is absent
 
 ![Order in which combat events fire](Combat_Event_Flow.svg)
 
@@ -139,7 +113,7 @@ None of them is withheld: a counterattack, the second blow of a double attack an
 
 Every combat event script declares a `priority` in its `scripts` entry. Scripts reacting to the same event run from lowest priority to highest, and `0` is the usual answer. It is required rather than defaulted because bonus order is otherwise alphabetical by ability name, which would let a mod decide what runs first by renaming an ability.
 
-Four of the scripts below exist only so that content declaring the bonus they replaced keeps working. They reproduce the H3 and WoG behaviour they were converted from, quirks included, and will not grow options beyond what that behaviour needs. A mod that wants an ability of that kind should ship its own script rather than try to configure these.
+Four of the scripts below exist only so that content declaring the bonus they replaced keeps working. They reproduce the H3 and WoG behaviour they were converted from, quirks included, and will not grow options beyond what that behaviour needs. They are not a base for new abilities.
 
 ### lifeDrain
 
@@ -173,19 +147,9 @@ Parameters:
 - `situation` - when the ability applies: `"melee"`, `"ranged"`, `"rangedDistancePenalty"`, `"rangedWallPenalty"` or `"rangedDistanceAndWallPenalty"`
 - `spell` - spell cast to kill them, which decides the animation, the immunities and the wording of the combat log. Defaults to death stare
 
-The script decides how many die in `killsIn`, which answers nil when the attack is not one the ability applies to. A patch overriding that method is how a mod adds a situation of its own, and `combat/deathStareCommander` - the patch core stacks over this script - is the worked example:
+The `combat/deathStareCommander` patch that core stacks over this script adds the `"commander"` situation.
 
-```lua
-function Script:killsIn(server, battle, unit, other, payload)
-    if self.situation ~= "commander" then
-        return Base.killsIn(self, server, battle, unit, other, payload)
-    end
-
-    return <however many this ability kills>
-end
-```
-
-`"commander"` is DEPRECATED and comes from that patch rather than from the script. It exists so that the commander skill converted from the `DEATH_STARE` bonus keeps working, and `val` means something else under it - kills before the level ratio of the two stacks is applied. Write a patch rather than expecting more situations to be added here.
+`"commander"` is DEPRECATED. It exists so that the commander skill converted from the `DEATH_STARE` bonus keeps working, and `val` means something else under it - kills before the level ratio of the two stacks is applied.
 
 ### enchanted
 

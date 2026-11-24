@@ -5,8 +5,8 @@ Audit the actual downloadable archive, not only staging/workflow text. Record so
 ## Static gates
 
 1. ZIP CRC and full inventory pass. Reject traversal, absolute/drive/UNC/alternate-stream paths, unsafe links, duplicates and case collisions. Verify one ordinary extraction/launch root.
-2. `new-horizons.exe` and `VCMI_lib.dll` are matching AMD64 PE outputs. Audit normal/delay imports recursively, compatible runtime architectures, app-local CRT/media/Lua/TBB providers and documented Windows system imports. Static closure does not prove dynamic loading.
-3. Client contains authoritative internal single-player execution and ordinary enabled AI. The facade aggregates core/Lua/AI; separate AI DLLs/server executable are not required. Exclude tests, synthetic maps, developer tools, caches and unrelated launcher/editor/lobby payload.
+2. `new-horizons.exe` and `VCMI_lib.dll` are matching AMD64 PE outputs. Audit normal/delay imports recursively, compatible runtime architectures, app-local CRT/media/TBB providers and documented Windows system imports. Static closure does not prove dynamic loading.
+3. Client contains authoritative internal single-player execution and ordinary enabled AI. The facade aggregates core/AI; separate AI DLLs/server executable are not required. Exclude tests, synthetic maps, developer tools, caches and unrelated launcher/editor/lobby payload.
 4. Compare all config/scripts/curated mods/resources to the declared source revision and submodules; verify required custom bindings, bootstrap mounts and the complete NHART inventory. No private overlays or loose fallbacks.
 5. Preserve GPL/attribution and applicable dependency licenses/notices/corresponding sources, including static/header-only graph nodes and recipe patches. Metadata, a LICENSE setting or an upstream-only URL is not sufficient source proof.
 6. Exclude purchaser executables, original archives/maps/music, saves/settings/logs/screenshots and authoring materials. Audit complete inventory/provenance plus ASCII/UTF-16 binary strings and text for private paths/credentials. Preserve legitimate third-party attribution; report raw privacy findings privately.

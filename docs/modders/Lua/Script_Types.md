@@ -1,6 +1,6 @@
 # Script Types
 
-Every script, whatever it does, is declared the same way - in the `scripts` section of a mod. What a script *is* comes from `implements`, which decides the interface the game calls it through and so which functions the script has to define:
+Every script, whatever it does, is declared the same way - in the `scripts` section of a mod. What a script *is* comes from `implements`, which decides the interface the game calls it through:
 
 ```json
 "lifeDrain" : {
@@ -15,31 +15,25 @@ Every script, whatever it does, is declared the same way - in the `scripts` sect
 
 ## Script types
 
-- [Spell Effect Scripts](Spell_Effect_Scripts.md) - `"implements" : "spellEffect"`, an effect of a spell, such as the built-in `core:damage` or `core:summon`
+- Spell effect scripts - `"implements" : "spellEffect"`, an effect of a spell, such as the built-in `core:damage` or `core:summon`. Spells configure them as described in the [spell format](../Entities_Format/Spell_Format.md)
 - [Combat Event Scripts](Combat_Event_Scripts.md) - `"implements" : "combatEvent"`, a reaction to events happening to a unit in combat, such as Fire Shield or Death Stare
-- [Damage Calculator Script](Damage_Calculator_Script.md) - `"implements" : "damageCalculator"`, what an attack is worth. Unlike the other two there is one of these for the whole game, and a mod changes the rules by patching it rather than by declaring its own
+- [Damage Calculator Script](Damage_Calculator_Script.md) - `"implements" : "damageCalculator"`, what an attack is worth. Unlike the other two there is one of these for the whole game
 
-## What a script can reach
+## Implementations
 
-Three globals are there whatever the script is:
-
-- `LIBRARY` - the game's content, looked up by identifier: creatures, heroes, factions, spells. See [Services](../Lua_Reference/Services.md)
-- `ENUM` - every enumeration the engine exports. See [Enums](../Lua_Reference/Enums.md)
-- `GAME` - the ongoing game session. See [Game](../Lua_Reference/Game.md)
-
-What each type of script is handed on top of those - a battle, a unit, a server to apply changes through - is described on its own page above.
-
-[**Lua API Reference**](../Lua_Reference/API.md) lists every class and enumeration the engine exposes, one page each. It is generated from the bindings themselves, so it is the one place that cannot fall behind them. `api.lua` next to it is a [Lua Language Server](https://luals.github.io/) stub - point `Lua.workspace.library` at it for completion and type checks while writing a script.
-
-VCMI also supports a subset of the Lua standard library; see [Lua Standard Library](Standard_Library.md) for what is in it.
+New Horizons implements every script natively in C++. A declaration selects one
+of those implementations by its `script` identifier and patch chain; the game
+rejects a declaration naming an unknown implementation or a changed patch chain
+when it loads, and it never executes Lua sources. See
+[fixed native rules](../../developers/Native_Rules.md).
 
 ## Shared format
 
 Fields every script declares, whatever its type:
 
 - `implements` - what this script is, see above
-- `script` - path to the source, relative to the `SCRIPTS/` directory of the mod, without the extension. Sources are kept in a directory per type, so `spells/damage` or `combat/lifeDrain`
-- `patches` - other sources stacked over the base one, in the order given, so that a mod can change a script it does not own instead of replacing it. Declare it as an empty list when the script has none, so that other mods have a place to append to
+- `script` - identifier of the native implementation, named like a path per type, so `spells/damage` or `combat/lifeDrain`
+- `patches` - identifiers of the layers stacked over the base implementation, in the order given. Only the patch chains the engine implements are accepted. Declare it as an empty list when the script has none
 - `schema` - a json schema validating the parameters every user of this script passes to it. Errors are reported when the game loads, naming whoever passed the bad parameters. Declare an empty, closed one when the script takes no parameters, rather than leaving it out
 
 A `damageCalculator` script declares nothing beyond the shared fields - nothing runs alongside it and nothing shows it to the player.
@@ -57,7 +51,7 @@ Scripts of every type share one namespace, so a script is referred to simply by 
 
 ## Parameters
 
-Whatever configures a single use of a script is its parameters, and they reach the script as fields of `self`. Where they are written depends on the type - a spell effect is configured by the spell that uses it, a combat event script by the bonus that runs it - but `schema` and `stringRegistrations` apply to both in the same way:
+Whatever configures a single use of a script is its parameters. Where they are written depends on the type - a spell effect is configured by the spell that uses it, a combat event script by the bonus that runs it - but `schema` and `stringRegistrations` apply to both in the same way:
 
 ```json
 "deathStare" : {

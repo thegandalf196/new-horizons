@@ -667,7 +667,7 @@ Affected unit will deal more damage based on movement distance (Champions)
 
 ### VULNERABLE_FROM_BACK
 
-DEPRECATED. Mods should instead define similar bonus on their own and provide script identical or similar to `damage/vulnerableFromBack.lua`
+DEPRECATED. The core `damage/vulnerableFromBack` damage calculator patch implements it.
 
 When affected unit is attacked from behind, it will receive more damage when attacked and will not turn around to face the attacker
 
@@ -682,7 +682,7 @@ Affected unit will deal more damage when attacking specific creature
 
 ### HATES_TRAIT
 
-DEPRECATED. Mods should instead define similar bonus on their own and provide script identical or similar to `damage/hatesTrait.lua`
+DEPRECATED. The core `damage/hatesTrait` damage calculator patch implements it.
 
 Affected unit will deal more damage when attacking unit that has specific bonus. Note that this bonus has no assigned description. To make it visible in creature window UI, make sure to provide custom description for such bonus.
 
@@ -793,7 +793,7 @@ Affected units will receive reduced damage from attacks by other units
 
 ### DAMAGE_RECEIVED_CAP
 
-DEPRECATED. Mods should instead define similar bonus on their own and provide script identical or similar to `damage/damageReceivedCap.lua`
+DEPRECATED. The core `damage/damageReceivedCap` damage calculator patch implements it.
 
 Limits maximal damage received by affected units based on max hp (HotA war machines)
 
@@ -946,7 +946,7 @@ Affected unit will attack additional times if killed creatures in target unit du
 
 ### ENEMY_ATTACK_REDUCTION
 
-DEPRECATED. Mods should instead define similar bonus on their own and provide script identical or similar to `damage/enemyAttackReduction.lua`
+DEPRECATED. The core `damage/enemyAttackReduction` damage calculator patch implements it.
 
 Affected unit will ignore specified percentage of attacked unit attack (Nix)
 
@@ -954,7 +954,7 @@ Affected unit will ignore specified percentage of attacked unit attack (Nix)
 
 ### REVENGE
 
-DEPRECATED. Mods should instead define similar bonus on their own and provide script identical or similar to `damage/revenge.lua`
+DEPRECATED. The core `damage/revenge` damage calculator patch implements it.
 
 Affected unit will deal more damage based on percentage of self health lost compared to amount on start of battle (formula: `square_root((total_unit_count + 1) * 1_creature_max_health / (current_whole_unit_health + 1_creature_max_health) - 1)`. Result is then multiplied separately by min and max base damage of unit and result is additive bonus to total damage at end of calculation)
 

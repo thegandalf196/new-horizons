@@ -84,12 +84,9 @@ this terminal cache as another cache's parent: child original-damage queries
 could observe its partial pair snapshots. `CreaturePressureCachePreparationTest`
 and `DamageCacheObstacleVisibilityTest` cover this API's preparation contract.
 
-Lua calculator capability admission binds every ordered layer to reviewed bytes.
-The current Inspiration root and physical-protection patch form one exact pair;
-mixing either with an earlier pair fails closed. Historical reviewed chains stay
-distinct. This admits the current canonical calculation to guarded forecast and
-cache reuse; initialization, import and patch checks still apply. Verify the
-native payload-to-Lua damage stages as well as the identity checks.
+The native calculator attests its canonical implementation, which admits it to
+guarded forecast and cache reuse; an unknown calculator retains full evaluation.
+Verify the native payload and calculation stages as well as the identity check.
 
 The wish consumer's lazy current-damage queries change eager preparation traffic;
 that API's call-order tests do not establish custom-calculator ordering in the
@@ -104,7 +101,7 @@ and a second search within complete stack selection. The two reported intervals
 exclude their evaluator construction; whole-process samples also include setup,
 construction and assertions. Keep ordinary native-test resource/profile isolation.
 The first search reports `FirstSearchDamage*` aggregate call counts and nanoseconds
-for native payload preparation, bonus discovery and the inclusive Lua bridge.
+for native payload preparation, bonus discovery and the retained calculator-call field.
 The four native subregions partition payload time; do not add them to that parent.
 This diagnostic binding ends before the second, complete stack selection. Its
 clock overhead means the first interval is not an uninstrumented timing baseline.
@@ -190,14 +187,14 @@ diagnostic settings, before claiming a timing improvement.
   and sum exactly to native_payload nanoseconds. Completed calls reach all four;
   exceptions record only reached intervals. These are nested wall-time regions,
   not additional elapsed time or CPU samples.
-  The following two fields describe the optional historical Lua test backend;
-  the fixed native production calculator leaves them zero. Native fact capture
+  The following two fields are retained from the retired Lua backend for record
+  compatibility; the fixed native production calculator leaves them zero. Native fact capture
   and numerical evaluation remain inside the enclosing dynamic damage interval.
   Use a sampling profile of `nativeDamage::capture` and `nativeDamage::calculate`
   to distinguish them; do not interpret zero Lua fields as zero damage work.
-  bonus_preparation includes declaration initialization (and its first-use Lua
-  bonusTypes call), effective bonus lookup and presence maps. lua_call includes
-  input/output conversion, Lua execution and native callbacks, not pure Lua CPU.
+  In historical records, bonus_preparation covered declaration initialization,
+  effective bonus lookup and presence maps, and lua_call covered conversion, Lua
+  execution and native callbacks.
   These sequential regions are subsets of dynamic wall time, not additional
   elapsed time; its remaining work includes Luck weighting and result cleanup.
   Calculation counters record reached initial, Lucky-second and unlucky-second
