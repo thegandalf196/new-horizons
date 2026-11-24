@@ -69,6 +69,40 @@ read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
   ends the intro and asks at once whether to end the battle with autocombat.
   If the enemy moves first, autocombat takes over at your first turn, without a
   second press.
+- **Academy's heroes get their revised specialties** (new games; games already
+  started keep the old ones):
+  - **Neela, Hardened:** each time one of her stacks is hit, it takes 5% less
+    damage from later hits until it next acts, up to 10% (20% at higher
+    levels).
+  - **Rissa, Spoils of Alchemy:** after each combat she wins, she gains Mercury
+    for the enemy creatures destroyed (up to 10 per combat), instead of 1
+    Mercury a day.
+  - **Astral, Practice Makes Perfect:** each spell he casts in combat becomes
+    1% stronger for him for good, up to 2% per hero level for each spell.
+  - **Aine, Wellspring of Wealth:** each morning she gains Gold for the Mana
+    she still holds (x1.5, up to x3 at level 20), instead of 350 Gold a day.
+    Mana spent in battle is income lost.
+  - **Solmyr, Storm Lord:** he starts with Lightning Bolt and learns Chain
+    Lightning at level 10. Both deal more damage as he levels. Master Chain
+    Lightning is retired.
+  - **Fafner, Serpent's Embrace:** his Nagas also deal more damage to the
+    targets they hold.
+  - **Josephine, Gold Standard:** upgrading Iron Golems into Gold Golems costs
+    her less as she levels.
+  - **Halon, Nullifying Shot:** his Magi's shots may dispel the target's
+    positive magic, as Theodorus's did. He no longer has an extra Double Cast
+    use.
+  - **Theodorus, Inexhaustible Knowledge:** from the second round of each
+    combat he regains 4% of his maximum Mana every round (more as he levels).
+    He has a new biography.
+  - **Cyra, Focus Magic:** her Focus Magic bonus grows as she levels.
+  - **Thane, Sage of the Ages:** +2 Spell Power and +2 Knowledge each time he
+    gains a level (was +1 and +1).
+  - Theodorus now starts with Mana Siphon, so no two Academy heroes share the
+    same start.
+  - The AI uses the new Academy specialties.
+- The Academy Town Hall shows the new blacksmith and Golem Factory pictures,
+  matching the animated buildings.
 
 ## 0.94.0-beta.3
 
