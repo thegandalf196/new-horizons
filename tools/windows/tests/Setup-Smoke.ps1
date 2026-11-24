@@ -126,9 +126,13 @@ try {
     Write-FixtureFile (Join-Path $package 'new-horizons.exe') 'SYNTHETIC PLACEHOLDER, NOT AN EXECUTABLE'
     Write-FixtureFile (Join-Path $package 'VCMI_lib.dll') 'SYNTHETIC PLACEHOLDER, NOT A DLL'
     Write-FixtureFile (Join-Path $package 'config\filesystem.json') '{}'
-    [IO.File]::Copy((Join-Path $sourceDir 'Launch-Process.ps1'), (Join-Path $package 'Launch-Process.ps1'))
-    [IO.File]::Copy((Join-Path $sourceDir 'Setup-Progress.ps1'), (Join-Path $package 'Setup-Progress.ps1'))
-    [IO.File]::Copy((Join-Path $sourceDir 'Complete-Assets.ps1'), (Join-Path $package 'Complete-Assets.ps1'))
+    # Copy every helper the setup script dot-sources, read from the script itself, so a new
+    # helper cannot be missing from the synthetic package (Track-Data.ps1 was, in 0.94.0-beta.1)
+    $helpers = @([regex]::Matches([IO.File]::ReadAllText($sourceHelper), '(?m)^\. \(Join-Path \$PSScriptRoot ''([^'']+\.ps1)''\)') | ForEach-Object { $_.Groups[1].Value })
+    Assert-Check (($helpers -contains 'Launch-Process.ps1') -and ($helpers -contains 'Track-Data.ps1')) 'setup helpers are found in the setup script'
+    foreach ($setupHelper in $helpers) {
+        [IO.File]::Copy((Join-Path $sourceDir $setupHelper), (Join-Path $package $setupHelper))
+    }
     [IO.File]::Copy((Join-Path $sourceDir 'dirs.json'), (Join-Path $package 'config\dirs.json'))
 
     # TEMP COPY only: replace the picker, prohibit launch and insert two narrowly

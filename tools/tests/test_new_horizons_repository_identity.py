@@ -10,6 +10,7 @@ REPOSITORY = "github.repository == 'thegandalf196/new-horizons' && "
 BETA = "github.ref == 'refs/heads/beta'"
 # Release builds also run from version tags (see the Windows dispatch gate).
 GATES = {
+    'new-horizons-windows-launcher-smokes.yml': REPOSITORY + BETA,
     'new-horizons-windows-notices.yml': REPOSITORY + BETA,
     'new-horizons-windows-tests.yml': REPOSITORY + BETA,
     'new-horizons-windows.yml': REPOSITORY + "(" + BETA + " || startsWith(github.ref, 'refs/tags/v') || "

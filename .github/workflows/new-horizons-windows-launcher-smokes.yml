@@ -1,0 +1,39 @@
+name: New Horizons Windows launcher smokes
+
+# Windows PowerShell 5.1 smokes of the player launcher scripts, with synthetic
+# packages only: no compile, no game data, no GUI. The release workflow runs the
+# same smokes; running them on every beta push that touches the launcher catches
+# a broken launcher before a release tag is cut.
+on:
+  workflow_dispatch:
+  push:
+    branches: [beta]
+    paths:
+      - .github/workflows/new-horizons-windows-launcher-smokes.yml
+      - tools/windows/**
+
+permissions:
+  contents: read
+
+concurrency:
+  group: new-horizons-windows-launcher-smokes-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    if: github.repository == 'thegandalf196/new-horizons' && github.ref == 'refs/heads/beta'
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Windows PowerShell 5.1 launcher setup smoke (no game or GUI)
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          powershell.exe -NoProfile -File tools/windows/tests/Setup-Smoke.ps1
+          if ($LASTEXITCODE -ne 0) { throw "Setup smoke failed: $LASTEXITCODE" }
+          powershell.exe -NoProfile -File tools/windows/tests/Managed-Preset-Smoke.ps1
+          if ($LASTEXITCODE -ne 0) { throw "Managed preset smoke failed: $LASTEXITCODE" }
