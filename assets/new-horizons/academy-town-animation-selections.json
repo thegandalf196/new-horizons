@@ -1,0 +1,2482 @@
+{
+  "format": 1,
+  "selection": "Owner-approved Academy town animation 2026-11-23",
+  "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
+  "frameTimeMs": 150,
+  "frameCount": 20,
+  "handoffSetSha256": "b5d5fc955b0d66c361b088dc81a829b971ccd8fe3efe2a1a7f7f89ee27601826",
+  "structures": [
+    {
+      "structure": "blacksmith",
+      "animation": "NH_ACADEMY_TBTWBLAK",
+      "currentFrameOnly": true
+    },
+    {
+      "structure": "dwellingLvl1",
+      "animation": "NH_ACADEMY_TBTWDW_0",
+      "currentFrameOnly": true
+    },
+    {
+      "structure": "dwellingUpLvl1",
+      "animation": "NH_ACADEMY_TBTWUP_0",
+      "currentFrameOnly": true
+    },
+    {
+      "structure": "grail",
+      "animation": "NH_ACADEMY_TBTWHOLY",
+      "currentFrameOnly": true
+    },
+    {
+      "structure": "dwellingLvl3",
+      "animation": "NH_ACADEMY_TBTWDW_2",
+      "currentFrameOnly": true
+    },
+    {
+      "structure": "dwellingUpLvl3",
+      "animation": "NH_ACADEMY_TBTWUP_2",
+      "currentFrameOnly": true
+    }
+  ],
+  "entries": [
+    {
+      "resource": "SPRITES/NH_ACADEMY_TBTWBLAK.json",
+      "role": "academy-town-animation-descriptor",
+      "structure": "blacksmith",
+      "animation": "NH_ACADEMY_TBTWBLAK",
+      "handoffRecordSha256": "66bf2a874dd2db1e6131d9c86052301de2a2cf9750ca986b79ac681d2eb42963",
+      "frameTimeMs": 150,
+      "previousSha256": "c59faaebd7f886d293e37ce46c0a8de73c21fa9b22091ddc0cf43fe4be8c88ab",
+      "sha256": "5a1a10e3e2da1106b28bc1efbbb0fdbead40a7bc98c9dd4dff60b37faae11120"
+    },
+    {
+      "resource": "SPRITES/NH_ACADEMY_TBTWDW_0.json",
+      "role": "academy-town-animation-descriptor",
+      "structure": "dwellingLvl1",
+      "animation": "NH_ACADEMY_TBTWDW_0",
+      "handoffRecordSha256": "0a9ba3b097143e2e90f98c294fa4a5101cc6ebc1e84f6e0eb09bde3c866128a9",
+      "frameTimeMs": 150,
+      "previousSha256": "63c2f76f008c72273c661b92a6f2c5ee79760743a5b8b82fe993aff0bed564b8",
+      "sha256": "c3b2390180af4fe82a75c1b54393d0f3472287f7856bc1abae8db5f6e958f708"
+    },
+    {
+      "resource": "SPRITES/NH_ACADEMY_TBTWDW_2.json",
+      "role": "academy-town-animation-descriptor",
+      "structure": "dwellingLvl3",
+      "animation": "NH_ACADEMY_TBTWDW_2",
+      "handoffRecordSha256": "2ab57b414e532f98acad9e6309c32f763cb74b7329cb8758914507fb46441f4c",
+      "frameTimeMs": 150,
+      "previousSha256": "dbcb77f4832d928c6cd4be38f732f75039d8bf0afbed5037638a015149028444",
+      "sha256": "adfecba5b95cbf2c23ff8d3e3ea0f023f626399663b50b455f18aabbb4127e41"
+    },
+    {
+      "resource": "SPRITES/NH_ACADEMY_TBTWHOLY.json",
+      "role": "academy-town-animation-descriptor",
+      "structure": "grail",
+      "animation": "NH_ACADEMY_TBTWHOLY",
+      "handoffRecordSha256": "1f4e0d2e31b841088e42c68b302b57d592ea7d082437f18fc63c3b23b63255fc",
+      "frameTimeMs": 150,
+      "previousSha256": "b5b1c78f42784ade74ec03a317a6b4f0a232c8a905f64b689afa4bceb88d6f8c",
+      "sha256": "1c35f8f4ef95475ff33be2a6518485f56f5c74d5e4cab0fd0e39ba08882543e7"
+    },
+    {
+      "resource": "SPRITES/NH_ACADEMY_TBTWUP_0.json",
+      "role": "academy-town-animation-descriptor",
+      "structure": "dwellingUpLvl1",
+      "animation": "NH_ACADEMY_TBTWUP_0",
+      "handoffRecordSha256": "b6df00d802a650e1b7ccea7de98299ebf7cdd787ba7e86296b73c7984f153831",
+      "frameTimeMs": 150,
+      "previousSha256": "cde207d8491452d2519c262f0b003af91bac9da5009c796ad7af9293496df230",
+      "sha256": "b300abf92da3eabe24f548028b6fb3929b6b4e7150c485534667fba531ddb0e5"
+    },
+    {
+      "resource": "SPRITES/NH_ACADEMY_TBTWUP_2.json",
+      "role": "academy-town-animation-descriptor",
+      "structure": "dwellingUpLvl3",
+      "animation": "NH_ACADEMY_TBTWUP_2",
+      "handoffRecordSha256": "f046a20ef07e7d2bde49bbeceb972d7044e3a8eedbb16ee2c44aec7778947b2b",
+      "frameTimeMs": 150,
+      "previousSha256": "74c34319107156c27003073b92734fdc57788967e5b90e6bae747e4d0e7dc8c4",
+      "sha256": "9ea4e96ae7229de3cba4415ee20c3c7bb10d7bbbe0ad883dfab7db1ab5e9fb0b"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwblak/frame-00.png",
+      "role": "academy-town-animation-frame",
+      "structure": "blacksmith",
+      "animation": "NH_ACADEMY_TBTWBLAK",
+      "handoffRecordSha256": "66bf2a874dd2db1e6131d9c86052301de2a2cf9750ca986b79ac681d2eb42963",
+      "handoffFrames": [
+        "frame_00.png"
+      ],
+      "dimensions": [
+        140,
+        146
+      ],
+      "alphaBoundingBox": [
+        3,
+        8,
+        134,
+        142
+      ],
+      "sha256": "1e877a049c0762cbd105e50ca7cc120131bb26d768589d9547e1fc6b9a519b9a"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwblak/frame-01.png",
+      "role": "academy-town-animation-frame",
+      "structure": "blacksmith",
+      "animation": "NH_ACADEMY_TBTWBLAK",
+      "handoffRecordSha256": "66bf2a874dd2db1e6131d9c86052301de2a2cf9750ca986b79ac681d2eb42963",
+      "handoffFrames": [
+        "frame_01.png"
+      ],
+      "dimensions": [
+        140,
+        146
+      ],
+      "alphaBoundingBox": [
+        3,
+        8,
+        134,
+        142
+      ],
+      "sha256": "2e36f57783c1aff94b85cbe81db40360f877731c3a6dd53f7c0b1b044cba83b0"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwblak/frame-02.png",
+      "role": "academy-town-animation-frame",
+      "structure": "blacksmith",
+      "animation": "NH_ACADEMY_TBTWBLAK",
+      "handoffRecordSha256": "66bf2a874dd2db1e6131d9c86052301de2a2cf9750ca986b79ac681d2eb42963",
+      "handoffFrames": [
+        "frame_02.png"
+      ],
+      "dimensions": [
+        140,
+        146
+      ],
+      "alphaBoundingBox": [
+        3,
+        8,
+        134,
+        142
+      ],
+      "sha256": "1bdfd845585576d41c6fb2ff924f5d5df49ff56802a25d98fa4ab9fbbb2a7c17"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwblak/frame-03.png",
+      "role": "academy-town-animation-frame",
+      "structure": "blacksmith",
+      "animation": "NH_ACADEMY_TBTWBLAK",
+      "handoffRecordSha256": "66bf2a874dd2db1e6131d9c86052301de2a2cf9750ca986b79ac681d2eb42963",
+      "handoffFrames": [
+        "frame_03.png"
+      ],
+      "dimensions": [
+        140,
+        146
+      ],
+      "alphaBoundingBox": [
+        3,
+        8,
+        134,
+        142
+      ],
+      "sha256": "2886263329edda645cc6237287bf736d4270725f2edd93b465b06038ee4f92e3"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwblak/frame-04.png",
+      "role": "academy-town-animation-frame",
+      "structure": "blacksmith",
+      "animation": "NH_ACADEMY_TBTWBLAK",
+      "handoffRecordSha256": "66bf2a874dd2db1e6131d9c86052301de2a2cf9750ca986b79ac681d2eb42963",
+      "handoffFrames": [
+        "frame_04.png"
+      ],
+      "dimensions": [
+        140,
+        146
+      ],
+      "alphaBoundingBox": [
+        3,
+        8,
+        134,
+        142
+      ],
+      "sha256": "bd94bff0efdba88ddf03055c13ef84f001fb558ba15404c8c4f7e23a8aeadbc1"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwblak/frame-05.png",
+      "role": "academy-town-animation-frame",
+      "structure": "blacksmith",
+      "animation": "NH_ACADEMY_TBTWBLAK",
+      "handoffRecordSha256": "66bf2a874dd2db1e6131d9c86052301de2a2cf9750ca986b79ac681d2eb42963",
+      "handoffFrames": [
+        "frame_05.png"
+      ],
+      "dimensions": [
+        140,
+        146
+      ],
+      "alphaBoundingBox": [
+        3,
+        8,
+        134,
+        142
+      ],
+      "sha256": "6e9342612881732b2f7e7db680d5ad273ec8f76e3e06447d8f02d47b5cbbf21c"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwblak/frame-06.png",
+      "role": "academy-town-animation-frame",
+      "structure": "blacksmith",
+      "animation": "NH_ACADEMY_TBTWBLAK",
+      "handoffRecordSha256": "66bf2a874dd2db1e6131d9c86052301de2a2cf9750ca986b79ac681d2eb42963",
+      "handoffFrames": [
+        "frame_06.png"
+      ],
+      "dimensions": [
+        140,
+        146
+      ],
+      "alphaBoundingBox": [
+        3,
+        8,
+        134,
+        142
+      ],
+      "sha256": "038dafd81a49f317b9923b545ffef186653901cb11ba6c4b0f36f051ba90984c"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwblak/frame-07.png",
+      "role": "academy-town-animation-frame",
+      "structure": "blacksmith",
+      "animation": "NH_ACADEMY_TBTWBLAK",
+      "handoffRecordSha256": "66bf2a874dd2db1e6131d9c86052301de2a2cf9750ca986b79ac681d2eb42963",
+      "handoffFrames": [
+        "frame_07.png"
+      ],
+      "dimensions": [
+        140,
+        146
+      ],
+      "alphaBoundingBox": [
+        3,
+        8,
+        134,
+        142
+      ],
+      "sha256": "3c4a800699efbd2c9e9e292f4dc26c0d416c2a17067e001dda67abfb94d0ceca"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwblak/frame-08.png",
+      "role": "academy-town-animation-frame",
+      "structure": "blacksmith",
+      "animation": "NH_ACADEMY_TBTWBLAK",
+      "handoffRecordSha256": "66bf2a874dd2db1e6131d9c86052301de2a2cf9750ca986b79ac681d2eb42963",
+      "handoffFrames": [
+        "frame_08.png"
+      ],
+      "dimensions": [
+        140,
+        146
+      ],
+      "alphaBoundingBox": [
+        3,
+        8,
+        134,
+        142
+      ],
+      "sha256": "ebb4eae055a001e803818bcfd1dfecc69bc8fd2f7835ccdfd209278f7886e16c"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwblak/frame-09.png",
+      "role": "academy-town-animation-frame",
+      "structure": "blacksmith",
+      "animation": "NH_ACADEMY_TBTWBLAK",
+      "handoffRecordSha256": "66bf2a874dd2db1e6131d9c86052301de2a2cf9750ca986b79ac681d2eb42963",
+      "handoffFrames": [
+        "frame_09.png"
+      ],
+      "dimensions": [
+        140,
+        146
+      ],
+      "alphaBoundingBox": [
+        3,
+        8,
+        134,
+        142
+      ],
+      "sha256": "c1d084c0e70a08c73f108ffe00ed00d19e58e0df367dbdb0eb08342c3cfc4d69"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwblak/frame-10.png",
+      "role": "academy-town-animation-frame",
+      "structure": "blacksmith",
+      "animation": "NH_ACADEMY_TBTWBLAK",
+      "handoffRecordSha256": "66bf2a874dd2db1e6131d9c86052301de2a2cf9750ca986b79ac681d2eb42963",
+      "handoffFrames": [
+        "frame_10.png"
+      ],
+      "dimensions": [
+        140,
+        146
+      ],
+      "alphaBoundingBox": [
+        3,
+        8,
+        134,
+        142
+      ],
+      "sha256": "08a7e7940ea9173d33de93e2b7befdb7dfbe3ad6ebf1af48f360b86de4449f2f"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwblak/frame-11.png",
+      "role": "academy-town-animation-frame",
+      "structure": "blacksmith",
+      "animation": "NH_ACADEMY_TBTWBLAK",
+      "handoffRecordSha256": "66bf2a874dd2db1e6131d9c86052301de2a2cf9750ca986b79ac681d2eb42963",
+      "handoffFrames": [
+        "frame_11.png"
+      ],
+      "dimensions": [
+        140,
+        146
+      ],
+      "alphaBoundingBox": [
+        3,
+        8,
+        134,
+        142
+      ],
+      "sha256": "0ad342f0134cff6f7335419f3b1aec85a197ed0ec9ae8c8db7da199ba584945e"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwblak/frame-12.png",
+      "role": "academy-town-animation-frame",
+      "structure": "blacksmith",
+      "animation": "NH_ACADEMY_TBTWBLAK",
+      "handoffRecordSha256": "66bf2a874dd2db1e6131d9c86052301de2a2cf9750ca986b79ac681d2eb42963",
+      "handoffFrames": [
+        "frame_12.png"
+      ],
+      "dimensions": [
+        140,
+        146
+      ],
+      "alphaBoundingBox": [
+        3,
+        8,
+        134,
+        142
+      ],
+      "sha256": "ddba8a7dc300546a5a75a808ddb820d98c7aa97ba698caced30200efaa89804e"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwblak/frame-13.png",
+      "role": "academy-town-animation-frame",
+      "structure": "blacksmith",
+      "animation": "NH_ACADEMY_TBTWBLAK",
+      "handoffRecordSha256": "66bf2a874dd2db1e6131d9c86052301de2a2cf9750ca986b79ac681d2eb42963",
+      "handoffFrames": [
+        "frame_13.png"
+      ],
+      "dimensions": [
+        140,
+        146
+      ],
+      "alphaBoundingBox": [
+        3,
+        8,
+        134,
+        142
+      ],
+      "sha256": "463060201e618a253ba0d4a63b3dc6c94f8b929e31a1b4882a58d2d66fc7fa06"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwblak/frame-14.png",
+      "role": "academy-town-animation-frame",
+      "structure": "blacksmith",
+      "animation": "NH_ACADEMY_TBTWBLAK",
+      "handoffRecordSha256": "66bf2a874dd2db1e6131d9c86052301de2a2cf9750ca986b79ac681d2eb42963",
+      "handoffFrames": [
+        "frame_14.png"
+      ],
+      "dimensions": [
+        140,
+        146
+      ],
+      "alphaBoundingBox": [
+        3,
+        8,
+        134,
+        142
+      ],
+      "sha256": "7ef51917ac164a77fa2ab2e1c7d7bd685cdaff7f29d60a64805c2c20c2b0bada"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwblak/frame-15.png",
+      "role": "academy-town-animation-frame",
+      "structure": "blacksmith",
+      "animation": "NH_ACADEMY_TBTWBLAK",
+      "handoffRecordSha256": "66bf2a874dd2db1e6131d9c86052301de2a2cf9750ca986b79ac681d2eb42963",
+      "handoffFrames": [
+        "frame_15.png"
+      ],
+      "dimensions": [
+        140,
+        146
+      ],
+      "alphaBoundingBox": [
+        3,
+        8,
+        134,
+        142
+      ],
+      "sha256": "da37d9a25106bb8ad2cb7376bb180afba9d3cc8093e49a9fe84e4cdce095db91"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwblak/frame-16.png",
+      "role": "academy-town-animation-frame",
+      "structure": "blacksmith",
+      "animation": "NH_ACADEMY_TBTWBLAK",
+      "handoffRecordSha256": "66bf2a874dd2db1e6131d9c86052301de2a2cf9750ca986b79ac681d2eb42963",
+      "handoffFrames": [
+        "frame_16.png"
+      ],
+      "dimensions": [
+        140,
+        146
+      ],
+      "alphaBoundingBox": [
+        3,
+        8,
+        134,
+        142
+      ],
+      "sha256": "0bca19b7ec3276f3ba9aad5fa4a035287d12838d7f3465d9746ffbcea43d383a"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwblak/frame-17.png",
+      "role": "academy-town-animation-frame",
+      "structure": "blacksmith",
+      "animation": "NH_ACADEMY_TBTWBLAK",
+      "handoffRecordSha256": "66bf2a874dd2db1e6131d9c86052301de2a2cf9750ca986b79ac681d2eb42963",
+      "handoffFrames": [
+        "frame_17.png"
+      ],
+      "dimensions": [
+        140,
+        146
+      ],
+      "alphaBoundingBox": [
+        3,
+        8,
+        134,
+        142
+      ],
+      "sha256": "c629fe0ee529002581e6f464806b08c69357466b3324946771669ea1a84bdde3"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwblak/frame-18.png",
+      "role": "academy-town-animation-frame",
+      "structure": "blacksmith",
+      "animation": "NH_ACADEMY_TBTWBLAK",
+      "handoffRecordSha256": "66bf2a874dd2db1e6131d9c86052301de2a2cf9750ca986b79ac681d2eb42963",
+      "handoffFrames": [
+        "frame_18.png"
+      ],
+      "dimensions": [
+        140,
+        146
+      ],
+      "alphaBoundingBox": [
+        3,
+        8,
+        134,
+        142
+      ],
+      "sha256": "cea3c07dfa2fd1230854b6e2b8845efdd54be81ccde2b3750901aed028316b5d"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwblak/frame-19.png",
+      "role": "academy-town-animation-frame",
+      "structure": "blacksmith",
+      "animation": "NH_ACADEMY_TBTWBLAK",
+      "handoffRecordSha256": "66bf2a874dd2db1e6131d9c86052301de2a2cf9750ca986b79ac681d2eb42963",
+      "handoffFrames": [
+        "frame_19.png"
+      ],
+      "dimensions": [
+        140,
+        146
+      ],
+      "alphaBoundingBox": [
+        3,
+        8,
+        134,
+        142
+      ],
+      "sha256": "99bf27e46415ffc8cc797b01f76edcd45f0ea8d5f13f7fd3a2a7503cd14fe5e8"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwdw_0/frame-00.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingLvl1",
+      "animation": "NH_ACADEMY_TBTWDW_0",
+      "handoffRecordSha256": "0a9ba3b097143e2e90f98c294fa4a5101cc6ebc1e84f6e0eb09bde3c866128a9",
+      "handoffFrames": [
+        "frame_00.png"
+      ],
+      "dimensions": [
+        53,
+        71
+      ],
+      "alphaBoundingBox": [
+        0,
+        34,
+        53,
+        71
+      ],
+      "sha256": "fdf4f806093f97867c55e16280328e9562bd7f8daa2245e9917a143a2a8cf291"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwdw_0/frame-01.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingLvl1",
+      "animation": "NH_ACADEMY_TBTWDW_0",
+      "handoffRecordSha256": "0a9ba3b097143e2e90f98c294fa4a5101cc6ebc1e84f6e0eb09bde3c866128a9",
+      "handoffFrames": [
+        "frame_01.png"
+      ],
+      "dimensions": [
+        53,
+        71
+      ],
+      "alphaBoundingBox": [
+        0,
+        34,
+        53,
+        71
+      ],
+      "sha256": "12c2ec1516788c27603d6fa18396ac8af0dd3cbc328687664619cfe987810181"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwdw_0/frame-02.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingLvl1",
+      "animation": "NH_ACADEMY_TBTWDW_0",
+      "handoffRecordSha256": "0a9ba3b097143e2e90f98c294fa4a5101cc6ebc1e84f6e0eb09bde3c866128a9",
+      "handoffFrames": [
+        "frame_02.png"
+      ],
+      "dimensions": [
+        53,
+        71
+      ],
+      "alphaBoundingBox": [
+        0,
+        34,
+        53,
+        71
+      ],
+      "sha256": "5a8057af06ad6cb8157b282a0dc3ac88941258294381ede872e881997e543174"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwdw_0/frame-03.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingLvl1",
+      "animation": "NH_ACADEMY_TBTWDW_0",
+      "handoffRecordSha256": "0a9ba3b097143e2e90f98c294fa4a5101cc6ebc1e84f6e0eb09bde3c866128a9",
+      "handoffFrames": [
+        "frame_03.png"
+      ],
+      "dimensions": [
+        53,
+        71
+      ],
+      "alphaBoundingBox": [
+        0,
+        34,
+        53,
+        71
+      ],
+      "sha256": "744db4c9a12f9d6fed844858914b9c1e3547092ff21fbb66e725f2af67040598"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwdw_0/frame-04.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingLvl1",
+      "animation": "NH_ACADEMY_TBTWDW_0",
+      "handoffRecordSha256": "0a9ba3b097143e2e90f98c294fa4a5101cc6ebc1e84f6e0eb09bde3c866128a9",
+      "handoffFrames": [
+        "frame_04.png"
+      ],
+      "dimensions": [
+        53,
+        71
+      ],
+      "alphaBoundingBox": [
+        0,
+        34,
+        53,
+        71
+      ],
+      "sha256": "0e197e4356c42b22f6ecd0ea29dee17e098a1df21aefee23ea71a0e023a9069c"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwdw_0/frame-05.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingLvl1",
+      "animation": "NH_ACADEMY_TBTWDW_0",
+      "handoffRecordSha256": "0a9ba3b097143e2e90f98c294fa4a5101cc6ebc1e84f6e0eb09bde3c866128a9",
+      "handoffFrames": [
+        "frame_05.png"
+      ],
+      "dimensions": [
+        53,
+        71
+      ],
+      "alphaBoundingBox": [
+        0,
+        34,
+        53,
+        71
+      ],
+      "sha256": "e1189acd274be907020ddf2928d5edf61346ec2f6006a84356454640ae1e0a63"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwdw_0/frame-06.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingLvl1",
+      "animation": "NH_ACADEMY_TBTWDW_0",
+      "handoffRecordSha256": "0a9ba3b097143e2e90f98c294fa4a5101cc6ebc1e84f6e0eb09bde3c866128a9",
+      "handoffFrames": [
+        "frame_06.png"
+      ],
+      "dimensions": [
+        53,
+        71
+      ],
+      "alphaBoundingBox": [
+        0,
+        34,
+        53,
+        71
+      ],
+      "sha256": "7cd971c63a7497800e0e15edcde1c14227a9ed6094dd7035d154293f010ea2df"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwdw_0/frame-07.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingLvl1",
+      "animation": "NH_ACADEMY_TBTWDW_0",
+      "handoffRecordSha256": "0a9ba3b097143e2e90f98c294fa4a5101cc6ebc1e84f6e0eb09bde3c866128a9",
+      "handoffFrames": [
+        "frame_07.png"
+      ],
+      "dimensions": [
+        53,
+        71
+      ],
+      "alphaBoundingBox": [
+        0,
+        34,
+        53,
+        71
+      ],
+      "sha256": "18ffa28cd6575b3209dc1bf054b9942f8cea6559322bc383fffd548a2c6213a0"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwdw_0/frame-08.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingLvl1",
+      "animation": "NH_ACADEMY_TBTWDW_0",
+      "handoffRecordSha256": "0a9ba3b097143e2e90f98c294fa4a5101cc6ebc1e84f6e0eb09bde3c866128a9",
+      "handoffFrames": [
+        "frame_08.png"
+      ],
+      "dimensions": [
+        53,
+        71
+      ],
+      "alphaBoundingBox": [
+        0,
+        34,
+        53,
+        71
+      ],
+      "sha256": "ae800c56f4ea27a76e00da89d436ead28070f7e6802e59141edfc4e6949be029"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwdw_0/frame-09.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingLvl1",
+      "animation": "NH_ACADEMY_TBTWDW_0",
+      "handoffRecordSha256": "0a9ba3b097143e2e90f98c294fa4a5101cc6ebc1e84f6e0eb09bde3c866128a9",
+      "handoffFrames": [
+        "frame_09.png"
+      ],
+      "dimensions": [
+        53,
+        71
+      ],
+      "alphaBoundingBox": [
+        0,
+        34,
+        53,
+        71
+      ],
+      "sha256": "39f9248f6c187d348a1d67831323a1604cf6ff921752b2ec7e8dc6f5d011a345"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwdw_0/frame-10.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingLvl1",
+      "animation": "NH_ACADEMY_TBTWDW_0",
+      "handoffRecordSha256": "0a9ba3b097143e2e90f98c294fa4a5101cc6ebc1e84f6e0eb09bde3c866128a9",
+      "handoffFrames": [
+        "frame_10.png"
+      ],
+      "dimensions": [
+        53,
+        71
+      ],
+      "alphaBoundingBox": [
+        0,
+        34,
+        53,
+        71
+      ],
+      "sha256": "5b28bdf69978083ea9ab0c49d8666eb8bfeeabfa414e0f60fee99e5b95530704"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwdw_0/frame-11.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingLvl1",
+      "animation": "NH_ACADEMY_TBTWDW_0",
+      "handoffRecordSha256": "0a9ba3b097143e2e90f98c294fa4a5101cc6ebc1e84f6e0eb09bde3c866128a9",
+      "handoffFrames": [
+        "frame_11.png"
+      ],
+      "dimensions": [
+        53,
+        71
+      ],
+      "alphaBoundingBox": [
+        0,
+        34,
+        53,
+        71
+      ],
+      "sha256": "0f82197931da131890391bb1e7b57cbc653503ef87cefe5c18a1cff1b054f01a"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwdw_0/frame-12.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingLvl1",
+      "animation": "NH_ACADEMY_TBTWDW_0",
+      "handoffRecordSha256": "0a9ba3b097143e2e90f98c294fa4a5101cc6ebc1e84f6e0eb09bde3c866128a9",
+      "handoffFrames": [
+        "frame_12.png"
+      ],
+      "dimensions": [
+        53,
+        71
+      ],
+      "alphaBoundingBox": [
+        0,
+        34,
+        53,
+        71
+      ],
+      "sha256": "a4b0e84495dffd8915f43e4206835aab122b78f1cd314e21db3b29826ca30e39"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwdw_0/frame-13.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingLvl1",
+      "animation": "NH_ACADEMY_TBTWDW_0",
+      "handoffRecordSha256": "0a9ba3b097143e2e90f98c294fa4a5101cc6ebc1e84f6e0eb09bde3c866128a9",
+      "handoffFrames": [
+        "frame_13.png"
+      ],
+      "dimensions": [
+        53,
+        71
+      ],
+      "alphaBoundingBox": [
+        0,
+        34,
+        53,
+        71
+      ],
+      "sha256": "aac423e2dd7f00aac6073a4aee12218b3308164e9844f196258330fc4dae8cc1"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwdw_0/frame-14.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingLvl1",
+      "animation": "NH_ACADEMY_TBTWDW_0",
+      "handoffRecordSha256": "0a9ba3b097143e2e90f98c294fa4a5101cc6ebc1e84f6e0eb09bde3c866128a9",
+      "handoffFrames": [
+        "frame_14.png"
+      ],
+      "dimensions": [
+        53,
+        71
+      ],
+      "alphaBoundingBox": [
+        0,
+        34,
+        53,
+        71
+      ],
+      "sha256": "9cb3f6e95dcef037a9931459dad6d3f782d49f54229b6ba71e4a82e1e3b680b8"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwdw_0/frame-15.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingLvl1",
+      "animation": "NH_ACADEMY_TBTWDW_0",
+      "handoffRecordSha256": "0a9ba3b097143e2e90f98c294fa4a5101cc6ebc1e84f6e0eb09bde3c866128a9",
+      "handoffFrames": [
+        "frame_15.png"
+      ],
+      "dimensions": [
+        53,
+        71
+      ],
+      "alphaBoundingBox": [
+        0,
+        34,
+        53,
+        71
+      ],
+      "sha256": "73848f77426e777ab03aae85e1836d11cacd2d2c118bfce263f5ea03409d446f"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwdw_0/frame-16.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingLvl1",
+      "animation": "NH_ACADEMY_TBTWDW_0",
+      "handoffRecordSha256": "0a9ba3b097143e2e90f98c294fa4a5101cc6ebc1e84f6e0eb09bde3c866128a9",
+      "handoffFrames": [
+        "frame_16.png"
+      ],
+      "dimensions": [
+        53,
+        71
+      ],
+      "alphaBoundingBox": [
+        0,
+        34,
+        53,
+        71
+      ],
+      "sha256": "5a179702279202caf8fe1d14cb3e2bf83442db5488bacc6e06b411690a79373b"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwdw_0/frame-17.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingLvl1",
+      "animation": "NH_ACADEMY_TBTWDW_0",
+      "handoffRecordSha256": "0a9ba3b097143e2e90f98c294fa4a5101cc6ebc1e84f6e0eb09bde3c866128a9",
+      "handoffFrames": [
+        "frame_17.png"
+      ],
+      "dimensions": [
+        53,
+        71
+      ],
+      "alphaBoundingBox": [
+        0,
+        34,
+        53,
+        71
+      ],
+      "sha256": "6ccf2b2ef122ba6dcb56d4891508d061106696b07f6e3cf0bcec0b9c9385ec08"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwdw_0/frame-18.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingLvl1",
+      "animation": "NH_ACADEMY_TBTWDW_0",
+      "handoffRecordSha256": "0a9ba3b097143e2e90f98c294fa4a5101cc6ebc1e84f6e0eb09bde3c866128a9",
+      "handoffFrames": [
+        "frame_18.png"
+      ],
+      "dimensions": [
+        53,
+        71
+      ],
+      "alphaBoundingBox": [
+        0,
+        34,
+        53,
+        71
+      ],
+      "sha256": "aba4bfdb240803e63f57d53e26c8daff830a6ecd9ef10f3e72b27439122022cd"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwdw_0/frame-19.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingLvl1",
+      "animation": "NH_ACADEMY_TBTWDW_0",
+      "handoffRecordSha256": "0a9ba3b097143e2e90f98c294fa4a5101cc6ebc1e84f6e0eb09bde3c866128a9",
+      "handoffFrames": [
+        "frame_19.png"
+      ],
+      "dimensions": [
+        53,
+        71
+      ],
+      "alphaBoundingBox": [
+        0,
+        34,
+        53,
+        71
+      ],
+      "sha256": "2d91e5b05925c25b5ae3e980260ba72f5e28f1d499687a52b3b17f858b88f433"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwdw_2/frame-00.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingLvl3",
+      "animation": "NH_ACADEMY_TBTWDW_2",
+      "handoffRecordSha256": "2ab57b414e532f98acad9e6309c32f763cb74b7329cb8758914507fb46441f4c",
+      "handoffFrames": [
+        "frame_00.png"
+      ],
+      "dimensions": [
+        108,
+        127
+      ],
+      "alphaBoundingBox": [
+        1,
+        0,
+        107,
+        127
+      ],
+      "sha256": "bc40d0e1a42bb4ff5955d176deceb6aff355bcdd3159fe7aec2a67a8293ba59f"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwdw_2/frame-01.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingLvl3",
+      "animation": "NH_ACADEMY_TBTWDW_2",
+      "handoffRecordSha256": "2ab57b414e532f98acad9e6309c32f763cb74b7329cb8758914507fb46441f4c",
+      "handoffFrames": [
+        "frame_01.png"
+      ],
+      "dimensions": [
+        108,
+        127
+      ],
+      "alphaBoundingBox": [
+        1,
+        0,
+        107,
+        127
+      ],
+      "sha256": "da1c07e99d259c73f2b50ad9c5cc7086462850316c63f4bbfe678c8c87f48b6f"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwdw_2/frame-02.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingLvl3",
+      "animation": "NH_ACADEMY_TBTWDW_2",
+      "handoffRecordSha256": "2ab57b414e532f98acad9e6309c32f763cb74b7329cb8758914507fb46441f4c",
+      "handoffFrames": [
+        "frame_02.png"
+      ],
+      "dimensions": [
+        108,
+        127
+      ],
+      "alphaBoundingBox": [
+        1,
+        0,
+        107,
+        127
+      ],
+      "sha256": "29b3f131a52675f5c21960e55708f031a453665b1e5e4fc6dc2493e5a7fef2ac"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwdw_2/frame-03.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingLvl3",
+      "animation": "NH_ACADEMY_TBTWDW_2",
+      "handoffRecordSha256": "2ab57b414e532f98acad9e6309c32f763cb74b7329cb8758914507fb46441f4c",
+      "handoffFrames": [
+        "frame_03.png"
+      ],
+      "dimensions": [
+        108,
+        127
+      ],
+      "alphaBoundingBox": [
+        1,
+        0,
+        107,
+        127
+      ],
+      "sha256": "962ce416d5d2c2fbbf008417cfb265a24c41635d698a8bf7ff3032326a3c2c96"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwdw_2/frame-04.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingLvl3",
+      "animation": "NH_ACADEMY_TBTWDW_2",
+      "handoffRecordSha256": "2ab57b414e532f98acad9e6309c32f763cb74b7329cb8758914507fb46441f4c",
+      "handoffFrames": [
+        "frame_04.png"
+      ],
+      "dimensions": [
+        108,
+        127
+      ],
+      "alphaBoundingBox": [
+        1,
+        0,
+        107,
+        127
+      ],
+      "sha256": "5158a9ee9014018d0dcfa947631919035ad2fa115b526e92c5cc28155cdc67e1"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwdw_2/frame-05.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingLvl3",
+      "animation": "NH_ACADEMY_TBTWDW_2",
+      "handoffRecordSha256": "2ab57b414e532f98acad9e6309c32f763cb74b7329cb8758914507fb46441f4c",
+      "handoffFrames": [
+        "frame_05.png"
+      ],
+      "dimensions": [
+        108,
+        127
+      ],
+      "alphaBoundingBox": [
+        1,
+        0,
+        107,
+        127
+      ],
+      "sha256": "60adb780100b8e57f51dde3bef83ffe07ac53a0a6d662978cb2771efc276acf3"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwdw_2/frame-06.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingLvl3",
+      "animation": "NH_ACADEMY_TBTWDW_2",
+      "handoffRecordSha256": "2ab57b414e532f98acad9e6309c32f763cb74b7329cb8758914507fb46441f4c",
+      "handoffFrames": [
+        "frame_06.png"
+      ],
+      "dimensions": [
+        108,
+        127
+      ],
+      "alphaBoundingBox": [
+        1,
+        0,
+        107,
+        127
+      ],
+      "sha256": "a9943a2d245b20181712aa05115caa87e3a5c505ff4ccf83cec17eb339af0ef8"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwdw_2/frame-07.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingLvl3",
+      "animation": "NH_ACADEMY_TBTWDW_2",
+      "handoffRecordSha256": "2ab57b414e532f98acad9e6309c32f763cb74b7329cb8758914507fb46441f4c",
+      "handoffFrames": [
+        "frame_07.png"
+      ],
+      "dimensions": [
+        108,
+        127
+      ],
+      "alphaBoundingBox": [
+        1,
+        0,
+        107,
+        127
+      ],
+      "sha256": "79ba8b10192d77d22ec760588db4b4a3c5f41828adb304e175ee8d3682c8f306"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwdw_2/frame-08.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingLvl3",
+      "animation": "NH_ACADEMY_TBTWDW_2",
+      "handoffRecordSha256": "2ab57b414e532f98acad9e6309c32f763cb74b7329cb8758914507fb46441f4c",
+      "handoffFrames": [
+        "frame_08.png"
+      ],
+      "dimensions": [
+        108,
+        127
+      ],
+      "alphaBoundingBox": [
+        1,
+        0,
+        107,
+        127
+      ],
+      "sha256": "8252da929132ad8aa77c982a77e56d103bb3f2f16ed714794bcaf6ce62369e94"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwdw_2/frame-09.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingLvl3",
+      "animation": "NH_ACADEMY_TBTWDW_2",
+      "handoffRecordSha256": "2ab57b414e532f98acad9e6309c32f763cb74b7329cb8758914507fb46441f4c",
+      "handoffFrames": [
+        "frame_09.png"
+      ],
+      "dimensions": [
+        108,
+        127
+      ],
+      "alphaBoundingBox": [
+        1,
+        0,
+        107,
+        127
+      ],
+      "sha256": "d31e91e712694316ea86c12e12c5d7843780725a2604c8ec37bb2d48d3b7d347"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwdw_2/frame-10.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingLvl3",
+      "animation": "NH_ACADEMY_TBTWDW_2",
+      "handoffRecordSha256": "2ab57b414e532f98acad9e6309c32f763cb74b7329cb8758914507fb46441f4c",
+      "handoffFrames": [
+        "frame_10.png"
+      ],
+      "dimensions": [
+        108,
+        127
+      ],
+      "alphaBoundingBox": [
+        1,
+        0,
+        107,
+        127
+      ],
+      "sha256": "3053fc95c310551b517aa416f56f115c55c977e5afe68c0d2b61acb8cb4d58c4"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwdw_2/frame-11.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingLvl3",
+      "animation": "NH_ACADEMY_TBTWDW_2",
+      "handoffRecordSha256": "2ab57b414e532f98acad9e6309c32f763cb74b7329cb8758914507fb46441f4c",
+      "handoffFrames": [
+        "frame_11.png"
+      ],
+      "dimensions": [
+        108,
+        127
+      ],
+      "alphaBoundingBox": [
+        1,
+        0,
+        107,
+        127
+      ],
+      "sha256": "e203fc0f683f46c0bf9fcdd42a1d5c413e36e1f7a7bb8209464b9fae367716df"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwdw_2/frame-12.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingLvl3",
+      "animation": "NH_ACADEMY_TBTWDW_2",
+      "handoffRecordSha256": "2ab57b414e532f98acad9e6309c32f763cb74b7329cb8758914507fb46441f4c",
+      "handoffFrames": [
+        "frame_12.png"
+      ],
+      "dimensions": [
+        108,
+        127
+      ],
+      "alphaBoundingBox": [
+        1,
+        0,
+        107,
+        127
+      ],
+      "sha256": "92a7d35f37606c702fd7fc736c5c3791ee1f8e108ac24422200bb51404408266"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwdw_2/frame-13.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingLvl3",
+      "animation": "NH_ACADEMY_TBTWDW_2",
+      "handoffRecordSha256": "2ab57b414e532f98acad9e6309c32f763cb74b7329cb8758914507fb46441f4c",
+      "handoffFrames": [
+        "frame_13.png"
+      ],
+      "dimensions": [
+        108,
+        127
+      ],
+      "alphaBoundingBox": [
+        1,
+        0,
+        107,
+        127
+      ],
+      "sha256": "e4f8a95abac6e31397ffec89ad85290ec79648c09157021cea65adc0648568a1"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwdw_2/frame-14.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingLvl3",
+      "animation": "NH_ACADEMY_TBTWDW_2",
+      "handoffRecordSha256": "2ab57b414e532f98acad9e6309c32f763cb74b7329cb8758914507fb46441f4c",
+      "handoffFrames": [
+        "frame_14.png"
+      ],
+      "dimensions": [
+        108,
+        127
+      ],
+      "alphaBoundingBox": [
+        1,
+        0,
+        107,
+        127
+      ],
+      "sha256": "2a98c08b07b9136175a16431d0d2f92d1df08585772439b00b8b6e746c4e4f82"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwdw_2/frame-15.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingLvl3",
+      "animation": "NH_ACADEMY_TBTWDW_2",
+      "handoffRecordSha256": "2ab57b414e532f98acad9e6309c32f763cb74b7329cb8758914507fb46441f4c",
+      "handoffFrames": [
+        "frame_15.png"
+      ],
+      "dimensions": [
+        108,
+        127
+      ],
+      "alphaBoundingBox": [
+        1,
+        0,
+        107,
+        127
+      ],
+      "sha256": "13d888386b45716944f656d70e373b904b77c71546e6962fbd01a45c306f8bfb"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwdw_2/frame-16.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingLvl3",
+      "animation": "NH_ACADEMY_TBTWDW_2",
+      "handoffRecordSha256": "2ab57b414e532f98acad9e6309c32f763cb74b7329cb8758914507fb46441f4c",
+      "handoffFrames": [
+        "frame_16.png"
+      ],
+      "dimensions": [
+        108,
+        127
+      ],
+      "alphaBoundingBox": [
+        1,
+        0,
+        107,
+        127
+      ],
+      "sha256": "0bd7444461a5c2d7a83c49652d0e5d71da8bc3547eb0db7ab8b3c4bd2bb1a5ec"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwdw_2/frame-17.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingLvl3",
+      "animation": "NH_ACADEMY_TBTWDW_2",
+      "handoffRecordSha256": "2ab57b414e532f98acad9e6309c32f763cb74b7329cb8758914507fb46441f4c",
+      "handoffFrames": [
+        "frame_17.png"
+      ],
+      "dimensions": [
+        108,
+        127
+      ],
+      "alphaBoundingBox": [
+        1,
+        0,
+        107,
+        127
+      ],
+      "sha256": "b7028741da97c0d78242ccaaa2a915f0b876291b63c3610921fb78c46af6f462"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwdw_2/frame-18.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingLvl3",
+      "animation": "NH_ACADEMY_TBTWDW_2",
+      "handoffRecordSha256": "2ab57b414e532f98acad9e6309c32f763cb74b7329cb8758914507fb46441f4c",
+      "handoffFrames": [
+        "frame_18.png"
+      ],
+      "dimensions": [
+        108,
+        127
+      ],
+      "alphaBoundingBox": [
+        1,
+        0,
+        107,
+        127
+      ],
+      "sha256": "a98fcd82f466d87e1c44451d6484abe54c57afeb3595c986ae7648ef0ad2a2b4"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwdw_2/frame-19.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingLvl3",
+      "animation": "NH_ACADEMY_TBTWDW_2",
+      "handoffRecordSha256": "2ab57b414e532f98acad9e6309c32f763cb74b7329cb8758914507fb46441f4c",
+      "handoffFrames": [
+        "frame_19.png"
+      ],
+      "dimensions": [
+        108,
+        127
+      ],
+      "alphaBoundingBox": [
+        1,
+        0,
+        107,
+        127
+      ],
+      "sha256": "a763b3546aedcc917e3af1616c5e1b095761138424e2d67a2d92be2249ceb269"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwholy/frame-00.png",
+      "role": "academy-town-animation-frame",
+      "structure": "grail",
+      "animation": "NH_ACADEMY_TBTWHOLY",
+      "handoffRecordSha256": "1f4e0d2e31b841088e42c68b302b57d592ea7d082437f18fc63c3b23b63255fc",
+      "handoffFrames": [
+        "frame_00.png",
+        "frame_01.png",
+        "frame_18.png",
+        "frame_19.png"
+      ],
+      "dimensions": [
+        90,
+        218
+      ],
+      "alphaBoundingBox": [
+        6,
+        2,
+        83,
+        218
+      ],
+      "sha256": "41aa7e79b7f6e87bd0fe4a5d5ed0bb7dc65308fed8b53878620c45ae817f87e9"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwholy/frame-02.png",
+      "role": "academy-town-animation-frame",
+      "structure": "grail",
+      "animation": "NH_ACADEMY_TBTWHOLY",
+      "handoffRecordSha256": "1f4e0d2e31b841088e42c68b302b57d592ea7d082437f18fc63c3b23b63255fc",
+      "handoffFrames": [
+        "frame_02.png",
+        "frame_17.png"
+      ],
+      "dimensions": [
+        90,
+        218
+      ],
+      "alphaBoundingBox": [
+        4,
+        1,
+        86,
+        218
+      ],
+      "sha256": "ef2b781dadac0d44c46dd4ef35483f1a192579e028e47c69dc0e951bd9586a08"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwholy/frame-03.png",
+      "role": "academy-town-animation-frame",
+      "structure": "grail",
+      "animation": "NH_ACADEMY_TBTWHOLY",
+      "handoffRecordSha256": "1f4e0d2e31b841088e42c68b302b57d592ea7d082437f18fc63c3b23b63255fc",
+      "handoffFrames": [
+        "frame_03.png",
+        "frame_16.png"
+      ],
+      "dimensions": [
+        90,
+        218
+      ],
+      "alphaBoundingBox": [
+        4,
+        0,
+        86,
+        218
+      ],
+      "sha256": "f99d34c9ea379185c84b2b7767272288af4d7283bfc888f09c914e7732a4d26b"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwholy/frame-04.png",
+      "role": "academy-town-animation-frame",
+      "structure": "grail",
+      "animation": "NH_ACADEMY_TBTWHOLY",
+      "handoffRecordSha256": "1f4e0d2e31b841088e42c68b302b57d592ea7d082437f18fc63c3b23b63255fc",
+      "handoffFrames": [
+        "frame_04.png",
+        "frame_14.png"
+      ],
+      "dimensions": [
+        90,
+        218
+      ],
+      "alphaBoundingBox": [
+        5,
+        0,
+        87,
+        218
+      ],
+      "sha256": "e27bddc584d887b140d91e49ab289cfb1c5b34f9f0f73a117f5f920e6b26a0e5"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwholy/frame-05.png",
+      "role": "academy-town-animation-frame",
+      "structure": "grail",
+      "animation": "NH_ACADEMY_TBTWHOLY",
+      "handoffRecordSha256": "1f4e0d2e31b841088e42c68b302b57d592ea7d082437f18fc63c3b23b63255fc",
+      "handoffFrames": [
+        "frame_05.png"
+      ],
+      "dimensions": [
+        90,
+        218
+      ],
+      "alphaBoundingBox": [
+        5,
+        1,
+        87,
+        218
+      ],
+      "sha256": "4b17bef00a1f01924f0478ebe45fc247b994b8904ada1e48dcaf4722f0554a2b"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwholy/frame-06.png",
+      "role": "academy-town-animation-frame",
+      "structure": "grail",
+      "animation": "NH_ACADEMY_TBTWHOLY",
+      "handoffRecordSha256": "1f4e0d2e31b841088e42c68b302b57d592ea7d082437f18fc63c3b23b63255fc",
+      "handoffFrames": [
+        "frame_06.png",
+        "frame_12.png"
+      ],
+      "dimensions": [
+        90,
+        218
+      ],
+      "alphaBoundingBox": [
+        7,
+        0,
+        87,
+        218
+      ],
+      "sha256": "f546891be67b075196b53a85ab49745767fe00e638ebc0c1c28120a3bb45d52b"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwholy/frame-07.png",
+      "role": "academy-town-animation-frame",
+      "structure": "grail",
+      "animation": "NH_ACADEMY_TBTWHOLY",
+      "handoffRecordSha256": "1f4e0d2e31b841088e42c68b302b57d592ea7d082437f18fc63c3b23b63255fc",
+      "handoffFrames": [
+        "frame_07.png",
+        "frame_11.png"
+      ],
+      "dimensions": [
+        90,
+        218
+      ],
+      "alphaBoundingBox": [
+        7,
+        0,
+        88,
+        218
+      ],
+      "sha256": "9845a07cd7a1cbb2d5017ff43fefb6d61de4c51d68c200a516e735842909b80d"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwholy/frame-08.png",
+      "role": "academy-town-animation-frame",
+      "structure": "grail",
+      "animation": "NH_ACADEMY_TBTWHOLY",
+      "handoffRecordSha256": "1f4e0d2e31b841088e42c68b302b57d592ea7d082437f18fc63c3b23b63255fc",
+      "handoffFrames": [
+        "frame_08.png",
+        "frame_09.png",
+        "frame_10.png"
+      ],
+      "dimensions": [
+        90,
+        218
+      ],
+      "alphaBoundingBox": [
+        7,
+        1,
+        88,
+        218
+      ],
+      "sha256": "36de3b795d7dcf8b6fcd21f854b5ef12bd71a580b58c0288ff013433911366d3"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwholy/frame-13.png",
+      "role": "academy-town-animation-frame",
+      "structure": "grail",
+      "animation": "NH_ACADEMY_TBTWHOLY",
+      "handoffRecordSha256": "1f4e0d2e31b841088e42c68b302b57d592ea7d082437f18fc63c3b23b63255fc",
+      "handoffFrames": [
+        "frame_13.png"
+      ],
+      "dimensions": [
+        90,
+        218
+      ],
+      "alphaBoundingBox": [
+        5,
+        0,
+        87,
+        218
+      ],
+      "sha256": "695a0c61aecf46dba5fbac62fdb48f9bd42aba84911c79bdc9a1600ac3987d8f"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwholy/frame-15.png",
+      "role": "academy-town-animation-frame",
+      "structure": "grail",
+      "animation": "NH_ACADEMY_TBTWHOLY",
+      "handoffRecordSha256": "1f4e0d2e31b841088e42c68b302b57d592ea7d082437f18fc63c3b23b63255fc",
+      "handoffFrames": [
+        "frame_15.png"
+      ],
+      "dimensions": [
+        90,
+        218
+      ],
+      "alphaBoundingBox": [
+        4,
+        0,
+        86,
+        218
+      ],
+      "sha256": "c44cbcdd53b42099f53a29a367d5e6bce5965a16102cd948f7ad9e1ebe357e05"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwup_0/frame-00.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingUpLvl1",
+      "animation": "NH_ACADEMY_TBTWUP_0",
+      "handoffRecordSha256": "b6df00d802a650e1b7ccea7de98299ebf7cdd787ba7e86296b73c7984f153831",
+      "handoffFrames": [
+        "frame_00.png"
+      ],
+      "dimensions": [
+        64,
+        71
+      ],
+      "alphaBoundingBox": [
+        0,
+        24,
+        64,
+        71
+      ],
+      "sha256": "d46160ae34d55d457c4762629c846fee628bd836d4427544f177f495592d8346"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwup_0/frame-01.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingUpLvl1",
+      "animation": "NH_ACADEMY_TBTWUP_0",
+      "handoffRecordSha256": "b6df00d802a650e1b7ccea7de98299ebf7cdd787ba7e86296b73c7984f153831",
+      "handoffFrames": [
+        "frame_01.png"
+      ],
+      "dimensions": [
+        64,
+        71
+      ],
+      "alphaBoundingBox": [
+        0,
+        24,
+        64,
+        71
+      ],
+      "sha256": "bd3e678b6b6f8e412f66e2610497ef2f2f2ae73063d1adbead418070c0adf871"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwup_0/frame-02.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingUpLvl1",
+      "animation": "NH_ACADEMY_TBTWUP_0",
+      "handoffRecordSha256": "b6df00d802a650e1b7ccea7de98299ebf7cdd787ba7e86296b73c7984f153831",
+      "handoffFrames": [
+        "frame_02.png"
+      ],
+      "dimensions": [
+        64,
+        71
+      ],
+      "alphaBoundingBox": [
+        0,
+        24,
+        64,
+        71
+      ],
+      "sha256": "5338e18e9667438bb6ca139ceb9a099dff9a7ac40e6fe0b6dea5a0610285ed7a"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwup_0/frame-03.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingUpLvl1",
+      "animation": "NH_ACADEMY_TBTWUP_0",
+      "handoffRecordSha256": "b6df00d802a650e1b7ccea7de98299ebf7cdd787ba7e86296b73c7984f153831",
+      "handoffFrames": [
+        "frame_03.png"
+      ],
+      "dimensions": [
+        64,
+        71
+      ],
+      "alphaBoundingBox": [
+        0,
+        24,
+        64,
+        71
+      ],
+      "sha256": "24ee93a6dbbf39be8f6841edbfd8e349509dffecee95aa12a48b6a9193e4223a"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwup_0/frame-04.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingUpLvl1",
+      "animation": "NH_ACADEMY_TBTWUP_0",
+      "handoffRecordSha256": "b6df00d802a650e1b7ccea7de98299ebf7cdd787ba7e86296b73c7984f153831",
+      "handoffFrames": [
+        "frame_04.png"
+      ],
+      "dimensions": [
+        64,
+        71
+      ],
+      "alphaBoundingBox": [
+        0,
+        24,
+        64,
+        71
+      ],
+      "sha256": "478061006b8ba72df01e8d42449a497375f8a4c33d7561e6ebcdb73f47648bb2"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwup_0/frame-05.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingUpLvl1",
+      "animation": "NH_ACADEMY_TBTWUP_0",
+      "handoffRecordSha256": "b6df00d802a650e1b7ccea7de98299ebf7cdd787ba7e86296b73c7984f153831",
+      "handoffFrames": [
+        "frame_05.png"
+      ],
+      "dimensions": [
+        64,
+        71
+      ],
+      "alphaBoundingBox": [
+        0,
+        24,
+        64,
+        71
+      ],
+      "sha256": "27b847fb997214fd74311ee280ae5d51c1ce031645af404b5afb247dc6e1717d"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwup_0/frame-06.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingUpLvl1",
+      "animation": "NH_ACADEMY_TBTWUP_0",
+      "handoffRecordSha256": "b6df00d802a650e1b7ccea7de98299ebf7cdd787ba7e86296b73c7984f153831",
+      "handoffFrames": [
+        "frame_06.png"
+      ],
+      "dimensions": [
+        64,
+        71
+      ],
+      "alphaBoundingBox": [
+        0,
+        24,
+        64,
+        71
+      ],
+      "sha256": "c408cb3abcc5fbf63a9146c3014606cb6ddb1f134cc4e402674e6ef91bd03346"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwup_0/frame-07.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingUpLvl1",
+      "animation": "NH_ACADEMY_TBTWUP_0",
+      "handoffRecordSha256": "b6df00d802a650e1b7ccea7de98299ebf7cdd787ba7e86296b73c7984f153831",
+      "handoffFrames": [
+        "frame_07.png"
+      ],
+      "dimensions": [
+        64,
+        71
+      ],
+      "alphaBoundingBox": [
+        0,
+        24,
+        64,
+        71
+      ],
+      "sha256": "9544ba40b56e84024f89d30277a128e99a84eb699f8fdbb728ce8cbb6bc1a588"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwup_0/frame-08.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingUpLvl1",
+      "animation": "NH_ACADEMY_TBTWUP_0",
+      "handoffRecordSha256": "b6df00d802a650e1b7ccea7de98299ebf7cdd787ba7e86296b73c7984f153831",
+      "handoffFrames": [
+        "frame_08.png"
+      ],
+      "dimensions": [
+        64,
+        71
+      ],
+      "alphaBoundingBox": [
+        0,
+        24,
+        64,
+        71
+      ],
+      "sha256": "b86d0a900dd9e7793ee2f8b8b6b06fab646ec22c2b065bb52691c7e28e16151e"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwup_0/frame-09.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingUpLvl1",
+      "animation": "NH_ACADEMY_TBTWUP_0",
+      "handoffRecordSha256": "b6df00d802a650e1b7ccea7de98299ebf7cdd787ba7e86296b73c7984f153831",
+      "handoffFrames": [
+        "frame_09.png"
+      ],
+      "dimensions": [
+        64,
+        71
+      ],
+      "alphaBoundingBox": [
+        0,
+        24,
+        64,
+        71
+      ],
+      "sha256": "d8634c5202a92a4addb775194998ba88fad81c0841c65b97275a0e23ac298274"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwup_0/frame-10.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingUpLvl1",
+      "animation": "NH_ACADEMY_TBTWUP_0",
+      "handoffRecordSha256": "b6df00d802a650e1b7ccea7de98299ebf7cdd787ba7e86296b73c7984f153831",
+      "handoffFrames": [
+        "frame_10.png"
+      ],
+      "dimensions": [
+        64,
+        71
+      ],
+      "alphaBoundingBox": [
+        0,
+        24,
+        64,
+        71
+      ],
+      "sha256": "5799e5557b524be745947917ab69944274b71a22241f278080a1549346f73ad8"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwup_0/frame-11.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingUpLvl1",
+      "animation": "NH_ACADEMY_TBTWUP_0",
+      "handoffRecordSha256": "b6df00d802a650e1b7ccea7de98299ebf7cdd787ba7e86296b73c7984f153831",
+      "handoffFrames": [
+        "frame_11.png"
+      ],
+      "dimensions": [
+        64,
+        71
+      ],
+      "alphaBoundingBox": [
+        0,
+        24,
+        64,
+        71
+      ],
+      "sha256": "c9ed35c4c3de145950e6e63e9cf8c297e6df1af3008d2f01390a58eeee11bccb"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwup_0/frame-12.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingUpLvl1",
+      "animation": "NH_ACADEMY_TBTWUP_0",
+      "handoffRecordSha256": "b6df00d802a650e1b7ccea7de98299ebf7cdd787ba7e86296b73c7984f153831",
+      "handoffFrames": [
+        "frame_12.png"
+      ],
+      "dimensions": [
+        64,
+        71
+      ],
+      "alphaBoundingBox": [
+        0,
+        24,
+        64,
+        71
+      ],
+      "sha256": "f891431f243804ea8c109d9fc76770e0e61404bae287e787ca4a30f9cbf9fb49"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwup_0/frame-13.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingUpLvl1",
+      "animation": "NH_ACADEMY_TBTWUP_0",
+      "handoffRecordSha256": "b6df00d802a650e1b7ccea7de98299ebf7cdd787ba7e86296b73c7984f153831",
+      "handoffFrames": [
+        "frame_13.png"
+      ],
+      "dimensions": [
+        64,
+        71
+      ],
+      "alphaBoundingBox": [
+        0,
+        24,
+        64,
+        71
+      ],
+      "sha256": "cfe714614b2dee9ead9fe1c753b3a5f3a511c191dccc4de43211eda0d4e8cb52"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwup_0/frame-14.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingUpLvl1",
+      "animation": "NH_ACADEMY_TBTWUP_0",
+      "handoffRecordSha256": "b6df00d802a650e1b7ccea7de98299ebf7cdd787ba7e86296b73c7984f153831",
+      "handoffFrames": [
+        "frame_14.png"
+      ],
+      "dimensions": [
+        64,
+        71
+      ],
+      "alphaBoundingBox": [
+        0,
+        24,
+        64,
+        71
+      ],
+      "sha256": "a2506fc21e338c7960468233408d281454479c13aa8597e10a70e0e2560f43bb"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwup_0/frame-15.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingUpLvl1",
+      "animation": "NH_ACADEMY_TBTWUP_0",
+      "handoffRecordSha256": "b6df00d802a650e1b7ccea7de98299ebf7cdd787ba7e86296b73c7984f153831",
+      "handoffFrames": [
+        "frame_15.png"
+      ],
+      "dimensions": [
+        64,
+        71
+      ],
+      "alphaBoundingBox": [
+        0,
+        24,
+        64,
+        71
+      ],
+      "sha256": "2b2cec6632e561fd87cbf966eaf52a794b79626085f10c431fd4eef56b5cfcb9"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwup_0/frame-16.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingUpLvl1",
+      "animation": "NH_ACADEMY_TBTWUP_0",
+      "handoffRecordSha256": "b6df00d802a650e1b7ccea7de98299ebf7cdd787ba7e86296b73c7984f153831",
+      "handoffFrames": [
+        "frame_16.png"
+      ],
+      "dimensions": [
+        64,
+        71
+      ],
+      "alphaBoundingBox": [
+        0,
+        24,
+        64,
+        71
+      ],
+      "sha256": "468c24e373f81067a27ba0ebcd031419e44055936baf80d5cedf66e44aabfe44"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwup_0/frame-17.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingUpLvl1",
+      "animation": "NH_ACADEMY_TBTWUP_0",
+      "handoffRecordSha256": "b6df00d802a650e1b7ccea7de98299ebf7cdd787ba7e86296b73c7984f153831",
+      "handoffFrames": [
+        "frame_17.png"
+      ],
+      "dimensions": [
+        64,
+        71
+      ],
+      "alphaBoundingBox": [
+        0,
+        24,
+        64,
+        71
+      ],
+      "sha256": "e1d3c1ec4f4788122f5d4c20052fd9ea75c11fea13c56fc916fc4a72d5b0655d"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwup_0/frame-18.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingUpLvl1",
+      "animation": "NH_ACADEMY_TBTWUP_0",
+      "handoffRecordSha256": "b6df00d802a650e1b7ccea7de98299ebf7cdd787ba7e86296b73c7984f153831",
+      "handoffFrames": [
+        "frame_18.png"
+      ],
+      "dimensions": [
+        64,
+        71
+      ],
+      "alphaBoundingBox": [
+        0,
+        24,
+        64,
+        71
+      ],
+      "sha256": "81953ee2088a7764e32534b4bf0ebec127cabe3defd2ab6942c73116eed95622"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwup_0/frame-19.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingUpLvl1",
+      "animation": "NH_ACADEMY_TBTWUP_0",
+      "handoffRecordSha256": "b6df00d802a650e1b7ccea7de98299ebf7cdd787ba7e86296b73c7984f153831",
+      "handoffFrames": [
+        "frame_19.png"
+      ],
+      "dimensions": [
+        64,
+        71
+      ],
+      "alphaBoundingBox": [
+        0,
+        24,
+        64,
+        71
+      ],
+      "sha256": "01e4dce652fd39330de343f3e9bcacbb1db65c7da58890208e0b6670561de789"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwup_2/frame-00.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingUpLvl3",
+      "animation": "NH_ACADEMY_TBTWUP_2",
+      "handoffRecordSha256": "f046a20ef07e7d2bde49bbeceb972d7044e3a8eedbb16ee2c44aec7778947b2b",
+      "handoffFrames": [
+        "frame_00.png"
+      ],
+      "dimensions": [
+        108,
+        127
+      ],
+      "alphaBoundingBox": [
+        1,
+        0,
+        107,
+        127
+      ],
+      "sha256": "383a21a75f47dde05d82fffef45441036169cc4e57814a72fa55d913b8bd9ec9"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwup_2/frame-01.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingUpLvl3",
+      "animation": "NH_ACADEMY_TBTWUP_2",
+      "handoffRecordSha256": "f046a20ef07e7d2bde49bbeceb972d7044e3a8eedbb16ee2c44aec7778947b2b",
+      "handoffFrames": [
+        "frame_01.png"
+      ],
+      "dimensions": [
+        108,
+        127
+      ],
+      "alphaBoundingBox": [
+        1,
+        0,
+        107,
+        127
+      ],
+      "sha256": "bacd86858a1d655baf87562209355ffb01db4ef571346e3e2eedcac2e2265811"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwup_2/frame-02.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingUpLvl3",
+      "animation": "NH_ACADEMY_TBTWUP_2",
+      "handoffRecordSha256": "f046a20ef07e7d2bde49bbeceb972d7044e3a8eedbb16ee2c44aec7778947b2b",
+      "handoffFrames": [
+        "frame_02.png"
+      ],
+      "dimensions": [
+        108,
+        127
+      ],
+      "alphaBoundingBox": [
+        1,
+        0,
+        107,
+        127
+      ],
+      "sha256": "46492a8360079f6de582cfd5b16149a14e075bf6ec583b0b1a10ab5f8eeebbcf"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwup_2/frame-03.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingUpLvl3",
+      "animation": "NH_ACADEMY_TBTWUP_2",
+      "handoffRecordSha256": "f046a20ef07e7d2bde49bbeceb972d7044e3a8eedbb16ee2c44aec7778947b2b",
+      "handoffFrames": [
+        "frame_03.png"
+      ],
+      "dimensions": [
+        108,
+        127
+      ],
+      "alphaBoundingBox": [
+        1,
+        0,
+        107,
+        127
+      ],
+      "sha256": "ef2bbf34cf2f76f14d5ba861efb90e917cc226f45fc96cd11673d909a565a5d4"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwup_2/frame-04.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingUpLvl3",
+      "animation": "NH_ACADEMY_TBTWUP_2",
+      "handoffRecordSha256": "f046a20ef07e7d2bde49bbeceb972d7044e3a8eedbb16ee2c44aec7778947b2b",
+      "handoffFrames": [
+        "frame_04.png"
+      ],
+      "dimensions": [
+        108,
+        127
+      ],
+      "alphaBoundingBox": [
+        1,
+        0,
+        107,
+        127
+      ],
+      "sha256": "59692ef08ff62904b14d263fa6e272173506cabed5e659479e37c8ca78718b26"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwup_2/frame-05.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingUpLvl3",
+      "animation": "NH_ACADEMY_TBTWUP_2",
+      "handoffRecordSha256": "f046a20ef07e7d2bde49bbeceb972d7044e3a8eedbb16ee2c44aec7778947b2b",
+      "handoffFrames": [
+        "frame_05.png"
+      ],
+      "dimensions": [
+        108,
+        127
+      ],
+      "alphaBoundingBox": [
+        1,
+        0,
+        107,
+        127
+      ],
+      "sha256": "46e4590e7c82d8bd0b3e91ed14354dce43574754e4da62e58cb56488f7a54310"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwup_2/frame-06.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingUpLvl3",
+      "animation": "NH_ACADEMY_TBTWUP_2",
+      "handoffRecordSha256": "f046a20ef07e7d2bde49bbeceb972d7044e3a8eedbb16ee2c44aec7778947b2b",
+      "handoffFrames": [
+        "frame_06.png"
+      ],
+      "dimensions": [
+        108,
+        127
+      ],
+      "alphaBoundingBox": [
+        1,
+        0,
+        107,
+        127
+      ],
+      "sha256": "d2dacb6a1646641a5bdef62c9775e79de19b0f887fd4c74c7b09f0af5f1e3413"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwup_2/frame-07.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingUpLvl3",
+      "animation": "NH_ACADEMY_TBTWUP_2",
+      "handoffRecordSha256": "f046a20ef07e7d2bde49bbeceb972d7044e3a8eedbb16ee2c44aec7778947b2b",
+      "handoffFrames": [
+        "frame_07.png"
+      ],
+      "dimensions": [
+        108,
+        127
+      ],
+      "alphaBoundingBox": [
+        1,
+        0,
+        107,
+        127
+      ],
+      "sha256": "69b8af75975c45a89dac042ffcd02bcacbabb58ec67909e664b0a49a6445d942"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwup_2/frame-08.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingUpLvl3",
+      "animation": "NH_ACADEMY_TBTWUP_2",
+      "handoffRecordSha256": "f046a20ef07e7d2bde49bbeceb972d7044e3a8eedbb16ee2c44aec7778947b2b",
+      "handoffFrames": [
+        "frame_08.png"
+      ],
+      "dimensions": [
+        108,
+        127
+      ],
+      "alphaBoundingBox": [
+        1,
+        0,
+        107,
+        127
+      ],
+      "sha256": "de19ba83ff70b2b8ef2209a9f9578273c0fa6942c301d1d768d7cf45099ee1b4"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwup_2/frame-09.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingUpLvl3",
+      "animation": "NH_ACADEMY_TBTWUP_2",
+      "handoffRecordSha256": "f046a20ef07e7d2bde49bbeceb972d7044e3a8eedbb16ee2c44aec7778947b2b",
+      "handoffFrames": [
+        "frame_09.png"
+      ],
+      "dimensions": [
+        108,
+        127
+      ],
+      "alphaBoundingBox": [
+        1,
+        0,
+        107,
+        127
+      ],
+      "sha256": "23fb62c085dcac21a9e53c3c87bcf2684b932984998f517c03be01b251382f9f"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwup_2/frame-10.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingUpLvl3",
+      "animation": "NH_ACADEMY_TBTWUP_2",
+      "handoffRecordSha256": "f046a20ef07e7d2bde49bbeceb972d7044e3a8eedbb16ee2c44aec7778947b2b",
+      "handoffFrames": [
+        "frame_10.png"
+      ],
+      "dimensions": [
+        108,
+        127
+      ],
+      "alphaBoundingBox": [
+        1,
+        0,
+        107,
+        127
+      ],
+      "sha256": "76b8d814e887004cda1eb7d820172a4b3f6e5ef449f71fc679d1a645f73f8708"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwup_2/frame-11.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingUpLvl3",
+      "animation": "NH_ACADEMY_TBTWUP_2",
+      "handoffRecordSha256": "f046a20ef07e7d2bde49bbeceb972d7044e3a8eedbb16ee2c44aec7778947b2b",
+      "handoffFrames": [
+        "frame_11.png"
+      ],
+      "dimensions": [
+        108,
+        127
+      ],
+      "alphaBoundingBox": [
+        1,
+        0,
+        107,
+        127
+      ],
+      "sha256": "358a0f830e504390447bc147acc96cc1f21da04400ab3401b8531505539d6771"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwup_2/frame-12.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingUpLvl3",
+      "animation": "NH_ACADEMY_TBTWUP_2",
+      "handoffRecordSha256": "f046a20ef07e7d2bde49bbeceb972d7044e3a8eedbb16ee2c44aec7778947b2b",
+      "handoffFrames": [
+        "frame_12.png"
+      ],
+      "dimensions": [
+        108,
+        127
+      ],
+      "alphaBoundingBox": [
+        1,
+        0,
+        107,
+        127
+      ],
+      "sha256": "90ef40138cc437192596deb243cb55b097bb7885001c7e895c845ce24cba3fc1"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwup_2/frame-13.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingUpLvl3",
+      "animation": "NH_ACADEMY_TBTWUP_2",
+      "handoffRecordSha256": "f046a20ef07e7d2bde49bbeceb972d7044e3a8eedbb16ee2c44aec7778947b2b",
+      "handoffFrames": [
+        "frame_13.png"
+      ],
+      "dimensions": [
+        108,
+        127
+      ],
+      "alphaBoundingBox": [
+        1,
+        0,
+        107,
+        127
+      ],
+      "sha256": "1d214b2b4bad7f0e6b2fe3acfdbe8742dc5a61b7c2798aa0b99f3bf9bedef3cb"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwup_2/frame-14.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingUpLvl3",
+      "animation": "NH_ACADEMY_TBTWUP_2",
+      "handoffRecordSha256": "f046a20ef07e7d2bde49bbeceb972d7044e3a8eedbb16ee2c44aec7778947b2b",
+      "handoffFrames": [
+        "frame_14.png"
+      ],
+      "dimensions": [
+        108,
+        127
+      ],
+      "alphaBoundingBox": [
+        1,
+        0,
+        107,
+        127
+      ],
+      "sha256": "c52b6127df745cb9c88f806ba6efbaefe0d78201be0a45ec4a97e47c44553101"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwup_2/frame-15.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingUpLvl3",
+      "animation": "NH_ACADEMY_TBTWUP_2",
+      "handoffRecordSha256": "f046a20ef07e7d2bde49bbeceb972d7044e3a8eedbb16ee2c44aec7778947b2b",
+      "handoffFrames": [
+        "frame_15.png"
+      ],
+      "dimensions": [
+        108,
+        127
+      ],
+      "alphaBoundingBox": [
+        1,
+        0,
+        107,
+        127
+      ],
+      "sha256": "da9e907643f173e2d0e679d17a004d9fae2a72cd222b6efbfa66e1c777d06b3d"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwup_2/frame-16.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingUpLvl3",
+      "animation": "NH_ACADEMY_TBTWUP_2",
+      "handoffRecordSha256": "f046a20ef07e7d2bde49bbeceb972d7044e3a8eedbb16ee2c44aec7778947b2b",
+      "handoffFrames": [
+        "frame_16.png"
+      ],
+      "dimensions": [
+        108,
+        127
+      ],
+      "alphaBoundingBox": [
+        1,
+        0,
+        107,
+        127
+      ],
+      "sha256": "e0346566180aba6b62f5742b3486313dd60bd9ddbcd2275f9d5622bda7e1bba8"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwup_2/frame-17.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingUpLvl3",
+      "animation": "NH_ACADEMY_TBTWUP_2",
+      "handoffRecordSha256": "f046a20ef07e7d2bde49bbeceb972d7044e3a8eedbb16ee2c44aec7778947b2b",
+      "handoffFrames": [
+        "frame_17.png"
+      ],
+      "dimensions": [
+        108,
+        127
+      ],
+      "alphaBoundingBox": [
+        1,
+        0,
+        107,
+        127
+      ],
+      "sha256": "b0117bf5b1a54d69caa396e7587e1314f5350203b8a8d2a5c0ab523b86f676eb"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwup_2/frame-18.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingUpLvl3",
+      "animation": "NH_ACADEMY_TBTWUP_2",
+      "handoffRecordSha256": "f046a20ef07e7d2bde49bbeceb972d7044e3a8eedbb16ee2c44aec7778947b2b",
+      "handoffFrames": [
+        "frame_18.png"
+      ],
+      "dimensions": [
+        108,
+        127
+      ],
+      "alphaBoundingBox": [
+        1,
+        0,
+        107,
+        127
+      ],
+      "sha256": "829eeb980b984b5b77acd97d142930ebc4f28a13adb432bfe43edf73606e89af"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/animation/tbtwup_2/frame-19.png",
+      "role": "academy-town-animation-frame",
+      "structure": "dwellingUpLvl3",
+      "animation": "NH_ACADEMY_TBTWUP_2",
+      "handoffRecordSha256": "f046a20ef07e7d2bde49bbeceb972d7044e3a8eedbb16ee2c44aec7778947b2b",
+      "handoffFrames": [
+        "frame_19.png"
+      ],
+      "dimensions": [
+        108,
+        127
+      ],
+      "alphaBoundingBox": [
+        1,
+        0,
+        107,
+        127
+      ],
+      "sha256": "621742b440195d4ff6fc09dda18289913c3cd4e1fdebb67af41ddb845ed9b7e4"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/buildings/tbtwblak.png",
+      "role": "academy-town-animation-static-rest-pose",
+      "structure": "blacksmith",
+      "animation": "NH_ACADEMY_TBTWBLAK",
+      "handoffRecordSha256": "66bf2a874dd2db1e6131d9c86052301de2a2cf9750ca986b79ac681d2eb42963",
+      "handoffFile": "frame_05.png",
+      "dimensions": [
+        140,
+        146
+      ],
+      "alphaBoundingBox": [
+        3,
+        8,
+        134,
+        142
+      ],
+      "previousSha256": "b0a3ac4a78f23b5e28d78095f88d31dae2d8282309852a999a08b86d2015a5cf",
+      "sha256": "6e9342612881732b2f7e7db680d5ad273ec8f76e3e06447d8f02d47b5cbbf21c"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/buildings/tbtwdw_2.png",
+      "role": "academy-town-animation-static-rest-pose",
+      "structure": "dwellingLvl3",
+      "animation": "NH_ACADEMY_TBTWDW_2",
+      "handoffRecordSha256": "2ab57b414e532f98acad9e6309c32f763cb74b7329cb8758914507fb46441f4c",
+      "handoffFile": "static_rest_pose.png",
+      "dimensions": [
+        108,
+        127
+      ],
+      "alphaBoundingBox": [
+        1,
+        0,
+        107,
+        127
+      ],
+      "previousSha256": "ca9b229535c4e056dc25683a9a21a2ce52d88a07aa6c049711eea9d9256d5f10",
+      "sha256": "8b8a14c54ca2d8bdf22eba7c9bdc7ec5c35d2e68e868e34343ca41ef848ba493"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/buildings/tbtwup_2.png",
+      "role": "academy-town-animation-static-rest-pose",
+      "structure": "dwellingUpLvl3",
+      "animation": "NH_ACADEMY_TBTWUP_2",
+      "handoffRecordSha256": "f046a20ef07e7d2bde49bbeceb972d7044e3a8eedbb16ee2c44aec7778947b2b",
+      "handoffFile": "static_rest_pose.png",
+      "dimensions": [
+        108,
+        127
+      ],
+      "alphaBoundingBox": [
+        1,
+        0,
+        107,
+        127
+      ],
+      "previousSha256": "2b0b8e79430a00161e3c29d783e55e5245d634ccf3c15f3ecc7305fd6e8d3043",
+      "sha256": "171160d90bc40bf33e119f3bec195345b0f7dd5a02fccec4be4bb3b7c2704175"
+    }
+  ]
+}

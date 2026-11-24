@@ -28,6 +28,7 @@ from .nhart_creature_ability_art import validate_ability_art
 from .nhart_interface_status_art import validate_interface_status_art
 from .nhart_status_icon_repaint import validate_repaint
 from .nhart_flat_interface_repaint import validate_flat_repaint
+from .nhart_academy_town_animation import validate_town_animation
 from .nhart_retired_interface_icons import validate_retirement
 from .nhart_retired_custom_buttons import validate_custom_button_retirement
 from .nhart_released_history import (authority_before_leadership_rework,
@@ -362,7 +363,7 @@ class ArtAdditionsTest(unittest.TestCase):
         historical = dict(re.findall(r'\{"(new-horizons:[^"]+)", "([^"]+)"\}',
                                      header_before_faction_rebindings(header_before_reworked_perks(self.header))))
         for wave in self.waves:
-            declared = {name for row in wave['perks'] + wave['statuses'] + wave.get('spells', []) + wave.get('specialties', []) + wave.get('creatures', []) + wave.get('perkPresentations', []) + wave.get('artRoles', []) + wave.get('heroInterfaceButtons', []) + wave.get('orderEntryButtons', []) + wave.get('nativeEffectAliases', []) + wave.get('suppliedAuthority', []) + wave.get('forceLanceEffects', []) + wave.get('skillRankArtwork', []) + wave.get('releaseArtwork', []) + wave.get('creatureBackdrops', []) + wave.get('abilityIcons', []) + wave.get('creatureAbilityArtwork', []) + wave.get('interfaceStatusArtwork', []) + ([wave['waterIceRestoration']] if 'waterIceRestoration' in wave else []) for name in row['resources']}
+            declared = {name for row in wave['perks'] + wave['statuses'] + wave.get('spells', []) + wave.get('specialties', []) + wave.get('creatures', []) + wave.get('perkPresentations', []) + wave.get('artRoles', []) + wave.get('heroInterfaceButtons', []) + wave.get('orderEntryButtons', []) + wave.get('nativeEffectAliases', []) + wave.get('suppliedAuthority', []) + wave.get('forceLanceEffects', []) + wave.get('skillRankArtwork', []) + wave.get('releaseArtwork', []) + wave.get('creatureBackdrops', []) + wave.get('abilityIcons', []) + wave.get('creatureAbilityArtwork', []) + wave.get('interfaceStatusArtwork', []) + wave.get('academyTownAnimation', []) + ([wave['waterIceRestoration']] if 'waterIceRestoration' in wave else []) for name in row['resources']}
             alliance = [row for row in wave.get('perkPresentations', []) if row.get('schemaVersion') == 3]
             if alliance:
                 validate_alliance_resource_reuse(wave, declared, self.manifest['entries'],
@@ -519,6 +520,9 @@ class ArtAdditionsTest(unittest.TestCase):
                 continue
             if 'flatInterfaceRepaint' in wave:
                 validate_flat_repaint(wave, self.manifest['entries'], read_resource)
+                continue
+            if 'academyTownAnimation' in wave:
+                validate_town_animation(wave, self.manifest['entries'], read_resource)
                 continue
             if 'statusIconRepaint' in wave:
                 validate_repaint(wave, self.manifest['entries'], read_resource)
