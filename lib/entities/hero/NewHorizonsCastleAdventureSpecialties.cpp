@@ -5,6 +5,7 @@
 #include "StdInc.h"
 #include "NewHorizonsCastleAdventureSpecialties.h"
 #include "NewHorizonsHeroRules.h"
+#include "NewHorizonsLevelScaledRows.h"
 #include "NewHorizonsRuleValidation.h"
 #include "NewHorizonsSpecialtyArtwork.h"
 #include "CHero.h"
@@ -39,19 +40,6 @@ int heroLevel(const CGHeroInstance & hero)
 	return static_cast<int>(hero.level);
 }
 
-LevelScaledValue scaled(const JsonNode & row, const char * base, const char * perLevel, const char * maximum)
-{
-	return {static_cast<int>(row[base].Integer()), static_cast<int>(row[perLevel].Integer()),
-		static_cast<int>(row[maximum].Integer())};
-}
-
-void requireScaled(const JsonNode & row, const char * base, const char * perLevel, const char * maximum,
-	int limit, const std::string & name)
-{
-	detail::require(detail::integer(row[base], 1, limit) && detail::integer(row[perLevel], 0, limit)
-		&& detail::integer(row[maximum], 1, limit) && row[maximum].Integer() >= row[base].Integer(), name);
-}
-
 /// "5.5%" for 55 permille, "5%" for 50.
 std::string permilleText(int permille)
 {
@@ -78,21 +66,21 @@ void validateCastleAdventureSpecialties(const JsonNode & revisedRow)
 	{
 		const auto & row = revisedRow["forcedMarch"];
 		detail::fields(row, {"movementPercent", "movementPercentPerLevel", "maximumMovementPercent", "moralePenalty"});
-		requireScaled(row, "movementPercent", "movementPercentPerLevel", "maximumMovementPercent", 500, "Forced March Movement");
+		detail::requireScaledRow(row, "movementPercent", "movementPercentPerLevel", "maximumMovementPercent", 500, "Forced March Movement");
 		detail::require(detail::integer(row["moralePenalty"], 0, 3), "Forced March Morale penalty");
 	}
 	if(revisedRow.Struct().contains("wellConnected"))
 	{
 		const auto & row = revisedRow["wellConnected"];
 		detail::fields(row, {"discountPermille", "discountPermillePerLevel", "maximumDiscountPermille", "combinedDiscountCapPercent"});
-		requireScaled(row, "discountPermille", "discountPermillePerLevel", "maximumDiscountPermille", 1000, "Well Connected discount");
+		detail::requireScaledRow(row, "discountPermille", "discountPermillePerLevel", "maximumDiscountPermille", 1000, "Well Connected discount");
 		detail::require(detail::integer(row["combinedDiscountCapPercent"], 1, 100), "Well Connected combined cap");
 	}
 	if(revisedRow.Struct().contains("almsOfTheFaithful"))
 	{
 		const auto & row = revisedRow["almsOfTheFaithful"];
 		detail::fields(row, {"donationPercent", "donationPercentPerLevel", "maximumDonationPercent"});
-		requireScaled(row, "donationPercent", "donationPercentPerLevel", "maximumDonationPercent", 100, "Alms of the Faithful donation");
+		detail::requireScaledRow(row, "donationPercent", "donationPercentPerLevel", "maximumDonationPercent", 100, "Alms of the Faithful donation");
 	}
 }
 
@@ -108,17 +96,17 @@ std::optional<CastleAdventureSpecialties> castleAdventureSpecialties(const JsonN
 	if(revised.Struct().contains("forcedMarch"))
 	{
 		const auto & row = revised["forcedMarch"];
-		result.forcedMarchMovementPercent = scaled(row, "movementPercent", "movementPercentPerLevel", "maximumMovementPercent");
+		result.forcedMarchMovementPercent = detail::scaledRow(row, "movementPercent", "movementPercentPerLevel", "maximumMovementPercent");
 		result.forcedMarchMoralePenalty = static_cast<int>(row["moralePenalty"].Integer());
 	}
 	if(revised.Struct().contains("wellConnected"))
 	{
 		const auto & row = revised["wellConnected"];
-		result.wellConnectedDiscountPermille = scaled(row, "discountPermille", "discountPermillePerLevel", "maximumDiscountPermille");
+		result.wellConnectedDiscountPermille = detail::scaledRow(row, "discountPermille", "discountPermillePerLevel", "maximumDiscountPermille");
 		result.wellConnectedCombinedCapPercent = static_cast<int>(row["combinedDiscountCapPercent"].Integer());
 	}
 	if(revised.Struct().contains("almsOfTheFaithful"))
-		result.almsDonationPercent = scaled(revised["almsOfTheFaithful"], "donationPercent", "donationPercentPerLevel",
+		result.almsDonationPercent = detail::scaledRow(revised["almsOfTheFaithful"], "donationPercent", "donationPercentPerLevel",
 			"maximumDonationPercent");
 	if(!result.forcedMarchMovementPercent && !result.wellConnectedDiscountPermille && !result.almsDonationPercent)
 		return std::nullopt;

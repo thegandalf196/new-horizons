@@ -5,6 +5,7 @@
 #include "StdInc.h"
 #include "NewHorizonsRampartSpecialties.h"
 #include "NewHorizonsHeroRules.h"
+#include "NewHorizonsLevelScaledRows.h"
 #include "NewHorizonsRuleValidation.h"
 #include "CHero.h"
 #include "../../CCreatureHandler.h"
@@ -57,19 +58,6 @@ int integer(const JsonNode & row, const char * key)
 	return static_cast<int>(row[key].Integer());
 }
 
-/// A scaled row: base and maximum in [1, limit], per-level growth in [0, limit], maximum >= base.
-void requireScaled(const JsonNode & row, const char * base, const char * perLevel, const char * maximum,
-	int limit, const std::string & name)
-{
-	detail::require(detail::integer(row[base], 1, limit) && detail::integer(row[perLevel], 0, limit)
-		&& detail::integer(row[maximum], 1, limit) && row[maximum].Integer() >= row[base].Integer(), name);
-}
-
-LevelScaledValue scaled(const JsonNode & row, const char * base, const char * perLevel, const char * maximum)
-{
-	return {integer(row, base), integer(row, perLevel), integer(row, maximum)};
-}
-
 const JsonNode * child(const JsonNode & row, const char * key)
 {
 	return row.Struct().contains(key) ? &row[key] : nullptr;
@@ -80,37 +68,37 @@ void validateCombatRows(const JsonNode & row)
 	if(const auto * ground = child(row, "useTheGround"))
 	{
 		detail::fields(*ground, {"reductionPermille", "reductionPermillePerLevel", "maximumReductionPermille"});
-		requireScaled(*ground, "reductionPermille", "reductionPermillePerLevel", "maximumReductionPermille", 750,
+		detail::requireScaledRow(*ground, "reductionPermille", "reductionPermillePerLevel", "maximumReductionPermille", 750,
 			"Use the Ground reduction");
 	}
 	if(const auto * slayer = child(row, "giantSlayer"))
 	{
 		detail::fields(*slayer, {"damagePermillePerStep", "damagePermillePerStepPerLevel", "maximumDamagePermillePerStep"});
-		requireScaled(*slayer, "damagePermillePerStep", "damagePermillePerStepPerLevel", "maximumDamagePermillePerStep",
+		detail::requireScaledRow(*slayer, "damagePermillePerStep", "damagePermillePerStepPerLevel", "maximumDamagePermillePerStep",
 			1000, "Giant-Slayer damage per step");
 	}
 	if(const auto * remedy = child(row, "livingRemedy"))
 	{
 		detail::fields(*remedy, {"rounds", "healingBasisPoints", "healingBasisPointsPerLevel", "maximumHealingBasisPoints"});
 		detail::require(detail::integer((*remedy)["rounds"], 1, 5), "Living Remedy rounds");
-		requireScaled(*remedy, "healingBasisPoints", "healingBasisPointsPerLevel", "maximumHealingBasisPoints", 10000,
+		detail::requireScaledRow(*remedy, "healingBasisPoints", "healingBasisPointsPerLevel", "maximumHealingBasisPoints", 10000,
 			"Living Remedy healing");
 	}
 	if(const auto * brittle = child(row, "brittle"))
 	{
 		detail::fields(*brittle, {"damagePermille", "damagePermillePerLevel", "maximumDamagePermille"});
-		requireScaled(*brittle, "damagePermille", "damagePermillePerLevel", "maximumDamagePermille", 1000, "Brittle damage");
+		detail::requireScaledRow(*brittle, "damagePermille", "damagePermillePerLevel", "maximumDamagePermille", 1000, "Brittle damage");
 	}
 	if(const auto * mount = child(row, "perfectMount"))
 	{
 		detail::fields(*mount, {"reductionPercent", "reductionPercentPerLevel", "maximumReductionPercent"});
-		requireScaled(*mount, "reductionPercent", "reductionPercentPerLevel", "maximumReductionPercent", 100,
+		detail::requireScaledRow(*mount, "reductionPercent", "reductionPercentPerLevel", "maximumReductionPercent", 100,
 			"Perfect Mount reduction");
 	}
 	if(const auto * moot = child(row, "treantmoot"))
 	{
 		detail::fields(*moot, {"dendroidReductionPercent", "dendroidReductionPercentPerLevel", "maximumDendroidReductionPercent"});
-		requireScaled(*moot, "dendroidReductionPercent", "dendroidReductionPercentPerLevel",
+		detail::requireScaledRow(*moot, "dendroidReductionPercent", "dendroidReductionPercentPerLevel",
 			"maximumDendroidReductionPercent", 75, "Treantmoot Dendroid reduction");
 	}
 	if(const auto * ambush = child(row, "forestAmbush"))
@@ -132,7 +120,7 @@ void validateOtherRows(const JsonNode & row)
 	if(const auto * patroness = child(row, "patroness"))
 	{
 		detail::fields(*patroness, {"incomePermille", "incomePermillePerLevel", "maximumIncomePermille"});
-		requireScaled(*patroness, "incomePermille", "incomePermillePerLevel", "maximumIncomePermille", 1000,
+		detail::requireScaledRow(*patroness, "incomePermille", "incomePermillePerLevel", "maximumIncomePermille", 1000,
 			"Patroness income share");
 	}
 	if(const auto * sorceress = child(row, "sorceressOfEnroth"))
@@ -166,29 +154,29 @@ RampartSpecialtyRules rampartSpecialtyRules(const JsonNode & development)
 	const auto & row = development[RAMPART_ROW];
 	validateRampartSpecialtyRows(row);
 	if(const auto * ground = child(row, "useTheGround"))
-		result.useTheGroundPermille = scaled(*ground, "reductionPermille", "reductionPermillePerLevel", "maximumReductionPermille");
+		result.useTheGroundPermille = detail::scaledRow(*ground, "reductionPermille", "reductionPermillePerLevel", "maximumReductionPermille");
 	if(const auto * elusive = child(row, "elusive"))
 		result.elusive = ElusiveRules{integer(*elusive, "eliteLevel"), integer(*elusive, "championLevel")};
 	if(const auto * patroness = child(row, "patroness"))
-		result.patronessPermille = scaled(*patroness, "incomePermille", "incomePermillePerLevel", "maximumIncomePermille");
+		result.patronessPermille = detail::scaledRow(*patroness, "incomePermille", "incomePermillePerLevel", "maximumIncomePermille");
 	if(const auto * slayer = child(row, "giantSlayer"))
-		result.giantSlayerPermillePerStep = scaled(*slayer, "damagePermillePerStep", "damagePermillePerStepPerLevel",
+		result.giantSlayerPermillePerStep = detail::scaledRow(*slayer, "damagePermillePerStep", "damagePermillePerStepPerLevel",
 			"maximumDamagePermillePerStep");
 	if(const auto * remedy = child(row, "livingRemedy"))
 		result.livingRemedy = LivingRemedyRules{integer(*remedy, "rounds"),
-			scaled(*remedy, "healingBasisPoints", "healingBasisPointsPerLevel", "maximumHealingBasisPoints")};
+			detail::scaledRow(*remedy, "healingBasisPoints", "healingBasisPointsPerLevel", "maximumHealingBasisPoints")};
 	if(const auto * sorceress = child(row, "sorceressOfEnroth"))
 		result.sorceressOfEnroth = SorceressOfEnrothRules{integer(*sorceress, "baseSpellLevel"),
 			integer(*sorceress, "heroLevelsPerSpellLevel")};
 	if(const auto * brittle = child(row, "brittle"))
-		result.brittlePermille = scaled(*brittle, "damagePermille", "damagePermillePerLevel", "maximumDamagePermille");
+		result.brittlePermille = detail::scaledRow(*brittle, "damagePermille", "damagePermillePerLevel", "maximumDamagePermille");
 	if(const auto * odds = child(row, "againstTheOdds"))
 		result.againstTheOdds = AgainstTheOddsRules{integer(*odds, "luck"), integer(*odds, "levelsPerLuck"),
 			integer(*odds, "maximumLuck")};
 	if(const auto * mount = child(row, "perfectMount"))
-		result.perfectMountPercent = scaled(*mount, "reductionPercent", "reductionPercentPerLevel", "maximumReductionPercent");
+		result.perfectMountPercent = detail::scaledRow(*mount, "reductionPercent", "reductionPercentPerLevel", "maximumReductionPercent");
 	if(const auto * moot = child(row, "treantmoot"))
-		result.treantmootPercent = scaled(*moot, "dendroidReductionPercent", "dendroidReductionPercentPerLevel",
+		result.treantmootPercent = detail::scaledRow(*moot, "dendroidReductionPercent", "dendroidReductionPercentPerLevel",
 			"maximumDendroidReductionPercent");
 	if(const auto * ambush = child(row, "forestAmbush"))
 	{
