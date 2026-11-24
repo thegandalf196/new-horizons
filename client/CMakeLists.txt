@@ -221,6 +221,7 @@ set(vcmiclientcommon_SRCS
 	windows/FortRecruitArea.cpp
 	windows/FortRecruitmentPresentation.cpp
 	windows/TownGrowthPresentation.cpp
+	windows/TownStructureStateFrames.cpp
 	windows/CCreatureWindow.cpp
 	windows/StackAbilityCards.cpp
 	windows/CreatureUpgradeConfirmation.cpp
@@ -581,6 +582,7 @@ set(vcmiclientcommon_HEADERS
 	windows/FortRecruitmentPresentation.h
 	windows/FortCompactCreatureLayout.h
 	windows/TownGrowthPresentation.h
+	windows/TownStructureStateFrames.h
 	windows/CCreatureWindow.h
 	windows/CreatureUpgradeConfirmation.h
 	windows/CStackExperienceDetailsWindow.h

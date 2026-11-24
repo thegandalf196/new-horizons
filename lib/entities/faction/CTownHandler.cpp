@@ -440,14 +440,7 @@ void CTownHandler::loadStructure(CTown &town, const std::string & stringID, cons
 		ret->building = town.buildings[BuildingID(identifier)].get();
 	});
 
-	if (source["builds"].isNull())
-	{
-		LIBRARY->identifiers()->tryRequestIdentifier( source.getModScope(), "building." + town.faction->getJsonKey(), stringID, [=, &town](si32 identifier) mutable
-		{
-			ret->building = town.buildings[BuildingID(identifier)].get();
-		});
-	}
-	else
+	if (!source["builds"].isNull())
 	{
 		LIBRARY->identifiers()->requestIdentifier("building." + town.faction->getJsonKey(), source["builds"], [=, &town](si32 identifier) mutable
 		{
@@ -461,6 +454,7 @@ void CTownHandler::loadStructure(CTown &town, const std::string & stringID, cons
 	ret->pos.z = static_cast<si32>(source["z"].Float());
 
 	ret->hiddenUpgrade = source["hidden"].Bool();
+	ret->currentFrameOnly = source["currentFrameOnly"].Bool();
 	ret->defName = AnimationPath::fromJson(source["animation"]);
 	ret->borderName = ImagePath::fromJson(source["border"]);
 	ret->campaignBonus = ImagePath::fromJson(source["campaignBonus"]);

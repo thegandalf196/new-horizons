@@ -1,0 +1,11 @@
+// Castle's blacksmith draws only its current animation frame, so that tests can check that the
+// town screen option reaches the loaded structure. The original DEF is kept; nothing is rendered.
+{
+	"core:castle" : {
+		"town" : {
+			"structures" : {
+				"blacksmith" : { "currentFrameOnly" : true }
+			}
+		}
+	}
+}

@@ -397,6 +397,7 @@ set(test_SRCS
 		entity/CHeroClassTest.cpp
 		entity/CHeroTest.cpp
 		entity/CSkillTest.cpp
+		entity/CTownStructureTest.cpp
 
 		events/ApplyDamageTest.cpp
 		events/EventBusTest.cpp

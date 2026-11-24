@@ -19,6 +19,10 @@
 			"description" : "Main animation file for this building",
 			"format" : "animationFile"
 		},
+		"currentFrameOnly" : {
+			"type" : "boolean",
+			"description" : "If true, town screen draws only the current animation frame. By default the first frame is drawn beneath every frame, as the original animations expect"
+		},
 		"area" : {
 			"type" : "string",
 			"description" : "Area that indicate when building is selected.",

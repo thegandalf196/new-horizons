@@ -8,6 +8,7 @@
 	"keepDisabled" : true,
 	"heroes" : [ "config/heroes.json" ],
 	"creatures" : [ "config/creatures.json" ],
+	"factions" : [ "config/factions.json" ],
 	"objects" : {
 		"questGate" : {
 			"name" : "Quest Gate",

@@ -20589,18 +20589,18 @@
       "hybrid_predecessor_review": "IR-0911-BOUNDED-DIRECT-MAP-COMPOSITION-V3",
       "inherited_deferral": "Owner: ui_developer / gameplay_engineer. Bounded exception for Major System Rework: Leadership attribute restoration, square-root damage scaling, and hero UI panel integration. Hotspots remain subject to ongoing shrinking and modularization policy.\nExact source-list bound only. Before substantive build logic, extract a cohesive target configuration section. Verify source/link membership once and retain no duplicate translation units. Prior stricter obligations remain in inherited_deferral, where present.\n\nBefore introducing conditional build logic, extract a cohesive target helper; retain exact source/link membership, one registration per translation unit and existing inherited obligations.",
       "kind": "exception",
-      "lines": 786,
+      "lines": 788,
       "owner": "ui_developer",
       "previous_exact_review": "IR-PERFORMANCE-STEP2-BUILD-ORG-V1",
       "previous_proposal_review": "PROPOSED-EXACT-REGISTRY-SIX-SOURCE-20261103",
-      "previous_review": "CLAUDE-HERO-CLASS-LEAN-20261123",
+      "previous_review": "CLAUDE-HERO-WINDOW-STAT-ROW-20261123",
       "prior_deferral": "Before substantive build-control growth, extract a cohesive target helper; retain all inherited deferrals and one registration per translation unit.",
       "proposal_predecessor_review": "PROPOSED-CLIENT225-BOUNDED-20261103",
-      "rationale": "Exact successor for 0.93.1 beta step 1 (Precise Casting resistance halving, core Stewardship and Lord of the Crypts, +3%/level specialty scaling, activation of unchanged extended ordinary specialties): bounded routing hooks and focused owners only. Existing extraction deferrals retained; no future growth credit. Hero class lean (Might/Magic) row: three source-list lines register the focused HeroClassLean.h, HeroClassLeanIndicator.h/.cpp owner. 781 to 784 lines; no future growth credit. Hero window stat row: Leadership, Mana, Regen, Movement and Vision merge into one row owned by the focused HeroWindowStatRow.cpp/HeroStatRowLayout.h (shared with the generated background); the class line and lean row move up 4 px; the skills panel moves up one row. 784 to 786 lines; no future growth credit.",
-      "review": "CLAUDE-HERO-WINDOW-STAT-ROW-20261123",
+      "rationale": "Exact successor for 0.93.1 beta step 1 (Precise Casting resistance halving, core Stewardship and Lord of the Crypts, +3%/level specialty scaling, activation of unchanged extended ordinary specialties): bounded routing hooks and focused owners only. Existing extraction deferrals retained; no future growth credit. Hero class lean (Might/Magic) row: three source-list lines register the focused HeroClassLean.h, HeroClassLeanIndicator.h/.cpp owner. 781 to 784 lines; no future growth credit. Hero window stat row: Leadership, Mana, Regen, Movement and Vision merge into one row owned by the focused HeroWindowStatRow.cpp/HeroStatRowLayout.h (shared with the generated background); the class line and lean row move up 4 px; the skills panel moves up one row. 784 to 786 lines; no future growth credit. Town structure frame mode: two source-list lines register the focused TownStructureStateFrames.h/.cpp owner. 786 to 788 lines; no future growth credit.",
+      "review": "CLAUDE-TOWN-ANIM-CURRENT-FRAME-20261123",
       "review_scope": "Exact bounded source organization and failure-path review only; native/rendered acceptance and future growth unapproved.",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "a6281a2bee109e3d31430b4a05c94e0e793e81333d9541f0be87767ce1c074ca",
+      "sha256": "df95a1cee566fa49739465e0fec21114f83fa1ad904a4d7beb3cf61b1e8459d6",
       "inherited_deferral_step2": "Exact current size only. Retain all prior obligations below; further renderer/cache expansion must extract its specific presentation or map-cache policy behind a focused interface and verify clipping, zoom, wrap, retained ownership, both backends and guarded scene/quit behavior before accepting it."
     },
     "client/CPlayerInterface.cpp": {
@@ -22484,14 +22484,14 @@
       },
       "deferral": "UI owner: before further substantive expansion of this affected purchase panel, extract CMageGuildAdventureSpellWindow and its exclusive price/help presentation into a focused town-purchase component, preserving public callback interface, authoritative refresh/ownership/turn/affordability ordering and native geometry. Verify owner-visiting/no-visitor/garrison-only price agreement with shared authority and guarded rendered transitions; no general file/function growth credit. Before further substantive expansion, owning engine/gameplay/UI specialist must extract the next coherent touched policy, ordered stage, codec family or widget responsibility into a focused owner, preserving callback visibility, rejection atomicity, serialized field order, payment and RNG/packet order. This exact bounded migration/registry/validation routing gives no future growth credit. Exact bounded declaration/include/UI removal only; no new rule responsibilities. Preserve prior UI extraction duties before future substantive affected growth.",
       "kind": "legacy",
-      "lines": 3539,
+      "lines": 3521,
       "owner": "ui_developer",
-      "previous_review": "IR-NH0923-FOLLOWUP-TOOLTIPS-ABILITY-20261118",
-      "rationale": "Exact3541 to3540-line successor removes only the redundant Town Hall steward-button construction; existing Gold-menu and S-key administration paths remain. Prior marketplace extraction, accepted income refresh and other purchase/visibility obligations remain binding. No economic state, payment or assignment mutation in this change. Original Heroes III buttons: the custom NH Cancel/Spells buttons are replaced in place by IOKAY (read-only windows), ICANCEL (choices) or the battle Cast Spell button; no new responsibility. 3540 to 3539 lines; no future growth credit.",
-      "review": "CLAUDE-ORIGINAL-CLOSE-BUTTONS-20261123",
+      "previous_review": "CLAUDE-ORIGINAL-CLOSE-BUTTONS-20261123",
+      "rationale": "Exact3541 to3540-line successor removes only the redundant Town Hall steward-button construction; existing Gold-menu and S-key administration paths remain. Prior marketplace extraction, accepted income refresh and other purchase/visibility obligations remain binding. No economic state, payment or assignment mutation in this change. Original Heroes III buttons: the custom NH Cancel/Spells buttons are replaced in place by IOKAY (read-only windows), ICANCEL (choices) or the battle Cast Spell button; no new responsibility. 3540 to 3539 lines; no future growth credit. Town structure frame mode: CBuildingRect passes BASE unless the structure is marked currentFrameOnly, and its Castle shipyard / Dungeon Mana Vortex state-frame ranges move unchanged into the focused TownStructureStateFrames owner. Exact 3539 to 3521 lines; no future growth credit.",
+      "review": "CLAUDE-TOWN-ANIM-CURRENT-FRAME-20261123",
       "review_scope": "Exact bounded source organization and failure-path review only; native/rendered acceptance and future growth unapproved.",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "62beff9a8fafac9a9ee2e3c52f9dc6d6f33b4ab2bae080a073b52711f7cbd16a"
+      "sha256": "e20d9c31f1eece558dd6931d73d9c5ddf39d39dd6fb1428d9f2f0e3e6522ccfc"
     },
     "client/windows/CCastleInterface.cpp::CFortScreen::CFortScreen(const CGTownInstance * town): CWindowObject(PLAYER_COLORED | BORDERED, {})#1": {
       "kind": "legacy",
@@ -25159,12 +25159,14 @@
     },
     "lib/entities/faction/CTownHandler.cpp": {
       "kind": "legacy",
-      "lines": 1039,
+      "lines": 1033,
       "owner": "gameplay_engineer",
-      "rationale": "Existing file owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 1039 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "rationale": "Existing file owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 1039 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral. Successor: loadStructure reads the client-only currentFrameOnly flag and drops its duplicate building identifier request (the unconditional request above it is kept). Exact 1039 to 1033 lines; no future growth credit.",
+      "review": "CLAUDE-TOWN-ANIM-CURRENT-FRAME-20261123",
       "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "2cd492a023edda069916e9b99ba2e4b692356c911d782ef0e59f2f8f10e1fa1b"
+      "sha256": "67dfb8e61f846328623497b5b570e71c6d335fa64691119fe68a0b58792dbefa",
+      "previous_review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW"
     },
     "lib/entities/faction/CTownHandler.cpp::std::vector<JsonNode> CTownHandler::loadLegacyData()#1": {
       "kind": "legacy",

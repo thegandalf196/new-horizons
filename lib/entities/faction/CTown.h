@@ -34,6 +34,10 @@ struct DLL_LINKAGE CStructure
 	std::string identifier;
 
 	bool hiddenUpgrade; // used only if "building" is upgrade, if true - structure on town screen will behave exactly like parent (mouse clicks, hover texts, etc)
+
+	/// Town screen draws only the current animation frame, not the first frame of its range beneath it.
+	/// For animations whose every frame is complete; the original DEFs paint frames as patches over frame 0.
+	bool currentFrameOnly = false;
 };
 
 class DLL_LINKAGE CTown : boost::noncopyable

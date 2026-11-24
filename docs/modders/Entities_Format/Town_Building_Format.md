@@ -279,6 +279,11 @@ In addition to above, it is possible to use same format as [Rewardable](../Map_O
 	// Main animation file for this building
 	"animation" : "", 
 	
+	// By default the town screen draws the animation's first frame beneath every frame, so a frame
+	// only has to repaint what changes. If true, only the current frame is drawn: every frame must
+	// then be complete, and pixels left transparent show the town behind the building.
+	"currentFrameOnly" : false,
+	
 	// Horizontal position on town screen
 	"x" : 0,
 	

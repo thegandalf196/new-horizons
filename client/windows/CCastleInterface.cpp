@@ -13,6 +13,7 @@
 #include "../../lib/mapObjects/EstatesArtifactQuote.h"
 #include "TownGrowthPresentation.h"
 #include "FortRecruitmentPresentation.h"
+#include "TownStructureStateFrames.h"
 
 #include "CHeroWindow.h"
 #include "CMarketWindow.h"
@@ -676,8 +677,9 @@ CSpellResearchDialog::CSpellResearchDialog(const std::string & textToShow, const
 	statusbar = CGStatusBar::create(std::make_shared<CPicture>(background->getSurface(), Rect(8, pos.h - 26, pos.w - 16, 19), 8, pos.h - 26));
 }
 
+// The original DEFs paint each frame as a patch over the first one, which BASE draws beneath it
 CBuildingRect::CBuildingRect(CCastleBuildings * Par, const CGTownInstance * Town, const CStructure * Str)
-	: CShowableAnim(0, 0, Str->defName, CShowableAnim::BASE, BUILDING_FRAME_TIME),
+	: CShowableAnim(0, 0, Str->defName, static_cast<ui8>(Str->currentFrameOnly ? 0 : CShowableAnim::BASE), BUILDING_FRAME_TIME),
 	  parent(Par),
 	  town(Town),
 	  str(Str),
@@ -689,31 +691,11 @@ CBuildingRect::CBuildingRect(CCastleBuildings * Par, const CGTownInstance * Town
 	pos.x += str->pos.x;
 	pos.y += str->pos.y;
 
-	// special animation frame manipulation for castle shipyard with and without ship
-	// done due to .def used in special way, not to animate building - first image is for shipyard without citadel moat, 2nd image is for including moat
-	if(Town->getFactionID() == FactionID::CASTLE && Str->building && (Str->building->bid == BuildingID::SHIPYARD || Str->building->bid == BuildingID::SHIP))
-	{
-		if(Town->hasBuilt(BuildingID::CITADEL))
-		{
-			this->first = 1;
-			this->frame = 1;
-		}
-		else
-			this->last = 0;
-	}
-
-	// special animation frame manipulation for dungeon Mana Vortex with and without Mage Guild 5
-	// done due to .def used in special way, not to animate building - first image is for shipyard without citadel moat, 2nd image is for including moat
-	if(Town->getFactionID() == FactionID::DUNGEON && Str->building && Str->building->bid == BuildingID::SPECIAL_2)
-	{
-		if(Town->hasBuilt(BuildingID::MAGES_GUILD_5))
-		{
-			this->first = 10;
-			this->frame = 10;
-		}
-		else
-			this->last = 9;
-	}
+	const auto stateFrames = townStructureStateFrames::forStructure(*Town, *Str);
+	if(stateFrames.first)
+		first = frame = *stateFrames.first;
+	if(stateFrames.last)
+		last = *stateFrames.last;
 
 	if(!str->borderName.empty())
 		border = ENGINE->renderHandler().loadImage(str->borderName, EImageBlitMode::COLORKEY);
