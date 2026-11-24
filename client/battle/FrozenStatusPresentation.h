@@ -31,4 +31,6 @@ std::string tooltip(int32_t shatterBonusPercent);
 std::optional<std::string> currentTooltip(const CStack & stack);
 std::size_t newApplicationCount(const SetStackEffect & packet,
 	const CBattleInfoCallback & battle, ApplicationFeedback & feedback);
+/// Six ice shards flying out of a stack whose Frozen state was shattered.
+void drawShatterShards(Canvas & canvas, const Rect & bounds, uint32_t elapsedMilliseconds);
 }

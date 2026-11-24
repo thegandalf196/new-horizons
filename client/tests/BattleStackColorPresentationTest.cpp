@@ -54,6 +54,25 @@ int main()
 	require(frozen.color == blue && frozen.transparency == 32,
 		"Actual Frozen takes last color precedence without discarding transparency");
 
+	const auto & concealedLook = battleStackColorPresentation::CONCEALED_LOOK;
+	require(ordinary.overlayTransparency == 0 && filtered.overlayTransparency == 0,
+		"No concealment means no second draw");
+	const auto concealed = battleStackColorPresentation::appearance(target, "new-horizons:livingArmor", false, {}, &concealedLook);
+	require(concealed.color == blue && concealed.transparency == 204
+		&& concealed.overlayColor == concealedLook.overlayColor && concealed.overlayTransparency == 115 * 204 / 255,
+		"Concealment keeps the creature's colours at about 80% opacity with a green layer at about 45%");
+	const auto concealedSpell = battleStackColorPresentation::appearance(target, "core:skeletonWarrior", false, filters, &concealedLook);
+	require(concealedSpell.color == lastColor && concealedSpell.transparency == 204 * 128 / 255 * 64 / 255
+		&& concealedSpell.overlayTransparency == 0,
+		"A spell colour wins over the green layer while every transparency still multiplies");
+	const std::array<BattleStackFilterEffect, 1> fade{{{target, nullptr, transparent, 128, false}}};
+	const auto concealedFade = battleStackColorPresentation::appearance(target, "core:skeletonWarrior", false, fade, &concealedLook);
+	require(concealedFade.overlayTransparency == 115 * (128 * 204 / 255) / 255,
+		"A transparency-only filter keeps the green layer and fades it with the stack");
+	const auto concealedFrozen = battleStackColorPresentation::appearance(target, "core:skeletonWarrior", true, {}, &concealedLook);
+	require(concealedFrozen.color == blue && concealedFrozen.transparency == 204 && concealedFrozen.overlayTransparency == 0,
+		"Frozen keeps last color precedence over concealment");
+
 	const auto help = [](int rounds)
 	{
 		return newHorizonsCreatureAbilityHelp::innateAbilities("new-horizons:livingArmor", nullptr, "", "", rounds, "", "");

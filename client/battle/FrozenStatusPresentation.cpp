@@ -94,4 +94,19 @@ std::size_t newApplicationCount(const SetStackEffect & packet,
 	}
 	return applications;
 }
+
+void drawShatterShards(Canvas & canvas, const Rect & bounds, uint32_t elapsedMilliseconds)
+{
+	const auto center = bounds.center();
+	const int distance = 5 + static_cast<int>(elapsedMilliseconds) / 14;
+	const ColorRGBA ice(200, 237, 255, static_cast<uint8_t>(255 - elapsedMilliseconds * 255 / 550));
+	const std::array<Point, 6> directions{{Point(0, -2), Point(2, -1), Point(2, 1), Point(0, 2), Point(-2, 1), Point(-2, -1)}};
+	for(const auto & direction : directions)
+	{
+		const auto shard = center + Point(direction.x * distance, direction.y * distance);
+		canvas.drawLine(shard + Point(-2, -4), shard + Point(3, 0), ice, ice);
+		canvas.drawLine(shard + Point(3, 0), shard + Point(-1, 4), ice, ice);
+		canvas.drawLine(shard + Point(-1, 4), shard + Point(-2, -4), ice, ice);
+	}
+}
 }

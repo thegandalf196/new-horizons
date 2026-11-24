@@ -21,6 +21,8 @@
 #include "BattleWindow.h"
 #include "CreatureAnimation.h"
 #include "FrozenStatusPresentation.h"
+#include "../../lib/battle/NewHorizonsForestAmbush.h"
+#include "../../lib/battle/NewHorizonsSylvanAmbush.h"
 #include "../../lib/entities/hero/NewHorizonsLeadership.h"
 
 #include "../CPlayerInterface.h"
@@ -440,26 +442,18 @@ std::shared_ptr<IImage> BattleStacksController::getStackAmountBox(const CStack *
 void BattleStacksController::showStack(Canvas & canvas, const CStack * stack)
 {
 	const bool physicallyFrozen = stack->alive() && newHorizonsFrozen::isFrozen(*stack);
-	const auto appearance = battleStackColorPresentation::appearance(stack,
-		stack->unitType()->getJsonKey(), physicallyFrozen, stackFilterEffects);
+	// Plain unit state only: Sylvan Tactics Concealment or Ivor's Forest Ambush.
+	const bool concealed = newHorizonsSylvanAmbush::concealed(stack) || newHorizonsForestAmbush::concealed(stack);
+	const auto appearance = battleStackColorPresentation::appearance(stack, stack->unitType()->getJsonKey(),
+		physicallyFrozen, stackFilterEffects, concealed ? &battleStackColorPresentation::CONCEALED_LOOK : nullptr);
 
-	stackAnimation[stack->unitId()]->nextFrame(canvas, appearance.color, appearance.transparency, facingRight(stack));
+	auto & animation = *stackAnimation[stack->unitId()];
+	animation.nextFrame(canvas, appearance.color, appearance.transparency, facingRight(stack));
+	if(appearance.overlayTransparency != 0) // concealed only: the green layer over its own colours
+		animation.nextFrame(canvas, appearance.overlayColor, appearance.overlayTransparency, facingRight(stack));
 	const auto feedback = frozenShatterFeedback.find(stack->unitId());
 	if(feedback != frozenShatterFeedback.end())
-	{
-		const auto & shattered = feedback->second;
-		const auto center = shattered.bounds.center();
-		const int distance = 5 + static_cast<int>(shattered.elapsedMilliseconds) / 14;
-		const ColorRGBA ice(200, 237, 255, static_cast<uint8_t>(255 - shattered.elapsedMilliseconds * 255 / 550));
-		const std::array<Point, 6> directions{{Point(0, -2), Point(2, -1), Point(2, 1), Point(0, 2), Point(-2, 1), Point(-2, -1)}};
-		for(const auto & direction : directions)
-		{
-			const auto shard = center + Point(direction.x * distance, direction.y * distance);
-			canvas.drawLine(shard + Point(-2, -4), shard + Point(3, 0), ice, ice);
-			canvas.drawLine(shard + Point(3, 0), shard + Point(-1, 4), ice, ice);
-			canvas.drawLine(shard + Point(-1, 4), shard + Point(-2, -4), ice, ice);
-		}
-	}
+		newHorizonsFrozenPresentation::drawShatterShards(canvas, feedback->second.bounds, feedback->second.elapsedMilliseconds);
 }
 
 void BattleStacksController::tick(uint32_t msPassed)

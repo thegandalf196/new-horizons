@@ -21420,14 +21420,14 @@
       "deferral": "Future Leadership rendering belongs in those owners. Before controller growth, extract another count/readout presentation group, preserving hit-animation timing, repaint ownership and restart transitions. Prior stricter obligations remain in inherited_deferral, where present.",
       "inherited_deferral": " Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
       "kind": "exception",
-      "lines": 1090,
+      "lines": 1084,
       "owner": "ui_developer",
-      "previous_review": "IR-LEADERSHIP-1159-INDEPENDENT-20261113-V1-UNITS",
-      "rationale": "Exact1125 to1090-line shrinking extraction. Ordinary per-injury stage preparation moves to the focused132-line OverflowSpellPresentation owner; summon appearance moves to44-line LivingArmorSpawnPresentation. stacksAreAttacked96 to72 retains recipient ordering, count snapshots, facing, rebirth/removal and final wait. New overflow stage is after original HIT and before AFTER_HIT; common projectile lifetime/render protection reused. Existing readout/attack-stage deferrals remain; actual queued-flight/restart rendering is separate.",
-      "review": "IR-NH0923-OVERFLOW-LIFETIME-ESTATE-SOURCE-20261118",
-      "review_scope": "Exact source organization and bounded state/lifetime review only. No compile, rendered acceptance, publication or future growth allowance.",
-      "review_status": "INDEPENDENT_SOURCE_REVIEW_NATIVE_RENDERED_UNRUN",
-      "sha256": "5d03daa37a56061c2f81fcb9f4632dc78d1088adec2539f1effee46d21e571d5"
+      "previous_review": "IR-NH0923-OVERFLOW-LIFETIME-ESTATE-SOURCE-20261118",
+      "rationale": "Exact1125 to1090-line shrinking extraction. Ordinary per-injury stage preparation moves to the focused132-line OverflowSpellPresentation owner; summon appearance moves to44-line LivingArmorSpawnPresentation. stacksAreAttacked96 to72 retains recipient ordering, count snapshots, facing, rebirth/removal and final wait. New overflow stage is after original HIT and before AFTER_HIT; common projectile lifetime/render protection reused. Existing readout/attack-stage deferrals remain; actual queued-flight/restart rendering is separate. Concealed-stack look (Sylvan Tactics Ambush and Forest Ambush): showStack reads the plain concealment state and draws the owner-chosen green layer only for a concealed stack, with the look and its precedence in the focused BattleStackColorPresentation owner; the Frozen shatter shards move to FrozenStatusPresentation. 1090 to 1084 lines; no future growth credit.",
+      "review": "CLAUDE-CONCEALED-STACK-LOOK-20261124",
+      "review_scope": "Exact bounded source organization and failure-path review only; native/rendered acceptance and future growth unapproved.",
+      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
+      "sha256": "7c183835744688e34f853b0272fe0c60d839f66c2a5860841f1c80053f73c498"
     },
     "client/battle/BattleStacksController.cpp::void BattleStacksController::stackAttacking( const StackAttackInfo & info )#1": {
       "deferral": "Owner: ui_developer. Extract cohesive stack attack stage planning with explicit immutable receipt and visual-origin inputs. Preserve ordered flight-out, facing, hit/death and return stages, normal attacks, both facings/widths, unchanged authoritative placement and callback teardown. Require zero/nonzero and lethal-reflection characterization plus rendered restart/new-scenario/quit evidence before further substantive growth.",
