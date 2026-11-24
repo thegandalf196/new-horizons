@@ -53,10 +53,7 @@ static std::string emptyCheck(JsonValidator & validator, const JsonNode & baseSc
 	return "";
 }
 
-static std::string notImplementedCheck(JsonValidator & validator,
-								const JsonNode & baseSchema,
-								const JsonNode & schema,
-								const JsonNode & data)
+static std::string notImplementedCheck(JsonValidator & validator, const JsonNode & baseSchema, const JsonNode & schema, const JsonNode & data)
 {
 	return "Not implemented entry in schema";
 }
@@ -69,8 +66,8 @@ static std::string patternCheck(JsonValidator & validator, const JsonNode & base
 	try
 	{
 		const std::regex expression(schema.String(), std::regex::ECMAScript | std::regex::optimize);
-		// JSON Schema patterns match anywhere unless the expression supplies anchors.
-		if(std::regex_search(data.String(), expression))
+		// Patterns match anywhere unless anchored; ^ and $ anchor only at the string ends, but MSVC also anchors them at line breaks, so a fully anchored pattern without alternation is matched whole
+		if(const auto & p = schema.String(); p.size() >= 2 && p.front() == '^' && p.back() == '$' && p[p.size() - 2] != '\\' && p.find('|') == std::string::npos ? std::regex_match(data.String(), expression) : std::regex_search(data.String(), expression))
 			return "";
 		return validator.makeErrorMessage("String does not match schema pattern: " + schema.String());
 	}

@@ -25901,13 +25901,13 @@
     },
     "lib/json/JsonValidator.cpp": {
       "kind": "legacy",
-      "lines": 750,
+      "lines": 747,
       "owner": "engine_engineer",
-      "rationale": "Legacy freeze shrinks by the uniqueItems correction: the keyword compared the schema value instead of the data items, so it never enforced uniqueness and an assert-enabled build aborted. No growth.",
-      "review": "PROPOSED-CLAUDE-ASSERT-SWEEP-20261123",
+      "rationale": "Legacy freeze shrinks by the uniqueItems correction: the keyword compared the schema value instead of the data items, so it never enforced uniqueness and an assert-enabled build aborted. No growth. The pattern keyword matches a fully anchored pattern against the whole string, so MSVC's line-anchoring std::regex gives the same result as GCC and notImplementedCheck's signature fits on one line like its neighbours; 750 to 747 lines.",
+      "review": "PROPOSED-CLAUDE-MSVC-REGEX-ANCHORS-20261124",
       "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "6405ac1b5a7eb61b9a16470bc0cda96b6004f38a0b3c68205d3e32112b7cdee0",
-      "prior_review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "sha256": "f2678d66b4f2546a5c023ece8a652d7a177798e5c47c9b3bd3c9e368fe099b59",
+      "prior_review": "PROPOSED-CLAUDE-ASSERT-SWEEP-20261123",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW"
     },
     "lib/mapObjectConstructors/AObjectTypeHandler.cpp::void AObjectTypeHandler::init(const JsonNode & input)#1": {
