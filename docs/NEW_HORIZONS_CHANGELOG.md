@@ -7,6 +7,37 @@ and revisions as the game develops.
 For individual perk effects, spell formulas, creature statistics and Order rules,
 read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 
+## 0.94.0-beta.2
+
+- **Sylvan Tactics becomes Ambush** (new games; games already started keep
+  their Sylvan Tactics):
+  - A friendly stack that Waits hides in ambush when a hiding place is free:
+    one per round at Basic, two at Advanced, three at Expert. Ranged attacks,
+    Overwatch and hostile single-target spells cannot pick a hidden stack.
+    Melee can still attack it, and area spells still hit it.
+  - A stack cannot hide two rounds in a row, or after it was attacked or
+    damaged that round. Hiding ends when the stack acts, attacks, is attacked,
+    damaged or moved, and at the end of the round.
+  - When the hidden stack acts, its first attack is an **Ambush strike** if
+    the target walked closer to it this round.
+  - Patient Hunter gives +15% after Waiting and +30% on an Ambush strike.
+    Hunting Pack gives Rampart creatures +15% against an enemy hit by an
+    Ambush strike, this round and the next. Dappled Cover cuts ranged damage by
+    25% for a Waiting stack that did not hide.
+  - New perks: **Forest Cover** (one more hiding place, beside an obstacle or
+    wall), **Startle** (the victim of an Ambush strike retaliates at half
+    damage) and **Apex Predator** (+25% on Ambush strikes). They replace Quick
+    Redeployment, Kindred Flame and Ancient Accord.
+  - Ivor's Elves keep Forest Ambush and use no hiding place; they can make an
+    Ambush strike every other round.
+  - The Wait button shows an ambush version when Waiting would hide the stack,
+    and says how many hiding places are left. The creature window shows
+    Concealed and Ambush strike ready.
+  - A hidden stack looks faded and green-tinged on the battlefield. Ivor's
+    hidden Elves look the same.
+  - The AI uses Ambush, and never shoots or casts single-target spells at a
+    hidden stack.
+
 ## 0.94.0-beta.1
 
 Rampart's heroes get their revised specialties.
