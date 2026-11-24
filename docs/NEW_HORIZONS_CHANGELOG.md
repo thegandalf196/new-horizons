@@ -9,6 +9,9 @@ read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 
 ## 0.94.0-beta.2
 
+Sylvan Tactics becomes Ambush, and the skill, perk and spell windows tell you
+more.
+
 - **Sylvan Tactics becomes Ambush** (new games; games already started keep
   their Sylvan Tactics):
   - A friendly stack that Waits hides in ambush when a hiding place is free:
@@ -33,10 +36,26 @@ read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
   - The Wait button shows an ambush version when Waiting would hide the stack,
     and says how many hiding places are left. The creature window shows
     Concealed and Ambush strike ready.
-  - A hidden stack looks faded and green-tinged on the battlefield. Ivor's
-    hidden Elves look the same.
+  - A hidden stack keeps its own colours but looks faded under a green veil
+    on the battlefield. Ivor's hidden Elves look the same.
   - The AI uses Ambush, and never shoots or casts single-target spells at a
     hidden stack.
+- The class skill odds window shows each skill and its share on the leather
+  background. Left-click a skill to open its perks, as for a learned skill in
+  the hero window.
+- The perk window is reworked:
+  - Each column starts with the skill's Basic, Advanced and Expert effect.
+  - Perks the hero has learned have a gold frame and a gold name.
+  - The window fits its content, without an empty band at the bottom.
+  - Clicking a perk still explains it, including why it is locked.
+- Mage Guild scrolls show a small school emblem under each spell; a spell of
+  two schools shows both.
+- Right-clicking a spell names its element when it has one, for example
+  "Element: Fire".
+- The game's log file now starts by naming New Horizons and its version, which
+  helps with bug reports.
+- Behind the scenes, the old Lua reference copies of the game rules are
+  retired, and the Windows build and tests are fixed.
 
 ## 0.94.0-beta.1
 
