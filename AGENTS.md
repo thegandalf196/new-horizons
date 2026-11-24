@@ -149,7 +149,8 @@ activity or test counts as completion.
 - `client/`: interfaces and rendering; `clientsdl2/` and `clientsdl3/` implement
   the rendering backends.
 - `AI/`: combat and adventure AI. Use callback interfaces for visible game state.
-- `config/`, `Mods/new-horizons/`, and `scripts/`: data, mod content, and Lua logic.
+- `config/` and `Mods/new-horizons/`: data and mod content. Game rules are native C++;
+  see `docs/developers/Native_Rules.md`.
 - `launcher/`, `mapeditor/`: Qt tools; `test/`: regression and mechanic tests.
 
 Use VCMI's internal connection and simulation thread for this single-player
@@ -179,8 +180,9 @@ does not satisfy the rule.
 
 For bonus changes, read `docs/developers/Bonus_System.md`. Preserve serialization
 and save compatibility for state changes; read `docs/developers/Serialization.md`.
-For combat, inspect `lib/battle/`, `server/battles/`, `client/battle/`, and relevant
-Lua damage logic in `scripts/damage/damageCalculator.lua`. Use schemas and the
+For combat, inspect `lib/battle/` (including the native damage pipeline, e.g.
+`DamagePayloadPreparation` and `DamageFinalization`), `server/battles/` and
+`client/battle/`. Use schemas and the
 existing JSON loader/validator for content changes. Consult the applicable
 code-structure, networking, battlefield, and logging guides as needed.
 
