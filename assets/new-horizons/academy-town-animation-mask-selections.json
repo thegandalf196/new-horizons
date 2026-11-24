@@ -1,0 +1,196 @@
+{
+  "format": 1,
+  "selection": "Owner-approved Academy town animation 2026-11-23",
+  "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
+  "maskConvention": "area: white, alpha = union of the 20 frame alphas; border: 255,220,64, alpha = MaxFilter(5)(union) - union",
+  "structures": [
+    {
+      "structure": "blacksmith",
+      "animation": "NH_ACADEMY_TBTWBLAK",
+      "currentFrameOnly": true
+    },
+    {
+      "structure": "dwellingLvl1",
+      "animation": "NH_ACADEMY_TBTWDW_0",
+      "currentFrameOnly": true
+    },
+    {
+      "structure": "dwellingUpLvl1",
+      "animation": "NH_ACADEMY_TBTWUP_0",
+      "currentFrameOnly": true
+    },
+    {
+      "structure": "grail",
+      "animation": "NH_ACADEMY_TBTWHOLY",
+      "currentFrameOnly": true
+    },
+    {
+      "structure": "dwellingLvl3",
+      "animation": "NH_ACADEMY_TBTWDW_2",
+      "currentFrameOnly": true
+    },
+    {
+      "structure": "dwellingUpLvl3",
+      "animation": "NH_ACADEMY_TBTWUP_2",
+      "currentFrameOnly": true
+    }
+  ],
+  "entries": [
+    {
+      "resource": "SPRITES/NH_academy/town/masks/blacksmith-area.png",
+      "role": "academy-town-animation-area-mask",
+      "structure": "blacksmith",
+      "animation": "NH_ACADEMY_TBTWBLAK",
+      "descriptorSha256": "5a1a10e3e2da1106b28bc1efbbb0fdbead40a7bc98c9dd4dff60b37faae11120",
+      "dimensions": [
+        140,
+        146
+      ],
+      "previousSha256": "d67ebb2ad60ecf646da28ea39db8b2a949827e55d644f04ad4693fbe3dde5d85",
+      "sha256": "b181d8333a79b19c2da350f9061bb5e10a5872b0815c0ae3d9eb55b6e2c74d05"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/masks/blacksmith-border.png",
+      "role": "academy-town-animation-border-mask",
+      "structure": "blacksmith",
+      "animation": "NH_ACADEMY_TBTWBLAK",
+      "descriptorSha256": "5a1a10e3e2da1106b28bc1efbbb0fdbead40a7bc98c9dd4dff60b37faae11120",
+      "dimensions": [
+        140,
+        146
+      ],
+      "previousSha256": "e631ab5470bb4fcdba4bae752c2fb4323cf07ac53e793bd7c6a09eccef0e04f6",
+      "sha256": "8eda7744dc40850279327a8a19a3af5929a30af7624ea2cd360942ebad62c15e"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/masks/dwellingLvl1-area.png",
+      "role": "academy-town-animation-area-mask",
+      "structure": "dwellingLvl1",
+      "animation": "NH_ACADEMY_TBTWDW_0",
+      "descriptorSha256": "c3b2390180af4fe82a75c1b54393d0f3472287f7856bc1abae8db5f6e958f708",
+      "dimensions": [
+        53,
+        71
+      ],
+      "previousSha256": "10b35e791e3d42d275d5b94fbcd1178c82040ca337c171df3c8bb36fcf123d9e",
+      "sha256": "6b2ff953711ab49ad904b1105bd77a6b12419968a8588c3a79a85c81fbbd1c44"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/masks/dwellingLvl1-border.png",
+      "role": "academy-town-animation-border-mask",
+      "structure": "dwellingLvl1",
+      "animation": "NH_ACADEMY_TBTWDW_0",
+      "descriptorSha256": "c3b2390180af4fe82a75c1b54393d0f3472287f7856bc1abae8db5f6e958f708",
+      "dimensions": [
+        53,
+        71
+      ],
+      "previousSha256": "12d2c7587e1e57a4aa537f4b84b3f1a67c193eba618763698372eede34eaed02",
+      "sha256": "a7519d6eda57056b027fd463ff3fb7966e0d1ef654c778aa6af62f51d6e765aa"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/masks/dwellingLvl3-area.png",
+      "role": "academy-town-animation-area-mask",
+      "structure": "dwellingLvl3",
+      "animation": "NH_ACADEMY_TBTWDW_2",
+      "descriptorSha256": "adfecba5b95cbf2c23ff8d3e3ea0f023f626399663b50b455f18aabbb4127e41",
+      "dimensions": [
+        108,
+        127
+      ],
+      "previousSha256": "188fab8ec3055cb8cd9b0ceeba2a85feb116a19f1d725c73e961b41bafb9dee5",
+      "sha256": "7a8cc432cd37a3d15aec2b47d36225a81aa39c05a35a27695855e40f1d4e4622"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/masks/dwellingLvl3-border.png",
+      "role": "academy-town-animation-border-mask",
+      "structure": "dwellingLvl3",
+      "animation": "NH_ACADEMY_TBTWDW_2",
+      "descriptorSha256": "adfecba5b95cbf2c23ff8d3e3ea0f023f626399663b50b455f18aabbb4127e41",
+      "dimensions": [
+        108,
+        127
+      ],
+      "previousSha256": "17852a0bc86246084e7a7ee06369be3a9e5dfe7f2c605b406fee54a28da7373c",
+      "sha256": "29ff5a46f501111baa4b192159f62b76836bcdcf4b166a85d0427d651ab40cf7"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/masks/dwellingUpLvl1-area.png",
+      "role": "academy-town-animation-area-mask",
+      "structure": "dwellingUpLvl1",
+      "animation": "NH_ACADEMY_TBTWUP_0",
+      "descriptorSha256": "b300abf92da3eabe24f548028b6fb3929b6b4e7150c485534667fba531ddb0e5",
+      "dimensions": [
+        64,
+        71
+      ],
+      "previousSha256": "91ef610bf094234a9a436015a377720fec0184892653f7e23586feb6cdd08cd4",
+      "sha256": "52dfdaded7eb37486046ed5e4a09b25e13dd56507c33e1f75a5864e6c8f2f054"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/masks/dwellingUpLvl1-border.png",
+      "role": "academy-town-animation-border-mask",
+      "structure": "dwellingUpLvl1",
+      "animation": "NH_ACADEMY_TBTWUP_0",
+      "descriptorSha256": "b300abf92da3eabe24f548028b6fb3929b6b4e7150c485534667fba531ddb0e5",
+      "dimensions": [
+        64,
+        71
+      ],
+      "previousSha256": "bc9d65227980e479f80c2e1e63e3d22a509b9767de2c4dc555c1ae1e9c455772",
+      "sha256": "6571ade75fefb3aa44779f31a206cea47868a9d2aa36cb018b7efcfab4e84c82"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/masks/dwellingUpLvl3-area.png",
+      "role": "academy-town-animation-area-mask",
+      "structure": "dwellingUpLvl3",
+      "animation": "NH_ACADEMY_TBTWUP_2",
+      "descriptorSha256": "9ea4e96ae7229de3cba4415ee20c3c7bb10d7bbbe0ad883dfab7db1ab5e9fb0b",
+      "dimensions": [
+        108,
+        127
+      ],
+      "previousSha256": "da9d374c8c58f428a5478b01fb977810cea35f138e7e948a2cae51f7308585e5",
+      "sha256": "442b74aa1838dc707f5795b20ee7e2ae2fc248239777421a19b705d24d2a0c32"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/masks/dwellingUpLvl3-border.png",
+      "role": "academy-town-animation-border-mask",
+      "structure": "dwellingUpLvl3",
+      "animation": "NH_ACADEMY_TBTWUP_2",
+      "descriptorSha256": "9ea4e96ae7229de3cba4415ee20c3c7bb10d7bbbe0ad883dfab7db1ab5e9fb0b",
+      "dimensions": [
+        108,
+        127
+      ],
+      "previousSha256": "695db69aef8429f7d6e6c783b82bb7eaf8bb23fba527aa4f7641438e7ad96222",
+      "sha256": "a546274034e3ed3e428adef5060e7ee70eaee3444e6d0c632be77ddbbaf2fdcd"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/masks/grail-area.png",
+      "role": "academy-town-animation-area-mask",
+      "structure": "grail",
+      "animation": "NH_ACADEMY_TBTWHOLY",
+      "descriptorSha256": "1c35f8f4ef95475ff33be2a6518485f56f5c74d5e4cab0fd0e39ba08882543e7",
+      "dimensions": [
+        90,
+        218
+      ],
+      "previousSha256": "0c438f763205aaf27c517eafbd1daf2a6688d70c6f68f5251bb7d7c739ddbaf2",
+      "sha256": "bb3428045bf0a6a71dd9fe04d1b92980e1c1875fdbc8f7f88bc2ab69fd79f962"
+    },
+    {
+      "resource": "SPRITES/NH_academy/town/masks/grail-border.png",
+      "role": "academy-town-animation-border-mask",
+      "structure": "grail",
+      "animation": "NH_ACADEMY_TBTWHOLY",
+      "descriptorSha256": "1c35f8f4ef95475ff33be2a6518485f56f5c74d5e4cab0fd0e39ba08882543e7",
+      "dimensions": [
+        90,
+        218
+      ],
+      "previousSha256": "7953e48004410343787937d7e605f53de38ddf5b9d3873deb88b818d51cf6299",
+      "sha256": "50fccfbc0731f18ebb85678b1f1b6de30907497743e9a0d384939fd7bce1d814"
+    }
+  ]
+}

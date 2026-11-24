@@ -1800,23 +1800,23 @@
       "source": "Mods/new-horizons/Images/NH_academy/town/landscape.png"
     },
     {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
       "family": "academy-town-and-portrait-ui",
-      "origin": "selected-supplied-or-modified-composite",
+      "origin": "Derived interaction mask: union alpha of the 20 selected animation frames, existing Academy area/border mask convention",
       "resource": "SPRITES/NH_academy/town/masks/blacksmith-area.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "d67ebb2ad60ecf646da28ea39db8b2a949827e55d644f04ad4693fbe3dde5d85",
-      "size": 6510,
+      "selection": "Owner-approved Academy town animation 2026-11-23",
+      "sha256": "b181d8333a79b19c2da350f9061bb5e10a5872b0815c0ae3d9eb55b6e2c74d05",
+      "size": 7650,
       "source": "Mods/new-horizons/Images/NH_academy/town/masks/blacksmith-area.png"
     },
     {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
       "family": "academy-town-and-portrait-ui",
-      "origin": "selected-supplied-or-modified-composite",
+      "origin": "Derived interaction mask: union alpha of the 20 selected animation frames, existing Academy area/border mask convention",
       "resource": "SPRITES/NH_academy/town/masks/blacksmith-border.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "e631ab5470bb4fcdba4bae752c2fb4323cf07ac53e793bd7c6a09eccef0e04f6",
-      "size": 8237,
+      "selection": "Owner-approved Academy town animation 2026-11-23",
+      "sha256": "8eda7744dc40850279327a8a19a3af5929a30af7624ea2cd360942ebad62c15e",
+      "size": 9796,
       "source": "Mods/new-horizons/Images/NH_academy/town/masks/blacksmith-border.png"
     },
     {
@@ -1900,23 +1900,23 @@
       "source": "Mods/new-horizons/Images/NH_academy/town/masks/cityHall-border.png"
     },
     {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
       "family": "academy-town-and-portrait-ui",
-      "origin": "selected-supplied-or-modified-composite",
+      "origin": "Derived interaction mask: union alpha of the 20 selected animation frames, existing Academy area/border mask convention",
       "resource": "SPRITES/NH_academy/town/masks/dwellingLvl1-area.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "10b35e791e3d42d275d5b94fbcd1178c82040ca337c171df3c8bb36fcf123d9e",
-      "size": 1574,
+      "selection": "Owner-approved Academy town animation 2026-11-23",
+      "sha256": "6b2ff953711ab49ad904b1105bd77a6b12419968a8588c3a79a85c81fbbd1c44",
+      "size": 1583,
       "source": "Mods/new-horizons/Images/NH_academy/town/masks/dwellingLvl1-area.png"
     },
     {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
       "family": "academy-town-and-portrait-ui",
-      "origin": "selected-supplied-or-modified-composite",
+      "origin": "Derived interaction mask: union alpha of the 20 selected animation frames, existing Academy area/border mask convention",
       "resource": "SPRITES/NH_academy/town/masks/dwellingLvl1-border.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "12d2c7587e1e57a4aa537f4b84b3f1a67c193eba618763698372eede34eaed02",
-      "size": 1902,
+      "selection": "Owner-approved Academy town animation 2026-11-23",
+      "sha256": "a7519d6eda57056b027fd463ff3fb7966e0d1ef654c778aa6af62f51d6e765aa",
+      "size": 1909,
       "source": "Mods/new-horizons/Images/NH_academy/town/masks/dwellingLvl1-border.png"
     },
     {
@@ -1940,23 +1940,23 @@
       "source": "Mods/new-horizons/Images/NH_academy/town/masks/dwellingLvl2-border.png"
     },
     {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
       "family": "academy-town-and-portrait-ui",
-      "origin": "selected-supplied-or-modified-composite",
+      "origin": "Derived interaction mask: union alpha of the 20 selected animation frames, existing Academy area/border mask convention",
       "resource": "SPRITES/NH_academy/town/masks/dwellingLvl3-area.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "188fab8ec3055cb8cd9b0ceeba2a85feb116a19f1d725c73e961b41bafb9dee5",
-      "size": 4887,
+      "selection": "Owner-approved Academy town animation 2026-11-23",
+      "sha256": "7a8cc432cd37a3d15aec2b47d36225a81aa39c05a35a27695855e40f1d4e4622",
+      "size": 5434,
       "source": "Mods/new-horizons/Images/NH_academy/town/masks/dwellingLvl3-area.png"
     },
     {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
       "family": "academy-town-and-portrait-ui",
-      "origin": "selected-supplied-or-modified-composite",
+      "origin": "Derived interaction mask: union alpha of the 20 selected animation frames, existing Academy area/border mask convention",
       "resource": "SPRITES/NH_academy/town/masks/dwellingLvl3-border.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "17852a0bc86246084e7a7ee06369be3a9e5dfe7f2c605b406fee54a28da7373c",
-      "size": 6194,
+      "selection": "Owner-approved Academy town animation 2026-11-23",
+      "sha256": "29ff5a46f501111baa4b192159f62b76836bcdcf4b166a85d0427d651ab40cf7",
+      "size": 6758,
       "source": "Mods/new-horizons/Images/NH_academy/town/masks/dwellingLvl3-border.png"
     },
     {
@@ -2040,23 +2040,23 @@
       "source": "Mods/new-horizons/Images/NH_academy/town/masks/dwellingLvl7-border.png"
     },
     {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
       "family": "academy-town-and-portrait-ui",
-      "origin": "selected-supplied-or-modified-composite",
+      "origin": "Derived interaction mask: union alpha of the 20 selected animation frames, existing Academy area/border mask convention",
       "resource": "SPRITES/NH_academy/town/masks/dwellingUpLvl1-area.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "91ef610bf094234a9a436015a377720fec0184892653f7e23586feb6cdd08cd4",
-      "size": 1996,
+      "selection": "Owner-approved Academy town animation 2026-11-23",
+      "sha256": "52dfdaded7eb37486046ed5e4a09b25e13dd56507c33e1f75a5864e6c8f2f054",
+      "size": 2006,
       "source": "Mods/new-horizons/Images/NH_academy/town/masks/dwellingUpLvl1-area.png"
     },
     {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
       "family": "academy-town-and-portrait-ui",
-      "origin": "selected-supplied-or-modified-composite",
+      "origin": "Derived interaction mask: union alpha of the 20 selected animation frames, existing Academy area/border mask convention",
       "resource": "SPRITES/NH_academy/town/masks/dwellingUpLvl1-border.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "bc9d65227980e479f80c2e1e63e3d22a509b9767de2c4dc555c1ae1e9c455772",
-      "size": 2346,
+      "selection": "Owner-approved Academy town animation 2026-11-23",
+      "sha256": "6571ade75fefb3aa44779f31a206cea47868a9d2aa36cb018b7efcfab4e84c82",
+      "size": 2366,
       "source": "Mods/new-horizons/Images/NH_academy/town/masks/dwellingUpLvl1-border.png"
     },
     {
@@ -2080,23 +2080,23 @@
       "source": "Mods/new-horizons/Images/NH_academy/town/masks/dwellingUpLvl2-border.png"
     },
     {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
       "family": "academy-town-and-portrait-ui",
-      "origin": "selected-supplied-or-modified-composite",
+      "origin": "Derived interaction mask: union alpha of the 20 selected animation frames, existing Academy area/border mask convention",
       "resource": "SPRITES/NH_academy/town/masks/dwellingUpLvl3-area.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "da9d374c8c58f428a5478b01fb977810cea35f138e7e948a2cae51f7308585e5",
-      "size": 5123,
+      "selection": "Owner-approved Academy town animation 2026-11-23",
+      "sha256": "442b74aa1838dc707f5795b20ee7e2ae2fc248239777421a19b705d24d2a0c32",
+      "size": 5950,
       "source": "Mods/new-horizons/Images/NH_academy/town/masks/dwellingUpLvl3-area.png"
     },
     {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
       "family": "academy-town-and-portrait-ui",
-      "origin": "selected-supplied-or-modified-composite",
+      "origin": "Derived interaction mask: union alpha of the 20 selected animation frames, existing Academy area/border mask convention",
       "resource": "SPRITES/NH_academy/town/masks/dwellingUpLvl3-border.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "695db69aef8429f7d6e6c783b82bb7eaf8bb23fba527aa4f7641438e7ad96222",
-      "size": 6591,
+      "selection": "Owner-approved Academy town animation 2026-11-23",
+      "sha256": "a546274034e3ed3e428adef5060e7ee70eaee3444e6d0c632be77ddbbaf2fdcd",
+      "size": 7460,
       "source": "Mods/new-horizons/Images/NH_academy/town/masks/dwellingUpLvl3-border.png"
     },
     {
@@ -2200,23 +2200,23 @@
       "source": "Mods/new-horizons/Images/NH_academy/town/masks/fort-border.png"
     },
     {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
       "family": "academy-town-and-portrait-ui",
-      "origin": "selected-supplied-or-modified-composite",
+      "origin": "Derived interaction mask: union alpha of the 20 selected animation frames, existing Academy area/border mask convention",
       "resource": "SPRITES/NH_academy/town/masks/grail-area.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "0c438f763205aaf27c517eafbd1daf2a6688d70c6f68f5251bb7d7c739ddbaf2",
-      "size": 8295,
+      "selection": "Owner-approved Academy town animation 2026-11-23",
+      "sha256": "bb3428045bf0a6a71dd9fe04d1b92980e1c1875fdbc8f7f88bc2ab69fd79f962",
+      "size": 8578,
       "source": "Mods/new-horizons/Images/NH_academy/town/masks/grail-area.png"
     },
     {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
       "family": "academy-town-and-portrait-ui",
-      "origin": "selected-supplied-or-modified-composite",
+      "origin": "Derived interaction mask: union alpha of the 20 selected animation frames, existing Academy area/border mask convention",
       "resource": "SPRITES/NH_academy/town/masks/grail-border.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "7953e48004410343787937d7e605f53de38ddf5b9d3873deb88b818d51cf6299",
-      "size": 10759,
+      "selection": "Owner-approved Academy town animation 2026-11-23",
+      "sha256": "50fccfbc0731f18ebb85678b1f1b6de30907497743e9a0d384939fd7bce1d814",
+      "size": 11026,
       "source": "Mods/new-horizons/Images/NH_academy/town/masks/grail-border.png"
     },
     {

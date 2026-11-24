@@ -126,6 +126,7 @@
 				},
 				"blacksmith": {
 					"animation": "NH_ACADEMY_TBTWBLAK",
+					"currentFrameOnly": true,
 					"campaignBonus": "NH_academy/ui/bonus/botblack.png",
 					"area": "NH_academy/town/masks/blacksmith-area.png",
 					"border": "NH_academy/town/masks/blacksmith-border.png"
@@ -169,12 +170,14 @@
 				},
 				"grail": {
 					"animation": "NH_ACADEMY_TBTWHOLY",
+					"currentFrameOnly": true,
 					"campaignBonus": "NH_academy/ui/bonus/botgrail.png",
 					"area": "NH_academy/town/masks/grail-area.png",
 					"border": "NH_academy/town/masks/grail-border.png"
 				},
 				"dwellingLvl1": {
 					"animation": "NH_ACADEMY_TBTWDW_0",
+					"currentFrameOnly": true,
 					"campaignBonus": "NH_academy/ui/bonus/botgrem1.png",
 					"area": "NH_academy/town/masks/dwellingLvl1-area.png",
 					"border": "NH_academy/town/masks/dwellingLvl1-border.png"
@@ -187,6 +190,7 @@
 				},
 				"dwellingLvl3": {
 					"animation": "NH_ACADEMY_TBTWDW_2",
+					"currentFrameOnly": true,
 					"campaignBonus": "NH_academy/ui/bonus/botgolm1.png",
 					"area": "NH_academy/town/masks/dwellingLvl3-area.png",
 					"border": "NH_academy/town/masks/dwellingLvl3-border.png"
@@ -221,6 +225,7 @@
 				},
 				"dwellingUpLvl1": {
 					"animation": "NH_ACADEMY_TBTWUP_0",
+					"currentFrameOnly": true,
 					"campaignBonus": "NH_academy/ui/bonus/botgrem2.png",
 					"area": "NH_academy/town/masks/dwellingUpLvl1-area.png",
 					"border": "NH_academy/town/masks/dwellingUpLvl1-border.png"
@@ -233,6 +238,7 @@
 				},
 				"dwellingUpLvl3": {
 					"animation": "NH_ACADEMY_TBTWUP_2",
+					"currentFrameOnly": true,
 					"campaignBonus": "NH_academy/ui/bonus/botgolm2.png",
 					"area": "NH_academy/town/masks/dwellingUpLvl3-area.png",
 					"border": "NH_academy/town/masks/dwellingUpLvl3-border.png"

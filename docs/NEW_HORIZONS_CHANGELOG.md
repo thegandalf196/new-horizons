@@ -50,6 +50,11 @@ Rampart's heroes get their revised specialties.
   - "Experience" is spelled correctly on every install.
 - Close and Cancel buttons in New Horizons windows use the original Heroes III
   buttons.
+- Academy's town screen comes alive: the blacksmith's drawbridge door, windmill
+  sails, smoke and window glow, the Workshop's turning wheel, the Grail's
+  swaying airship and the Golem Factory's pumps, cogwheel, chain, gears and
+  steam now animate. Their hover outlines and click areas follow the moving
+  parts.
 - Painted icons replace the flat creature ability, quick save/load, hero
   growth and artillery icons. Frost Mantle, Brittle and Living Remedy have
   their own status icons.

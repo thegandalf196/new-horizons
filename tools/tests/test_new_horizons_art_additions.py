@@ -29,6 +29,7 @@ from .nhart_interface_status_art import validate_interface_status_art
 from .nhart_status_icon_repaint import validate_repaint
 from .nhart_flat_interface_repaint import validate_flat_repaint
 from .nhart_academy_town_animation import validate_town_animation
+from .nhart_academy_town_masks import validate_town_masks
 from .nhart_retired_interface_icons import validate_retirement
 from .nhart_retired_custom_buttons import validate_custom_button_retirement
 from .nhart_released_history import (authority_before_leadership_rework,
@@ -523,6 +524,9 @@ class ArtAdditionsTest(unittest.TestCase):
                 continue
             if 'academyTownAnimation' in wave:
                 validate_town_animation(wave, self.manifest['entries'], read_resource)
+                continue
+            if 'academyTownAnimationMasks' in wave:
+                validate_town_masks(wave, self.manifest['entries'], read_resource)
                 continue
             if 'statusIconRepaint' in wave:
                 validate_repaint(wave, self.manifest['entries'], read_resource)
