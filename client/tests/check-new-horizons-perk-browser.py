@@ -27,19 +27,27 @@ def main() -> None:
     require(HERO, "tierSlotText(slot, newHorizonsPerkHelp::skillName(curHero, skillId))", "empty-tier lock explanation")
     require(HERO, "area->enable();", "empty tier remains inspectable")
     require(BROWSER_HEADER, "Read-only catalogue", "read-only browser contract")
-    require(BROWSER, 'ImagePath::builtin("newHorizonsOrdersBackground.png")', "existing leather dialog texture")
+    require(BROWSER, 'std::make_shared<CFilledTexture>(ImagePath::builtin("DiBoxBck"), Rect(0, 0, pos.w, pos.h))', "leather dialog texture cut to the content")
+    require(BROWSER, "pos = Rect(0, 0, WINDOW_WIDTH, columnBottom + FOOTER_HEIGHT);", "window height follows the tallest column")
     require(BROWSER, "perkState.hasSelection(skillId, perk.id)", "learned state comes from saved selections")
     require(BROWSER, 'perk.effect["status"].String()', "effect implementation status from the saved registry")
     require(BROWSER, 'return "Not implemented";', "planned effect disclosure")
     require(BROWSER, 'Implementation: " + effectStatus', "implementation status in right-click help")
-    require(BROWSER, "std::array<std::vector<const newHorizonsHeroes::PerkDefinition *>, 3>", "three rank groups")
+    require(BROWSER, "std::array<std::vector<PerkRow>, 3> perksByRank", "three rank groups")
     for rank in ("Basic", "Advanced", "Expert"):
         require(BROWSER, f'"{rank}"', f"{rank} group label")
-    require(BROWSER, 'AnimationPath::builtin(newHorizonsHybridCapturedPerkIcon(perk.id, perk.name, perkState.rules))', "existing perk animation lookup")
-    require(BROWSER, "CMultiLineLabel>(Rect(cardLeft + 34, top + 2, cardWidth - 40, 26)", "wrapped full-width perk name")
-    require(BROWSER, 'cardLeft + 34, top + 30, FONT_TINY', "learned state below the wrapped name")
-    require(BROWSER, 'cardLeft + 34, top + 42, FONT_TINY', "full-width effect status on its own line")
-    require(BROWSER, 'reasonCaption(evaluation, newHorizonsPerkHelp::skillName(&hero, skillId)), cardWidth - 40)', "full-width eligibility reason")
+    require(BROWSER, 'AnimationPath::builtin(newHorizonsHybridCapturedPerkIcon(perk.id, perk.name, perkState.getRules()))', "existing perk animation lookup")
+    require(BROWSER, "newHorizonsPerkHelp::skillDescription(&hero, *parentSkill, rank) : std::string()", "Skill's own rank effect above each column")
+    require(BROWSER, "FONT_SMALL, ETextAlignment::TOPCENTER, Colors::WHITE, rankDescription(hero, skillId, rank))", "one rank effect per column")
+    require(BROWSER, "CMessage::breakText(rankDescription(hero, skillId, rank), COLUMN_WIDTH - 16, FONT_SMALL).size()", "perk grid starts below the tallest rank text")
+    require(BROWSER, "learned ? Colors::YELLOW : Colors::WHITE, perk.name", "learned perk name highlighted, others plain")
+    require(BROWSER, "if(learned)\n\t\telements.push_back(std::make_shared<TransparentFilledRectangle>(row", "gold frame only around learned perks")
+    # The window shows no per-perk state captions or card boxes any more; the
+    # eligibility explanation stays in the click/right-click help.
+    for removed in ("Future level-up offer", "Not learned", "Requires this Skill", "statusName(", "reasonCaption(",
+                    "Read-only catalogue. Learned perks", "cardFill", "unlearnedBorder"):
+        if removed in BROWSER:
+            raise AssertionError(f"removed perk browser status/card element returned: {removed}")
     require(BROWSER, "newHorizonsPerkAvailability::evaluatePerk(", "saved-rule eligibility classification")
     require(BROWSER, "newHorizonsPerkAvailability::explanation(evaluation, newHorizonsPerkHelp::skillName(&hero, skillId))", "complete lock explanation in help")
     require(BROWSER, 'newHorizonsPerkHelp::format(&hero, skillId, perk.name', "shared perk explanation")
@@ -56,28 +64,24 @@ def main() -> None:
     require(CMAKE, "windows/NewHorizonsPerkBrowser.cpp", "new browser source registration")
     require(CMAKE, "windows/NewHorizonsPerkBrowser.h", "new browser header registration")
 
-    # The existing generated Orders texture is 640x500. Keep the three rank
-    # panels and all controls inside that logical window, including the frame.
-    window_width, window_height = 640, 500
-    column_left, column_stride, column_width = 12, 208, 200
-    panel_top, panel_height = 77, 381
-    cards_top, cards_bottom = 116, 450
-    close_top, footer_top = 500 - 38, 477  # original 64x30 checkmark, 8 px inside the corner
+    # The 640-wide window's height follows its content: title, the tallest
+    # rank text (clipped at its full height), the tallest perk column and the
+    # footer with the original 64x30 checkmark 8 px inside the corner.
+    window_width, column_left, column_stride, column_width = 640, 12, 208, 200
+    panel_top, description_height, footer_height = 42, 160, 46
+    row_height, icon = 50, 44
+    for name, value in (("WINDOW_WIDTH", window_width), ("COLUMN_LEFT", column_left), ("COLUMN_STRIDE", column_stride),
+                        ("COLUMN_WIDTH", column_width), ("COLUMN_TOP", panel_top), ("DESCRIPTION_HEIGHT", description_height),
+                        ("FOOTER_HEIGHT", footer_height), ("PERK_ROW_HEIGHT", row_height), ("PERK_ICON", icon)):
+        require(BROWSER, f"constexpr int {name} = {value};", f"{name} geometry")
+    require(BROWSER, "const int columnBottom = perksTop + static_cast<int>(rows) * PERK_ROW_HEIGHT + 4;", "columns end below the last perk row")
+    require(BROWSER, "Point(pos.w - 72, pos.h - 38)", "checkmark anchored to the fitted window corner")
     assert column_left + 2 * column_stride + column_width <= window_width
-    assert panel_top < cards_top < cards_bottom < panel_top + panel_height
-    assert cards_top < cards_bottom < panel_top + panel_height < close_top < footer_top < window_height
-    assert close_top + 30 <= window_height and (window_width - 72) + 64 <= window_width
-
-    # The live registry has a 4/4/2 rank split. Each 56px card can fit a wrapped
-    # two-line name followed by independent Learned and implementation lines.
-    tiny_line_height = 10
-    for rank_count in (4, 4, 2):
-        available_height = (cards_bottom - cards_top) - 3 * (rank_count - 1)
-        card_height = min(56, available_height // rank_count)
-        assert card_height == 56
-        assert 2 + 26 <= 30
-        assert 30 + tiny_line_height <= 42
-        assert 42 + tiny_line_height <= card_height
+    assert icon <= row_height - 4
+    assert 8 + 30 + 8 == footer_height and (window_width - 72) + 64 <= window_width
+    # Longest rank text and four perk rows still fit a 600 px logical screen.
+    tallest = panel_top + 26 + description_height + 14 + 4 * row_height + 4 + footer_height
+    assert tallest <= 600, tallest
 
     # Browser code only reads saved selections and definitions; no choice
     # submitter or learning/acquisition API may appear in this new window.

@@ -5,14 +5,18 @@
 #include "StdInc.h"
 #include "NewHorizonsPerkBrowser.h"
 
+#include "CMessage.h"
 #include "InfoWindows.h"
 #include "NewHorizonsPerkHelp.h"
 #include "NewHorizonsSylvanHybridPerkIcons.h"
 #include "NewHorizonsPerkAvailability.h"
 #include "../CPlayerInterface.h"
+#include "../GameEngine.h"
 #include "../GameInstance.h"
 #include "../gui/Shortcut.h"
 #include "../render/Colors.h"
+#include "../render/IFont.h"
+#include "../render/IRenderHandler.h"
 #include "../widgets/Buttons.h"
 #include "../widgets/CComponent.h"
 #include "../widgets/GraphicalPrimitiveCanvas.h"
@@ -68,6 +72,26 @@ public:
 	}
 };
 
+using PerkRow = const newHorizonsHeroes::PerkDefinition *;
+
+// 640-wide leather dialog: three rank columns, each with the Skill's own rank
+// effect above that rank's perks.  The height follows the tallest column.
+constexpr int WINDOW_WIDTH = 640;
+constexpr int COLUMN_LEFT = 12;
+constexpr int COLUMN_STRIDE = 208;
+constexpr int COLUMN_WIDTH = 200;
+constexpr int COLUMN_TOP = 42;
+constexpr int DESCRIPTION_TOP = COLUMN_TOP + 26;
+constexpr int DESCRIPTION_HEIGHT = 160;
+constexpr int FOOTER_HEIGHT = 46;
+constexpr int PERK_ROW_HEIGHT = 50;
+constexpr int PERK_ICON = 44;
+
+int columnLeft(size_t rankIndex)
+{
+	return COLUMN_LEFT + static_cast<int>(rankIndex) * COLUMN_STRIDE;
+}
+
 std::shared_ptr<CIntObject> rankHelp(const CGHeroInstance & hero, const std::string & skillId,
 	int rank, const Rect & area)
 {
@@ -77,6 +101,12 @@ std::shared_ptr<CIntObject> rankHelp(const CGHeroInstance & hero, const std::str
 	return std::make_shared<PerkBrowserHelpArea>(area,
 		newHorizonsPerkHelp::skillDescription(&hero, *parentSkill, rank),
 		newHorizonsPerkHelp::skillDetails(&hero, *parentSkill, rank), parentSkill, rank);
+}
+
+std::string rankDescription(const CGHeroInstance & hero, const std::string & skillId, int rank)
+{
+	const auto parentSkill = newHorizonsPerkHelp::skillEntity(skillId);
+	return parentSkill ? newHorizonsPerkHelp::skillDescription(&hero, *parentSkill, rank) : std::string();
 }
 
 int perkRank(const newHorizonsHeroes::PerkDefinition & perk)
@@ -94,151 +124,129 @@ std::string implementationStatus(const newHorizonsHeroes::PerkDefinition & perk)
 	return "Status unknown";
 }
 
-std::string reasonCaption(const newHorizonsPerkAvailability::Evaluation & evaluation, std::string_view skillName)
+std::string perkHelpText(const CGHeroInstance & hero, const std::string & skillId,
+	const newHorizonsHeroes::PerkDefinition & perk)
 {
-	using newHorizonsPerkAvailability::Reason;
-	using newHorizonsPerkAvailability::Status;
-	if(evaluation.status == Status::AVAILABLE)
-		return "Future level-up offer";
-	if(evaluation.status == Status::ACQUIRED && evaluation.reason == Reason::NONE)
-		return "Already acquired";
-	switch(evaluation.reason)
+	// The window itself shows no state captions; the explanation keeps the
+	// complete saved-rule eligibility and implementation disclosure.
+	const auto evaluation = newHorizonsPerkAvailability::evaluatePerk(
+		hero.getPerkState(), skillId, hero.getPerkSkillRank(skillId), perk);
+	const auto effectStatus = implementationStatus(perk);
+	return newHorizonsPerkHelp::format(&hero, skillId, perk.name,
+		newHorizonsPerkHelp::tierName(perk.requiredRank), perk.description)
+		+ "\n\n" + newHorizonsPerkAvailability::explanation(evaluation, newHorizonsPerkHelp::skillName(&hero, skillId))
+		+ "\nImplementation: " + effectStatus + ". This browser is read-only; it does not unlock perks.";
+}
+
+/// One perk: icon and name directly on the column.  A learned perk gets the
+/// Heroes III gold selection frame and a gold name; the rest stay plain.
+void addPerkRow(std::vector<std::shared_ptr<CIntObject>> & elements, const CGHeroInstance & hero,
+	const std::string & skillId, const newHorizonsHeroes::PerkDefinition & perk, const Rect & row)
+{
+	const auto & perkState = hero.getPerkState();
+	const bool learned = perkState.hasSelection(skillId, perk.id);
+	if(learned)
+		elements.push_back(std::make_shared<TransparentFilledRectangle>(row, ColorRGBA(231, 194, 86, 28),
+			ColorRGBA(231, 194, 86, 255)));
+	elements.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin(newHorizonsHybridCapturedPerkIcon(perk.id, perk.name, perkState.getRules())), 0,
+		Rect(row.x + 3, row.y + (row.h - PERK_ICON) / 2, PERK_ICON, PERK_ICON)));
+	const int nameLeft = row.x + PERK_ICON + 9;
+	elements.push_back(std::make_shared<CMultiLineLabel>(Rect(nameLeft, row.y + 2, row.x + row.w - nameLeft - 3, row.h - 4),
+		FONT_SMALL, ETextAlignment::CENTERLEFT, learned ? Colors::YELLOW : Colors::WHITE, perk.name));
+
+	auto parentSkill = newHorizonsPerkHelp::skillEntity(skillId);
+	const int skillRank = std::clamp(hero.getPerkSkillRank(skillId), 1, 3);
+	elements.push_back(std::make_shared<PerkBrowserHelpArea>(row, perkHelpText(hero, skillId, perk), perk.details,
+		std::move(parentSkill), skillRank));
+}
+
+/// Height of the tallest rank text; every column's perk grid starts below it.
+int rankTextHeight(const CGHeroInstance & hero, const std::string & skillId)
+{
+	size_t lines = 1;
+	for(int rank = 1; rank <= 3; ++rank)
+		lines = std::max(lines, CMessage::breakText(rankDescription(hero, skillId, rank), COLUMN_WIDTH - 16, FONT_SMALL).size());
+	const int lineHeight = static_cast<int>(ENGINE->renderHandler().loadFont(FONT_SMALL)->getLineHeight());
+	return std::min(DESCRIPTION_HEIGHT, static_cast<int>(lines) * lineHeight);
+}
+
+/// Column recess, rank name, the Skill's own effect at that rank, then the
+/// rank's perks.  All columns share perksTop so the perk rows stay on one grid.
+void addRankColumn(std::vector<std::shared_ptr<CIntObject>> & elements, const CGHeroInstance & hero,
+	const std::string & skillId, size_t rankIndex, const std::vector<PerkRow> & perks, int perksTop, int columnBottom)
+{
+	const std::array<const char *, 3> rankNames = {"Basic", "Advanced", "Expert"};
+	const int left = columnLeft(rankIndex);
+	const int rank = static_cast<int>(rankIndex) + 1;
+	elements.push_back(std::make_shared<TransparentFilledRectangle>(Rect(left, COLUMN_TOP, COLUMN_WIDTH, columnBottom - COLUMN_TOP),
+		ColorRGBA(35, 21, 13, 92), ColorRGBA(154, 119, 66, 255)));
+	elements.push_back(std::make_shared<CLabel>(left + COLUMN_WIDTH / 2, COLUMN_TOP + 13, FONT_MEDIUM,
+		ETextAlignment::CENTER, Colors::YELLOW, rankNames[rankIndex]));
+	elements.push_back(std::make_shared<CMultiLineLabel>(Rect(left + 8, DESCRIPTION_TOP, COLUMN_WIDTH - 16, perksTop - 14 - DESCRIPTION_TOP),
+		FONT_SMALL, ETextAlignment::TOPCENTER, Colors::WHITE, rankDescription(hero, skillId, rank)));
+	// The rank header and effect text open the Skill's own rank explanation.
+	elements.push_back(rankHelp(hero, skillId, rank,
+		Rect(left + 6, COLUMN_TOP + 3, COLUMN_WIDTH - 12, perksTop - COLUMN_TOP - 6)));
+
+	if(perks.empty())
 	{
-	case Reason::NONE:
-		return newHorizonsPerkAvailability::explanation(evaluation, skillName);
-	case Reason::NO_CATALOGUE:
-		return "No saved catalogue";
-	case Reason::SKILL_NOT_LEARNED:
-		return "Requires this Skill";
-	case Reason::PLANNED_INACTIVE:
-		return "Planned; inactive";
-	case Reason::INSUFFICIENT_RANK:
-		return "Requires " + newHorizonsPerkAvailability::tierName(evaluation.requiredRank) + " rank";
-	case Reason::EARLIER_TIER_MISSING:
-		return "Earlier perk tier missing";
-	case Reason::TIER_OCCUPIED:
-		return "Tier already selected";
-	case Reason::PER_SKILL_CAP:
-		return "Per-Skill limit reached";
+		elements.push_back(std::make_shared<CLabel>(left + COLUMN_WIDTH / 2, perksTop + 14, FONT_SMALL,
+			ETextAlignment::CENTER, Colors::WHITE, "No perks in this rank.", COLUMN_WIDTH - 20));
+		return;
 	}
-	return "Status unknown";
+	for(size_t perkIndex = 0; perkIndex < perks.size(); ++perkIndex)
+	{
+		const Rect row(left + 6, perksTop + static_cast<int>(perkIndex) * PERK_ROW_HEIGHT, COLUMN_WIDTH - 12, PERK_ROW_HEIGHT - 4);
+		addPerkRow(elements, hero, skillId, *perks[perkIndex], row);
+	}
 }
 }
 
 NewHorizonsPerkBrowser::NewHorizonsPerkBrowser(const CGHeroInstance & hero, const std::string & skillId)
-	: CWindowObject(BORDERED, ImagePath::builtin("newHorizonsOrdersBackground.png"))
+	: CWindowObject(BORDERED)
 {
 	OBJECT_CONSTRUCTION;
 
-	const auto & perkState = hero.getPerkState();
 	const auto skill = newHorizonsPerkHelp::skillDefinition(&hero, skillId);
-	if(!skill)
+	std::array<std::vector<PerkRow>, 3> perksByRank;
+	if(skill)
 	{
-		elements.push_back(std::make_shared<CLabel>(320, 214, FONT_MEDIUM, ETextAlignment::CENTER,
-			Colors::WHITE, "No saved perk catalogue is available for this Skill.", 560));
-	}
-	else
-	{
-		std::array<std::vector<const newHorizonsHeroes::PerkDefinition *>, 3> perksByRank;
 		for(const auto & perk : skill->perks)
 		{
 			const int rank = perkRank(perk);
 			if(rank >= 1 && rank <= static_cast<int>(perksByRank.size()))
 				perksByRank[static_cast<size_t>(rank - 1)].push_back(&perk);
 		}
+	}
+	size_t rows = 1;
+	for(const auto & rankPerks : perksByRank)
+		rows = std::max(rows, rankPerks.size());
+	const int perksTop = DESCRIPTION_TOP + (skill ? rankTextHeight(hero, skillId) : 0) + 14;
+	const int columnBottom = perksTop + static_cast<int>(rows) * PERK_ROW_HEIGHT + 4;
+	pos = Rect(0, 0, WINDOW_WIDTH, columnBottom + FOOTER_HEIGHT);
+	// The same tiled leather as the other New Horizons dialogs, cut to fit the
+	// content; BORDERED supplies the original player-coloured frame.
+	elements.push_back(std::make_shared<CFilledTexture>(ImagePath::builtin("DiBoxBck"), Rect(0, 0, pos.w, pos.h)));
 
-		elements.push_back(std::make_shared<CLabel>(320, 19, FONT_BIG, ETextAlignment::CENTER,
+	if(!skill)
+	{
+		elements.push_back(std::make_shared<CLabel>(pos.w / 2, pos.h / 2 - 20, FONT_MEDIUM, ETextAlignment::CENTER,
+			Colors::WHITE, "No saved perk catalogue is available for this Skill.", 560));
+	}
+	else
+	{
+		elements.push_back(std::make_shared<CLabel>(pos.w / 2, 19, FONT_BIG, ETextAlignment::CENTER,
 			Colors::YELLOW, "Perks: " + newHorizonsPerkHelp::skillName(&hero, skillId), 590));
-		elements.push_back(std::make_shared<CLabel>(320, 51, FONT_SMALL, ETextAlignment::CENTER,
-			Colors::WHITE, "Read-only catalogue. Learned perks are marked Learned; browsing changes nothing.", 600));
-
-		constexpr int columnLeft = 12;
-		constexpr int columnStride = 208;
-		constexpr int columnWidth = 200;
-		constexpr int columnTop = 77;
-		constexpr int columnHeight = 381;
-		constexpr int cardsTop = 116;
-		constexpr int cardsBottom = 450;
-		constexpr int cardGap = 3;
-		const std::array<const char *, 3> rankNames = {"Basic", "Advanced", "Expert"};
-		const ColorRGBA panelFill(35, 21, 13, 92);
-		const ColorRGBA panelBorder(154, 119, 66, 255);
-		const ColorRGBA cardFill(20, 13, 9, 86);
-		const ColorRGBA unlearnedBorder(130, 69, 51, 255);
-		const ColorRGBA learnedBorder(184, 143, 62, 255);
-
 		for(size_t rankIndex = 0; rankIndex < perksByRank.size(); ++rankIndex)
-		{
-			const int left = columnLeft + static_cast<int>(rankIndex) * columnStride;
-			elements.push_back(std::make_shared<TransparentFilledRectangle>(Rect(left, columnTop, columnWidth, columnHeight),
-				panelFill, panelBorder));
-			elements.push_back(std::make_shared<CLabel>(left + columnWidth / 2, 86, FONT_MEDIUM,
-				ETextAlignment::CENTER, Colors::YELLOW, rankNames[rankIndex]));
-			elements.push_back(rankHelp(hero, skillId, static_cast<int>(rankIndex) + 1,
-				Rect(left + 6, columnTop + 3, columnWidth - 12, 32)));
-
-			const auto & rankPerks = perksByRank[rankIndex];
-			if(rankPerks.empty())
-			{
-				elements.push_back(std::make_shared<CLabel>(left + columnWidth / 2, 130, FONT_SMALL,
-					ETextAlignment::CENTER, Colors::WHITE, "No perks in this rank.", columnWidth - 20));
-				continue;
-			}
-
-			const int contentHeight = cardsBottom - cardsTop;
-			const int availableHeight = contentHeight - cardGap * static_cast<int>(rankPerks.size() - 1);
-			const int cardHeight = std::min(56, availableHeight / static_cast<int>(rankPerks.size()));
-			const int totalCardsHeight = cardHeight * static_cast<int>(rankPerks.size())
-				+ cardGap * static_cast<int>(rankPerks.size() - 1);
-			const int firstCardTop = cardsTop + (contentHeight - totalCardsHeight) / 2;
-			const int cardLeft = left + 6;
-			const int cardWidth = columnWidth - 12;
-			for(size_t perkIndex = 0; perkIndex < rankPerks.size(); ++perkIndex)
-			{
-				const auto & perk = *rankPerks[perkIndex];
-				const auto evaluation = newHorizonsPerkAvailability::evaluatePerk(
-					perkState, skillId, hero.getPerkSkillRank(skillId), perk);
-				const bool learned = perkState.hasSelection(skillId, perk.id);
-				const auto effectStatus = implementationStatus(perk);
-				const int top = firstCardTop + static_cast<int>(perkIndex) * (cardHeight + cardGap);
-				const Rect card(cardLeft, top, cardWidth, cardHeight);
-				elements.push_back(std::make_shared<TransparentFilledRectangle>(card, cardFill,
-					evaluation.status == newHorizonsPerkAvailability::Status::ACQUIRED ? learnedBorder
-						: evaluation.status == newHorizonsPerkAvailability::Status::AVAILABLE ? panelBorder
-						: evaluation.status == newHorizonsPerkAvailability::Status::LOCKED ? unlearnedBorder
-						: ColorRGBA(117, 96, 64, 255)));
-
-				auto icon = std::make_shared<CAnimImage>(AnimationPath::builtin(newHorizonsHybridCapturedPerkIcon(perk.id, perk.name, perkState.getRules())), 0,
-					Rect(cardLeft + 4, top + 3, 24, 24));
-				elements.push_back(icon);
-				elements.push_back(std::make_shared<CMultiLineLabel>(Rect(cardLeft + 34, top + 2, cardWidth - 40, 26),
-					FONT_TINY, ETextAlignment::TOPLEFT, Colors::WHITE, perk.name));
-				elements.push_back(std::make_shared<CLabel>(cardLeft + 34, top + 30, FONT_TINY,
-					ETextAlignment::TOPLEFT, learned ? Colors::YELLOW : Colors::WHITE,
-					std::string(learned ? "Learned" : "Not learned") + " | "
-						+ newHorizonsPerkAvailability::statusName(evaluation.status), cardWidth - 40));
-				elements.push_back(std::make_shared<CLabel>(cardLeft + 34, top + 42, FONT_TINY,
-					ETextAlignment::TOPLEFT,
-					evaluation.status == newHorizonsPerkAvailability::Status::AVAILABLE ? Colors::GREEN : Colors::WHITE,
-					reasonCaption(evaluation, newHorizonsPerkHelp::skillName(&hero, skillId)), cardWidth - 40));
-
-				const auto description = newHorizonsPerkHelp::format(&hero, skillId, perk.name,
-					newHorizonsPerkHelp::tierName(perk.requiredRank), perk.description)
-					+ "\n\n" + newHorizonsPerkAvailability::explanation(evaluation, newHorizonsPerkHelp::skillName(&hero, skillId))
-					+ "\nImplementation: " + effectStatus + ". This browser is read-only; it does not unlock perks.";
-				auto parentSkill = newHorizonsPerkHelp::skillEntity(skillId);
-				const int skillRank = std::clamp(hero.getPerkSkillRank(skillId), 1, 3);
-				elements.push_back(std::make_shared<PerkBrowserHelpArea>(card, description, perk.details,
-					std::move(parentSkill), skillRank));
-			}
-		}
+			addRankColumn(elements, hero, skillId, rankIndex, perksByRank[rankIndex], perksTop, columnBottom);
 	}
 
-	elements.push_back(std::make_shared<CLabel>(16, 477, FONT_TINY, ETextAlignment::TOPLEFT,
+	elements.push_back(std::make_shared<CLabel>(16, pos.h - 28, FONT_TINY, ETextAlignment::TOPLEFT,
 		Colors::WHITE, "Click a perk for its explanation; use i for details.", 500));
 	// Read-only information window: the original checkmark closes it (Enter or Escape).
 	closeButton = std::make_shared<CButton>(Point(pos.w - 72, pos.h - 38), AnimationPath::builtin("IOKAY"),
 		CButton::tooltip("Close", "Return to the hero screen without changing any Skills or perks."),
 		[this] { close(); }, EShortcut::GLOBAL_RETURN);
 	updateShadow();
+	center();
 }

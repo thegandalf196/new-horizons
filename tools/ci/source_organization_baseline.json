@@ -23090,18 +23090,6 @@
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
       "sha256": "511bf8ff3a9f6c735fedaeb102617cc534182c30e32e3b8aa4c40c0d07c90dc0"
     },
-    "client/windows/HeroSkillOddsWindow.cpp::HeroSkillOddsWindow::HeroSkillOddsWindow(const CGHeroInstance & hero) : CWindowObject(BORDERED)#1": {
-      "deferral": "Owner: ui_developer. Before further odds-window layout/label expansion, extract cohesive captured Skill display rows through existing shared presentation, with explicit hero and existing measured weights as input and immutable label/help rows as output. Preserve filtering, stable sorting, probability arithmetic and fallback text; require old/current captured-label and unchanged-weight comparisons. Exact103-line existing-hotspot renewal below150, not ceiling permission.",
-      "kind": "exception",
-      "lines": 103,
-      "owner": "ui_developer",
-      "previous_review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "rationale": "Skill label helper receives the explicit hero and delegates to captured Skill presentation; existing weights, filtering, sort and probability arithmetic remain unchanged. Exact 103 to 103 physical lines/hash renewal only; all inherited extraction and characterization obligations remain binding.",
-      "review": "IR-COMPOSED-FEATURE-NUMERIC-EXACT-20261029",
-      "review_scope": "Exact private047bb composition maintained function span 65-167 (103 physical lines, including any template declaration); bounded cohesion/existing-hotspot review only. No future growth, native, rendered or actual-Main gate claim.",
-      "review_status": "INDEPENDENT_SOURCE_METADATA_REVIEWED_NATIVE_PENDING",
-      "sha256": "31a99fe751e88238956561f5f6bb904acdbc3015841e389f6fcea6a50b6693f4"
-    },
     "client/windows/HeroStartingPreview.cpp::HeroStartingPreview heroStartingPreview(HeroTypeID id, const CMapInfo * selectedMap, PlayerColor owner, const CGHeroInstance * capturedHero)#1": {
       "deferral": "UI developer: extract selected-map context and authored-hero lookup before further expansion; preserve loader-only ownership, translator priority, default/failure labeling and saved-world refusal to claim fresh defaults. Exact94-line method only; no general growth allowance. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. UI developer: before further affected growth, extract coherent secondary-Skill slot refresh consuming owned descriptions and actual hero context; preserve saved/current text, original rank and event ownership with native and rendered parity.",
       "kind": "exception",
@@ -23148,20 +23136,6 @@
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
       "sha256": "0ca0ddbddf4b5fdc1e32493227a55014c5c8c9baf1cac7e480ae3635bd4cccbc"
-    },
-    "client/windows/NewHorizonsPerkBrowser.cpp::NewHorizonsPerkBrowser::NewHorizonsPerkBrowser(const CGHeroInstance & hero, const std::string & skillId) : CWindowObject(BORDERED, ImagePath::builtin(\"newHorizonsOrdersBackground.png\"))#1": {
-      "deferral": "UI developer owns extraction of read-only perk rank-column/card construction into a focused PerkBrowserCards presentation owner before substantive affected-area growth. Accept the saved SkillDefinition/PerkState read model, current Skill rank and explicit native geometry; return parent-owned widgets and popup-only help values without retaining borrowed temporary definitions or mutating gameplay. Preserve three rank columns, ten-perk catalogue and tier/eligibility captions, current/historical captured label/icon identity, exact card positions/font/colors, learned state, lazy popup creation, child ownership, Close/Escape and shadow behavior. Require maintained browser guards, native saved-catalogue/current-historical icon checks and isolated rendered open/right-click/close/reopen/legacy-absence parity. Exact115-line no-growth allowance covers only the single captured-name icon argument; no future growth or general structural clearance. Next substantive browser construction growth should extract rank-column assembly with saved-rule identity, locked/acquired states and native card hitbox parity; no150 ceiling increase.",
-      "hybrid_predecessor_review": "IR-0911-INTEGRATION-SOURCE-ORGANIZATION",
-      "kind": "exception",
-      "lines": 117,
-      "owner": "ui_developer",
-      "previous_review": "IR-NH092-ORG-3E82D142-20261116",
-      "proposal_predecessor_review": "PROPOSED-CLIENT225-BOUNDED-20261103",
-      "rationale": "Exact 117 to 117-line scope. Client presentation/input routing integrates current spell/action receipts and validated captured views. Preserve command submission, session/teardown ownership, native layout and ordinary input behavior; no direct gameplay mutation is introduced. Original Heroes III buttons: the custom NH Cancel/Spells buttons are replaced in place by IOKAY (read-only windows), ICANCEL (choices) or the battle Cast Spell button; no new responsibility. 117 to 117 lines; no future growth credit.",
-      "review": "CLAUDE-ORIGINAL-CLOSE-BUTTONS-20261123",
-      "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
-      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "f94484a1b8b85b8057a0fad8f6420b1a1859a341ee8bafc9ebb507103bb63ebe"
     },
     "client/windows/QuickRecruitmentWindow.cpp::void QuickRecruitmentWindow::setCreaturePurchaseCards()#1": {
       "deferral": "Before further layout growth, extract category/card layout preparation with explicit row and variants inputs; preserve category grouping, native geometry, one card per row and slider/cycling ownership. Exact93-line adapter change only; no future allowance.",

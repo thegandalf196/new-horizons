@@ -13,7 +13,8 @@
 class CGHeroInstance;
 class CButton;
 
-/// Read-only catalogue of the saved perk definitions for one learned Skill.
+/// Read-only catalogue of the saved perk definitions for one Skill, learned or
+/// not; the hero's learned perks are highlighted and browsing changes nothing.
 class NewHorizonsPerkBrowser : public CWindowObject
 {
 	std::vector<std::shared_ptr<CIntObject>> elements;

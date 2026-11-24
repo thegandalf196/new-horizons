@@ -50,4 +50,12 @@ assert 'std::make_shared<CTextBox>' in window
 assert 'Not exact next-level probabilities.' in window
 assert 'Base share ' in window
 assert 'const CGHeroInstance & hero' in window
+# Same tiled leather surface as the perk browser; no per-skill card boxes.
+assert 'std::make_shared<CFilledTexture>(ImagePath::builtin("DiBoxBck"), Rect(0, 0, pos.w, pos.h))' in window
+assert 'TransparentFilledRectangle' not in window, "Skill entries sit directly on the dialog surface"
+# Left-click opens the Skill's perk catalogue, as a learned Skill does in the hero window.
+assert 'createAndPushWindow<NewHorizonsPerkBrowser>(*hero, skillId)' in window
+assert 'skillId = skill.toSkill()->getJsonKey();' in window
+assert 'newHorizonsPerkHelp::skillDefinition(hero, skillId)' in window
+assert 'LRClickableAreaWTextComp::clickPressed(cursorPosition)' in window, "Skills without a catalogue keep their info dialog"
 print("Hero skill odds binding, saved-weight source, disclaimer and layout guard PASS")
