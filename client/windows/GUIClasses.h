@@ -67,6 +67,7 @@ class CSpellScrollPresentation final : public CIntObject
 {
 	std::shared_ptr<CAnimImage> background;
 	std::shared_ptr<CAnimImage> emblem;
+	std::shared_ptr<class SpellSchoolBadge> schoolBadge;
 	CArtPlace * interactionTarget = nullptr;
 
 public:

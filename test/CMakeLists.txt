@@ -107,6 +107,7 @@ set(test_SRCS
 		client/ConsecratedArmsPrayerChoiceTest.cpp
 		client/CreatureDamagePresentationTest.cpp
 		client/LeadershipEfficiencyRowTest.cpp
+		client/SpellSchoolBadgeLayoutTest.cpp
 		client/CreatureAbilityGroupingTest.cpp
 		hero/LeadershipEfficiencyRulesTest.cpp
 		server/battles/LeadershipEfficiencyBattleTest.cpp

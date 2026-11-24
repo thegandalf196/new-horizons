@@ -3129,12 +3129,12 @@
     "client/windows/GUIClasses.h": {
       "confirmation_predecessor_review": "IR-QUICK-STUDY-CURRENT2-PRESERVING-METADATA-SOURCE-20261101",
       "functions": [],
-      "previous_review": "RECRUITMENT-PRESENTATION-REDUCTION-EXACT-SOURCE-20261114",
-      "rationale": "Complete513-line header read independently. All classes/nested classes contain declarations and field/default initializers, no inline callable bodies. The two pre-existing CObjectListWindow vector/image default arguments still produce parser recovery; raw-row identity and layoutCards declarations add no callable body. Complete exact-file callable inventory is empty.",
-      "review": "IR-SETH-UI-AI-EXACT-SOURCE-20261114-V1",
+      "previous_review": "IR-SETH-UI-AI-EXACT-SOURCE-20261114-V1",
+      "rationale": "Complete513-line header read independently. All classes/nested classes contain declarations and field/default initializers, no inline callable bodies. The two pre-existing CObjectListWindow vector/image default arguments still produce parser recovery; raw-row identity and layoutCards declarations add no callable body. Complete exact-file callable inventory is empty. Spell school badge: one CSpellScrollPresentation member declaration (schoolBadge); no callable body, inventory stays empty.",
+      "review": "CLAUDE-SPELL-SCHOOL-BADGE-20261123",
       "review_scope": "Complete exact-file callable inventory only; no numeric-growth, C++ or runtime acceptance.",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_METADATA_REVIEWED_RUNTIME_UNRUN",
-      "sha256": "19a44aa9305adef5b0a9dd50e7f9c764eee9963e59f32fd567d80aa11fc778cf"
+      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
+      "sha256": "a3dbfde2be2ef639ce215c57ff5a3ebf13220176c470da4a889905a8b03d777d"
     },
     "client/windows/InfoWindows.h": {
       "functions": [],
@@ -20602,18 +20602,18 @@
       "hybrid_predecessor_review": "IR-0911-BOUNDED-DIRECT-MAP-COMPOSITION-V3",
       "inherited_deferral": "Owner: ui_developer / gameplay_engineer. Bounded exception for Major System Rework: Leadership attribute restoration, square-root damage scaling, and hero UI panel integration. Hotspots remain subject to ongoing shrinking and modularization policy.\nExact source-list bound only. Before substantive build logic, extract a cohesive target configuration section. Verify source/link membership once and retain no duplicate translation units. Prior stricter obligations remain in inherited_deferral, where present.\n\nBefore introducing conditional build logic, extract a cohesive target helper; retain exact source/link membership, one registration per translation unit and existing inherited obligations.",
       "kind": "exception",
-      "lines": 790,
+      "lines": 792,
       "owner": "ui_developer",
       "previous_exact_review": "IR-PERFORMANCE-STEP2-BUILD-ORG-V1",
       "previous_proposal_review": "PROPOSED-EXACT-REGISTRY-SIX-SOURCE-20261103",
-      "previous_review": "CLAUDE-TOWN-ANIM-CURRENT-FRAME-20261123",
+      "previous_review": "CLAUDE-SYLVAN-AMBUSH-20261123",
       "prior_deferral": "Before substantive build-control growth, extract a cohesive target helper; retain all inherited deferrals and one registration per translation unit.",
       "proposal_predecessor_review": "PROPOSED-CLIENT225-BOUNDED-20261103",
-      "rationale": "Exact successor for 0.93.1 beta step 1 (Precise Casting resistance halving, core Stewardship and Lord of the Crypts, +3%/level specialty scaling, activation of unchanged extended ordinary specialties): bounded routing hooks and focused owners only. Existing extraction deferrals retained; no future growth credit. Hero class lean (Might/Magic) row: three source-list lines register the focused HeroClassLean.h, HeroClassLeanIndicator.h/.cpp owner. 781 to 784 lines; no future growth credit. Hero window stat row: Leadership, Mana, Regen, Movement and Vision merge into one row owned by the focused HeroWindowStatRow.cpp/HeroStatRowLayout.h (shared with the generated background); the class line and lean row move up 4 px; the skills panel moves up one row. 784 to 786 lines; no future growth credit. Town structure frame mode: two source-list lines register the focused TownStructureStateFrames.h/.cpp owner. 786 to 788 lines; no future growth credit. Exact successor for Sylvan Tactics 5 (Ambush): two source-list lines register the focused SylvanAmbushWaitButton.h/.cpp owner; the rules live in the focused NewHorizonsSylvanAmbush and SylvanAmbushState units. 788 to 790 lines; no future growth credit.",
-      "review": "CLAUDE-SYLVAN-AMBUSH-20261123",
+      "rationale": "Exact successor for 0.93.1 beta step 1 (Precise Casting resistance halving, core Stewardship and Lord of the Crypts, +3%/level specialty scaling, activation of unchanged extended ordinary specialties): bounded routing hooks and focused owners only. Existing extraction deferrals retained; no future growth credit. Hero class lean (Might/Magic) row: three source-list lines register the focused HeroClassLean.h, HeroClassLeanIndicator.h/.cpp owner. 781 to 784 lines; no future growth credit. Hero window stat row: Leadership, Mana, Regen, Movement and Vision merge into one row owned by the focused HeroWindowStatRow.cpp/HeroStatRowLayout.h (shared with the generated background); the class line and lean row move up 4 px; the skills panel moves up one row. 784 to 786 lines; no future growth credit. Town structure frame mode: two source-list lines register the focused TownStructureStateFrames.h/.cpp owner. 786 to 788 lines; no future growth credit. Exact successor for Sylvan Tactics 5 (Ambush): two source-list lines register the focused SylvanAmbushWaitButton.h/.cpp owner; the rules live in the focused NewHorizonsSylvanAmbush and SylvanAmbushState units. 788 to 790 lines; no future growth credit. Spell school badge: two source-list lines register the focused SpellSchoolBadge.h/.cpp owner. 790 to 792 lines; no future growth credit.",
+      "review": "CLAUDE-SPELL-SCHOOL-BADGE-20261124",
       "review_scope": "Exact bounded source organization and failure-path review only; native/rendered acceptance and future growth unapproved.",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "e25874a8c4e5ccc438125ff3aedeca97e33f362f1ddfc7e8e300c0cebc38e080",
+      "sha256": "f9db1f9071489e7e1502b4df7e9463644a1de6f6600ab881df80416ed55f8d2f",
       "inherited_deferral_step2": "Exact current size only. Retain all prior obligations below; further renderer/cache expansion must extract its specific presentation or map-cache policy behind a focused interface and verify clipping, zoom, wrap, retained ownership, both backends and guarded scene/quit behavior before accepting it."
     },
     "client/CPlayerInterface.cpp": {
@@ -22972,15 +22972,15 @@
       "deferral": "Preserve all inherited dialog extraction obligations; do not regrow this umbrella.",
       "inherited_deferral": "\nUI developer owns extraction of CUniversityWindow/CUnivConfirmWindow and cohesive helpers into a focused UniversityWindow component before expansion. Preserve interfaces, original art/layout and command submission. Acceptance requires local compile, existing regression coverage and rendered offer/acquired rank, tuition/help, affordability/payment, cancellation and close checks; decrease this exact3066-line baseline. No unrelated GUI extraction is approved. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. UI developer: before further affected growth, extract coherent secondary-Skill slot refresh consuming owned descriptions and actual hero context; preserve saved/current text, original rank and event ownership with native and rendered parity. UI developer: before further substantive garrison-dialog growth, extract cohesive CGarrisonWindow construction/update/holdsGarrison into its focused owner; preserve CArmedInstance/hero inputs, original panels, CGarrisonInt ownership and validated transfer callbacks. Verify neutral blank marker, all valid player crests, town visiting hero portrait, split/transfer and normal close; retain all earlier deferrals and decreasing bounds. Before further substantive expansion, owning engine/gameplay/UI specialist must extract the next coherent touched policy, ordered stage, codec family or widget responsibility into a focused owner, preserving callback visibility, rejection atomicity, serialized field order, payment and RNG/packet order. This exact bounded migration/registry/validation routing gives no future growth credit.",
       "kind": "exception",
-      "lines": 2231,
+      "lines": 2236,
       "owner": "ui_developer",
       "preceding_review": "IR-SYLVAN-CAPTURED-ICONS-LINEAGE-EXACT-20261029",
-      "previous_review": "PROPOSED-0920-EXACT-SOURCE-ORGANIZATION",
-      "rationale": "Exact 2231 to 2231-line scope. Client presentation/input routing integrates current spell/action receipts and validated captured views. Preserve command submission, session/teardown ownership, native layout and ordinary input behavior; no direct gameplay mutation is introduced.",
-      "review": "IR-NH092-ORG-3E82D142-20261116",
+      "previous_review": "IR-NH092-ORG-3E82D142-20261116",
+      "rationale": "Exact 2231 to 2231-line scope. Client presentation/input routing integrates current spell/action receipts and validated captured views. Preserve command submission, session/teardown ownership, native layout and ordinary input behavior; no direct gameplay mutation is introduced. Spell school badge: the scroll presentation creates the focused SpellSchoolBadge owner, and the House of Wisdom layout reserves its overhang; no new responsibility in this file. 2231 to 2236 lines; no future growth credit.",
+      "review": "CLAUDE-SPELL-SCHOOL-BADGE-20261123",
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "3309df00b9c1d09773c390610a921d965ec86b555f1cccf9215d09f3943278f8"
+      "sha256": "8618b4adb8251c254047089efb4a2ad14ee75f17a35e763b9437b921ee8b4fa0"
     },
     "client/windows/GUIClasses.cpp::CSplitWindow::CSplitWindow(const CCreature * creature, std::function<void(int, int)> callback_, int leftMin_, int rightMin_, int leftAmount_, int rightAmount_, CSplitWindowOwner leftOwnerInfo, CSplitWindowOwner rightOwnerInfo) : CWindowObject(0, splitDialogBackgroundImage()), callback(callback_), leftAmount(leftAmount_), rightAmount(rightAmount_), initialLeftAmount(leftAmount_), initialRightAmount(rightAmount_), splitCreature(creature), leftArmy(leftOwnerInfo.army), rightArmy(rightOwnerInfo.army), leftSlot(leftOwnerInfo.slot), rightSlot(rightOwnerInfo.slot), leftMin(leftMin_), rightMin(rightMin_)#1": {
       "kind": "review",
@@ -23019,14 +23019,14 @@
     "client/windows/GUIClasses.cpp::void CUniversityWindow::CItem::update()#1": {
       "deferral": "Owner: ui_developer. Before further university item-presentation growth, extract immutable Skill name/help/rank row preparation using existing NewHorizonsPerkHelp and explicit owner-hero context. Keep widget updates and purchases in CItem; preserve cost/eligibility, tooltip/hover agreement, historical/current labels and callback lifetime. Require context-label and purchase/UI regression checks. Exact93-line existing-hotspot renewal below150, no future allowance.",
       "kind": "exception",
-      "lines": 94,
+      "lines": 95,
       "owner": "ui_developer",
-      "previous_review": "IR-COMPOSED-FEATURE-NUMERIC-EXACT-20261029",
-      "rationale": "Replace exactly one House of Wisdom scroll price read with the shared hero-aware artifactPurchaseQuote cost. One-line net growth preserves the existing item rendering/admission routine and adds no independent arithmetic. Extract the next touched University pricing/presentation responsibility before further substantive growth. Exact measured unit only; no future growth credit.",
-      "review": "PROPOSED-0920-EXACT-SOURCE-ORGANIZATION",
+      "previous_review": "PROPOSED-0920-EXACT-SOURCE-ORGANIZATION",
+      "rationale": "Replace exactly one House of Wisdom scroll price read with the shared hero-aware artifactPurchaseQuote cost. One-line net growth preserves the existing item rendering/admission routine and adds no independent arithmetic. Extract the next touched University pricing/presentation responsibility before further substantive growth. Exact measured unit only; no future growth credit. Spell school badge: the scroll presentation creates the focused SpellSchoolBadge owner, and the House of Wisdom layout reserves its overhang; no new responsibility in this file. 94 to 95 lines; no future growth credit.",
+      "review": "CLAUDE-SPELL-SCHOOL-BADGE-20261123",
       "review_scope": "Proposed source organization and exact bound only; native/rendered/runtime acceptance remains separate.",
-      "review_status": "PROPOSED_AWAITING_INDEPENDENT_REVIEW",
-      "sha256": "a1db6b7ec622fe830acf4ea0936b77260d60875aa81b8ccbc1b3e30ae99da218"
+      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
+      "sha256": "e079f624086815e32927803a87e6a30f477a28f18b898093fe3b60853eac9570"
     },
     "client/windows/GUIClasses.h": {
       "completed_p_predecessor": {
@@ -23040,14 +23040,14 @@
       "deferral": "Before further CRecruitmentWindow declaration growth, move that entire class/nested-card declaration into its focused header and update all direct consumers, retaining callback signatures and the complete callable inventory. Other inherited header extraction obligations remain.",
       "inherited_deferral": "\nPrior CLevelWindow declaration extraction requirement is discharged by exact102-line focused header, unchanged80-line declaration and all4directCPPconsumers. Shared header643\u2192567 decreases76 from actual pre-Learning; remaining dialog declarations stay coherent, complete zero-inline-body manual inventory retained. Continue extracting a touched dialog class before substantive shared-header growth; no future growth credit.",
       "kind": "exception",
-      "lines": 513,
+      "lines": 514,
       "owner": "ui_developer",
-      "previous_review": "RECRUITMENT-PRESENTATION-REDUCTION-EXACT-SOURCE-20261114",
-      "rationale": "Declaration-only header511 to513: one const raw-stock-row field and one private layout declaration accompany the complete recruitment CPP extraction. No inline callable body, new UI policy or exposed simulation mutation. Exact bounded declaration renewal; complete manual inventory remains empty.",
-      "review": "IR-SETH-UI-AI-EXACT-SOURCE-20261114-V1",
+      "previous_review": "IR-SETH-UI-AI-EXACT-SOURCE-20261114-V1",
+      "rationale": "Declaration-only header511 to513: one const raw-stock-row field and one private layout declaration accompany the complete recruitment CPP extraction. No inline callable body, new UI policy or exposed simulation mutation. Exact bounded declaration renewal; complete manual inventory remains empty. Spell school badge: one member declaration for the focused SpellSchoolBadge owner. 513 to 514 lines; no future growth credit.",
+      "review": "CLAUDE-SPELL-SCHOOL-BADGE-20261123",
       "review_scope": "Exact UI/AI afterimages only; no compile, runtime, rendered, art or publication acceptance.",
-      "review_status": "INDEPENDENT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
-      "sha256": "19a44aa9305adef5b0a9dd50e7f9c764eee9963e59f32fd567d80aa11fc778cf"
+      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
+      "sha256": "a3dbfde2be2ef639ce215c57ff5a3ebf13220176c470da4a889905a8b03d777d"
     },
     "client/windows/HeroGrowthWindow.cpp": {
       "completed_p_predecessor": {

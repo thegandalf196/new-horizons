@@ -11,6 +11,7 @@
 #include <boost/algorithm/string/replace.hpp>
 #include "GUIClasses.h"
 #include "NewHorizonsPerkHelp.h"
+#include "SpellSchoolBadge.h"
 
 #include "CCastleInterface.h"
 #include "CCreatureWindow.h"
@@ -204,6 +205,7 @@ CSpellScrollPresentation::CSpellScrollPresentation(SpellID spell, Point position
 		background = spellFrame;
 
 	pos = background->pos;
+	schoolBadge = SpellSchoolBadge::create(spell);
 }
 
 void CSpellScrollPresentation::setVisible(bool visible)
@@ -212,6 +214,8 @@ void CSpellScrollPresentation::setVisible(bool visible)
 		background->visible = visible;
 	if(emblem)
 		emblem->visible = visible;
+	if(schoolBadge)
+		schoolBadge->setEnabled(visible);
 }
 
 void CSpellScrollPresentation::setInteractionTarget(CArtPlace * target)
@@ -1137,7 +1141,8 @@ void CUniversityWindow::CItem::update()
 			scroll->image->visible = false;
 		}
 		constexpr int houseTopBarY = -29;
-		constexpr int spellScrollHeight = 61;
+		// The school badge hangs below the 61px parchment; keep the price bar clear of it.
+		const int spellScrollHeight = 61 + SpellSchoolBadge::overhang(scrollID);
 		const int initialTopBarY = parent->houseOfWisdom ? houseTopBarY : -22;
 		topBar = std::make_shared<CPicture>(image, Point(-28, initialTopBarY));
 		bottomBar = std::make_shared<CPicture>(image, Point(-28, 48));
