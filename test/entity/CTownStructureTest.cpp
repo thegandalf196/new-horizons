@@ -52,16 +52,19 @@ TEST(CTownStructureTest, SchemaAcceptsOnlyBooleanCurrentFrameOnly)
 	EXPECT_TRUE(validStructure(withoutOption));
 }
 
-// The vcmi-test fixture mod marks only Castle's blacksmith; every other structure keeps the
-// original drawing, the first frame of its range beneath the current one. Tests load the TEST
-// preset without New Horizons, so Academy's opted-in structures are checked by the Python
-// Academy town animation art test instead.
+// The vcmi-test fixture mod marks only Castle's blacksmith. With New Horizons loaded, Academy
+// (core:tower) also marks its six animated structures. Every other structure keeps the original
+// drawing, the first frame of its range beneath the current one.
 TEST(CTownStructureTest, OnlyMarkedStructuresDrawCurrentFrameOnly)
 {
 	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 
+	static const std::set<std::string> academyAnimated = {
+		"blacksmith", "grail", "dwellingLvl1", "dwellingUpLvl1", "dwellingLvl3", "dwellingUpLvl3"};
+
 	size_t marked = 0;
 	size_t checked = 0;
+	bool fixtureMarked = false;
 	for(const auto & faction : LIBRARY->townh->objects)
 	{
 		if(!faction || !faction->town)
@@ -70,11 +73,19 @@ TEST(CTownStructureTest, OnlyMarkedStructuresDrawCurrentFrameOnly)
 		{
 			++checked;
 			const bool fixture = faction->getId() == FactionID::CASTLE && structure->identifier == "blacksmith";
-			EXPECT_EQ(structure->currentFrameOnly, fixture) << faction->getJsonKey() << " " << structure->identifier;
+			const bool academy = faction->getId() == FactionID::TOWER && academyAnimated.count(structure->identifier) != 0;
+			if(fixture)
+				fixtureMarked = structure->currentFrameOnly;
+			else if(!academy)
+			{
+				EXPECT_FALSE(structure->currentFrameOnly) << faction->getJsonKey() << " " << structure->identifier;
+			}
 			if(structure->currentFrameOnly)
 				++marked;
 		}
 	}
-	EXPECT_EQ(marked, 1);
+	EXPECT_TRUE(fixtureMarked);
+	// 1 in the plain TEST preset; 7 with New Horizons' Academy
+	EXPECT_TRUE(marked == 1 || marked == 1 + academyAnimated.size()) << marked;
 	EXPECT_GT(checked, 100);
 }
