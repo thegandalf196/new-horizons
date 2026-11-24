@@ -8,7 +8,6 @@
  *
  */
 #include "StdInc.h"
-#include "../../luascript/StdInc.h"
 
 #include "../../lib/battle/CObstacleInstance.h"
 #include "../../lib/networkPacks/PacksForClientBattle.h"
@@ -17,7 +16,6 @@
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/spells/MagicalDamageReduction.h"
 #include "../../lib/spells/ObstacleCasterProxy.h"
-#include "../../luascript/api/battle/SpellObstacleDescriptor.h"
 
 #include <stdexcept>
 
@@ -46,19 +44,11 @@ SpellCreatedObstacle hazard(SpellID spell)
 }
 }
 
-TEST(OverwhelmingFormulaObstacle, DescriptorAndTriggerProxyRetainOriginalCastIdentityForMineAndFireWall)
+TEST(OverwhelmingFormulaObstacle, TriggerProxyRetainsOriginalCastIdentityForMineAndFireWall)
 {
 	for(const SpellID spellId : {SpellID(SpellID::LAND_MINE), SpellID(SpellID::FIRE_WALL)})
 	{
-		CSpell spell;
-		spell.id = spellId;
-		scripting::api::SpellObstacleDescriptor descriptor;
-		descriptor.spell = &spell;
-		descriptor.casterSide = BattleSide::ATTACKER;
-		descriptor.pos = BattleHex(5, 5);
-		descriptor.capturedMdrPenetration = originalCapture();
-		const auto obstacle = descriptor.toObstacle();
-		EXPECT_EQ(obstacle.capturedMdrPenetration, originalCapture());
+		const auto obstacle = hazard(spellId);
 		spells::ObstacleCasterProxy proxy(PlayerColor(0), nullptr, obstacle);
 		EXPECT_EQ(proxy.getCapturedMdrPenetration(), originalCapture());
 		const auto formula = spells::capturedOverwhelmingFormula(proxy.getCapturedMdrPenetration());

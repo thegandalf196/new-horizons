@@ -31,11 +31,12 @@
     },
     ".github/workflows/instruction-portability.yml": {
       "functions": [],
-      "rationale": "Complete exact167-line workflow inventory. Twelve literal run blocks33-37,44-52,57-66,77-85,91,97-99,106-108,113-117,128-129,147-154,159-160,165-167 and scalar140 contain external commands/assignments only. Added external bonus-list guard test58 and guard116 define no local callable. Existing shell conditional groups47-49/77-84 and command substitutions48/78/79/98/106 remain invocations. No shell function, inline language/heredoc, lambda or function-like macro. Complete callable inventory stays empty; external sources remain independently measured. Branch-model update: only branch names in push triggers or job gates change (main to beta, or the upstream beta push entry removed); no run body changes.",
-      "review": "CLAUDE-BETA-BRANCH-CHECKS-20261123",
-      "sha256": "877e932b336fe61650cd8db26d6f30709f65a6401c3502fbe8a417da03c37095",
+      "rationale": "Complete exact167-line workflow inventory. Twelve literal run blocks33-37,44-52,57-66,77-85,91,97-99,106-108,113-117,128-129,147-154,159-160,165-167 and scalar140 contain external commands/assignments only. Added external bonus-list guard test58 and guard116 define no local callable. Existing shell conditional groups47-49/77-84 and command substitutions48/78/79/98/106 remain invocations. No shell function, inline language/heredoc, lambda or function-like macro. Complete callable inventory stays empty; external sources remain independently measured. Branch-model update: only branch names in push triggers or job gates change (main to beta, or the upstream beta push entry removed); no run body changes. Lua oracle retirement: only the LuaJIT development package is dropped from one apt install list; line count and callable inventory unchanged.",
+      "review": "CLAUDE-LUA-RETIRE-20261124",
+      "sha256": "e60bd924dce5047529da76a0c3e4121975fc9f92ed2c91ef8c85abe8e1b6b0f7",
       "review_scope": "Exact independent source/organization only; no compilation, runtime, rendering, timing, publication or future-growth acceptance.",
-      "review_status": "AUTHOR_GENERATED_PENDING_INTEGRATOR_REVIEW_NO_NATIVE_ACCEPTANCE"
+      "review_status": "AUTHOR_GENERATED_PENDING_INTEGRATOR_REVIEW_NO_NATIVE_ACCEPTANCE",
+      "previous_review": "CLAUDE-BETA-BRANCH-CHECKS-20261123"
     },
     ".github/workflows/new-horizons-windows-manual-setup.yml": {
       "functions": [],
@@ -9620,114 +9621,6 @@
       "review": "independent-source-manual-review-2026-10-15",
       "sha256": "01163fa795363831e830bf6126bc8f8de3549b146e58128fa80b1d06d7b476ae"
     },
-    "luascript/LuaCallWrapper.h": {
-      "functions": [
-        {
-          "end": 106,
-          "start": 98,
-          "symbol": "scripting::LuaMethodWrapper::static void fetchArg(LuaStack & stack, TupleType & t)#1"
-        },
-        {
-          "end": 116,
-          "start": 108,
-          "symbol": "scripting::LuaMethodWrapper::static decltype(auto) unwrapArg(TupleType & t)#1"
-        },
-        {
-          "end": 122,
-          "start": 118,
-          "symbol": "scripting::LuaMethodWrapper::static void fetchAll(LuaStack & stack, TupleType & t, std::index_sequence<I...>)#1"
-        },
-        {
-          "end": 128,
-          "start": 124,
-          "symbol": "scripting::LuaMethodWrapper::static ReturnType callMethod(ObjectRawPtr objPtr, TupleType & args, std::index_sequence<I...>)#1"
-        },
-        {
-          "end": 162,
-          "start": 130,
-          "symbol": "scripting::LuaMethodWrapper::static int invokeImpl(lua_State * L)#1"
-        },
-        {
-          "end": 177,
-          "start": 165,
-          "symbol": "scripting::LuaMethodWrapper::static int invoke(lua_State * L)#1"
-        },
-        {
-          "end": 218,
-          "start": 210,
-          "symbol": "scripting::LuaFunctionWrapper::static void fetchArg(LuaStack & stack, TupleType & t)#1"
-        },
-        {
-          "end": 228,
-          "start": 220,
-          "symbol": "scripting::LuaFunctionWrapper::static decltype(auto) unwrapArg(TupleType & t)#1"
-        },
-        {
-          "end": 234,
-          "start": 230,
-          "symbol": "scripting::LuaFunctionWrapper::static void fetchAll(LuaStack & stack, TupleType & t, std::index_sequence<I...>)#1"
-        },
-        {
-          "end": 240,
-          "start": 236,
-          "symbol": "scripting::LuaFunctionWrapper::static ReturnType callFunc(TupleType & args, std::index_sequence<I...>)#1"
-        },
-        {
-          "end": 263,
-          "start": 242,
-          "symbol": "scripting::LuaFunctionWrapper::static int invokeImpl(lua_State * L)#1"
-        },
-        {
-          "end": 278,
-          "start": 266,
-          "symbol": "scripting::LuaFunctionWrapper::static int invoke(lua_State * L)#1"
-        },
-        {
-          "end": 299,
-          "start": 287,
-          "symbol": "scripting::LuaCallWrapper::static int invoke(lua_State * L)#1"
-        }
-      ],
-      "rationale": "Thirteen bodies: LuaMethodWrapper helper templates98\u2013106/108\u2013116/118\u2013122/124\u2013128 and invokeImpl130\u2013162/invoke165\u2013177; LuaFunctionWrapper helpers210\u2013218/220\u2013228/230\u2013234/236\u2013240 and invokeImpl242\u2013263/invoke266\u2013278; LuaCallWrapper invoke287\u2013299. Template lines, constexpr branches, try/catch and final lua_error paths included. Pointer/function/const/noexcept trait specializations are data/types, not callable bodies. No macros/lambdas.",
-      "review": "IR-MANUAL-BATCH6-fd2cb4d2-20261015",
-      "sha256": "9b3cda4f079be700d9f38d1bc08a99f5f5888ada8b3edb4a40173186e7395b71"
-    },
-    "luascript/LuaImplementationIdentity.h": {
-      "functions": [],
-      "rationale": "Complete exact52-line header has zero callable bodies: nine public constructor/method declarations and two private method declarations, plus private data only. The one new currentLifeDrain boolean is a transient data initializer, not a callable. Existing missing:type_identifier recovery24 is the unchanged empty string_view default argument; class/namespace braces and that initializer are not implementations. Full declaration coverage only; no source edit, runtime acceptance, production size exception, pending coverage or exclusion.",
-      "review": "IR-CURRENT-LIFEDRAIN-IDENTITY-DECLARATION-COVERAGE-20261103",
-      "review_scope": "Exact52-line zero-callable header coverage only; no size ceiling exception, future growth or native acceptance.",
-      "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_PENDING",
-      "sha256": "313c3660e4aeddf5fac6949cecdf214d576e67deed830cbd42395c7f7a146d59"
-    },
-    "luascript/LuaScriptInstance.h": {
-      "functions": [
-        {
-          "end": 59,
-          "start": 59,
-          "symbol": "scripting::LuaScriptInstance::std::string getIdentifier() const override#1"
-        },
-        {
-          "end": 60,
-          "start": 60,
-          "symbol": "scripting::LuaScriptInstance::bool hasPatchDeclarations() const#1"
-        },
-        {
-          "end": 61,
-          "start": 61,
-          "symbol": "scripting::LuaScriptInstance::const std::vector<std::pair<std::string, std::string>> & getPatchDeclarations() const#1"
-        }
-      ],
-      "rationale": "Complete 70-line header inspected: the only callable bodies are the three inline accessors getIdentifier, hasPatchDeclarations and getPatchDeclarations at lines59-61. Constructors, destructor, factory and loadLayer overloads are declarations only; recovery at line49 is the empty builtinLayers default argument. Layer has data members only; no lambda or function-like macro body is present. Exact-content coverage only.",
-      "review": "phase2-vines-complete-callable-source-review-20261021",
-      "sha256": "443ef70061e5de4cddb99cf8c71a81416257d9b0f40bf6b8d202819dbd17c66b"
-    },
-    "luascript/StdInc.h": {
-      "functions": [],
-      "rationale": "Only pragma/include directives and __has_include conditional selecting external Lua headers; no function-like #define or handwritten callable. ERROR14 concerns preprocessor __has_include syntax, not a body. External included header implementations are not handwritten definitions in this physical file.",
-      "review": "ROOT-MANUAL-SPANS-NEXT10-20261015",
-      "sha256": "130bf81b24992430b92134e650120e643b00bd90e4e7dec01b9f65b4e3dd8723"
-    },
     "mapeditor/inspector/artifactwidget.cpp": {
       "functions": [
         {
@@ -13639,134 +13532,6 @@
       "rationale": "Complete 450-line source review covers map factory, both helper constructors, NamedAction override, setNode, fixture methods and all twelve TEST_F bodies. Empty shared_ptr default at line 77 causes recovery in setNode signature. No lambdas or handwritten macro definitions.",
       "review": "test-function-inventory-complete-32",
       "sha256": "3f87ff3de5de580e403018ff7eeb5b8447e671910fbbdd78dcbdec5f55c97a9f"
-    },
-    "test/scripting/NativeDamageCaptureParityTest.cpp": {
-      "functions": [
-        {
-          "end": 24,
-          "start": 20,
-          "symbol": "Values values(const DamageEstimation & result)#1"
-        },
-        {
-          "end": 41,
-          "start": 33,
-          "symbol": "CaptureOracle::std::unordered_map<std::string, bool> presence(const battle::Unit & unit) const#1"
-        },
-        {
-          "end": 51,
-          "start": 47,
-          "symbol": "CaptureOracle::explicit CaptureOracle(scripting::LuaContext & lua) : lua(lua)#1"
-        },
-        {
-          "end": 70,
-          "start": 52,
-          "symbol": "CaptureOracle::DamageEstimation calculate(const CBattleInfoCallback & battle, DamageAttackInfo & payload) const override#1"
-        },
-        {
-          "end": 72,
-          "start": 71,
-          "symbol": "CaptureOracle::DamageForecastImplementation forecastImplementation(const CBattleInfoCallback &) const override#1"
-        },
-        {
-          "end": 79,
-          "start": 79,
-          "symbol": "OracleFactory::explicit OracleFactory(std::shared_ptr<IDamageCalculatorScript> oracle) : oracle(std::move(oracle))#1"
-        },
-        {
-          "end": 80,
-          "start": 80,
-          "symbol": "OracleFactory::void initialize(const ScriptTypeDescription &) override#1"
-        },
-        {
-          "end": 81,
-          "start": 81,
-          "symbol": "OracleFactory::std::shared_ptr<IDamageCalculatorScript> createDamageCalculatorScript(const std::string &) const override#1"
-        },
-        {
-          "end": 82,
-          "start": 82,
-          "symbol": "OracleFactory::std::shared_ptr<ICombatEventScript> createCombatEventScript(const std::string &) const override#1"
-        },
-        {
-          "end": 83,
-          "start": 83,
-          "symbol": "OracleFactory::std::shared_ptr<spells::effects::Effect> createSpellEffect(const std::string &) const override#1"
-        },
-        {
-          "end": 109,
-          "start": 93,
-          "symbol": "OracleRegistry::explicit OracleRegistry(const std::shared_ptr<CaptureOracle> & oracle)#1"
-        },
-        {
-          "end": 102,
-          "start": 102,
-          "symbol": "OracleRegistry::OracleRegistry(const std::shared_ptr<CaptureOracle> & oracle)::[&]#1"
-        },
-        {
-          "end": 114,
-          "start": 110,
-          "symbol": "OracleRegistry::~OracleRegistry()#1"
-        },
-        {
-          "end": 127,
-          "start": 117,
-          "symbol": "std::vector<JsonNode> snapshot(const HypotheticBattle & branch)#1"
-        },
-        {
-          "end": 166,
-          "start": 129,
-          "symbol": "void decorate(StackWithBonuses & attacker, StackWithBonuses & defender, int variation)#1"
-        },
-        {
-          "end": 133,
-          "start": 132,
-          "symbol": "decorate(StackWithBonuses & attacker, StackWithBonuses & defender, int variation)::[](BonusType type, int value, BonusSubtypeID subtype = {})#1"
-        },
-        {
-          "end": 171,
-          "start": 171,
-          "symbol": "NativeDamageCaptureParityTest::virtual int cap() const#1"
-        },
-        {
-          "end": 180,
-          "start": 172,
-          "symbol": "NativeDamageCaptureParityTest::void mapLoaded(CMap * map) override#1"
-        },
-        {
-          "end": 240,
-          "start": 181,
-          "symbol": "NativeDamageCaptureParityTest::void compare()#1"
-        },
-        {
-          "end": 243,
-          "start": 243,
-          "symbol": "NativeLegacyDamageCaptureParityTest::int cap() const override#1"
-        },
-        {
-          "end": 245,
-          "start": 245,
-          "symbol": "NativeZeroCapDamageCaptureParityTest::int cap() const override#1"
-        },
-        {
-          "end": 249,
-          "start": 248,
-          "symbol": "TEST_F(NativeDamageCaptureParityTest, FullLiveCaptureMatchesLuaWithCurrentProtection)#1"
-        },
-        {
-          "end": 251,
-          "start": 250,
-          "symbol": "TEST_F(NativeLegacyDamageCaptureParityTest, FullLiveCaptureMatchesLuaWithHistoricalProtection)#1"
-        },
-        {
-          "end": 253,
-          "start": 252,
-          "symbol": "TEST_F(NativeZeroCapDamageCaptureParityTest, FullLiveCaptureMatchesLuaWithExplicitZeroCap)#1"
-        }
-      ],
-      "rationale": "Complete exact-content callable inventory: 24 body-bearing definitions including inline constructors/accessors and lambdas. Each raw diagnostic is an empty-brace default argument; removing only those defaults in memory yields zero parser diagnostics with identical complete callable physical spans. Original bytes remain unchanged; no parser exclusion, numeric waiver or runtime acceptance. Independent complete source/span review establishes coverage only; no numeric waiver or runtime/performance acceptance.",
-      "review": "IR-NATIVE-MIGRATION-COMPLETE-COVERAGE-20261105",
-      "review_status": "INDEPENDENT_COMPLETE_EXACT_SOURCE_COVERAGE_REVIEWED",
-      "sha256": "c9583a80e8d88ca93115c318b1f787c4e436c9777b5c72750916706461bccb41"
     },
     "test/serializer/BattlePacketReceiptCompatibilityTest.cpp": {
       "functions": [
@@ -18066,55 +17831,6 @@
         }
       ]
     },
-    "luascript/api/adventure/HeroInstance.cpp": {
-      "functions": [
-        {
-          "symbol": "scripting::api::void HeroInstanceProxy::registerMethods(MethodRegistrar & R)#1",
-          "start": 25,
-          "end": 75
-        },
-        {
-          "symbol": "scripting::api::bool HeroInstanceProxy::isMale(const CGHeroInstance & hero)#1",
-          "start": 77,
-          "end": 80
-        },
-        {
-          "symbol": "scripting::api::bool HeroInstanceProxy::isFemale(const CGHeroInstance & hero)#1",
-          "start": 82,
-          "end": 85
-        },
-        {
-          "symbol": "scripting::api::int HeroInstanceProxy::getLevel(const CGHeroInstance & hero)#1",
-          "start": 87,
-          "end": 90
-        },
-        {
-          "symbol": "scripting::api::int64_t HeroInstanceProxy::getExperience(const CGHeroInstance & hero)#1",
-          "start": 92,
-          "end": 95
-        },
-        {
-          "symbol": "scripting::api::bool HeroInstanceProxy::hasArtifact(const CGHeroInstance & hero, ArtifactID artifact)#1",
-          "start": 97,
-          "end": 100
-        },
-        {
-          "symbol": "scripting::api::int HeroInstanceProxy::ownedArtifacts(const CGHeroInstance & hero, ArtifactID artifact)#1",
-          "start": 102,
-          "end": 112
-        },
-        {
-          "symbol": "scripting::api::int HeroInstanceProxy::creatureCountInArmy(const CGHeroInstance & hero, CreatureID creature)#1",
-          "start": 114,
-          "end": 124
-        }
-      ],
-      "rationale": "Complete 126-line source inspected: eight callable bodies, HeroInstanceProxy::registerMethods 25-75 and the seven static accessors isMale 77-80, isFemale 82-85, getLevel 87-90, getExperience 92-95, hasArtifact 97-100, ownedArtifacts 102-112 and creatureCountInArmy 114-124; no lambda or function-like macro body. Parser recovery (missing:type_identifier and ERROR nodes at 55-56 and 60) is the static_cast member-function-pointer template argument that selects the string overload of hasActivePerk, inside registerMethods; it is not a callable. Largest callable is 51 lines, below 80. Exact-content coverage only.",
-      "review": "CLAUDE-LUA-ORACLE-BIND-20261123",
-      "review_scope": "Exact 126-line callable coverage after a764ff1d5a; no size exception, future growth or native acceptance.",
-      "review_status": "AUTHOR_GENERATED_PENDING_INTEGRATOR_REVIEW_NO_NATIVE_ACCEPTANCE",
-      "sha256": "7d4299f31029edfc6ed07c7942776e5478805ef156c948a903d95738d06bcfe6"
-    },
     ".github/workflows/new-horizons-windows-launcher-smokes.yml": {
       "functions": [],
       "rationale": "Only embedded code is one Windows PowerShell run block34\u201339: $ErrorActionPreference assignment, two powershell.exe -File invocations of tracked smoke scripts and two exit-code if/throw checks. No function, filter, scriptblock or other callable body in this file; the smoke scripts are inventoried separately.",
@@ -20555,12 +20271,13 @@
     "CMakeLists.txt": {
       "deferral": "Exact committed hash and size only, not future growth or native/build/performance approval. Owner engine_engineer must keep future conditional compile policy in focused target helpers and extract the next cohesive stage before further orchestration expansion. Preserve all stricter inherited source/link/guard/ordering obligations below.\nOnly this exact native migration content/hash/size is proposed; no future growth allowance. Owner: engine_engineer. Next substantive edit must extract the affected calculation/query/forecast routing into the existing dedicated component with exact state, packet/RNG, action-choice and lifecycle regressions; preserve any narrower inherited deferral below. Engine owner must extract cohesive component-selection/assembly before further routing growth, preserving explicit full/minimal-library, servercommon, facade, client, test and tool dependencies and ordering. Compare ordinary toolOFF and toolON/full-library graphs and reject toolON+minimal. No cosmetic forwarding include, install expansion or future growth credit; exact1126-line endpoint only.",
       "kind": "exception",
-      "lines": 1137,
-      "rationale": "Exact bounded 1134to1137 physical-line successor. Three dispatcher lines include focused81-line Unity and30-line hot-PCH owners and call the latter from existing enable_pch. Conditional policy is owned by those bounded helpers; existing source/target/link ordering remains. Both experiments defaultOFF.",
-      "review": "IR-PERFORMANCE-STEP2-BUILD-ORG-V1",
+      "lines": 1112,
+      "rationale": "Exact 1137to1112 physical-line reduction: the retired Lua oracle option, interpreter discovery and backend/test registration are removed with their sources. No responsibility added and no future growth credit. Previous rationale: Exact bounded 1134to1137 physical-line successor. Three dispatcher lines include focused81-line Unity and30-line hot-PCH owners and call the latter from existing enable_pch. Conditional policy is owned by those bounded helpers; existing source/target/link ordering remains. Both experiments defaultOFF.",
+      "review": "CLAUDE-LUA-RETIRE-20261124",
       "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_ONLY",
-      "sha256": "c0f4b706228c281d0920bf333321910df40621d075c8c480ee2b30cf89d5878c",
-      "inherited_deferral_step2": "Only this exact native migration content/hash/size is proposed; no future growth allowance. Owner: engine_engineer. Next substantive edit must extract the affected calculation/query/forecast routing into the existing dedicated component with exact state, packet/RNG, action-choice and lifecycle regressions; preserve any narrower inherited deferral below. Engine owner must extract cohesive component-selection/assembly before further routing growth, preserving explicit full/minimal-library, servercommon, facade, client, test and tool dependencies and ordering. Compare ordinary toolOFF and toolON/full-library graphs and reject toolON+minimal. No cosmetic forwarding include, install expansion or future growth credit; exact1126-line endpoint only."
+      "sha256": "be893433093cdda2d5b37ebf1aef37531e4d8061bfd3fdea954199e0ce9ebcd5",
+      "inherited_deferral_step2": "Only this exact native migration content/hash/size is proposed; no future growth allowance. Owner: engine_engineer. Next substantive edit must extract the affected calculation/query/forecast routing into the existing dedicated component with exact state, packet/RNG, action-choice and lifecycle regressions; preserve any narrower inherited deferral below. Engine owner must extract cohesive component-selection/assembly before further routing growth, preserving explicit full/minimal-library, servercommon, facade, client, test and tool dependencies and ordering. Compare ordinary toolOFF and toolON/full-library graphs and reject toolON+minimal. No cosmetic forwarding include, install expansion or future growth credit; exact1126-line endpoint only.",
+      "previous_review": "IR-PERFORMANCE-STEP2-BUILD-ORG-V1"
     },
     "Global.h": {
       "kind": "legacy",
@@ -28000,113 +27717,6 @@
       "review": "source-size-legacy-freeze-cf2e62f9-v1",
       "review_scope": "numeric-legacy-debt-freeze-only",
       "sha256": "89cc4f0980b64bab22a9649df1d513760323b29481c549cb8b839c20e7fff371"
-    },
-    "luascript/LuaStack.cpp::scripting::void LuaStack::get(int position, JsonNode & value)#1": {
-      "kind": "legacy",
-      "lines": 81,
-      "owner": "engine_engineer",
-      "rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 81 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "86270c80b964096cf30bdf77bf117481c506c91b0358ce7f4b7680ee83b8276f"
-    },
-    "luascript/LuaStack.h": {
-      "kind": "legacy",
-      "lines": 553,
-      "owner": "engine_engineer",
-      "rationale": "Existing file owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 553 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "c39b13af99765816f0600b2a691697212535dcccc5d10d9ce6802afd4b6afc1c"
-    },
-    "luascript/api/battle/Unit.cpp::scripting::api::void UnitProxy::registerMethods(MethodRegistrar & R)#1": {
-      "deferral": " Before further affected expansion, owning engine/gameplay specialist must extract the next cohesive healing/provider/selection or ordered-transition responsibility, retaining query/mutation/serialization order and historical behavior. No raised ceiling, pending-baseline escape, runtime approval or later-growth permission. Preserve ALL inherited deferrals and exact prior shrinking baselines. Further growth must extract a cohesive domain owner before expansion; no future growth credit or limit increase.",
-      "kind": "exception",
-      "lines": 93,
-      "owner": "engine_engineer",
-      "previous_review": "IR-COMMON-NATIVE48-AI71-CLEANSING-UI-FINITE-E3-20261031",
-      "rationale": "Exact 95 to 93-line scope. Existing state/content/serialization responsibility integrates current captured rules and explicit native routing. Preserve independent captures, validation boundaries, deterministic order, existing ownership and saved absence.",
-      "review": "IR-NH092-ORG-3E82D142-20261116",
-      "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
-      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "1fc7267f9be9051b3cbb3f947812b615c49f3a066a730fd4cd7c351bf1318a7c"
-    },
-    "luascript/api/battle/UnitState.cpp::scripting::api::void LuaUnitStateProxy::registerMethods(MethodRegistrar & R)#1": {
-      "deferral": " Before further affected expansion, owning engine/gameplay specialist must extract the next cohesive healing/provider/selection or ordered-transition responsibility, retaining query/mutation/serialization order and historical behavior. No raised ceiling, pending-baseline escape, runtime approval or later-growth permission. Preserve ALL inherited deferrals and exact prior shrinking baselines. Further growth must extract a cohesive domain owner before expansion; no future growth credit or limit increase.",
-      "kind": "exception",
-      "lines": 127,
-      "owner": "engine_engineer",
-      "previous_review": "IR-COMMON-NATIVE48-AI71-CLEANSING-UI-FINITE-E3-20261031",
-      "rationale": "Exact 129 to 127-line scope. Existing state/content/serialization responsibility integrates current captured rules and explicit native routing. Preserve independent captures, validation boundaries, deterministic order, existing ownership and saved absence.",
-      "review": "IR-NH092-ORG-3E82D142-20261116",
-      "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
-      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "01c17846791fca98e2ae3fa88428d3e037e2458552e838eae93de09f823c7e74"
-    },
-    "luascript/api/callback/AdventureServer.cpp": {
-      "kind": "legacy",
-      "lines": 571,
-      "owner": "engine_engineer",
-      "rationale": "Existing file owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 571 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "c721167fa9c229c9e81fdde08dbafa830b81b4838a637a00e442319dc735a62a"
-    },
-    "luascript/api/callback/AdventureServer.cpp::scripting::api::void AdventureServerProxy::registerMethods(MethodRegistrar & R)#1": {
-      "kind": "legacy",
-      "lines": 223,
-      "owner": "engine_engineer",
-      "rationale": "Existing function owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 223 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "c901670e97e11c202001276c08f8fd386edb0bbd1b9806c02c6127ee54249ceb"
-    },
-    "luascript/api/callback/IBattleInfoCallback.cpp::scripting::api::void IBattleInfoCallbackProxy::registerMethods(MethodRegistrar & R)#1": {
-      "deferral": "Engine owner must extract a cohesive obstacle/unit-query registration family before the next substantive registration expansion, preserving Lua names/signatures/order and implementation-identity contracts; retain126 as the shrinking baseline ceiling, not future growth credit.",
-      "kind": "exception",
-      "lines": 126,
-      "owner": "engine_engineer",
-      "rationale": "Same-size126-line method registry updates one description to match the urgent observer-scoped obstacle query correction. Registered names/signatures/order and all other registration bytes are unchanged; no rule implementation moved into the registry and no growth allowance.",
-      "review": "IR-LUA-OBSTACLE-VISIBILITY-20261024",
-      "review_scope": "exact-observer-scoped-Lua-binding-source-only-no-native-or-campaign-acceptance",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "sha256": "501c75a7d9f4b7462994a5255166256ea1d8d7a4f233617508f1dc3c0940f70e"
-    },
-    "luascript/api/callback/ServerCallback.cpp": {
-      "deferral": "Before further affected expansion, owning engine/gameplay specialist must extract the next cohesive healing/provider/selection or ordered-transition responsibility, retaining query/mutation/serialization order and historical behavior. No raised ceiling, pending-baseline escape, runtime approval or later-growth permission. Preserve ALL inherited deferrals and exact prior shrinking baselines. Further growth must extract a cohesive domain owner before expansion; no future growth credit or limit increase. Owning gameplay/engine specialist: before further substantive expansion of this touched rule/transition, extract the next coherent affected policy or ordered stage into a focused owner. Preserve callback visibility, original recipient/caster identity, rejection atomicity and packet/RNG order; characterization must compare exact state and emitted packets. This is no future growth credit.",
-      "kind": "exception",
-      "lines": 849,
-      "owner": "gameplay_engineer",
-      "previous_review": "IR-COMMON-NATIVE48-AI71-CLEANSING-UI-FINITE-E3-20261031",
-      "rationale": "Exact 846 to 849 physical lines. Three registration lines expose the resolved-recipient recorder; actual semantics remain in the native callback/recorder. This is a mechanical binding addition.",
-      "review": "IR-SHARED84-CURRENT225-EXACT-SOURCE-20261103",
-      "review_scope": "Only exact current source organization, measured span/hash and stated responsibility. Excludes the two identified structural blockers, behavior/save/AI/rendered/platform acceptance and publication authorization.",
-      "review_status": "INDEPENDENT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
-      "sha256": "a1aee4860341e2379b84ce33837d463284eb0dd158c4263b17e12259307aea4f"
-    },
-    "luascript/api/callback/ServerCallback.cpp::scripting::api::void ServerCallbackProxy::registerMethods(MethodRegistrar & R)#1": {
-      "deferral": "Engine engineer: retain one intended registration per target and platform/facade linkage parity; any new target-configuration algorithm needs its own focused component. Exact current registry only, with no implementation or future size allowance.",
-      "kind": "exception",
-      "lines": 236,
-      "owner": "gameplay_engineer",
-      "previous_review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "rationale": "Exact 233 to 236 physical lines. Three registration lines expose the resolved-recipient recorder; actual semantics remain in the native callback/recorder. This is a mechanical binding addition.",
-      "review": "IR-SHARED84-CURRENT225-EXACT-SOURCE-20261103",
-      "review_scope": "Only exact current source organization, measured span/hash and stated responsibility. Excludes the two identified structural blockers, behavior/save/AI/rendered/platform acceptance and publication authorization.",
-      "review_status": "INDEPENDENT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
-      "sha256": "8b2f1dc9103cbd84afdc0dc76b3de08e6fd15a77ace7311db622ee6bd5c0bc7a"
-    },
-    "luascript/api/spells/Mechanics.cpp::scripting::api::void MechanicsProxy::registerMethods(MethodRegistrar & R)#1": {
-      "deferral": "Owner: Gameplay engineer. Interface/acceptance: Keep coherent API registry; any category extraction must preserve registered names, signatures, docs and Lua5.4/LuaJIT binding behavior. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split. Engine engineer: retain one intended registration per target and platform/facade linkage parity; any new target-configuration algorithm needs its own focused component. Exact current registry only, with no implementation or future size allowance. Before further substantive expansion, engine/gameplay owner must extract the next touched coherent formula-family, typed validation or presentation/registry group with a narrow interface and exact unchanged state/packet/RNG ordering. This approval permits only the exact deletion/signature/text migration; no future growth credit.",
-      "kind": "exception",
-      "lines": 275,
-      "owner": "gameplay_engineer",
-      "previous_review": "IR-NH092-ORG-3E82D142-20261116",
-      "rationale": "Precise Casting moves to captured Spellcraft policy 2: one added validation call and allowed-field token in the perk validator, and one gated condition in the shared area-centre query; the resistance halving lives in the focused resistance helper. Existing extraction deferrals retained; no future growth credit.",
-      "review": "CLAUDE-SPECIALTIES-20261120",
-      "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
-      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "4f20b59f1d61e719baee7f5d83192ba4e442e2f8a0b30da21ddb818c68c9b83b"
     },
     "mapeditor/Animation.cpp": {
       "kind": "legacy",

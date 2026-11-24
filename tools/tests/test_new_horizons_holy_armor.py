@@ -84,28 +84,26 @@ class HolyArmorContentTest(unittest.TestCase):
                 self.assertEqual(definition["graphics"][role], filename)
                 self.assertEqual(png_size(ArtPath() / filename), size)
 
-    def test_timed_script_uses_shared_holy_armor_formula_and_loader_owned_base(self):
-        script = (ROOT / "scripts/spells/timed.lua").read_text(encoding="utf-8")
-        self.assertIn('local HOLY_ARMOR_SPELL = "new-horizons:holyArmor"', script)
-        self.assertIn("nb.val = mechanics:getHolyArmorReduction(nb.val or 0, unit)", script)
-        binding = (ROOT / "luascript/api/spells/TimedUtility.cpp").read_text(encoding="utf-8")
-        self.assertIn("newHorizonsMagic::holyArmorReduction(configuredBase", binding)
-        self.assertIn("m.getCrownAndAltarBonusPercent(&unit)", binding)
+    def test_native_timed_effect_uses_shared_holy_armor_formula_and_loader_owned_base(self):
+        plan = (ROOT / "lib/spells/NewHorizonsTimedStatusPlan.cpp").read_text(encoding="utf-8")
+        self.assertIn("newHorizonsMagic::holyArmorReduction(configuredBase", plan)
+        self.assertIn("m.getCrownAndAltarBonusPercent(&unit)", plan)
         helper = (ROOT / "lib/spells/NewHorizonsTimedUtility.cpp").read_text(encoding="utf-8")
+        self.assertIn("value->val = holyArmorReductionForRecipient(m, value->val, unit);", helper)
         self.assertIn("BonusTypeID::decode", helper)
         self.assertIn("decodeBonusSubtype", helper)
         self.assertNotIn("JsonUtils::parseBonus", helper)
         self.assertIn("numerator *= 120", helper)
         self.assertIn("divisor *= 100", helper)
-        self.assertNotIn("HOLY_ARMOR_MAX_REDUCTION_PERCENT", script)
+        self.assertNotIn("HOLY_ARMOR_MAX_REDUCTION_PERCENT", helper)
 
-    def test_damage_script_keeps_legacy_immunity_but_defers_new_horizons_reduction(self):
-        script = (ROOT / "scripts/spells/damage.lua").read_text(encoding="utf-8")
-        self.assertIn("mechanics:usesNewHorizonsMultiplicativeMDR()", script)
-        self.assertIn('subtype = "any"}) >= 100', script)
-        self.assertIn("total >= 100 and not useIndependentMagicalDamageReduction", script)
-        self.assertIn("return Base.isReceptive(self, mechanics, unit)", script)
-
+    def test_native_damage_keeps_legacy_immunity_but_defers_new_horizons_reduction(self):
+        damage = (ROOT / "lib/spells/effects/native/Damage.cpp").read_text(encoding="utf-8")
+        receptive = damage.split("bool Damage::isReceptive(", 1)[1].split("\n}\n", 1)[0]
+        self.assertIn("mechanics->usesNewHorizonsMultiplicativeMDR()", receptive)
+        self.assertIn("SpellSchool::ANY) >= 100", receptive)
+        self.assertIn("total >= 100 && !independent", receptive)
+        self.assertIn("UnitEffect::isReceptive(mechanics, unit)", receptive)
 
 if __name__ == "__main__":
     unittest.main()

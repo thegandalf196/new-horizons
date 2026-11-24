@@ -21,7 +21,6 @@ actions = (ROOT / "client/battle/BattleActionsController.cpp").read_text(encodin
 spellbook = (ROOT / "client/windows/CSpellWindow.cpp").read_text(encoding="utf-8")
 mechanics = (ROOT / "lib/spells/BattleSpellMechanics.cpp").read_text(encoding="utf-8")
 mechanics_h = (ROOT / "lib/spells/ISpellMechanics.h").read_text(encoding="utf-8")
-lua_mechanics = (ROOT / "luascript/api/spells/Mechanics.cpp").read_text(encoding="utf-8")
 skill_schema = json.loads((ROOT / "config/schemas/skill.json").read_text(encoding="utf-8"))
 new_horizons_skills = json.loads((ROOT / "config/newHorizonsSkills.json").read_text(encoding="utf-8"))
 

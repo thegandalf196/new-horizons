@@ -13,12 +13,6 @@ add_executable(nhBattleMovementCompilationTest battle/BattleMovementCompilationT
 target_link_libraries(nhBattleMovementCompilationTest PRIVATE vcmi)
 add_test(NAME nhBattleMovementCompilationTest COMMAND nhBattleMovementCompilationTest)
 set_tests_properties(nhBattleMovementCompilationTest PROPERTIES TIMEOUT 60 LABELS "battle;movement")
-if(ENABLE_LUA_ORACLE)
-	add_executable(nhLuaDeclaredBonusTypesTest scripting/LuaDeclaredBonusTypesTest.cpp)
-	target_link_libraries(nhLuaDeclaredBonusTypesTest PRIVATE vcmi)
-	add_test(NAME nhLuaDeclaredBonusTypesTest COMMAND nhLuaDeclaredBonusTypesTest)
-	set_tests_properties(nhLuaDeclaredBonusTypesTest PROPERTIES TIMEOUT 60 LABELS "battle;damage;lua-oracle")
-endif()
 
 # Pure direct-composition ownership and cache-band geometry; no SDL/game launch.
 add_executable(nhPresentedCanvasStateTest ../client/tests/PresentedCanvasStateTest.cpp)
@@ -96,6 +90,7 @@ endif()
 
 set(test_SRCS
 		spells/NewHorizonsMetamagicOverflowTest.cpp
+		spells/OverwhelmingFormulaObstacleTest.cpp
 		server/battles/NewHorizonsMetamagicOverflowPipelineTest.cpp
 		bonus/OwnedFrozenScoringSourceTest.cpp
 		bonus/BonusDependencyQueryFrameTest.cpp
@@ -1144,9 +1139,6 @@ set(test_HEADERS
 		HistoricalFactionPerkRules.h
 		OverkillRandomPrayerRules.h
 		ActivatedOrdinarySpecialties.h
-		scripting/HistoricalTimedScript.h
-		scripting/HistoricalLifeDrainScript.h
-		scripting/HistoricalDamageCalculatorScript.h
 		battleAI/HeroActionTimingCapture.h
 		battleAI/HeroQueueSelectorFixture.h
 		battleAI/HeroExpectedSpellFixture.h
@@ -1687,34 +1679,8 @@ if(ENABLE_NULLKILLER2_AI)
 		target_compile_definitions(vcmitest PRIVATE VCMI_DLL_STATIC=1)
 	endif()
 	target_sources(vcmitest PRIVATE $<TARGET_OBJECTS:Nullkiller2>)
-	if(TARGET vcmiLua)
-		# These fixtures exercise internal Lua descriptors and field serialization.
-		# Reuse embedded Lua, not a second facade/global instance.
-		target_sources(vcmitest PRIVATE
-			spells/OverwhelmingFormulaObstacleTest.cpp
-			scripting/CureAfflictionSourceTest.cpp
-			scripting/LuaImplementationIdentityTest.cpp
-			scripting/LuaDamageCalculatorIdentityTest.cpp
-			scripting/LuaCombatEventIdentityTest.cpp
-			scripting/LuaStackFieldKeyTest.cpp
-			scripting/LuaObstacleVisibilityTest.cpp)
-		target_sources(vcmitest PRIVATE scripting/NativeCombatEventsParityTest.cpp
-			scripting/NativeCombatEventAuthorityParityTest.cpp
-			scripting/NativeDamageCaptureParityTest.cpp
-			scripting/NativeJsonParametersParityTest.cpp
-			spells/effects/NativeSpellLuaParityTest.cpp
-			spells/effects/NativeHealthSpellLuaParityTest.cpp
-			spells/effects/NativeStatusSpellLuaParityTest.cpp
-			spells/effects/NativeLocationSpellLuaParityTest.cpp
-			spells/effects/NativeUtilitySpellLuaParityTest.cpp
-			spells/effects/NativeCreatureSpellLuaParityTest.cpp
-			spells/effects/NativeHealthTransferSpellLuaParityTest.cpp
-			spells/effects/NativeStructureSpellLuaParityTest.cpp
-			spells/effects/NativeSummonWorldLuaParityTest.cpp
-			spells/effects/NativeTransferWorldLuaParityTest.cpp)
-	endif()
 	set(vcmitest_LIBS gtest gmock vcmiMain vcmiservercommon TBB::tbb ${SYSTEM_LIBS})
-	foreach(optional_vcmitest_target IN ITEMS vcmiLua EmptyAI StupidAI MMAI)
+	foreach(optional_vcmitest_target IN ITEMS EmptyAI StupidAI MMAI)
 		if(TARGET ${optional_vcmitest_target})
 			list(APPEND vcmitest_LIBS ${optional_vcmitest_target})
 		endif()
@@ -1741,27 +1707,6 @@ target_link_libraries(nhNativeRuleRegistrationTest PRIVATE gtest_main vcmi ${SYS
 add_test(NAME nhNativeRuleRegistrationTest COMMAND nhNativeRuleRegistrationTest)
 set_tests_properties(nhNativeRuleRegistrationTest PROPERTIES TIMEOUT 60 LABELS "native-rules;component"
 	ENVIRONMENT "NH_RULE_SOURCE_ROOT=${CMAKE_SOURCE_DIR}")
-
-if(ENABLE_LUA_ORACLE)
-	# No game bootstrap for this one conversion-only case. Descriptor cases in
-	# the same source still run under vcmitest's initialized game library.
-	add_executable(nhNativeJsonParametersParityTest scripting/NativeJsonParametersParityTest.cpp)
-	target_include_directories(nhNativeJsonParametersParityTest PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-	target_link_libraries(nhNativeJsonParametersParityTest PRIVATE gtest_main gmock vcmiMain vcmiLua TBB::tbb ${SYSTEM_LIBS})
-	# The embedded core's AIFactory references every enabled native AI. Include
-	# their objects here as in the facade, without loading another core instance.
-	foreach(oracle_ai IN ITEMS EmptyAI BattleAI Nullkiller2 StupidAI MMAI)
-		if(TARGET ${oracle_ai})
-			target_link_libraries(nhNativeJsonParametersParityTest PRIVATE ${oracle_ai})
-		endif()
-	endforeach()
-	add_test(NAME nhNativeJsonParametersParityTest COMMAND nhNativeJsonParametersParityTest
-		--gtest_filter=NativeJsonParametersParity.CapturedTreesMatchActualInterpreterConversionIncludingTypesAndScopes)
-	set_tests_properties(nhNativeJsonParametersParityTest PROPERTIES TIMEOUT 60 LABELS "native-rules;lua-oracle;component")
-	add_custom_command(TARGET vcmitest POST_BUILD
-		COMMAND ${CMAKE_COMMAND} -P ${CMAKE_SOURCE_DIR}/cmake_modules/create_link.cmake
-			${CMAKE_SOURCE_DIR}/scripts ${CMAKE_BINARY_DIR}/bin/${CMAKE_CFG_INTDIR}/scripts)
-endif()
 
 target_include_directories(vcmitest
 		PUBLIC	${CMAKE_CURRENT_SOURCE_DIR}
@@ -1820,7 +1765,6 @@ if(ENABLE_NH_BUG_REPORT_REGRESSION)
 		LABELS "nh-pure;ui;privacy" TIMEOUT 10)
 endif()
 
-include(NativeMigrationTests.cmake)
 include(StartingPerkTests.cmake)
 include(ReplayDayZeroTests.cmake)
 include(SethRoyalTests.cmake)

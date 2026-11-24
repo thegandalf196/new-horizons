@@ -150,7 +150,7 @@ jobs:
             libboost-program-options-dev libboost-iostreams-dev \
             libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev \
             zlib1g-dev libavformat-dev libswscale-dev libtbb-dev \
-            libluajit-5.1-dev libminizip-dev libsqlite3-dev libcurl4-openssl-dev \
+            libminizip-dev libsqlite3-dev libcurl4-openssl-dev \
             libsquish-dev libfmt-dev liblzma-dev
       - name: Configure and build reviewed standalone checks
         env:

@@ -16,9 +16,6 @@
 # Keep the exact local decoder patch stable across Windows checkouts.
 /tools/ci/patches/sdl3-image-3.4.4-interlace.patch text eol=lf
 
-# Preserve exact historical Lua bytes embedded in this test fixture.
-/test/scripting/HistoricalDamageCalculatorScript.h text eol=lf
-
 # Match the reviewed corresponding-source snapshot's privacy exclusions.
 /CI/deploy_rsa.enc export-ignore
 /docs/NH_* export-ignore

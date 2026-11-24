@@ -166,10 +166,6 @@ endif()
 include(CMakeDependentOption)
 cmake_dependent_option(ENABLE_INNOEXTRACT "Enable innoextract for GOG file extraction in launcher" ON "ENABLE_LAUNCHER" OFF)
 cmake_dependent_option(ENABLE_GITVERSION "Enable Version.cpp with Git commit hash" ON "NOT ENABLE_GOLDMASTER" OFF)
-option(ENABLE_LUA_ORACLE "Build the historical Lua backend for migration tests only" OFF)
-if(ENABLE_LUA_ORACLE AND (NOT ENABLE_TEST OR ENABLE_MINIMAL_LIB))
-	message(FATAL_ERROR "ENABLE_LUA_ORACLE requires ENABLE_TEST and the full library")
-endif()
 cmake_dependent_option(ENABLE_TEMPLATE_EDITOR "Enable template editor inside map editor" ON "ENABLE_EDITOR" OFF)
 
 option(VCMI_PORTMASTER "PortMaster build" OFF)
@@ -644,24 +640,7 @@ endif()
 
 if(NOT ENABLE_MINIMAL_LIB)
 	find_package(TBB REQUIRED)
-	# Production rules are compiled C++. Lua is an optional differential-test oracle.
-endif()
-if(ENABLE_LUA_ORACLE)
-	find_package(luajit)
-
-	if(TARGET luajit::luajit)
-		message(STATUS "Using LuaJIT provided by system")
-	else()
-		message(STATUS "Cannot find LuaJIT! Fallback to using usual Lua.")
-		find_package(Lua REQUIRED)
-		if(Lua_FOUND AND NOT TARGET Lua::Lua)
-			add_library(Lua::Lua INTERFACE IMPORTED)
-			set_target_properties(Lua::Lua PROPERTIES
-				INTERFACE_INCLUDE_DIRECTORIES "${LUA_INCLUDE_DIR}"
-				INTERFACE_LINK_LIBRARIES "${LUA_LIBRARIES}"
-			)
-	    endif()
-	endif()
+	# Production rules are compiled C++; no build links a Lua runtime.
 endif()
 
 ############################################
@@ -758,10 +737,6 @@ add_subdirectory(lib)
 # The full server also links the core AIFactory and its enabled implementations.
 if (ENABLE_CLIENT OR ENABLE_TEST OR ENABLE_SERVER)
 	add_subdirectory_with_folder("AI" AI)
-endif()
-
-if(ENABLE_LUA_ORACLE)
-	add_subdirectory(luascript)
 endif()
 
 add_subdirectory(libFacade)
