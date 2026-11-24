@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "../windows/NewHorizonsCurrentSkillPresentation.h"
+#include "../windows/SpellbookEntryPresentation.h"
 #include "CComponent.h"
 
 #include "Images.h"
@@ -298,7 +299,7 @@ std::string CComponent::getDescription() const
 		}
 		case ComponentType::SPELL:
 		{
-			auto description = LIBRARY->spells()->getById(data.subType.as<SpellID>())->getDescriptionTranslated(std::max(0, data.value.value_or(0)));
+			auto description = spellbookPresentation::descriptionWithElement(*data.subType.as<SpellID>().toSpell(), std::max(0, data.value.value_or(0)), GAME->translator());
 			if(data.helpReason && !data.helpReason->empty())
 				description += "\n" + data.helpReason->toString(&GAME->translator());
 			return description;

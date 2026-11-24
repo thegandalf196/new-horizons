@@ -22306,14 +22306,14 @@
       "deferral": "Before further component placement growth, extract the deterministic row layout calculation from widget application. Preserve parent/child ownership, null-image behavior, selectable ordering, geometry and repeated construction/teardown tests. Prior stricter obligations remain recorded in inherited_deferral, where present.",
       "inherited_deferral": "UI owner: keep selection primitives inside CComponentBox and query/submit ownership in the window. Before substantive component-layout or subtitle growth, extract that touched rendering/layout responsibility with existing native geometry/selection/help behavior preserved. Exact six-line guarded selection API addition only.",
       "kind": "exception",
-      "lines": 721,
+      "lines": 722,
       "owner": "ui_developer",
-      "previous_review": "IR-LEARNING-PER-CARD-UI-FOCUSED-HEADER-20261103",
-      "rationale": "HEAD721 lines adds seven-line child-detaching clearLines, image-null guards, and showOr configuration; complete101-line placeComponents retains row measurement/placement. Old one-argument symbol is retired. No production changes in this migration.",
-      "review": "IR-LEADERSHIP-1159-INDEPENDENT-20261113-HEAD-SUPPLEMENT",
+      "previous_review": "IR-LEADERSHIP-1159-INDEPENDENT-20261113-HEAD-SUPPLEMENT",
+      "rationale": "HEAD721 lines adds seven-line child-detaching clearLines, image-null guards, and showOr configuration; complete101-line placeComponents retains row measurement/placement. Old one-argument symbol is retired. No production changes in this migration. The spell component description reads through the shared spellbookPresentation::descriptionWithElement helper, which appends the spell's elemental tag line; one replaced description line plus one include. Exact 721 to 722 lines; no new responsibility and no future growth credit.",
+      "review": "PROPOSED-CLAUDE-SPELL-ELEMENT-LINE-20261124",
       "review_scope": "Metadata-only repair of exact unchanged HEAD debt. Source-organization bound only; not native/rendered/gameplay/balance/publication approval.",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_REVIEW_NATIVE_RENDERED_UNRUN",
-      "sha256": "240c4d82c6de8a72a77b5426ee52fa7e2b88685f1764930f0dcb80bd0613f9c8"
+      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
+      "sha256": "78037017e0b2a1cad0567bf4ccb4936524f015cf71d67df61fc6bf887eb44e5d"
     },
     "client/widgets/CComponent.cpp::std::string CComponent::getSubtitle() const#1": {
       "deferral": "Owner: ui_developer. Before further Skill subtitle branching, move the cohesive Skill label/rank formatter to the existing shared presentation owner with explicit component/context inputs and text output. Preserve non-Skill branches, rank translation, numeric values and historical/current label equality; require focused component presentation comparisons. Exact91-line existing-hotspot renewal below150, not ceiling permission.",
@@ -22501,14 +22501,14 @@
       },
       "deferral": "UI owner: before further substantive expansion of this affected purchase panel, extract CMageGuildAdventureSpellWindow and its exclusive price/help presentation into a focused town-purchase component, preserving public callback interface, authoritative refresh/ownership/turn/affordability ordering and native geometry. Verify owner-visiting/no-visitor/garrison-only price agreement with shared authority and guarded rendered transitions; no general file/function growth credit. Before further substantive expansion, owning engine/gameplay/UI specialist must extract the next coherent touched policy, ordered stage, codec family or widget responsibility into a focused owner, preserving callback visibility, rejection atomicity, serialized field order, payment and RNG/packet order. This exact bounded migration/registry/validation routing gives no future growth credit. Exact bounded declaration/include/UI removal only; no new rule responsibilities. Preserve prior UI extraction duties before future substantive affected growth.",
       "kind": "legacy",
-      "lines": 3521,
+      "lines": 3517,
       "owner": "ui_developer",
-      "previous_review": "CLAUDE-ORIGINAL-CLOSE-BUTTONS-20261123",
-      "rationale": "Exact3541 to3540-line successor removes only the redundant Town Hall steward-button construction; existing Gold-menu and S-key administration paths remain. Prior marketplace extraction, accepted income refresh and other purchase/visibility obligations remain binding. No economic state, payment or assignment mutation in this change. Original Heroes III buttons: the custom NH Cancel/Spells buttons are replaced in place by IOKAY (read-only windows), ICANCEL (choices) or the battle Cast Spell button; no new responsibility. 3540 to 3539 lines; no future growth credit. Town structure frame mode: CBuildingRect passes BASE unless the structure is marked currentFrameOnly, and its Castle shipyard / Dungeon Mana Vortex state-frame ranges move unchanged into the focused TownStructureStateFrames owner. Exact 3539 to 3521 lines; no future growth credit.",
-      "review": "CLAUDE-TOWN-ANIM-CURRENT-FRAME-20261123",
+      "previous_review": "CLAUDE-TOWN-ANIM-CURRENT-FRAME-20261123",
+      "rationale": "Exact3541 to3540-line successor removes only the redundant Town Hall steward-button construction; existing Gold-menu and S-key administration paths remain. Prior marketplace extraction, accepted income refresh and other purchase/visibility obligations remain binding. No economic state, payment or assignment mutation in this change. Original Heroes III buttons: the custom NH Cancel/Spells buttons are replaced in place by IOKAY (read-only windows), ICANCEL (choices) or the battle Cast Spell button; no new responsibility. 3540 to 3539 lines; no future growth credit. Town structure frame mode: CBuildingRect passes BASE unless the structure is marked currentFrameOnly, and its Castle shipyard / Dungeon Mana Vortex state-frame ranges move unchanged into the focused TownStructureStateFrames owner. Exact 3539 to 3521 lines; no future growth credit. The Mage Guild spell description body moves to the existing newHorizonsGuildSpellHelp owner, which adds the spell's elemental tag line through the shared spellbookPresentation::descriptionWithElement helper; the local wrapper keeps only the town lookup. Exact 3521 to 3517 lines; no new responsibility and no future growth credit.",
+      "review": "PROPOSED-CLAUDE-SPELL-ELEMENT-LINE-20261124",
       "review_scope": "Exact bounded source organization and failure-path review only; native/rendered acceptance and future growth unapproved.",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "e20d9c31f1eece558dd6931d73d9c5ddf39d39dd6fb1428d9f2f0e3e6522ccfc"
+      "sha256": "f2da8f3dbc020871ea070e6bd3ae2169924c3c1072f971bf7508ddd21802737c"
     },
     "client/windows/CCastleInterface.cpp::CFortScreen::CFortScreen(const CGTownInstance * town): CWindowObject(PLAYER_COLORED | BORDERED, {})#1": {
       "kind": "legacy",

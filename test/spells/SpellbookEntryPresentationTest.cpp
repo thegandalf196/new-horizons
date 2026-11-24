@@ -4,6 +4,7 @@
  */
 #include "StdInc.h"
 #include "../../client/windows/SpellbookEntryPresentation.h"
+#include "../../lib/constants/Enumerations.h"
 #include "../../lib/spells/SpellCostBreakdown.h"
 #include "../../lib/spells/SpellEffectPreview.h"
 #include "../../lib/texts/ITranslator.h"
@@ -113,4 +114,19 @@ TEST(SpellbookEntryPresentationTest, ArmyGroupsKeepDifferentMagnitudesAndTimersW
 	army.problems = {"Not enough Mana."};
 	EXPECT_EQ(spellbookPresentation::armyEffectDetail(army, translator),
 		text + "\n\nCannot cast now.\nNot enough Mana.");
+}
+
+TEST(SpellbookEntryPresentationTest, ElementLineNamesTaggedElementsAndStaysEmptyForUntaggedSpells)
+{
+	BookTranslator translator;
+	translator.texts["new-horizons.spell.element"] = "Element: %s";
+	translator.texts["new-horizons.spell.element.air"] = "Air";
+	translator.texts["new-horizons.spell.element.fire"] = "Fire";
+	translator.texts["new-horizons.spell.element.water"] = "Water";
+	translator.texts["new-horizons.spell.element.earth"] = "Earth";
+	EXPECT_EQ(spellbookPresentation::elementLine(SpellDamageElement::FIRE, translator), "Element: Fire");
+	EXPECT_EQ(spellbookPresentation::elementLine(SpellDamageElement::WATER, translator), "Element: Water");
+	EXPECT_EQ(spellbookPresentation::elementLine(SpellDamageElement::AIR, translator), "Element: Air");
+	EXPECT_EQ(spellbookPresentation::elementLine(SpellDamageElement::EARTH, translator), "Element: Earth");
+	EXPECT_TRUE(spellbookPresentation::elementLine(SpellDamageElement::NONE, translator).empty());
 }

@@ -112,11 +112,7 @@ static MetaString currentGuildSpellRequirement(ObjectInstanceID townId, const CS
 
 static std::string currentGuildSpellDescription(ObjectInstanceID townId, const CSpell * spell)
 {
-	auto description = spell->getDescriptionTranslated(0);
-	const auto requirement = currentGuildSpellRequirement(townId, spell);
-	if(!requirement.empty())
-		description += "\n\n" + requirement.toString(&GAME->translator());
-	return description;
+	return newHorizonsGuildSpellHelp::spellDescription(*spell, currentGuildSpellRequirement(townId, spell), GAME->translator());
 }
 
 static std::optional<newHorizonsCreatures::CreatureCategoryView> currentCreatureCategory(const CCreature * creature)

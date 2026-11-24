@@ -16,6 +16,7 @@ class ITranslator;
 class CGHeroInstance;
 class CBattleInfoCallback;
 struct SpellCostBreakdown;
+enum class SpellDamageElement : int8_t;
 namespace newHorizonsMagic { struct SpellEffectPreview; }
 
 namespace spellbookPresentation
@@ -46,6 +47,12 @@ struct Access
 	std::string requirement;
 };
 Access access(const CGHeroInstance & hero, const CSpell & spell, const ITranslator & translator);
+/// "Element: Fire" for a spell with an elemental damage tag; empty for untagged
+/// (arcane, divine, shadow or ambiguous) spells.  Tags are independent of the
+/// six Magic Schools, so this line is shown next to, not instead of, them.
+std::string elementLine(SpellDamageElement element, const ITranslator & translator);
+/// The spell's ordinary description followed by its element line, if tagged.
+std::string descriptionWithElement(const CSpell & spell, int level, const ITranslator & translator);
 std::string levelAndSchools(int savedLevel, int mastery,
 	const std::set<SpellSchool> & savedSchools, const ITranslator & translator);
 std::string costLine(const SpellCostBreakdown & cost, const ITranslator & translator, const Width & width, int maximumWidth = 78);

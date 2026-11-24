@@ -198,6 +198,40 @@ Access access(const CGHeroInstance & hero, const CSpell & spell, const ITranslat
 	return result;
 }
 
+std::string elementLine(SpellDamageElement element, const ITranslator & translator)
+{
+	const char * name = nullptr;
+	switch(element)
+	{
+	case SpellDamageElement::AIR:
+		name = "new-horizons.spell.element.air";
+		break;
+	case SpellDamageElement::FIRE:
+		name = "new-horizons.spell.element.fire";
+		break;
+	case SpellDamageElement::WATER:
+		name = "new-horizons.spell.element.water";
+		break;
+	case SpellDamageElement::EARTH:
+		name = "new-horizons.spell.element.earth";
+		break;
+	case SpellDamageElement::NONE:
+		break;
+	}
+	if(!name)
+		return {};
+	MetaString line = MetaString::createFromTextID("new-horizons.spell.element");
+	line.replaceRawString(translated(translator, name));
+	return line.toString(&translator);
+}
+
+std::string descriptionWithElement(const CSpell & spell, int level, const ITranslator & translator)
+{
+	const auto element = elementLine(spell.getDamageElement(), translator);
+	const auto description = spell.getDescriptionTranslated(level);
+	return element.empty() ? description : description + "\n\n" + element;
+}
+
 std::string levelAndSchools(int savedLevel, int mastery,
 	const std::set<SpellSchool> & savedSchools, const ITranslator & translator)
 {

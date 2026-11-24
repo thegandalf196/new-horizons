@@ -72,8 +72,10 @@ void CSpellWindow::SpellArea::showPopupWindow(const Point & cursorPosition)
 	if(mySpell)
 	{
 		const auto breakdown = refreshReadout();
+		const auto element = spellbookPresentation::elementLine(mySpell->getDamageElement(), GAME->translator());
 		const auto heading = spellbookPresentation::levelAndSchools(owner->spellLevels.at(mySpell->getId()),
-			schoolLevel, owner->spellSchools.at(mySpell->getId()), GAME->translator());
+			schoolLevel, owner->spellSchools.at(mySpell->getId()), GAME->translator())
+			+ (element.empty() ? std::string() : "\n" + element);
 		const auto battle = owner->myInt->battleInt ? owner->myInt->battleInt->getBattle() : nullptr;
 		const auto army = spellbookPresentation::heavenlyGaleArmyPreview(*owner->myHero, *mySpell, battle.get());
 		const auto currentEffect = army ? spellbookPresentation::armyEffectDetail(*army, GAME->translator())

@@ -11,6 +11,7 @@
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/texts/MetaString.h"
+#include "SpellbookEntryPresentation.h"
 
 namespace newHorizonsGuildSpellHelp
 {
@@ -49,5 +50,15 @@ inline MetaString acquisitionRequirement(const JsonNode & worldRules,
 		reason.appendTextID(LIBRARY->skillh->getById(skills[index])->getNameTextID());
 	}
 	return reason;
+}
+
+/// Mage Guild spell help text: the description, the spell's element line when
+/// it is tagged, then any acquisition requirement for the visitor.
+inline std::string spellDescription(const CSpell & spell, const MetaString & requirement, const ITranslator & translator)
+{
+	auto description = spellbookPresentation::descriptionWithElement(spell, 0, translator);
+	if(!requirement.empty())
+		description += "\n\n" + requirement.toString(&translator);
+	return description;
 }
 }
