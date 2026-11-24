@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons; GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../SylvanTacticsHistoricalRules.h"
 #include <set>
 #include "../../client/windows/NewHorizonsSylvanHybridPerkIcons.h"
 #include "../../lib/entities/hero/NewHorizonsPerkRules.h"
@@ -137,8 +138,7 @@ constexpr SylvanArtExpectation sylvanArt[] = {
 
 JsonNode historicalSylvanArtRules()
 {
-	JsonNode rules(JsonPath::builtin("config/newHorizonsPerks"));
-	rules["sylvanTacticsPolicy"].Integer() = 1;
+	JsonNode rules = sylvanTacticsHistoricalRules(1);
 	for(auto & row : rules["skills"]["new-horizons:sylvanLuck"]["perks"].Vector())
 		for(const auto & expected : sylvanArt)
 			if(row["id"].String() == expected.id)
@@ -208,9 +208,34 @@ TEST(NewHorizonsPerkIconPresentation, SylvanImmutableOfferKeepsItsCapturedArtCon
 	}
 }
 
-TEST(NewHorizonsPerkIconPresentation, HybridRosterUsesItsOwnExactCapturedIdentity)
+TEST(NewHorizonsPerkIconPresentation, AmbushRosterUsesItsOwnExactCapturedIdentity)
 {
 	const JsonNode current(JsonPath::builtin("config/newHorizonsPerks"));
+	ASSERT_TRUE(newHorizonsHeroes::usesSylvanTacticsV5(current));
+	const SylvanArtExpectation ambush[] = {
+		{"new-horizons:sylvanLuck.elvenPrecision", "Hunting Pack", "NH_perk_sylvan_tactics_wild_hunt"},
+		{"new-horizons:sylvanLuck.serendipity", "Patient Hunter", "NH_perk_sylvan_tactics_patient_hunter"},
+		{"new-horizons:sylvanLuck.luckyRecovery", "Dappled Cover", "NH_perk_sylvan_tactics_dappled_cover"},
+		{"new-horizons:sylvanLuck.forestCover", "Forest Cover", "NH_perk_sylvan_tactics_forest_cover"},
+		{"new-horizons:sylvanLuck.startle", "Startle", "NH_perk_sylvan_tactics_startle"},
+		{"new-horizons:sylvanLuck.apexPredator", "Apex Predator", "NH_perk_sylvan_tactics_apex_predator"},
+	};
+	for(const auto & expected : ambush)
+	{
+		SCOPED_TRACE(expected.id);
+		const auto perk = newHorizonsHeroes::perkDefinition(current, "new-horizons:sylvanLuck", expected.id);
+		ASSERT_TRUE(perk);
+		ASSERT_EQ(perk->name, expected.name);
+		EXPECT_EQ(newHorizonsHybridCapturedPerkIcon(perk->id, perk->name, current), expected.resource);
+	}
+	for(const auto * retired : {"natureSProvidence", "wildChance", "cascadingFortune"})
+		EXPECT_FALSE(newHorizonsHeroes::perkDefinition(current, "new-horizons:sylvanLuck",
+			std::string("new-horizons:sylvanLuck.") + retired)) << retired;
+}
+
+TEST(NewHorizonsPerkIconPresentation, HybridRosterUsesItsOwnExactCapturedIdentity)
+{
+	const JsonNode current = sylvanTacticsHistoricalRules(4);
 	ASSERT_TRUE(newHorizonsHeroes::usesSylvanTacticsV3(current));
 	const auto before = current;
 	const SylvanArtExpectation hybrid[] = {

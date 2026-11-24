@@ -52,6 +52,12 @@ inline Army mirrorNecropolisArmy()
 	return {{troop("core:skeleton"), 40}, {troop("core:walkingDead"), 20}, {troop("core:wight"), 10},
 		{troop("core:vampire"), 8}, {troop("core:lich"), 5}, {troop("core:blackKnight"), 3}, {troop("core:boneDragon"), 2}};
 }
+/// Castle melee only: the enemy must walk in, with no shooter to punish waiting.
+inline Army meleeCastleArmy()
+{
+	return {{troop("core:pikeman"), 30}, {troop("core:halberdier"), 14}, {troop("core:griffin"), 12},
+		{troop("core:swordsman"), 10}, {troop("core:crusader"), 6}, {troop("core:cavalier"), 3}, {troop("core:angel"), 1}};
+}
 inline Army withSlot(Army army, size_t slot, const char * creature, uint16_t count)
 {
 	army[slot] = {troop(creature), count};

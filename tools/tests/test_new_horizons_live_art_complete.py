@@ -99,7 +99,7 @@ class LiveArtworkCompletenessTest(unittest.TestCase):
                 with self.subTest(perk=identity):
                     self.assertEqual(counts[identity], 1, "Missing or duplicate default perk binding")
                     stem = bindings.get(identity, "NH_perk_neutral")
-                    if identity.startswith("new-horizons:sylvanLuck.") and self.perks["sylvanTacticsPolicy"] in (3, 4):
+                    if identity.startswith("new-horizons:sylvanLuck.") and self.perks["sylvanTacticsPolicy"] in (3, 4, 5):
                         stem = named.get((identity, perk["name"]), "NH_perk_neutral")
                     if identity == "new-horizons:sorceryMagic.countermage" and perk["name"] in ("Arcane Ballistics", "Arcane Arsenal"):
                         stem = "NH_perk_arcane_ballistics"

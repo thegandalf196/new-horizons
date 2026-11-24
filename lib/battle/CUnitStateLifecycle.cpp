@@ -26,6 +26,7 @@ void CUnitState::localInit(const IUnitEnvironment * env_)
 void CUnitState::reset()
 {
 	forestAmbush = {};
+	sylvanAmbush = {};
 	heroicSpiritRetaliation = false;
 	heroicSpiritMoralePending = false;
 	confusionState = {};
@@ -122,6 +123,7 @@ void CUnitState::reset()
 void CUnitState::afterAttack(bool ranged, bool counter, bool physical)
 {
 	forestAmbush.finishStrike(ranged, physical);
+	sylvanAmbush.finishAttack(counter);
 	if(counter)
 		counterAttacks.use();
 
@@ -152,6 +154,7 @@ void CUnitState::afterNewRound(bool isFirstRound, bool deferBattleFormRestoratio
 	completedActionThisRound = false;
 	arcaneWard.clear(); // Arcane Ward lasts until the start of the next round.
 	forestAmbush = {};
+	sylvanAmbush.newRound(); // Round markers outlive the round; Concealment does not.
 	moraleExtraActivation = false;
 	battlecraftOverwatchReadyRound = -1;
 	battlecraftOverwatchUsedRound = -1;
@@ -231,6 +234,7 @@ void CUnitState::afterGetsTurn(BattleUnitTurnReason reason)
 void CUnitState::makeGhost()
 {
 	forestAmbush.retire();
+	sylvanAmbush.retire();
 	dreadCavalryState.retirePending();
 	summonRoundsRemaining = 0;
 	moraleExtraActivation = false;

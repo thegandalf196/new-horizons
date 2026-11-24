@@ -27,7 +27,7 @@ def main():
 
     perks = json.loads((ROOT / "config/newHorizonsPerks.json").read_text())
     registry = perks["skills"]["new-horizons:sylvanLuck"]
-    assert perks["sylvanTacticsPolicy"] == 4
+    assert perks["sylvanTacticsPolicy"] == 5
     for rank in expected:
         assert registry["ranks"][rank]["effect"]["status"] == "active"
 

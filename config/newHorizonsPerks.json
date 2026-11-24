@@ -10,7 +10,7 @@
 	"fourOfferProgressionVersion": 1,
 	"estatesPolicyVersion": 2,
 	"spellcraftPolicyVersion": 2,
-	"sylvanTacticsPolicy": 4,
+	"sylvanTacticsPolicy": 5,
 	"metamagicPolicy": {
 		"version": 7,
 		"usesPerCombatByRank": [
@@ -3590,27 +3590,28 @@
 			"name": "Sylvan Tactics",
 			"domain": "Faction",
 			"availability": "Rampart heroes only",
-			"description": "Friendly creatures gain Initiative and passive benefits from patient, coordinated tactics.",
+			"description": "Friendly creatures gain Initiative and lie in ambush: a Waiting stack can hide from shots and spells, then strike an enemy that walked in.",
+			"details": "A Concealed stack cannot be targeted by ranged attacks, Overwatch or hostile single-target spells. Melee attacks can still reach it, and area effects still hit it. Concealment ends when the stack starts its delayed activation, attacks, is attacked or damaged, or is moved, and at the end of the round. A stack cannot be Concealed in two rounds in a row, nor after it was attacked or damaged this round. An enemy is prey if its own movement this round ended closer to the hidden stack. The first attack of the delayed activation is an Ambush strike if its target is prey.",
 			"ranks": {
 				"basic": {
-					"description": "Friendly creatures gain +1 Initiative.",
+					"description": "Friendly creatures gain +1 Initiative. One friendly stack per round becomes Concealed when it Waits.",
 					"effect": {
 						"status": "active",
-						"description": "Friendly creatures gain +1 Initiative."
+						"description": "Friendly creatures gain +1 Initiative. One friendly stack per round becomes Concealed when it Waits."
 					}
 				},
 				"advanced": {
-					"description": "Friendly creatures gain +2 Initiative.",
+					"description": "Friendly creatures gain +2 Initiative. Two friendly stacks per round become Concealed when they Wait.",
 					"effect": {
 						"status": "active",
-						"description": "Friendly creatures gain +2 Initiative."
+						"description": "Friendly creatures gain +2 Initiative. Two friendly stacks per round become Concealed when they Wait."
 					}
 				},
 				"expert": {
-					"description": "Friendly creatures gain +3 Initiative.",
+					"description": "Friendly creatures gain +3 Initiative. Three friendly stacks per round become Concealed when they Wait.",
 					"effect": {
 						"status": "active",
-						"description": "Friendly creatures gain +3 Initiative."
+						"description": "Friendly creatures gain +3 Initiative. Three friendly stacks per round become Concealed when they Wait."
 					}
 				}
 			},
@@ -3619,15 +3620,15 @@
 					"id": "new-horizons:sylvanLuck.elvenPrecision",
 					"name": "Hunting Pack",
 					"requires": "basic",
-					"description": "Friendly Rampart creatures deal +15% damage to enemy stacks that have not yet acted this round.",
+					"description": "Friendly Rampart creatures deal +15% damage to an enemy hit by a friendly Ambush strike this round or the next.",
 					"effect": {
 						"status": "active",
-						"description": "Friendly Rampart creatures deal +15% damage to enemy stacks that have not yet acted this round.",
+						"description": "Friendly Rampart creatures deal +15% damage to an enemy hit by a friendly Ambush strike this round or the next.",
 						"parameters": {
 							"attackDamagePercent": 15
 						}
 					},
-					"details": "Completing an action or Defending counts as acting. Waiting alone does not. The bonus applies to melee and ranged attacks and to retaliations without granting another action."
+					"details": "The Ambush strike itself marks the enemy; the mark lasts until the end of the next round. The bonus applies to melee and ranged attacks and to retaliations without granting another action."
 				},
 				{
 					"id": "new-horizons:sylvanLuck.forestSFavor",
@@ -3644,10 +3645,10 @@
 					"id": "new-horizons:sylvanLuck.serendipity",
 					"name": "Patient Hunter",
 					"requires": "basic",
-					"description": "The first attack after Waiting deals +15% damage.",
+					"description": "The first attack after Waiting deals +15% damage; an Ambush strike deals +30% instead.",
 					"effect": {
 						"status": "active",
-						"description": "The first attack after Waiting deals +15% damage."
+						"description": "The first attack after Waiting deals +15% damage; an Ambush strike deals +30% instead."
 					},
 					"details": "Waiting prepares one attack bonus, consumed by the first qualifying attack. It grants no extra attack or activation."
 				},
@@ -3655,12 +3656,12 @@
 					"id": "new-horizons:sylvanLuck.luckyRecovery",
 					"name": "Dappled Cover",
 					"requires": "basic",
-					"description": "A creature that voluntarily moves at least 3 hexes during its activation takes 20% less ranged attack damage until its next activation.",
+					"description": "A Waiting creature that is not Concealed takes 25% less ranged attack damage until its delayed activation.",
 					"effect": {
 						"status": "active",
-						"description": "A creature that voluntarily moves at least 3 hexes during its activation takes 20% less ranged attack damage until its next activation."
+						"description": "A Waiting creature that is not Concealed takes 25% less ranged attack damage until its delayed activation."
 					},
-					"details": "All movement the creature is ordered to make during one activation counts. Teleports and forced movement do not. It does not reduce melee attacks or spell damage."
+					"details": "It covers the rounds in which a stack cannot hide or finds no free Concealment. It does not reduce melee attacks or spell damage."
 				},
 				{
 					"id": "new-horizons:sylvanLuck.sharedFortune",
@@ -3677,15 +3678,15 @@
 					"details": "Only beneficial hero spell effects with a temporary combat-round duration qualify. Instantaneous, permanent and other duration types are unchanged."
 				},
 				{
-					"id": "new-horizons:sylvanLuck.natureSProvidence",
-					"name": "Quick Redeployment",
+					"id": "new-horizons:sylvanLuck.forestCover",
+					"name": "Forest Cover",
 					"requires": "advanced",
-					"description": "After a creature retaliates, it gains +2 Initiative until its next activation.",
+					"description": "One extra Concealment per round, usable only by a stack that Waits next to a battlefield obstacle or wall.",
 					"effect": {
 						"status": "active",
-						"description": "After a creature retaliates, it gains +2 Initiative until its next activation."
+						"description": "One extra Concealment per round, usable only by a stack that Waits next to a battlefield obstacle or wall."
 					},
-					"details": "Repeated retaliations refresh the bonus without stacking it. Pre-emptive blows, Counterfire and Overwatch shots do not count as retaliations."
+					"details": "The extra Concealment is used only when no rank Concealment is free. A stack still cannot be Concealed in two rounds in a row."
 				},
 				{
 					"id": "new-horizons:sylvanLuck.fortunateAim",
@@ -3699,15 +3700,15 @@
 					"details": "Damaging direct melee attacks and retaliations qualify. Repeated hits refresh the effect without stacking; it ends at the target’s next activation."
 				},
 				{
-					"id": "new-horizons:sylvanLuck.wildChance",
-					"name": "Kindred Flame",
+					"id": "new-horizons:sylvanLuck.startle",
+					"name": "Startle",
 					"requires": "advanced",
-					"description": "Breath attacks by your Green and Gold Dragons do not damage friendly creatures.",
+					"description": "The victim of an Ambush strike deals 50% damage when it retaliates against that strike.",
 					"effect": {
 						"status": "active",
-						"description": "Breath attacks by your Green and Gold Dragons do not damage friendly creatures."
+						"description": "The victim of an Ambush strike deals 50% damage when it retaliates against that strike."
 					},
-					"details": "The attack keeps its normal breath geometry and damage against enemies; it creates neither extra targets nor additional attacks."
+					"details": "Only the retaliation to that Ambush strike is reduced. Later retaliations deal full damage."
 				},
 				{
 					"id": "new-horizons:sylvanLuck.perfectMoment",
@@ -3720,15 +3721,15 @@
 					}
 				},
 				{
-					"id": "new-horizons:sylvanLuck.cascadingFortune",
-					"name": "Ancient Accord",
+					"id": "new-horizons:sylvanLuck.apexPredator",
+					"name": "Apex Predator",
 					"requires": "expert",
-					"description": "Your beneficial hero spells bypass the native spell-level immunity of friendly Rampart creatures.",
+					"description": "Ambush strikes deal +25% damage.",
 					"effect": {
 						"status": "active",
-						"description": "Your beneficial hero spells bypass the native spell-level immunity of friendly Rampart creatures."
+						"description": "Ambush strikes deal +25% damage."
 					},
-					"details": "Bypasses only the creature’s intrinsic spell-level immunity for your beneficial hero spells. Artifact immunities, blanket immunities and protection against hostile spells remain unchanged."
+					"details": "Adds to Patient Hunter in the same damage stage. It changes no Concealment and grants no extra attack."
 				}
 			]
 		},

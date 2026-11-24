@@ -2,6 +2,7 @@
 #include "StdInc.h"
 #include "NewHorizonsSylvanTactics.h"
 #include "NewHorizonsSylvanTacticsV2.h"
+#include "NewHorizonsSylvanAmbush.h"
 #include "NewHorizonsCombatSkills.h"
 #include "CBattleInfoCallback.h"
 #include "BattleAttackInfo.h"
@@ -47,12 +48,14 @@ void configure(const CGHeroInstance & hero, SylvanLuckState & fortune)
 		// Policy 3 reuses the existing activation/Waiting histories, but only
 		// enables the selected hybrid roster. Older captures keep their slots.
 		// Policy 4 revises two of those slots as recipient markers instead.
+		// Policy 5 keeps Dappled Cover on Waiting and retires Quick Redeployment.
 		const bool revised = newHorizonsHeroes::usesSylvanTacticsV4(hero.getPerkState().getRules());
+		const bool ambush = newHorizonsHeroes::usesSylvanTacticsV5(hero.getPerkState().getRules());
 		tactics.fleetfoot = perk("forestSFavor");
 		tactics.patientHunter = perk("serendipity");
 		tactics.dappledCover = !revised && perk("luckyRecovery");
 		tactics.disruptiveStrike = perk("fortunateAim");
-		tactics.quickRedeployment = !revised && perk("natureSProvidence");
+		tactics.quickRedeployment = !revised && !ambush && perk("natureSProvidence");
 		tactics.perfectMoment = perk("perfectMoment");
 		return;
 	}
@@ -98,6 +101,7 @@ void finalizeDamage(const CBattleInfoCallback & battle, const BattleAttackInfo &
 	DamageAttackInfo & payload)
 {
 	newHorizonsSylvanTacticsV2::finalizeDamage(battle, info, payload);
+	newHorizonsSylvanAmbush::finalizeDamage(battle, info, payload);
 	if(!info.physicalDamage || !ordinary(info.attacker) || !info.defender) return;
 	const auto side = battle.playerToSide(battle.battleGetOwner(info.attacker));
 	const auto targetSide = battle.playerToSide(battle.battleGetOwner(info.defender));
@@ -106,8 +110,10 @@ void finalizeDamage(const CBattleInfoCallback & battle, const BattleAttackInfo &
 	if(tactics.enabled)
 	{
 		if(tactics.perfectMoment && info.luckyStrike) payload.sylvanLuckyStrikeTotalPercent = PERFECT_MOMENT_TOTAL_PERCENT;
-		if(tactics.patientHunter && info.attacker->battlecraftWaitBonusAvailable())
-			payload.sylvanAttackMultipliers.push_back(100 + PATIENT_HUNTER_PERCENT);
+		// Policy 5 Ambush strikes raise Patient Hunter and add Apex Predator.
+		if(const int waited = newHorizonsSylvanAmbush::waitStrikePercent(battle, info,
+			tactics.patientHunter, PATIENT_HUNTER_PERCENT))
+			payload.sylvanAttackMultipliers.push_back(100 + waited);
 		const bool primaryMelee = !info.shooting && !info.secondaryAttack && !info.retaliation
 			&& !info.bracePreemptive && info.preemptiveDamagePercent == 0 && info.cleaveDamagePercent == 0;
 		if(tactics.measuredAdvance && primaryMelee && info.chargeDistance >= 1

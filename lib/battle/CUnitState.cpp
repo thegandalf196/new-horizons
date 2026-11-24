@@ -2123,6 +2123,7 @@ void CUnitState::load(const JsonNode & data)
 		}
 	}
 	forestAmbushStateFromUnitJson(data);
+	sylvanAmbushStateFromUnitJson(data);
 	hasOverwatchState(data);
 	newHorizonsAerialSupremacy::hasRoundState(data);
 	hasHeroicSpiritState(data);
@@ -2191,6 +2192,8 @@ void CUnitState::damageInternal(int64_t & amount, bool destroyRemains, bool bypa
 {
 	if(postShieldBeforeCasualties)
 		*postShieldBeforeCasualties = 0;
+	if(amount > 0)
+		sylvanAmbush.harm(); // Any incoming damage reveals Sylvan Concealment.
 	const int64_t maximumHealthBefore = battle::getMaximumHealth(*this);
 	const int64_t availableHealthBefore = getAvailableHealth();
 	const auto cohesionBasis = getBattleStartMaximumAggregateHP();

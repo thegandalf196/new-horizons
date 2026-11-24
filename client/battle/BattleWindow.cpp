@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "BattleWindow.h"
+#include "SylvanAmbushWaitButton.h"
 #include "PassiveFactionSkillPresentation.h"
 #include "BattleTargetSelectionPanel.h"
 
@@ -1246,6 +1247,7 @@ void BattleWindow::updateBattleTargetSelectionControls()
 			+ " before the delayed activation. Uses one shot; once per round."));
 	else
 		widget<CButton>("wait")->setHelp(CButton::tooltipLocalized("core.help.386"));
+	sylvanAmbushWaitButton::refresh(*widget<CButton>("wait"), ambushWaitArtShown, *owner.getBattle(), activeStack);
 	if(continuationPending)
 		widget<CButton>("defence")->setHelp(CButton::tooltip(
 			creatureContinuationUI::closeTitle(continuation, &GAME->translator()),

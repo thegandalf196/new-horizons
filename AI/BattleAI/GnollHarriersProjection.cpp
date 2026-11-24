@@ -6,6 +6,7 @@
 #include "StackWithBonuses.h"
 #include "../../lib/battle/NewHorizonsGnollHarriers.h"
 #include "../../lib/battle/NewHorizonsSylvanTacticsRevision.h"
+#include "../../lib/battle/NewHorizonsSylvanAmbush.h"
 #include "../../lib/bonuses/BonusList.h"
 namespace gnollHarriersAI
 {
@@ -25,6 +26,9 @@ void record(HypotheticBattle & battle, uint32_t id, BattleHex before, BattleHex 
 	const auto marker = newHorizonsGnollHarriers::movement(battle, *mover, true, before, after);
 	if(marker)
 		mover->addUnitBonus({*marker});
+	// Sylvan Tactics 5 prey: forecasts record per step, the server per segment;
+	// the chain rule yields the same approach record.
+	newHorizonsSylvanAmbush::recordApproach(battle, *mover, before, after);
 	// Sylvan Tactics 4.1 Dappled Cover shares this voluntary-movement receipt.
 	// Callers record each committed step, or one flight, so the hex distance is the path.
 	const auto dappled = newHorizonsSylvanTacticsRevision::dappledMovement(battle, *mover, true,

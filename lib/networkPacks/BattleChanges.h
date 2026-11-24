@@ -105,6 +105,7 @@ public:
 	template <typename Handler> void validateOverwatchSerialization(Handler & h) const
 	{
 		battle::forestAmbushStateFromUnitJson(data).validateSerialization(h);
+		battle::sylvanAmbushStateFromUnitJson(data).validateSerialization(h);
 		if(battle::hasHeroicSpiritState(data) && !h.hasFeature(Handler::Version::NEW_HORIZONS_HEROIC_SPIRIT))
 			throw std::runtime_error("Cannot discard Heroic Spirit receipt in an older unit update");
 		if(newHorizonsAerialSupremacy::hasRoundState(data)

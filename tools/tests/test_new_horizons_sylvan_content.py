@@ -20,11 +20,11 @@ EXPECTED = (
     ('serendipity', 'Patient Hunter', 'basic', {}),
     ('luckyRecovery', 'Dappled Cover', 'basic', {}),
     ('sharedFortune', 'Evergreen Blessings', 'advanced', {'beneficialDurationBonusRounds': 2}),
-    ('natureSProvidence', 'Quick Redeployment', 'advanced', {}),
+    ('forestCover', 'Forest Cover', 'advanced', {}),
     ('fortunateAim', 'Disruptive Strike', 'advanced', {}),
-    ('wildChance', 'Kindred Flame', 'advanced', {}),
+    ('startle', 'Startle', 'advanced', {}),
     ('perfectMoment', 'Perfect Moment', 'expert', {}),
-    ('cascadingFortune', 'Ancient Accord', 'expert', {}),
+    ('apexPredator', 'Apex Predator', 'expert', {}),
 )
 
 
@@ -36,17 +36,17 @@ class SylvanContentTest(unittest.TestCase):
         cls.skill = cls.rules['skills'][SKILL]
         cls.perks = {row['id'].split('.')[-1]: row for row in cls.skill['perks']}
 
-    def test_policy_four_and_historical_markers_are_supported(self):
+    def test_policy_five_and_historical_markers_are_supported(self):
         validator = Draft4Validator(self.schema)
-        self.assertEqual(self.rules['sylvanTacticsPolicy'], 4)
-        for marker in (None, 1, 2, 3, 4):
+        self.assertEqual(self.rules['sylvanTacticsPolicy'], 5)
+        for marker in (None, 1, 2, 3, 4, 5):
             candidate = copy.deepcopy(self.rules)
             if marker is None:
                 candidate.pop('sylvanTacticsPolicy')
             else:
                 candidate['sylvanTacticsPolicy'] = marker
             validator.validate(candidate)
-        for invalid in (None, False, True, 0, -1, 5, 1.0, 4.0, '4', {}, []):
+        for invalid in (None, False, True, 0, -1, 6, 1.0, 5.0, '5', {}, []):
             candidate = copy.deepcopy(self.rules)
             candidate['sylvanTacticsPolicy'] = invalid
             self.assertTrue(list(validator.iter_errors(candidate)), repr(invalid))
@@ -62,8 +62,9 @@ class SylvanContentTest(unittest.TestCase):
 
     def test_rank_and_perfect_moment_are_unchanged(self):
         for rank, value in (('basic', 1), ('advanced', 2), ('expert', 3)):
-            self.assertEqual(self.skill['ranks'][rank]['description'],
-                             f'Friendly creatures gain +{value} Initiative.')
+            self.assertTrue(self.skill['ranks'][rank]['description'].startswith(
+                f'Friendly creatures gain +{value} Initiative. '))
+            self.assertIn('Concealed', self.skill['ranks'][rank]['description'])
         perfect = self.perks['perfectMoment']
         self.assertEqual(perfect['description'], 'Creature Lucky Strikes deal 3.5× damage.')
         self.assertEqual(perfect['effect'], {'status': 'active', 'description': perfect['description']})

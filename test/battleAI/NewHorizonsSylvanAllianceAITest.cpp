@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../SylvanTacticsHistoricalRules.h"
 #include "ProjectedTargetHitFixture.h"
 #include "../../AI/BattleAI/AttackPossibility.h"
 #include "../../AI/BattleAI/BattleExchangeVariant.h"
@@ -19,8 +20,7 @@ protected:
 	void mapLoaded(CMap * loaded) override
 	{
 		ProjectedTargetHitFixture::mapLoaded(loaded);
-		JsonNode rules(JsonPath::builtin("config/newHorizonsPerks"));
-		rules["sylvanTacticsPolicy"].Integer() = policy();
+		JsonNode rules = sylvanTacticsHistoricalRules(policy());
 		if(policy() == 2)
 			for(auto & row : rules["skills"]["new-horizons:sylvanLuck"]["perks"].Vector())
 			{

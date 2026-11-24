@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../../SylvanTacticsHistoricalRules.h"
 #include "../../../lib/battle/OwnedFrameCaptureFacts.h"
 #include "../../../lib/bonuses/PreparedBonusGraphStorage.h"
 #include "../../../lib/bonuses/BonusSelector.h"
@@ -80,8 +81,7 @@ protected:
 	void mapLoaded(CMap * loaded) override
 	{
 		TinyMapGameTest::mapLoaded(loaded);
-		JsonNode legacyPerks(JsonPath::builtin("config/newHorizonsPerks"));
-		legacyPerks.Struct().erase("sylvanTacticsPolicy");
+		JsonNode legacyPerks = sylvanTacticsHistoricalRules(0);
 		legacyPerks.setOverrideFlag(true);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, legacyPerks);
 		loaded->overrideGameSetting(EGameSettings::COMBAT_GOOD_LUCK_CHANCE, certainLuck());

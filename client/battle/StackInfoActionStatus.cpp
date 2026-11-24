@@ -4,6 +4,8 @@
 #include "../widgets/MiscWidgets.h"
 #include "../widgets/TextControls.h"
 #include "../../lib/battle/NewHorizonsForestAmbush.h"
+#include "../../lib/GameLibrary.h"
+#include "../../lib/texts/CGeneralTextHandler.h"
 void StackInfoBasicPanel::appendActionStatus()
 {
 	if(displayedStatus.defend.defending)
@@ -16,7 +18,8 @@ void StackInfoBasicPanel::appendActionStatus()
 		statusTooltips.push_back(std::make_shared<LRClickableAreaWText>(Rect(7, 153, 39, 13), tooltip, tooltip));
 	}
 	else if(displayedStatus.battlecraftWait || displayedStatus.overwatchRange > 0
-		|| displayedStatus.forestAmbush.concealed || displayedStatus.forestAmbush.shotPending)
+		|| displayedStatus.forestAmbush.concealed || displayedStatus.forestAmbush.shotPending
+		|| displayedStatus.sylvanConcealed || displayedStatus.sylvanStrikeReady)
 	{
 		auto tooltip = displayedStatus.battlecraftWait
 			? newHorizonsBattleStatus::battlecraftWaitTooltip(*displayedStatus.battlecraftWait) : std::string();
@@ -29,8 +32,17 @@ void StackInfoBasicPanel::appendActionStatus()
 			tooltip += "\n\nForest Ambush: the first primary physical ranged strike in this delayed activation gains +"
 				+ std::to_string(newHorizonsForestAmbush::FIRST_SHOT_LUCK)
 				+ " Luck within normal limits. This bonus expires at activation end.";
-		const auto badge = displayedStatus.forestAmbush.concealed ? "HIDDEN"
+		const auto translate = [](const char * key) { return LIBRARY->generaltexth->translate(key); };
+		if(displayedStatus.sylvanConcealed)
+			tooltip += "\n\n" + translate("new-horizons.combat.sylvanAmbush.concealed.title") + ": "
+				+ translate("new-horizons.combat.sylvanAmbush.concealed.help");
+		if(displayedStatus.sylvanStrikeReady)
+			tooltip += "\n\n" + translate("new-horizons.combat.sylvanAmbush.strike.title") + ": "
+				+ translate("new-horizons.combat.sylvanAmbush.strike.help");
+		const std::string badge = displayedStatus.forestAmbush.concealed ? "HIDDEN"
+			: displayedStatus.sylvanConcealed ? translate("new-horizons.combat.sylvanAmbush.badge.concealed")
 			: displayedStatus.forestAmbush.shotPending ? "AMBUSH"
+			: displayedStatus.sylvanStrikeReady ? translate("new-horizons.combat.sylvanAmbush.badge.strike")
 			: displayedStatus.overwatchRange > 0 ? "WATCH" : "WAIT";
 		labels.push_back(std::make_shared<CLabel>(8, 155, EFonts::FONT_TINY, ETextAlignment::TOPLEFT,
 			Colors::YELLOW, badge));

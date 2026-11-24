@@ -4,6 +4,7 @@
 #include "CapturedRuleSet.h"
 #include "../spells/NewHorizonsMetamagicDoubleCast.h"
 #include "../entities/hero/NewHorizonsRevisedSpecialties.h"
+#include "../entities/hero/NewHorizonsPerkRules.h"
 #include <vector>
 #include <map>
 #include "../constants/EntityIdentifiers.h"
@@ -53,8 +54,11 @@ public:
 			const auto kind = static_cast<CapturedRuleKind>(wireKind);
 			const bool currentPolicies = h.hasFeature(Handler::Version::NEW_HORIZONS_DOUBLE_CAST_CHOSEN_PRAYERS);
 			const bool revisedSpecialties = h.hasFeature(Handler::Version::NEW_HORIZONS_REVISED_SPECIALTIES);
+			const bool sylvanAmbush = h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_AMBUSH);
 			if(h.saving)
 			{
+				if(!sylvanAmbush && newHorizonsHeroes::requiresSylvanAmbushFormat(documents[index]->document()))
+					throw std::runtime_error("Cannot write Sylvan Tactics 5 rules to an older format");
 				if(!currentPolicies && newHorizonsMetamagic::requiresDoubleCastFormat(documents[index]->document()))
 					throw std::runtime_error("Cannot write Double Cast or Chosen Prayers rules to an older format");
 				if(!revisedSpecialties && newHorizonsHeroes::requiresRevisedSpecialtyFormat(documents[index]->document()))
@@ -69,6 +73,8 @@ public:
 					throw std::runtime_error("Older format claims Double Cast or Chosen Prayers rules");
 				if(!revisedSpecialties && newHorizonsHeroes::requiresRevisedSpecialtyFormat(decoded))
 					throw std::runtime_error("Older format claims revised specialty rules");
+				if(!sylvanAmbush && newHorizonsHeroes::requiresSylvanAmbushFormat(decoded))
+					throw std::runtime_error("Older format claims Sylvan Tactics 5 rules");
 				if(candidate.intern(kind, decoded) != index + 1)
 					throw std::runtime_error("Duplicate captured rules document identity");
 			}

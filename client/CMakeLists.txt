@@ -70,6 +70,7 @@ set(vcmiclientcommon_SRCS
 	battle/StackInfoVitalStatus.cpp
 	battle/BattleTargetSelectionPanel.cpp
 	battle/BattleWindow.cpp
+	battle/SylvanAmbushWaitButton.cpp
 	battle/PassiveFactionSkillPresentation.cpp
 	battle/CreatureAnimation.cpp
 	battle/HeroInfoWindow.cpp
@@ -422,6 +423,7 @@ set(vcmiclientcommon_HEADERS
 	battle/SummonLifetimePresentation.h
 	battle/BattleTargetSelectionPanel.h
 	battle/BattleWindow.h
+	battle/SylvanAmbushWaitButton.h
 	battle/PassiveFactionSkillPresentation.h
 	battle/CurrentFactionSkillPresentation.h
 	battle/NewHorizonsRealityWarpPreview.h

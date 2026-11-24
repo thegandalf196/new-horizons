@@ -101,11 +101,15 @@ struct DLL_LINKAGE SkillDefinition
 
 DLL_LINKAGE bool usesSylvanTactics(const JsonNode & rules);
 DLL_LINKAGE bool usesSylvanTacticsV2(const JsonNode & rules);
-/// Mixed roster: policy 3 and its policy-4 revision.
+/// Mixed roster family: policy 3, its policy-4 revision and the policy-5 Ambush roster.
 DLL_LINKAGE bool usesSylvanTacticsV3(const JsonNode & rules);
 /// Revised Dappled Cover, Quick Redeployment and Hunting Pack.
 DLL_LINKAGE bool usesSylvanTacticsV4(const JsonNode & rules);
+/// Sylvan Tactics 5 (Ambush): Concealment on Wait and Ambush strikes.
+DLL_LINKAGE bool usesSylvanTacticsV5(const JsonNode & rules);
 DLL_LINKAGE void validateSylvanTacticsSerialization(const JsonNode & rules, bool supported);
+/// Policy-5 captures need NEW_HORIZONS_SYLVAN_AMBUSH; older formats cannot hold them.
+DLL_LINKAGE bool requiresSylvanAmbushFormat(const JsonNode & rules);
 /// Captured Spellcraft policy 2: Precise Casting halves hostile resistance instead of
 /// protecting a friendly area centre. Absence keeps the historical effect.
 DLL_LINKAGE bool usesResistancePreciseCasting(const JsonNode & rules);

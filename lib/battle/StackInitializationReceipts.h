@@ -25,6 +25,7 @@ class DLL_LINKAGE StackInitializationReceipts final
 	bool restoredDemonicGateOpened;
 	std::tuple<int64_t, int32_t, int32_t, BattleSide> restoredPhysicalPoison;
 	ForestAmbushState restoredForestAmbush;
+	SylvanAmbushState restoredSylvanAmbush;
 	DreadCavalryState restoredDreadCavalry;
 	int32_t restoredOverwatchReadyRound;
 	int32_t restoredPetrifyingBloodRound;

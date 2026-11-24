@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../../SylvanTacticsHistoricalRules.h"
 #include "BattleTestFixture.h"
 #include "../../SpellPointTestUtils.h"
 #include "../../../lib/battle/BattleAction.h"
@@ -25,8 +26,7 @@ protected:
 	void mapLoaded(CMap * map) override
 	{
 		TinyMapGameTest::mapLoaded(map);
-		JsonNode rules(JsonPath::builtin("config/newHorizonsPerks"));
-		rules["sylvanTacticsPolicy"].Integer() = policy();
+		JsonNode rules = sylvanTacticsHistoricalRules(policy());
 		// A policy-3 capture keeps its own payload, never the installed 4.1 value.
 		if(policy() == 3)
 			for(auto & row : rules["skills"]["new-horizons:sylvanLuck"]["perks"].Vector())

@@ -27,6 +27,10 @@ inline std::string newHorizonsHybridCapturedPerkIcon(const std::string & perkId,
 			{"new-horizons:sylvanLuck.wildChance", "Kindred Flame", "NH_perk_sylvan_tactics_kindred_flame"},
 			{"new-horizons:sylvanLuck.perfectMoment", "Perfect Moment", "NH_perk_sylvan_tactics_perfect_moment"},
 			{"new-horizons:sylvanLuck.cascadingFortune", "Ancient Accord", "NH_perk_sylvan_tactics_ancient_accord"},
+			// Policy 5 (Ambush) replacements for the three retired slots.
+			{"new-horizons:sylvanLuck.forestCover", "Forest Cover", "NH_perk_sylvan_tactics_forest_cover"},
+			{"new-horizons:sylvanLuck.startle", "Startle", "NH_perk_sylvan_tactics_startle"},
+			{"new-horizons:sylvanLuck.apexPredator", "Apex Predator", "NH_perk_sylvan_tactics_apex_predator"},
 		};
 		for(const auto & binding : bindings)
 			if(perkId == binding.id && capturedName == binding.name)

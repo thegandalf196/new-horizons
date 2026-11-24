@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../../SylvanTacticsHistoricalRules.h"
 #include "BattleTestFixture.h"
 #include "../../../lib/battle/NewHorizonsSylvanTacticsV2.h"
 #include "../../../lib/battle/NewHorizonsSylvanTactics.h"
@@ -23,8 +24,7 @@ protected:
 	void mapLoaded(CMap * map) override
 	{
 		TinyMapGameTest::mapLoaded(map);
-		JsonNode rules(JsonPath::builtin("config/newHorizonsPerks"));
-		rules["sylvanTacticsPolicy"].Integer() = policy();
+		JsonNode rules = sylvanTacticsHistoricalRules(policy());
 		if(policy() == 2)
 		{
 			// Historical captures own their effect payloads. Do not use the

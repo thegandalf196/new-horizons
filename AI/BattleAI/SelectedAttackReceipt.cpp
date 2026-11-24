@@ -125,7 +125,9 @@ std::unique_ptr<AttackPossibility> selectedAttackReceipt::refreshForestAmbush(
 	const auto * captured = dynamic_cast<const battle::CUnitState *>(preview.attack.attacker);
 	const auto * actor = branch->battleGetUnitByID(preview.attack.attacker->unitId());
 	const auto * current = dynamic_cast<const battle::CUnitState *>(actor);
-	if(!captured || !current || captured->forestAmbush == current->forestAmbush)
+	// A pending Sylvan Ambush strike changes the same first attack's damage.
+	if(!captured || !current || (captured->forestAmbush == current->forestAmbush
+		&& captured->sylvanAmbush.strikePending == current->sylvanAmbush.strikePending))
 		return {};
 	const auto * target = branch->battleGetUnitByID(preview.attack.defender->unitId());
 	if(!actor->alive() || !target || !target->alive())

@@ -13,6 +13,12 @@ void CUnitState::serializeWaitActionState(JsonSerializeFormat & handler)
 	handler.serializeRaw("forestAmbush", forestAmbushData, std::cref(emptyForestAmbush));
 	if(!handler.saving)
 		forestAmbush = ForestAmbushState::fromJson(forestAmbushData);
+	JsonNode sylvanAmbushData;
+	if(handler.saving)
+		sylvanAmbushData = sylvanAmbush.toJson();
+	handler.serializeRaw("sylvanAmbush", sylvanAmbushData, std::cref(emptyForestAmbush));
+	if(!handler.saving)
+		sylvanAmbush = SylvanAmbushState::fromJson(sylvanAmbushData);
 	handler.serializeBool("waiting", waiting);
 	handler.serializeBool("waitedThisTurn", waitedThisTurn);
 	handler.serializeBool("battlecraftWaitBonusUsed", battlecraftWaitBonusUsed);

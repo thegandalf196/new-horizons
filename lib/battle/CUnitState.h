@@ -10,6 +10,7 @@
 
 #pragma once
 #include "NewHorizonsForestAmbushState.h"
+#include "SylvanAmbushState.h"
 
 #include <typeinfo>
 
@@ -92,6 +93,7 @@ public:
 	/// Accepted Wait arms Overwatch until the next genuine activation. Usage is
 	/// independent of Counterfire and survives readiness expiry within a round.
 	ForestAmbushState forestAmbush;
+	SylvanAmbushState sylvanAmbush;
 	int32_t battlecraftOverwatchReadyRound = -1;
 	int32_t battlecraftOverwatchUsedRound = -1;
 	/// Nonstacking derived retaliation: excludes the granting Morale activation.

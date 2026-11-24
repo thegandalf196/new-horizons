@@ -8,6 +8,9 @@
 #include "SearchWorkXml.h"
 #endif
 #include "../SpellPointTestUtils.h"
+#include "../SylvanTacticsHistoricalRules.h"
+#include "NativeAmbushEncounterObserver.h"
+#include "../../lib/mapping/CMap.h"
 #include "../../lib/CCreatureHandler.h"
 #include "../../lib/entities/hero/NewHorizonsLeadership.h"
 #include "../../lib/battle/AutocombatPreferences.h"
@@ -48,6 +51,18 @@ protected:
 	uint64_t callbacksMade = 0;
 	int maximumRound = 0;
 	const int seed = benchmarkSeed();
+	/// 4 installs the historical Sylvan Tactics roster before capture; 0 keeps the shipped rules.
+	int sylvanPolicy = 0;
+	/// External grants after the authored starting ledger has been verified.
+	std::function<void(CGHeroInstance &, CGHeroInstance *)> afterHeroes;
+	std::unique_ptr<nativeBenchmark::AmbushEncounterObserver> ambushObserver;
+
+	void mapLoaded(CMap * loaded) override
+	{
+		TinyMapGameTest::mapLoaded(loaded);
+		if(sylvanPolicy == 4)
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, sylvanTacticsHistoricalRules(4));
+	}
 
 	Services * gameServices() override { return LIBRARY; }
 	void configureWorldInitialization(StartInfo &, GameRandomizer & rng) const override { rng.setSeed(seed); }
@@ -207,6 +222,7 @@ protected:
 				leftHero->addSpellToSpellbook(spell);
 				initial["spells"].Vector().emplace_back(name);
 			}
+			if(afterHeroes) ASSERT_NO_FATAL_FAILURE(afterHeroes(*leftHero, rightHero));
 			initial["attackerHero"] = heroEvidence(*leftHero);
 			if(rightHero) initial["defenderHero"] = heroEvidence(*rightHero);
 		}
@@ -290,9 +306,11 @@ protected:
 			ASSERT_EQ(callbacks[index]->pending.size(), 1u);
 			const auto action = callbacks[index]->pending.front();
 			submitted.push_back(action);
+			if(ambushObserver) ambushObserver->before(*current, action);
 			// Apply only after activeStack returns: forecasts never reenter live
 			// authoritative mutation from inside their submission callback.
 			ASSERT_TRUE(handler->battles->makePlayerBattleAction(BattleID(0), player, action));
+			if(ambushObserver) ambushObserver->after(*gameState()->getBattle(BattleID(0)), action);
 		}
 		RecordProperty("encounterUs", std::to_string(microseconds(started)));
 		ASSERT_TRUE(server.result) << "512-callback budget reached; not a successful whole fight";
@@ -303,6 +321,7 @@ protected:
 			series += (series.empty() ? "" : " ") + std::to_string(value);
 		RecordProperty("callbackUsSeries", series);
 		RecordProperty("rounds", std::to_string(maximumRound));
+		if(ambushObserver) RecordProperty("ambushStats", ambushObserver->summary().toString());
 		RecordProperty("packets", std::to_string(server.packets - initialPacketCount));
 		RecordProperty("submittedActionsHex", hex(bytes(submitted)));
 		RecordProperty("terminalUnits", server.terminalUnits.toString());
@@ -466,6 +485,48 @@ TEST_F(DISABLED_NativeEncounterBenchmarkTest, MirrorNecropolisHeroOptions)
 	ASSERT_NO_FATAL_FAILURE(prepare(army, army, "core:straker", true, false, false, true, "core:galthran"));
 	runEncounter();
 }
+/// Sylvan Tactics AI-use and present-mechanic workloads: Jenova with Expert
+/// Sylvan Tactics and one perk per tier against Rion, who has Magic Arrow and
+/// Fireball. Policy 5 selects Patient Hunter, Startle and Apex Predator;
+/// policy 4 the same tiers of its own roster.
+class DISABLED_NativeAmbushEncounterBenchmarkTest : public DISABLED_NativeEncounterBenchmarkTest
+{
+protected:
+	void ambushEncounter(int policy, bool shooters)
+	{
+		sylvanPolicy = policy;
+		afterHeroes = [policy](CGHeroInstance & rampart, CGHeroInstance * opponent)
+		{
+			const std::string skill = "new-horizons:sylvanLuck";
+			rampart.setSecSkillLevel(SecondarySkill(SecondarySkill::decode(skill)), 3, ChangeValueMode::ABSOLUTE);
+			const auto perks = policy == 4 ? std::array<const char *, 3>{"serendipity", "fortunateAim", "perfectMoment"}
+				: std::array<const char *, 3>{"serendipity", "startle", "apexPredator"};
+			for(const auto * perk : perks)
+			{
+				rampart.applyPerkSelection({skill, skill + "." + perk});
+				ASSERT_TRUE(rampart.hasActivePerk(skill, skill + "." + perk)) << perk;
+			}
+			ASSERT_NE(opponent, nullptr);
+			for(const auto spell : {SpellID::MAGIC_ARROW, SpellID::FIREBALL})
+				opponent->addSpellToSpellbook(spell);
+			setTestSpellPointTotal(opponent, 60);
+		};
+		ambushObserver = std::make_unique<nativeBenchmark::AmbushEncounterObserver>(BattleSide::ATTACKER);
+		ASSERT_NO_FATAL_FAILURE(prepare(mirrorRampartArmy(), shooters ? rangedArmy() : meleeCastleArmy(),
+			"core:jenova", true, false, false, true, "core:rion"));
+		runEncounter();
+		const auto stats = ambushObserver->summary();
+		// The opposing AI must never pick a Concealed stack with a shot or a
+		// single-target spell; the authority would also reject it above.
+		EXPECT_EQ(stats["rangedOrSingleSpellOnConcealed"].Integer(), 0);
+		if(policy == 4)
+			EXPECT_EQ(stats["concealments"].Integer(), 0);
+	}
+};
+TEST_F(DISABLED_NativeAmbushEncounterBenchmarkTest, ShootersPolicy5) { ambushEncounter(5, true); }
+TEST_F(DISABLED_NativeAmbushEncounterBenchmarkTest, ShootersPolicy4) { ambushEncounter(4, true); }
+TEST_F(DISABLED_NativeAmbushEncounterBenchmarkTest, MeleePolicy5) { ambushEncounter(5, false); }
+TEST_F(DISABLED_NativeAmbushEncounterBenchmarkTest, MeleePolicy4) { ambushEncounter(4, false); }
 class DISABLED_NativeSpecialtyEncounterBenchmarkTest : public DISABLED_NativeEncounterBenchmarkTest,
 	public ::testing::WithParamInterface<SpecialtyEncounter>
 {

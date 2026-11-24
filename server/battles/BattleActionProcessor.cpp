@@ -23,6 +23,7 @@
 #include "BattleVoluntaryMovementHistory.h"
 #include "BattleWaitState.h"
 #include "../../lib/battle/NewHorizonsForestAmbush.h"
+#include "../../lib/battle/NewHorizonsSylvanAmbush.h"
 #include "../../lib/battle/OrdinaryMeleeRetaliation.h"
 #include "../../lib/battle/NewHorizonsHeroLuck.h"
 #include "../../lib/battle/NewHorizonsHeroicSpirit.h"
@@ -359,9 +360,10 @@ static bool canonicalLandMineHexIsEmpty(const CBattleInfoCallback & battle,
 }
 
 static bool isSanctifiedHostileTarget(const CBattleInfoCallback & battle,
-	const battle::Unit * attacker, const battle::Unit * target)
+	const battle::Unit * attacker, const battle::Unit * target, bool ranged)
 {
-	return attacker && target && newHorizonsForestAmbush::protectsDirectTarget(target)
+	return attacker && target && (ranged ? newHorizonsForestAmbush::protectsFromRangedOrSpell(target)
+		: newHorizonsForestAmbush::protectsFromMelee(target))
 		&& battle.battleMatchActionController(attacker, target, false);
 }
 
@@ -407,12 +409,12 @@ static bool actionDirectlyTargetsSanctified(const CBattleInfoCallback & battle,
 		case EActionType::WALK_AND_ATTACK:
 			return target.size() >= 2
 				&& isSanctifiedHostileTarget(battle, stack,
-					battle.battleGetStackByPos(target[1].hexValue, true));
+					battle.battleGetStackByPos(target[1].hexValue, true), false);
 		case EActionType::SHOOT:
 			// These attacks are selected by location; Sanctified units remain valid area targets.
 			return !battle.battleCanTargetEmptyHex(stack) && !target.empty()
 				&& isSanctifiedHostileTarget(battle, stack,
-					battle.battleGetStackByPos(target.front().hexValue, true));
+					battle.battleGetStackByPos(target.front().hexValue, true), true);
 		case EActionType::MONSTER_SPELL:
 			return creatureSpellDirectlyTargetsSanctified(battle, stack, action.spell, target, BonusType::SPELLCASTER);
 		case EActionType::WALK_AND_CAST:
@@ -1174,7 +1176,7 @@ bool BattleActionProcessor::doAttackAction(const CBattleInfoCallback & battle, c
 		gameHandler->complain("A creature action can only attack a target hostile to its action controller.");
 		return false;
 	}
-	if(isSanctifiedHostileTarget(battle, stack, destinationStack))
+	if(isSanctifiedHostileTarget(battle, stack, destinationStack, false))
 	{
 		gameHandler->complain("A protected stack cannot be selected for a direct attack.");
 		return false;
@@ -4357,6 +4359,7 @@ DamageEstimation BattleActionProcessor::applyBattleEffects(const CBattleInfoCall
 		bsa.damageAmount = battle.getBattle()->getActualDamage(range.damage, attackerState->getCount(), gameHandler->getRandomGenerator());
 		auto defenderState = bai.defender->acquireState();
 		newHorizonsForestAmbush::receiveAttack(battle, *defenderState);
+		newHorizonsSylvanAmbush::receiveAttack(battle, bai, *defenderState);
 		const int64_t incomingDamage = bsa.damageAmount;
 		const int64_t guardianSpiritBefore = defenderState->guardianSpiritHitPoints;
 		const int64_t healthBeforeAttack = def->getAvailableHealth();

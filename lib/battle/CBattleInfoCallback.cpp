@@ -98,7 +98,7 @@ bool admitsBerserkTarget(const CBattleInfoCallback & callback, const battle::Uni
 	// V3 forces a melee attack. Exclude only targets rejected by the same
 	// authoritative melee legality checks; Berserk still includes allies.
 	return !u->isInvincible()
-		&& !(newHorizonsForestAmbush::protectsDirectTarget(u) && callback.battleMatchOwner(berserker, u));
+		&& !(newHorizonsForestAmbush::protectsFromMelee(u) && callback.battleMatchOwner(berserker, u));
 }
 
 /// Order targeting is based on occupied hexes, not a unit's primary position.
@@ -2113,7 +2113,7 @@ bool CBattleInfoCallback::battleCanAttackUnit(const battle::Unit * attacker, con
 		throw std::runtime_error("Undefined attacker in battleCanAttackUnit!");
 
 	if(!target || target->isInvincible()
-		|| (newHorizonsForestAmbush::protectsDirectTarget(target) && battleMatchOwner(attacker, target)))
+		|| (newHorizonsForestAmbush::protectsFromMelee(target) && battleMatchOwner(attacker, target)))
 		return false;
 
 	if(attacker == target || !battleMatchOwner(attacker, target))
@@ -2137,7 +2137,7 @@ bool CBattleInfoCallback::battleCanAttackUnitAction(const battle::Unit * attacke
 	if(!newHorizonsDreadCavalry::permitsTarget(*this, attacker, target))
 		return false;
 	if(!target || target->isInvincible()
-		|| (newHorizonsForestAmbush::protectsDirectTarget(target)
+		|| (newHorizonsForestAmbush::protectsFromMelee(target)
 			&& battleMatchActionController(attacker, target, false)))
 		return false;
 	if(attacker == target || !battleMatchActionController(attacker, target, false))
@@ -2243,7 +2243,7 @@ bool CBattleInfoCallback::battleCanOverwatch(const battle::Unit * shooter, const
 	if(!shooter || !mover || shooter->unitId() == mover->unitId() || !from.isAvailable() || !to.isAvailable()
 		|| from == to || !battleOverwatchReady(shooter) || !mover->alive() || mover->isGhost()
 		|| !battleMatchOwner(shooter, mover) || mover->isInvincible()
-		|| (newHorizonsForestAmbush::protectsDirectTarget(mover) && battleMatchOwner(shooter, mover)))
+		|| (newHorizonsForestAmbush::protectsFromRangedOrSpell(mover) && battleMatchOwner(shooter, mover)))
 		return false;
 	// Ghost Walk is supplied by the mover's current controller. Veiled
 	// Movement suppresses movement reactions, not ordinary ranged attacks.
@@ -2306,7 +2306,7 @@ bool CBattleInfoCallback::battleCanShoot(const battle::Unit * attacker, const Ba
 			return false;
 
 		if(defender->isInvincible()
-			|| (newHorizonsForestAmbush::protectsDirectTarget(defender) && battleMatchOwner(attacker, defender)))
+			|| (newHorizonsForestAmbush::protectsFromRangedOrSpell(defender) && battleMatchOwner(attacker, defender)))
 			return false;
 	}
 
@@ -2370,7 +2370,7 @@ bool CBattleInfoCallback::battleCanShootActionWithoutCounterBatteryRestriction(
 	if(!emptyHexAreaAttack)
 	{
 		if(!defender || defender->isInvincible()
-			|| (newHorizonsForestAmbush::protectsDirectTarget(defender)
+			|| (newHorizonsForestAmbush::protectsFromRangedOrSpell(defender)
 				&& battleMatchActionController(attacker, defender, false)))
 			return false;
 	}

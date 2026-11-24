@@ -3,6 +3,7 @@
 #include "NewHorizonsSylvanTacticsV2.h"
 #include "NewHorizonsSylvanTactics.h"
 #include "NewHorizonsSylvanTacticsRevision.h"
+#include "NewHorizonsSylvanAmbush.h"
 #include "CBattleInfoCallback.h"
 #include "BattleAttackInfo.h"
 #include "Unit.h"
@@ -43,8 +44,11 @@ bool hasPerk(const CGHeroInstance * hero, std::string_view perk)
 	// Only these four family/spell effects survive in the hybrid policy.
 	// Other slots now own activation/Waiting effects: allowing them through
 	// this adapter would also reactivate retired spell or creature effects.
-	const bool retained = perk == "elvenPrecision" || perk == "sharedFortune"
-		|| perk == "wildChance" || perk == "cascadingFortune";
+	// Policy 5 retires Kindred Flame and Ancient Accord: their slots never fire.
+	const bool retired = (perk == "wildChance" || perk == "cascadingFortune")
+		&& newHorizonsSylvanAmbush::captured(hero);
+	const bool retained = !retired && (perk == "elvenPrecision" || perk == "sharedFortune"
+		|| perk == "wildChance" || perk == "cascadingFortune");
 	if(!enabled(hero) && !(retained && newHorizonsHeroes::usesSylvanTacticsV3(hero->getPerkState().getRules()))) return false;
 	return hero->hasActivePerk("new-horizons:sylvanLuck", "new-horizons:sylvanLuck." + std::string(perk));
 }
@@ -60,6 +64,10 @@ int perkValue(const CGHeroInstance * hero, std::string_view perk, std::string_vi
 }
 bool huntingPackConfigured(const CBattleInfoCallback & battle, const battle::Unit * attacker)
 {
+	if(newHorizonsSylvanAmbush::captured(commandingHero(battle, attacker)))
+		return newHorizonsSylvanTactics::ordinary(attacker) && attacker->unitType()
+			&& attacker->unitType()->getFactionID() == FactionID::RAMPART
+			&& newHorizonsSylvanAmbush::hasPerk(commandingHero(battle, attacker), "elvenPrecision");
 	if(newHorizonsSylvanTacticsRevision::revised(commandingHero(battle, attacker)))
 		return newHorizonsSylvanTacticsRevision::huntingPackConfigured(battle, attacker);
 	return newHorizonsSylvanTactics::ordinary(attacker) && family(attacker, Family::Centaur)
@@ -67,6 +75,9 @@ bool huntingPackConfigured(const CBattleInfoCallback & battle, const battle::Uni
 }
 int huntingPackBonus(const CBattleInfoCallback & battle, const battle::Unit * attacker, const battle::Unit * target, BattleHex targetPosition)
 {
+	// Policy 5: enemies hit by a friendly Ambush strike this round or the last.
+	if(newHorizonsSylvanAmbush::captured(commandingHero(battle, attacker)))
+		return newHorizonsSylvanAmbush::huntingPackPercent(battle, attacker, target);
 	if(newHorizonsSylvanTacticsRevision::revised(commandingHero(battle, attacker)))
 		return newHorizonsSylvanTacticsRevision::huntingPackPercent(battle, attacker, target);
 	if(!huntingPackConfigured(battle, attacker) || !target || battle.battleGetOwner(attacker) == battle.battleGetOwner(target)) return 0;

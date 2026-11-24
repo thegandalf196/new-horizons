@@ -504,5 +504,16 @@
 	"new-horizons.rampart.livingRemedy.effect": "Living Remedy: regenerates at the start of each activation",
 	"new-horizons.rampart.livingRemedy.log": "Living Remedy: %d %s will regenerate.",
 	"new-horizons.rampart.againstTheOdds.effect": "Against the Odds",
-	"new-horizons.rampart.againstTheOdds.log": "Against the Odds: the stronger enemy grants this army +%d Luck."
+	"new-horizons.rampart.againstTheOdds.log": "Against the Odds: the stronger enemy grants this army +%d Luck.",
+	"new-horizons.combat.sylvanAmbush.concealed.row": "Concealed: hidden from ranged attacks and hostile single-target spells until the delayed activation.",
+	"new-horizons.combat.sylvanAmbush.concealed.title": "Concealed",
+	"new-horizons.combat.sylvanAmbush.concealed.help": "Ranged attacks, Overwatch and hostile single-target spells cannot select this stack. Melee attacks can, and area effects still hit it. Concealment ends when the stack starts its delayed activation, attacks, is attacked or damaged, or is moved, and at the end of the round.",
+	"new-horizons.combat.sylvanAmbush.strike.row": "Ambush strike ready: the first attack of this activation is an Ambush strike if its target is prey.",
+	"new-horizons.combat.sylvanAmbush.strike.title": "Ambush strike ready",
+	"new-horizons.combat.sylvanAmbush.strike.help": "An enemy is prey if its own movement this round ended closer to the hex where this stack hid. An Ambush strike gains the hero's ambush bonuses. Against any other target the first attack is an ordinary attack after Waiting, and the Ambush strike is used up.",
+	"new-horizons.combat.sylvanAmbush.badge.concealed": "HIDDEN",
+	"new-horizons.combat.sylvanAmbush.badge.strike": "AMBUSH",
+	"new-horizons.combat.sylvanAmbush.wait.title": "Wait in ambush",
+	"new-horizons.combat.sylvanAmbush.wait.rank": "Wait and hide in ambush (%LEFT% of %TOTAL% hiding places left this round). While Concealed, ranged attacks and hostile single-target spells cannot select this stack; melee still can.",
+	"new-horizons.combat.sylvanAmbush.wait.forestCover": "Wait and hide in ambush in Forest Cover beside this obstacle (the rank hiding places are taken this round). While Concealed, ranged attacks and hostile single-target spells cannot select this stack; melee still can."
 }

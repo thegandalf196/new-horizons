@@ -12,6 +12,7 @@
 #include "../../lib/battle/NewHorizonsForestAmbush.h"
 #include "../../lib/battle/NewHorizonsSylvanTacticsV2.h"
 #include "../../lib/battle/NewHorizonsSylvanTacticsRevision.h"
+#include "../../lib/battle/NewHorizonsSylvanAmbush.h"
 
 namespace sylvanTacticsAI
 {
@@ -89,7 +90,8 @@ bool dynamicDamage(const CBattleInfoCallback & battle,
 		|| (defense.enabled && defense.dappledCover)
 		|| revision::active(newHorizonsSylvanTacticsV2::commandingHero(battle, defender), "luckyRecovery")
 		|| revision::dappledCoverPercent(defender) > 0
-		|| revision::active(newHorizonsSylvanTacticsV2::commandingHero(battle, attacker), "elvenPrecision");
+		|| revision::active(newHorizonsSylvanTacticsV2::commandingHero(battle, attacker), "elvenPrecision")
+		|| newHorizonsSylvanAmbush::dynamicDamage(battle, attacker, defender);
 }
 
 void StrikeProjection::damage(const CBattleInfoCallback & world, const BattleAttackInfo & attack,
@@ -129,6 +131,8 @@ void StrikeProjection::damage(const CBattleInfoCallback & world, const BattleAtt
 		}
 	}
 	newHorizonsForestAmbush::receiveAttack(world, target);
+	// Same reveal and victim marks as the authoritative strike, before afterAttack.
+	newHorizonsSylvanAmbush::receiveAttack(world, attack, target);
 	// Capture qualification before casualties/rebirth; only a damaging hit spends
 	// the isolated target counter. Neither previews nor selected replay touch live state.
 	const int disarmed = newHorizonsSylvanTacticsV2::disarmingShotRetaliations(

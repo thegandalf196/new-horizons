@@ -2,6 +2,8 @@
 #include "StdInc.h"
 #include "NewHorizonsSylvanTactics.h"
 #include "NewHorizonsSylvanTacticsRevision.h"
+#include "NewHorizonsSylvanAmbush.h"
+#include "NewHorizonsSylvanTacticsV2.h"
 #include "CBattleInfoCallback.h"
 #include "IBattleState.h"
 #include "../entities/hero/NewHorizonsPerkRules.h"
@@ -56,7 +58,14 @@ std::vector<std::pair<std::string, int>> rangedProtectionContributions(const CBa
 	const auto tactics = battle.getBattle()->getSylvanLuckState(side).tactics;
 	std::vector<std::pair<std::string, int>> result;
 	if(tactics.enabled && tactics.dappledCover && unit->waited()
-		&& !tactics.dappledExpired.contains(unit->unitId())) result.emplace_back("Dappled Cover", DAPPLED_COVER_REDUCTION_PERCENT);
+		&& !tactics.dappledExpired.contains(unit->unitId()))
+	{
+		// Policy 5 covers only a Waiting stack that did not hide, with 25%.
+		if(!newHorizonsSylvanAmbush::captured(newHorizonsSylvanTacticsV2::commandingHero(battle, unit)))
+			result.emplace_back("Dappled Cover", DAPPLED_COVER_REDUCTION_PERCENT);
+		else if(!newHorizonsSylvanAmbush::concealed(unit))
+			result.emplace_back("Dappled Cover", newHorizonsSylvanAmbush::DAPPLED_COVER_PERCENT);
+	}
 	for(auto provider : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 		if(battle.getBattle()->getSylvanLuckState(provider).tactics.covered.contains(unit->unitId()))
 		{

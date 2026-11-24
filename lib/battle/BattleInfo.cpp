@@ -1625,6 +1625,7 @@ void BattleInfo::moveUnit(uint32_t id, const BattleHex & destination)
 	}
 	if(sta->getPosition() != destination)
 	{
+		sta->sylvanAmbush.reveal(); // Being moved by any effect ends Sylvan Concealment.
 		// Entangle is a position effect: an accepted forced move or teleport
 		// removes only Entangle's own root marker. Unrelated BIND_EFFECT sources
 		// (including classic Bind) keep their original lifecycle.

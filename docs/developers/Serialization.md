@@ -4,7 +4,10 @@
 
 Consecrated Arms and the replacement Metamagic profile require a new game. The
 minimum accepted format is **1164**, `NEW_HORIZONS_CONSECRATED_ARMS`; the current
-writer is **1166**, `NEW_HORIZONS_REVISED_SPECIALTIES`, which protects captured
+writer is **1167**, `NEW_HORIZONS_SYLVAN_AMBUSH`, which protects captured Sylvan
+Tactics policy 5 and each battle unit's Ambush state (Concealment, pending
+strike, approach record and victim marks). Older formats load that state inert
+and refuse to write it. 1166, `NEW_HORIZONS_REVISED_SPECIALTIES`, protects captured
 revised specialties, core Stewardship (Estates policy 2) and Spellcraft policy 2.
 1165, `NEW_HORIZONS_DOUBLE_CAST_CHOSEN_PRAYERS`, added Double Cast offer/use state
 and chosen prayer action fields. 1164 and 1165 saves load with their captured rules. On load (and when a tavern hero

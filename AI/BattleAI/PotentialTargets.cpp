@@ -46,8 +46,11 @@ void PotentialTargets::enumerateCandidates(const battle::Unit * attackerInfo,
 			continue;
 		// Sanctuary bars this unit only as a deliberately selected enemy primary.
 		// Attacks whose primary is another stack may still include it as collateral.
-		const bool sanctuaryEnemy = newHorizonsForestAmbush::protectsDirectTarget(defender)
+		const bool sanctuaryEnemy = newHorizonsForestAmbush::protectsFromMelee(defender)
 			&& evaluationState->battleMatchActionController(attackerInfo, defender);
+		// Sylvan Concealment bars shots only; melee may still pick the stack.
+		const bool rangedProtectedEnemy = sanctuaryEnemy || (newHorizonsForestAmbush::protectsFromRangedOrSpell(defender)
+			&& evaluationState->battleMatchActionController(attackerInfo, defender));
 		if(sanctuaryEnemy && !evaluationState->battleCanTargetEmptyHex(attackerInfo))
 			continue;
 
@@ -91,7 +94,7 @@ void PotentialTargets::enumerateCandidates(const battle::Unit * attackerInfo,
 			if(canShootFromCurrentPosition)
 				possibleAttacks.push_back(GenerateAttackInfo(true, BattleHex::INVALID));
 
-			if(!newHorizonsDreadCavalry::hasRawPending(attackerInfo) && !sanctuaryEnemy && newHorizonsArchery::canUseSkirmisher(candidateWorld->heroPolicy(attackerInfo->unitSide()).legacyHero(), attackerInfo))
+			if(!newHorizonsDreadCavalry::hasRawPending(attackerInfo) && !rangedProtectedEnemy && newHorizonsArchery::canUseSkirmisher(candidateWorld->heroPolicy(attackerInfo->unitSide()).legacyHero(), attackerInfo))
 			{
 				// Score every legal destination so the AI can trade movement, firing line,
 				// range, and Counterfire exposure instead of always choosing one nearest hex.

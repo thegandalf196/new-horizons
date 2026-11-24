@@ -56,6 +56,7 @@ void selectedAttackReceipt::replayResourcesNative(const AttackPossibility & ap, 
 	unitToUpdate->archeryCrossfireAttackers = captured.archeryCrossfireAttackers;
 	unitToUpdate->archeryCrossfireDefenders = captured.archeryCrossfireDefenders;
 	unitToUpdate->forestAmbush = captured.forestAmbush;
+	unitToUpdate->sylvanAmbush = captured.sylvanAmbush;
 	unitToUpdate->battlecraftWaitBonusUsed = captured.battlecraftWaitBonusUsed;
 	unitToUpdate->battlecraftWaitMasteryDoubled = captured.battlecraftWaitMasteryDoubled;
 	unitToUpdate->battlecraftDefendMasteryDoubled = captured.battlecraftDefendMasteryDoubled;

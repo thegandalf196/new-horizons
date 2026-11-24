@@ -20,7 +20,7 @@ void require(bool accepted)
 // list of perk/lifetime predicates. Any real mutation retains the full replay.
 bool unchangedCompletion(const HypotheticBattle & branch, const StackWithBonuses & actor, LifecyclePhase phase)
 {
-	if(actor.forestAmbush.shotPending) return false;
+	if(actor.forestAmbush.shotPending || actor.sylvanAmbush.strikePending) return false;
 	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 	{
 		const auto before = branch.getSylvanLuckState(side);

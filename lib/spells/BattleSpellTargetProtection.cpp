@@ -33,6 +33,6 @@ bool targetsSanctifiedStackDirectly(const Mechanics & mechanics, const Target & 
 	if(!unit && destination.hexValue.isValid())
 		unit = battle->battleGetUnitByPos(destination.hexValue, true);
 
-	return unit && newHorizonsForestAmbush::protectsDirectTarget(unit) && mechanics.ownerMatches(unit, false);
+	return unit && newHorizonsForestAmbush::protectsFromRangedOrSpell(unit) && mechanics.ownerMatches(unit, false);
 }
 }

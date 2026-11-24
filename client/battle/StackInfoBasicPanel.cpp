@@ -12,6 +12,7 @@
 #include "../../lib/entities/hero/NewHorizonsGenieSage.h"
 #include "../windows/SylvanFactionStatusPresentation.h"
 #include "StackInfoBasicPanel.h"
+#include "../../lib/battle/NewHorizonsSylvanAmbush.h"
 #include "ShieldPresentation.h"
 #include "StackTemporaryStatusPresenter.h"
 #include "SummonLifetimePresentation.h"
@@ -348,6 +349,8 @@ newHorizonsBattleStatus::StackInfoStatusSnapshot currentStackInfoStatus(
 	if(stack)
 	{
 		result.forestAmbush = stack->forestAmbush;
+		result.sylvanConcealed = newHorizonsSylvanAmbush::concealed(stack);
+		result.sylvanStrikeReady = newHorizonsSylvanAmbush::strikeReady(stack);
 		result.frozen = stack->alive() && newHorizonsFrozen::isFrozen(*stack);
 		if(result.frozen && battleCallback && battleCallback->getBattle())
 			result.frozenShatterBonusPercent = newHorizonsFrozen::shatterBonusPercent(battleCallback->getBattle()->getMagicRules());

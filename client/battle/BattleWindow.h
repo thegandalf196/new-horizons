@@ -100,6 +100,7 @@ class BattleWindow : public InterfaceObjectConfigurable
 	void updateDoubleCastCue();
 	uint32_t announcedDoubleCastOffer = 0;
 	bool doubleCastCueShown = false;
+	bool ambushWaitArtShown = false; ///< Sylvan Ambush Wait button art is loaded.
 	int heroBattleStatusHeight(BattleSide side) const;
 	void createQuickSpellWindow();
 	void createTimerInfoWindows();

@@ -7,6 +7,7 @@
 #include "../../lib/battle/NewHorizonsBattlecraft.h"
 #include "../../lib/battle/NewHorizonsCombatSkills.h"
 #include "../../lib/battle/NewHorizonsForestAmbush.h"
+#include "../../lib/battle/NewHorizonsSylvanAmbush.h"
 #include "../../lib/networkPacks/PacksForClientBattle.h"
 namespace battleWaitState
 {
@@ -26,10 +27,14 @@ void accept(CGameHandler & game, const CBattleInfoCallback & battle, const CStac
 		game.sendAndApply(changed);
 	}
 
-	if(newHorizonsForestAmbush::hasBattlePolicy(battle))
+	// Sylvan Concealment reads the Forest Ambush result of the same Wait.
+	const bool forestAmbush = newHorizonsForestAmbush::hasBattlePolicy(battle);
+	if(forestAmbush || newHorizonsSylvanAmbush::hasBattlePolicy(battle))
 	{
 		auto state = stack.acquireState();
-		newHorizonsForestAmbush::acceptWait(battle, *state);
+		if(forestAmbush)
+			newHorizonsForestAmbush::acceptWait(battle, *state);
+		newHorizonsSylvanAmbush::acceptWait(battle, *state);
 		BattleUnitsChanged changed;
 		changed.battleID = battle.getBattle()->getBattleID();
 		UnitChanges update(stack.unitId(), UnitChanges::EOperation::UPDATE);

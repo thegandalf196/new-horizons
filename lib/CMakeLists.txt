@@ -381,6 +381,8 @@ set(lib_MAIN_SRCS
 	battle/NewHorizonsSylvanTacticsPresentation.cpp
 	battle/NewHorizonsSylvanTacticsV2.cpp
 	battle/NewHorizonsSylvanTacticsRevision.cpp
+	battle/NewHorizonsSylvanAmbush.cpp
+	battle/SylvanAmbushState.cpp
 	battle/BattleAttackVictims.cpp
 	spells/SylvanTacticsSpellRules.cpp
 	battle/NewHorizonsSylvanTactics.cpp
@@ -1342,6 +1344,8 @@ set(lib_MAIN_HEADERS
 	battle/SylvanTacticsState.h
 	battle/NewHorizonsSylvanTacticsV2.h
 	battle/NewHorizonsSylvanTacticsRevision.h
+	battle/NewHorizonsSylvanAmbush.h
+	battle/SylvanAmbushState.h
 	battle/NewHorizonsSylvanTactics.h
 	battle/SylvanLuckState.h
 	battle/LuckSerendipityState.h

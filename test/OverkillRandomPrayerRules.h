@@ -7,6 +7,7 @@
 #include "../lib/filesystem/ResourcePath.h"
 #include "../lib/json/JsonNode.h"
 #include "ActivatedOrdinarySpecialties.h"
+#include "SylvanTacticsHistoricalRules.h"
 
 /// Pin Metamagic 5 (Overkill, policy 6) and Consecrated Arms 3 (random prayers,
 /// policy 3): the shipped rules captured before Double Cast and Chosen Prayers.
@@ -22,6 +23,12 @@ inline JsonNode overkillRandomPrayerRules(JsonNode rules)
 	rules.Struct().erase("spellcraftPolicyVersion");
 	if(rules.Struct().contains("estatesPolicyVersion"))
 		rules["estatesPolicyVersion"].Integer() = 1;
+	// ... and Sylvan Tactics policy 5 (format 1167): keep the policy-4 roster.
+	if(rules.Struct().contains("sylvanTacticsPolicy"))
+	{
+		rules["skills"]["new-horizons:sylvanLuck"] = sylvanTacticsHistoricalRules(4)["skills"]["new-horizons:sylvanLuck"];
+		rules["sylvanTacticsPolicy"].Integer() = 4;
+	}
 	// A complete captured registry: never merge the pinned policies into installed ones.
 	rules.setOverrideFlag(true);
 	return rules;

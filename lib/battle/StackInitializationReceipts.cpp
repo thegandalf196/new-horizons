@@ -20,6 +20,7 @@ battle::StackInitializationReceipts::StackInitializationReceipts(const CUnitStat
 	restoredPhysicalPoison = std::make_tuple(state.physicalPoisonBaseDamage, state.physicalPoisonActivationsRemaining,
 		state.physicalPoisonSourceStackId, state.physicalPoisonSpellSide);
 	restoredForestAmbush = state.forestAmbush;
+	restoredSylvanAmbush = state.sylvanAmbush;
 	restoredDreadCavalry = state.dreadCavalryState;
 	restoredOverwatchReadyRound = state.battlecraftOverwatchReadyRound;
 	restoredPetrifyingBloodRound = state.petrifyingBloodRound;
@@ -55,6 +56,7 @@ void battle::StackInitializationReceipts::initialize(CUnitState & state,
 	std::tie(state.physicalPoisonBaseDamage, state.physicalPoisonActivationsRemaining,
 		state.physicalPoisonSourceStackId, state.physicalPoisonSpellSide) = restoredPhysicalPoison;
 	state.forestAmbush = restoredForestAmbush;
+	state.sylvanAmbush = restoredSylvanAmbush;
 	state.dreadCavalryState = restoredDreadCavalry;
 	state.battlecraftOverwatchReadyRound = restoredOverwatchReadyRound;
 	state.petrifyingBloodRound = restoredPetrifyingBloodRound;

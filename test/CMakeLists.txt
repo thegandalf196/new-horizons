@@ -1005,6 +1005,7 @@ set(test_SRCS
 		server/battles/NewHorizonsNightProwlerTest.cpp
 		server/battles/SylvanAllianceRulesTest.cpp
 		server/battles/SylvanTactics41Test.cpp
+		server/battles/SylvanAmbushTest.cpp
 		server/battles/NewHorizonsSylvanTacticsTest.cpp
 		server/battles/NewHorizonsSylvanLuckTest.cpp
 		server/battles/NewHorizonsHeroLuckTest.cpp

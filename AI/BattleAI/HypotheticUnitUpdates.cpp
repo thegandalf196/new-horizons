@@ -75,6 +75,8 @@ void HypotheticBattle::moveUnit(uint32_t id, const BattleHex & destination)
 	if(forecast::NativeAdapter::moveUnit(*this, id, destination)) return;
 	std::shared_ptr<StackWithBonuses> changed = getForUpdate(id);
 	const bool moved = changed->position != destination;
+	if(moved)
+		changed->sylvanAmbush.reveal(); // Matches BattleInfo::moveUnit.
 	if(moved && changed->hasBonusOfType(BonusType::BIND_EFFECT))
 	{
 		if(const auto entangleSpell = entangleSpellId())

@@ -68,7 +68,7 @@ TEST(NewHorizonsPerkRules, MixedSylvanCatalogKeepsTenStableTierSlotsAndExplicitP
 {
 	using namespace newHorizonsHeroes;
 	JsonNode rules(JsonPath::builtin("config/newHorizonsPerks"));
-	EXPECT_EQ(rules["sylvanTacticsPolicy"].Integer(), 4);
+	EXPECT_EQ(rules["sylvanTacticsPolicy"].Integer(), 5);
 	const auto skill = perkSkill(rules, "new-horizons:sylvanLuck");
 	ASSERT_TRUE(skill);
 	EXPECT_EQ(skill->name, "Sylvan Tactics");
@@ -76,9 +76,9 @@ TEST(NewHorizonsPerkRules, MixedSylvanCatalogKeepsTenStableTierSlotsAndExplicitP
 	const std::array<std::pair<const char *, const char *>, 10> expected = {{
 		{"elvenPrecision", "Hunting Pack"}, {"forestSFavor", "Fleetfoot"},
 		{"serendipity", "Patient Hunter"}, {"luckyRecovery", "Dappled Cover"},
-		{"sharedFortune", "Evergreen Blessings"}, {"natureSProvidence", "Quick Redeployment"},
-		{"fortunateAim", "Disruptive Strike"}, {"wildChance", "Kindred Flame"},
-		{"perfectMoment", "Perfect Moment"}, {"cascadingFortune", "Ancient Accord"}
+		{"sharedFortune", "Evergreen Blessings"}, {"forestCover", "Forest Cover"},
+		{"fortunateAim", "Disruptive Strike"}, {"startle", "Startle"},
+		{"perfectMoment", "Perfect Moment"}, {"apexPredator", "Apex Predator"}
 	}};
 	for(size_t index = 0; index < expected.size(); ++index)
 	{
@@ -87,13 +87,13 @@ TEST(NewHorizonsPerkRules, MixedSylvanCatalogKeepsTenStableTierSlotsAndExplicitP
 		EXPECT_EQ(perk.name, expected[index].second);
 		EXPECT_EQ(perk.requiredRank, index < 4 ? "basic" : index < 8 ? "advanced" : "expert");
 	}
-	for(const int policy : {1, 2, 3, 4})
+	for(const int policy : {1, 2, 3, 4, 5})
 	{
 		rules["sylvanTacticsPolicy"] = JsonNode(policy);
 		EXPECT_TRUE(JsonUtils::validate(rules, "vcmi:newHorizonsPerks", "supported Sylvan policy"));
 		EXPECT_NO_THROW(validatePerkRules(rules));
 	}
-	for(const int policy : {0, 5})
+	for(const int policy : {0, 6})
 	{
 		rules["sylvanTacticsPolicy"] = JsonNode(policy);
 		EXPECT_FALSE(JsonUtils::validate(rules, "vcmi:newHorizonsPerks", "unknown Sylvan policy"));

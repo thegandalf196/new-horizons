@@ -21,6 +21,7 @@ using battleSearchTiming::MovementExchangeScope;
 #include "CoordinatedMarkProjection.h"
 #include "DreadCavalryProjection.h"
 #include "../../lib/battle/NewHorizonsForestAmbush.h"
+#include "../../lib/battle/NewHorizonsSylvanAmbush.h"
 #include "AerialRetaliationProjection.h"
 #include "BracePrimaryState.h"
 #include "BattleExchangeVariant.h"
@@ -221,7 +222,8 @@ float BattleExchangeVariant::trackAttack(
 		return 0;
 	}
 	const auto * ambushTarget = hb->battleGetUnitByID(ap.attack.defender->unitId());
-	if(newHorizonsForestAmbush::concealed(ambushTarget)
+	if((newHorizonsForestAmbush::concealed(ambushTarget)
+		|| (ap.attack.shooting && newHorizonsSylvanAmbush::concealed(ambushTarget)))
 		&& hb->battleMatchOwner(ap.attack.attacker, ambushTarget))
 		return 0;
 	if(const auto refreshed = selectedAttackReceipt::refreshForestAmbush(ap, hb, damageCache))
@@ -528,7 +530,8 @@ float BattleExchangeVariant::trackAttackWithSelectedDamage(
 	if(actionResult)
 		*actionResult = {};
 	if(!attacker || attacker->armorerLastStandEndedActivation
-		|| (newHorizonsForestAmbush::concealed(defender.get())
+		|| ((newHorizonsForestAmbush::concealed(defender.get())
+			|| (shooting && newHorizonsSylvanAmbush::concealed(defender.get())))
 			&& hb->battleMatchOwner(attacker.get(), defender.get())))
 		return 0;
 
@@ -1075,7 +1078,7 @@ BattleScore BattleExchangeEvaluator::calculateExchange(
 			// pending Cascade gift.
 			const bool initialChosenUnit = canUseAp
 				&& activeUnit->unitId() == ap.attack.attacker->unitId()
-				&& !(attacker->waiting && attacker->forestAmbush.concealed);
+				&& !(attacker->waiting && (attacker->forestAmbush.concealed || attacker->sylvanAmbush.concealed));
 			if(!actorBudget.enter(initialChosenUnit))
 				return finishScore(); // Complete prior bodies; leave next activation/partial round unstarted.
 			const bool frozenForfeits = !initialChosenUnit

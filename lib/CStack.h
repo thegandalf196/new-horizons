@@ -257,6 +257,9 @@ public:
 		forestAmbush.validateSerialization(h);
 		if(forestAmbush.concealed && (!waiting || !waitedThisTurn))
 			throw std::runtime_error("Concealed Forest Ambush requires accepted Wait queue state");
+		sylvanAmbush.validateSerialization(h);
+		if(sylvanAmbush.concealed && (!waiting || !waitedThisTurn))
+			throw std::runtime_error("Concealed Sylvan Ambush requires accepted Wait queue state");
 		if((battlecraftOverwatchReadyRound < -1 || battlecraftOverwatchUsedRound < -1))
 			throw std::runtime_error("Invalid Overwatch round marker");
 		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_OVERWATCH)
@@ -431,6 +434,7 @@ public:
 		else if(!h.saving)
 			rebirthOriginalAggregateHP = 0;
 		h & forestAmbush;
+		h & sylvanAmbush;
 		h & confusionState;
 		h & dreadCavalryState;
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_AERIAL_SUPREMACY))

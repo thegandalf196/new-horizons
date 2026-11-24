@@ -5,6 +5,7 @@
  * Full text of license available in license.txt file, in main folder
  */
 #include "StdInc.h"
+#include "../SylvanTacticsHistoricalRules.h"
 #include "../server/battles/BattleTestFixture.h"
 #include "../../lib/GameSettings.h"
 #include "../../lib/mapping/CMap.h"
@@ -33,7 +34,8 @@ protected:
 	void mapLoaded(CMap * map) override
 	{
 		TinyMapGameTest::mapLoaded(map);
-		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, JsonNode(JsonPath::builtin("config/newHorizonsPerks")));
+		// Wild Chance belongs to the policy-4 Sylvan Tactics roster.
+		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, sylvanTacticsHistoricalRules(4));
 	}
 
 	void SetUp() override
@@ -96,8 +98,7 @@ protected:
 	void mapLoaded(CMap * map) override
 	{
 		ColdBonusContextTest::mapLoaded(map);
-		JsonNode perks(JsonPath::builtin("config/newHorizonsPerks"));
-		perks.Struct().erase("sylvanTacticsPolicy");
+		JsonNode perks = sylvanTacticsHistoricalRules(0);
 		perks.setOverrideFlag(true);
 		map->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, perks);
 	}

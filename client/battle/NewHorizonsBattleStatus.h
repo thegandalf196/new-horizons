@@ -1009,6 +1009,8 @@ struct StackInfoStatusSnapshot
 	std::optional<BattlecraftWaitStatus> battlecraftWait;
 	int overwatchRange = 0;
 	battle::ForestAmbushState forestAmbush;
+	bool sylvanConcealed = false; ///< Sylvan Tactics 5 Concealment.
+	bool sylvanStrikeReady = false;
 	SylvanLuckStackStatus sylvanLuck;
 	BattleFormStatus battleForm;
 	PhysicalPoisonStatus physicalPoison;

@@ -32,7 +32,7 @@ TEST(SylvanTacticsStateTest, MissingPolicyRetainsLegacyAndPresentInvalidTypesFai
 {
 	JsonNode rules;
 	EXPECT_FALSE(newHorizonsHeroes::usesSylvanTactics(rules));
-	for(const auto & invalid : {JsonNode(), JsonNode(false), JsonNode(0), JsonNode(5), JsonNode(1.0), JsonNode("1")})
+	for(const auto & invalid : {JsonNode(), JsonNode(false), JsonNode(0), JsonNode(6), JsonNode(1.0), JsonNode("1")})
 	{
 		rules["sylvanTacticsPolicy"] = invalid;
 		EXPECT_THROW(newHorizonsHeroes::usesSylvanTactics(rules), std::runtime_error);

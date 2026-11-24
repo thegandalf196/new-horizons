@@ -20,6 +20,7 @@
 #include "PhysicalStrikeProjection.h"
 #include "DreadCavalryProjection.h"
 #include "../../lib/battle/NewHorizonsForestAmbush.h"
+#include "../../lib/battle/NewHorizonsSylvanAmbush.h"
 #include "HypotheticBattle.h"
 #include "../../lib/battle/CUnitState.h"
 #include "../../lib/battle/ArcaneInspiration.h"
@@ -371,6 +372,7 @@ void HypotheticBattle::nextTurnImpl(uint32_t unitId, BattleUnitTurnReason reason
 	}
 	if(newActivation)
 	{
+		newHorizonsSylvanAmbush::beginActivation(*this, *unit, reason == BattleUnitTurnReason::TURN_QUEUE && unit->waiting);
 		unit->forestAmbush.beginActivation(reason == BattleUnitTurnReason::TURN_QUEUE && unit->waiting);
 		if(reason == BattleUnitTurnReason::HERO_COMMAND)
 			unit->castSpellThisTurn = false; // Match the actual armed Second Wind activation, not ordinary Orders.
@@ -424,6 +426,7 @@ void HypotheticBattle::makeWait(const battle::Unit * activeStack)
 	resetActiveUnit();
 	newHorizonsForestAmbush::acceptWait(*this, *unit);
 	unit->afterWait();
+	newHorizonsSylvanAmbush::acceptWait(*this, *unit);
 	prismaticVanguardAI::completeWait(*unit);
 	for(auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 		fortuneStates.at(side).tactics.endActivation();
@@ -452,6 +455,7 @@ void HypotheticBattle::completeNormalActivation(uint32_t unitId)
 	newHorizonsDivineMandate::completeDisciplineActivation(*this, unitId);
 	const auto unit = getForUpdate(unitId);
 	unit->forestAmbush.finishActivation();
+	unit->sylvanAmbush.finishActivation();
 	for(auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 		fortuneStates.at(side).tactics.endActivation();
 

@@ -1,0 +1,150 @@
+{
+	"description": "Sylvan Tactics as installed for captured policy 4 (4.1): the roster that policy-3 and policy-4 captures keep after policy 5 replaced the installed one.",
+	"skill": {
+		"id": "new-horizons:sylvanLuck",
+		"name": "Sylvan Tactics",
+		"domain": "Faction",
+		"availability": "Rampart heroes only",
+		"description": "Friendly creatures gain Initiative and passive benefits from patient, coordinated tactics.",
+		"ranks": {
+			"basic": {
+				"description": "Friendly creatures gain +1 Initiative.",
+				"effect": {
+					"status": "active",
+					"description": "Friendly creatures gain +1 Initiative."
+				}
+			},
+			"advanced": {
+				"description": "Friendly creatures gain +2 Initiative.",
+				"effect": {
+					"status": "active",
+					"description": "Friendly creatures gain +2 Initiative."
+				}
+			},
+			"expert": {
+				"description": "Friendly creatures gain +3 Initiative.",
+				"effect": {
+					"status": "active",
+					"description": "Friendly creatures gain +3 Initiative."
+				}
+			}
+		},
+		"perks": [
+			{
+				"id": "new-horizons:sylvanLuck.elvenPrecision",
+				"name": "Hunting Pack",
+				"requires": "basic",
+				"description": "Friendly Rampart creatures deal +15% damage to enemy stacks that have not yet acted this round.",
+				"effect": {
+					"status": "active",
+					"description": "Friendly Rampart creatures deal +15% damage to enemy stacks that have not yet acted this round.",
+					"parameters": {
+						"attackDamagePercent": 15
+					}
+				},
+				"details": "Completing an action or Defending counts as acting. Waiting alone does not. The bonus applies to melee and ranged attacks and to retaliations without granting another action."
+			},
+			{
+				"id": "new-horizons:sylvanLuck.forestSFavor",
+				"name": "Fleetfoot",
+				"requires": "basic",
+				"description": "Friendly creatures gain +1 Speed during their first activation of combat.",
+				"effect": {
+					"status": "active",
+					"description": "Friendly creatures gain +1 Speed during their first activation of combat."
+				},
+				"details": "Only the first creature activation receives this Speed bonus. Waiting, Defending and subsequent activations do not renew it."
+			},
+			{
+				"id": "new-horizons:sylvanLuck.serendipity",
+				"name": "Patient Hunter",
+				"requires": "basic",
+				"description": "The first attack after Waiting deals +15% damage.",
+				"effect": {
+					"status": "active",
+					"description": "The first attack after Waiting deals +15% damage."
+				},
+				"details": "Waiting prepares one attack bonus, consumed by the first qualifying attack. It grants no extra attack or activation."
+			},
+			{
+				"id": "new-horizons:sylvanLuck.luckyRecovery",
+				"name": "Dappled Cover",
+				"requires": "basic",
+				"description": "A creature that voluntarily moves at least 3 hexes during its activation takes 20% less ranged attack damage until its next activation.",
+				"effect": {
+					"status": "active",
+					"description": "A creature that voluntarily moves at least 3 hexes during its activation takes 20% less ranged attack damage until its next activation."
+				},
+				"details": "All movement the creature is ordered to make during one activation counts. Teleports and forced movement do not. It does not reduce melee attacks or spell damage."
+			},
+			{
+				"id": "new-horizons:sylvanLuck.sharedFortune",
+				"name": "Evergreen Blessings",
+				"requires": "advanced",
+				"description": "Your beneficial temporary hero spells last two additional combat rounds on friendly Rampart creatures.",
+				"effect": {
+					"status": "active",
+					"description": "Your beneficial temporary hero spells last two additional combat rounds on friendly Rampart creatures.",
+					"parameters": {
+						"beneficialDurationBonusRounds": 2
+					}
+				},
+				"details": "Only beneficial hero spell effects with a temporary combat-round duration qualify. Instantaneous, permanent and other duration types are unchanged."
+			},
+			{
+				"id": "new-horizons:sylvanLuck.natureSProvidence",
+				"name": "Quick Redeployment",
+				"requires": "advanced",
+				"description": "After a creature retaliates, it gains +2 Initiative until its next activation.",
+				"effect": {
+					"status": "active",
+					"description": "After a creature retaliates, it gains +2 Initiative until its next activation."
+				},
+				"details": "Repeated retaliations refresh the bonus without stacking it. Pre-emptive blows, Counterfire and Overwatch shots do not count as retaliations."
+			},
+			{
+				"id": "new-horizons:sylvanLuck.fortunateAim",
+				"name": "Disruptive Strike",
+				"requires": "advanced",
+				"description": "Melee hits reduce the target’s Initiative by 15% until its next activation.",
+				"effect": {
+					"status": "active",
+					"description": "Melee hits reduce the target’s Initiative by 15% until its next activation."
+				},
+				"details": "Damaging direct melee attacks and retaliations qualify. Repeated hits refresh the effect without stacking; it ends at the target’s next activation."
+			},
+			{
+				"id": "new-horizons:sylvanLuck.wildChance",
+				"name": "Kindred Flame",
+				"requires": "advanced",
+				"description": "Breath attacks by your Green and Gold Dragons do not damage friendly creatures.",
+				"effect": {
+					"status": "active",
+					"description": "Breath attacks by your Green and Gold Dragons do not damage friendly creatures."
+				},
+				"details": "The attack keeps its normal breath geometry and damage against enemies; it creates neither extra targets nor additional attacks."
+			},
+			{
+				"id": "new-horizons:sylvanLuck.perfectMoment",
+				"name": "Perfect Moment",
+				"requires": "expert",
+				"description": "Creature Lucky Strikes deal 3.5× damage.",
+				"effect": {
+					"status": "active",
+					"description": "Creature Lucky Strikes deal 3.5× damage."
+				}
+			},
+			{
+				"id": "new-horizons:sylvanLuck.cascadingFortune",
+				"name": "Ancient Accord",
+				"requires": "expert",
+				"description": "Your beneficial hero spells bypass the native spell-level immunity of friendly Rampart creatures.",
+				"effect": {
+					"status": "active",
+					"description": "Your beneficial hero spells bypass the native spell-level immunity of friendly Rampart creatures."
+				},
+				"details": "Bypasses only the creature’s intrinsic spell-level immunity for your beneficial hero spells. Artifact immunities, blanket immunities and protection against hostile spells remain unchanged."
+			}
+		]
+	}
+}

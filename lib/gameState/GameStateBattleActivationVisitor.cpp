@@ -30,6 +30,7 @@ void GameStatePackVisitor::visitEndAction(EndAction & pack)
 		{
 			activeStack->setActivationMovementBonus(0);
 			activeStack->forestAmbush.finishActivation();
+			activeStack->sylvanAmbush.finishActivation();
 		}
 		for(auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 			battle->getSide(side).sylvanLuck.endActivation();

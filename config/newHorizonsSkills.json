@@ -1432,7 +1432,7 @@
 			"magic": 0
 		},
 		"basic": {
-			"description": "Friendly creatures gain +1 Initiative.",
+			"description": "Friendly creatures gain +1 Initiative. One friendly stack per round becomes Concealed when it Waits.",
 			"images": {
 				"small": "NH_sylvanLuck_rankart_v2_basic_small.png",
 				"medium": "NH_sylvanLuck_rankart_v2_basic_medium.png",
@@ -1448,7 +1448,7 @@
 			}
 		},
 		"advanced": {
-			"description": "Friendly creatures gain +2 Initiative.",
+			"description": "Friendly creatures gain +2 Initiative. Two friendly stacks per round become Concealed when they Wait.",
 			"images": {
 				"small": "NH_sylvanLuck_rankart_v2_advanced_small.png",
 				"medium": "NH_sylvanLuck_rankart_v2_advanced_medium.png",
@@ -1464,7 +1464,7 @@
 			}
 		},
 		"expert": {
-			"description": "Friendly creatures gain +3 Initiative.",
+			"description": "Friendly creatures gain +3 Initiative. Three friendly stacks per round become Concealed when they Wait.",
 			"images": {
 				"small": "NH_sylvanLuck_rankart_v2_expert_small.png",
 				"medium": "NH_sylvanLuck_rankart_v2_expert_medium.png",

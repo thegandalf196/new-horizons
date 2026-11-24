@@ -6,11 +6,13 @@
 #include "BattleInfo.h"
 #include "NewHorizonsOffense.h"
 #include "MetamagicDoubleCast.h"
+#include "NewHorizonsSylvanAmbush.h"
 #include "../CStack.h"
 #include "../mapObjects/CGHeroInstance.h"
 void BattleInfo::beginActivationActionState(CStack & stack, uint32_t unitId, BattleUnitTurnReason reason)
 {
 	CStack * st = &stack;
+	newHorizonsSylvanAmbush::beginActivation(*this, *st, reason == BattleUnitTurnReason::TURN_QUEUE && st->waiting);
 	st->forestAmbush.beginActivation(reason == BattleUnitTurnReason::TURN_QUEUE && st->waiting);
 	if(reason == BattleUnitTurnReason::HERO_COMMAND)
 		st->castSpellThisTurn = false; // Only the armed Second Wind target begins a new activation here.

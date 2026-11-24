@@ -210,7 +210,7 @@ TEST_F(NewHorizonsForestAmbushTest, CapturedWaitUsesDistinctNonmagicalProtection
 	ASSERT_TRUE(battle()->battleCanShoot(enemy, elf->getPosition()));
 	ASSERT_NO_FATAL_FAILURE(conceal());
 	EXPECT_FALSE(elf->hasBonusOfType(BonusType::SANCTIFIED));
-	EXPECT_TRUE(newHorizonsForestAmbush::protectsDirectTarget(elf));
+	EXPECT_TRUE(newHorizonsForestAmbush::protectsFromMelee(elf));
 	EXPECT_EQ(shotLuck(), std::min(10, before + 5)) << "a concealed primary shot uses the existing Luck roll";
 	EXPECT_FALSE(battle()->battleCanAttackUnit(enemy, elf));
 	EXPECT_FALSE(battle()->battleCanShoot(enemy, elf->getPosition()));
@@ -302,7 +302,7 @@ TEST_F(NewHorizonsForestAmbushTest, LegacyCapturedAbsenceRetainsOriginalSpecialt
 	ASSERT_TRUE(submit(elf, BattleAction::makeWait(elf)));
 	EXPECT_FALSE(elf->forestAmbush.hasState());
 	EXPECT_FALSE(elf->save()["state"].Struct().contains("forestAmbush"));
-	EXPECT_FALSE(newHorizonsForestAmbush::protectsDirectTarget(elf));
+	EXPECT_FALSE(newHorizonsForestAmbush::protectsFromMelee(elf));
 }
 
 TEST_F(NewHorizonsForestAmbushTest, DisabledCaptureSelectsIdentityWithoutGrantingConcealment)

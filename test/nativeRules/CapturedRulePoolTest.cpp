@@ -142,8 +142,9 @@ TEST(CapturedRulePool, InvalidTableAdmissionPreservesExistingPool)
 
 TEST(CapturedRulePool, ConsecratedArmsMinimumAndWriterRejectEarlierFormats)
 {
-	EXPECT_EQ(ESerializationVersion::CURRENT, ESerializationVersion::NEW_HORIZONS_REVISED_SPECIALTIES);
-	EXPECT_EQ(static_cast<int>(ESerializationVersion::CURRENT), 1166);
+	EXPECT_EQ(ESerializationVersion::CURRENT, ESerializationVersion::NEW_HORIZONS_SYLVAN_AMBUSH);
+	EXPECT_EQ(static_cast<int>(ESerializationVersion::CURRENT), 1167);
+	EXPECT_EQ(static_cast<int>(ESerializationVersion::NEW_HORIZONS_REVISED_SPECIALTIES), 1166);
 	EXPECT_EQ(static_cast<int>(ESerializationVersion::NEW_HORIZONS_DOUBLE_CAST_CHOSEN_PRAYERS), 1165);
 	EXPECT_EQ(ESerializationVersion::MINIMAL, ESerializationVersion::NEW_HORIZONS_CONSECRATED_ARMS);
 	EXPECT_EQ(static_cast<int>(ESerializationVersion::MINIMAL), 1164);

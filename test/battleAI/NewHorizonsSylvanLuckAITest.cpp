@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../SylvanTacticsHistoricalRules.h"
 #include "ProjectedTargetHitFixture.h"
 #include "../../lib/CRandomGenerator.h"
 #include "../server/battles/HeroCommandFixture.h"
@@ -17,8 +18,7 @@ namespace
 {
 JsonNode legacySylvanRegistry()
 {
-	JsonNode rules(JsonPath::builtin("config/newHorizonsPerks"));
-	rules.Struct().erase("sylvanTacticsPolicy");
+	JsonNode rules = sylvanTacticsHistoricalRules(0);
 	rules.setOverrideFlag(true);
 	return rules;
 }

@@ -1,6 +1,7 @@
 /* Part of VCMI / New Horizons. GPL v2.0 or later; see license.txt. */
 #include "StdInc.h"
 #include "NewHorizonsForestAmbush.h"
+#include "NewHorizonsSylvanAmbush.h"
 #include "CUnitState.h"
 #include "CBattleInfoCallback.h"
 #include "../entities/hero/NewHorizonsForestAmbush.h"
@@ -28,9 +29,13 @@ bool concealed(const battle::Unit * unit)
 	const auto * state = dynamic_cast<const battle::CUnitState *>(unit);
 	return state && state->alive() && !state->isGhost() && state->forestAmbush.concealed;
 }
-bool protectsDirectTarget(const battle::Unit * unit)
+bool protectsFromMelee(const battle::Unit * unit)
 {
 	return unit && (unit->hasBonusOfType(BonusType::SANCTIFIED) || concealed(unit));
+}
+bool protectsFromRangedOrSpell(const battle::Unit * unit)
+{
+	return protectsFromMelee(unit) || newHorizonsSylvanAmbush::concealed(unit);
 }
 int shotLuck(const CBattleInfoCallback & battle, const battle::Unit * unit, bool shooting)
 {
