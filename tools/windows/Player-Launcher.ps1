@@ -329,16 +329,17 @@ function New-NHPlayerTitle($Form) {
 }
 
 function New-NHPlayerTrack($Form, [string]$Track) {
+    # PowerShell names are case-insensitive: $track would be the [string] parameter $Track.
     $null = New-NHPlayerLabel $Form 'Version track' 22 70 104 26
-    $track = New-Object Windows.Forms.ComboBox
-    Set-NHComboLook $track
-    $track.Location = New-Object Drawing.Point(132,71)
-    $track.Size = New-Object Drawing.Size(406,24)
-    $null = $track.Items.Add('Stable')
-    $null = $track.Items.Add('Beta (experimental, separate saves)')
-    $track.SelectedIndex = [int]($Track -ceq 'beta')
-    $Form.Controls.Add($track)
-    return $track
+    $list = New-Object Windows.Forms.ComboBox
+    Set-NHComboLook $list
+    $list.Location = New-Object Drawing.Point(132,71)
+    $list.Size = New-Object Drawing.Size(406,24)
+    $null = $list.Items.Add('Stable')
+    $null = $list.Items.Add('Beta (experimental, separate saves)')
+    $list.SelectedIndex = [int]($Track -ceq 'beta')
+    $Form.Controls.Add($list)
+    return $list
 }
 
 function New-NHPlayerView($Runtimes, [string]$CodeRoot, [string]$Own = 'stable') {

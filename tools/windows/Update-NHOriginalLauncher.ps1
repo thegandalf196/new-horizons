@@ -29,9 +29,9 @@ function Resolve-NHExistingPathCase([string]$Path) {
 function Get-NHUpdateChildOriginal([string]$Runtime) {
     # A selected update lives at <store>\r\<digest prefix>\runtime; the store's
     # installation.json names the folder holding the original runtime.
-    $runtime = [IO.Path]::GetFullPath($Runtime).TrimEnd([IO.Path]::DirectorySeparatorChar)
-    if ([IO.Path]::GetFileName($runtime) -ine 'runtime') { return $null }
-    $digest = [IO.Path]::GetDirectoryName($runtime)
+    $fullRuntime = [IO.Path]::GetFullPath($Runtime).TrimEnd([IO.Path]::DirectorySeparatorChar)
+    if ([IO.Path]::GetFileName($fullRuntime) -ine 'runtime') { return $null }
+    $digest = [IO.Path]::GetDirectoryName($fullRuntime)
     if ([IO.Path]::GetFileName($digest) -cnotmatch '^[0-9a-f]{24}$') { return $null }
     $packages = [IO.Path]::GetDirectoryName($digest)
     if ([IO.Path]::GetFileName($packages) -cne 'r') { return $null }
@@ -45,8 +45,8 @@ function Get-NHUpdateChildOriginal([string]$Runtime) {
     $installation = Resolve-NHExistingPathCase ([IO.Path]::GetFullPath($record.installation))
     if (-not $installation) { return $null }
     $original = Resolve-NHExistingPathCase (Join-Path $installation 'runtime')
-    if (-not $original -or $original -ieq $runtime) { return $null }
-    return [PSCustomObject]@{ original = $original; store = $store; runtime = $runtime }
+    if (-not $original -or $original -ieq $fullRuntime) { return $null }
+    return [PSCustomObject]@{ original = $original; store = $store; runtime = $fullRuntime }
 }
 
 function Test-NHOriginalLauncherCurrent([string]$Original) {

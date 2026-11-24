@@ -106,7 +106,7 @@ class WindowsLauncherLookSourceTest(unittest.TestCase):
             self.assertIn(face, item)
         self.assertNotIn('SystemColors', item)
         launcher = functions((WINDOWS / 'Player-Launcher.ps1').read_text())['New-NHPlayerTrack']
-        self.assertIn('Set-NHComboLook $track', launcher)
+        self.assertIn('Set-NHComboLook $list', launcher)
         self.assertNotIn('FlatStyle', launcher)
         notes = functions((WINDOWS / 'Player-Launcher-Notes.ps1').read_text())['New-NHReleaseNotesBox']
         self.assertIn("add_HandleCreated({ param($sender, $e) Set-NHControlTheme $sender 'DarkMode_Explorer' })", notes)

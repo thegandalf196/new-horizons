@@ -37,3 +37,5 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "Setup smoke failed: $LASTEXITCODE" }
           powershell.exe -NoProfile -File tools/windows/tests/Managed-Preset-Smoke.ps1
           if ($LASTEXITCODE -ne 0) { throw "Managed preset smoke failed: $LASTEXITCODE" }
+          powershell.exe -NoProfile -File tools/windows/tests/Player-View-Smoke.ps1
+          if ($LASTEXITCODE -ne 0) { throw "Player view smoke failed: $LASTEXITCODE" }
