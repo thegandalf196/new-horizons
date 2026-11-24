@@ -840,6 +840,10 @@ Use #pragma once instead of the traditional #ifndef/#define/#endif include guard
 
 The header StdInc.h should be included in every compilation unit. It has to be included before any C macro and before any c++ statements. Pre compiled header should not be changed, except any important thing is missing. The StdInc includes most Boost libraries and nearly all standard STL and C libraries, so you don’t have to include them by yourself.
 
+### File-private names and Unity builds
+
+The Windows tests workflow compiles `vcmiMain` (`lib/`) and BattleAI, and a Windows package build with `use_unity_build` also the client common library, as CMake Unity batches (`ENABLE_NH_UNITY_BUILD=ON`, batch size 8), which merge several `.cpp` files into one translation unit. Names in an anonymous namespace or declared `static`, `inline` or `constexpr` must therefore not repeat with the same signature in the same enclosing namespace of those targets: such copies become a redefinition only in the Unity build. Share a common helper through one header instead of copying it, or give the helper a file-specific name; overloads with different parameter types are legal. To check quickly, configure a separate build directory with `cmake --preset new-horizons-linux-unity` (or `-DENABLE_NH_UNITY_BUILD=ON -DNH_UNITY_BUILD_BATCH_SIZE=8 -DENABLE_PCH=OFF`; configuring compiles nothing) and run `/usr/bin/python3 tools/ci/unity_private_names.py <build directory>`, which lists same-scope private definitions, aliases and macros that clash inside one batch. The scan is lexical; compiling `ninja vcmiMain BattleAI vcmiclientcommon vcmitest` in that directory is the proof.
+
 ### Enumeration handling
 
 Do not declare enumerations in global namespace. It is better to use strongly typed enum or to wrap them in class or namespace to avoid polluting global namespace:
