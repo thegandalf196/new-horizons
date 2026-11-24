@@ -88,6 +88,11 @@ inline Army confluxArmy()
 	return {{troop("core:pixie"), 20}, {troop("new-horizons:wisp"), 14}, {troop("new-horizons:wispUpgrade"), 8},
 		{troop("core:airElemental"), 6}, {troop("core:fireElemental"), 6}, {troop("core:energyElemental"), 4}};
 }
+inline Army academyArmy()
+{
+	return {{troop("core:gremlin"), 30}, {troop("core:stoneGargoyle"), 16}, {troop("core:stoneGolem"), 12},
+		{troop("core:mage"), 8}, {troop("core:genie"), 6}, {troop("core:naga"), 3}, {troop("core:giant"), 1}};
+}
 /// A specialty hero against an unchanged hero. Native defaults keep the hero's
 /// own book and Mana; otherwise it receives the fixture spells plus `spells`.
 /// Armies are built at run time: identifiers resolve only after content loads.
@@ -144,6 +149,12 @@ inline std::vector<SpecialtyEncounter> specialtyEncounters()
 		{"Vey", "core:vey", strongholdArmy, strongholdArmy, "core:ivor", {}, true},
 		{"Pasis", "core:pasis", +[] { return withSlot(confluxArmy(), 4, "core:psychicElemental", 5); }, confluxArmy,
 			"core:ivor", {}, true},
+		{"Neela", "core:neela", academyArmy, castle, "core:rion", {}, true},
+		{"Fafner", "core:fafner", +[] { return withSlot(academyArmy(), 5, "core:naga", 8); }, castle, "core:rion", {}, true},
+		{"Solmyr", "core:solmyr", academyArmy, castle, "core:rion", {"core:lightningBolt", "core:chainLightning"}, false},
+		{"Astral", "core:astral", academyArmy, castle, "core:rion", {"core:magicArrow", "core:lightningBolt"}, false},
+		{"Halon", "core:halon", academyArmy, castle, "core:rion", {}, true},
+		{"Theodorus", "core:theodorus", academyArmy, castle, "core:rion", {"core:magicArrow", "core:lightningBolt"}, false},
 	};
 }
 }
