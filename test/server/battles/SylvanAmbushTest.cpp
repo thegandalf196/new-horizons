@@ -23,7 +23,7 @@ namespace
 {
 using namespace rampartCombatTest;
 namespace ambush = newHorizonsSylvanAmbush;
-using Source = battle::SylvanAmbushState::Source;
+using AmbushSource = battle::SylvanAmbushState::Source;
 
 /// Sylvan Tactics 5 on the shipped rules, driven through the authoritative
 /// battle processor where a server hook exists.
@@ -131,7 +131,7 @@ TEST_F(SylvanAmbushTest, RankSlotsAreCountedFirstComeAndResetEachRound)
 	for(auto * unit : {first, second, third})
 		ASSERT_TRUE(wait(unit));
 	EXPECT_TRUE(first->sylvanAmbush.concealed);
-	EXPECT_EQ(first->sylvanAmbush.source, Source::RANK);
+	EXPECT_EQ(first->sylvanAmbush.source, AmbushSource::RANK);
 	EXPECT_TRUE(second->sylvanAmbush.concealed);
 	EXPECT_FALSE(third->sylvanAmbush.concealed);
 	// A revealed stack keeps its slot for the rest of the round.
@@ -181,9 +181,9 @@ TEST_F(SylvanAmbushTest, ForestCoverAddsOneSlotOnlyBesideAnObstacle)
 	EXPECT_FALSE(ambush::concealmentSlot(*battle(), *open));
 	ASSERT_TRUE(wait(open));
 	EXPECT_FALSE(open->sylvanAmbush.concealed);
-	ASSERT_EQ(ambush::concealmentSlot(*battle(), *covered), Source::FOREST_COVER);
+	ASSERT_EQ(ambush::concealmentSlot(*battle(), *covered), AmbushSource::FOREST_COVER);
 	ASSERT_TRUE(wait(covered));
-	EXPECT_EQ(covered->sylvanAmbush.source, Source::FOREST_COVER);
+	EXPECT_EQ(covered->sylvanAmbush.source, AmbushSource::FOREST_COVER);
 	ASSERT_TRUE(wait(coveredToo));
 	EXPECT_FALSE(coveredToo->sylvanAmbush.concealed);
 }
@@ -286,25 +286,25 @@ TEST_F(SylvanAmbushTest, MeleeIsLegalAndRevealsWhileRetaliationResolves)
 TEST_F(SylvanAmbushTest, ActivationAttackMoveAndRoundEndReveal)
 {
 	battle::SylvanAmbushState state;
-	state.conceal(Source::RANK, 3);
+	state.conceal(AmbushSource::RANK, 3);
 	state.beginActivation(false, 3, BattleHex(20), false);
 	EXPECT_FALSE(state.concealed);
 	EXPECT_FALSE(state.strikePending); // Morale, Second Wind and other activations.
-	state.conceal(Source::RANK, 3);
+	state.conceal(AmbushSource::RANK, 3);
 	state.beginActivation(true, 3, BattleHex(20), false);
 	EXPECT_FALSE(state.concealed);
 	EXPECT_TRUE(state.strikePending);
 	EXPECT_EQ(state.strikeOrigin, BattleHex(20));
 	state.finishAttack(false);
 	EXPECT_FALSE(state.strikePending);
-	state.conceal(Source::RANK, 3);
+	state.conceal(AmbushSource::RANK, 3);
 	state.finishAttack(false); // An Overwatch shot from hiding.
 	EXPECT_FALSE(state.concealed);
-	state.conceal(Source::RANK, 3);
+	state.conceal(AmbushSource::RANK, 3);
 	state.newRound();
 	EXPECT_FALSE(state.concealed);
 	EXPECT_EQ(state.concealedRound, 3);
-	EXPECT_EQ(state.source, Source::RANK);
+	EXPECT_EQ(state.source, AmbushSource::RANK);
 }
 
 TEST_F(SylvanAmbushTest, ApproachRecordKeepsTheLatestUnbrokenVoluntaryChain)
@@ -465,7 +465,7 @@ TEST_F(SylvanAmbushTest, IvorElvesStrikeOnlyEveryOtherRoundAndKeepMeleeProtectio
 	ambush::beginActivation(*battle(), *state, true);
 	EXPECT_TRUE(state->sylvanAmbush.strikePending);
 	EXPECT_EQ(state->sylvanAmbush.concealedRound, battle()->battleGetRound());
-	EXPECT_EQ(state->sylvanAmbush.source, Source::NONE);
+	EXPECT_EQ(state->sylvanAmbush.source, AmbushSource::NONE);
 	const int first = battle()->battleGetRound();
 	battle()->nextRound();
 	state->sylvanAmbush.newRound();
@@ -516,7 +516,7 @@ TEST_F(SylvanAmbushPolicy4Test, CapturedPolicyFourNeverConcealsOrStrikes)
 TEST_F(SylvanAmbushTest, StateRoundTripsAndRejectsInvalidOrDowngradedState)
 {
 	battle::SylvanAmbushState state;
-	state.conceal(Source::FOREST_COVER, 4);
+	state.conceal(AmbushSource::FOREST_COVER, 4);
 	state.recordApproach(4, BattleHex(30), BattleHex(31));
 	state.huntingPackRound = 3;
 	state.startledBy = 7;

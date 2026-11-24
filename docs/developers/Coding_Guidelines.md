@@ -844,6 +844,10 @@ The header StdInc.h should be included in every compilation unit. It has to be i
 
 The Windows tests workflow compiles `vcmiMain` (`lib/`) and BattleAI, and a Windows package build with `use_unity_build` also the client common library, as CMake Unity batches (`ENABLE_NH_UNITY_BUILD=ON`, batch size 8), which merge several `.cpp` files into one translation unit. Names in an anonymous namespace or declared `static`, `inline` or `constexpr` must therefore not repeat with the same signature in the same enclosing namespace of those targets: such copies become a redefinition only in the Unity build. Share a common helper through one header instead of copying it, or give the helper a file-specific name; overloads with different parameter types are legal. To check quickly, configure a separate build directory with `cmake --preset new-horizons-linux-unity` (or `-DENABLE_NH_UNITY_BUILD=ON -DNH_UNITY_BUILD_BATCH_SIZE=8 -DENABLE_PCH=OFF`; configuring compiles nothing) and run `/usr/bin/python3 tools/ci/unity_private_names.py <build directory>`, which lists same-scope private definitions, aliases and macros that clash inside one batch. The scan is lexical; compiling `ninja vcmiMain BattleAI vcmiclientcommon vcmitest` in that directory is the proof.
 
+### Type aliases inside lambdas
+
+The Windows toolset (MSVC v142) can resolve a name used inside a lambda to a namespace-scope declaration instead of a type alias declared in the enclosing function. A header function with `using Source = …;` whose lambda uses `Source::VALUE` then fails to compile in any file that declares its own `Source` at file scope, while GCC accepts it. Avoid short file-scope aliases such as `using Source = …;` in source and test files; give them a specific name (`using AmbushSource = …;`). In new code, spell the type out inside lambdas instead of relying on a function-local alias.
+
 ### Enumeration handling
 
 Do not declare enumerations in global namespace. It is better to use strongly typed enum or to wrap them in class or namespace to avoid polluting global namespace:
