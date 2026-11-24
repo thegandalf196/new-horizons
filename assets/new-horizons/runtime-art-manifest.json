@@ -27,7 +27,7 @@
   "requiredFamilyCounts": {
     "academy-town-and-portrait-ui": 463,
     "bug-report-interface-icon": 1,
-    "builtin-skills-perks-orders-and-ui": 3773,
+    "builtin-skills-perks-orders-and-ui": 3855,
     "cabir-and-master": 218,
     "casting-glows": 864,
     "conflux-hero-portraits": 10,
@@ -66817,6 +66817,826 @@
       "family": "mage-guild-town-art-and-ui",
       "origin": "Original Codex CLI built-in imagegen medallion; premultiplied-alpha native export",
       "selection": "Owner-selected Mage Guild spell school badge medallions (18 px, no band) 2026-11-24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_warcasting2_rankart_v5_basic_large.png",
+      "source": "Mods/new-horizons/Images/NH_warcasting2_rankart_v5_basic_large.png",
+      "size": 14251,
+      "sha256": "4f236eba6d0c4face2280eedb020216614e2fac4bf29644af87ad951dc2df045",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_warcasting2_rankart_v5_basic_scenarioBonus.png",
+      "source": "Mods/new-horizons/Images/NH_warcasting2_rankart_v5_basic_scenarioBonus.png",
+      "size": 9693,
+      "sha256": "f59a8d650558d4241c47d660750f5d274d62cde49c82480273a11643f5fa4373",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_warcasting2_rankart_v5_basic_medium.png",
+      "source": "Mods/new-horizons/Images/NH_warcasting2_rankart_v5_basic_medium.png",
+      "size": 5180,
+      "sha256": "f7b2a0e3816205deea936b3e1f2eaf23bba65d75973e5a49e624fb636c8a54ad",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_warcasting2_rankart_v5_basic_small.png",
+      "source": "Mods/new-horizons/Images/NH_warcasting2_rankart_v5_basic_small.png",
+      "size": 2882,
+      "sha256": "8ee3c7652a76b1041d97a03b185dc485d22650bbdcba85eba0e75d43d79fa656",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_warcasting2_rankart_v5_advanced_large.png",
+      "source": "Mods/new-horizons/Images/NH_warcasting2_rankart_v5_advanced_large.png",
+      "size": 16308,
+      "sha256": "8f440c5a16b431b544f5394faf4c05309e3102868ac35b279f50b20dcc86086f",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_warcasting2_rankart_v5_advanced_scenarioBonus.png",
+      "source": "Mods/new-horizons/Images/NH_warcasting2_rankart_v5_advanced_scenarioBonus.png",
+      "size": 10257,
+      "sha256": "cf3915d09e727a1d23bce4d76522cdb0e0d5520e9f9a1c762c10a7459d79dd92",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_warcasting2_rankart_v5_advanced_medium.png",
+      "source": "Mods/new-horizons/Images/NH_warcasting2_rankart_v5_advanced_medium.png",
+      "size": 5468,
+      "sha256": "554904885cf8be5cf198b663259c07d84c87fabc997f5fd67a93bf2e0a00437f",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_warcasting2_rankart_v5_advanced_small.png",
+      "source": "Mods/new-horizons/Images/NH_warcasting2_rankart_v5_advanced_small.png",
+      "size": 3026,
+      "sha256": "7df8dd35e5bcdc665352d5c3532d26245ca5c4685dd62ba0b76947876e823d80",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_warcasting2_rankart_v5_expert_large.png",
+      "source": "Mods/new-horizons/Images/NH_warcasting2_rankart_v5_expert_large.png",
+      "size": 17790,
+      "sha256": "779f01148104f4670dd07c412632267882ad6dd8d0f57f1f45ed0996f4d92bac",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_warcasting2_rankart_v5_expert_scenarioBonus.png",
+      "source": "Mods/new-horizons/Images/NH_warcasting2_rankart_v5_expert_scenarioBonus.png",
+      "size": 10597,
+      "sha256": "c4e13a48b181498ace99d3230e4124e61ea8e501f094fd2797e2db9b60ec4b78",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_warcasting2_rankart_v5_expert_medium.png",
+      "source": "Mods/new-horizons/Images/NH_warcasting2_rankart_v5_expert_medium.png",
+      "size": 5648,
+      "sha256": "c3e39dd1f467b5a85a16e865847b61c878f56bbd30b2be99d84e7ae372084a03",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_warcasting2_rankart_v5_expert_small.png",
+      "source": "Mods/new-horizons/Images/NH_warcasting2_rankart_v5_expert_small.png",
+      "size": 3127,
+      "sha256": "b7f4adc2f782c9e394808b54a40797c08048bd2cd665c0066ed1ed76733d2a6a",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_field_enchanter.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_field_enchanter.png",
+      "size": 4919,
+      "sha256": "722832b9bb61a261d925c6dcc2236b9561ec8fb9d18f0c626da96524e5c045a7",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_field_enchanter_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_field_enchanter_32.png",
+      "size": 2716,
+      "sha256": "2039a4457e1c5d2bc9f39ea17581e90dbd1a9f435ed860df5031c4913fdc344b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_field_enchanter_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_field_enchanter_normal.png",
+      "size": 4919,
+      "sha256": "79a7d19796a4fa7766ca951584f78c2b03dee0ec77be8adbe790a61819192fb8",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_field_enchanter_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_field_enchanter_pressed.png",
+      "size": 4822,
+      "sha256": "3dee91f6aadbac48a3718064906f917968a157d9824b9ef3f62597e0d6b60a52",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_field_enchanter_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_field_enchanter_disabled.png",
+      "size": 4748,
+      "sha256": "b739d2cdd1c5d2fa3d6bf4889a9c3f2b757744bffda33c1e2ecfc018a130f06c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_field_enchanter_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_field_enchanter_highlighted.png",
+      "size": 4914,
+      "sha256": "2b92e11fe63391b08af0e1d5f2c102871416adfb30e967f7e9f7e71333949ce2",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_field_enchanter.json",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_field_enchanter.json",
+      "size": 477,
+      "sha256": "8ff21b43f2c846b5cbb7537328dc9fe0119a2bc191249d7023a52d3d882076b0",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_kindled_edge.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_kindled_edge.png",
+      "size": 3727,
+      "sha256": "17c48d7fa8c355acdddd1a1053d1e283fe4e310a66e24d7c93ed01ccdbc1f08d",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_kindled_edge_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_kindled_edge_32.png",
+      "size": 2102,
+      "sha256": "22f5bd70e8481ebcf4c965007dc1a22ff98fc5595e89c645a1c32fbbc8920a8e",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_kindled_edge_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_kindled_edge_normal.png",
+      "size": 3735,
+      "sha256": "e27f1f88cc0379af7f8e8902c3740a9952fd1cf187be1e06bb58b9b0b4ff52d4",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_kindled_edge_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_kindled_edge_pressed.png",
+      "size": 3680,
+      "sha256": "48bc59cfe61d2e9905e8694a21ce5991dad9e9e77bbc7430eefbee6dfa1fe280",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_kindled_edge_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_kindled_edge_disabled.png",
+      "size": 3695,
+      "sha256": "dc55fea08d05b47d9484ebd0aa2112531d6a97ced1f7aeeb5b318ac2b6f3aa1c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_kindled_edge_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_kindled_edge_highlighted.png",
+      "size": 3700,
+      "sha256": "0b7882131c9a21b16ec3c979c89964dbc60f7abe83b0076099e71835d4ea2eb7",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_kindled_edge.json",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_kindled_edge.json",
+      "size": 465,
+      "sha256": "1d2b6cc855965dca4b85b84f1e59e8a03bc79d504142bfb4351faf72a9297e7c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_commanders_meditation.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_commanders_meditation.png",
+      "size": 3964,
+      "sha256": "d4186d08c736c5e0228d17aad2e8af778303f78010f002bc7f62c19cc2dde94b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_commanders_meditation_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_commanders_meditation_32.png",
+      "size": 2221,
+      "sha256": "c0d0326564aef291c95786bf4895b380c171d7c968342f818eee32d0379e329e",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_commanders_meditation_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_commanders_meditation_normal.png",
+      "size": 3995,
+      "sha256": "6e9488fbaf8f8583cbfac8797a1a8df639057e9d8036e450d1373b0c220ccf9a",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_commanders_meditation_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_commanders_meditation_pressed.png",
+      "size": 3951,
+      "sha256": "c2804530798768079ad1154c4e710a446313941b1805573fe483d61fd0f50a29",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_commanders_meditation_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_commanders_meditation_disabled.png",
+      "size": 3944,
+      "sha256": "9abecd48c74022d4b4b0513182def47be493be25c3880d3dacc7b2920c83d8dd",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_commanders_meditation_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_commanders_meditation_highlighted.png",
+      "size": 3949,
+      "sha256": "ea1c967e407bb92266c0567082699f52c951d2fe74edbc3e46ddd1185b5ed8bb",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_commanders_meditation.json",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_commanders_meditation.json",
+      "size": 501,
+      "sha256": "85ac1896fa5f99b8c62a65cf4d2d702a18a5ecac24f8a0ada7b396e54035d34c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_layered_enchantment.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_layered_enchantment.png",
+      "size": 4844,
+      "sha256": "b6d05a2ba3865abcb169ec1d35d1d0cabfc280ae87dc5045e513c7a41767e929",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_layered_enchantment_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_layered_enchantment_32.png",
+      "size": 2705,
+      "sha256": "f2f443a36f1baeb8e7ad78626dfcd57519151ca17cdcf875a89519c03031f825",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_layered_enchantment_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_layered_enchantment_normal.png",
+      "size": 4837,
+      "sha256": "92bd17338d71502207b631afbad76ac8292925556860bf66ed4a0e6134041044",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_layered_enchantment_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_layered_enchantment_pressed.png",
+      "size": 4793,
+      "sha256": "75081f115a037c0d5598f282304f5dfad8e1359738556cd644ee856ccf7ec823",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_layered_enchantment_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_layered_enchantment_disabled.png",
+      "size": 4789,
+      "sha256": "546a48f204f1c1cb7cb096713fe4746db379e9819936a07fa8022a18d54be42b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_layered_enchantment_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_layered_enchantment_highlighted.png",
+      "size": 4759,
+      "sha256": "aa5d494ba1e994c61188b2b14eaa0e4594766c044f8eed65bede41abae26d4b6",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_layered_enchantment.json",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_layered_enchantment.json",
+      "size": 493,
+      "sha256": "f31c202a570ffa5b97964cf449c11095f559021d244a92eff88bf8e38ca645ba",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_sustaining_command.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_sustaining_command.png",
+      "size": 4382,
+      "sha256": "d97c274fb47812029ff3cde238c99375821774c25b42f08d28aa8cf336d4c17d",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_sustaining_command_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_sustaining_command_32.png",
+      "size": 2436,
+      "sha256": "b4c8d16dae09219a48ecaa1708cc2be83941e41923793e567b2abeeb207a7a6c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_sustaining_command_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_sustaining_command_normal.png",
+      "size": 4416,
+      "sha256": "857cd2abbcf12727ec0bda99fc45b49f2033247a19a424ab024df4df22f38fbd",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_sustaining_command_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_sustaining_command_pressed.png",
+      "size": 4358,
+      "sha256": "ecf7dca19cc29f289490b3d5d6da94eb557c9663402b1b7ca3034add260134ce",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_sustaining_command_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_sustaining_command_disabled.png",
+      "size": 4282,
+      "sha256": "ae1ba6dcef3ff459cf01f9bb37710d233142dacfa8fa4fd9ef772364ee28a63f",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_sustaining_command_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_sustaining_command_highlighted.png",
+      "size": 4427,
+      "sha256": "27d630a3a0cdea5340d4be0c935bea2023df98da2a6f3e0b14063a482b7f06aa",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_sustaining_command.json",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_sustaining_command.json",
+      "size": 489,
+      "sha256": "46f9aa2d3493216ff2f593fd11b0cf01c3d7afd97bf764401ea13c6272b74606",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_opening.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_opening.png",
+      "size": 4830,
+      "sha256": "13adac5e1efbe1a720a1940b3df2942459008d1b44ccfd689d500e9155033736",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_opening_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_opening_32.png",
+      "size": 2687,
+      "sha256": "ef9d0be72133aa44e34102c6818807252ad64ee7e48d1704c8ed4255753c4ad1",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_opening_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_opening_normal.png",
+      "size": 4826,
+      "sha256": "9c68a0fb3ba85ee08858b7ba862fcf119120ddb8ae35c4050990d85110bbb0fc",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_opening_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_opening_pressed.png",
+      "size": 4765,
+      "sha256": "7168e7071e1897c7c90d4856d90689afe9d99e16fd9fb89acee8735eebd243b2",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_opening_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_opening_disabled.png",
+      "size": 4716,
+      "sha256": "aeb7d692da74ca871743d50ddb06c60ef05a8fa9e89c5bada0a67bf0b7679fbd",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_opening_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_opening_highlighted.png",
+      "size": 4768,
+      "sha256": "75d265a1051d2812b7672f33d94ace7760f089e0a9162d6d483119334da59588",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_opening.json",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_opening.json",
+      "size": 445,
+      "sha256": "ac27b9690ef475abbd85b23115d0755694f2ee8989965bea748dda8da535b0cd",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_warded_ranks.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_warded_ranks.png",
+      "size": 4765,
+      "sha256": "648ca68a8e4040f80c9ec0a28dd6fb6fffc494f75c25b6832909294aef7f63f2",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_warded_ranks_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_warded_ranks_32.png",
+      "size": 2556,
+      "sha256": "64c05b489087c520debeade2ccb43141314b83282669d3a81cf3a393f4ae74fa",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_warded_ranks_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_warded_ranks_normal.png",
+      "size": 4778,
+      "sha256": "440e0aaab52cdaf477a913568ee3395ae7641c9fbd01fec61f3ff62e39600dc4",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_warded_ranks_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_warded_ranks_pressed.png",
+      "size": 4681,
+      "sha256": "fef829c2f6321c4cd447e3622ccf34ce021390cea5f3eb007357f2afebb9ec2e",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_warded_ranks_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_warded_ranks_disabled.png",
+      "size": 4646,
+      "sha256": "30fcd930af1e34e5ab239c7f3f06ffed083f36df1a439e7ca985e242e5a437d4",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_warded_ranks_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_warded_ranks_highlighted.png",
+      "size": 4715,
+      "sha256": "2203afacd7f704ec90471078ccc27fc5f064c9870050181f7ef249ea7cf52ba1",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_warded_ranks.json",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_warded_ranks.json",
+      "size": 465,
+      "sha256": "8b95cf74c0a83955661c3fe15ee33eecb13c3889b3cbf17c5e7ddcdb51e75b74",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_enchanted_steel.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_enchanted_steel.png",
+      "size": 4791,
+      "sha256": "7473e5b49d1770bbf692102a8a310be70628bbeb27cabc3ae39f004ea4ecf22c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_enchanted_steel_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_enchanted_steel_32.png",
+      "size": 2610,
+      "sha256": "a87fd48c2fc21f82cffa9cc1ab061cc090bfc95fa429b1c0be909bf497246191",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_enchanted_steel_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_enchanted_steel_normal.png",
+      "size": 4776,
+      "sha256": "6569f702bbd6393f7266e54cf9bdc1789bd265b59cbf5096ee78bfa5342339a6",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_enchanted_steel_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_enchanted_steel_pressed.png",
+      "size": 4682,
+      "sha256": "7d6f8ad884549103a552d55738045ed3fafbf675c9c580c2dc47a53d47945737",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_enchanted_steel_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_enchanted_steel_disabled.png",
+      "size": 4583,
+      "sha256": "7c5c464c459e5ab7110a701afaeb36de6c4371f85c59cebfb7cdf816e94ab442",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_enchanted_steel_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_enchanted_steel_highlighted.png",
+      "size": 4782,
+      "sha256": "ca84af726c8b441f6d42cbeb0de2f66cd41af0477658adf66f65782b254cba84",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_enchanted_steel.json",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_enchanted_steel.json",
+      "size": 477,
+      "sha256": "6bfa4805d1baf0ffe3229307030c58b4ed32591aa890fc122716e5ea474516b5",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_grand_convergence.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_grand_convergence.png",
+      "size": 4948,
+      "sha256": "cd3a307d2c354442507911775d5eabc02fdba1b3cd73465a31f4320a7a9a24f2",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_grand_convergence_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_grand_convergence_32.png",
+      "size": 2765,
+      "sha256": "6d27e0e18abe9775d3dadee52fa8863bf628459a69d560791fb61d52ec95ef7a",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_grand_convergence_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_grand_convergence_normal.png",
+      "size": 4900,
+      "sha256": "721e35f6be41cb65db094583ef0dff07a013b8ec7a21013737c2f71bb6b434ae",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_grand_convergence_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_grand_convergence_pressed.png",
+      "size": 4788,
+      "sha256": "16e7c2d1fd41fe684f0c473810b2773e6dd709569054dbec4c5eed5553575e42",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_grand_convergence_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_grand_convergence_disabled.png",
+      "size": 4696,
+      "sha256": "c6337bf36be6e6e09cd05ebb45f1459966b4654d77f70f449bd5db80c35c1d11",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_grand_convergence_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_grand_convergence_highlighted.png",
+      "size": 4811,
+      "sha256": "a029b37717011beb916bd06100467b0d34167216ccb2faa5316b58a9ddcedf3d",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_grand_convergence.json",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_grand_convergence.json",
+      "size": 485,
+      "sha256": "89202b22eab298879707d655a5de232a64fbbf90fd3393b16c2e186dab5a1771",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_unbroken_command.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_unbroken_command.png",
+      "size": 4065,
+      "sha256": "d5eee96f5bc36de0e9f9e94f3613e1b1981e9b8e5e1f4614f9fefe5ec750d334",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_unbroken_command_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_unbroken_command_32.png",
+      "size": 2340,
+      "sha256": "cb5000ad0541ef5205dfff9a83beb7bd9518f40ec58e2438ef7d662e910be2e6",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_unbroken_command_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_unbroken_command_normal.png",
+      "size": 4070,
+      "sha256": "a1dcc0ba33b748478dce132d06d9f483e735c3d9266b6f544413f4f1aa3ab09f",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_unbroken_command_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_unbroken_command_pressed.png",
+      "size": 4015,
+      "sha256": "35a6f1f090bc016b1f41befd4c09d11a0b99d72740f01b6a8df66c711c8895f7",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_unbroken_command_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_unbroken_command_disabled.png",
+      "size": 3929,
+      "sha256": "a90d88de0f4e0f0c2e3f62bdbca213a2943056b6cd911cc5a011640a22fc164f",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_unbroken_command_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_unbroken_command_highlighted.png",
+      "size": 4028,
+      "sha256": "9fdeca564fc2995433c6d58d81d16a2bc7ae7dd03143205b50eb89e6dba62fa9",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_unbroken_command.json",
+      "source": "Mods/new-horizons/Images/NH_perk_warcasting2_unbroken_command.json",
+      "size": 481,
+      "sha256": "1c9106cd18c38b19ee0c7422fafc5be1a9537a3a491455df2acf61a1a1abd464",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
       "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
     }
   ]

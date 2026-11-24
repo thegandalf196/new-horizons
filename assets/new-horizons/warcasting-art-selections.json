@@ -1,0 +1,2091 @@
+{
+  "format": 1,
+  "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+  "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
+  "skill": {
+    "id": "new-horizons:warcast",
+    "name": "Warcasting",
+    "images": {
+      "basic": {
+        "large": "NH_warcasting2_rankart_v5_basic_large.png",
+        "scenarioBonus": "NH_warcasting2_rankart_v5_basic_scenarioBonus.png",
+        "medium": "NH_warcasting2_rankart_v5_basic_medium.png",
+        "small": "NH_warcasting2_rankart_v5_basic_small.png"
+      },
+      "advanced": {
+        "large": "NH_warcasting2_rankart_v5_advanced_large.png",
+        "scenarioBonus": "NH_warcasting2_rankart_v5_advanced_scenarioBonus.png",
+        "medium": "NH_warcasting2_rankart_v5_advanced_medium.png",
+        "small": "NH_warcasting2_rankart_v5_advanced_small.png"
+      },
+      "expert": {
+        "large": "NH_warcasting2_rankart_v5_expert_large.png",
+        "scenarioBonus": "NH_warcasting2_rankart_v5_expert_scenarioBonus.png",
+        "medium": "NH_warcasting2_rankart_v5_expert_medium.png",
+        "small": "NH_warcasting2_rankart_v5_expert_small.png"
+      }
+    }
+  },
+  "perkBindings": [
+    {
+      "id": "new-horizons:warcast.fieldEnchanter",
+      "name": "Field Enchanter",
+      "icon44": "NH_perk_warcasting2_field_enchanter"
+    },
+    {
+      "id": "new-horizons:warcast.kindledEdge",
+      "name": "Kindled Edge",
+      "icon44": "NH_perk_warcasting2_kindled_edge"
+    },
+    {
+      "id": "new-horizons:warcast.commandersMeditation",
+      "name": "Commander's Meditation",
+      "icon44": "NH_perk_warcasting2_commanders_meditation"
+    },
+    {
+      "id": "new-horizons:warcast.layeredEnchantment",
+      "name": "Layered Enchantment",
+      "icon44": "NH_perk_warcasting2_layered_enchantment"
+    },
+    {
+      "id": "new-horizons:warcast.sustainingCommand",
+      "name": "Sustaining Command",
+      "icon44": "NH_perk_warcasting2_sustaining_command"
+    },
+    {
+      "id": "new-horizons:warcast.opening",
+      "name": "Opening",
+      "icon44": "NH_perk_warcasting2_opening"
+    },
+    {
+      "id": "new-horizons:warcast.wardedRanks",
+      "name": "Warded Ranks",
+      "icon44": "NH_perk_warcasting2_warded_ranks"
+    },
+    {
+      "id": "new-horizons:warcast.enchantedSteel",
+      "name": "Enchanted Steel",
+      "icon44": "NH_perk_warcasting2_enchanted_steel"
+    },
+    {
+      "id": "new-horizons:warcast.grandConvergence",
+      "name": "Grand Convergence",
+      "icon44": "NH_perk_warcasting2_grand_convergence"
+    },
+    {
+      "id": "new-horizons:warcast.unbrokenCommand",
+      "name": "Unbroken Command",
+      "icon44": "NH_perk_warcasting2_unbroken_command"
+    }
+  ],
+  "provenance": {
+    "privateRoot": "Paths are relative to the private New Horizons art-work library; masters, prompts and logs are not distributed.",
+    "rankArt": {
+      "tool": "codex-cli 0.170.0 exec, built-in image generation, 1254x1254 RGBA genuine alpha",
+      "templateOrigin": "Various modder-tools-pack blankIcons; hashes equal the selected skill-rank wave",
+      "postProcessing": "Alpha matte clean, crop, premultiplied LANCZOS fit into the role content rectangle (fill basic 0.86, advanced 0.94, expert 1.0), centre, composite over the template. No painting.",
+      "ranks": {
+        "basic": {
+          "lineage": [
+            {
+              "kind": "generation",
+              "master": "warcasting-new-rankart/v4-wand-rod-staff/masters/call1_basic_original.png",
+              "sha256": "bac97c6e31701b06f246c0e445a4679ae09a7f4ed7f81fe8afa4a9d5c972e595",
+              "prompt": "warcasting-new-rankart/v4-wand-rod-staff/prompts/call1.txt",
+              "log": "warcasting-new-rankart/v4-wand-rod-staff/gen/call1/events.jsonl"
+            },
+            {
+              "kind": "unchanged copy",
+              "master": "warcasting-new-rankart/v5-no-glow/masters/basic_v4_original.png",
+              "sha256": "bac97c6e31701b06f246c0e445a4679ae09a7f4ed7f81fe8afa4a9d5c972e595"
+            }
+          ],
+          "export": "warcasting-new-rankart/v5-no-glow/tools/compose_fill.py",
+          "fill": 0.86
+        },
+        "advanced": {
+          "lineage": [
+            {
+              "kind": "generation (skill-icon option B)",
+              "master": "warcasting-skill-icon/masters/call1_optionB_original.png",
+              "sha256": "e13e76642cf2ab35776c5aa8eb8b6926ff3039f1d2884eb2b568924c1f6c128e",
+              "prompt": "warcasting-skill-icon/prompts/call1.txt",
+              "log": "warcasting-skill-icon/gen/call1/events.jsonl"
+            },
+            {
+              "kind": "unchanged copy",
+              "master": "warcasting-new-rankart/v5-no-glow/masters/advanced_optionB_original.png",
+              "sha256": "e13e76642cf2ab35776c5aa8eb8b6926ff3039f1d2884eb2b568924c1f6c128e"
+            },
+            {
+              "kind": "edit: light spark at the shaft crossing removed",
+              "master": "warcasting-new-rankart/v5-no-glow/masters/call2_advanced_v5_original.png",
+              "sha256": "4e984b21f1af86994b9ae0bc8aecee42505f08dc981e79711d56977be4d3c4e2",
+              "prompt": "warcasting-new-rankart/v5-no-glow/prompts/call2.txt",
+              "log": "warcasting-new-rankart/v5-no-glow/gen/call2/events.jsonl"
+            }
+          ],
+          "export": "warcasting-new-rankart/v5-no-glow/tools/compose_fill.py",
+          "fill": 0.94
+        },
+        "expert": {
+          "lineage": [
+            {
+              "kind": "generation",
+              "master": "warcasting-new-rankart/v4-wand-rod-staff/masters/call1_expert_original.png",
+              "sha256": "57d55f4e8efd53cd06f5931880ee25f6d76950cb732f3a909e479073e79f7f57",
+              "prompt": "warcasting-new-rankart/v4-wand-rod-staff/prompts/call1.txt",
+              "log": "warcasting-new-rankart/v4-wand-rod-staff/gen/call1/events.jsonl"
+            },
+            {
+              "kind": "edit: glow removed, heavier ornate staff",
+              "master": "warcasting-new-rankart/v5-no-glow/masters/call1_expert_v5_original.png",
+              "sha256": "d73f3e642344122894fff10f56188d4c8530a875aec7b8e506c214e39aee1263",
+              "prompt": "warcasting-new-rankart/v5-no-glow/prompts/call1.txt",
+              "log": "warcasting-new-rankart/v5-no-glow/gen/call1/events.jsonl"
+            },
+            {
+              "kind": "edit: staff head straightened onto the shaft axis",
+              "master": "warcasting-new-rankart/v5-no-glow/masters/call3_expert_v5fix_original.png",
+              "sha256": "3bc5b1bf3de7957fb204fba294a97541f0ca26d000b4a080fed5765cf07b9626",
+              "prompt": "warcasting-new-rankart/v5-no-glow/prompts/call3.txt",
+              "log": "warcasting-new-rankart/v5-no-glow/gen/call3/events.jsonl"
+            },
+            {
+              "kind": "splice: only the straightened head taken from the fix; pixels outside the feathered head mask equal the v5 master",
+              "master": "warcasting-new-rankart/v5-no-glow/masters/expert_v5fix_spliced.png",
+              "sha256": "149cdfaa8de8a095045514ae7541f304849715d8b6572544d06f87738f4d7463",
+              "tool": "warcasting-new-rankart/v5-no-glow/tools/splice_head.py"
+            }
+          ],
+          "export": "warcasting-new-rankart/v5-no-glow/tools/compose_fill_box.py",
+          "fill": 1.0
+        }
+      }
+    },
+    "perks": {
+      "tool": "codex-cli 0.170.0 exec, built-in image generation, 1254x1254 RGBA genuine alpha",
+      "postProcessing": "Matte clean (a<8 -> 0, a>=248 -> 255), crop alpha>=24 bbox, premultiplied LANCZOS fit 40 (44) / 28 (32), centre, zero RGB under alpha 0. No painting. Button states and descriptor derived with the perk importer recipe.",
+      "icons": [
+        {
+          "perk": "new-horizons:warcast.fieldEnchanter",
+          "version": "v1",
+          "lineage": [
+            {
+              "kind": "generation",
+              "master": "warcasting-new-rankart/perks/masters/call1_field_enchanter_original.png",
+              "sha256": "23a650617fe5dd48c1c0e915b99ea491e60665c6b57faa940759a6f4be43457c",
+              "prompt": "warcasting-new-rankart/perks/prompts/call1.txt",
+              "log": "warcasting-new-rankart/perks/gen/call1/events.jsonl"
+            }
+          ],
+          "export": "warcasting-new-rankart/perks/tools/reduce.py"
+        },
+        {
+          "perk": "new-horizons:warcast.kindledEdge",
+          "version": "v1",
+          "lineage": [
+            {
+              "kind": "generation",
+              "master": "warcasting-new-rankart/perks/masters/call1_kindled_edge_original.png",
+              "sha256": "d3f94105f6f403973beddcee2b78d164d48718bd392775b814e812bdc7aed33a",
+              "prompt": "warcasting-new-rankart/perks/prompts/call1.txt",
+              "log": "warcasting-new-rankart/perks/gen/call1/events.jsonl"
+            }
+          ],
+          "export": "warcasting-new-rankart/perks/tools/reduce.py"
+        },
+        {
+          "perk": "new-horizons:warcast.commandersMeditation",
+          "version": "v1",
+          "lineage": [
+            {
+              "kind": "generation",
+              "master": "warcasting-new-rankart/perks/masters/call1_commanders_meditation_original.png",
+              "sha256": "8e5eb6b349b33e27c41c18ce3c3576620f235a59635efc575f01a045fe531f5c",
+              "prompt": "warcasting-new-rankart/perks/prompts/call1.txt",
+              "log": "warcasting-new-rankart/perks/gen/call1/events.jsonl"
+            }
+          ],
+          "export": "warcasting-new-rankart/perks/tools/reduce.py"
+        },
+        {
+          "perk": "new-horizons:warcast.layeredEnchantment",
+          "version": "v1",
+          "lineage": [
+            {
+              "kind": "generation",
+              "master": "warcasting-new-rankart/perks/masters/call1_layered_enchantment_original.png",
+              "sha256": "375e17a5970f2c5f6207137c0cc59fdb91d8ec023c6c8cf695014e1c9e239d4c",
+              "prompt": "warcasting-new-rankart/perks/prompts/call1.txt",
+              "log": "warcasting-new-rankart/perks/gen/call1/events.jsonl"
+            }
+          ],
+          "export": "warcasting-new-rankart/perks/tools/reduce.py"
+        },
+        {
+          "perk": "new-horizons:warcast.sustainingCommand",
+          "version": "v1",
+          "lineage": [
+            {
+              "kind": "generation",
+              "master": "warcasting-new-rankart/perks/masters/call2_sustaining_command_original.png",
+              "sha256": "98963125690e07d1677c2ad5a41f60b1f17cb5cb14fbba81c7d95f02f3c4f620",
+              "prompt": "warcasting-new-rankart/perks/prompts/call2.txt",
+              "log": "warcasting-new-rankart/perks/gen/call2/events.jsonl"
+            }
+          ],
+          "export": "warcasting-new-rankart/perks/tools/reduce.py"
+        },
+        {
+          "perk": "new-horizons:warcast.opening",
+          "version": "v2",
+          "lineage": [
+            {
+              "kind": "targeted correction",
+              "master": "warcasting-new-rankart/perks/masters/call4_opening_v2_original.png",
+              "sha256": "a33760c2a4c9749760a508fff4eec8cbbf165f5050735139d199c42bd33ecaba",
+              "prompt": "warcasting-new-rankart/perks/prompts/call4.txt",
+              "log": "warcasting-new-rankart/perks/gen/call4/events.jsonl"
+            }
+          ],
+          "export": "warcasting-new-rankart/perks/tools/reduce.py"
+        },
+        {
+          "perk": "new-horizons:warcast.wardedRanks",
+          "version": "v1",
+          "lineage": [
+            {
+              "kind": "generation",
+              "master": "warcasting-new-rankart/perks/masters/call2_warded_ranks_original.png",
+              "sha256": "482e55e90a738ba5e7e3d1e31591bc81ae9fb6455cd2c277cfe2f35cf3a05986",
+              "prompt": "warcasting-new-rankart/perks/prompts/call2.txt",
+              "log": "warcasting-new-rankart/perks/gen/call2/events.jsonl"
+            }
+          ],
+          "export": "warcasting-new-rankart/perks/tools/reduce.py"
+        },
+        {
+          "perk": "new-horizons:warcast.enchantedSteel",
+          "version": "v2",
+          "lineage": [
+            {
+              "kind": "targeted correction",
+              "master": "warcasting-new-rankart/perks/masters/call4_enchanted_steel_v2_original.png",
+              "sha256": "6ceab7f64c8e5033e5f541407892c04cc402884cfd249625b5a14dda8f23d505",
+              "prompt": "warcasting-new-rankart/perks/prompts/call4.txt",
+              "log": "warcasting-new-rankart/perks/gen/call4/events.jsonl"
+            }
+          ],
+          "export": "warcasting-new-rankart/perks/tools/reduce.py"
+        },
+        {
+          "perk": "new-horizons:warcast.grandConvergence",
+          "version": "v1",
+          "lineage": [
+            {
+              "kind": "generation",
+              "master": "warcasting-new-rankart/perks/masters/call3_grand_convergence_original.png",
+              "sha256": "e7e940b1332dcb5862ed7db2bd0c290cfeed68880a37c0911731383e96003f69",
+              "prompt": "warcasting-new-rankart/perks/prompts/call3.txt",
+              "log": "warcasting-new-rankart/perks/gen/call3/events.jsonl"
+            }
+          ],
+          "export": "warcasting-new-rankart/perks/tools/reduce.py"
+        },
+        {
+          "perk": "new-horizons:warcast.unbrokenCommand",
+          "version": "v1",
+          "lineage": [
+            {
+              "kind": "generation",
+              "master": "warcasting-new-rankart/perks/masters/call3_unbroken_command_original.png",
+              "sha256": "24c813fc5d922a1c36ccab2fbd9a49f8ce4074d0f03b23047f10f8e5cc1eb039",
+              "prompt": "warcasting-new-rankart/perks/prompts/call3.txt",
+              "log": "warcasting-new-rankart/perks/gen/call3/events.jsonl"
+            }
+          ],
+          "export": "warcasting-new-rankart/perks/tools/reduce.py"
+        }
+      ]
+    },
+    "notPacked": [
+      "Opening v1 and Enchanted Steel v1 perk alternatives",
+      "rank art v1-v4 and the unstraightened v5 Expert"
+    ]
+  },
+  "entries": [
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_commanders_meditation.json",
+      "role": "warcasting-perk-descriptor",
+      "perk": "new-horizons:warcast.commandersMeditation",
+      "perkName": "Commander's Meditation",
+      "tier": "Basic",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "8e5eb6b349b33e27c41c18ce3c3576620f235a59635efc575f01a045fe531f5c",
+      "sha256": "85ac1896fa5f99b8c62a65cf4d2d702a18a5ecac24f8a0ada7b396e54035d34c"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_commanders_meditation.png",
+      "role": "warcasting-perk-native44",
+      "perk": "new-horizons:warcast.commandersMeditation",
+      "perkName": "Commander's Meditation",
+      "tier": "Basic",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "8e5eb6b349b33e27c41c18ce3c3576620f235a59635efc575f01a045fe531f5c",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        3,
+        2,
+        41,
+        42
+      ],
+      "sha256": "d4186d08c736c5e0228d17aad2e8af778303f78010f002bc7f62c19cc2dde94b"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_commanders_meditation_32.png",
+      "role": "warcasting-perk-native32",
+      "perk": "new-horizons:warcast.commandersMeditation",
+      "perkName": "Commander's Meditation",
+      "tier": "Basic",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "8e5eb6b349b33e27c41c18ce3c3576620f235a59635efc575f01a045fe531f5c",
+      "dimensions": [
+        32,
+        32
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        29,
+        30
+      ],
+      "sha256": "c0d0326564aef291c95786bf4895b380c171d7c968342f818eee32d0379e329e"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_commanders_meditation_disabled.png",
+      "role": "warcasting-perk-state-disabled",
+      "perk": "new-horizons:warcast.commandersMeditation",
+      "perkName": "Commander's Meditation",
+      "tier": "Basic",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "8e5eb6b349b33e27c41c18ce3c3576620f235a59635efc575f01a045fe531f5c",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        3,
+        2,
+        41,
+        42
+      ],
+      "derivedFrom": "SPRITES/NH_perk_warcasting2_commanders_meditation.png",
+      "sha256": "9abecd48c74022d4b4b0513182def47be493be25c3880d3dacc7b2920c83d8dd"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_commanders_meditation_highlighted.png",
+      "role": "warcasting-perk-state-highlighted",
+      "perk": "new-horizons:warcast.commandersMeditation",
+      "perkName": "Commander's Meditation",
+      "tier": "Basic",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "8e5eb6b349b33e27c41c18ce3c3576620f235a59635efc575f01a045fe531f5c",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        3,
+        2,
+        41,
+        42
+      ],
+      "derivedFrom": "SPRITES/NH_perk_warcasting2_commanders_meditation.png",
+      "sha256": "ea1c967e407bb92266c0567082699f52c951d2fe74edbc3e46ddd1185b5ed8bb"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_commanders_meditation_normal.png",
+      "role": "warcasting-perk-state-normal",
+      "perk": "new-horizons:warcast.commandersMeditation",
+      "perkName": "Commander's Meditation",
+      "tier": "Basic",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "8e5eb6b349b33e27c41c18ce3c3576620f235a59635efc575f01a045fe531f5c",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        3,
+        2,
+        41,
+        42
+      ],
+      "derivedFrom": "SPRITES/NH_perk_warcasting2_commanders_meditation.png",
+      "sha256": "6e9488fbaf8f8583cbfac8797a1a8df639057e9d8036e450d1373b0c220ccf9a"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_commanders_meditation_pressed.png",
+      "role": "warcasting-perk-state-pressed",
+      "perk": "new-horizons:warcast.commandersMeditation",
+      "perkName": "Commander's Meditation",
+      "tier": "Basic",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "8e5eb6b349b33e27c41c18ce3c3576620f235a59635efc575f01a045fe531f5c",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        3,
+        2,
+        41,
+        42
+      ],
+      "derivedFrom": "SPRITES/NH_perk_warcasting2_commanders_meditation.png",
+      "sha256": "c2804530798768079ad1154c4e710a446313941b1805573fe483d61fd0f50a29"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_enchanted_steel.json",
+      "role": "warcasting-perk-descriptor",
+      "perk": "new-horizons:warcast.enchantedSteel",
+      "perkName": "Enchanted Steel",
+      "tier": "Advanced",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "6ceab7f64c8e5033e5f541407892c04cc402884cfd249625b5a14dda8f23d505",
+      "sha256": "6bfa4805d1baf0ffe3229307030c58b4ed32591aa890fc122716e5ea474516b5"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_enchanted_steel.png",
+      "role": "warcasting-perk-native44",
+      "perk": "new-horizons:warcast.enchantedSteel",
+      "perkName": "Enchanted Steel",
+      "tier": "Advanced",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "6ceab7f64c8e5033e5f541407892c04cc402884cfd249625b5a14dda8f23d505",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        41,
+        42
+      ],
+      "sha256": "7473e5b49d1770bbf692102a8a310be70628bbeb27cabc3ae39f004ea4ecf22c"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_enchanted_steel_32.png",
+      "role": "warcasting-perk-native32",
+      "perk": "new-horizons:warcast.enchantedSteel",
+      "perkName": "Enchanted Steel",
+      "tier": "Advanced",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "6ceab7f64c8e5033e5f541407892c04cc402884cfd249625b5a14dda8f23d505",
+      "dimensions": [
+        32,
+        32
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        29,
+        30
+      ],
+      "sha256": "a87fd48c2fc21f82cffa9cc1ab061cc090bfc95fa429b1c0be909bf497246191"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_enchanted_steel_disabled.png",
+      "role": "warcasting-perk-state-disabled",
+      "perk": "new-horizons:warcast.enchantedSteel",
+      "perkName": "Enchanted Steel",
+      "tier": "Advanced",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "6ceab7f64c8e5033e5f541407892c04cc402884cfd249625b5a14dda8f23d505",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        41,
+        42
+      ],
+      "derivedFrom": "SPRITES/NH_perk_warcasting2_enchanted_steel.png",
+      "sha256": "7c5c464c459e5ab7110a701afaeb36de6c4371f85c59cebfb7cdf816e94ab442"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_enchanted_steel_highlighted.png",
+      "role": "warcasting-perk-state-highlighted",
+      "perk": "new-horizons:warcast.enchantedSteel",
+      "perkName": "Enchanted Steel",
+      "tier": "Advanced",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "6ceab7f64c8e5033e5f541407892c04cc402884cfd249625b5a14dda8f23d505",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        41,
+        42
+      ],
+      "derivedFrom": "SPRITES/NH_perk_warcasting2_enchanted_steel.png",
+      "sha256": "ca84af726c8b441f6d42cbeb0de2f66cd41af0477658adf66f65782b254cba84"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_enchanted_steel_normal.png",
+      "role": "warcasting-perk-state-normal",
+      "perk": "new-horizons:warcast.enchantedSteel",
+      "perkName": "Enchanted Steel",
+      "tier": "Advanced",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "6ceab7f64c8e5033e5f541407892c04cc402884cfd249625b5a14dda8f23d505",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        41,
+        42
+      ],
+      "derivedFrom": "SPRITES/NH_perk_warcasting2_enchanted_steel.png",
+      "sha256": "6569f702bbd6393f7266e54cf9bdc1789bd265b59cbf5096ee78bfa5342339a6"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_enchanted_steel_pressed.png",
+      "role": "warcasting-perk-state-pressed",
+      "perk": "new-horizons:warcast.enchantedSteel",
+      "perkName": "Enchanted Steel",
+      "tier": "Advanced",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "6ceab7f64c8e5033e5f541407892c04cc402884cfd249625b5a14dda8f23d505",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        41,
+        42
+      ],
+      "derivedFrom": "SPRITES/NH_perk_warcasting2_enchanted_steel.png",
+      "sha256": "7d6f8ad884549103a552d55738045ed3fafbf675c9c580c2dc47a53d47945737"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_field_enchanter.json",
+      "role": "warcasting-perk-descriptor",
+      "perk": "new-horizons:warcast.fieldEnchanter",
+      "perkName": "Field Enchanter",
+      "tier": "Basic",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "23a650617fe5dd48c1c0e915b99ea491e60665c6b57faa940759a6f4be43457c",
+      "sha256": "8ff21b43f2c846b5cbb7537328dc9fe0119a2bc191249d7023a52d3d882076b0"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_field_enchanter.png",
+      "role": "warcasting-perk-native44",
+      "perk": "new-horizons:warcast.fieldEnchanter",
+      "perkName": "Field Enchanter",
+      "tier": "Basic",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "23a650617fe5dd48c1c0e915b99ea491e60665c6b57faa940759a6f4be43457c",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        42,
+        42
+      ],
+      "sha256": "722832b9bb61a261d925c6dcc2236b9561ec8fb9d18f0c626da96524e5c045a7"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_field_enchanter_32.png",
+      "role": "warcasting-perk-native32",
+      "perk": "new-horizons:warcast.fieldEnchanter",
+      "perkName": "Field Enchanter",
+      "tier": "Basic",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "23a650617fe5dd48c1c0e915b99ea491e60665c6b57faa940759a6f4be43457c",
+      "dimensions": [
+        32,
+        32
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        30,
+        30
+      ],
+      "sha256": "2039a4457e1c5d2bc9f39ea17581e90dbd1a9f435ed860df5031c4913fdc344b"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_field_enchanter_disabled.png",
+      "role": "warcasting-perk-state-disabled",
+      "perk": "new-horizons:warcast.fieldEnchanter",
+      "perkName": "Field Enchanter",
+      "tier": "Basic",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "23a650617fe5dd48c1c0e915b99ea491e60665c6b57faa940759a6f4be43457c",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        42,
+        42
+      ],
+      "derivedFrom": "SPRITES/NH_perk_warcasting2_field_enchanter.png",
+      "sha256": "b739d2cdd1c5d2fa3d6bf4889a9c3f2b757744bffda33c1e2ecfc018a130f06c"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_field_enchanter_highlighted.png",
+      "role": "warcasting-perk-state-highlighted",
+      "perk": "new-horizons:warcast.fieldEnchanter",
+      "perkName": "Field Enchanter",
+      "tier": "Basic",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "23a650617fe5dd48c1c0e915b99ea491e60665c6b57faa940759a6f4be43457c",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        42,
+        42
+      ],
+      "derivedFrom": "SPRITES/NH_perk_warcasting2_field_enchanter.png",
+      "sha256": "2b92e11fe63391b08af0e1d5f2c102871416adfb30e967f7e9f7e71333949ce2"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_field_enchanter_normal.png",
+      "role": "warcasting-perk-state-normal",
+      "perk": "new-horizons:warcast.fieldEnchanter",
+      "perkName": "Field Enchanter",
+      "tier": "Basic",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "23a650617fe5dd48c1c0e915b99ea491e60665c6b57faa940759a6f4be43457c",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        42,
+        42
+      ],
+      "derivedFrom": "SPRITES/NH_perk_warcasting2_field_enchanter.png",
+      "sha256": "79a7d19796a4fa7766ca951584f78c2b03dee0ec77be8adbe790a61819192fb8"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_field_enchanter_pressed.png",
+      "role": "warcasting-perk-state-pressed",
+      "perk": "new-horizons:warcast.fieldEnchanter",
+      "perkName": "Field Enchanter",
+      "tier": "Basic",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "23a650617fe5dd48c1c0e915b99ea491e60665c6b57faa940759a6f4be43457c",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        42,
+        42
+      ],
+      "derivedFrom": "SPRITES/NH_perk_warcasting2_field_enchanter.png",
+      "sha256": "3dee91f6aadbac48a3718064906f917968a157d9824b9ef3f62597e0d6b60a52"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_grand_convergence.json",
+      "role": "warcasting-perk-descriptor",
+      "perk": "new-horizons:warcast.grandConvergence",
+      "perkName": "Grand Convergence",
+      "tier": "Expert",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "e7e940b1332dcb5862ed7db2bd0c290cfeed68880a37c0911731383e96003f69",
+      "sha256": "89202b22eab298879707d655a5de232a64fbbf90fd3393b16c2e186dab5a1771"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_grand_convergence.png",
+      "role": "warcasting-perk-native44",
+      "perk": "new-horizons:warcast.grandConvergence",
+      "perkName": "Grand Convergence",
+      "tier": "Expert",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "e7e940b1332dcb5862ed7db2bd0c290cfeed68880a37c0911731383e96003f69",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        41,
+        42
+      ],
+      "sha256": "cd3a307d2c354442507911775d5eabc02fdba1b3cd73465a31f4320a7a9a24f2"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_grand_convergence_32.png",
+      "role": "warcasting-perk-native32",
+      "perk": "new-horizons:warcast.grandConvergence",
+      "perkName": "Grand Convergence",
+      "tier": "Expert",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "e7e940b1332dcb5862ed7db2bd0c290cfeed68880a37c0911731383e96003f69",
+      "dimensions": [
+        32,
+        32
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        30,
+        30
+      ],
+      "sha256": "6d27e0e18abe9775d3dadee52fa8863bf628459a69d560791fb61d52ec95ef7a"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_grand_convergence_disabled.png",
+      "role": "warcasting-perk-state-disabled",
+      "perk": "new-horizons:warcast.grandConvergence",
+      "perkName": "Grand Convergence",
+      "tier": "Expert",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "e7e940b1332dcb5862ed7db2bd0c290cfeed68880a37c0911731383e96003f69",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        41,
+        42
+      ],
+      "derivedFrom": "SPRITES/NH_perk_warcasting2_grand_convergence.png",
+      "sha256": "c6337bf36be6e6e09cd05ebb45f1459966b4654d77f70f449bd5db80c35c1d11"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_grand_convergence_highlighted.png",
+      "role": "warcasting-perk-state-highlighted",
+      "perk": "new-horizons:warcast.grandConvergence",
+      "perkName": "Grand Convergence",
+      "tier": "Expert",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "e7e940b1332dcb5862ed7db2bd0c290cfeed68880a37c0911731383e96003f69",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        41,
+        42
+      ],
+      "derivedFrom": "SPRITES/NH_perk_warcasting2_grand_convergence.png",
+      "sha256": "a029b37717011beb916bd06100467b0d34167216ccb2faa5316b58a9ddcedf3d"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_grand_convergence_normal.png",
+      "role": "warcasting-perk-state-normal",
+      "perk": "new-horizons:warcast.grandConvergence",
+      "perkName": "Grand Convergence",
+      "tier": "Expert",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "e7e940b1332dcb5862ed7db2bd0c290cfeed68880a37c0911731383e96003f69",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        41,
+        42
+      ],
+      "derivedFrom": "SPRITES/NH_perk_warcasting2_grand_convergence.png",
+      "sha256": "721e35f6be41cb65db094583ef0dff07a013b8ec7a21013737c2f71bb6b434ae"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_grand_convergence_pressed.png",
+      "role": "warcasting-perk-state-pressed",
+      "perk": "new-horizons:warcast.grandConvergence",
+      "perkName": "Grand Convergence",
+      "tier": "Expert",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "e7e940b1332dcb5862ed7db2bd0c290cfeed68880a37c0911731383e96003f69",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        41,
+        42
+      ],
+      "derivedFrom": "SPRITES/NH_perk_warcasting2_grand_convergence.png",
+      "sha256": "16e7c2d1fd41fe684f0c473810b2773e6dd709569054dbec4c5eed5553575e42"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_kindled_edge.json",
+      "role": "warcasting-perk-descriptor",
+      "perk": "new-horizons:warcast.kindledEdge",
+      "perkName": "Kindled Edge",
+      "tier": "Basic",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "d3f94105f6f403973beddcee2b78d164d48718bd392775b814e812bdc7aed33a",
+      "sha256": "1d2b6cc855965dca4b85b84f1e59e8a03bc79d504142bfb4351faf72a9297e7c"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_kindled_edge.png",
+      "role": "warcasting-perk-native44",
+      "perk": "new-horizons:warcast.kindledEdge",
+      "perkName": "Kindled Edge",
+      "tier": "Basic",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "d3f94105f6f403973beddcee2b78d164d48718bd392775b814e812bdc7aed33a",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        42,
+        41
+      ],
+      "sha256": "17c48d7fa8c355acdddd1a1053d1e283fe4e310a66e24d7c93ed01ccdbc1f08d"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_kindled_edge_32.png",
+      "role": "warcasting-perk-native32",
+      "perk": "new-horizons:warcast.kindledEdge",
+      "perkName": "Kindled Edge",
+      "tier": "Basic",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "d3f94105f6f403973beddcee2b78d164d48718bd392775b814e812bdc7aed33a",
+      "dimensions": [
+        32,
+        32
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        30,
+        29
+      ],
+      "sha256": "22f5bd70e8481ebcf4c965007dc1a22ff98fc5595e89c645a1c32fbbc8920a8e"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_kindled_edge_disabled.png",
+      "role": "warcasting-perk-state-disabled",
+      "perk": "new-horizons:warcast.kindledEdge",
+      "perkName": "Kindled Edge",
+      "tier": "Basic",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "d3f94105f6f403973beddcee2b78d164d48718bd392775b814e812bdc7aed33a",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        42,
+        41
+      ],
+      "derivedFrom": "SPRITES/NH_perk_warcasting2_kindled_edge.png",
+      "sha256": "dc55fea08d05b47d9484ebd0aa2112531d6a97ced1f7aeeb5b318ac2b6f3aa1c"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_kindled_edge_highlighted.png",
+      "role": "warcasting-perk-state-highlighted",
+      "perk": "new-horizons:warcast.kindledEdge",
+      "perkName": "Kindled Edge",
+      "tier": "Basic",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "d3f94105f6f403973beddcee2b78d164d48718bd392775b814e812bdc7aed33a",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        42,
+        41
+      ],
+      "derivedFrom": "SPRITES/NH_perk_warcasting2_kindled_edge.png",
+      "sha256": "0b7882131c9a21b16ec3c979c89964dbc60f7abe83b0076099e71835d4ea2eb7"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_kindled_edge_normal.png",
+      "role": "warcasting-perk-state-normal",
+      "perk": "new-horizons:warcast.kindledEdge",
+      "perkName": "Kindled Edge",
+      "tier": "Basic",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "d3f94105f6f403973beddcee2b78d164d48718bd392775b814e812bdc7aed33a",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        42,
+        41
+      ],
+      "derivedFrom": "SPRITES/NH_perk_warcasting2_kindled_edge.png",
+      "sha256": "e27f1f88cc0379af7f8e8902c3740a9952fd1cf187be1e06bb58b9b0b4ff52d4"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_kindled_edge_pressed.png",
+      "role": "warcasting-perk-state-pressed",
+      "perk": "new-horizons:warcast.kindledEdge",
+      "perkName": "Kindled Edge",
+      "tier": "Basic",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "d3f94105f6f403973beddcee2b78d164d48718bd392775b814e812bdc7aed33a",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        42,
+        41
+      ],
+      "derivedFrom": "SPRITES/NH_perk_warcasting2_kindled_edge.png",
+      "sha256": "48bc59cfe61d2e9905e8694a21ce5991dad9e9e77bbc7430eefbee6dfa1fe280"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_layered_enchantment.json",
+      "role": "warcasting-perk-descriptor",
+      "perk": "new-horizons:warcast.layeredEnchantment",
+      "perkName": "Layered Enchantment",
+      "tier": "Basic",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "375e17a5970f2c5f6207137c0cc59fdb91d8ec023c6c8cf695014e1c9e239d4c",
+      "sha256": "f31c202a570ffa5b97964cf449c11095f559021d244a92eff88bf8e38ca645ba"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_layered_enchantment.png",
+      "role": "warcasting-perk-native44",
+      "perk": "new-horizons:warcast.layeredEnchantment",
+      "perkName": "Layered Enchantment",
+      "tier": "Basic",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "375e17a5970f2c5f6207137c0cc59fdb91d8ec023c6c8cf695014e1c9e239d4c",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        42,
+        41
+      ],
+      "sha256": "b6d05a2ba3865abcb169ec1d35d1d0cabfc280ae87dc5045e513c7a41767e929"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_layered_enchantment_32.png",
+      "role": "warcasting-perk-native32",
+      "perk": "new-horizons:warcast.layeredEnchantment",
+      "perkName": "Layered Enchantment",
+      "tier": "Basic",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "375e17a5970f2c5f6207137c0cc59fdb91d8ec023c6c8cf695014e1c9e239d4c",
+      "dimensions": [
+        32,
+        32
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        30,
+        30
+      ],
+      "sha256": "f2f443a36f1baeb8e7ad78626dfcd57519151ca17cdcf875a89519c03031f825"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_layered_enchantment_disabled.png",
+      "role": "warcasting-perk-state-disabled",
+      "perk": "new-horizons:warcast.layeredEnchantment",
+      "perkName": "Layered Enchantment",
+      "tier": "Basic",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "375e17a5970f2c5f6207137c0cc59fdb91d8ec023c6c8cf695014e1c9e239d4c",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        42,
+        41
+      ],
+      "derivedFrom": "SPRITES/NH_perk_warcasting2_layered_enchantment.png",
+      "sha256": "546a48f204f1c1cb7cb096713fe4746db379e9819936a07fa8022a18d54be42b"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_layered_enchantment_highlighted.png",
+      "role": "warcasting-perk-state-highlighted",
+      "perk": "new-horizons:warcast.layeredEnchantment",
+      "perkName": "Layered Enchantment",
+      "tier": "Basic",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "375e17a5970f2c5f6207137c0cc59fdb91d8ec023c6c8cf695014e1c9e239d4c",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        42,
+        41
+      ],
+      "derivedFrom": "SPRITES/NH_perk_warcasting2_layered_enchantment.png",
+      "sha256": "aa5d494ba1e994c61188b2b14eaa0e4594766c044f8eed65bede41abae26d4b6"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_layered_enchantment_normal.png",
+      "role": "warcasting-perk-state-normal",
+      "perk": "new-horizons:warcast.layeredEnchantment",
+      "perkName": "Layered Enchantment",
+      "tier": "Basic",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "375e17a5970f2c5f6207137c0cc59fdb91d8ec023c6c8cf695014e1c9e239d4c",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        42,
+        41
+      ],
+      "derivedFrom": "SPRITES/NH_perk_warcasting2_layered_enchantment.png",
+      "sha256": "92bd17338d71502207b631afbad76ac8292925556860bf66ed4a0e6134041044"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_layered_enchantment_pressed.png",
+      "role": "warcasting-perk-state-pressed",
+      "perk": "new-horizons:warcast.layeredEnchantment",
+      "perkName": "Layered Enchantment",
+      "tier": "Basic",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "375e17a5970f2c5f6207137c0cc59fdb91d8ec023c6c8cf695014e1c9e239d4c",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        42,
+        41
+      ],
+      "derivedFrom": "SPRITES/NH_perk_warcasting2_layered_enchantment.png",
+      "sha256": "75081f115a037c0d5598f282304f5dfad8e1359738556cd644ee856ccf7ec823"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_opening.json",
+      "role": "warcasting-perk-descriptor",
+      "perk": "new-horizons:warcast.opening",
+      "perkName": "Opening",
+      "tier": "Advanced",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "a33760c2a4c9749760a508fff4eec8cbbf165f5050735139d199c42bd33ecaba",
+      "sha256": "ac27b9690ef475abbd85b23115d0755694f2ee8989965bea748dda8da535b0cd"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_opening.png",
+      "role": "warcasting-perk-native44",
+      "perk": "new-horizons:warcast.opening",
+      "perkName": "Opening",
+      "tier": "Advanced",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "a33760c2a4c9749760a508fff4eec8cbbf165f5050735139d199c42bd33ecaba",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        3,
+        2,
+        41,
+        42
+      ],
+      "sha256": "13adac5e1efbe1a720a1940b3df2942459008d1b44ccfd689d500e9155033736"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_opening_32.png",
+      "role": "warcasting-perk-native32",
+      "perk": "new-horizons:warcast.opening",
+      "perkName": "Opening",
+      "tier": "Advanced",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "a33760c2a4c9749760a508fff4eec8cbbf165f5050735139d199c42bd33ecaba",
+      "dimensions": [
+        32,
+        32
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        29,
+        30
+      ],
+      "sha256": "ef9d0be72133aa44e34102c6818807252ad64ee7e48d1704c8ed4255753c4ad1"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_opening_disabled.png",
+      "role": "warcasting-perk-state-disabled",
+      "perk": "new-horizons:warcast.opening",
+      "perkName": "Opening",
+      "tier": "Advanced",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "a33760c2a4c9749760a508fff4eec8cbbf165f5050735139d199c42bd33ecaba",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        3,
+        2,
+        41,
+        42
+      ],
+      "derivedFrom": "SPRITES/NH_perk_warcasting2_opening.png",
+      "sha256": "aeb7d692da74ca871743d50ddb06c60ef05a8fa9e89c5bada0a67bf0b7679fbd"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_opening_highlighted.png",
+      "role": "warcasting-perk-state-highlighted",
+      "perk": "new-horizons:warcast.opening",
+      "perkName": "Opening",
+      "tier": "Advanced",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "a33760c2a4c9749760a508fff4eec8cbbf165f5050735139d199c42bd33ecaba",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        3,
+        2,
+        41,
+        42
+      ],
+      "derivedFrom": "SPRITES/NH_perk_warcasting2_opening.png",
+      "sha256": "75d265a1051d2812b7672f33d94ace7760f089e0a9162d6d483119334da59588"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_opening_normal.png",
+      "role": "warcasting-perk-state-normal",
+      "perk": "new-horizons:warcast.opening",
+      "perkName": "Opening",
+      "tier": "Advanced",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "a33760c2a4c9749760a508fff4eec8cbbf165f5050735139d199c42bd33ecaba",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        3,
+        2,
+        41,
+        42
+      ],
+      "derivedFrom": "SPRITES/NH_perk_warcasting2_opening.png",
+      "sha256": "9c68a0fb3ba85ee08858b7ba862fcf119120ddb8ae35c4050990d85110bbb0fc"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_opening_pressed.png",
+      "role": "warcasting-perk-state-pressed",
+      "perk": "new-horizons:warcast.opening",
+      "perkName": "Opening",
+      "tier": "Advanced",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "a33760c2a4c9749760a508fff4eec8cbbf165f5050735139d199c42bd33ecaba",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        3,
+        2,
+        41,
+        42
+      ],
+      "derivedFrom": "SPRITES/NH_perk_warcasting2_opening.png",
+      "sha256": "7168e7071e1897c7c90d4856d90689afe9d99e16fd9fb89acee8735eebd243b2"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_sustaining_command.json",
+      "role": "warcasting-perk-descriptor",
+      "perk": "new-horizons:warcast.sustainingCommand",
+      "perkName": "Sustaining Command",
+      "tier": "Advanced",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "98963125690e07d1677c2ad5a41f60b1f17cb5cb14fbba81c7d95f02f3c4f620",
+      "sha256": "46f9aa2d3493216ff2f593fd11b0cf01c3d7afd97bf764401ea13c6272b74606"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_sustaining_command.png",
+      "role": "warcasting-perk-native44",
+      "perk": "new-horizons:warcast.sustainingCommand",
+      "perkName": "Sustaining Command",
+      "tier": "Advanced",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "98963125690e07d1677c2ad5a41f60b1f17cb5cb14fbba81c7d95f02f3c4f620",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        4,
+        2,
+        40,
+        42
+      ],
+      "sha256": "d97c274fb47812029ff3cde238c99375821774c25b42f08d28aa8cf336d4c17d"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_sustaining_command_32.png",
+      "role": "warcasting-perk-native32",
+      "perk": "new-horizons:warcast.sustainingCommand",
+      "perkName": "Sustaining Command",
+      "tier": "Advanced",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "98963125690e07d1677c2ad5a41f60b1f17cb5cb14fbba81c7d95f02f3c4f620",
+      "dimensions": [
+        32,
+        32
+      ],
+      "alphaBoundingBox": [
+        3,
+        2,
+        28,
+        30
+      ],
+      "sha256": "b4c8d16dae09219a48ecaa1708cc2be83941e41923793e567b2abeeb207a7a6c"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_sustaining_command_disabled.png",
+      "role": "warcasting-perk-state-disabled",
+      "perk": "new-horizons:warcast.sustainingCommand",
+      "perkName": "Sustaining Command",
+      "tier": "Advanced",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "98963125690e07d1677c2ad5a41f60b1f17cb5cb14fbba81c7d95f02f3c4f620",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        4,
+        2,
+        40,
+        42
+      ],
+      "derivedFrom": "SPRITES/NH_perk_warcasting2_sustaining_command.png",
+      "sha256": "ae1ba6dcef3ff459cf01f9bb37710d233142dacfa8fa4fd9ef772364ee28a63f"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_sustaining_command_highlighted.png",
+      "role": "warcasting-perk-state-highlighted",
+      "perk": "new-horizons:warcast.sustainingCommand",
+      "perkName": "Sustaining Command",
+      "tier": "Advanced",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "98963125690e07d1677c2ad5a41f60b1f17cb5cb14fbba81c7d95f02f3c4f620",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        4,
+        2,
+        40,
+        42
+      ],
+      "derivedFrom": "SPRITES/NH_perk_warcasting2_sustaining_command.png",
+      "sha256": "27d630a3a0cdea5340d4be0c935bea2023df98da2a6f3e0b14063a482b7f06aa"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_sustaining_command_normal.png",
+      "role": "warcasting-perk-state-normal",
+      "perk": "new-horizons:warcast.sustainingCommand",
+      "perkName": "Sustaining Command",
+      "tier": "Advanced",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "98963125690e07d1677c2ad5a41f60b1f17cb5cb14fbba81c7d95f02f3c4f620",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        4,
+        2,
+        40,
+        42
+      ],
+      "derivedFrom": "SPRITES/NH_perk_warcasting2_sustaining_command.png",
+      "sha256": "857cd2abbcf12727ec0bda99fc45b49f2033247a19a424ab024df4df22f38fbd"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_sustaining_command_pressed.png",
+      "role": "warcasting-perk-state-pressed",
+      "perk": "new-horizons:warcast.sustainingCommand",
+      "perkName": "Sustaining Command",
+      "tier": "Advanced",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "98963125690e07d1677c2ad5a41f60b1f17cb5cb14fbba81c7d95f02f3c4f620",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        4,
+        2,
+        40,
+        42
+      ],
+      "derivedFrom": "SPRITES/NH_perk_warcasting2_sustaining_command.png",
+      "sha256": "ecf7dca19cc29f289490b3d5d6da94eb557c9663402b1b7ca3034add260134ce"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_unbroken_command.json",
+      "role": "warcasting-perk-descriptor",
+      "perk": "new-horizons:warcast.unbrokenCommand",
+      "perkName": "Unbroken Command",
+      "tier": "Expert",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "24c813fc5d922a1c36ccab2fbd9a49f8ce4074d0f03b23047f10f8e5cc1eb039",
+      "sha256": "1c9106cd18c38b19ee0c7422fafc5be1a9537a3a491455df2acf61a1a1abd464"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_unbroken_command.png",
+      "role": "warcasting-perk-native44",
+      "perk": "new-horizons:warcast.unbrokenCommand",
+      "perkName": "Unbroken Command",
+      "tier": "Expert",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "24c813fc5d922a1c36ccab2fbd9a49f8ce4074d0f03b23047f10f8e5cc1eb039",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        5,
+        2,
+        39,
+        42
+      ],
+      "sha256": "d5eee96f5bc36de0e9f9e94f3613e1b1981e9b8e5e1f4614f9fefe5ec750d334"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_unbroken_command_32.png",
+      "role": "warcasting-perk-native32",
+      "perk": "new-horizons:warcast.unbrokenCommand",
+      "perkName": "Unbroken Command",
+      "tier": "Expert",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "24c813fc5d922a1c36ccab2fbd9a49f8ce4074d0f03b23047f10f8e5cc1eb039",
+      "dimensions": [
+        32,
+        32
+      ],
+      "alphaBoundingBox": [
+        4,
+        2,
+        28,
+        30
+      ],
+      "sha256": "cb5000ad0541ef5205dfff9a83beb7bd9518f40ec58e2438ef7d662e910be2e6"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_unbroken_command_disabled.png",
+      "role": "warcasting-perk-state-disabled",
+      "perk": "new-horizons:warcast.unbrokenCommand",
+      "perkName": "Unbroken Command",
+      "tier": "Expert",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "24c813fc5d922a1c36ccab2fbd9a49f8ce4074d0f03b23047f10f8e5cc1eb039",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        5,
+        2,
+        39,
+        42
+      ],
+      "derivedFrom": "SPRITES/NH_perk_warcasting2_unbroken_command.png",
+      "sha256": "a90d88de0f4e0f0c2e3f62bdbca213a2943056b6cd911cc5a011640a22fc164f"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_unbroken_command_highlighted.png",
+      "role": "warcasting-perk-state-highlighted",
+      "perk": "new-horizons:warcast.unbrokenCommand",
+      "perkName": "Unbroken Command",
+      "tier": "Expert",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "24c813fc5d922a1c36ccab2fbd9a49f8ce4074d0f03b23047f10f8e5cc1eb039",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        5,
+        2,
+        39,
+        42
+      ],
+      "derivedFrom": "SPRITES/NH_perk_warcasting2_unbroken_command.png",
+      "sha256": "9fdeca564fc2995433c6d58d81d16a2bc7ae7dd03143205b50eb89e6dba62fa9"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_unbroken_command_normal.png",
+      "role": "warcasting-perk-state-normal",
+      "perk": "new-horizons:warcast.unbrokenCommand",
+      "perkName": "Unbroken Command",
+      "tier": "Expert",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "24c813fc5d922a1c36ccab2fbd9a49f8ce4074d0f03b23047f10f8e5cc1eb039",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        5,
+        2,
+        39,
+        42
+      ],
+      "derivedFrom": "SPRITES/NH_perk_warcasting2_unbroken_command.png",
+      "sha256": "a1dcc0ba33b748478dce132d06d9f483e735c3d9266b6f544413f4f1aa3ab09f"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_unbroken_command_pressed.png",
+      "role": "warcasting-perk-state-pressed",
+      "perk": "new-horizons:warcast.unbrokenCommand",
+      "perkName": "Unbroken Command",
+      "tier": "Expert",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "24c813fc5d922a1c36ccab2fbd9a49f8ce4074d0f03b23047f10f8e5cc1eb039",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        5,
+        2,
+        39,
+        42
+      ],
+      "derivedFrom": "SPRITES/NH_perk_warcasting2_unbroken_command.png",
+      "sha256": "35a6f1f090bc016b1f41befd4c09d11a0b99d72740f01b6a8df66c711c8895f7"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_warded_ranks.json",
+      "role": "warcasting-perk-descriptor",
+      "perk": "new-horizons:warcast.wardedRanks",
+      "perkName": "Warded Ranks",
+      "tier": "Advanced",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "482e55e90a738ba5e7e3d1e31591bc81ae9fb6455cd2c277cfe2f35cf3a05986",
+      "sha256": "8b95cf74c0a83955661c3fe15ee33eecb13c3889b3cbf17c5e7ddcdb51e75b74"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_warded_ranks.png",
+      "role": "warcasting-perk-native44",
+      "perk": "new-horizons:warcast.wardedRanks",
+      "perkName": "Warded Ranks",
+      "tier": "Advanced",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "482e55e90a738ba5e7e3d1e31591bc81ae9fb6455cd2c277cfe2f35cf3a05986",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        42,
+        41
+      ],
+      "sha256": "648ca68a8e4040f80c9ec0a28dd6fb6fffc494f75c25b6832909294aef7f63f2"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_warded_ranks_32.png",
+      "role": "warcasting-perk-native32",
+      "perk": "new-horizons:warcast.wardedRanks",
+      "perkName": "Warded Ranks",
+      "tier": "Advanced",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "482e55e90a738ba5e7e3d1e31591bc81ae9fb6455cd2c277cfe2f35cf3a05986",
+      "dimensions": [
+        32,
+        32
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        30,
+        29
+      ],
+      "sha256": "64c05b489087c520debeade2ccb43141314b83282669d3a81cf3a393f4ae74fa"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_warded_ranks_disabled.png",
+      "role": "warcasting-perk-state-disabled",
+      "perk": "new-horizons:warcast.wardedRanks",
+      "perkName": "Warded Ranks",
+      "tier": "Advanced",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "482e55e90a738ba5e7e3d1e31591bc81ae9fb6455cd2c277cfe2f35cf3a05986",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        42,
+        41
+      ],
+      "derivedFrom": "SPRITES/NH_perk_warcasting2_warded_ranks.png",
+      "sha256": "30fcd930af1e34e5ab239c7f3f06ffed083f36df1a439e7ca985e242e5a437d4"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_warded_ranks_highlighted.png",
+      "role": "warcasting-perk-state-highlighted",
+      "perk": "new-horizons:warcast.wardedRanks",
+      "perkName": "Warded Ranks",
+      "tier": "Advanced",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "482e55e90a738ba5e7e3d1e31591bc81ae9fb6455cd2c277cfe2f35cf3a05986",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        42,
+        41
+      ],
+      "derivedFrom": "SPRITES/NH_perk_warcasting2_warded_ranks.png",
+      "sha256": "2203afacd7f704ec90471078ccc27fc5f064c9870050181f7ef249ea7cf52ba1"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_warded_ranks_normal.png",
+      "role": "warcasting-perk-state-normal",
+      "perk": "new-horizons:warcast.wardedRanks",
+      "perkName": "Warded Ranks",
+      "tier": "Advanced",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "482e55e90a738ba5e7e3d1e31591bc81ae9fb6455cd2c277cfe2f35cf3a05986",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        42,
+        41
+      ],
+      "derivedFrom": "SPRITES/NH_perk_warcasting2_warded_ranks.png",
+      "sha256": "440e0aaab52cdaf477a913568ee3395ae7641c9fbd01fec61f3ff62e39600dc4"
+    },
+    {
+      "resource": "SPRITES/NH_perk_warcasting2_warded_ranks_pressed.png",
+      "role": "warcasting-perk-state-pressed",
+      "perk": "new-horizons:warcast.wardedRanks",
+      "perkName": "Warded Ranks",
+      "tier": "Advanced",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "482e55e90a738ba5e7e3d1e31591bc81ae9fb6455cd2c277cfe2f35cf3a05986",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        42,
+        41
+      ],
+      "derivedFrom": "SPRITES/NH_perk_warcasting2_warded_ranks.png",
+      "sha256": "fef829c2f6321c4cd447e3622ccf34ce021390cea5f3eb007357f2afebb9ec2e"
+    },
+    {
+      "resource": "SPRITES/NH_warcasting2_rankart_v5_advanced_large.png",
+      "role": "warcasting-rank-large",
+      "skill": "new-horizons:warcast",
+      "rank": "advanced",
+      "dimensions": [
+        82,
+        93
+      ],
+      "alphaBoundingBox": [
+        0,
+        0,
+        82,
+        93
+      ],
+      "template": "secondarySkillLargeBlank.png",
+      "templateSha256": "4fe1e46fbfae83eb327ecfab0e9c33c623b439ef0d862a9a1c60031f567d114b",
+      "placement": [
+        7,
+        8
+      ],
+      "foregroundSize": [
+        68,
+        77
+      ],
+      "fill": 0.94,
+      "contentRectangle": [
+        5,
+        5,
+        77,
+        88
+      ],
+      "origin": "Original Codex CLI built-in imagegen foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "sourceMasterSha256": "4e984b21f1af86994b9ae0bc8aecee42505f08dc981e79711d56977be4d3c4e2",
+      "sha256": "8f440c5a16b431b544f5394faf4c05309e3102868ac35b279f50b20dcc86086f"
+    },
+    {
+      "resource": "SPRITES/NH_warcasting2_rankart_v5_advanced_medium.png",
+      "role": "warcasting-rank-medium",
+      "skill": "new-horizons:warcast",
+      "rank": "advanced",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        0,
+        0,
+        44,
+        44
+      ],
+      "template": "secondarySkillBlank.png",
+      "templateSha256": "77203d8fcc0258dd0919ded950414c31cd34f04d78ade1bf15a5d06f67644333",
+      "placement": [
+        6,
+        4
+      ],
+      "foregroundSize": [
+        31,
+        36
+      ],
+      "fill": 0.94,
+      "contentRectangle": [
+        3,
+        3,
+        41,
+        41
+      ],
+      "origin": "Original Codex CLI built-in imagegen foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "sourceMasterSha256": "4e984b21f1af86994b9ae0bc8aecee42505f08dc981e79711d56977be4d3c4e2",
+      "sha256": "554904885cf8be5cf198b663259c07d84c87fabc997f5fd67a93bf2e0a00437f"
+    },
+    {
+      "resource": "SPRITES/NH_warcasting2_rankart_v5_advanced_scenarioBonus.png",
+      "role": "warcasting-rank-scenarioBonus",
+      "skill": "new-horizons:warcast",
+      "rank": "advanced",
+      "dimensions": [
+        58,
+        64
+      ],
+      "alphaBoundingBox": [
+        0,
+        0,
+        58,
+        64
+      ],
+      "template": "bonusBlank.png",
+      "templateSha256": "12b3f4bb28b71fd0a72eecbf1bf4d3fd3388371aa15c95b4bc04fa4249eb0ce5",
+      "placement": [
+        5,
+        4
+      ],
+      "foregroundSize": [
+        48,
+        55
+      ],
+      "fill": 0.94,
+      "contentRectangle": [
+        3,
+        3,
+        55,
+        61
+      ],
+      "origin": "Original Codex CLI built-in imagegen foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "sourceMasterSha256": "4e984b21f1af86994b9ae0bc8aecee42505f08dc981e79711d56977be4d3c4e2",
+      "sha256": "cf3915d09e727a1d23bce4d76522cdb0e0d5520e9f9a1c762c10a7459d79dd92"
+    },
+    {
+      "resource": "SPRITES/NH_warcasting2_rankart_v5_advanced_small.png",
+      "role": "warcasting-rank-small",
+      "skill": "new-horizons:warcast",
+      "rank": "advanced",
+      "dimensions": [
+        32,
+        32
+      ],
+      "alphaBoundingBox": [
+        0,
+        0,
+        32,
+        32
+      ],
+      "template": "secondarySkillSmallBlank.png",
+      "templateSha256": "eed48ae89b037457aa783baa5e9dd3ed820a95b6a7a991a7840ce34c3d49d197",
+      "placement": [
+        4,
+        3
+      ],
+      "foregroundSize": [
+        23,
+        26
+      ],
+      "fill": 0.94,
+      "contentRectangle": [
+        2,
+        2,
+        30,
+        30
+      ],
+      "origin": "Original Codex CLI built-in imagegen foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "sourceMasterSha256": "4e984b21f1af86994b9ae0bc8aecee42505f08dc981e79711d56977be4d3c4e2",
+      "sha256": "7df8dd35e5bcdc665352d5c3532d26245ca5c4685dd62ba0b76947876e823d80"
+    },
+    {
+      "resource": "SPRITES/NH_warcasting2_rankart_v5_basic_large.png",
+      "role": "warcasting-rank-large",
+      "skill": "new-horizons:warcast",
+      "rank": "basic",
+      "dimensions": [
+        82,
+        93
+      ],
+      "alphaBoundingBox": [
+        0,
+        0,
+        82,
+        93
+      ],
+      "template": "secondarySkillLargeBlank.png",
+      "templateSha256": "4fe1e46fbfae83eb327ecfab0e9c33c623b439ef0d862a9a1c60031f567d114b",
+      "placement": [
+        10,
+        11
+      ],
+      "foregroundSize": [
+        61,
+        71
+      ],
+      "fill": 0.86,
+      "contentRectangle": [
+        5,
+        5,
+        77,
+        88
+      ],
+      "origin": "Original Codex CLI built-in imagegen foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "sourceMasterSha256": "bac97c6e31701b06f246c0e445a4679ae09a7f4ed7f81fe8afa4a9d5c972e595",
+      "sha256": "4f236eba6d0c4face2280eedb020216614e2fac4bf29644af87ad951dc2df045"
+    },
+    {
+      "resource": "SPRITES/NH_warcasting2_rankart_v5_basic_medium.png",
+      "role": "warcasting-rank-medium",
+      "skill": "new-horizons:warcast",
+      "rank": "basic",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        0,
+        0,
+        44,
+        44
+      ],
+      "template": "secondarySkillBlank.png",
+      "templateSha256": "77203d8fcc0258dd0919ded950414c31cd34f04d78ade1bf15a5d06f67644333",
+      "placement": [
+        8,
+        5
+      ],
+      "foregroundSize": [
+        28,
+        33
+      ],
+      "fill": 0.86,
+      "contentRectangle": [
+        3,
+        3,
+        41,
+        41
+      ],
+      "origin": "Original Codex CLI built-in imagegen foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "sourceMasterSha256": "bac97c6e31701b06f246c0e445a4679ae09a7f4ed7f81fe8afa4a9d5c972e595",
+      "sha256": "f7b2a0e3816205deea936b3e1f2eaf23bba65d75973e5a49e624fb636c8a54ad"
+    },
+    {
+      "resource": "SPRITES/NH_warcasting2_rankart_v5_basic_scenarioBonus.png",
+      "role": "warcasting-rank-scenarioBonus",
+      "skill": "new-horizons:warcast",
+      "rank": "basic",
+      "dimensions": [
+        58,
+        64
+      ],
+      "alphaBoundingBox": [
+        0,
+        0,
+        58,
+        64
+      ],
+      "template": "bonusBlank.png",
+      "templateSha256": "12b3f4bb28b71fd0a72eecbf1bf4d3fd3388371aa15c95b4bc04fa4249eb0ce5",
+      "placement": [
+        8,
+        7
+      ],
+      "foregroundSize": [
+        42,
+        50
+      ],
+      "fill": 0.86,
+      "contentRectangle": [
+        3,
+        3,
+        55,
+        61
+      ],
+      "origin": "Original Codex CLI built-in imagegen foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "sourceMasterSha256": "bac97c6e31701b06f246c0e445a4679ae09a7f4ed7f81fe8afa4a9d5c972e595",
+      "sha256": "f59a8d650558d4241c47d660750f5d274d62cde49c82480273a11643f5fa4373"
+    },
+    {
+      "resource": "SPRITES/NH_warcasting2_rankart_v5_basic_small.png",
+      "role": "warcasting-rank-small",
+      "skill": "new-horizons:warcast",
+      "rank": "basic",
+      "dimensions": [
+        32,
+        32
+      ],
+      "alphaBoundingBox": [
+        0,
+        0,
+        32,
+        32
+      ],
+      "template": "secondarySkillSmallBlank.png",
+      "templateSha256": "eed48ae89b037457aa783baa5e9dd3ed820a95b6a7a991a7840ce34c3d49d197",
+      "placement": [
+        6,
+        4
+      ],
+      "foregroundSize": [
+        20,
+        24
+      ],
+      "fill": 0.86,
+      "contentRectangle": [
+        2,
+        2,
+        30,
+        30
+      ],
+      "origin": "Original Codex CLI built-in imagegen foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "sourceMasterSha256": "bac97c6e31701b06f246c0e445a4679ae09a7f4ed7f81fe8afa4a9d5c972e595",
+      "sha256": "8ee3c7652a76b1041d97a03b185dc485d22650bbdcba85eba0e75d43d79fa656"
+    },
+    {
+      "resource": "SPRITES/NH_warcasting2_rankart_v5_expert_large.png",
+      "role": "warcasting-rank-large",
+      "skill": "new-horizons:warcast",
+      "rank": "expert",
+      "dimensions": [
+        82,
+        93
+      ],
+      "alphaBoundingBox": [
+        0,
+        0,
+        82,
+        93
+      ],
+      "template": "secondarySkillLargeBlank.png",
+      "templateSha256": "4fe1e46fbfae83eb327ecfab0e9c33c623b439ef0d862a9a1c60031f567d114b",
+      "placement": [
+        5,
+        8
+      ],
+      "foregroundSize": [
+        72,
+        76
+      ],
+      "fill": 1.0,
+      "contentRectangle": [
+        5,
+        5,
+        77,
+        88
+      ],
+      "origin": "Original Codex CLI built-in imagegen foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "sourceMasterSha256": "149cdfaa8de8a095045514ae7541f304849715d8b6572544d06f87738f4d7463",
+      "sha256": "779f01148104f4670dd07c412632267882ad6dd8d0f57f1f45ed0996f4d92bac"
+    },
+    {
+      "resource": "SPRITES/NH_warcasting2_rankart_v5_expert_medium.png",
+      "role": "warcasting-rank-medium",
+      "skill": "new-horizons:warcast",
+      "rank": "expert",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        0,
+        0,
+        44,
+        44
+      ],
+      "template": "secondarySkillBlank.png",
+      "templateSha256": "77203d8fcc0258dd0919ded950414c31cd34f04d78ade1bf15a5d06f67644333",
+      "placement": [
+        4,
+        3
+      ],
+      "foregroundSize": [
+        36,
+        38
+      ],
+      "fill": 1.0,
+      "contentRectangle": [
+        3,
+        3,
+        41,
+        41
+      ],
+      "origin": "Original Codex CLI built-in imagegen foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "sourceMasterSha256": "149cdfaa8de8a095045514ae7541f304849715d8b6572544d06f87738f4d7463",
+      "sha256": "c3e39dd1f467b5a85a16e865847b61c878f56bbd30b2be99d84e7ae372084a03"
+    },
+    {
+      "resource": "SPRITES/NH_warcasting2_rankart_v5_expert_scenarioBonus.png",
+      "role": "warcasting-rank-scenarioBonus",
+      "skill": "new-horizons:warcast",
+      "rank": "expert",
+      "dimensions": [
+        58,
+        64
+      ],
+      "alphaBoundingBox": [
+        0,
+        0,
+        58,
+        64
+      ],
+      "template": "bonusBlank.png",
+      "templateSha256": "12b3f4bb28b71fd0a72eecbf1bf4d3fd3388371aa15c95b4bc04fa4249eb0ce5",
+      "placement": [
+        3,
+        4
+      ],
+      "foregroundSize": [
+        52,
+        55
+      ],
+      "fill": 1.0,
+      "contentRectangle": [
+        3,
+        3,
+        55,
+        61
+      ],
+      "origin": "Original Codex CLI built-in imagegen foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "sourceMasterSha256": "149cdfaa8de8a095045514ae7541f304849715d8b6572544d06f87738f4d7463",
+      "sha256": "c4e13a48b181498ace99d3230e4124e61ea8e501f094fd2797e2db9b60ec4b78"
+    },
+    {
+      "resource": "SPRITES/NH_warcasting2_rankart_v5_expert_small.png",
+      "role": "warcasting-rank-small",
+      "skill": "new-horizons:warcast",
+      "rank": "expert",
+      "dimensions": [
+        32,
+        32
+      ],
+      "alphaBoundingBox": [
+        0,
+        0,
+        32,
+        32
+      ],
+      "template": "secondarySkillSmallBlank.png",
+      "templateSha256": "eed48ae89b037457aa783baa5e9dd3ed820a95b6a7a991a7840ce34c3d49d197",
+      "placement": [
+        3,
+        2
+      ],
+      "foregroundSize": [
+        26,
+        28
+      ],
+      "fill": 1.0,
+      "contentRectangle": [
+        2,
+        2,
+        30,
+        30
+      ],
+      "origin": "Original Codex CLI built-in imagegen foreground on pinned Various modder-tools-pack native template; inherited CC BY-SA 4.0 and mixed original-game dependency retained",
+      "sourceMasterSha256": "149cdfaa8de8a095045514ae7541f304849715d8b6572544d06f87738f4d7463",
+      "sha256": "b7f4adc2f782c9e394808b54a40797c08048bd2cd665c0066ed1ed76733d2a6a"
+    }
+  ]
+}
