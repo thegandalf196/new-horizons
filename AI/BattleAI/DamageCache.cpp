@@ -38,6 +38,8 @@
 #include "../../lib/spells/ISpellMechanics.h"
 #include "../../lib/spells/ObstacleCasterProxy.h"
 #include "../../lib/battle/NewHorizonsFocusMagic.h"
+#include "../../lib/battle/NewHorizonsAcademySpecialties.h"
+#include "../../lib/battle/NewHorizonsSerpentsEmbrace.h"
 #include <vcmi/spells/Service.h>
 #include <vcmi/spells/Spell.h>
 
@@ -67,6 +69,8 @@ bool hasTemporaryCombatModifier(const battle::Unit * unit)
 			|| newHorizonsReactiveDefense::isSolidarityProtection(bonus)
 			|| newHorizonsReactiveDefense::isIronHideSpent(bonus)
 			|| newHorizonsRampart::isBrittleMarker(bonus)
+			|| newHorizonsAcademy::isHardenedMarker(bonus)
+			|| (bonus->type == BonusType::BIND_EFFECT && newHorizonsSerpentsEmbrace::isMarker(*bonus))
 			|| bonus->source == BonusSource::HERO_COMMAND
 			|| bonus->source == BonusSource::SPELL_EFFECT
 			|| consecratedArms::identity(bonus).has_value();

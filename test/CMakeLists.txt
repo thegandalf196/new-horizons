@@ -1329,6 +1329,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/ActivatedOrdinarySpecialtyAITest.cpp
 		battleAI/CastleSpecialtyAITest.cpp
 		battleAI/RampartSpecialtyAITest.cpp
+		battleAI/AcademySpecialtyAITest.cpp
 		battleAI/DamageFinalizationParityTest.cpp
 		battleAI/PrimaryFortuneProducerTest.cpp
 		battleAI/AppliedStrikeFactsTest.cpp
@@ -1473,6 +1474,7 @@ if(ENABLE_NULLKILLER2_AI)
 		nullkiller2/NewHorizonsRecruitmentGrowthAITest.cpp
 		nullkiller2/WellConnectedAITest.cpp
 		nullkiller2/RampartAdventureSpecialtyAITest.cpp
+		nullkiller2/AcademyAdventureSpecialtyAITest.cpp
 		nullkiller2/NewHorizonsSethRecruitmentAITest.cpp
 		nullkiller2/NewHorizonsAcademicStudyAITest.cpp
 		nullkiller2/NewHorizonsSageAITest.cpp

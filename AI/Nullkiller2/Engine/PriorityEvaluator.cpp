@@ -46,6 +46,7 @@
 #include "../Markers/DefendTown.h"
 
 #include "../../../lib/entities/hero/NewHorizonsRampartSpecialties.h"
+#include "../../../lib/entities/hero/NewHorizonsAcademySpecialties.h"
 #include <vcmi/spells/Service.h>
 #include <vcmi/spells/Spell.h>
 
@@ -178,6 +179,17 @@ int32_t getResourcesGoldReward(const TResources & res)
 	}
 
 	return result;
+}
+
+/// Rissa's Spoils of Alchemy: the Mercury defeating the whole army would bring.
+static int32_t spoilsOfAlchemyReward(const CGHeroInstance * hero, const CGObjectInstance * target)
+{
+	const auto * army = dynamic_cast<const CCreatureSet *>(target);
+	if(!hero || !army || newHorizonsHeroes::spoilsGoldPerMercury(hero) <= 0)
+		return 0;
+	TResources mercury;
+	mercury[EGameResID::MERCURY] = newHorizonsHeroes::spoilsOfAlchemyMercury(hero, newHorizonsHeroes::spoilsRecruitmentGold(*army));
+	return getResourcesGoldReward(mercury);
 }
 
 uint64_t getDwellingArmyValue(CCallback * cb, const CGObjectInstance * target, const CGHeroInstance * buyer, bool checkGold)
@@ -726,7 +738,10 @@ int32_t RewardEvaluator::getGoldReward(const CGObjectInstance * target, const CG
 	case Obj::HERO:
 		return relations == PlayerRelations::ENEMIES
 			? heroEliminationBonus + enemyArmyEliminationGoldRewardRatio * getArmyCost(dynamic_cast<const CGHeroInstance *>(target))
+				+ spoilsOfAlchemyReward(hero, target)
 			: 0;
+	case Obj::MONSTER:
+		return spoilsOfAlchemyReward(hero, target);
 	default:
 		break;
 	}
