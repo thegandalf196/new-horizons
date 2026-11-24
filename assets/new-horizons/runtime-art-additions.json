@@ -21390,6 +21390,83 @@
         }
       ],
       "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "baselineArchiveSha256": "b5d6e5e78f15e79258ebbeb1544a7fb4ca6b01ec7e35e70307657dbc76764ae0",
+      "baselineManifestSha256": "902f5d9dd46ef24acaa60eb78a83dcbd21436933d5d446f0401563c4adeaba33",
+      "baselineEntriesSha256": "d2b3add3d0eff2312f0039d0f5d60f0aa44ee7bcf15e93d14aac43c2709c9004",
+      "baselineCount": 6643,
+      "entryCount": 6671,
+      "newArchiveSha256": "cb96bae5dea0da5de735ec0c534e9747f77ba3e59f9a0e5a5c0ac46dbf095c38",
+      "resources": [
+        "SPRITES/NH_perk_sylvan_tactics_apex_predator.json",
+        "SPRITES/NH_perk_sylvan_tactics_apex_predator.png",
+        "SPRITES/NH_perk_sylvan_tactics_apex_predator_32.png",
+        "SPRITES/NH_perk_sylvan_tactics_apex_predator_disabled.png",
+        "SPRITES/NH_perk_sylvan_tactics_apex_predator_highlighted.png",
+        "SPRITES/NH_perk_sylvan_tactics_apex_predator_normal.png",
+        "SPRITES/NH_perk_sylvan_tactics_apex_predator_pressed.png",
+        "SPRITES/NH_perk_sylvan_tactics_forest_cover.json",
+        "SPRITES/NH_perk_sylvan_tactics_forest_cover.png",
+        "SPRITES/NH_perk_sylvan_tactics_forest_cover_32.png",
+        "SPRITES/NH_perk_sylvan_tactics_forest_cover_disabled.png",
+        "SPRITES/NH_perk_sylvan_tactics_forest_cover_highlighted.png",
+        "SPRITES/NH_perk_sylvan_tactics_forest_cover_normal.png",
+        "SPRITES/NH_perk_sylvan_tactics_forest_cover_pressed.png",
+        "SPRITES/NH_perk_sylvan_tactics_startle.json",
+        "SPRITES/NH_perk_sylvan_tactics_startle.png",
+        "SPRITES/NH_perk_sylvan_tactics_startle_32.png",
+        "SPRITES/NH_perk_sylvan_tactics_startle_disabled.png",
+        "SPRITES/NH_perk_sylvan_tactics_startle_highlighted.png",
+        "SPRITES/NH_perk_sylvan_tactics_startle_normal.png",
+        "SPRITES/NH_perk_sylvan_tactics_startle_pressed.png",
+        "SPRITES/NH_status_sylvan_ambush_strike.png",
+        "SPRITES/NH_status_sylvan_concealed.png",
+        "SPRITES/NH_wait_ambush_button.json",
+        "SPRITES/NH_wait_ambush_disabled.png",
+        "SPRITES/NH_wait_ambush_highlighted.png",
+        "SPRITES/NH_wait_ambush_normal.png",
+        "SPRITES/NH_wait_ambush_pressed.png"
+      ],
+      "perks": [],
+      "statuses": [],
+      "reusedBindings": [],
+      "sylvanAmbushArtwork": [
+        {
+          "resources": [
+            "SPRITES/NH_perk_sylvan_tactics_apex_predator.json",
+            "SPRITES/NH_perk_sylvan_tactics_apex_predator.png",
+            "SPRITES/NH_perk_sylvan_tactics_apex_predator_32.png",
+            "SPRITES/NH_perk_sylvan_tactics_apex_predator_disabled.png",
+            "SPRITES/NH_perk_sylvan_tactics_apex_predator_highlighted.png",
+            "SPRITES/NH_perk_sylvan_tactics_apex_predator_normal.png",
+            "SPRITES/NH_perk_sylvan_tactics_apex_predator_pressed.png",
+            "SPRITES/NH_perk_sylvan_tactics_forest_cover.json",
+            "SPRITES/NH_perk_sylvan_tactics_forest_cover.png",
+            "SPRITES/NH_perk_sylvan_tactics_forest_cover_32.png",
+            "SPRITES/NH_perk_sylvan_tactics_forest_cover_disabled.png",
+            "SPRITES/NH_perk_sylvan_tactics_forest_cover_highlighted.png",
+            "SPRITES/NH_perk_sylvan_tactics_forest_cover_normal.png",
+            "SPRITES/NH_perk_sylvan_tactics_forest_cover_pressed.png",
+            "SPRITES/NH_perk_sylvan_tactics_startle.json",
+            "SPRITES/NH_perk_sylvan_tactics_startle.png",
+            "SPRITES/NH_perk_sylvan_tactics_startle_32.png",
+            "SPRITES/NH_perk_sylvan_tactics_startle_disabled.png",
+            "SPRITES/NH_perk_sylvan_tactics_startle_highlighted.png",
+            "SPRITES/NH_perk_sylvan_tactics_startle_normal.png",
+            "SPRITES/NH_perk_sylvan_tactics_startle_pressed.png",
+            "SPRITES/NH_status_sylvan_ambush_strike.png",
+            "SPRITES/NH_status_sylvan_concealed.png",
+            "SPRITES/NH_wait_ambush_button.json",
+            "SPRITES/NH_wait_ambush_disabled.png",
+            "SPRITES/NH_wait_ambush_highlighted.png",
+            "SPRITES/NH_wait_ambush_normal.png",
+            "SPRITES/NH_wait_ambush_pressed.png"
+          ],
+          "selectionRecordSha256": "a6d3592a00ccc982c990e54ff136d490e61aa3d3a49c51a8a7a92931d79ae199"
+        }
+      ],
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
     }
   ]
 }

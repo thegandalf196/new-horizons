@@ -1,10 +1,10 @@
 {
   "format": 1,
-  "purpose": "Exact reversible source-consumer changes; selected artwork bytes, original hashes and approval records remain unchanged. Current Metamagic and Consecrated Arms have distinct selected perk artwork. Metamagic 6 perks bind provisional stand-ins that reuse selected historical paintings; Metamagic 5 bindings remain for captured policy-6 games.",
+  "purpose": "Exact reversible source-consumer changes; selected artwork bytes, original hashes and approval records remain unchanged. Current Metamagic and Consecrated Arms have distinct selected perk artwork. Metamagic 6 perks bind provisional stand-ins that reuse selected historical paintings; Metamagic 5 bindings remain for captured policy-6 games. Sylvan Tactics 5 (Ambush) perks bind their selected icons.",
   "files": {
     "client/windows/NewHorizonsPerkIcons.h": {
       "historicalSha256": "8d67c0ddcd521aeb37566c39d5ac8cb28dd7ebec8d280773c9eca01a7dadb8aa",
-      "currentSha256": "6fe3caec4670596898f1cad5180dd4f6e6eeb600f408728a480c0d288a427bc9",
+      "currentSha256": "623039e7b9b9f64691afeb0ec56743afa17088f127e5c933219066651ffab71a",
       "changes": [
         {
           "before": "\t\t{\"new-horizons:authority.veteranCorps\", \"NH_perk_authority_veteran_corps\"},\n\t\t{\"new-horizons:metamagic.arcaneCatalyst\", \"NH_perk_arcane_acquisition\"},\n\t\t{\"new-horizons:metamagic.arcaneShield\", \"NH_perk_echoed_duration\"},\n\t\t{\"new-horizons:metamagic.manaConduit\", \"NH_perk_arcane_economy\"},\n\t\t{\"new-horizons:metamagic.lingeringMagic\", \"NH_perk_spell_sequencing\"},\n\t\t{\"new-horizons:metamagic.arcaneFeedback\", \"NH_perk_focused_pairing\"},\n\t\t{\"new-horizons:metamagic.spellFracture\", \"NH_perk_perfect_sequence\"},\n\t\t{\"new-horizons:metamagic.arcaneWellspring\", \"NH_perk_countersequence\"},\n\t\t{\"new-horizons:metamagic.arcaneAttunement\", \"NH_perk_spell_buffer_v2\"},\n\t\t{\"new-horizons:metamagic.arcaneEcho\", \"NH_perk_formula_reserve\"},\n\t\t{\"new-horizons:metamagic.arcaneSingularity\", \"NH_perk_grand_metamagic\"},\n\t\t{\"new-horizons:divineMandate.knightlyValor\", \"NH_perk_knightly_sequence\"},\n",
@@ -33,6 +33,10 @@
         {
           "before": "\t\t{\"new-horizons:metamagic.empoweredSpells\", \"NH_perk_metamagic_empowered_spells\"},\n",
           "after": "\t\t{\"new-horizons:metamagic.empoweredSpells\", \"NH_perk_metamagic_empowered_spells\"},\n\t\t// Metamagic 6 (Double Cast) provisional stand-ins reuse selected historical\n\t\t// paintings until purpose-made art is approved; the Metamagic 5 rows above\n\t\t// stay bound for games that captured policy 6.\n\t\t{\"new-horizons:metamagic.arcaneWard\", \"NH_perk_spell_buffer\"},\n\t\t{\"new-horizons:metamagic.manaSiphon\", \"NH_perk_focused_pairing\"},\n\t\t{\"new-horizons:metamagic.deepReserves\", \"NH_perk_arcane_reservoir\"},\n\t\t{\"new-horizons:metamagic.formulaRecovery\", \"NH_perk_formula_reserve\"},\n\t\t{\"new-horizons:metamagic.arcaneCycle\", \"NH_perk_spell_sequencing\"},\n\t\t{\"new-horizons:metamagic.afterglow\", \"NH_perk_echoed_duration\"},\n\t\t{\"new-horizons:metamagic.crescendo\", \"NH_perk_perfect_sequence\"},\n\t\t{\"new-horizons:metamagic.cleansingWeave\", \"NH_perk_metamagic_reconstituting_magic\"},\n\t\t{\"new-horizons:metamagic.grandWeaving\", \"NH_perk_grand_metamagic\"},\n\t\t{\"new-horizons:metamagic.spellstorm\", \"NH_perk_arcane_economy\"},\n"
+        },
+        {
+          "before": "\t\t{\"new-horizons:sylvanLuck.cascadingFortune\", \"NH_perk_cascading_fortune\"},\n",
+          "after": "\t\t{\"new-horizons:sylvanLuck.cascadingFortune\", \"NH_perk_cascading_fortune\"},\n\t\t{\"new-horizons:sylvanLuck.forestCover\", \"NH_perk_sylvan_tactics_forest_cover\"},\n\t\t{\"new-horizons:sylvanLuck.startle\", \"NH_perk_sylvan_tactics_startle\"},\n\t\t{\"new-horizons:sylvanLuck.apexPredator\", \"NH_perk_sylvan_tactics_apex_predator\"},\n"
         }
       ]
     },

@@ -19,6 +19,7 @@ from .nhart_retired_interface_icons import retirement_wave
 from .nhart_retired_custom_buttons import custom_button_retirement_wave
 from .nhart_academy_town_animation import town_animation_wave
 from .nhart_academy_town_masks import town_mask_wave
+from .nhart_sylvan_ambush_art import sylvan_ambush_wave
 
 AUTHORITY_CURRENT = (
     ('massedRanks', 'offensive_drills'), ('veteranCadre', 'defensive_drills'),
@@ -97,6 +98,7 @@ def released_predecessor_entries(entries, waves, digest):
     custom_button_retirement_wave(waves)
     town_animation_wave(waves)
     town_mask_wave(waves)
+    sylvan_ambush_wave(waves)
     matches = [i for i, wave in enumerate(waves) if wave['baselineArchiveSha256'] == BRIDGE_NEXT_ARCHIVE]
     if len(matches) != 1 or matches[0] == 0:
         raise ValueError('Missing exact released-art bridge boundary')

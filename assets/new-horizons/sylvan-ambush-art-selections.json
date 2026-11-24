@@ -1,0 +1,529 @@
+{
+  "format": 1,
+  "selection": "Owner-approved Sylvan Tactics Ambush status, perk and Wait button art 2026-11-23",
+  "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
+  "perkBindings": [
+    {
+      "id": "new-horizons:sylvanLuck.forestCover",
+      "name": "Forest Cover",
+      "icon44": "NH_perk_sylvan_tactics_forest_cover"
+    },
+    {
+      "id": "new-horizons:sylvanLuck.startle",
+      "name": "Startle",
+      "icon44": "NH_perk_sylvan_tactics_startle"
+    },
+    {
+      "id": "new-horizons:sylvanLuck.apexPredator",
+      "name": "Apex Predator",
+      "icon44": "NH_perk_sylvan_tactics_apex_predator"
+    }
+  ],
+  "entries": [
+    {
+      "resource": "SPRITES/NH_perk_sylvan_tactics_apex_predator.json",
+      "role": "sylvan-ambush-perk-descriptor",
+      "perk": "new-horizons:sylvanLuck.apexPredator",
+      "perkName": "Apex Predator",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "3476f7176fae187b21d480f9bce5d4bbd2e5796aaa41490cf843eeb2fc3c5086",
+      "sha256": "ee9f40c420297b65b8301feb334bdc5cd24fdc6f3dcd3ae4fa7658815db4907f"
+    },
+    {
+      "resource": "SPRITES/NH_perk_sylvan_tactics_apex_predator.png",
+      "role": "sylvan-ambush-perk-native44",
+      "perk": "new-horizons:sylvanLuck.apexPredator",
+      "perkName": "Apex Predator",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "3476f7176fae187b21d480f9bce5d4bbd2e5796aaa41490cf843eeb2fc3c5086",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        41,
+        42
+      ],
+      "sha256": "f5d919fffc9e70c9c638fff73eef9d0cc9d284c15c332156c65636f4c155051f"
+    },
+    {
+      "resource": "SPRITES/NH_perk_sylvan_tactics_apex_predator_32.png",
+      "role": "sylvan-ambush-perk-native32",
+      "perk": "new-horizons:sylvanLuck.apexPredator",
+      "perkName": "Apex Predator",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "3476f7176fae187b21d480f9bce5d4bbd2e5796aaa41490cf843eeb2fc3c5086",
+      "dimensions": [
+        32,
+        32
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        29,
+        30
+      ],
+      "sha256": "bbd9152a965dfc1e39a59531483e84e72882da4e3478edf0d96c42a5620e606b"
+    },
+    {
+      "resource": "SPRITES/NH_perk_sylvan_tactics_apex_predator_disabled.png",
+      "role": "sylvan-ambush-perk-state-disabled",
+      "perk": "new-horizons:sylvanLuck.apexPredator",
+      "perkName": "Apex Predator",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "3476f7176fae187b21d480f9bce5d4bbd2e5796aaa41490cf843eeb2fc3c5086",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        41,
+        42
+      ],
+      "derivedFrom": "SPRITES/NH_perk_sylvan_tactics_apex_predator.png",
+      "sha256": "6238ba89588c5296c6f09a67f929771ff9d6dfc5436111e5204fee3d43b9dd07"
+    },
+    {
+      "resource": "SPRITES/NH_perk_sylvan_tactics_apex_predator_highlighted.png",
+      "role": "sylvan-ambush-perk-state-highlighted",
+      "perk": "new-horizons:sylvanLuck.apexPredator",
+      "perkName": "Apex Predator",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "3476f7176fae187b21d480f9bce5d4bbd2e5796aaa41490cf843eeb2fc3c5086",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        41,
+        42
+      ],
+      "derivedFrom": "SPRITES/NH_perk_sylvan_tactics_apex_predator.png",
+      "sha256": "d95205837ddade63c45ece6dbf98efdda740991ba8fac1e86785e99f6cc9267e"
+    },
+    {
+      "resource": "SPRITES/NH_perk_sylvan_tactics_apex_predator_normal.png",
+      "role": "sylvan-ambush-perk-state-normal",
+      "perk": "new-horizons:sylvanLuck.apexPredator",
+      "perkName": "Apex Predator",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "3476f7176fae187b21d480f9bce5d4bbd2e5796aaa41490cf843eeb2fc3c5086",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        41,
+        42
+      ],
+      "derivedFrom": "SPRITES/NH_perk_sylvan_tactics_apex_predator.png",
+      "sha256": "305fcd24ce6ebe1592dd0c8e0ea01ffdbde1a247e0a41d4ad6f473b14c43f9fb"
+    },
+    {
+      "resource": "SPRITES/NH_perk_sylvan_tactics_apex_predator_pressed.png",
+      "role": "sylvan-ambush-perk-state-pressed",
+      "perk": "new-horizons:sylvanLuck.apexPredator",
+      "perkName": "Apex Predator",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "3476f7176fae187b21d480f9bce5d4bbd2e5796aaa41490cf843eeb2fc3c5086",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        41,
+        42
+      ],
+      "derivedFrom": "SPRITES/NH_perk_sylvan_tactics_apex_predator.png",
+      "sha256": "c9168cd7c1b7566b7ddc10122eb1fbb2a7de223fc096a6d83fe58f4fc5c4d7f8"
+    },
+    {
+      "resource": "SPRITES/NH_perk_sylvan_tactics_forest_cover.json",
+      "role": "sylvan-ambush-perk-descriptor",
+      "perk": "new-horizons:sylvanLuck.forestCover",
+      "perkName": "Forest Cover",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "25bc179814182ac8c98578c6f3fd7a51a051b4afaefe389d23c64cca7e144b2a",
+      "sha256": "0f6528fbe73e4bfea3da61b43dd6712bce66aadb1a13845cf2912ba4db128791"
+    },
+    {
+      "resource": "SPRITES/NH_perk_sylvan_tactics_forest_cover.png",
+      "role": "sylvan-ambush-perk-native44",
+      "perk": "new-horizons:sylvanLuck.forestCover",
+      "perkName": "Forest Cover",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "25bc179814182ac8c98578c6f3fd7a51a051b4afaefe389d23c64cca7e144b2a",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        42,
+        41
+      ],
+      "sha256": "6ee7e101287b0f880b5c8a885a90f0323eeacce23cfbc9d30744044176d99941"
+    },
+    {
+      "resource": "SPRITES/NH_perk_sylvan_tactics_forest_cover_32.png",
+      "role": "sylvan-ambush-perk-native32",
+      "perk": "new-horizons:sylvanLuck.forestCover",
+      "perkName": "Forest Cover",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "25bc179814182ac8c98578c6f3fd7a51a051b4afaefe389d23c64cca7e144b2a",
+      "dimensions": [
+        32,
+        32
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        30,
+        30
+      ],
+      "sha256": "4758b3bda8de3fc0ef2878f474e864ff7b6a1eb76e52478389bdb806e8d3c032"
+    },
+    {
+      "resource": "SPRITES/NH_perk_sylvan_tactics_forest_cover_disabled.png",
+      "role": "sylvan-ambush-perk-state-disabled",
+      "perk": "new-horizons:sylvanLuck.forestCover",
+      "perkName": "Forest Cover",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "25bc179814182ac8c98578c6f3fd7a51a051b4afaefe389d23c64cca7e144b2a",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        42,
+        41
+      ],
+      "derivedFrom": "SPRITES/NH_perk_sylvan_tactics_forest_cover.png",
+      "sha256": "10550cdaa140ed265372f3915825ab4971d10ba95238626232326c4eebb6ca84"
+    },
+    {
+      "resource": "SPRITES/NH_perk_sylvan_tactics_forest_cover_highlighted.png",
+      "role": "sylvan-ambush-perk-state-highlighted",
+      "perk": "new-horizons:sylvanLuck.forestCover",
+      "perkName": "Forest Cover",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "25bc179814182ac8c98578c6f3fd7a51a051b4afaefe389d23c64cca7e144b2a",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        42,
+        41
+      ],
+      "derivedFrom": "SPRITES/NH_perk_sylvan_tactics_forest_cover.png",
+      "sha256": "e99a98d2bc4ce72eba455956bcdd09aade1a4e5eb8aa33213f586a93c089d86f"
+    },
+    {
+      "resource": "SPRITES/NH_perk_sylvan_tactics_forest_cover_normal.png",
+      "role": "sylvan-ambush-perk-state-normal",
+      "perk": "new-horizons:sylvanLuck.forestCover",
+      "perkName": "Forest Cover",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "25bc179814182ac8c98578c6f3fd7a51a051b4afaefe389d23c64cca7e144b2a",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        42,
+        41
+      ],
+      "derivedFrom": "SPRITES/NH_perk_sylvan_tactics_forest_cover.png",
+      "sha256": "e1d013843bc853d42cb73a96bd29ecd685e139d1b777a1d4b1d32dad9d4b3965"
+    },
+    {
+      "resource": "SPRITES/NH_perk_sylvan_tactics_forest_cover_pressed.png",
+      "role": "sylvan-ambush-perk-state-pressed",
+      "perk": "new-horizons:sylvanLuck.forestCover",
+      "perkName": "Forest Cover",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "25bc179814182ac8c98578c6f3fd7a51a051b4afaefe389d23c64cca7e144b2a",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        42,
+        41
+      ],
+      "derivedFrom": "SPRITES/NH_perk_sylvan_tactics_forest_cover.png",
+      "sha256": "e7a6a62a0a6732f017c79cee5fe431ab6637b8f11f1781f9183ada5c0377f519"
+    },
+    {
+      "resource": "SPRITES/NH_perk_sylvan_tactics_startle.json",
+      "role": "sylvan-ambush-perk-descriptor",
+      "perk": "new-horizons:sylvanLuck.startle",
+      "perkName": "Startle",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "6c916a601d2edc6a829b13bc0fdf686f36a2aac0f8069bbc76d2f7e719c78498",
+      "sha256": "cc85e4c20681acf79ac128b59a0fbb96bdda7587fcb14eb669403e14c5d5ecdd"
+    },
+    {
+      "resource": "SPRITES/NH_perk_sylvan_tactics_startle.png",
+      "role": "sylvan-ambush-perk-native44",
+      "perk": "new-horizons:sylvanLuck.startle",
+      "perkName": "Startle",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "6c916a601d2edc6a829b13bc0fdf686f36a2aac0f8069bbc76d2f7e719c78498",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        42,
+        42
+      ],
+      "sha256": "f89623815465abb8bb8defa7aec55b8c42793e66409e603a0e0818f8ac3dff60"
+    },
+    {
+      "resource": "SPRITES/NH_perk_sylvan_tactics_startle_32.png",
+      "role": "sylvan-ambush-perk-native32",
+      "perk": "new-horizons:sylvanLuck.startle",
+      "perkName": "Startle",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "6c916a601d2edc6a829b13bc0fdf686f36a2aac0f8069bbc76d2f7e719c78498",
+      "dimensions": [
+        32,
+        32
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        30,
+        30
+      ],
+      "sha256": "ef68b6c415531756c2c7cf6d3831793198daff65ba8ec3accb80d31cacffd3e6"
+    },
+    {
+      "resource": "SPRITES/NH_perk_sylvan_tactics_startle_disabled.png",
+      "role": "sylvan-ambush-perk-state-disabled",
+      "perk": "new-horizons:sylvanLuck.startle",
+      "perkName": "Startle",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "6c916a601d2edc6a829b13bc0fdf686f36a2aac0f8069bbc76d2f7e719c78498",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        42,
+        42
+      ],
+      "derivedFrom": "SPRITES/NH_perk_sylvan_tactics_startle.png",
+      "sha256": "f465b60bfa538d19df15f041de060716c1c66b2d7a6e343d9be72048a7c55645"
+    },
+    {
+      "resource": "SPRITES/NH_perk_sylvan_tactics_startle_highlighted.png",
+      "role": "sylvan-ambush-perk-state-highlighted",
+      "perk": "new-horizons:sylvanLuck.startle",
+      "perkName": "Startle",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "6c916a601d2edc6a829b13bc0fdf686f36a2aac0f8069bbc76d2f7e719c78498",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        42,
+        42
+      ],
+      "derivedFrom": "SPRITES/NH_perk_sylvan_tactics_startle.png",
+      "sha256": "1a9df0e29dbc9acfb072d47dbc918be78cda28235555eb41af03c963755b7bf0"
+    },
+    {
+      "resource": "SPRITES/NH_perk_sylvan_tactics_startle_normal.png",
+      "role": "sylvan-ambush-perk-state-normal",
+      "perk": "new-horizons:sylvanLuck.startle",
+      "perkName": "Startle",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "6c916a601d2edc6a829b13bc0fdf686f36a2aac0f8069bbc76d2f7e719c78498",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        42,
+        42
+      ],
+      "derivedFrom": "SPRITES/NH_perk_sylvan_tactics_startle.png",
+      "sha256": "f662d9cdb7e9690b48dc1a024056ddd6fd68f5c0ccf438456e1566843aa6f070"
+    },
+    {
+      "resource": "SPRITES/NH_perk_sylvan_tactics_startle_pressed.png",
+      "role": "sylvan-ambush-perk-state-pressed",
+      "perk": "new-horizons:sylvanLuck.startle",
+      "perkName": "Startle",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "6c916a601d2edc6a829b13bc0fdf686f36a2aac0f8069bbc76d2f7e719c78498",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        42,
+        42
+      ],
+      "derivedFrom": "SPRITES/NH_perk_sylvan_tactics_startle.png",
+      "sha256": "5c69dcd8807b18797a4bb24a200417fa6fa324cfc042801e03c314e768500576"
+    },
+    {
+      "resource": "SPRITES/NH_status_sylvan_ambush_strike.png",
+      "role": "sylvan-ambush-status",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        42,
+        41
+      ],
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "6c8d98d972c2b1bc89bc6b61917e2c798534820fd96a2a9ff1037c0bc7b0d878",
+      "sha256": "cf7a5d5342a3bc5c5379593f7676d3c3e6f299cdc35af570261f862488557e0a"
+    },
+    {
+      "resource": "SPRITES/NH_status_sylvan_concealed.png",
+      "role": "sylvan-ambush-status",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        2,
+        2,
+        42,
+        42
+      ],
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "sourceMasterSha256": "49ce40cdfb7cfae5f7d4c807cec4e5a19e9c75f872a4fceb87f131c6fc1fffb0",
+      "sha256": "e81ca0033eb0b0dd70156d6f17b292983d9d4c00ce8fd9e97cbff8ee967f37a7"
+    },
+    {
+      "resource": "SPRITES/NH_wait_ambush_button.json",
+      "role": "sylvan-ambush-wait-button-descriptor",
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the original Heroes III icm006 Wait frame and state treatment",
+      "sourceMasterSha256": "2427432c5ba17d9371b4f3b760e6dc30f979f3464d67b797cef1e337c01e3e47",
+      "tonedMasterSha256": "d46fcc60f617187159cd34d5ce0689fe0081c9a36ca8175a6f66429a041611fe",
+      "originalFrame": "H3sprite.lod icm006.def",
+      "originalFrameSha256": "7402971fffb61b1a5c1633c984390b9dfd45d65ac00837d9197371a358d2dedb",
+      "sha256": "faf6a2863df0b3c35bfd91ec88e999b4f0e46cc74c44a598d75f02e2fd56570c"
+    },
+    {
+      "resource": "SPRITES/NH_wait_ambush_disabled.png",
+      "role": "sylvan-ambush-wait-button-disabled",
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the original Heroes III icm006 Wait frame and state treatment",
+      "sourceMasterSha256": "2427432c5ba17d9371b4f3b760e6dc30f979f3464d67b797cef1e337c01e3e47",
+      "tonedMasterSha256": "d46fcc60f617187159cd34d5ce0689fe0081c9a36ca8175a6f66429a041611fe",
+      "originalFrame": "H3sprite.lod icm006.def",
+      "originalFrameSha256": "7402971fffb61b1a5c1633c984390b9dfd45d65ac00837d9197371a358d2dedb",
+      "dimensions": [
+        48,
+        36
+      ],
+      "alphaBoundingBox": [
+        0,
+        0,
+        48,
+        36
+      ],
+      "sha256": "23f84e62fad19fc59b2736acef11615e82a82d6512927e938860a6f8ea2826e3"
+    },
+    {
+      "resource": "SPRITES/NH_wait_ambush_highlighted.png",
+      "role": "sylvan-ambush-wait-button-highlighted",
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the original Heroes III icm006 Wait frame and state treatment",
+      "sourceMasterSha256": "2427432c5ba17d9371b4f3b760e6dc30f979f3464d67b797cef1e337c01e3e47",
+      "tonedMasterSha256": "d46fcc60f617187159cd34d5ce0689fe0081c9a36ca8175a6f66429a041611fe",
+      "originalFrame": "H3sprite.lod icm006.def",
+      "originalFrameSha256": "7402971fffb61b1a5c1633c984390b9dfd45d65ac00837d9197371a358d2dedb",
+      "dimensions": [
+        48,
+        36
+      ],
+      "alphaBoundingBox": [
+        0,
+        0,
+        48,
+        36
+      ],
+      "sha256": "fe349eb8105018993e64f16f2b8b809c5b706ddf5f12a705f688e3835fbb2d08"
+    },
+    {
+      "resource": "SPRITES/NH_wait_ambush_normal.png",
+      "role": "sylvan-ambush-wait-button-normal",
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the original Heroes III icm006 Wait frame and state treatment",
+      "sourceMasterSha256": "2427432c5ba17d9371b4f3b760e6dc30f979f3464d67b797cef1e337c01e3e47",
+      "tonedMasterSha256": "d46fcc60f617187159cd34d5ce0689fe0081c9a36ca8175a6f66429a041611fe",
+      "originalFrame": "H3sprite.lod icm006.def",
+      "originalFrameSha256": "7402971fffb61b1a5c1633c984390b9dfd45d65ac00837d9197371a358d2dedb",
+      "dimensions": [
+        48,
+        36
+      ],
+      "alphaBoundingBox": [
+        0,
+        0,
+        48,
+        36
+      ],
+      "sha256": "8b7f50acf7a1305a554132e8fff740aac44de558539e707119df26a85553f443"
+    },
+    {
+      "resource": "SPRITES/NH_wait_ambush_pressed.png",
+      "role": "sylvan-ambush-wait-button-pressed",
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the original Heroes III icm006 Wait frame and state treatment",
+      "sourceMasterSha256": "2427432c5ba17d9371b4f3b760e6dc30f979f3464d67b797cef1e337c01e3e47",
+      "tonedMasterSha256": "d46fcc60f617187159cd34d5ce0689fe0081c9a36ca8175a6f66429a041611fe",
+      "originalFrame": "H3sprite.lod icm006.def",
+      "originalFrameSha256": "7402971fffb61b1a5c1633c984390b9dfd45d65ac00837d9197371a358d2dedb",
+      "dimensions": [
+        48,
+        36
+      ],
+      "alphaBoundingBox": [
+        0,
+        0,
+        48,
+        36
+      ],
+      "sha256": "2853e264caeb74038525c0c7963ec9b8de60d5c3718f5fa86f2f7352ae7f92a2"
+    }
+  ]
+}

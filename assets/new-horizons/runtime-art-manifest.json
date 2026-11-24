@@ -27,7 +27,7 @@
   "requiredFamilyCounts": {
     "academy-town-and-portrait-ui": 463,
     "bug-report-interface-icon": 1,
-    "builtin-skills-perks-orders-and-ui": 3745,
+    "builtin-skills-perks-orders-and-ui": 3773,
     "cabir-and-master": 218,
     "casting-glows": 864,
     "conflux-hero-portraits": 10,
@@ -66477,6 +66477,286 @@
       "family": "academy-town-and-portrait-ui",
       "origin": "Selected Academy town building art animated with original Codex CLI built-in imagegen parts; patch-free full frames for the town structure currentFrameOnly option",
       "selection": "Owner-approved Academy town animation 2026-11-23",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_status_sylvan_concealed.png",
+      "source": "Mods/new-horizons/Images/NH_status_sylvan_concealed.png",
+      "size": 4688,
+      "sha256": "e81ca0033eb0b0dd70156d6f17b292983d9d4c00ce8fd9e97cbff8ee967f37a7",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Sylvan Tactics Ambush status, perk and Wait button art 2026-11-23",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_status_sylvan_ambush_strike.png",
+      "source": "Mods/new-horizons/Images/NH_status_sylvan_ambush_strike.png",
+      "size": 4967,
+      "sha256": "cf7a5d5342a3bc5c5379593f7676d3c3e6f299cdc35af570261f862488557e0a",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Sylvan Tactics Ambush status, perk and Wait button art 2026-11-23",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_sylvan_tactics_forest_cover.png",
+      "source": "Mods/new-horizons/Images/NH_perk_sylvan_tactics_forest_cover.png",
+      "size": 4795,
+      "sha256": "6ee7e101287b0f880b5c8a885a90f0323eeacce23cfbc9d30744044176d99941",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Sylvan Tactics Ambush status, perk and Wait button art 2026-11-23",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_sylvan_tactics_forest_cover_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_sylvan_tactics_forest_cover_32.png",
+      "size": 2657,
+      "sha256": "4758b3bda8de3fc0ef2878f474e864ff7b6a1eb76e52478389bdb806e8d3c032",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Sylvan Tactics Ambush status, perk and Wait button art 2026-11-23",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_sylvan_tactics_forest_cover_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_sylvan_tactics_forest_cover_normal.png",
+      "size": 4804,
+      "sha256": "e1d013843bc853d42cb73a96bd29ecd685e139d1b777a1d4b1d32dad9d4b3965",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Sylvan Tactics Ambush status, perk and Wait button art 2026-11-23",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_sylvan_tactics_forest_cover_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_sylvan_tactics_forest_cover_pressed.png",
+      "size": 4661,
+      "sha256": "e7a6a62a0a6732f017c79cee5fe431ab6637b8f11f1781f9183ada5c0377f519",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Sylvan Tactics Ambush status, perk and Wait button art 2026-11-23",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_sylvan_tactics_forest_cover_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_sylvan_tactics_forest_cover_disabled.png",
+      "size": 4622,
+      "sha256": "10550cdaa140ed265372f3915825ab4971d10ba95238626232326c4eebb6ca84",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Sylvan Tactics Ambush status, perk and Wait button art 2026-11-23",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_sylvan_tactics_forest_cover_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_sylvan_tactics_forest_cover_highlighted.png",
+      "size": 4859,
+      "sha256": "e99a98d2bc4ce72eba455956bcdd09aade1a4e5eb8aa33213f586a93c089d86f",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Sylvan Tactics Ambush status, perk and Wait button art 2026-11-23",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_sylvan_tactics_forest_cover.json",
+      "source": "Mods/new-horizons/Images/NH_perk_sylvan_tactics_forest_cover.json",
+      "size": 477,
+      "sha256": "0f6528fbe73e4bfea3da61b43dd6712bce66aadb1a13845cf2912ba4db128791",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Sylvan Tactics Ambush status, perk and Wait button art 2026-11-23",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_sylvan_tactics_startle.png",
+      "source": "Mods/new-horizons/Images/NH_perk_sylvan_tactics_startle.png",
+      "size": 5442,
+      "sha256": "f89623815465abb8bb8defa7aec55b8c42793e66409e603a0e0818f8ac3dff60",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Sylvan Tactics Ambush status, perk and Wait button art 2026-11-23",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_sylvan_tactics_startle_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_sylvan_tactics_startle_32.png",
+      "size": 2981,
+      "sha256": "ef68b6c415531756c2c7cf6d3831793198daff65ba8ec3accb80d31cacffd3e6",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Sylvan Tactics Ambush status, perk and Wait button art 2026-11-23",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_sylvan_tactics_startle_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_sylvan_tactics_startle_normal.png",
+      "size": 5425,
+      "sha256": "f662d9cdb7e9690b48dc1a024056ddd6fd68f5c0ccf438456e1566843aa6f070",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Sylvan Tactics Ambush status, perk and Wait button art 2026-11-23",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_sylvan_tactics_startle_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_sylvan_tactics_startle_pressed.png",
+      "size": 5355,
+      "sha256": "5c69dcd8807b18797a4bb24a200417fa6fa324cfc042801e03c314e768500576",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Sylvan Tactics Ambush status, perk and Wait button art 2026-11-23",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_sylvan_tactics_startle_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_sylvan_tactics_startle_disabled.png",
+      "size": 5487,
+      "sha256": "f465b60bfa538d19df15f041de060716c1c66b2d7a6e343d9be72048a7c55645",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Sylvan Tactics Ambush status, perk and Wait button art 2026-11-23",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_sylvan_tactics_startle_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_sylvan_tactics_startle_highlighted.png",
+      "size": 5420,
+      "sha256": "1a9df0e29dbc9acfb072d47dbc918be78cda28235555eb41af03c963755b7bf0",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Sylvan Tactics Ambush status, perk and Wait button art 2026-11-23",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_sylvan_tactics_startle.json",
+      "source": "Mods/new-horizons/Images/NH_perk_sylvan_tactics_startle.json",
+      "size": 457,
+      "sha256": "cc85e4c20681acf79ac128b59a0fbb96bdda7587fcb14eb669403e14c5d5ecdd",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Sylvan Tactics Ambush status, perk and Wait button art 2026-11-23",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_sylvan_tactics_apex_predator.png",
+      "source": "Mods/new-horizons/Images/NH_perk_sylvan_tactics_apex_predator.png",
+      "size": 3871,
+      "sha256": "f5d919fffc9e70c9c638fff73eef9d0cc9d284c15c332156c65636f4c155051f",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Sylvan Tactics Ambush status, perk and Wait button art 2026-11-23",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_sylvan_tactics_apex_predator_32.png",
+      "source": "Mods/new-horizons/Images/NH_perk_sylvan_tactics_apex_predator_32.png",
+      "size": 2178,
+      "sha256": "bbd9152a965dfc1e39a59531483e84e72882da4e3478edf0d96c42a5620e606b",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Sylvan Tactics Ambush status, perk and Wait button art 2026-11-23",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_sylvan_tactics_apex_predator_normal.png",
+      "source": "Mods/new-horizons/Images/NH_perk_sylvan_tactics_apex_predator_normal.png",
+      "size": 3848,
+      "sha256": "305fcd24ce6ebe1592dd0c8e0ea01ffdbde1a247e0a41d4ad6f473b14c43f9fb",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Sylvan Tactics Ambush status, perk and Wait button art 2026-11-23",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_sylvan_tactics_apex_predator_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_perk_sylvan_tactics_apex_predator_pressed.png",
+      "size": 3824,
+      "sha256": "c9168cd7c1b7566b7ddc10122eb1fbb2a7de223fc096a6d83fe58f4fc5c4d7f8",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Sylvan Tactics Ambush status, perk and Wait button art 2026-11-23",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_sylvan_tactics_apex_predator_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_perk_sylvan_tactics_apex_predator_disabled.png",
+      "size": 3933,
+      "sha256": "6238ba89588c5296c6f09a67f929771ff9d6dfc5436111e5204fee3d43b9dd07",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Sylvan Tactics Ambush status, perk and Wait button art 2026-11-23",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_sylvan_tactics_apex_predator_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_perk_sylvan_tactics_apex_predator_highlighted.png",
+      "size": 3768,
+      "sha256": "d95205837ddade63c45ece6dbf98efdda740991ba8fac1e86785e99f6cc9267e",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Sylvan Tactics Ambush status, perk and Wait button art 2026-11-23",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_perk_sylvan_tactics_apex_predator.json",
+      "source": "Mods/new-horizons/Images/NH_perk_sylvan_tactics_apex_predator.json",
+      "size": 481,
+      "sha256": "ee9f40c420297b65b8301feb334bdc5cd24fdc6f3dcd3ae4fa7658815db4907f",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
+      "selection": "Owner-approved Sylvan Tactics Ambush status, perk and Wait button art 2026-11-23",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_wait_ambush_normal.png",
+      "source": "Mods/new-horizons/Images/NH_wait_ambush_normal.png",
+      "size": 4260,
+      "sha256": "8b7f50acf7a1305a554132e8fff740aac44de558539e707119df26a85553f443",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the original Heroes III icm006 Wait frame and state treatment",
+      "selection": "Owner-approved Sylvan Tactics Ambush status, perk and Wait button art 2026-11-23",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_wait_ambush_pressed.png",
+      "source": "Mods/new-horizons/Images/NH_wait_ambush_pressed.png",
+      "size": 4076,
+      "sha256": "2853e264caeb74038525c0c7963ec9b8de60d5c3718f5fa86f2f7352ae7f92a2",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the original Heroes III icm006 Wait frame and state treatment",
+      "selection": "Owner-approved Sylvan Tactics Ambush status, perk and Wait button art 2026-11-23",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_wait_ambush_disabled.png",
+      "source": "Mods/new-horizons/Images/NH_wait_ambush_disabled.png",
+      "size": 3510,
+      "sha256": "23f84e62fad19fc59b2736acef11615e82a82d6512927e938860a6f8ea2826e3",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the original Heroes III icm006 Wait frame and state treatment",
+      "selection": "Owner-approved Sylvan Tactics Ambush status, perk and Wait button art 2026-11-23",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_wait_ambush_highlighted.png",
+      "source": "Mods/new-horizons/Images/NH_wait_ambush_highlighted.png",
+      "size": 4020,
+      "sha256": "fe349eb8105018993e64f16f2b8b809c5b706ddf5f12a705f688e3835fbb2d08",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the original Heroes III icm006 Wait frame and state treatment",
+      "selection": "Owner-approved Sylvan Tactics Ambush status, perk and Wait button art 2026-11-23",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_wait_ambush_button.json",
+      "source": "Mods/new-horizons/Images/NH_wait_ambush_button.json",
+      "size": 392,
+      "sha256": "faf6a2863df0b3c35bfd91ec88e999b4f0e46cc74c44a598d75f02e2fd56570c",
+      "family": "builtin-skills-perks-orders-and-ui",
+      "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the original Heroes III icm006 Wait frame and state treatment",
+      "selection": "Owner-approved Sylvan Tactics Ambush status, perk and Wait button art 2026-11-23",
       "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
     }
   ]
