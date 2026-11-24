@@ -69,11 +69,11 @@ class NewHorizonsInitiativeContentTest(unittest.TestCase):
         self.assertIn("LegacyIceBoltSpeedEffect", wrapper)
         self.assertIn("usesNewHorizonsMagicV3()", wrapper)
 
-    def test_slow_is_converted_to_initiative_by_new_horizons_timed_script(self):
-        script = (ROOT / "scripts/spells/timed.lua").read_text(encoding="utf-8")
-        self.assertIn('spellKey == SLOW_SPELL and mechanics:usesNewHorizonsMagic()', script)
-        self.assertIn('nb.type = "STACKS_INITIATIVE"', script)
-        self.assertIn('nb.valueType = "ADDITIVE_VALUE"', script)
+    def test_slow_is_converted_to_initiative_by_native_new_horizons_timed_effect(self):
+        source = (ROOT / "lib/spells/effects/native/TimedConversion.cpp").read_text(encoding="utf-8")
+        block = source.split('if(key == "core:slow" && mechanics->usesNewHorizonsMagic())', 1)[1].split("}", 1)[0]
+        self.assertIn('bonus["type"].String() = "STACKS_INITIATIVE";', block)
+        self.assertIn('bonus["valueType"].String() = "ADDITIVE_VALUE";', block)
 
     def test_arch_mage_keeps_mage_speed_but_has_higher_initiative(self):
         patch = load("Mods/new-horizons/Content/config/creatures/tower.json")

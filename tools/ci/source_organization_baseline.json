@@ -20608,9 +20608,9 @@
         ]
       },
       "owner": "ui_developer",
-      "previous_review": "CLAUDE-METAMAGIC6-PHASE5-20261120",
-      "rationale": "Exact successor for 0.93.1 Castle combat specialties (Volley Command, revised Aerial Supremacy, Benediction of Arms, Pariah, Frost Mantle, Quick Study, Sermon): bounded routing hooks into focused new owners only. Existing extraction deferrals retained; no future growth credit.",
-      "review": "CLAUDE-CASTLE-COMBAT-0931",
+      "previous_review": "CLAUDE-CASTLE-COMBAT-0931",
+      "rationale": "Comment-only successor: one comment now names the native Phantom Army owner instead of the retired Lua script; physical line count, responsibilities and code unchanged. No future growth credit. Previous rationale: Exact successor for 0.93.1 Castle combat specialties (Volley Command, revised Aerial Supremacy, Benediction of Arms, Pariah, Frost Mantle, Quick Study, Sermon): bounded routing hooks into focused new owners only. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-LUA-RETIRE-20261124",
       "review_history": [
         {
           "kind": "exception",
@@ -20623,7 +20623,7 @@
       ],
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "b16099eecb99e8d7cf444c83052db2351004634be5e0e8e68136db0aba896f96"
+      "sha256": "25ae7b0f8e0e6c8452f82f27a2cb3aac0cbc0983046b6211f2f296fead88db14"
     },
     "client/battle/BattleActionsController.cpp::StormOfDaggersSelectionPreview BattleActionsController::getStormOfDaggersSelectionPreview() const#1": {
       "kind": "legacy",
@@ -28141,95 +28141,6 @@
       "review_scope": "numeric-legacy-debt-freeze-only",
       "sha256": "e6fe38941aba809becf1011ee192dc90594c6061ec53aefe2918bf899914d79e"
     },
-    "scripts/damage/damageCalculator.lua": {
-      "completed_p_predecessor": {
-        "kind": "legacy",
-        "lines": 636,
-        "review": "IR-F86-ENGINE-COMPLETE-LEGACY-FREEZE-20261110",
-        "review_status": "INDEPENDENT_COMPLETE_EXACT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
-        "sha256": "489f6ce1e08e578b4a3ef43806fcc177d5b0383af15f14af85e05949b47eea24"
-      },
-      "composition_predecessor_review": "PROPOSED-IR-CURRENT704-REBASED-FINITE-PREREQUISITES-20261031",
-      "deferral": "Retain every inherited extraction deferral of this unit. Before further substantive growth, move the next coherent touched responsibility into its focused owner; this exact routing gives no future growth allowance.",
-      "kind": "exception",
-      "lines": 642,
-      "owner": "gameplay_engineer",
-      "preceding_review": "IR-COMPOSED-FEATURE-NUMERIC-EXACT-20261029",
-      "previous_review": "IR-NH092-ORG-3E82D142-20261116",
-      "rationale": "Exact successor for the 0.93.2 Rampart hero specialties (Use the Ground, Elusive, Patroness, Giant-Slayer, Living Remedy, Sorceress of Enroth, Brittle, Against the Odds, revised Perfect Mount, Treantmoot and Forest Ambush): one-line routing hooks into the focused new owners lib/entities/hero/NewHorizonsRampartSpecialties, lib/battle/NewHorizonsRampartSpecialties, lib/pathfinder/NewHorizonsElusive, server/battles/BattleRampartSpecialtyCasts, server/processors/PatronessVisit and AI/BattleAI/RampartSpecialtyValue. Existing extraction deferrals retained; no future growth credit.",
-      "review": "CLAUDE-RAMPART-0932",
-      "review_category": "urgent-parity-review-trigger",
-      "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
-      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "3400e97dc002df81da394f58aae82abb83fa5fab7e1e1e94dc1b76c5833e0268",
-      "inherited_rampart_deferral": "Owner: ui_developer / gameplay_engineer. Bounded exception for Major System Rework: Leadership attribute restoration, square-root damage scaling, and hero UI panel integration. Hotspots remain subject to ongoing shrinking and modularization policy."
-    },
-    "scripts/damage/damageCalculator.lua::function Script:calculate(battle, info) -- the battle answers the queries that depend on where the blow happens; it rides along with the -- rest of the attack rather than in a global, which a script shared between threads must not have#1": {
-      "completed_p_predecessor": {
-        "kind": "exception",
-        "lines": 117,
-        "review": "IR-ARCANE-INSPIRATION-EXACT-PRODUCTION-20261103",
-        "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_RENDERED_UNRUN",
-        "sha256": "8997d247df94c359a2422e0641a60ec210358896656bc68eb452ec7e3a2d88af"
-      },
-      "composition_predecessor_review": "PROPOSED-IR-CURRENT704-REBASED-FINITE-PREREQUISITES-20261031",
-      "deferral": "Retain every inherited extraction deferral of this unit. Before further substantive growth, move the next coherent touched responsibility into its focused owner; this exact routing gives no future growth allowance.",
-      "kind": "exception",
-      "lines": 119,
-      "owner": "gameplay_engineer",
-      "preceding_review": "IR-COMPOSED-FEATURE-NUMERIC-EXACT-20261029",
-      "previous_review": "IR-COMMAND-AUTHORITY-EXPANDED-BOUNDARY-20261109",
-      "rationale": "Exact successor for the 0.93.2 Rampart hero specialties (Use the Ground, Elusive, Patroness, Giant-Slayer, Living Remedy, Sorceress of Enroth, Brittle, Against the Odds, revised Perfect Mount, Treantmoot and Forest Ambush): one-line routing hooks into the focused new owners lib/entities/hero/NewHorizonsRampartSpecialties, lib/battle/NewHorizonsRampartSpecialties, lib/pathfinder/NewHorizonsElusive, server/battles/BattleRampartSpecialtyCasts, server/processors/PatronessVisit and AI/BattleAI/RampartSpecialtyValue. Existing extraction deferrals retained; no future growth credit.",
-      "review": "CLAUDE-RAMPART-0932",
-      "review_category": "urgent-parity-review-trigger",
-      "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
-      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "fbf3eeed7a9c4db4e3aec019576acfbe236f0cf4af6fa24412066f6b526eb049",
-      "inherited_rampart_deferral": "Before further substantive damage-script growth, extract pure modifier factor composition with explicit damage payload, preserving Defense versus protection distinction, one factor/floor/cap, native casualties and before-defense score semantics. Expanded exact review: Gameplay/engine engineer: use the same focused incoming-defense-factor extraction as the Lua file record, preserving explicit payload inputs and final rounding and validating native/Lua edge cases. Exact118-line correctness fix only; future edits require fresh review."
-    },
-    "scripts/spells/obstacle.lua::function Script:apply(mechanics, server, target)#1": {
-      "kind": "legacy",
-      "lines": 86,
-      "owner": "gameplay_engineer",
-      "rationale": "Existing function owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 86 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "1431d29986e2d2acf36b15d387f3b7481349e5e1c886c5bf75ad1a524bb76071"
-    },
-    "scripts/spells/timed.lua": {
-      "kind": "review",
-      "lines": 544,
-      "owner": "gameplay_engineer",
-      "previous_review": "IR-SPELLBOOK-FULL75-V21-EXACT-SOURCE-20261030",
-      "rationale": "Exact 545 to 544 physical lines. Crusade and configured duration decisions route to shared native utility; convertBonuses shrinks134 to126. Recipient Misfortune and Divine Retribution payout additions call existing exposed deterministic magnitude APIs.",
-      "review": "IR-SHARED84-CURRENT225-EXACT-SOURCE-20261103",
-      "review_scope": "Only exact current source organization, measured span/hash and stated responsibility. Excludes the two identified structural blockers, behavior/save/AI/rendered/platform acceptance and publication authorization.",
-      "review_status": "INDEPENDENT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
-      "sha256": "740fa003b00e18a6752478a76df695f8809090029f197f1856b6a2ee42e6af6d"
-    },
-    "scripts/spells/timed.lua::function Script:apply(mechanics, server, target)#1": {
-      "kind": "legacy",
-      "lines": 109,
-      "owner": "gameplay_engineer",
-      "previous_review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "rationale": "Existing function owned for structural review by gameplay_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 112 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral. Exact Sorcery/Living Armor renewal: Shared SorceryRevision Lua owner absorbs Slow scaling/refresh, preserving timed spell execution and ordering. Physical span 112\u2192109; unchanged limits/coverage.",
-      "review": "IR-SORCERY-LIVINGARMOR-EXACT-METADATA-20261027",
-      "review_scope": "numeric-legacy-debt-freeze-only",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "sha256": "531e186b4c0d1863317cd5ae3c688125974ba5316507dd283e1540b5930a00e5"
-    },
-    "scripts/spells/timed.lua::function Script:convertBonuses(mechanics)#1": {
-      "deferral": " Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split.",
-      "kind": "review",
-      "lines": 126,
-      "owner": "gameplay_engineer",
-      "previous_review": "IR-SPELLBOOK-FULL75-V21-EXACT-SOURCE-20261030",
-      "rationale": "Exact 134 to 126 physical lines. Crusade and configured duration decisions route to shared native utility; convertBonuses shrinks134 to126. Recipient Misfortune and Divine Retribution payout additions call existing exposed deterministic magnitude APIs.",
-      "review": "IR-SHARED84-CURRENT225-EXACT-SOURCE-20261103",
-      "review_scope": "Only exact current source organization, measured span/hash and stated responsibility. Excludes the two identified structural blockers, behavior/save/AI/rendered/platform acceptance and publication authorization.",
-      "review_status": "INDEPENDENT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
-      "sha256": "ff6d701a3b48eb3884669ef58659585508fcf6654b5fc6789f55750c423f3868"
-    },
     "server/CGameHandler.cpp": {
       "completed_p_predecessor": {
         "kind": "legacy",
@@ -30114,17 +30025,6 @@
       "sha256": "90d4679d9e661a2964afd2e1771eb49490c6818c693a23bbe8508b1cdf3b6ce7",
       "review": "CLAUDE-CASTLE-COMBAT-0931",
       "rationale": "Exact successor for 0.93.1 Castle combat specialties (Volley Command, revised Aerial Supremacy, Benediction of Arms, Pariah, Frost Mantle, Quick Study, Sermon): bounded routing hooks into focused new owners only. Existing extraction deferrals retained; no future growth credit."
-    },
-    "scripts/damage/physicalProtection.lua::local function getPhysicalDamageReductionFactor(info)#1": {
-      "kind": "exception",
-      "lines": 81,
-      "sha256": "d2206b460e25673d9be3dcb70b2cbfaa9cf7c9dc4895f6f58e7dd9a06889d057",
-      "review": "CLAUDE-RAMPART-0932",
-      "owner": "gameplay_engineer",
-      "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
-      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "rationale": "Exact successor for the 0.93.2 Rampart hero specialties (Use the Ground, Elusive, Patroness, Giant-Slayer, Living Remedy, Sorceress of Enroth, Brittle, Against the Odds, revised Perfect Mount, Treantmoot and Forest Ambush): one-line routing hooks into the focused new owners lib/entities/hero/NewHorizonsRampartSpecialties, lib/battle/NewHorizonsRampartSpecialties, lib/pathfinder/NewHorizonsElusive, server/battles/BattleRampartSpecialtyCasts, server/processors/PatronessVisit and AI/BattleAI/RampartSpecialtyValue. Existing extraction deferrals retained; no future growth credit.",
-      "deferral": "Retain every inherited extraction deferral of this unit. Before further substantive growth, move the next coherent touched responsibility into its focused owner; this exact routing gives no future growth allowance."
     }
   }
 }

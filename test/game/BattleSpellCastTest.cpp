@@ -913,7 +913,7 @@ INSTANTIATE_TEST_SUITE_P(Heroes, SpellMagnitudeSpecialty, ::testing::Values(
 	// H3-correct rounding base% * floor(heroLevel / targetLevel).
 	MagnitudeCase{"solmyr_chainLightning_cavalier", 45, 19, 10, MagnitudeKind::Damage, 10}, // level 6
 	MagnitudeCase{"alagar_iceBolt_archer",          30, 16,  2, MagnitudeKind::Damage,  7}, // level 2
-	// Per-level scaling applied to healing / raising: heal.lua scales the raise via applySpellBonus.
+	// Per-level scaling applied to healing / raising: native Heal scales the raise via applySpellBonus.
 	MagnitudeCase{"alamar_resurrection", 88, 38,  0, MagnitudeKind::Heal,  9}, // orc, level 3
 	MagnitudeCase{"thant_animateDead",   76, 39, 56, MagnitudeKind::Heal,  8}  // medusa, level 4
 ),
@@ -924,7 +924,7 @@ INSTANTIATE_TEST_SUITE_P(Heroes, SpellMagnitudeSpecialty, ::testing::Values(
 // SPECIAL_FIXED_VALUE_ENCHANT)
 //
 // The specialty nudges the value of the bonus an enchantment spell places on the
-// affected unit (see scripts/timed.lua:applyHeroSpecialty). Each case names the
+// affected unit (see the native Timed::specialty). Each case names the
 // exact bonus the spell provides (e.g. STACKS_SPEED for Haste); the test reads
 // that bonus's value coming from this spell's effect, with and without the
 // specialty, and checks the shift. Positive spells land on the caster's own
@@ -975,7 +975,7 @@ TEST_P(EnchantSpecialty, matchesBaseline)
 	const SpellID spell(c.spellIndex);
 
 	// Read the specialty (type + parameter) straight from config, plus target tier
-	// and spell polarity, to reproduce the shift scripts/timed.lua applies.
+	// and spell polarity, to reproduce the shift the native Timed effect applies.
 	std::shared_ptr<Bonus> specialtyBonus;
 	for(const auto & b : LIBRARY->heroh->objects.at(c.hero)->specialty)
 		if(b->subtype == BonusSubtypeID(spell))
@@ -1284,7 +1284,7 @@ INSTANTIATE_TEST_SUITE_P(Adela, AdelaBlessSpecialty, ::testing::Values(
 // Each hero's only distinction is a spellScalingPercentage specialty: the cast
 // spell's buff/debuff magnitude grows by val% for every <target creature level>
 // hero levels, i.e. val * floor(heroLevel / targetLevel). This is the timed-effect
-// path (scripts/timed.lua:applySpellScaling) of SPECIAL_SPELL_SCALING; the damage
+// path (native Timed::specialty) of SPECIAL_SPELL_SCALING; the damage
 // and heal paths of the same bonus are covered by SpellMagnitudeSpecialty above.
 // ===========================================================================
 

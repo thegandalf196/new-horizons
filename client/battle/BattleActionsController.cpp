@@ -2664,7 +2664,7 @@ std::optional<PhantomArmyPlacementPreview> BattleActionsController::getPhantomAr
 	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
 		return std::nullopt;
 
-	// This is the same read-only landing query used by phantomArmy.lua during
+	// This is the same read-only landing query used by native Phantom Army during
 	// validity checks and creation. Do not choose or mutate a destination here.
 	const BattleHex landingHex = battle->getAvailableHex(creature, side, source->getPosition());
 	if(!landingHex.isAvailable())

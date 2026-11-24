@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[2]
 ACTIONS_H = (ROOT / "client/battle/BattleActionsController.h").read_text(encoding="utf-8")
 ACTIONS_CPP = (ROOT / "client/battle/BattleActionsController.cpp").read_text(encoding="utf-8")
 FIELD_CPP = (ROOT / "client/battle/BattleFieldController.cpp").read_text(encoding="utf-8")
-SPELL_SCRIPT = (ROOT / "scripts/spells/phantomArmy.lua").read_text(encoding="utf-8")
+SPELL_EFFECT = (ROOT / "lib/spells/effects/native/NativePhantomArmy.cpp").read_text(encoding="utf-8")
 COMBAT_TEXTS = (ROOT / "config/newHorizonsCombatTexts.json").read_text(encoding="utf-8")
 
 
@@ -115,13 +115,12 @@ def main() -> None:
     require(blocked, "getPhantomArmyPlacementPreview(source)", "blocked-cast landing validation")
     require(blocked, '"new-horizons.combat.phantomArmy.noLegalPlacement"', "no-legal-placement feedback")
 
-    require(SPELL_SCRIPT,
-        "battle:getAvailableHex(creature, mechanics:getCasterSide(), source:getPosition())",
+    require(SPELL_EFFECT,
+        "getAvailableHex(summon::creature(unit), mechanics->getCasterSide(), unit->getPosition())",
         "authoritative summon landing query")
-    require(SPELL_SCRIPT,
-        "hpDelta = integrityPool(mechanics, source)",
-        "shared SpellEffectValue Integrity basis")
-    require(SPELL_SCRIPT, "unitsDelta = source:getCount()", "shared SpellEffectValue count basis")
+    require(SPELL_EFFECT,
+        "summon::value(mechanics->getPhantomArmyIntegrity(unit), unit->getCount(), summon::creature(unit))",
+        "shared SpellEffectValue Integrity and count basis")
     require(COMBAT_TEXTS,
         '"new-horizons.combat.phantomArmy.preview": "%s (count: %s); Phantom Integrity: %s; landing: %s; hex footprint: %s."',
         "localized count/Integrity/landing text")

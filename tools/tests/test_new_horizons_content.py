@@ -1590,11 +1590,11 @@ class NewHorizonsContentTest(unittest.TestCase):
             with self.subTest(effect=name):
                 self.assertEqual(scripts[name]['implements'], 'spellEffect')
                 self.assertEqual(scripts[name]['script'], 'spells/' + name)
-                self.assertTrue((ROOT / 'scripts/spells' / (name + '.lua')).is_file())
         self.assertEqual(content['phantomArmy']['levels']['none']['battleEffects']
                          ['phantomArmy']['type'], 'core:phantomArmy')
-        phantom_source = (ROOT / 'scripts/spells/phantomArmy.lua').read_text(encoding='utf-8')
-        self.assertNotIn('require("spells/clone")', phantom_source)
+        phantom_source = (ROOT / 'lib/spells/effects/native/NativePhantomArmy.cpp').read_text(encoding='utf-8')
+        self.assertIn('class PhantomArmy final : public UnitEffect', phantom_source)
+        self.assertIn('!unit->isClone()', phantom_source)
         self.assertNotIn('setCloned(', phantom_source)
 
     def test_generated_module_matches_all_canonical_data(self):

@@ -45,8 +45,8 @@ def main():
 
     bonus_enum = (ROOT / "lib/bonuses/BonusEnum.h").read_text()
     assert "BONUS_NAME(LUCKY_STRIKE_DAMAGE_PERCENTAGE)" in bonus_enum
-    damage = (ROOT / "scripts/damage/damageCalculator.lua").read_text()
-    assert 'getBonusValueOfType(info.attacker, info.attackerBonuses, "LUCKY_STRIKE_DAMAGE_PERCENTAGE") / 100' in damage
+    damage = (ROOT / "lib/combatScripts/NativeDamageCalculator.cpp").read_text()
+    assert "facts.attacker.value(BonusType::LUCKY_STRIKE_DAMAGE_PERCENTAGE) / 100" in damage
     print("PASS: Current Sylvan Tactics grants Initiative; historical absent-policy Sylvan Luck retains its captured multipliers")
 
 

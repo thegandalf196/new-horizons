@@ -76,14 +76,14 @@ class StormTargetUI(unittest.TestCase):
         self.assertIn("EShortcut::GLOBAL_CANCEL", panel)
 
     def test_actual_result_uses_resolved_damage_and_casualties_only_for_storm(self):
-        damage = self.read("scripts/spells/damage.lua")
-        self.assertIn('local stormOfDaggers = mechanics:getSpell():getJsonKey() == "new-horizons:stormOfDaggers"', damage)
-        block = damage.split("if stormOfDaggers then", 1)[1].split("\n\t\t\t\tend", 1)[0]
-        self.assertIn("replaceNumbers = { dmg }", block)
-        self.assertIn("unit:getCreature():getNameTextID(unit:getCount())", block)
-        self.assertIn("BattleLog.creaturesPerish(server, battle, unit, killed)", block)
+        damage = self.read("lib/spells/effects/native/DamageApplication.cpp")
+        self.assertIn('const bool daggers = mechanics->getSpell()->getJsonKey() == "new-horizons:stormOfDaggers";', damage)
+        block = damage.split("if(daggers)", 1)[1].split("\n\t\t}", 1)[0]
+        self.assertIn("message.replaceNumber(damage);", block)
+        self.assertIn("nativeEvents::creatureName(unit, unit->getCount())", block)
+        self.assertIn("nativeEvents::perish(context, unit, killed);", block)
         self.assertNotIn("amount", block)
-        self.assertIn("if describe and not stormOfDaggers and firstUnit and totalDamage > 0 then", damage)
+        self.assertIn("if(describeChanges && !daggers && first && totalDamage > 0)", damage)
 
 
 if __name__ == "__main__":

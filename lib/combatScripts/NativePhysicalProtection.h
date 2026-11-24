@@ -10,7 +10,7 @@ class IBonusBearer;
 
 namespace nativeDamage
 {
-/// Owned observations from the canonical physicalProtection.lua bonus queries.
+/// Owned observations from the canonical physical-protection bonus queries.
 /// Source groups retain numeric source / lexical source-ID order, and their
 /// values have already passed through the native BonusList value-type rules.
 struct PhysicalProtectionFacts

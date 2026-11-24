@@ -73,7 +73,6 @@ cp "$REPO_ROOT/launcher/vcmilauncher.desktop" "$APP_DIR/usr/share/applications/"
 echo "Copying config and Mods..."
 cp -r "$REPO_ROOT/config" "$APP_DIR/usr/bin/"
 cp -r "$REPO_ROOT/Mods" "$APP_DIR/usr/bin/"
-cp -r "$REPO_ROOT/scripts" "$APP_DIR/usr/bin/"
 
 # Set up version
 if [[ -z "$VERSION" ]]; then

@@ -9,7 +9,7 @@ import unittest
 ROOT = Path(__file__).resolve().parents[2]
 ACTIONS = (ROOT / "client/battle/BattleActionsController.cpp").read_text()
 FIELD = (ROOT / "client/battle/BattleFieldController.cpp").read_text()
-TELEPORT = (ROOT / "scripts/spells/teleport.lua").read_text()
+TELEPORT = (ROOT / "lib/spells/effects/native/NativeRelocation.cpp").read_text()
 
 
 def body(source, marker):
@@ -48,10 +48,11 @@ class TeleportDestinationHighlighting(unittest.TestCase):
         self.assertIn("m->canBeCastAt(target, problem)", shared)
 
     def test_blocked_and_wide_destinations_remain_shared_authority_rules(self):
-        # isAccessibleForUnit owns full creature-footprint accessibility;
-        # the client must not substitute single-cell or movement-range rules.
-        self.assertIn("isAccessibleForUnit(unit, toHex)", TELEPORT)
-        self.assertIn("hasPenaltyOnLine(fromHex, toHex", TELEPORT)
+        # The native effect's accessibility query owns full creature-footprint
+        # accessibility; the client must not substitute single-cell or movement-range rules.
+        teleport = TELEPORT.split("class Teleport final", 1)[1]
+        self.assertIn("getAccessibility(unit).accessible(to, unit)", teleport)
+        self.assertIn("battleHasPenaltyOnLine(from, to,", teleport)
         click = body(ACTIONS, "BattleActionsController::actionIsLegal(")
         self.assertIn("isCastingPossibleHere(action.spell().toSpell(), selectedStack, targetHex)", click)
 

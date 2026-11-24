@@ -8,7 +8,7 @@ root = Path(__file__).resolve().parents[2]
 source = (root / "client/battle/BattleActionsController.cpp").read_text(encoding="utf-8")
 callback = (root / "lib/battle/CBattleInfoCallback.cpp").read_text(encoding="utf-8")
 payload = (root / "lib/combatScripts/IDamageCalculatorScript.h").read_text(encoding="utf-8")
-calculator = (root / "scripts/damage/damageCalculator.lua").read_text(encoding="utf-8")
+protection = (root / "lib/combatScripts/NativePhysicalProtection.cpp").read_text(encoding="utf-8")
 combat_skills = (root / "lib/battle/NewHorizonsCombatSkills.cpp").read_text(encoding="utf-8")
 status = source.split("std::string BattleActionsController::actionGetStatusMessage(", 1)[1]
 shot = status.split("case PossiblePlayerBattleAction::SHOOT:", 1)[1].split(
@@ -57,16 +57,16 @@ ordinary_attack = combat_skills.split("bool isPhysicalCreatureAttack(", 1)[1].sp
 for token in ("physicalDamage", "isOrdinaryCreatureAttacker(attacker)", "SlotID::WAR_MACHINES_SLOT"):
     assert token in ordinary_attack, token
 
-physical_stage = calculator.split("local function getPhysicalDamageReductionFactor(info)", 1)[1].split(
-    "-- The same four, as methods", 1
+physical_stage = protection.split("const double cap = std::clamp(static_cast<double>(info.physicalDamageReductionCapPercent)", 1)[1].split(
+    "\n}", 1
 )[0]
 for token in (
-    "local cappedDamageFactor = math.max(remainingDamage, 1 - capPercent / 100)",
-    "local reductionIgnorePercent = math.max(0,",
-    "return 1 - (1 - cappedDamageFactor) * (1 - reductionIgnorePercent / 100)",
+    "const double capped = std::max(remaining, 1 - cap / 100);",
+    "const double ignored = std::clamp(static_cast<double>(info.physicalDamageReductionIgnorePercent), 0.0, 100.0);",
+    "return 1 - (1 - capped) * (1 - ignored / 100);",
 ):
     assert token in physical_stage, token
-assert physical_stage.index("local cappedDamageFactor") < physical_stage.index("local reductionIgnorePercent")
+assert physical_stage.index("const double capped") < physical_stage.index("const double ignored")
 assert "physicalDamageReductionIgnorePercent" in payload
 
 print("PASS: three-mark active-perk eligibility, separate Defense/PDR payloads, capped-PDR penetration, and shared hover")

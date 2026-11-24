@@ -1,15 +1,10 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-or-later
-"""Execute The Chosen's Lua lifecycle; native tests cover engine integration."""
+"""The Chosen content and registration; native tests cover engine integration."""
 import unittest
 import json
 from pathlib import Path
 import re
-
-if __package__:
-    from . import test_primary_scale_lua as lua_runner
-else:
-    import test_primary_scale_lua as lua_runner
 
 
 def load(path):
@@ -23,14 +18,6 @@ def load(path):
 
 
 class TheChosenTest(unittest.TestCase):
-    execute = lua_runner.PrimaryScaleLuaTest.execute
-
-    def test_lua54_lifecycle(self):
-        self.execute('lua5.4', True, 'the-chosen.lua')
-
-    def test_luajit_lifecycle(self):
-        self.execute('luajit-5.1', False, 'the-chosen.lua')
-
     def test_registered_current_spell_preserves_historical_definition(self):
         spells = load('Mods/new-horizons/Content/config/spells/newHorizons.json')
         rules = load('config/newHorizonsMagic.json')['spells']
