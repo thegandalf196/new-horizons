@@ -18114,6 +18114,13 @@
       "review_scope": "Exact 126-line callable coverage after a764ff1d5a; no size exception, future growth or native acceptance.",
       "review_status": "AUTHOR_GENERATED_PENDING_INTEGRATOR_REVIEW_NO_NATIVE_ACCEPTANCE",
       "sha256": "7d4299f31029edfc6ed07c7942776e5478805ef156c948a903d95738d06bcfe6"
+    },
+    ".github/workflows/new-horizons-windows-launcher-smokes.yml": {
+      "functions": [],
+      "rationale": "Only embedded code is one Windows PowerShell run block34\u201339: $ErrorActionPreference assignment, two powershell.exe -File invocations of tracked smoke scripts and two exit-code if/throw checks. No function, filter, scriptblock or other callable body in this file; the smoke scripts are inventoried separately.",
+      "review": "CLAUDE-LAUNCHER-SMOKES-WORKFLOW-20261124",
+      "review_status": "AUTHOR_GENERATED_PENDING_INTEGRATOR_REVIEW_NO_NATIVE_ACCEPTANCE",
+      "sha256": "eac717425e093c3d84deead2b8d827e5c8be8f39ff0cb70eadd6532a04c5db17"
     }
   },
   "schema": 1,
