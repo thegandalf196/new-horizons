@@ -9,6 +9,8 @@
  */
 #include "StdInc.h"
 
+#include "../OriginalDataRequirement.h"
+
 #include "../../lib/battle/CObstacleInstance.h"
 #include "../../lib/networkPacks/PacksForClientBattle.h"
 #include "../../lib/serializer/CMemorySerializer.h"
@@ -61,6 +63,9 @@ TEST(OverwhelmingFormulaObstacle, TriggerProxyRetainsOriginalCastIdentityForMine
 
 TEST(OverwhelmingFormulaObstacle, JsonAddAndUpdatePreserveCompleteCapture)
 {
+	// Serializing the obstacle encodes its spell identifier through the loaded game library
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
+
 	for(const auto operation : {BattleChanges::EOperation::ADD, BattleChanges::EOperation::UPDATE})
 	{
 		auto obstacle = hazard(SpellID::LAND_MINE);
@@ -75,6 +80,9 @@ TEST(OverwhelmingFormulaObstacle, JsonAddAndUpdatePreserveCompleteCapture)
 
 TEST(OverwhelmingFormulaObstacle, CurrentBinaryRoundTripPreservesCapturedTokenAndContributors)
 {
+	// Serializing the obstacle encodes its spell identifier through the loaded game library
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
+
 	auto obstacle = hazard(SpellID::FIRE_WALL);
 	CMemorySerializer wire;
 	wire.oser.version = ESerializationVersion::CURRENT;
@@ -99,6 +107,9 @@ TEST(OverwhelmingFormulaObstacle, OlderBinaryDownSaveRejectsNonemptyCaptureBefor
 
 TEST(OverwhelmingFormulaObstacle, OlderBinaryAndMissingJsonCaptureLoadAsNull)
 {
+	// Serializing the obstacle encodes its spell identifier through the loaded game library
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
+
 	auto obstacle = hazard(SpellID::LAND_MINE);
 	obstacle.capturedMdrPenetration = JsonNode();
 	CMemorySerializer old;
