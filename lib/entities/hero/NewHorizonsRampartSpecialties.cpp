@@ -38,70 +38,70 @@ constexpr auto RYLAND = "core:ryland";
 constexpr auto IVOR = "core:ivor";
 
 /// getJsonKey returns by value; compare the held string, never a view of it.
-bool isHero(const CGHeroInstance * hero, const char * key)
+bool isRampartHero(const CGHeroInstance * hero, const char * key)
 {
 	return hero && hero->getHeroType() && hero->getHeroType()->getJsonKey() == key;
 }
 
-int heroLevel(const CGHeroInstance * hero)
+int rampartHeroLevel(const CGHeroInstance * hero)
 {
 	return hero ? std::max(1, static_cast<int>(hero->level)) : 1;
 }
 
-const RampartSpecialtyRules * captured(const CGHeroInstance * hero)
+const RampartSpecialtyRules * rampartCaptured(const CGHeroInstance * hero)
 {
 	return hero && hero->compiledDevelopment() ? &hero->compiledDevelopment()->rampartSpecialties : nullptr;
 }
 
-int integer(const JsonNode & row, const char * key)
+int rampartInteger(const JsonNode & row, const char * key)
 {
 	return static_cast<int>(row[key].Integer());
 }
 
-const JsonNode * child(const JsonNode & row, const char * key)
+const JsonNode * rampartChild(const JsonNode & row, const char * key)
 {
 	return row.Struct().contains(key) ? &row[key] : nullptr;
 }
 
 void validateCombatRows(const JsonNode & row)
 {
-	if(const auto * ground = child(row, "useTheGround"))
+	if(const auto * ground = rampartChild(row, "useTheGround"))
 	{
 		detail::fields(*ground, {"reductionPermille", "reductionPermillePerLevel", "maximumReductionPermille"});
 		detail::requireScaledRow(*ground, "reductionPermille", "reductionPermillePerLevel", "maximumReductionPermille", 750,
 			"Use the Ground reduction");
 	}
-	if(const auto * slayer = child(row, "giantSlayer"))
+	if(const auto * slayer = rampartChild(row, "giantSlayer"))
 	{
 		detail::fields(*slayer, {"damagePermillePerStep", "damagePermillePerStepPerLevel", "maximumDamagePermillePerStep"});
 		detail::requireScaledRow(*slayer, "damagePermillePerStep", "damagePermillePerStepPerLevel", "maximumDamagePermillePerStep",
 			1000, "Giant-Slayer damage per step");
 	}
-	if(const auto * remedy = child(row, "livingRemedy"))
+	if(const auto * remedy = rampartChild(row, "livingRemedy"))
 	{
 		detail::fields(*remedy, {"rounds", "healingBasisPoints", "healingBasisPointsPerLevel", "maximumHealingBasisPoints"});
 		detail::require(detail::integer((*remedy)["rounds"], 1, 5), "Living Remedy rounds");
 		detail::requireScaledRow(*remedy, "healingBasisPoints", "healingBasisPointsPerLevel", "maximumHealingBasisPoints", 10000,
 			"Living Remedy healing");
 	}
-	if(const auto * brittle = child(row, "brittle"))
+	if(const auto * brittle = rampartChild(row, "brittle"))
 	{
 		detail::fields(*brittle, {"damagePermille", "damagePermillePerLevel", "maximumDamagePermille"});
 		detail::requireScaledRow(*brittle, "damagePermille", "damagePermillePerLevel", "maximumDamagePermille", 1000, "Brittle damage");
 	}
-	if(const auto * mount = child(row, "perfectMount"))
+	if(const auto * mount = rampartChild(row, "perfectMount"))
 	{
 		detail::fields(*mount, {"reductionPercent", "reductionPercentPerLevel", "maximumReductionPercent"});
 		detail::requireScaledRow(*mount, "reductionPercent", "reductionPercentPerLevel", "maximumReductionPercent", 100,
 			"Perfect Mount reduction");
 	}
-	if(const auto * moot = child(row, "treantmoot"))
+	if(const auto * moot = rampartChild(row, "treantmoot"))
 	{
 		detail::fields(*moot, {"dendroidReductionPercent", "dendroidReductionPercentPerLevel", "maximumDendroidReductionPercent"});
 		detail::requireScaledRow(*moot, "dendroidReductionPercent", "dendroidReductionPercentPerLevel",
 			"maximumDendroidReductionPercent", 75, "Treantmoot Dendroid reduction");
 	}
-	if(const auto * ambush = child(row, "forestAmbush"))
+	if(const auto * ambush = rampartChild(row, "forestAmbush"))
 	{
 		detail::fields(*ambush, {"shotDamagePercentPerLevel", "maximumShotDamagePercent"});
 		detail::require(detail::integer((*ambush)["shotDamagePercentPerLevel"], 1, 10)
@@ -111,25 +111,25 @@ void validateCombatRows(const JsonNode & row)
 
 void validateOtherRows(const JsonNode & row)
 {
-	if(const auto * elusive = child(row, "elusive"))
+	if(const auto * elusive = rampartChild(row, "elusive"))
 	{
 		detail::fields(*elusive, {"eliteLevel", "championLevel"});
 		detail::require(detail::integer((*elusive)["eliteLevel"], 1, 100) && detail::integer((*elusive)["championLevel"], 1, 100)
 			&& (*elusive)["championLevel"].Integer() >= (*elusive)["eliteLevel"].Integer(), "Elusive guard levels");
 	}
-	if(const auto * patroness = child(row, "patroness"))
+	if(const auto * patroness = rampartChild(row, "patroness"))
 	{
 		detail::fields(*patroness, {"incomePermille", "incomePermillePerLevel", "maximumIncomePermille"});
 		detail::requireScaledRow(*patroness, "incomePermille", "incomePermillePerLevel", "maximumIncomePermille", 1000,
 			"Patroness income share");
 	}
-	if(const auto * sorceress = child(row, "sorceressOfEnroth"))
+	if(const auto * sorceress = rampartChild(row, "sorceressOfEnroth"))
 	{
 		detail::fields(*sorceress, {"baseSpellLevel", "heroLevelsPerSpellLevel"});
 		detail::require(detail::integer((*sorceress)["baseSpellLevel"], 1, 5)
 			&& detail::integer((*sorceress)["heroLevelsPerSpellLevel"], 1, 100), "Sorceress of Enroth spell levels");
 	}
-	if(const auto * odds = child(row, "againstTheOdds"))
+	if(const auto * odds = rampartChild(row, "againstTheOdds"))
 	{
 		detail::fields(*odds, {"luck", "levelsPerLuck", "maximumLuck"});
 		detail::require(detail::integer((*odds)["luck"], 1, 10) && detail::integer((*odds)["levelsPerLuck"], 1, 100)
@@ -153,35 +153,35 @@ RampartSpecialtyRules rampartSpecialtyRules(const JsonNode & development)
 		return result;
 	const auto & row = development[RAMPART_ROW];
 	validateRampartSpecialtyRows(row);
-	if(const auto * ground = child(row, "useTheGround"))
+	if(const auto * ground = rampartChild(row, "useTheGround"))
 		result.useTheGroundPermille = detail::scaledRow(*ground, "reductionPermille", "reductionPermillePerLevel", "maximumReductionPermille");
-	if(const auto * elusive = child(row, "elusive"))
-		result.elusive = ElusiveRules{integer(*elusive, "eliteLevel"), integer(*elusive, "championLevel")};
-	if(const auto * patroness = child(row, "patroness"))
+	if(const auto * elusive = rampartChild(row, "elusive"))
+		result.elusive = ElusiveRules{rampartInteger(*elusive, "eliteLevel"), rampartInteger(*elusive, "championLevel")};
+	if(const auto * patroness = rampartChild(row, "patroness"))
 		result.patronessPermille = detail::scaledRow(*patroness, "incomePermille", "incomePermillePerLevel", "maximumIncomePermille");
-	if(const auto * slayer = child(row, "giantSlayer"))
+	if(const auto * slayer = rampartChild(row, "giantSlayer"))
 		result.giantSlayerPermillePerStep = detail::scaledRow(*slayer, "damagePermillePerStep", "damagePermillePerStepPerLevel",
 			"maximumDamagePermillePerStep");
-	if(const auto * remedy = child(row, "livingRemedy"))
-		result.livingRemedy = LivingRemedyRules{integer(*remedy, "rounds"),
+	if(const auto * remedy = rampartChild(row, "livingRemedy"))
+		result.livingRemedy = LivingRemedyRules{rampartInteger(*remedy, "rounds"),
 			detail::scaledRow(*remedy, "healingBasisPoints", "healingBasisPointsPerLevel", "maximumHealingBasisPoints")};
-	if(const auto * sorceress = child(row, "sorceressOfEnroth"))
-		result.sorceressOfEnroth = SorceressOfEnrothRules{integer(*sorceress, "baseSpellLevel"),
-			integer(*sorceress, "heroLevelsPerSpellLevel")};
-	if(const auto * brittle = child(row, "brittle"))
+	if(const auto * sorceress = rampartChild(row, "sorceressOfEnroth"))
+		result.sorceressOfEnroth = SorceressOfEnrothRules{rampartInteger(*sorceress, "baseSpellLevel"),
+			rampartInteger(*sorceress, "heroLevelsPerSpellLevel")};
+	if(const auto * brittle = rampartChild(row, "brittle"))
 		result.brittlePermille = detail::scaledRow(*brittle, "damagePermille", "damagePermillePerLevel", "maximumDamagePermille");
-	if(const auto * odds = child(row, "againstTheOdds"))
-		result.againstTheOdds = AgainstTheOddsRules{integer(*odds, "luck"), integer(*odds, "levelsPerLuck"),
-			integer(*odds, "maximumLuck")};
-	if(const auto * mount = child(row, "perfectMount"))
+	if(const auto * odds = rampartChild(row, "againstTheOdds"))
+		result.againstTheOdds = AgainstTheOddsRules{rampartInteger(*odds, "luck"), rampartInteger(*odds, "levelsPerLuck"),
+			rampartInteger(*odds, "maximumLuck")};
+	if(const auto * mount = rampartChild(row, "perfectMount"))
 		result.perfectMountPercent = detail::scaledRow(*mount, "reductionPercent", "reductionPercentPerLevel", "maximumReductionPercent");
-	if(const auto * moot = child(row, "treantmoot"))
+	if(const auto * moot = rampartChild(row, "treantmoot"))
 		result.treantmootPercent = detail::scaledRow(*moot, "dendroidReductionPercent", "dendroidReductionPercentPerLevel",
 			"maximumDendroidReductionPercent");
-	if(const auto * ambush = child(row, "forestAmbush"))
+	if(const auto * ambush = rampartChild(row, "forestAmbush"))
 	{
-		const int perLevel = integer(*ambush, "shotDamagePercentPerLevel");
-		result.forestAmbushShotPercent = LevelScaledValue{perLevel, perLevel, integer(*ambush, "maximumShotDamagePercent")};
+		const int perLevel = rampartInteger(*ambush, "shotDamagePercentPerLevel");
+		result.forestAmbushShotPercent = LevelScaledValue{perLevel, perLevel, rampartInteger(*ambush, "maximumShotDamagePercent")};
 	}
 	return result;
 }
@@ -190,11 +190,11 @@ namespace
 {
 int scaledFor(const CGHeroInstance * hero, const char * key, std::optional<LevelScaledValue> RampartSpecialtyRules::*member)
 {
-	const auto * rules = isHero(hero, key) ? captured(hero) : nullptr;
+	const auto * rules = isRampartHero(hero, key) ? rampartCaptured(hero) : nullptr;
 	if(!rules)
 		return 0;
 	const auto & value = std::invoke(member, *rules);
-	return value ? value->at(heroLevel(hero)) : 0;
+	return value ? value->at(rampartHeroLevel(hero)) : 0;
 }
 }
 
@@ -205,10 +205,10 @@ int useTheGroundPermille(const CGHeroInstance * hero)
 
 std::optional<newHorizonsCreatures::CreatureCategory> elusiveGuardRank(const CGHeroInstance * hero)
 {
-	const auto * rules = isHero(hero, KYRRE) ? captured(hero) : nullptr;
+	const auto * rules = isRampartHero(hero, KYRRE) ? rampartCaptured(hero) : nullptr;
 	if(!rules || !rules->elusive)
 		return std::nullopt;
-	const int level = heroLevel(hero);
+	const int level = rampartHeroLevel(hero);
 	using newHorizonsCreatures::CreatureCategory;
 	return level >= rules->elusive->championLevel ? CreatureCategory::CHAMPION
 		: level >= rules->elusive->eliteLevel ? CreatureCategory::ELITE : CreatureCategory::CORE;
@@ -270,23 +270,23 @@ int giantSlayerPermillePerStep(const CGHeroInstance * hero)
 
 int livingRemedyBasisPoints(const CGHeroInstance * hero)
 {
-	const auto * rules = isHero(hero, ULAND) ? captured(hero) : nullptr;
-	return rules && rules->livingRemedy ? rules->livingRemedy->healingBasisPoints.at(heroLevel(hero)) : 0;
+	const auto * rules = isRampartHero(hero, ULAND) ? rampartCaptured(hero) : nullptr;
+	return rules && rules->livingRemedy ? rules->livingRemedy->healingBasisPoints.at(rampartHeroLevel(hero)) : 0;
 }
 
 int livingRemedyRounds(const CGHeroInstance * hero)
 {
-	const auto * rules = isHero(hero, ULAND) ? captured(hero) : nullptr;
+	const auto * rules = isRampartHero(hero, ULAND) ? rampartCaptured(hero) : nullptr;
 	return rules && rules->livingRemedy ? rules->livingRemedy->rounds : 0;
 }
 
 int sorceressFreeSpellLevel(const CGHeroInstance * hero)
 {
-	const auto * rules = isHero(hero, GEM) ? captured(hero) : nullptr;
+	const auto * rules = isRampartHero(hero, GEM) ? rampartCaptured(hero) : nullptr;
 	if(!rules || !rules->sorceressOfEnroth)
 		return 0;
 	const auto & sorceress = *rules->sorceressOfEnroth;
-	return std::min(5, sorceress.baseSpellLevel + heroLevel(hero) / sorceress.heroLevelsPerSpellLevel);
+	return std::min(5, sorceress.baseSpellLevel + rampartHeroLevel(hero) / sorceress.heroLevelsPerSpellLevel);
 }
 
 int brittlePermille(const CGHeroInstance * hero)
@@ -296,23 +296,23 @@ int brittlePermille(const CGHeroInstance * hero)
 
 int againstTheOddsLuck(const CGHeroInstance * hero)
 {
-	const auto * rules = isHero(hero, MELODIA) ? captured(hero) : nullptr;
+	const auto * rules = isRampartHero(hero, MELODIA) ? rampartCaptured(hero) : nullptr;
 	if(!rules || !rules->againstTheOdds)
 		return 0;
 	const auto & odds = *rules->againstTheOdds;
-	return std::min(odds.maximumLuck, odds.luck + heroLevel(hero) / odds.levelsPerLuck);
+	return std::min(odds.maximumLuck, odds.luck + rampartHeroLevel(hero) / odds.levelsPerLuck);
 }
 
 std::optional<int> perfectMountPercent(const CGHeroInstance & hero)
 {
-	const auto * rules = isHero(&hero, AERIS) ? captured(&hero) : nullptr;
-	return rules && rules->perfectMountPercent ? std::optional(rules->perfectMountPercent->at(heroLevel(&hero))) : std::nullopt;
+	const auto * rules = isRampartHero(&hero, AERIS) ? rampartCaptured(&hero) : nullptr;
+	return rules && rules->perfectMountPercent ? std::optional(rules->perfectMountPercent->at(rampartHeroLevel(&hero))) : std::nullopt;
 }
 
 std::optional<int> treantmootPercent(const CGHeroInstance & hero)
 {
-	const auto * rules = isHero(&hero, RYLAND) ? captured(&hero) : nullptr;
-	return rules && rules->treantmootPercent ? std::optional(rules->treantmootPercent->at(heroLevel(&hero))) : std::nullopt;
+	const auto * rules = isRampartHero(&hero, RYLAND) ? rampartCaptured(&hero) : nullptr;
+	return rules && rules->treantmootPercent ? std::optional(rules->treantmootPercent->at(rampartHeroLevel(&hero))) : std::nullopt;
 }
 
 int forestAmbushShotPercent(const CGHeroInstance * hero)
@@ -331,7 +331,7 @@ int specialtyRank(const newHorizonsCreatures::CreatureCategoryRules & rules, Cre
 
 bool rampartSpecialtyRetiresHistorical(const CGHeroInstance & hero)
 {
-	const auto * rules = captured(&hero);
+	const auto * rules = rampartCaptured(&hero);
 	if(!rules || !hero.getHeroType())
 		return false;
 	const std::string key = hero.getHeroType()->getJsonKey();
