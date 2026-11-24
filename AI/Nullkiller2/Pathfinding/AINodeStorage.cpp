@@ -1098,6 +1098,14 @@ ExchangeCandidate HeroChainCalculationTask::calculateExchange(
 		candidate.setCost(candidate.getCost() + waitingCost);
 		candidate.moveRemains = moveRemains;
 	}
+	// Day's March: marched troops limit the carrier; the lost movement is spent time, like Castle Gate.
+	const auto beforeLimit = candidate.moveRemains;
+	candidate.moveRemains = marchLeftExchangeMovement(*exchangeActor, candidate.layer, candidate.moveRemains,
+		*otherParentNode->actor, otherParentNode->layer, otherParentNode->moveRemains,
+		otherParentNode->turns == candidate.turns);
+	if(candidate.moveRemains < beforeLimit)
+		candidate.setCost(candidate.getCost() + static_cast<float>(beforeLimit - candidate.moveRemains)
+			/ exchangeActor->marchDailyMovement(candidate.layer));
 
 	return candidate;
 }

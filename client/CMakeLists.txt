@@ -326,6 +326,8 @@ set(vcmiclientcommon_SRCS
 	CPlayerInterfaceLevelUp.cpp
 	EstatesNetPacks.cpp
 	widgets/GarrisonBulkTransfer.cpp
+	widgets/MarchLeftIndicator.cpp
+	widgets/MarchLeftWarning.cpp
 	windows/CBlacksmithDialog.cpp
 	windows/TownEstateUI.cpp
 	windows/TownEstateUI.h
@@ -548,6 +550,8 @@ set(vcmiclientcommon_HEADERS
 	widgets/CComponentHolder.h
 	widgets/CExchangeController.h
 	widgets/CGarrisonInt.h
+	widgets/MarchLeftIndicator.h
+	widgets/MarchLeftWarning.h
 	widgets/NewHorizonsLeadershipReadback.h
 	widgets/LeadershipEfficiencyBadge.h
 	widgets/LeadershipEfficiencyPresentation.h

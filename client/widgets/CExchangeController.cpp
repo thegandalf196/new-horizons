@@ -15,6 +15,7 @@
 #include "../UIHelper.h"
 
 #include "CGarrisonInt.h"
+#include "MarchLeftWarning.h"
 
 #include "../../lib/GameLibrary.h"
 #include "../../lib/callback/CCallback.h"
@@ -41,6 +42,21 @@ CExchangeController::CExchangeController(ObjectInstanceID hero1, ObjectInstanceI
 }
 
 void CExchangeController::swapArmy()
+{
+	auto transfers = marchLeftWarning::wholeArmy(left, right);
+	for(auto & transfer : transfers)
+		transfer.swap = true;
+	for(auto transfer : marchLeftWarning::wholeArmy(right, left))
+	{
+		transfer.swap = true;
+		transfers.push_back(transfer);
+	}
+	// The warning is modal; resolve both heroes again when it is accepted.
+	marchLeftWarning::confirm(transfers, [leftID = left->id, rightID = right->id]()
+		{ CExchangeController(leftID, rightID).swapArmyNow(); });
+}
+
+void CExchangeController::swapArmyNow()
 {
 	const auto & leftSlots = left->Slots();
 	const auto & rightSlots = right->Slots();
@@ -125,7 +141,11 @@ void CExchangeController::moveArmy(bool leftToRight, std::optional<SlotID> heldS
 	if (source->getCreature(heldSlot.value()) == nullptr)
 		return;
 
-	GAME->interface()->cb->bulkMoveArmy(source->id, target->id, heldSlot.value());
+	const auto sourceID = source->id;
+	const auto targetID = target->id;
+	const auto held = heldSlot.value();
+	marchLeftWarning::confirm(marchLeftWarning::wholeArmy(source, target),
+		[sourceID, targetID, held]() { GAME->interface()->cb->bulkMoveArmy(sourceID, targetID, held); });
 }
 
 void CExchangeController::moveStack(bool leftToRight, SlotID sourceSlot)
@@ -149,16 +169,22 @@ void CExchangeController::moveStack(bool leftToRight, SlotID sourceSlot)
 		return;
 	}
 
+	const auto transfers = marchLeftWarning::move(source, sourceSlot, target, targetSlot);
 	if(target->getCreature(targetSlot))
 	{
-		GAME->interface()->cb->mergeStacks(source, target, sourceSlot, targetSlot);
+		marchLeftWarning::confirm(transfers, [source = source, target = target, sourceSlot, targetSlot]()
+			{ GAME->interface()->cb->mergeStacks(source, target, sourceSlot, targetSlot); });
 		return;
 	}
 
+	const auto mergeOrSwap = [source = source, target = target, sourceSlot, targetSlot]()
+	{
+		GAME->interface()->cb->mergeOrSwapStacks(source, target, sourceSlot, targetSlot);
+	};
 	if(mustKeepLastSourceCreature)
 	{
 		// Whole-stack intent retains the source's required last creature.
-		GAME->interface()->cb->mergeOrSwapStacks(source, target, sourceSlot, targetSlot);
+		marchLeftWarning::confirm(transfers, mergeOrSwap);
 		return;
 	}
 
@@ -168,7 +194,7 @@ void CExchangeController::moveStack(bool leftToRight, SlotID sourceSlot)
 	if(!UIHelper::checkArmySlot(target, targetSlot, creature->getId()))
 		return;
 
-	GAME->interface()->cb->mergeOrSwapStacks(source, target, sourceSlot, targetSlot);
+	marchLeftWarning::confirm(transfers, mergeOrSwap);
 }
 
 void CExchangeController::moveSingleStackCreature(bool leftToRight, SlotID sourceSlot, bool forceEmptySlotTarget)
@@ -195,7 +221,10 @@ void CExchangeController::moveSingleStackCreature(bool leftToRight, SlotID sourc
 	{
 		if(!UIHelper::checkArmySlot(target, targetSlot, creature->getId()))
 			return;
-		GAME->interface()->cb->splitStack(source, target, sourceSlot, targetSlot, target->getStackCount(targetSlot) + 1);
+		const int amount = target->getStackCount(targetSlot) + 1;
+		marchLeftWarning::confirm(marchLeftWarning::move(source, sourceSlot, target, targetSlot),
+			[source = source, target = target, sourceSlot, targetSlot, amount]()
+			{ GAME->interface()->cb->splitStack(source, target, sourceSlot, targetSlot, amount); });
 	}
 }
 

@@ -1112,6 +1112,7 @@ set(test_SRCS
 		server/NewHorizonsAstrologyTest.cpp
 		server/NewHorizonsCastleGateTest.cpp
 		server/NewHorizonsLeadershipAdmissionTest.cpp
+		server/NewHorizonsMarchLeftTest.cpp
 		server/CurrentArmyArrangementTest.cpp
 		server/NewHorizonsTownSiegeLeadershipTest.cpp
 		server/NewHorizonsUpgradeLeadershipParityTest.cpp
@@ -1533,6 +1534,7 @@ if(ENABLE_NULLKILLER2_AI)
 		nullkiller2/Pathfinding/AIPathNodePoolTest.cpp
 		nullkiller2/Pathfinding/ArmyLossTest.cpp
 		nullkiller2/Pathfinding/ChainReconstructionTest.cpp
+		nullkiller2/Pathfinding/MarchLeftChainTest.cpp
 		nullkiller2/Pathfinding/DimensionDoorActionTest.cpp
 		nullkiller2/Pathfinding/CastleGateActionTest.cpp
 		nullkiller2/Pathfinding/AdventureSpellDailyPathfindingTest.cpp

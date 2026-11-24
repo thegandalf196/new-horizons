@@ -11,6 +11,8 @@
 	"new-horizons.command.slot.name.champion": "Champion",
 	"new-horizons.command.slot.lockedMarker": "Locked",
 	"new-horizons.command.slot.lockedStatus": "%SLOT% is locked.",
+	"new-horizons.marchLeft.hoverSuffix": ": %PERCENT%% of today's march left",
+	"new-horizons.marchLeft.exchangeWarning": "These troops have %PERCENT%% of today's march left. %HERO% will have %LEFT% movement left (was %WAS%).",
 	"new-horizons.command.slot.unlockedMarker": "Unlocked",
 	"new-horizons.command.slot.unlock": "%SLOT%: %STATUS% (Command %REQUIRED%).",
 	"new-horizons.command.slot.locked": "Locked slot. Requires Command %REQUIRED%.",

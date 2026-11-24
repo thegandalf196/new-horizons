@@ -163,6 +163,7 @@ public:
 	virtual void visitSetNewHorizonsSageGuildVisit(SetNewHorizonsSageGuildVisit & pack) {}
 	virtual void visitSetNewHorizonsDiplomacyState(SetNewHorizonsDiplomacyState & pack) {}
 	virtual void visitSetNewHorizonsDemonicReserve(SetNewHorizonsDemonicReserve & pack) {}
+	virtual void visitLowerStackMarchLeft(LowerStackMarchLeft & pack) {}
 	virtual void visitSetPortalDwellingSource(SetPortalDwellingSource & pack) {}
 	virtual void visitShowWorldViewEx(ShowWorldViewEx & pack) {}
 	virtual void visitEndTurn(EndTurn & pack) {}

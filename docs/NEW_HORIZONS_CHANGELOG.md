@@ -7,6 +7,38 @@ and revisions as the game develops.
 For individual perk effects, spell formulas, creature statistics and Order rules,
 read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 
+## 0.94.0-beta.5
+
+- **Day's March ends hero chaining.** Troops now remember how much of the day's
+  march they have left. When a hero moves, his troops keep only the share of
+  his daily movement he has left. A hero who takes troops can move at most the
+  share of his own day that those troops have left: if they have 25% of
+  today's march left, he keeps at most 25% of his daily movement. Handing an
+  army from hero to hero in one day no longer carries it further.
+  - The hero who gives the troops keeps his movement. A hero can leave marched
+    troops behind to stay unaffected.
+  - Troops that have not marched today (newly recruited, waiting in a town all
+    day or just joined) have their whole march left. Every stack's march is
+    full again at the start of each day. Artifacts, spells and war machines
+    have no march.
+  - Troops left in a town or garrison keep their march left; the next hero who
+    takes them the same day is limited too. Merging keeps the smaller march
+    left; splitting a stack copies it.
+  - The exchange window warns you before a transfer would lower a hero's
+    movement, for example "These troops have 25% of today's march left. Gem
+    will have 450 movement left (was 1800)." In the exchange window, the hero
+    screen and a town's garrison, a stack that has marched shows a movement
+    bar on its left edge, and pointing at it adds "25% of today's march left"
+    to the status bar text.
+  - A hero dismissed after marching no longer comes back from the tavern the
+    same day with his movement restored. Skeletons made in the Skeleton
+    Transformer keep the march left of the troops they were.
+  - The AI plans its exchanges with the same rule, prefers fresh troops, and
+    does not move marched troops into a main hero when that would leave him
+    almost unable to move.
+  - Saved games keep working: their troops start with a full day's march, and
+    the rule applies from the next move.
+
 ## 0.94.0-beta.4
 
 Castle prayers move into the spellbook, a new Warcasting Skill arrives,

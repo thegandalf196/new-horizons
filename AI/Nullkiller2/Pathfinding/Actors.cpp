@@ -13,6 +13,7 @@
 #include "../Engine/Nullkiller.h"
 #include "../../../lib/mapObjects/MapObjects.h"
 #include "../../../lib/mapping/TerrainTile.h"
+#include "../../../lib/pathfinder/NewHorizonsMarchLeft.h"
 #include "../../../lib/pathfinder/TurnInfo.h"
 #include "Actions/BuyArmyAction.h"
 
@@ -47,6 +48,12 @@ ChainActor::ChainActor(const CGHeroInstance * hero, HeroRole heroRole, uint64_t 
 	initialTurn = 0;
 	armyValue = getHeroArmyStrengthWithCommander(hero, hero);
 	heroFightingStrength = normalizeHeroStrength(hero->getHeroStrength());
+	if(newHorizonsMarchLeft::appliesTo(*hero))
+	{
+		const auto turnInfo = hero->getTurnInfo(0);
+		marchLandMovement = turnInfo->getMaxMovePoints(EPathfindingLayer::LAND);
+		marchSeaMovement = turnInfo->getMaxMovePoints(EPathfindingLayer::SAIL);
+	}
 }
 
 ChainActor::ChainActor(const ChainActor * carrier, const ChainActor * other, const CCreatureSet * heroArmy)
@@ -55,6 +62,8 @@ ChainActor::ChainActor(const ChainActor * carrier, const ChainActor * other, con
 	actorExchangeCount(carrier->actorExchangeCount + other->actorExchangeCount), armyCost(carrier->armyCost + other->getArmyCostForBuyer(carrier->hero)), actorAction()
 {
 	armyValue = getHeroArmyStrengthWithCommander(hero, heroArmy);
+	marchLandMovement = carrier->marchLandMovement;
+	marchSeaMovement = carrier->marchSeaMovement;
 }
 
 ChainActor::ChainActor(const CGObjectInstance * obj, const CCreatureSet * creatureSet, uint64_t chainMask, int initialTurn)
@@ -135,6 +144,20 @@ void ChainActor::setBaseActor(HeroActor * base)
 	armyCost = base->armyCost;
 	actorAction = base->actorAction;
 	actorExchangeCount = base->actorExchangeCount;
+	marchLandMovement = base->marchLandMovement;
+	marchSeaMovement = base->marchSeaMovement;
+}
+
+int NK2AI::marchLeftExchangeMovement(const ChainActor & carrier, EPathfindingLayer carrierLayer,
+	int carrierMoveRemains, const ChainActor & other, EPathfindingLayer otherLayer,
+	int otherMoveRemains, bool marchedOnMeetingDay)
+{
+	const int carrierDaily = carrier.marchDailyMovement(carrierLayer);
+	const int otherDaily = other.marchDailyMovement(otherLayer);
+	if(!marchedOnMeetingDay || !other.isMovable || carrierDaily <= 0 || otherDaily <= 0)
+		return carrierMoveRemains;
+	const int left = newHorizonsMarchLeft::marchLeft(otherMoveRemains, otherDaily);
+	return newHorizonsMarchLeft::movementAfterReceiving(carrierMoveRemains, carrierDaily, left);
 }
 
 void HeroActor::setupSpecialActors()

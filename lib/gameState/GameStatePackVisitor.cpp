@@ -28,6 +28,7 @@
 #include "../pathfinder/NewHorizonsProtectedMobility.h"
 #include "../TerrainHandler.h"
 #include "../pathfinder/NewHorizonsLighthouse.h"
+#include "../pathfinder/NewHorizonsMarchLeft.h"
 #include "../pathfinder/CPathfinder.h"
 #include "../pathfinder/PathfinderOptions.h"
 #include "../pathfinder/TurnInfo.h"
@@ -713,7 +714,20 @@ void GameStatePackVisitor::visitSetNewHorizonsDiplomacyState(SetNewHorizonsDiplo
 void GameStatePackVisitor::visitSetNewHorizonsDemonicReserve(SetNewHorizonsDemonicReserve & pack)
 {
 	if(auto * hero = gs.getHero(pack.heroId))
+	{
+		// Withdrawn creatures marched with the hero; the reserve must not refresh them.
+		newHorizonsMarchLeft::recordReserveWithdrawal(*hero, pack.reserve, gs.getCalendar().getCurrentDay());
 		hero->setDemonicReserve(std::move(pack.reserve));
+	}
+}
+
+void GameStatePackVisitor::visitLowerStackMarchLeft(LowerStackMarchLeft & pack)
+{
+	auto * army = gs.getArmyInstance(pack.army);
+	if(!army || !army->hasStackAtSlot(pack.slot) || pack.day != gs.getCalendar().getCurrentDay()
+		|| pack.marchLeft < 0 || pack.marchLeft >= newHorizonsMarchLeft::FULL)
+		throw std::runtime_error("Invalid march left stack packet");
+	army->getStackPtr(pack.slot)->lowerMarchLeft(pack.day, pack.marchLeft);
 }
 
 void GameStatePackVisitor::visitSetPortalDwellingSource(SetPortalDwellingSource & pack)
@@ -750,7 +764,15 @@ void GameStatePackVisitor::visitSetMovePoints(SetMovePoints & pack)
 		return;
 	}
 	assert(hero);
+	if(pack.marchLeftLimit)
+	{
+		if(!hero || pack.val > hero->movementPointsRemaining())
+			throw std::runtime_error("A march left limit can only lower Movement");
+		hero->setMovementPoints(pack.val);
+		return;
+	}
 	hero->setMovementPoints(pack.val);
+	newHorizonsMarchLeft::recordMarch(*hero, gs.getCalendar().getCurrentDay());
 }
 
 void GameStatePackVisitor::visitFoWChange(FoWChange & pack)
@@ -1201,6 +1223,7 @@ void GameStatePackVisitor::visitTryMoveHero(TryMoveHero & pack)
 
 	if (fromTile.getTerrainID() != destTile.getTerrainID())
 		h->nodeHasChanged(); // update bonuses with terrain limiter
+	newHorizonsMarchLeft::recordMarch(*h, gs.getCalendar().getCurrentDay());
 }
 
 void GameStatePackVisitor::visitNewStructures(NewStructures & pack)

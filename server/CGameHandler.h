@@ -387,6 +387,12 @@ public:
 private:
 	class StackArrangement;
 	void notifyCannotMoveLastCreature(PlayerColor player);
+	/// Lowers each hero that received marched troops in this operation (Day's March).
+	void applyMarchLeftLimits(const CGarrisonOperationPack & pack);
+	/// Least march left today among these slots (a whole day when none has marched).
+	int lowestMarchLeft(const CArmedInstance & army, const std::vector<SlotID> & slots);
+	/// Lowers a stack that absorbed other stacks (Skeleton Transformer) to their march left.
+	void carryMarchLeft(const CArmedInstance & army, SlotID slot, int marchLeft);
 	void initializeRecruitmentForBuilding(const CGTownInstance * town, BuildingID buildingID);
 	void stampPhysicalAfflictionEffects(SetStackEffect & effects);
 

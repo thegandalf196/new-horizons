@@ -39,6 +39,7 @@
 #include "../widgets/MiscWidgets.h"
 #include "../widgets/CComponent.h"
 #include "../widgets/CGarrisonInt.h"
+#include "../widgets/MarchLeftWarning.h"
 #include "../widgets/CTextInput.h"
 #include "../widgets/Buttons.h"
 #include "../widgets/TextControls.h"
@@ -1208,7 +1209,12 @@ void HeroSlots::swapArmies()
 	visitingHero->setHighlight(false);
 
 	if (allow)
-		GAME->interface()->cb->swapGarrisonHero(town);
+	{
+		// Entering the garrison takes the town's troops into the hero's army.
+		const auto transfers = !town->getGarrisonHero()
+			? marchLeftWarning::wholeArmy(town, town->getVisitingHero()) : marchLeftWarning::Transfers();
+		marchLeftWarning::confirm(transfers, [town = town]() { GAME->interface()->cb->swapGarrisonHero(town); });
+	}
 }
 
 CCastleBuildings::CCastleBuildings(const CGTownInstance* Town):

@@ -4,6 +4,7 @@
  */
 #include "StdInc.h"
 #include "CGarrisonInt.h"
+#include "MarchLeftWarning.h"
 #include "../CPlayerInterface.h"
 #include "../GameInstance.h"
 #include "../../lib/callback/CCallback.h"
@@ -51,7 +52,10 @@ void CGarrisonInt::bulkMoveArmy(const CGarrisonSlot * selected)
 	}
 
 	const auto srcSlot = selected->ID;
-	GAME->interface()->cb->bulkMoveArmy(srcArmy->id, destArmy->id, srcSlot);
+	const auto srcID = srcArmy->id;
+	const auto destID = destArmy->id;
+	marchLeftWarning::confirm(marchLeftWarning::wholeArmy(srcArmy, destArmy),
+		[srcID, destID, srcSlot]() { GAME->interface()->cb->bulkMoveArmy(srcID, destID, srcSlot); });
 }
 
 void CGarrisonInt::bulkMergeStacks(const CGarrisonSlot * selected)

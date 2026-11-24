@@ -484,6 +484,7 @@ void CCreatureSet::joinStack(const SlotID & slot, std::unique_ptr<CStackInstance
 	auto receipt = getStackPtr(slot)->getTrainingReceipt();
 	receipt.merge(stack->getTrainingReceipt());
 	getStackPtr(slot)->setTrainingReceipt(receipt);
+	getStackPtr(slot)->mergeMarchLeft(*stack);
 	//TODO move stuff
 	changeStackCount(slot, stack->getCount());
 	giveTotalStackExperience(slot, stack->getTotalExperience());
@@ -501,6 +502,7 @@ std::unique_ptr<CStackInstance> CCreatureSet::splitStack(const SlotID & slot, TQ
 	auto newStack = std::make_unique<CStackInstance>(currentStack->cb, currentStack->getCreatureID(), toSplit);
 	newStack->giveTotalStackExperience(experienceBefore - experienceAfter);
 	newStack->setTrainingReceipt(currentStack->getTrainingReceipt());
+	newStack->copyMarchLeft(*currentStack);
 
 	return newStack;
 }

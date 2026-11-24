@@ -15,6 +15,7 @@
 #include "../NewHorizonsGlyphsOfFear.h"
 #include "../CGTownInstance.h"
 #include "../../battle/NewHorizonsDiscipline.h"
+#include "../../pathfinder/NewHorizonsMarchLeft.h"
 
 #include "../../CConfigHandler.h"
 #include "../../GameLibrary.h"
@@ -193,6 +194,30 @@ ImagePath CStackInstance::bonusToGraphics(const std::shared_ptr<Bonus> & bonus) 
 	if(!bonus->customIconPath.empty())
 		return bonus->customIconPath;
 	return LIBRARY->getBth()->bonusToGraphics(bonus);
+}
+
+void CStackInstance::lowerMarchLeft(int day, int left)
+{
+	const int value = std::clamp(left, 0, newHorizonsMarchLeft::FULL);
+	if(value >= newHorizonsMarchLeft::FULL || day < marchLeftDay)
+		return;
+	if(day != marchLeftDay)
+	{
+		marchLeftDay = day;
+		marchLeft = newHorizonsMarchLeft::FULL;
+	}
+	marchLeft = static_cast<uint16_t>(std::min<int>(marchLeft, value));
+}
+
+void CStackInstance::mergeMarchLeft(const CStackInstance & other)
+{
+	lowerMarchLeft(other.marchLeftDay, other.marchLeft);
+}
+
+void CStackInstance::copyMarchLeft(const CStackInstance & other)
+{
+	marchLeftDay = other.marchLeftDay;
+	marchLeft = other.marchLeft;
 }
 
 void CStackInstance::setTrainingReceipt(const newHorizonsTraining::Receipt & receipt)

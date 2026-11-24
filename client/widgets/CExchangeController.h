@@ -23,6 +23,8 @@ public:
 	void moveArtifacts(bool leftToRight, bool equipped, bool baclpack);
 
 private:
+	void swapArmyNow();
+
 	const CGHeroInstance * left;
 	const CGHeroInstance * right;
 };

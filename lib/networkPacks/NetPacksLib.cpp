@@ -721,6 +721,11 @@ void SetNewHorizonsDiplomacyState::visitTyped(ICPackVisitor & visitor)
 	visitor.visitSetNewHorizonsDiplomacyState(*this);
 }
 
+void LowerStackMarchLeft::visitTyped(ICPackVisitor & visitor)
+{
+	visitor.visitLowerStackMarchLeft(*this);
+}
+
 void SetNewHorizonsDemonicReserve::visitTyped(ICPackVisitor & visitor)
 {
 	visitor.visitSetNewHorizonsDemonicReserve(*this);

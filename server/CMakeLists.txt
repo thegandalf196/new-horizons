@@ -100,6 +100,7 @@ set(vcmiservercommon_SRCS
 		NeutralMonsterPopulation.cpp
 		HeroLevelProgression.cpp
 		StackArrangement.cpp
+		MarchLeftLimits.cpp
 		ArtifactPurchases.cpp
 		HeroLevelUpPreparation.cpp
 		HeroSkillProgression.cpp

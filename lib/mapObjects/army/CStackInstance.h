@@ -47,6 +47,10 @@ class DLL_LINKAGE CStackInstance : public CBonusSystemNode, public CStackBasicDe
 
 	newHorizonsTraining::Receipt trainingReceipt;
 	TExpType totalExperience; //commander needs same amount of exp as hero
+	/// Day's March: the day it belongs to and that day's share of the march left,
+	/// in parts of 10000 (newHorizonsMarchLeft::FULL); any other day is a full day.
+	int32_t marchLeftDay = -1;
+	uint16_t marchLeft = 10000;
 public:
 	struct RandomStackInfo
 	{
@@ -76,6 +80,13 @@ public:
 					|| bonus->stacking == "new-horizons:reinforcementDrill")
 					throw std::runtime_error("Cannot discard strategic training bonus");
 	}
+	/// Today's share of the march left in parts of newHorizonsMarchLeft::FULL; a full day on any other day.
+	int getMarchLeft(int day) const { return day == marchLeftDay ? marchLeft : 10000; }
+	/// March left never rises during a day; a new day starts full.
+	void lowerMarchLeft(int day, int left);
+	/// Merging keeps the lower march left of the current day; splitting copies it.
+	void mergeMarchLeft(const CStackInstance & other);
+	void copyMarchLeft(const CStackInstance & other);
 	CArmedInstance * getArmy();
 	const CArmedInstance * getArmy() const; //stack must be part of some army, army must be part of some object
 	void setArmy(CArmedInstance * ArmyObj);
@@ -104,6 +115,17 @@ public:
 		h & trainingReceipt;
 		if(!h.saving)
 			setTrainingReceipt(trainingReceipt);
+		// Daily state: an older format forgets only today's march, so it is not refused.
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_MARCH_LEFT))
+		{
+			h & marchLeftDay;
+			h & marchLeft;
+		}
+		else if(!h.saving)
+		{
+			marchLeftDay = -1;
+			marchLeft = 10000;
+		}
 	}
 
 	void serializeJson(JsonSerializeFormat & handler);

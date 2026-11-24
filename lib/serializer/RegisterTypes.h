@@ -359,4 +359,5 @@ void registerTypes(Serializer &s)
 	s.template registerType<EstatesKingdomChanged>(314);
 	s.template registerType<AssignTownSteward>(315);
 	s.template registerType<SetNewHorizonsSpellPractice>(316);
+	s.template registerType<LowerStackMarchLeft>(317);
 }

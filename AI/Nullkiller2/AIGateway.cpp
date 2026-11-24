@@ -50,6 +50,7 @@
 #include "../../lib/entities/hero/NewHorizonsCastleAdventureSpecialties.h"
 
 #include "AIGateway.h"
+#include "Helpers/MarchLeftTransfer.h"
 #include "Goals/Goals.h"
 #include "Helpers/ArmyFormation.h"
 #include "Helpers/RouteMovement.h"
@@ -1579,6 +1580,13 @@ void AIGateway::pickBestCreatures(const CArmedInstance * destinationArmy, const 
 
 	const auto * receiverHero = dynamic_cast<const CGHeroInstance *>(destinationArmy);
 	const auto * sourceHero = dynamic_cast<const CGHeroInstance *>(source);
+	if(receiverHero && nullkiller->heroManager->getHeroRoleOrDefaultInefficient(receiverHero) == HeroRole::MAIN
+		&& marchLeftTransfer::strandsReceiver(*receiverHero, *source, cc->getCalendar().getCurrentDay()))
+	{
+		logAi->debug("Day's March: keeping troops of %d out of main hero %s today",
+			source->id.getNum(), receiverHero->getNameTextID());
+		return;
+	}
 	if(armyFormation::hasLeadershipCapacityRules(receiverHero, destinationArmy)
 		|| armyFormation::hasLeadershipCapacityRules(receiverHero, source)
 		|| armyFormation::hasLeadershipCapacityRules(sourceHero, destinationArmy)
@@ -1908,6 +1916,9 @@ void AIGateway::endTurn()
 	}
 
 	logAi->debug("Resources at the end of turn: %s", cc->getResourceAmount().toString());
+	for(const auto * hero : cc->getHeroesInfo())
+		logAi->info("Hero %s ends the day with %d of %d movement", hero->getNameTextID(),
+			hero->movementPointsRemaining(), hero->movementPointsLimit());
 
 	if(cc->getPlayerStatus(playerID) != EPlayerStatus::INGAME)
 	{

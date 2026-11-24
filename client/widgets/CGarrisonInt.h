@@ -28,6 +28,7 @@ enum class EGarrisonType
 };
 
 /// A single garrison slot which holds one creature of a specific amount
+class MarchLeftIndicator;
 class CGarrisonSlot : public CIntObject
 {
 	SlotID ID; //for identification
@@ -41,6 +42,7 @@ class CGarrisonSlot : public CIntObject
 	std::shared_ptr<CAnimImage> artifactImage;
 	std::shared_ptr<CAnimImage> selectionImage; // image for selection, not always visible
 	std::shared_ptr<CLabel> stackCount;
+	std::shared_ptr<MarchLeftIndicator> marchIndicator;
 	leadershipPresentation::ReadoutCache leadershipReadout;
 	int displayedLeadershipPercent = -1;
 

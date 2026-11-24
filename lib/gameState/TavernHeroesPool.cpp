@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "TavernHeroesPool.h"
+#include "../pathfinder/NewHorizonsMarchLeft.h"
 
 #include "CGameState.h"
 
@@ -61,6 +62,9 @@ void TavernHeroesPool::setHeroForPlayer(PlayerColor player, TavernHeroSlot slot,
 
 	auto h = owner->getMap().tryGetFromHeroPool(hero);
 	assert(h != nullptr);
+	// A hero who marched today (or took marched troops) and was dismissed must not
+	// come back from the tavern the same day with his spent movement restored.
+	const bool marchedToday = newHorizonsMarchLeft::hasMarchedToday(*h, owner->getCalendar().getCurrentDay());
 
 	if(army && h->getArmyCommand())
 	{
@@ -80,7 +84,8 @@ void TavernHeroesPool::setHeroForPlayer(PlayerColor player, TavernHeroSlot slot,
 
 	if (replenishPoints)
 	{
-		h->setMovementPoints(h->movementPointsLimit());
+		if(!marchedToday)
+			h->setMovementPoints(h->movementPointsLimit());
 		h->setNormalSpellPoints(h->manaLimit());
 	}
 

@@ -32,6 +32,7 @@ set(Nullkiller2_SRCS
 		Helpers/LeadershipEvaluation.cpp
 		Helpers/RecruitmentRowPlan.cpp
 		Helpers/TreasureChestChoice.cpp
+		Helpers/MarchLeftTransfer.cpp
 		Analyzers/ArmyRecruitmentForecast.cpp
 		Analyzers/HeroManager.cpp
 		Engine/Settings.cpp
@@ -137,6 +138,7 @@ set(Nullkiller2_HEADERS
 		Helpers/LeadershipEvaluation.h
 		Helpers/RecruitmentRowPlan.h
 		Helpers/TreasureChestChoice.h
+		Helpers/MarchLeftTransfer.h
 		pforeach.h
 		Analyzers/ArmyManager.h
 		Analyzers/HeroManager.h

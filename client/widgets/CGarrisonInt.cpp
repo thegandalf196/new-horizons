@@ -25,6 +25,8 @@
 #include "../windows/GUIClasses.h"
 #include "../windows/CommandPresentation.h"
 #include "CommandArmySlotPresentation.h"
+#include "MarchLeftIndicator.h"
+#include "MarchLeftWarning.h"
 #include "../../lib/entities/hero/NewHorizonsLeadership.h"
 #include "../CPlayerInterface.h"
 
@@ -169,7 +171,9 @@ void CGarrisonSlot::hover (bool on)
 		{
 			temp.appendRawString(" — " + UIHelper::armySlotProblem(getObj(), ID, source->creature->getId()));
 		}
-		ENGINE->statusbar()->write(temp.toString(&GAME->translator()));
+		// Troops change hands here, so a stack that has marched says how much of today's march it has left.
+		ENGINE->statusbar()->write(newHorizonsMarchLeft::withMarchLeft(temp.toString(&GAME->translator()),
+			creature ? myStack : nullptr, GAME->interface()->cb->getCalendar().getCurrentDay()));
 	}
 	else
 	{
@@ -428,6 +432,9 @@ void CGarrisonSlot::clickPressed(const Point & cursorPosition)
 				lastHeroStackSelected = true;
 			}
 
+			const auto * army = owner->army(upg);
+			const SlotID from = selection->ID;
+			const SlotID to = ID;
 			if((owner->getSplittingMode() || ENGINE->isKeyboardShiftDown()) // split window
 				&& (!creature || creature == selection->creature))
 			{
@@ -440,15 +447,18 @@ void CGarrisonSlot::clickPressed(const Point & cursorPosition)
 			}
 			else if(!creature && lastHeroStackSelected) // whole-stack intent reserves the last creature on the server
 			{
-				GAME->interface()->cb->mergeOrSwapStacks(selectedObj, owner->army(upg), selection->ID, ID);
+				marchLeftWarning::confirm(marchLeftWarning::move(selectedObj, from, army, to),
+					[selectedObj, army, from, to]() { GAME->interface()->cb->mergeOrSwapStacks(selectedObj, army, from, to); });
 			}
 			else if(creature != selection->creature) // swap
 			{
-				GAME->interface()->cb->swapCreatures(owner->army(upg), selectedObj, ID, selection->ID);
+				marchLeftWarning::confirm(marchLeftWarning::swap(selectedObj, from, army, to),
+					[selectedObj, army, from, to]() { GAME->interface()->cb->swapCreatures(army, selectedObj, to, from); });
 			}
 			else // merge
 			{
-				GAME->interface()->cb->mergeStacks(selectedObj, owner->army(upg), selection->ID, ID);
+				marchLeftWarning::confirm(marchLeftWarning::move(selectedObj, from, army, to),
+					[selectedObj, army, from, to]() { GAME->interface()->cb->mergeStacks(selectedObj, army, from, to); });
 			}
 		}
 		if(refr)
@@ -541,6 +551,8 @@ void CGarrisonSlot::update()
 		artifactImage->disable();
 		stackCount->disable();
 	}
+	if(marchIndicator)
+		marchIndicator->update(creature ? myStack : nullptr, GAME->interface()->cb->getCalendar().getCurrentDay());
 }
 
 CGarrisonSlot::CGarrisonSlot(CGarrisonInt * Owner, int x, int y, SlotID IID, EGarrisonType Upg, const CStackInstance * creature_)
@@ -597,6 +609,7 @@ CGarrisonSlot::CGarrisonSlot(CGarrisonInt * Owner, int x, int y, SlotID IID, EGa
 			: ETextAlignment::BOTTOMRIGHT;
 
 	stackCount = std::make_shared<CLabel>(labelPosW, labelPosH, owner->smallIcons ? FONT_TINY : FONT_MEDIUM, labelAlignment, Colors::WHITE);
+	marchIndicator = std::make_shared<MarchLeftIndicator>(Point(pos.w, pos.h));
 
 	update();
 }
@@ -738,7 +751,11 @@ void CGarrisonInt::splitStacks(const CGarrisonSlot * from, const CArmedInstance 
 		|| !UIHelper::checkArmySlot(armyDest, slotDest, from->creature->getId()))
 		return;
 
-	GAME->interface()->cb->splitStack(armedObjs[from->upg], armyDest, from->ID, slotDest, amount);
+	const auto * source = armedObjs[from->upg];
+	const SlotID sourceSlot = from->ID;
+	marchLeftWarning::confirm(marchLeftWarning::move(source, sourceSlot, armyDest, slotDest),
+		[source, armyDest, sourceSlot, slotDest, amount]()
+		{ GAME->interface()->cb->splitStack(source, armyDest, sourceSlot, slotDest, amount); });
 }
 
 bool CGarrisonInt::checkSelected(const CGarrisonSlot * selected, TQuantity min) const
@@ -812,19 +829,23 @@ void CGarrisonInt::moveStackToAnotherArmy(const CGarrisonSlot * selected)
 		&& UIHelper::armySlotProblem(destArmy, srcSlot, selected->creature->getId()).empty())
 		destSlot = srcSlot; // Same place is more preferable
 
-	if(!isDestSlotEmpty)
+	const auto send = [srcArmy, destArmy, srcSlot, destSlot, isDestSlotEmpty, isLastStack]()
 	{
-		GAME->interface()->cb->mergeStacks(srcArmy, destArmy, srcSlot, destSlot);
-	}
-	else if(isLastStack)
-	{
-		// The authoritative server reserves the source's last creature.
-		GAME->interface()->cb->mergeOrSwapStacks(srcArmy, destArmy, srcSlot, destSlot);
-	}
-	else
-	{
-		GAME->interface()->cb->swapCreatures(srcArmy, destArmy, srcSlot, destSlot);
-	}
+		if(!isDestSlotEmpty)
+		{
+			GAME->interface()->cb->mergeStacks(srcArmy, destArmy, srcSlot, destSlot);
+		}
+		else if(isLastStack)
+		{
+			// The authoritative server reserves the source's last creature.
+			GAME->interface()->cb->mergeOrSwapStacks(srcArmy, destArmy, srcSlot, destSlot);
+		}
+		else
+		{
+			GAME->interface()->cb->swapCreatures(srcArmy, destArmy, srcSlot, destSlot);
+		}
+	};
+	marchLeftWarning::confirm(marchLeftWarning::move(srcArmy, srcSlot, destArmy, destSlot), send);
 }
 
 CGarrisonInt::CGarrisonInt(const Point & position, int inx, const Point & garsOffset, const CArmedInstance * s1, const CArmedInstance * s2, bool _removableUnits, bool smallImgs, ESlotsLayout _layout)

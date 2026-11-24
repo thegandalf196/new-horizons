@@ -73,6 +73,9 @@ public:
 	float heroFightingStrength;
 	uint8_t actorExchangeCount;
 	TResources armyCost;
+	/// Day's March: the hero's full daily land and sea movement, 0 when the rule does not apply.
+	int marchLandMovement = 0;
+	int marchSeaMovement = 0;
 
 	ChainActor() = default;
 	virtual ~ChainActor() = default;
@@ -83,10 +86,21 @@ public:
 	void setBaseActor(HeroActor * base);
 	virtual const CGObjectInstance * getActorObject() const	{ return hero; }
 	int maxMovePoints(EPathfindingLayer layer);
+	int marchDailyMovement(EPathfindingLayer layer) const
+	{
+		return layer == EPathfindingLayer::SAIL ? marchSeaMovement : marchLandMovement;
+	}
 
 protected:
 	virtual ExchangeResult tryExchangeNoLock(const ChainActor * specialActor, const ChainActor * other) const;
 };
+
+/// Movement the carrier keeps after taking the other actor's army at a meeting.
+/// Troops that marched on the meeting day limit the carrier to their march left;
+/// troops that waited for a later day are fresh.
+int marchLeftExchangeMovement(const ChainActor & carrier, EPathfindingLayer carrierLayer,
+	int carrierMoveRemains, const ChainActor & other, EPathfindingLayer otherLayer,
+	int otherMoveRemains, bool marchedOnMeetingDay);
 
 class HeroExchangeMap
 {

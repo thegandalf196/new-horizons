@@ -916,6 +916,7 @@ set(lib_MAIN_SRCS
 	pathfinder/TurnInfo.cpp
 	pathfinder/NewHorizonsMovement.cpp
 	pathfinder/NewHorizonsMovementBonuses.cpp
+	pathfinder/NewHorizonsMarchLeft.cpp
 	pathfinder/NewHorizonsProtectedMobility.cpp
 	pathfinder/NewHorizonsLighthouse.cpp
 
@@ -1890,6 +1891,7 @@ set(lib_MAIN_HEADERS
 	pathfinder/TurnInfo.h
 	pathfinder/NewHorizonsMovement.h
 	pathfinder/NewHorizonsMovementBonuses.h
+	pathfinder/NewHorizonsMarchLeft.h
 	pathfinder/NewHorizonsProtectedMobility.h
 	pathfinder/NewHorizonsLighthouse.h
 

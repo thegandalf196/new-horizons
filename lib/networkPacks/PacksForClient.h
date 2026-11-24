@@ -547,11 +547,15 @@ struct DLL_LINKAGE SetMovePoints : public CPackForClient
 	si32 val = 0;
 	/// Present only for an atomic, positive Pursuit March recovery and daily-use stamp.
 	std::optional<int32_t> pursuitMarchUseDay;
+	/// A lowered limit after receiving marched troops; it is not a march of its own.
+	bool marchLeftLimit = false;
 
 	void validatePursuitMarchShape() const
 	{
 		if(pursuitMarchUseDay && (!hid.hasValue() || val < 0 || *pursuitMarchUseDay < 0))
 			throw std::runtime_error("Invalid Pursuit March Movement packet");
+		if(marchLeftLimit && (pursuitMarchUseDay || !hid.hasValue() || val < 0))
+			throw std::runtime_error("Invalid march left Movement packet");
 	}
 
 	void visitTyped(ICPackVisitor & visitor) override;
@@ -570,6 +574,10 @@ struct DLL_LINKAGE SetMovePoints : public CPackForClient
 			h & pursuitMarchUseDay;
 		else if(!h.saving)
 			pursuitMarchUseDay.reset();
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_MARCH_LEFT))
+			h & marchLeftLimit;
+		else if(!h.saving)
+			marchLeftLimit = false;
 		if(!h.saving)
 			validatePursuitMarchShape();
 	}
@@ -2516,6 +2524,28 @@ struct DLL_LINKAGE SetNewHorizonsDiplomacyState : public CPackForClient
 			pactExpiryDay = -1;
 		if(!h.saving && !hasValidState())
 			throw std::runtime_error("Invalid New Horizons Diplomacy state packet");
+	}
+};
+
+/// March left carried onto a stack that absorbed other stacks outside an
+/// exchange (the Skeleton Transformer output). March left only falls.
+struct DLL_LINKAGE LowerStackMarchLeft : public CPackForClient
+{
+	ObjectInstanceID army;
+	SlotID slot;
+	int32_t day = -1;
+	int32_t marchLeft = 10000;
+
+	void visitTyped(ICPackVisitor & visitor) override;
+
+	template <typename Handler> void serialize(Handler & h)
+	{
+		if(h.saving && !h.hasFeature(Handler::Version::NEW_HORIZONS_MARCH_LEFT))
+			throw std::runtime_error("Day's March requires the new wire format");
+		h & army;
+		h & slot;
+		h & day;
+		h & marchLeft;
 	}
 };
 

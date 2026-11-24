@@ -2276,6 +2276,7 @@ void CGameHandler::sendAndApply(CGarrisonOperationPack & pack)
 	}
 	for(const auto & query : recruitingVisits)
 		queries->queryAs<MapObjectVisitQuery>(query)->admittedNeutralRecruitment = true;
+	applyMarchLeftLimits(pack);
 	checkVictoryLossConditionsForAll();
 }
 
@@ -4285,10 +4286,13 @@ bool CGameHandler::transformInUndead(const IMarket * market, const CGHeroInstanc
 		change->slot = slot;
 		changes.push_back(std::move(change));
 	}
+	const int marchLeft = lowestMarchLeft(*army, slots); // the skeletons keep the converted troops' march
 	// Ordinary authoritative packets still synchronize each update. Run derived
 	// victory/loss processing once, on the complete admitted transaction.
 	for(auto & change : changes)
 		sendAndApply(static_cast<CPackForClient &>(*change));
+	for(const auto & output : projection.outputs)
+		carryMarchLeft(*army, output.slot, marchLeft);
 	checkVictoryLossConditionsForAll();
 	return true;
 }

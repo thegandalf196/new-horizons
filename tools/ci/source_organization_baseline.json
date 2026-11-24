@@ -1426,290 +1426,291 @@
           "symbol": "NK2AI::void HeroChainCalculationTask::addHeroChain(const std::vector<ExchangeCandidate> & result)#1"
         },
         {
-          "end": 1103,
+          "end": 1111,
           "start": 1072,
           "symbol": "NK2AI::ExchangeCandidate HeroChainCalculationTask::calculateExchange( ChainActor * exchangeActor, AIPathNode * carrierParentNode, AIPathNode * otherParentNode) const#1"
         },
         {
-          "end": 1116,
-          "start": 1105,
+          "end": 1124,
+          "start": 1113,
           "symbol": "NK2AI::const std::set<const CGHeroInstance *> AINodeStorage::getAllHeroes() const#1"
         },
         {
-          "end": 1134,
-          "start": 1118,
+          "end": 1142,
+          "start": 1126,
           "symbol": "NK2AI::bool AINodeStorage::isDistanceLimitReached(const PathNodeInfo & source, CDestinationNodeInfo & destination) const#1"
         },
         {
-          "end": 1162,
-          "start": 1136,
+          "end": 1170,
+          "start": 1144,
           "symbol": "NK2AI::void AINodeStorage::setHeroes(HeroMap<HeroRole> heroes)#1"
         },
         {
-          "end": 1215,
-          "start": 1164,
+          "end": 1223,
+          "start": 1172,
           "symbol": "NK2AI::void AINodeStorage::setTownsAndDwellings( const std::vector<const CGTownInstance *> & towns, const std::set<const CGObjectInstance *> & visitableObjs)#1"
         },
         {
-          "end": 1231,
-          "start": 1217,
+          "end": 1239,
+          "start": 1225,
           "symbol": "NK2AI::std::vector<CGPathNode *> AINodeStorage::calculateTeleportations( const PathNodeInfo & source, const PathfinderConfig * pathfinderConfig, const CPathfinderHelper * pathfinderHelper)#1"
         },
         {
-          "end": 1237,
-          "start": 1233,
+          "end": 1245,
+          "start": 1241,
           "symbol": "NK2AI::bool AINodeStorage::isObjectTeleportation(const CGPathNode * destination) const#1"
         },
         {
-          "end": 1314,
-          "start": 1239,
+          "end": 1322,
+          "start": 1247,
           "symbol": "NK2AI::void AINodeStorage::calculateObjectTeleportations( std::vector<CGPathNode *> & neighbours, const PathNodeInfo & source, const CPathfinderHelper * pathfinderHelper, const AIPathNode * srcNode)#1"
         },
         {
-          "end": 1270,
-          "start": 1267,
+          "end": 1278,
+          "start": 1275,
           "symbol": "NK2AI::AINodeStorage::calculateObjectTeleportations( std::vector<CGPathNode *> & neighbours, const PathNodeInfo & source, const CPathfinderHelper * pathfinderHelper, const AIPathNode * srcNode)::[&](const CGTownInstance * town)#1"
         },
         {
-          "end": 1327,
-          "start": 1316,
+          "end": 1335,
+          "start": 1324,
           "symbol": "NK2AI::bool AINodeStorage::canCalculateDimensionDoorTeleportations( const PathNodeInfo & source, const PathfinderConfig * pathfinderConfig, const AIPathNode * srcNode) const#1"
         },
         {
-          "end": 1346,
-          "start": 1329,
+          "end": 1354,
+          "start": 1337,
           "symbol": "NK2AI::void AINodeStorage::calculateDimensionDoorTeleportations( std::vector<CGPathNode *> & neighbours, const PathNodeInfo & source, const CPathfinderHelper * pathfinderHelper, const AIPathNode * srcNode)#1"
         },
         {
-          "end": 1373,
-          "start": 1348,
+          "end": 1381,
+          "start": 1356,
           "symbol": "NK2AI::const std::vector<AINodeStorage::DimensionDoorCapability> & AINodeStorage::getDimensionDoorCapabilities( const CGHeroInstance * hero)#1"
         },
         {
-          "end": 1370,
-          "start": 1357,
+          "end": 1378,
+          "start": 1365,
           "symbol": "NK2AI::& AINodeStorage::getDimensionDoorCapabilities( const CGHeroInstance * hero)::[&](const CSpell * spell, const auto & mechanics, const DimensionDoorEffect * effect)#1"
         },
         {
-          "end": 1424,
-          "start": 1375,
+          "end": 1432,
+          "start": 1383,
           "symbol": "NK2AI::std::optional<AINodeStorage::DimensionDoorSpellPlan> AINodeStorage::getDimensionDoorSpellPlan( const PathNodeInfo & source, const CPathfinderHelper * pathfinderHelper, const AIPathNode * srcNode, const CGHeroInstance * hero, const DimensionDoorCapability & capability) const#1"
         },
         {
-          "end": 1456,
-          "start": 1426,
+          "end": 1464,
+          "start": 1434,
           "symbol": "NK2AI::void AINodeStorage::calculateDimensionDoorTeleportationsForSpell( std::vector<CGPathNode *> & neighbours, const PathNodeInfo & source, const AIPathNode * srcNode, const DimensionDoorSpellPlan & plan)#1"
         },
         {
-          "end": 1466,
-          "start": 1458,
+          "end": 1474,
+          "start": 1466,
           "symbol": "NK2AI::bool AINodeStorage::isDimensionDoorDestinationValid( const PathNodeInfo & source, const CGHeroInstance * hero, const int3 & destination, const DimensionDoorSpellPlan & plan) const#1"
         },
         {
-          "end": 1498,
-          "start": 1468,
+          "end": 1506,
+          "start": 1476,
           "symbol": "NK2AI::AINodeStorage::DimensionDoorLandingInfo AINodeStorage::getDimensionDoorLandingInfo( const AIPathNode * srcNode, const CGHeroInstance * hero, const int3 & destination) const#1"
         },
         {
-          "end": 1547,
-          "start": 1500,
+          "end": 1555,
+          "start": 1508,
           "symbol": "NK2AI::void AINodeStorage::addDimensionDoorTeleportation( std::vector<CGPathNode *> & neighbours, const PathNodeInfo & source, const AIPathNode * srcNode, const int3 & destination, const DimensionDoorSpellPlan & plan, const DimensionDoorLandingInfo & landing)#1"
         },
         {
-          "end": 1576,
-          "start": 1563,
+          "end": 1584,
+          "start": 1571,
           "symbol": "NK2AI::TownPortalFinder::TownPortalFinder(const ChainActor * actor, const std::vector<CGPathNode *> & initialNodes, const std::vector<const CGTownInstance *> & targetTowns, AINodeStorage * nodeStorage, SpellID spellID) : initialNodes(initialNodes) , actor(actor) , hero(actor->hero) , targetTowns(targetTowns) , nodeStorage(nodeStorage) , townPortal(spellID.toSpell()) , spellID(spellID) , usesSharedDailyOpportunity(newHorizonsMagic::isAdventureSpell(hero->getMagicRules(), spellID))#1"
         },
         {
-          "end": 1581,
-          "start": 1578,
+          "end": 1589,
+          "start": 1586,
           "symbol": "NK2AI::TownPortalFinder::bool actorCanCastTownPortal()#1"
         },
         {
-          "end": 1612,
-          "start": 1583,
+          "end": 1620,
+          "start": 1591,
           "symbol": "NK2AI::TownPortalFinder::CGPathNode * getBestInitialNodeForTownPortal(const CGTownInstance * targetTown)#1"
         },
         {
-          "end": 1664,
-          "start": 1614,
+          "end": 1672,
+          "start": 1622,
           "symbol": "NK2AI::TownPortalFinder::std::optional<AIPathNode *> createTownPortalNode(const CGTownInstance * targetTown)#1"
         },
         {
-          "end": 1740,
-          "start": 1667,
+          "end": 1748,
+          "start": 1675,
           "symbol": "NK2AI::void AINodeStorage::calculateTownPortal( const ChainActor * actor, const HeroMap<int> & maskMap, const std::vector<CGPathNode *> & initialNodes, TVector & output)#1"
         },
         {
-          "end": 1679,
-          "start": 1676,
+          "end": 1687,
+          "start": 1684,
           "symbol": "NK2AI::AINodeStorage::calculateTownPortal( const ChainActor * actor, const HeroMap<int> & maskMap, const std::vector<CGPathNode *> & initialNodes, TVector & output)::[&](const CGTownInstance * t) -> bool#1"
         },
         {
-          "end": 1790,
-          "start": 1742,
+          "end": 1798,
+          "start": 1750,
           "symbol": "NK2AI::void AINodeStorage::calculateTownPortalTeleportations(std::vector<CGPathNode *> & initialNodes)#1"
         },
         {
-          "end": 1778,
-          "start": 1772,
+          "end": 1786,
+          "start": 1780,
           "symbol": "NK2AI::AINodeStorage::calculateTownPortalTeleportations(std::vector<CGPathNode *> & initialNodes)::[&](const tbb::blocked_range<size_t> & r)#1"
         },
         {
-          "end": 1797,
-          "start": 1792,
+          "end": 1805,
+          "start": 1800,
           "symbol": "NK2AI::bool AINodeStorage::hasBetterChain(const PathNodeInfo & source, CDestinationNodeInfo & destination) const#1"
         },
         {
-          "end": 1810,
-          "start": 1799,
+          "end": 1818,
+          "start": 1807,
           "symbol": "NK2AI::bool AINodeStorage::hasBetterChain( const CGPathNode * source, const AIPathNode & candidateNode) const#1"
         },
         {
-          "end": 1809,
-          "start": 1806,
+          "end": 1817,
+          "start": 1814,
           "symbol": "NK2AI::AINodeStorage::hasBetterChain( const CGPathNode * source, const AIPathNode & candidateNode) const::[this, &source, candidateNode](const AIPathNode & node) -> bool#1"
         },
         {
-          "end": 1825,
-          "start": 1812,
+          "end": 1833,
+          "start": 1820,
           "symbol": "NK2AI::bool AINodeStorage::hasBetterChain( const CGPathNode * source, const AIPathNode & candidateNode, const NodeRange & nodes) const#1"
         },
         {
-          "end": 1915,
-          "start": 1827,
+          "end": 1923,
+          "start": 1835,
           "symbol": "NK2AI::bool AINodeStorage::isOtherChainBetter( const CGPathNode * source, const AIPathNode & candidateNode, const AIPathNode & other) const#1"
         },
         {
-          "end": 1933,
-          "start": 1917,
+          "end": 1941,
+          "start": 1925,
           "symbol": "NK2AI::bool AINodeStorage::isTileAccessible(const HeroPtr & heroPtr, const int3 & pos, const EPathfindingLayer layer) const#1"
         },
         {
-          "end": 1941,
-          "start": 1935,
+          "end": 1949,
+          "start": 1943,
           "symbol": "NK2AI::bool AINodeStorage::hasCurrentNodes(const int3 & pos) const#1"
         },
         {
-          "end": 1955,
-          "start": 1943,
+          "end": 1963,
+          "start": 1951,
           "symbol": "NK2AI::void AINodeStorage::calculateChainInfo(std::vector<AIPath> & paths, const int3 & pos, const bool isOnLand) const#1"
         },
         {
-          "end": 2000,
-          "start": 1957,
+          "end": 2008,
+          "start": 1965,
           "symbol": "NK2AI::void AINodeStorage::calculatePathSummaries( std::vector<AIPathSummary> & summaries, const int3 & pos, const bool isOnLand) const#1"
         },
         {
-          "end": 2013,
-          "start": 2002,
+          "end": 2021,
+          "start": 2010,
           "symbol": "NK2AI::bool AINodeStorage::calculatePathInfo(AIPath & path, const AIPathSummary & summary) const#1"
         },
         {
-          "end": 2087,
-          "start": 2015,
+          "end": 2095,
+          "start": 2023,
           "symbol": "NK2AI::bool AINodeStorage::calculatePathInfo(AIPath & path, const AIPathNode * node) const#1"
         },
         {
-          "end": 2224,
-          "start": 2089,
+          "end": 2232,
+          "start": 2097,
           "symbol": "NK2AI::bool AINodeStorage::tryReconstructChainInfo(const AIPathNode * node, AIPath & path, int & parentIndex, RealMoveMasksByHero & realMoveMasks) const#1"
         },
         {
-          "end": 2115,
-          "start": 2098,
+          "end": 2123,
+          "start": 2106,
           "symbol": "NK2AI::AINodeStorage::tryReconstructChainInfo(const AIPathNode * node, AIPath & path, int & parentIndex, RealMoveMasksByHero & realMoveMasks) const::[](const AIPathNode * exchangeNode, const AIPathNode * predecessor) -> std::optional<ExchangeMaskTransition>#1"
         },
         {
-          "end": 2221,
-          "start": 2117,
+          "end": 2229,
+          "start": 2125,
           "symbol": "NK2AI::AINodeStorage::tryReconstructChainInfo(const AIPathNode * node, AIPath & path, int & parentIndex, RealMoveMasksByHero & realMoveMasks) const::[this, &getVerifiedExchangeTransition](auto && self, const AIPathNode * spineRoot, AIPath & candidatePath, int & candidateParentIndex, RealMoveMasksByHero & candidateMasks) -> bool#1"
         },
         {
-          "end": 2182,
-          "start": 2127,
+          "end": 2190,
+          "start": 2135,
           "symbol": "NK2AI::AINodeStorage::tryReconstructChainInfo(const AIPathNode * node, AIPath & path, int & parentIndex, RealMoveMasksByHero & realMoveMasks) const::(auto && self, const AIPathNode * spineRoot, AIPath & candidatePath, int & candidateParentIndex, RealMoveMasksByHero & candidateMasks) -> bool::[this, spineRoot, &currentMasks, &expectedTransition]( const AIPathNode * node, AIPath & pathToAppend, int parent, RealMoveMasksByHero & masks) -> std::optional<int>#1"
         },
         {
-          "end": 2172,
-          "start": 2169,
+          "end": 2180,
+          "start": 2177,
           "symbol": "NK2AI::AINodeStorage::tryReconstructChainInfo(const AIPathNode * node, AIPath & path, int & parentIndex, RealMoveMasksByHero & realMoveMasks) const::(auto && self, const AIPathNode * spineRoot, AIPath & candidatePath, int & candidateParentIndex, RealMoveMasksByHero & candidateMasks) -> bool::( const AIPathNode * node, AIPath & pathToAppend, int parent, RealMoveMasksByHero & masks) -> std::optional<int>::[spineRoot, nodeMask](const RealMoveMaskCommitment & commitment)#1"
         },
         {
-          "end": 2229,
-          "start": 2226,
+          "end": 2237,
+          "start": 2234,
           "symbol": "NK2AI::AIPath::AIPath() : nodes({})#1"
         },
         {
-          "end": 2240,
-          "start": 2231,
+          "end": 2248,
+          "start": 2239,
           "symbol": "NK2AI::std::shared_ptr<const SpecialAction> AIPath::getFirstBlockedAction() const#1"
         },
         {
-          "end": 2250,
-          "start": 2242,
+          "end": 2258,
+          "start": 2250,
           "symbol": "NK2AI::int3 AIPath::firstTileToGet() const#1"
         },
         {
-          "end": 2260,
-          "start": 2252,
+          "end": 2268,
+          "start": 2260,
           "symbol": "NK2AI::int3 AIPath::targetTile() const#1"
         },
         {
-          "end": 2265,
-          "start": 2262,
+          "end": 2273,
+          "start": 2270,
           "symbol": "NK2AI::const AIPathNodeInfo & AIPath::firstNode() const#1"
         },
         {
-          "end": 2284,
-          "start": 2267,
-          "symbol": "NK2AI::const AIPathNodeInfo & AIPath::targetNode() const#1"
-        },
-        {
           "end": 2292,
-          "start": 2286,
-          "symbol": "NK2AI::uint64_t AIPath::getPathDanger() const#1"
+          "start": 2275,
+          "symbol": "NK2AI::const AIPathNodeInfo & AIPath::targetNode() const#1"
         },
         {
           "end": 2300,
           "start": 2294,
-          "symbol": "NK2AI::float AIPath::movementCost() const#1"
+          "symbol": "NK2AI::uint64_t AIPath::getPathDanger() const#1"
         },
         {
           "end": 2308,
           "start": 2302,
+          "symbol": "NK2AI::float AIPath::movementCost() const#1"
+        },
+        {
+          "end": 2316,
+          "start": 2310,
           "symbol": "NK2AI::uint8_t AIPath::turn() const#1"
         },
         {
-          "end": 2314,
-          "start": 2310,
+          "end": 2322,
+          "start": 2318,
           "symbol": "NK2AI::uint64_t AIPath::getHeroStrength() const#1"
         },
         {
-          "end": 2322,
-          "start": 2316,
+          "end": 2330,
+          "start": 2324,
           "symbol": "NK2AI::uint64_t AIPath::getTotalDanger() const#1"
         },
         {
-          "end": 2336,
-          "start": 2324,
+          "end": 2344,
+          "start": 2332,
           "symbol": "NK2AI::bool AIPath::containsHero(const CGHeroInstance * hero) const#1"
         },
         {
-          "end": 2341,
-          "start": 2338,
+          "end": 2349,
+          "start": 2346,
           "symbol": "NK2AI::uint64_t AIPath::getTotalArmyLoss() const#1"
         },
         {
-          "end": 2352,
-          "start": 2343,
+          "end": 2360,
+          "start": 2351,
           "symbol": "NK2AI::std::string AIPath::toString() const#1"
         }
       ],
       "rationale": "Complete exact 2354-line source inventory: same 102 body-bearing callables, symbols and order as the prior complete inventory. Only calculateObjectTeleportations changes (two-line null-checked Castle Gate roster read replaces a three-line dereference); spans after line 1257 shift up by one. Source coverage only.",
-      "review": "CLAUDE-AI0931-CRASH6",
+      "review": "CLAUDE-DAYS-MARCH-B5-20261127",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "sha256": "2c44c6f5928b38fc74852199881b16122c1b5b3c68fe1296ede5ceb1003befe9"
+      "sha256": "f13d8ddab8e3a37216e29950a8c5a136636fee8708a52221ccb238e8b37a01d2",
+      "previous_review": "CLAUDE-AI0931-CRASH6"
     },
     "CI/NSIS.template.in": {
       "functions": [
@@ -11133,11 +11134,11 @@
         }
       ],
       "rationale": "Complete two-body header inventory: gameState accessor and pending-progression serializer. The serializer adds one early feature admission call; new economy/progression methods are declarations only. Recovery is a braced declaration default.",
-      "review": "CLAUDE-CASTLE-COMBAT-0931",
+      "review": "CLAUDE-DAYS-MARCH-B5-20261127",
       "review_scope": "Complete callable measurement proposal only; not compiler, gameplay, native, rendered or publication acceptance.",
       "review_status": "PROPOSED_AWAITING_INDEPENDENT_REVIEW",
-      "sha256": "2cd6f52fbe478b751fcff0082a28864981ed6bbcf6c631a520006b32f330a440",
-      "previous_review": "PROPOSED-0920-EXACT-CALLABLE-COVERAGE"
+      "sha256": "2854dc54cd10309010c918bd24d232c13e3e098d79a8a3a969995ba2b5034d79",
+      "previous_review": "CLAUDE-CASTLE-COMBAT-0931"
     },
     "server/CVCMIServer.h": {
       "functions": [
@@ -19513,11 +19514,11 @@
       },
       "deferral": "Before substantive gateway growth, extract the touched object-specific purchase/interaction stage, passing callback, hero, destination and authoritative quote. Preserve visible-state checks, native command order, actual buyer and once-only reservations.\n\nBefore any further gateway or turn-error growth, extract the turn-completion/error boundary into the existing turn-execution owner with explicit callback, player and interruption/termination outcome. Retain the shared read lease during state reads and turn completion/recovery. Release and reacquire it only through the synchronous request wait guard. Preserve no endTurn on planner cancellation/termination, original authoritative command order and at-most-once fallback; characterize normal, thrown-error and shutdown routes before extraction. Retain all prior purchase/interaction extraction obligations.",
       "kind": "exception",
-      "lines": 2427,
+      "lines": 2438,
       "owner": "ai_engineer",
-      "previous_review": "CLAUDE-CASTLE-ADVENTURE-0931",
-      "rationale": "Exact successor for the 0.93.1 AI route-refusal fix: requestRealized forwards every authoritative receipt to RouteActorObservation (one routing line; the query-reply confirmation loses its braces), so the gateway shrinks 2428 to 2427. MoveHero refusal tracking and the resubmission decision live in RouteActorObservation and RouteMovement. Existing extraction deferrals retained; no future growth credit.",
-      "review": "CLAUDE-AI-ROUTE-REFUSAL-0931",
+      "previous_review": "CLAUDE-AI-ROUTE-REFUSAL-0931",
+      "rationale": "Exact successor for march fatigue (0.94.0-beta.5, rebased onto Warcasting and the Academy specialties): call-site hooks only (record the march after movement packets, the receiver limit after garrison operations, the exchange warning around existing transfer requests, the creature-card line, the AI exchange movement and actor budgets); the rule itself lives in the focused NewHorizonsMarchLeft, MarchLeftLimits, MarchLeftWarning, MarchLeftIndicator and MarchLeftTransfer units. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-DAYS-MARCH-B5-20261127",
       "review_history": [
         {
           "deferral": "AI engineer owns extraction of current-node special-action dispatch/current-day execution boundary into a focused executor before any further affected-area growth. Preserve parent dependencies, composite and DimensionDoor stale recovery, current-day approaches, exact request/wait/ack ordering, exceptions and captured historical behavior; characterize them with focused native tests. Gateway file remains capped at2861 until shrinking extraction.",
@@ -19568,7 +19569,7 @@
       ],
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "6477444e1225268b26515cf77543baedb5aecff805cbc8bd5da74dfa8fe581fb"
+      "sha256": "47272921fdfb3f8b16cc7895254925659c93f65180e34114ed41443b544f7e38"
     },
     "AI/Nullkiller2/AIGateway.cpp::NK2AI::AIGateway::pickBestArtifacts(const std::shared_ptr<CCallback> & cc, const CGHeroInstance * h, const CGHeroInstance * other)::[cc](const CGHeroInstance * h, const CGHeroInstance * otherh, bool giveStuffToFirstHero) -> void#1": {
       "kind": "legacy",
@@ -19622,14 +19623,16 @@
       "sha256": "258cf42f0f02d7c9573f9b39171989ffd9b86a344d632ebaf3cc1d7d4833abaa"
     },
     "AI/Nullkiller2/AIGateway.cpp::NK2AI::void AIGateway::pickBestCreatures(const CArmedInstance * destinationArmy, const CArmedInstance * source)#1": {
-      "kind": "legacy",
-      "lines": 108,
+      "kind": "exception",
+      "lines": 115,
       "owner": "ai_engineer",
-      "rationale": "Exact 169-to-108-line reduction: original 62-line executor body moves by one-tab dedent into a cohesive 67-line helper. Remaining strategy and legacy fallback are byte-exact; the 108-line method remains reviewed legacy debt, not a new ceiling allowance or future growth credit.",
-      "review": "IR-F17-CURRENT614-EXECUTION-V2-20261016",
+      "rationale": "Exact successor for march fatigue (0.94.0-beta.5, rebased onto Warcasting and the Academy specialties): call-site hooks only (record the march after movement packets, the receiver limit after garrison operations, the exchange warning around existing transfer requests, the creature-card line, the AI exchange movement and actor budgets); the rule itself lives in the focused NewHorizonsMarchLeft, MarchLeftLimits, MarchLeftWarning, MarchLeftIndicator and MarchLeftTransfer units. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-DAYS-MARCH-B5-20261127",
       "review_scope": "exact-physical-plan-executor-extraction-shrinking-file-and-method-freeze-only",
       "review_status": "APPROVED_EXACT_SOURCE_SCOPE",
-      "sha256": "ed8fbe133a3d742b708e6f9e79f494205c517aed2cc9bb656e874aaa1929670f"
+      "sha256": "b52402d40d2b5a0206a029eef1d4199a6b5cbc420189317bc4f7864af2563803",
+      "previous_review": "IR-F17-CURRENT614-EXECUTION-V2-20261016",
+      "deferral": "Before further substantive expansion, extract the next cohesive touched stage into its focused owner; preserve packet/RNG order, serialization field order and rejection atomicity. No future growth credit."
     },
     "AI/Nullkiller2/AIGateway.cpp::NK2AI::void AIGateway::prepareDemonicReserve(const CGTownInstance * town)#1": {
       "completed_p_predecessor": {
@@ -20070,14 +20073,14 @@
     "AI/Nullkiller2/Pathfinding/AINodeStorage.cpp": {
       "deferral": "AI engineer: extract TownPortalFinder and calculateTownPortal/calculateTownPortalTeleportations into one cohesive Town Portal path-generation component before further expansion in this area. Preserve actor/node ordering, initial-node input/output, callback full-roster capability, nearest/tie/occupied-town and movement/mana semantics; verify denied/own/allied forecasts and exact world/RNG preservation. The next structural change must reduce AINodeStorage; this six-line exception gives no unrelated regrowth credit.",
       "kind": "exception",
-      "lines": 2354,
+      "lines": 2362,
       "owner": "ai_engineer",
-      "rationale": "Exact 2355 to 2354 physical lines: calculateObjectTeleportations (77 to 76) reads the Castle Gate source owner's town roster with a non-verbose, null-checked callback query instead of dereferencing the result, so an enemy observer's threat forecast omits private gate exits instead of crashing (headless Arrogance segfault after 'Cannot access player 6 info!'). No other callable changes. Existing Town Portal extraction deferral retained; no future growth credit.",
-      "review": "CLAUDE-AI0931-CRASH6",
+      "rationale": "Exact successor for march fatigue (0.94.0-beta.5, rebased onto Warcasting and the Academy specialties): call-site hooks only (record the march after movement packets, the receiver limit after garrison operations, the exchange warning around existing transfer requests, the creature-card line, the AI exchange movement and actor budgets); the rule itself lives in the focused NewHorizonsMarchLeft, MarchLeftLimits, MarchLeftWarning, MarchLeftIndicator and MarchLeftTransfer units. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-DAYS-MARCH-B5-20261127",
       "review_scope": "exact-source-only-cohesive-native-export-extraction-shrinking-ratchet",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "sha256": "2c44c6f5928b38fc74852199881b16122c1b5b3c68fe1296ede5ceb1003befe9",
-      "previous_review": "IR-WAITING-RECEIVER-EXPORT-EXTRACTION-20261024"
+      "sha256": "f13d8ddab8e3a37216e29950a8c5a136636fee8708a52221ccb238e8b37a01d2",
+      "previous_review": "CLAUDE-AI0931-CRASH6"
     },
     "AI/Nullkiller2/Pathfinding/AINodeStorage.cpp::NK2AI::AINodeStorage::tryReconstructChainInfo(const AIPathNode * node, AIPath & path, int & parentIndex, RealMoveMasksByHero & realMoveMasks) const::[this, &getVerifiedExchangeTransition](auto && self, const AIPathNode * spineRoot, AIPath & candidatePath, int & candidateParentIndex, RealMoveMasksByHero & candidateMasks) -> bool#1": {
       "kind": "legacy",
@@ -20325,18 +20328,18 @@
       "hybrid_predecessor_review": "IR-0911-BOUNDED-DIRECT-MAP-COMPOSITION-V3",
       "inherited_deferral": "Owner: ui_developer / gameplay_engineer. Bounded exception for Major System Rework: Leadership attribute restoration, square-root damage scaling, and hero UI panel integration. Hotspots remain subject to ongoing shrinking and modularization policy.\nExact source-list bound only. Before substantive build logic, extract a cohesive target configuration section. Verify source/link membership once and retain no duplicate translation units. Prior stricter obligations remain in inherited_deferral, where present.\n\nBefore introducing conditional build logic, extract a cohesive target helper; retain exact source/link membership, one registration per translation unit and existing inherited obligations.",
       "kind": "exception",
-      "lines": 795,
+      "lines": 799,
       "owner": "ui_developer",
       "previous_exact_review": "IR-PERFORMANCE-STEP2-BUILD-ORG-V1",
       "previous_proposal_review": "PROPOSED-EXACT-REGISTRY-SIX-SOURCE-20261103",
-      "previous_review": "CLAUDE-SPELL-SCHOOL-BADGE-20261124",
+      "previous_review": "PROPOSED-CLAUDE-ORDER-PRAYER-SPELLBOOK-FLOW-20261124",
       "prior_deferral": "Before substantive build-control growth, extract a cohesive target helper; retain all inherited deferrals and one registration per translation unit.",
       "proposal_predecessor_review": "PROPOSED-CLIENT225-BOUNDED-20261103",
-      "rationale": "Exact successor for 0.93.1 beta step 1 (Precise Casting resistance halving, core Stewardship and Lord of the Crypts, +3%/level specialty scaling, activation of unchanged extended ordinary specialties): bounded routing hooks and focused owners only. Existing extraction deferrals retained; no future growth credit. Hero class lean (Might/Magic) row: three source-list lines register the focused HeroClassLean.h, HeroClassLeanIndicator.h/.cpp owner. 781 to 784 lines; no future growth credit. Hero window stat row: Leadership, Mana, Regen, Movement and Vision merge into one row owned by the focused HeroWindowStatRow.cpp/HeroStatRowLayout.h (shared with the generated background); the class line and lean row move up 4 px; the skills panel moves up one row. 784 to 786 lines; no future growth credit. Town structure frame mode: two source-list lines register the focused TownStructureStateFrames.h/.cpp owner. 786 to 788 lines; no future growth credit. Exact successor for Sylvan Tactics 5 (Ambush): two source-list lines register the focused SylvanAmbushWaitButton.h/.cpp owner; the rules live in the focused NewHorizonsSylvanAmbush and SylvanAmbushState units. 788 to 790 lines; no future growth credit. Spell school badge: two source-list lines register the focused SpellSchoolBadge.h/.cpp owner. 790 to 792 lines; no future growth credit. The Chosen Prayers modal source pair is replaced by the prayer flow, the battlefield prayer-recipient selector and the extracted Order targeting unit: exact source-list membership only, one registration per translation unit. Exact 792 to 795 lines; no future growth credit.",
-      "review": "PROPOSED-CLAUDE-ORDER-PRAYER-SPELLBOOK-FLOW-20261124",
+      "rationale": "Exact successor for march fatigue (0.94.0-beta.5, rebased onto Warcasting and the Academy specialties): call-site hooks only (record the march after movement packets, the receiver limit after garrison operations, the exchange warning around existing transfer requests, the creature-card line, the AI exchange movement and actor budgets); the rule itself lives in the focused NewHorizonsMarchLeft, MarchLeftLimits, MarchLeftWarning, MarchLeftIndicator and MarchLeftTransfer units. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-DAYS-MARCH-B5-20261127",
       "review_scope": "Exact bounded source organization and failure-path review only; native/rendered acceptance and future growth unapproved.",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "c58ba8bdaabd52ea0b4c8624b11b74e9d2f8a58ca9f98444303e2d839d4a5d57",
+      "sha256": "c05244c039b9237f0127d3bb3e4bc806e0c99d6bed0fa5e83f072d791c74304f",
       "inherited_deferral_step2": "Exact current size only. Retain all prior obligations below; further renderer/cache expansion must extract its specific presentation or map-cache policy behind a focused interface and verify clipping, zoom, wrap, retained ownership, both backends and guarded scene/quit behavior before accepting it."
     },
     "client/CPlayerInterface.cpp": {
@@ -22066,15 +22069,16 @@
         "review": "source-size-legacy-freeze-cf2e62f9-v1",
         "sha256": "58bd2bc647384d5085388adbb369c8c274880e58444b41ac475c698b6ebc6c1e"
       },
-      "kind": "review",
-      "lines": 944,
+      "kind": "exception",
+      "lines": 965,
       "owner": "ui_developer",
-      "previous_review": "IR-LEADERSHIP-1159-INDEPENDENT-20261113-V1-UNITS",
-      "rationale": "Bulk transfer methods move to GarrisonBulkTransfer.cpp and Company-only slot protection is routed through named predicates; the widget owner shrinks12 lines while ordinary authored mine guards remain transferable. Exact measured unit only; no future growth credit.",
-      "review": "PROPOSED-0920-EXACT-SOURCE-ORGANIZATION",
+      "previous_review": "PROPOSED-0920-EXACT-SOURCE-ORGANIZATION",
+      "rationale": "Exact successor for march fatigue (0.94.0-beta.5, rebased onto Warcasting and the Academy specialties): call-site hooks only (record the march after movement packets, the receiver limit after garrison operations, the exchange warning around existing transfer requests, the creature-card line, the AI exchange movement and actor budgets); the rule itself lives in the focused NewHorizonsMarchLeft, MarchLeftLimits, MarchLeftWarning, MarchLeftIndicator and MarchLeftTransfer units. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-DAYS-MARCH-B5-20261127",
       "review_scope": "Proposed source organization and exact bound only; native/rendered/runtime acceptance remains separate.",
       "review_status": "PROPOSED_AWAITING_INDEPENDENT_REVIEW",
-      "sha256": "015e135ac24654d976cc36bd9b278303986b9a08d874d330f5c539cb29a42545"
+      "sha256": "8499710a3c0096077f464da8b4492d0fa44526b7aa3eafa9a5de148649fb1837",
+      "deferral": "Before further substantive expansion, extract the next cohesive touched stage into its focused owner; preserve packet/RNG order, serialization field order and rejection atomicity. No future growth credit."
     },
     "client/widgets/CGarrisonInt.cpp::void CGarrisonSlot::hover (bool on)#1": {
       "completed_p_predecessor": {
@@ -22085,14 +22089,14 @@
       },
       "deferral": "Before further substantive expansion, extract the next touched coherent responsibility into a focused owner while preserving authority, packet/RNG order, lifetime and historical wire behavior. This exact mechanical or bounded routing proposal grants no future growth allowance.",
       "kind": "exception",
-      "lines": 100,
+      "lines": 102,
       "owner": "ui_developer",
-      "previous_review": "IR-COMMAND-AUTHORITY-SCOPED-ORGANIZATION-20261109-UNITS",
-      "rationale": "Only a five-line Company-only locked-slot status/early return is added to the existing hover dispatcher. This exact UI guard avoids presenting transferable behavior for protected defenders; it does not add a target/action or broader widget rule. Exact measured unit only; no future growth credit.",
-      "review": "PROPOSED-0920-EXACT-SOURCE-ORGANIZATION",
+      "previous_review": "PROPOSED-0920-EXACT-SOURCE-ORGANIZATION",
+      "rationale": "Exact successor for march fatigue (0.94.0-beta.5, rebased onto Warcasting and the Academy specialties): call-site hooks only (record the march after movement packets, the receiver limit after garrison operations, the exchange warning around existing transfer requests, the creature-card line, the AI exchange movement and actor budgets); the rule itself lives in the focused NewHorizonsMarchLeft, MarchLeftLimits, MarchLeftWarning, MarchLeftIndicator and MarchLeftTransfer units. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-DAYS-MARCH-B5-20261127",
       "review_scope": "Proposed source organization and exact bound only; native/rendered/runtime acceptance remains separate.",
       "review_status": "PROPOSED_AWAITING_INDEPENDENT_REVIEW",
-      "sha256": "6e525724133a4446a282c562807c634f85234f0d65e9d1418fde850563227c61"
+      "sha256": "778c1635e523a031f4455a7abd25c87c12f32932fdf1c4842f57df497007efdd"
     },
     "client/widgets/CTextInput.cpp": {
       "kind": "legacy",
@@ -22223,15 +22227,15 @@
         "sha256": "38e0b1aa790e897bcfe72e03dd3431ad9df94fe5b60bf8d6cafa7212d460186c"
       },
       "deferral": "UI owner: before further substantive expansion of this affected purchase panel, extract CMageGuildAdventureSpellWindow and its exclusive price/help presentation into a focused town-purchase component, preserving public callback interface, authoritative refresh/ownership/turn/affordability ordering and native geometry. Verify owner-visiting/no-visitor/garrison-only price agreement with shared authority and guarded rendered transitions; no general file/function growth credit. Before further substantive expansion, owning engine/gameplay/UI specialist must extract the next coherent touched policy, ordered stage, codec family or widget responsibility into a focused owner, preserving callback visibility, rejection atomicity, serialized field order, payment and RNG/packet order. This exact bounded migration/registry/validation routing gives no future growth credit. Exact bounded declaration/include/UI removal only; no new rule responsibilities. Preserve prior UI extraction duties before future substantive affected growth.",
-      "kind": "legacy",
-      "lines": 3517,
+      "kind": "exception",
+      "lines": 3523,
       "owner": "ui_developer",
-      "previous_review": "CLAUDE-TOWN-ANIM-CURRENT-FRAME-20261123",
-      "rationale": "Exact3541 to3540-line successor removes only the redundant Town Hall steward-button construction; existing Gold-menu and S-key administration paths remain. Prior marketplace extraction, accepted income refresh and other purchase/visibility obligations remain binding. No economic state, payment or assignment mutation in this change. Original Heroes III buttons: the custom NH Cancel/Spells buttons are replaced in place by IOKAY (read-only windows), ICANCEL (choices) or the battle Cast Spell button; no new responsibility. 3540 to 3539 lines; no future growth credit. Town structure frame mode: CBuildingRect passes BASE unless the structure is marked currentFrameOnly, and its Castle shipyard / Dungeon Mana Vortex state-frame ranges move unchanged into the focused TownStructureStateFrames owner. Exact 3539 to 3521 lines; no future growth credit. The Mage Guild spell description body moves to the existing newHorizonsGuildSpellHelp owner, which adds the spell's elemental tag line through the shared spellbookPresentation::descriptionWithElement helper; the local wrapper keeps only the town lookup. Exact 3521 to 3517 lines; no new responsibility and no future growth credit.",
-      "review": "PROPOSED-CLAUDE-SPELL-ELEMENT-LINE-20261124",
+      "previous_review": "PROPOSED-CLAUDE-SPELL-ELEMENT-LINE-20261124",
+      "rationale": "Exact successor for march fatigue (0.94.0-beta.5, rebased onto Warcasting and the Academy specialties): call-site hooks only (record the march after movement packets, the receiver limit after garrison operations, the exchange warning around existing transfer requests, the creature-card line, the AI exchange movement and actor budgets); the rule itself lives in the focused NewHorizonsMarchLeft, MarchLeftLimits, MarchLeftWarning, MarchLeftIndicator and MarchLeftTransfer units. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-DAYS-MARCH-B5-20261127",
       "review_scope": "Exact bounded source organization and failure-path review only; native/rendered acceptance and future growth unapproved.",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "f2da8f3dbc020871ea070e6bd3ae2169924c3c1072f971bf7508ddd21802737c"
+      "sha256": "266a0ca0dee245aef224b84d72a7012a1a34a0634c6f9cefd94e7b64f8dae019"
     },
     "client/windows/CCastleInterface.cpp::CFortScreen::CFortScreen(const CGTownInstance * town): CWindowObject(PLAYER_COLORED | BORDERED, {})#1": {
       "kind": "legacy",
@@ -23761,9 +23765,9 @@
       "inherited_a1_health_deferral": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.",
       "inherited_deferral": "Exact source-list bound only. Before substantive build logic, extract a cohesive target configuration section. Verify source/link membership once and retain no duplicate translation units. Prior stricter obligations remain in inherited_deferral, where present.",
       "kind": "exception",
-      "lines": 2209,
+      "lines": 2211,
       "owner": "engine_engineer",
-      "previous_review": "PROPOSED-CLAUDE-UNIT-STATE-REVISION-20261125",
+      "previous_review": "CLAUDE-ACADEMY-0942",
       "prior_a1_health_scope": {
         "kind": "exception",
         "lines": 2063,
@@ -23772,11 +23776,11 @@
         "sha256": "7058cdef35cfce13214572d190c4accfdf5721e6c144af3cdfca9f53bb68c2a0"
       },
       "prior_deferral": "Exact mechanical source/header registration only. Before substantive CMake target policy growth, extract a cohesive configuration section while verifying translation-unit membership and facade linkage. No future file growth allowance. Prior stricter obligations remain in inherited_deferral, where present.\n\nKeep registrations in their current coherent tables. Extract any future conditional target/control logic rather than growing this registry into a build framework.",
-      "rationale": "Exact successor for the 0.93.2 Rampart hero specialties (Use the Ground, Elusive, Patroness, Giant-Slayer, Living Remedy, Sorceress of Enroth, Brittle, Against the Odds, revised Perfect Mount, Treantmoot and Forest Ambush): one-line routing hooks into the focused new owners lib/entities/hero/NewHorizonsRampartSpecialties, lib/battle/NewHorizonsRampartSpecialties, lib/pathfinder/NewHorizonsElusive, server/battles/BattleRampartSpecialtyCasts, server/processors/PatronessVisit and AI/BattleAI/RampartSpecialtyValue. Existing extraction deferrals retained; no future growth credit. Exact successor for Sylvan Tactics 5 (Ambush): one-line hooks, includes, the split ranged/melee targeting predicate, one plain unit-state field and its persistence/copy plumbing, or registrations only; the rules live in the focused NewHorizonsSylvanAmbush and SylvanAmbushState units, the client presentation in SylvanAmbushStatusPresentation and SylvanAmbushWaitButton. Existing extraction deferrals retained; 2185 to 2189 lines; no future growth credit. Warcasting (new-horizons:warcast): registers the focused NewHorizonsWarcast.h/.cpp, HeroOrderWarcast.h and HeroCommandWarcastCapture.cpp owners. 2189 to 2194 lines; no future growth credit. Hot stats: CStack gains the never-saved battle::UnitHotStats member and its hotStatsAccess override; its two non-template save guards move out of line to StackSerializationChecks.cpp; Unit gains the one-line hotStatsAccess default; lib lists UnitHotStats.cpp, StackSerializationChecks.cpp and three headers; HypotheticSourceBinding gains one ProjectedAdjacencyRosterSlot data member and its include. Exact 2194 to 2199 lines; no future growth credit. Unit-state revision: CUnitState position, ghost, ghostPending and health are private; reads use the inline accessors getPosition, isGhost, isGhostPending and getHealth, writes the revision-bumping mutators setPosition, setGhost, setGhostPending, setHealth and editHealth()->. One-to-one mechanical rewrites, no behaviour change. Exact 2199 to 2201 lines; no future growth credit.\n\nCLAUDE-ACADEMY-0942: Exact successor for the 0.94.0-beta.4 Academy hero specialties (Hardened, Spoils of Alchemy, Practice Makes Perfect, Wellspring of Wealth, Storm Lord, revised Serpent's Embrace, Gold Standard, Inexhaustible Knowledge, Halon's Nullifying Shot, Focus Magic and Sage of the Ages): one-line routing hooks or registrations into the focused new owners lib/entities/hero/NewHorizonsAcademySpecialties, lib/battle/NewHorizonsAcademySpecialties, lib/networkPacks/AcademySpecialtyPacks and server/battles/BattleAcademySpecialties. Existing extraction deferrals retained; no future growth credit.",
-      "review": "CLAUDE-ACADEMY-0942",
+      "rationale": "Exact successor for march fatigue (0.94.0-beta.5, rebased onto Warcasting and the Academy specialties): call-site hooks only (record the march after movement packets, the receiver limit after garrison operations, the exchange warning around existing transfer requests, the creature-card line, the AI exchange movement and actor budgets); the rule itself lives in the focused NewHorizonsMarchLeft, MarchLeftLimits, MarchLeftWarning, MarchLeftIndicator and MarchLeftTransfer units. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-DAYS-MARCH-B5-20261127",
       "review_scope": "Exact source organization hash/count/span only; no runtime or future-growth approval.",
       "review_status": "AUTHOR_GENERATED_PENDING_INDEPENDENT_REVIEW",
-      "sha256": "769f43ff10a09311f4b2a79903f8d9b56377b63590ae81950f9c28b7f8159a0d",
+      "sha256": "f281363a5b8199d61d8c9aee1bcac81d662488a2c0de8f2903ff684f8c09d56c",
       "inherited_deferral_step2": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.\n\nExact shared-facade source/header registration only. Before conditional target/control policy growth, extract the next coherent configuration section; preserve one translation unit per implementation and consumer linkage through vcmi. No future registry-size growth credit.",
       "inherited_rampart_deferral": "Exact hash/size only. Preserve prior narrower extraction, ownership, registration, state/RNG and lifecycle obligations below; next substantive affected expansion must extract a cohesive responsibility and lower the retained bound. Owner engine_engineer.\nExact committed hash and size only, not future growth or native/build/performance approval. Owner engine_engineer must keep future conditional compile policy in focused target helpers and extract the next cohesive stage before further orchestration expansion. Preserve all stricter inherited source/link/guard/ordering obligations below.\nPreserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.\n\nExact shared-facade source/header registration only. Before conditional target/control policy growth, extract the next coherent configuration section; preserve one translation unit per implementation and consumer linkage through vcmi. No future registry-size growth credit."
     },
@@ -25367,14 +25371,14 @@
       "deferral": "Before further recruitment visitor growth, extract the next deterministic batch admission step into existing training rules. Preserve source/count receipts, mutation order, duplicate rejection and server/client conservation; exact file freeze only. Prior stricter obligations remain recorded in inherited_deferral, where present.",
       "inherited_deferral": "Before next substantive visitor expansion extract accepted action/history stages using validated packet and explicit BattleInfo/side refs; preserve all validation-before-mutation, typed allowance, Wisdom epoch/count, packet/RNG order and rejection atomicity. Before further substantive expansion, owning engine/gameplay/UI specialist must extract the next coherent touched policy, ordered stage, codec family or widget responsibility into a focused owner, preserving callback visibility, rejection atomicity, serialized field order, payment and RNG/packet order. This exact bounded migration/registry/validation routing gives no future growth credit.",
       "kind": "exception",
-      "lines": 3769,
+      "lines": 3792,
       "owner": "engine_engineer",
-      "previous_review": "IR-MANDATE-HISTORICAL-ALLOWANCE-794806-20261119",
-      "rationale": "Exact successor for Metamagic 6 Double Cast / Consecrated Arms 4 phases 2-3: one-line calls, includes, version-gated fields or registrations only; the new behavior lives in focused MetamagicDoubleCast and ConsecratedArmsChoice units. Existing extraction deferrals retained; no future growth credit.",
-      "review": "CLAUDE-0925-DOUBLECAST-CHOSEN-PRAYERS-PHASE23-20261120",
+      "previous_review": "CLAUDE-0925-DOUBLECAST-CHOSEN-PRAYERS-PHASE23-20261120",
+      "rationale": "Exact successor for march fatigue (0.94.0-beta.5, rebased onto Warcasting and the Academy specialties): call-site hooks only (record the march after movement packets, the receiver limit after garrison operations, the exchange warning around existing transfer requests, the creature-card line, the AI exchange movement and actor budgets); the rule itself lives in the focused NewHorizonsMarchLeft, MarchLeftLimits, MarchLeftWarning, MarchLeftIndicator and MarchLeftTransfer units. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-DAYS-MARCH-B5-20261127",
       "review_scope": "Exact organization and source-policy review only; no native/rendered acceptance, future growth approval or publication authorization.",
       "review_status": "INDEPENDENT_EXACT_SOURCE_REVIEWED_NATIVE_UNRUN",
-      "sha256": "1d1c26a41728170e4ebae37a81556ccf02c04dd4c7417db05af1ab8f55fd9f6a"
+      "sha256": "fb0fc891f80b0c2a426b1568e5ab582c62f50847f6103d52d1c95ec1fc53acb0"
     },
     "lib/gameState/GameStatePackVisitor.cpp::void BattleStatePackVisitor::visitBattleHeroOrderStateChanged(BattleHeroOrderStateChanged & pack)#1": {
       "kind": "legacy",
@@ -25489,13 +25493,14 @@
     "lib/gameState/GameStatePackVisitor.cpp::void GameStatePackVisitor::visitTryMoveHero(TryMoveHero & pack)#1": {
       "deferral": "Keep this exact ordered registry/serialization/authoritative-routing seam for Fly integration. Owning gameplay/engine specialist should separately extract cohesive validation or movement stages with prefix/rejection/wire/state parity before future expansion; no blanket ceiling allowance.",
       "kind": "exception",
-      "lines": 115,
+      "lines": 116,
       "owner": "engine_engineer",
-      "rationale": "Bounded Fly captured-policy/version/receipt/shared-landing integration only, 115 to 115 lines. Fixed mechanical routing/validation or serializer guards; shared substantive travel implementation extracted to NewHorizonsTravelSafety and NewHorizonsTravelDayEnd. Exact size only, not future growth or runtime approval.",
-      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
+      "rationale": "Exact successor for march fatigue (0.94.0-beta.5, rebased onto Warcasting and the Academy specialties): call-site hooks only (record the march after movement packets, the receiver limit after garrison operations, the exchange warning around existing transfer requests, the creature-card line, the AI exchange movement and actor budgets); the rule itself lives in the focused NewHorizonsMarchLeft, MarchLeftLimits, MarchLeftWarning, MarchLeftIndicator and MarchLeftTransfer units. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-DAYS-MARCH-B5-20261127",
       "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
       "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "sha256": "2819367828c3a13073569f731e282951a39f82aea4c0bc16b83b8aeef2bb501e"
+      "sha256": "de82c03d21248c72dd978584cec8fac2e4969da0995f72ace943b428ac69aa45",
+      "previous_review": "IR-FLY-V2-SCOPED-GROWTH-20261020"
     },
     "lib/gameState/GameStatePackVisitor.cpp::void applySpellPointMutation(CGameState & gs, CGHeroInstance & hero, const SetMana & pack)#1": {
       "deferral": "Owner: engine_engineer. Before further typed Spell Point mutation growth, extract cohesive validated dispatch into the existing focused resource owner, preserving pre-mutation payload/policy rejection, actual Normal recovery receipts, Buffer/temporary provenance, packet order and cancellation/settlement behavior.",
@@ -26007,13 +26012,15 @@
       "sha256": "c9dceccdf3e1ff85fac3296381b1c5a810ac2cada673c982acdd457c12ec976d"
     },
     "lib/mapObjects/army/CCreatureSet.cpp": {
-      "kind": "legacy",
-      "lines": 670,
+      "kind": "exception",
+      "lines": 672,
       "owner": "engine_engineer",
-      "rationale": "Existing file owned for structural review by engine_engineer; unchanged in cf2e62f9f1c56e5ab790dca81a2e745d8e9850bc. Exact no-growth freeze at 670 physical lines. No semantic certification or ceiling exception. Affected-area extraction and a decreasing baseline are required before expansion; urgent correctness work requires a separate bounded reviewed deferral.",
-      "review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "rationale": "Exact successor for march fatigue (0.94.0-beta.5, rebased onto Warcasting and the Academy specialties): call-site hooks only (record the march after movement packets, the receiver limit after garrison operations, the exchange warning around existing transfer requests, the creature-card line, the AI exchange movement and actor budgets); the rule itself lives in the focused NewHorizonsMarchLeft, MarchLeftLimits, MarchLeftWarning, MarchLeftIndicator and MarchLeftTransfer units. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-DAYS-MARCH-B5-20261127",
       "review_scope": "numeric-legacy-debt-freeze-only",
-      "sha256": "d004859099ac03778b6a2d70feed2a814f2cd4dd114e22b74d7d8813cb9512b6"
+      "sha256": "58d89186497ba3e680368b619f3b8281714e9e6aa15f96eb762f3514828384db",
+      "previous_review": "source-size-legacy-freeze-cf2e62f9-v1",
+      "deferral": "Before further substantive expansion, extract the next cohesive touched stage into its focused owner; preserve packet/RNG order, serialization field order and rejection atomicity. No future growth credit."
     },
     "lib/mapObjects/army/CStackInstance.cpp::void CStackInstance::serializeJson(JsonSerializeFormat & handler)#1": {
       "kind": "legacy",
@@ -26392,14 +26399,14 @@
       },
       "deferral": "Future substantive pack-dispatch expansion should use existing typed visitor owners; preserve numeric registration slots and current schema validation. Current exact Command/Authority scope: Engine: split only the Command registration/source/visitTyped subgroup into a focused registry owner on the next edit; preserve IDs310-313, no duplicate/omitted registration, same source-target linkage and dispatch order. Exception is exact current bytes/size only; build/native acceptance remains pending.",
       "kind": "exception",
-      "lines": 1372,
+      "lines": 1377,
       "owner": "engine_engineer",
-      "previous_review": "IR-SHARED84-CURRENT225-EXACT-SOURCE-20261103",
-      "rationale": "Exact mechanical source/type/dispatch registry change only; existing numeric IDs, source ownership and validated execution order retained. No gameplay rule body moved into the registry.",
-      "review": "IR-COMMAND-AUTHORITY-SCOPED-ORGANIZATION-20261109-UNITS",
+      "previous_review": "IR-COMMAND-AUTHORITY-SCOPED-ORGANIZATION-20261109-UNITS",
+      "rationale": "Exact successor for march fatigue (0.94.0-beta.5, rebased onto Warcasting and the Academy specialties): call-site hooks only (record the march after movement packets, the receiver limit after garrison operations, the exchange warning around existing transfer requests, the creature-card line, the AI exchange movement and actor budgets); the rule itself lives in the focused NewHorizonsMarchLeft, MarchLeftLimits, MarchLeftWarning, MarchLeftIndicator and MarchLeftTransfer units. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-DAYS-MARCH-B5-20261127",
       "review_scope": "Exact frozen production patch only. Conditional on root serialized engine/AI/UI/content/test composition; no future growth, old-save matrix, native/render/runtime proof or adoption authorization.",
       "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_RENDERED_UNRUN",
-      "sha256": "9bc0c2d7acb4e56be670b042075b7193225e72f8b6a2e7c78034d632ae46062d"
+      "sha256": "c541757db9c50cfc36a888b08c1addf0bd6454fc2d0e597ddbee839e16809e98"
     },
     "lib/networkPacks/PacksForClient.h": {
       "completed_p_predecessor": {
@@ -26412,14 +26419,14 @@
       "deferral": "Exact envelope extension only. Future progression logic belongs in HeroPerkProgression/applyLevelUpOffer; preserve wire order, absence defaults, stale replies and pending-offer roundtrip. Prior stricter obligations remain in inherited_deferral, where present.",
       "inherited_deferral": "Owner: engine_engineer. Before further serialization-family growth, extract cohesive non-writing capability preflight with explicit wire-stage boundaries; retain direct/enclosing prefix rejection, exact enum/field order, historical clear defaults and malformed-input rejection. Engine: split the commander-property packet family into a focused declaration header with the existing public aggregate include and packet registration; preserve linkage, command fields, prefix rejection and supported binary bytes. The current change is four include/routing lines only, not permission to grow this packet registry. 1148 bounded follow-up: Before further commander serialization-family growth perform the previously assigned cohesive declaration/header extraction with the public aggregate registration, exact payload ordering and capability-prefix tests; no blanket packet-registry allowance. B47 correctness-only renewal: retain engine_engineer commander declaration/header extraction before further substantive family growth, including public aggregate registration/linkage, identical payload order, historical clear defaults and direct/enclosing empty-prefix/current-byte regression requirements. This one missing1151 preflight condition does not discharge or broaden that obligation. Engine: before further HeroLevelUp packet logic growth, extract its nonwriting envelope admission into a named shared helper, retaining exact writer/reader field order, query identity and unsupported pre-prefix/older-read-reset tests. Keep packet serialization and authority separate. Engine engineer: before further non-mechanical codec/preflight growth in this exact owner, extract the next touched non-writing capability/shape family into a typed domain validator. Keep Handler I/O contiguous, unchanged prefix position, field order and current1156 roundtrip/malformed-input rejection; no new generic context or include fragment. Before further substantive expansion, owning engine/gameplay/UI specialist must extract the next coherent touched policy, ordered stage, codec family or widget responsibility into a focused owner, preserving callback visibility, rejection atomicity, serialized field order, payment and RNG/packet order. This exact bounded migration/registry/validation routing gives no future growth credit. Current exact Command/Authority scope: Engine: extract the three Command packet definitions into a dedicated typed packet header with CPackForClient/Query dependencies; preserve registration IDs310-312, visitTyped dispatch, prefix refusal and accepted progression/chosen-before-QueryResolved packet order.",
       "kind": "exception",
-      "lines": 2610,
+      "lines": 2640,
       "owner": "engine_engineer",
-      "previous_review": "IR-LEADERSHIP-1159-INDEPENDENT-20261113-V1-UNITS",
-      "rationale": "The typed HeroLevelUp envelope gains the fixed offer identity descriptor and feature-gated wire field with unsupported-writer refusal. SetObjectProperty adds Estates pre-write and post-field feature admission through validateEstatesProperty. These are protocol declaration/codec guards; RNG, eligibility, property-domain validation bodies and mutation remain in focused owners. Exact measured unit only; no future growth credit.",
-      "review": "PROPOSED-0920-EXACT-SOURCE-ORGANIZATION",
+      "previous_review": "PROPOSED-0920-EXACT-SOURCE-ORGANIZATION",
+      "rationale": "Exact successor for march fatigue (0.94.0-beta.5, rebased onto Warcasting and the Academy specialties): call-site hooks only (record the march after movement packets, the receiver limit after garrison operations, the exchange warning around existing transfer requests, the creature-card line, the AI exchange movement and actor budgets); the rule itself lives in the focused NewHorizonsMarchLeft, MarchLeftLimits, MarchLeftWarning, MarchLeftIndicator and MarchLeftTransfer units. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-DAYS-MARCH-B5-20261127",
       "review_scope": "Proposed source organization and exact bound only; native/rendered/runtime acceptance remains separate.",
       "review_status": "PROPOSED_AWAITING_INDEPENDENT_REVIEW",
-      "sha256": "01651c66a7f13a3f2cb9a1781a61d5396852185da9fe396331fe622ebe035797"
+      "sha256": "070f7e92138799d987764fa2857ff7da34a3718c0a83a5909a2972dd7998ae1d"
     },
     "lib/networkPacks/PacksForClientBattle.h": {
       "deferral": "Before substantive packet growth, extract coherent validation/current serialization group with explicit packet/context; preserve current1156 byte layout and native load validation; retired type304 stays reserved.\n\nEngine: before further substantive packet growth, extract one cohesive nonwriting BattleStart admission family into its existing BattleInfo/domain validator with explicit feature support; retain outer guard location and Handler layout. For packet-family header decomposition, move only a bounded family with all declarations/consumers/includes/type IDs checked, never another huge helper. Require exact current bytes, direct/enclosing unsupported prefixes, historical reused defaults, malformed receipt and descriptor refusal controls. Reserved type304 remains reserved. Protected invariants: Existing leaf and enclosing before-prefix rejection stays before the same packet prefix; preserve late checks too without claiming they are early; Stable packet fields/type identities, source/side/receipt shape, compare-and-apply and historical clearing; Target vector order, primary/SECONDARY and casualty provenance, Last Stand activation markers and attacker/target preflight traversal; No codec reinstatement of retired mechanics or midcombat resume; deferred animation is presentation, not gameplay authority.",
@@ -27151,15 +27158,15 @@
       "deferral": "Exact enum bound only. Future format changes require independent serialized ownership and file-loader/connection compatibility evidence. Prior stricter obligations remain in inherited_deferral, where present.",
       "inherited_deferral": "Preserve append-only feature values, historical aliases and explicit read/write capability tests; do not place runtime mechanics in this registry. Owner: engine_engineer. Before further serialization-family growth, extract cohesive non-writing capability preflight with explicit wire-stage boundaries; retain direct/enclosing prefix rejection, exact enum/field order, historical clear defaults and malformed-input rejection. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance. Fafner bounded follow-up: Keep append-only feature values/aliases and direct/enclosing capability tests; do not add runtime mechanics to the feature registry. Keep the stable version registry coherent. Bound growth to six physical lines and this one capability; remove old versions only in a separate reviewed minimum-version migration with native historical fixtures. No future numeric ceiling increase. Future1146 hold: Root must first qualify the current1145/first19 cohort, preserve BATTLE_WIDE and all13 selected artwork bindings on rebase, review final coherent composition and execute the full direct/enclosing/history matrix including hero/map/pool/world and captured identity/default-absence controls. The nine authored central cases and two retargeted zero cases remain UNCOMPILED/UNRUN and do not discharge those obligations. Neutral start-option follow-up: retain host/NEW_GAME scope, absent map/default preservation, historical reused-read clearing, direct/enclosing zero-prefix admission, and no rescaling on load. Require native and rendered acceptance before delivery; preserve every inherited extraction and historical-policy obligation. 1148 bounded follow-up: Continue separate captured JSON and exact-marker codec admission; retain old13/four/neutral domains, no implicit policy repair, and prove direct/enclosing old-prefix rejection plus current full snapshot identity. Exact bounded1151 change only. Exact651to656 appends named1151 plus static boundary assertions and CURRENT alias update. All prior numeric values/aliases exceptCURRENT remain exact; capability facts are nonserialized and no payload field changes. No ceiling increase, coverage exclusion or unrelated/future growth allowance. Engine: preserve explicit known wire-to-Bonus profile mapping, zero-prefix policy refusal and current/default separation. Quarantine indistinguishable obsolete private experiments by provenance; no universal rejection or migration claim. Before delivery require fresh coherent2/Bonus1 native andgenuinefirstwriter/save/resave/replay/rendered acceptance plus1151historical/refusal controls. No automaticpromotion or futureformat approval. Engine engineer: retain one intended registration per target and platform/facade linkage parity; any new target-configuration algorithm needs its own focused component. Exact current registry only, with no implementation or future size allowance. Current exact Command/Authority scope: Engine: split only the Command registration/source/visitTyped subgroup into a focused registry owner on the next edit; preserve IDs310-313, no duplicate/omitted registration, same source-target linkage and dispatch order. Exception is exact current bytes/size only; build/native acceptance remains pending.",
       "kind": "exception",
-      "lines": 693,
+      "lines": 694,
       "neutral_predecessor_review": "IR-EXTENDED-CURE-1152-COMPOSED-20261030",
       "owner": "engine_engineer",
-      "previous_review": "CLAUDE-SYLVAN-AMBUSH-20261123",
-      "rationale": "Exact successor for 0.93.1 beta step 1 (Precise Casting resistance halving, core Stewardship and Lord of the Crypts, +3%/level specialty scaling, activation of unchanged extended ordinary specialties): bounded routing hooks and focused owners only. Existing extraction deferrals retained; no future growth credit. Exact successor for Sylvan Tactics 5 (Ambush): one-line hooks, includes, the split ranged/melee targeting predicate, one plain unit-state field and its persistence/copy plumbing, or registrations only; the rules live in the focused NewHorizonsSylvanAmbush and SylvanAmbushState units, the client presentation in SylvanAmbushStatusPresentation and SylvanAmbushWaitButton. Existing extraction deferrals retained; 691 to 692 lines; no future growth credit. Warcasting (new-horizons:warcast): one append-only format, NEW_HORIZONS_WARCAST (1168). 692 to 693 lines; no future growth credit.",
-      "review": "CLAUDE-WARCAST-20261124",
+      "previous_review": "CLAUDE-WARCAST-20261124",
+      "rationale": "Exact successor for march fatigue (0.94.0-beta.5, rebased onto Warcasting and the Academy specialties): call-site hooks only (record the march after movement packets, the receiver limit after garrison operations, the exchange warning around existing transfer requests, the creature-card line, the AI exchange movement and actor budgets); the rule itself lives in the focused NewHorizonsMarchLeft, MarchLeftLimits, MarchLeftWarning, MarchLeftIndicator and MarchLeftTransfer units. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-DAYS-MARCH-B5-20261127",
       "review_scope": "Exact recorded C14 source hash, physical span and organization delta only. No future growth, whole-mechanic, compiler, native, rendered, performance, save-resume, publication or promotion acceptance.",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "7b6b1609c7f18550013f5187acafd1d822826b76d8c62b47a7b4b3719d56ffba"
+      "sha256": "0a2e48d519d6e50ad2dd2411f2621e0c09fa5cab1162bd44b23318a3b00be55c"
     },
     "lib/serializer/JsonSerializeFormat.h": {
       "kind": "legacy",
@@ -27180,14 +27187,14 @@
       },
       "deferral": "Keep the mechanical numeric registration table stable; never reuse retired slots in this change, and verify current serialization/type registration with final composed engine. Current exact Command/Authority scope: Engine: extract the append-only Command registration subgroup behind a typed template helper preserving exact IDs/order; require no duplicate IDs and current/historical codec checks before any later registry growth.",
       "kind": "exception",
-      "lines": 306,
+      "lines": 307,
       "owner": "engine_engineer",
-      "previous_review": "IR-NH092-ORG-3E82D142-20261116",
-      "rationale": "Exact 305 to 305-line scope. Existing state/content/serialization responsibility integrates current captured rules and explicit native routing. Preserve independent captures, validation boundaries, deterministic order, existing ownership and saved absence.\n\nCLAUDE-ACADEMY-0942: Exact successor for the 0.94.0-beta.4 Academy hero specialties (Hardened, Spoils of Alchemy, Practice Makes Perfect, Wellspring of Wealth, Storm Lord, revised Serpent's Embrace, Gold Standard, Inexhaustible Knowledge, Halon's Nullifying Shot, Focus Magic and Sage of the Ages): one-line routing hooks or registrations into the focused new owners lib/entities/hero/NewHorizonsAcademySpecialties, lib/battle/NewHorizonsAcademySpecialties, lib/networkPacks/AcademySpecialtyPacks and server/battles/BattleAcademySpecialties. Existing extraction deferrals retained; no future growth credit.",
-      "review": "CLAUDE-ACADEMY-0942",
+      "previous_review": "CLAUDE-ACADEMY-0942",
+      "rationale": "Exact successor for march fatigue (0.94.0-beta.5, rebased onto Warcasting and the Academy specialties): call-site hooks only (record the march after movement packets, the receiver limit after garrison operations, the exchange warning around existing transfer requests, the creature-card line, the AI exchange movement and actor budgets); the rule itself lives in the focused NewHorizonsMarchLeft, MarchLeftLimits, MarchLeftWarning, MarchLeftIndicator and MarchLeftTransfer units. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-DAYS-MARCH-B5-20261127",
       "review_scope": "Exact source organization hash/count/span only; no runtime or future-growth approval.",
       "review_status": "AUTHOR_GENERATED_PENDING_INDEPENDENT_REVIEW",
-      "sha256": "08635ba824bc586783a68adcbe204d415d33563eb1258b45b8aa1b486d2f7456"
+      "sha256": "9f658aece9204c8c8b6184b735a4d577d8675a382f6d1cd115cdf8b702f4f743"
     },
     "lib/spells/BattleSpellMechanics.cpp": {
       "deferral": "Further castEval growth requires focused posteffects receipt dispatch taking Mechanics/recorder/ServerCallback, preserving certification last, no duplicate completion and native injury/packet/RNG order. Native controls: Hero/creatureorigin, shields/sourceidentity/history/actions. No general ceilingwaiver.\n\nBefore any further substantive expansion, extract the next cohesive touched policy, callback/read adapter or ordered admission stage into its focused owner. Preserve exact capture metadata, source visibility, schema rejection, RNG/packet ordering and standalone/world wire identity; no future growth credit from this exception. Current exact-scope addendum: Gameplay owner extracts accepted-original completion and spell-evaluation transaction phases after native live/castEval/AI parity; preserve ticket entry/delegation/cost, effect ordering, one Overflow completion and RNG/reflection routing.",
@@ -28164,14 +28171,14 @@
       "deferral": "Retain every inherited extraction deferral of this unit. Before further substantive growth, move the next coherent touched responsibility into its focused owner; this exact routing gives no future growth allowance.",
       "inherited_deferral": "Only this exact native migration content/hash/size is proposed; no future growth allowance. Owner: engine_engineer. Next substantive edit must extract the affected calculation/query/forecast routing into the existing dedicated component with exact state, packet/RNG, action-choice and lifecycle regressions; preserve any narrower inherited deferral below. Before further substantive query/progression growth keep admission, single-card draw and ordinary progression in focused owners; preserve owner/top/stale/index/once/RNG rejection atomicity, normal queue/mastery choices, raw XP offset, native caps and specialty growth. Before further substantive expansion, owning engine/gameplay/UI specialist must extract the next coherent touched policy, ordered stage, codec family or widget responsibility into a focused owner, preserving callback visibility, rejection atomicity, serialized field order, payment and RNG/packet order. This exact bounded migration/registry/validation routing gives no future growth credit.",
       "kind": "exception",
-      "lines": 5758,
+      "lines": 5762,
       "owner": "gameplay_engineer",
-      "previous_review": "CLAUDE-CASTLE-COMBAT-0931",
-      "rationale": "Exact successor for the 0.93.2 Rampart hero specialties (Use the Ground, Elusive, Patroness, Giant-Slayer, Living Remedy, Sorceress of Enroth, Brittle, Against the Odds, revised Perfect Mount, Treantmoot and Forest Ambush): one-line routing hooks into the focused new owners lib/entities/hero/NewHorizonsRampartSpecialties, lib/battle/NewHorizonsRampartSpecialties, lib/pathfinder/NewHorizonsElusive, server/battles/BattleRampartSpecialtyCasts, server/processors/PatronessVisit and AI/BattleAI/RampartSpecialtyValue. Existing extraction deferrals retained; no future growth credit.",
-      "review": "PROPOSED-CLAUDE-ASSERT-SWEEP-20261123",
+      "previous_review": "PROPOSED-CLAUDE-ASSERT-SWEEP-20261123",
+      "rationale": "Exact successor for march fatigue (0.94.0-beta.5, rebased onto Warcasting and the Academy specialties): call-site hooks only (record the march after movement packets, the receiver limit after garrison operations, the exchange warning around existing transfer requests, the creature-card line, the AI exchange movement and actor budgets); the rule itself lives in the focused NewHorizonsMarchLeft, MarchLeftLimits, MarchLeftWarning, MarchLeftIndicator and MarchLeftTransfer units. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-DAYS-MARCH-B5-20261127",
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "28432e6564cdf9e5870e8b23ec13bb3a89ecb6fb77090eabba146ae67a15a2bb",
+      "sha256": "211d9677c9fc7ef21bcecc67c21439efb5dd1977be7e70349d8c3622cf8a9848",
       "inherited_rampart_deferral": "Extend the focused progression owner before further routing. Before substantive handler growth, extract the next lifecycle command group with removed/covered/transferred query, callback suppression and conservation coverage; exact6058 only. Prior stricter obligations remain in inherited_deferral, where present.",
       "prior_review": "CLAUDE-RAMPART-0932",
       "assert_sweep_note": "One line: a Quick Study copy has no own source to charge, so the charge lookup returns before its canCastThisSpell assert. Same line count; release behaviour unchanged."
@@ -28282,15 +28289,15 @@
       },
       "deferral": "Engine/gameplay engineer: retain pure conversion planning in SkeletonTransformer; if this executor expands, factor typed output-packet preparation from final publication without changing positive-output-before-erase order. Preserve invalid-slot/no-partial-state and last-stack controls.82 lines is an ordinary trigger, not a ceiling violation.",
       "kind": "exception",
-      "lines": 84,
+      "lines": 87,
       "owner": "engine_engineer",
-      "previous_review": "IR-COMMAND-AUTHORITY-EXPANDED-BOUNDARY-20261109",
-      "rationale": "Exact 82 to 84-line scope. Authoritative execution integrates current spell/action receipts and validated captured data while retiring incompatible handlers. Preserve validated requests, rejection atomicity, ordered effects/packets and RNG.",
-      "review": "IR-NH092-ORG-3E82D142-20261116",
+      "previous_review": "IR-NH092-ORG-3E82D142-20261116",
+      "rationale": "Exact successor for march fatigue (0.94.0-beta.5, rebased onto Warcasting and the Academy specialties): call-site hooks only (record the march after movement packets, the receiver limit after garrison operations, the exchange warning around existing transfer requests, the creature-card line, the AI exchange movement and actor budgets); the rule itself lives in the focused NewHorizonsMarchLeft, MarchLeftLimits, MarchLeftWarning, MarchLeftIndicator and MarchLeftTransfer units. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-DAYS-MARCH-B5-20261127",
       "review_category": "ordinary-function-review",
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "ccc769bed5c7ab019123e6cf29860fafadd0e74eec6cd27b473421d799e1dfbe"
+      "sha256": "6d932d88c5d8e36b7a749f26dcbdd33171f31fd7787cb9da8822a03ceeda6673"
     },
     "server/CGameHandler.cpp::std::function<void()> CGameHandler::prepareChargeBasedSpellCompletion(const ObjectInstanceID & heroObjectID, const SpellID & spellID)#1": {
       "deferral": "Next substantive source-completion expansion should extract the selected charged-source completion receipt with explicit hero/artifact/spell/cost IDs, re-resolve after effects and preserve permanent/reusable priority, charge amount and exactly-once debit; retain source-consumption native regression.",
@@ -28337,14 +28344,14 @@
     "server/CGameHandler.cpp::void CGameHandler::sendAndApply(CGarrisonOperationPack & pack)#1": {
       "deferral": "Before another garrison transition family, extract the touched army-admission preflight group into focused shared validators; preserve full transaction validation and send/apply order. Cap this renewal to the recorded exact size and hash; independent review and relevant runtime validation remain required.",
       "kind": "exception",
-      "lines": 201,
+      "lines": 202,
       "owner": "engine_engineer",
-      "previous_review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "rationale": "Exact 201 to 201 physical lines: Read-only current perk accessor migration leaves the garrison validation/dispatch span unchanged. This proposed exception covers only the recorded hash/span, not future growth.",
-      "review": "IR-NH092-ORG-3E82D142-20261116",
+      "previous_review": "IR-NH092-ORG-3E82D142-20261116",
+      "rationale": "Exact successor for march fatigue (0.94.0-beta.5, rebased onto Warcasting and the Academy specialties): call-site hooks only (record the march after movement packets, the receiver limit after garrison operations, the exchange warning around existing transfer requests, the creature-card line, the AI exchange movement and actor budgets); the rule itself lives in the focused NewHorizonsMarchLeft, MarchLeftLimits, MarchLeftWarning, MarchLeftIndicator and MarchLeftTransfer units. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-DAYS-MARCH-B5-20261127",
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "f86f861551a62a221cf9507639caa83ce4c69e79f83e9ee7875573f73d1dcd3e"
+      "sha256": "4b75301a9885ecf4a86d1c7bafa0e933a88f09746d12da349617c1f88d64f720"
     },
     "server/CGameHandler.cpp::void CGameHandler::sendAndApply(CPackForClient & pack)#1": {
       "deferral": "Owner: engine_engineer. Preserve all existing packet ordering, command validation and RNG invariants. Before further substantive growth, extract the next touched cohesive prepublication/admission or reaction orchestration into its existing domain owner with explicit world/context inputs; characterize zero publication on rejection, direct GS receiver rejection, original apply/aftermath order and exception/state/RNG parity. This exact3-line shared-policy routing correction may precede that broader extraction. Owning gameplay/engine specialist: before further substantive expansion of this touched rule/transition, extract the next coherent affected policy or ordered stage into a focused owner. Preserve callback visibility, original recipient/caster identity, rejection atomicity and packet/RNG order; characterization must compare exact state and emitted packets. This is no future growth credit. Exact frozen-unit obligation: Engine engineer: next hook edit must extract typed pre-publication snapshot and post-publication reaction stages while preserving applyPack position, reaction order, echo nonrecursion and authoritative RNG/receipt comparisons.",
@@ -30052,6 +30059,26 @@
       "sha256": "90d4679d9e661a2964afd2e1771eb49490c6818c693a23bbe8508b1cdf3b6ce7",
       "review": "CLAUDE-CASTLE-COMBAT-0931",
       "rationale": "Exact successor for 0.93.1 Castle combat specialties (Volley Command, revised Aerial Supremacy, Benediction of Arms, Pariah, Frost Mantle, Quick Study, Sermon): bounded routing hooks into focused new owners only. Existing extraction deferrals retained; no future growth credit."
+    },
+    "AI/Nullkiller2/Pathfinding/Actors.cpp": {
+      "kind": "exception",
+      "owner": "gameplay_engineer",
+      "previous_review": null,
+      "deferral": "Before further substantive expansion, extract the next cohesive touched stage into its focused owner; preserve packet/RNG order, serialization field order and rejection atomicity. No future growth credit.",
+      "lines": 510,
+      "sha256": "5f7a034e8419ca97d55220fe99396e99c2759f386ec8a9c0d2acd30830bbf5a9",
+      "review": "CLAUDE-DAYS-MARCH-B5-20261127",
+      "rationale": "Exact successor for march fatigue (0.94.0-beta.5, rebased onto Warcasting and the Academy specialties): call-site hooks only (record the march after movement packets, the receiver limit after garrison operations, the exchange warning around existing transfer requests, the creature-card line, the AI exchange movement and actor budgets); the rule itself lives in the focused NewHorizonsMarchLeft, MarchLeftLimits, MarchLeftWarning, MarchLeftIndicator and MarchLeftTransfer units. Existing extraction deferrals retained; no future growth credit."
+    },
+    "client/widgets/CGarrisonInt.cpp::void CGarrisonSlot::clickPressed(const Point & cursorPosition)#1": {
+      "kind": "exception",
+      "owner": "gameplay_engineer",
+      "previous_review": null,
+      "deferral": "Before further substantive expansion, extract the next cohesive touched stage into its focused owner; preserve packet/RNG order, serialization field order and rejection atomicity. No future growth credit.",
+      "lines": 84,
+      "sha256": "b94e7704869faa91a588dcf25d70b2a91bbe46fc5b37a31ed3cbf23fda807cd0",
+      "review": "CLAUDE-DAYS-MARCH-B5-20261127",
+      "rationale": "Exact successor for march fatigue (0.94.0-beta.5, rebased onto Warcasting and the Academy specialties): call-site hooks only (record the march after movement packets, the receiver limit after garrison operations, the exchange warning around existing transfer requests, the creature-card line, the AI exchange movement and actor budgets); the rule itself lives in the focused NewHorizonsMarchLeft, MarchLeftLimits, MarchLeftWarning, MarchLeftIndicator and MarchLeftTransfer units. Existing extraction deferrals retained; no future growth credit."
     }
   }
 }

@@ -129,6 +129,7 @@ public:
 	void visitSetNewHorizonsSageGuildVisit(SetNewHorizonsSageGuildVisit & pack) override;
 	void visitSetNewHorizonsDiplomacyState(SetNewHorizonsDiplomacyState & pack) override;
 	void visitSetNewHorizonsDemonicReserve(SetNewHorizonsDemonicReserve & pack) override;
+	void visitLowerStackMarchLeft(LowerStackMarchLeft & pack) override;
 	void visitSetPortalDwellingSource(SetPortalDwellingSource & pack) override;
 	void visitEntitiesChanged(EntitiesChanged & pack) override;
 	void visitSetCommanderProperty(SetCommanderProperty & pack) override;
