@@ -38,7 +38,7 @@
     "guild-room-composites-and-bindings": 10,
     "hero-interface-buttons": 11,
     "hero-specialty-icons": 236,
-    "mage-guild-town-art-and-ui": 81,
+    "mage-guild-town-art-and-ui": 87,
     "magi-and-archmagi": 348,
     "mummy-runtime": 102,
     "native-specialty-effect-aliases": 1,
@@ -66757,6 +66757,66 @@
       "family": "builtin-skills-perks-orders-and-ui",
       "origin": "Original Codex CLI built-in imagegen symbol; premultiplied-alpha native export composited on the original Heroes III icm006 Wait frame and state treatment",
       "selection": "Owner-approved Sylvan Tactics Ambush status, perk and Wait button art 2026-11-23",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_school_badge_light.png",
+      "source": "Mods/new-horizons/Images/NH_school_badge_light.png",
+      "size": 1191,
+      "sha256": "c3ed234421ebd6ef7846d1842c49eed3f0df6bbc6d87b761415c3fde514b0431",
+      "family": "mage-guild-town-art-and-ui",
+      "origin": "Original Codex CLI built-in imagegen medallion; premultiplied-alpha native export",
+      "selection": "Owner-selected Mage Guild spell school badge medallions (18 px, no band) 2026-11-24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_school_badge_nature.png",
+      "source": "Mods/new-horizons/Images/NH_school_badge_nature.png",
+      "size": 1194,
+      "sha256": "243436bc0c22a0f85a7ca56e5ab58ae50becb197d55b117109a71349803efdb1",
+      "family": "mage-guild-town-art-and-ui",
+      "origin": "Original Codex CLI built-in imagegen medallion; premultiplied-alpha native export",
+      "selection": "Owner-selected Mage Guild spell school badge medallions (18 px, no band) 2026-11-24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_school_badge_sorcery.png",
+      "source": "Mods/new-horizons/Images/NH_school_badge_sorcery.png",
+      "size": 1220,
+      "sha256": "93405af596f9016cd1765f7837bd95006ca2c2ea979c5aa9e186edb5f365df31",
+      "family": "mage-guild-town-art-and-ui",
+      "origin": "Original Codex CLI built-in imagegen medallion; premultiplied-alpha native export",
+      "selection": "Owner-selected Mage Guild spell school badge medallions (18 px, no band) 2026-11-24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_school_badge_havoc.png",
+      "source": "Mods/new-horizons/Images/NH_school_badge_havoc.png",
+      "size": 1174,
+      "sha256": "e0adc8e23d5e195281ff87f93578b24e22663db80132bb1cae834d112ef794e9",
+      "family": "mage-guild-town-art-and-ui",
+      "origin": "Original Codex CLI built-in imagegen medallion; premultiplied-alpha native export",
+      "selection": "Owner-selected Mage Guild spell school badge medallions (18 px, no band) 2026-11-24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_school_badge_shadow.png",
+      "source": "Mods/new-horizons/Images/NH_school_badge_shadow.png",
+      "size": 1185,
+      "sha256": "161bb99d04bdd85087c1c76a05720f12d0a89db698e775c4e0e4bc0c41c0c83a",
+      "family": "mage-guild-town-art-and-ui",
+      "origin": "Original Codex CLI built-in imagegen medallion; premultiplied-alpha native export",
+      "selection": "Owner-selected Mage Guild spell school badge medallions (18 px, no band) 2026-11-24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/NH_school_badge_chaos.png",
+      "source": "Mods/new-horizons/Images/NH_school_badge_chaos.png",
+      "size": 1194,
+      "sha256": "2330190ac0c91ce57a7b7af05b77d1f0238f5275245eb3d3e4b2cc93c91faa19",
+      "family": "mage-guild-town-art-and-ui",
+      "origin": "Original Codex CLI built-in imagegen medallion; premultiplied-alpha native export",
+      "selection": "Owner-selected Mage Guild spell school badge medallions (18 px, no band) 2026-11-24",
       "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
     }
   ]

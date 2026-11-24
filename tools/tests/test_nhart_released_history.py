@@ -21,6 +21,7 @@ from .nhart_living_armor_backdrop import backdrop_wave
 from .nhart_creature_ability_art import ability_wave
 from .nhart_interface_status_art import interface_status_wave
 from .nhart_academy_town_animation import town_animation_wave
+from .nhart_spell_school_badges import school_badge_wave
 from .nhart_retired_interface_icons import retirement_wave, retired_count
 from .nhart_current_faction_perk_art import current_faction_perk_wave_from
 from .nhart_sylvan_ambush_art import sylvan_ambush_wave
@@ -61,6 +62,7 @@ class ReleasedArtHistoryTest(unittest.TestCase):
                           + len(interface_status_wave(self.waves)['resources'])
                           + len(town_animation_wave(self.waves)['resources'])
                           + len(sylvan_ambush_wave(self.waves)['resources'])
+                          + len(school_badge_wave(self.waves)['resources'])
                           - retired_count(self.waves), 41))
         for family in ('mummy-runtime', 'conflux-water-ice-runtime', 'wisps-and-projectiles'):
             changed = copy.deepcopy(self.entries)

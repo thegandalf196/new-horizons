@@ -21467,6 +21467,39 @@
         }
       ],
       "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "baselineArchiveSha256": "cb96bae5dea0da5de735ec0c534e9747f77ba3e59f9a0e5a5c0ac46dbf095c38",
+      "baselineManifestSha256": "d528e9a9fcdf3d30c01a9c5f722a9eb87bc72096b039ebe34828f7a690a12c96",
+      "baselineEntriesSha256": "8211d98750e32679ca8c83ae211deee2fc04c9bc526b94f98374977a4b5b1227",
+      "baselineCount": 6671,
+      "entryCount": 6677,
+      "newArchiveSha256": "dad2371c6b96d2506ff04e4d28e2c1ca2385a453e734c9d1667701160b153a65",
+      "resources": [
+        "SPRITES/NH_school_badge_chaos.png",
+        "SPRITES/NH_school_badge_havoc.png",
+        "SPRITES/NH_school_badge_light.png",
+        "SPRITES/NH_school_badge_nature.png",
+        "SPRITES/NH_school_badge_shadow.png",
+        "SPRITES/NH_school_badge_sorcery.png"
+      ],
+      "perks": [],
+      "statuses": [],
+      "reusedBindings": [],
+      "spellSchoolBadges": [
+        {
+          "resources": [
+            "SPRITES/NH_school_badge_chaos.png",
+            "SPRITES/NH_school_badge_havoc.png",
+            "SPRITES/NH_school_badge_light.png",
+            "SPRITES/NH_school_badge_nature.png",
+            "SPRITES/NH_school_badge_shadow.png",
+            "SPRITES/NH_school_badge_sorcery.png"
+          ],
+          "selectionRecordSha256": "f7dbd0fc9083778ba86ddaa15f05a098c392da4c166cb03ee0ebd15671b5a569"
+        }
+      ],
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
     }
   ]
 }

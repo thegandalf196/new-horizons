@@ -1,0 +1,110 @@
+{
+  "format": 1,
+  "selection": "Owner-selected Mage Guild spell school badge medallions (18 px, no band) 2026-11-24",
+  "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
+  "placement": "18x18 medallion centred on the bottom edge of the native 83x61 spell scroll; two-school spells show both side by side",
+  "entries": [
+    {
+      "resource": "SPRITES/NH_school_badge_light.png",
+      "school": "new-horizons:light",
+      "sha256": "c3ed234421ebd6ef7846d1842c49eed3f0df6bbc6d87b761415c3fde514b0431",
+      "dimensions": [
+        18,
+        18
+      ],
+      "alphaBoundingBox": [
+        0,
+        0,
+        18,
+        18
+      ],
+      "origin": "Original Codex CLI built-in imagegen medallion; premultiplied-alpha native export",
+      "sourceMasterSha256": "818c9bde6c3edaccd0d0d14fc64c89a66dc84858d87266efe653a1cf74197039"
+    },
+    {
+      "resource": "SPRITES/NH_school_badge_nature.png",
+      "school": "new-horizons:nature",
+      "sha256": "243436bc0c22a0f85a7ca56e5ab58ae50becb197d55b117109a71349803efdb1",
+      "dimensions": [
+        18,
+        18
+      ],
+      "alphaBoundingBox": [
+        0,
+        0,
+        18,
+        18
+      ],
+      "origin": "Original Codex CLI built-in imagegen medallion; premultiplied-alpha native export",
+      "sourceMasterSha256": "d28e660e49f4182c95576da346dd35118c8f81ae2b1a910c7fe15dfb0a1d0210"
+    },
+    {
+      "resource": "SPRITES/NH_school_badge_sorcery.png",
+      "school": "new-horizons:sorcery",
+      "sha256": "93405af596f9016cd1765f7837bd95006ca2c2ea979c5aa9e186edb5f365df31",
+      "dimensions": [
+        18,
+        18
+      ],
+      "alphaBoundingBox": [
+        0,
+        0,
+        18,
+        18
+      ],
+      "origin": "Original Codex CLI built-in imagegen medallion; premultiplied-alpha native export",
+      "sourceMasterSha256": "b179b1f35f5e6f7a8ecb7ee94a6892cff53e78e6c86746a7bae7cc100936682f"
+    },
+    {
+      "resource": "SPRITES/NH_school_badge_havoc.png",
+      "school": "new-horizons:havoc",
+      "sha256": "e0adc8e23d5e195281ff87f93578b24e22663db80132bb1cae834d112ef794e9",
+      "dimensions": [
+        18,
+        18
+      ],
+      "alphaBoundingBox": [
+        0,
+        0,
+        18,
+        18
+      ],
+      "origin": "Original Codex CLI built-in imagegen medallion; premultiplied-alpha native export",
+      "sourceMasterSha256": "8edeeb76d9fc463e436bd86bbb1d5bbcb013ea8d85da8497b9df250f439d49d6"
+    },
+    {
+      "resource": "SPRITES/NH_school_badge_shadow.png",
+      "school": "new-horizons:shadow",
+      "sha256": "161bb99d04bdd85087c1c76a05720f12d0a89db698e775c4e0e4bc0c41c0c83a",
+      "dimensions": [
+        18,
+        18
+      ],
+      "alphaBoundingBox": [
+        0,
+        0,
+        18,
+        18
+      ],
+      "origin": "Original Codex CLI built-in imagegen medallion; premultiplied-alpha native export",
+      "sourceMasterSha256": "f22e1104e690ac1a688e49c3d646a43920885dfb7e89b3357fe8026426e0c6f0"
+    },
+    {
+      "resource": "SPRITES/NH_school_badge_chaos.png",
+      "school": "new-horizons:chaos",
+      "sha256": "2330190ac0c91ce57a7b7af05b77d1f0238f5275245eb3d3e4b2cc93c91faa19",
+      "dimensions": [
+        18,
+        18
+      ],
+      "alphaBoundingBox": [
+        0,
+        0,
+        18,
+        18
+      ],
+      "origin": "Original Codex CLI built-in imagegen medallion; premultiplied-alpha native export",
+      "sourceMasterSha256": "9d678c6c5bc0599abb27a50624aead0cf690c5f54fd00d4df864f57d9ea0da94"
+    }
+  ]
+}
