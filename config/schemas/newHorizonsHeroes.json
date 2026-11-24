@@ -286,6 +286,124 @@
 								"shotDamagePercentPerLevel": {"type": "integer", "minimum": 1, "maximum": 10},
 								"maximumShotDamagePercent": {"type": "integer", "minimum": 1, "maximum": 500}
 							}
+						},
+						"hardened": {
+							"type": "object", "additionalProperties": false,
+							"description": "Neela: damage reduction in permille each hit adds to one of her stacks until its next activation, up to a level-scaled total.",
+							"required": ["hitPermille", "totalPermille", "totalPermillePerLevel", "maximumTotalPermille"],
+							"properties": {
+								"hitPermille": {"type": "integer", "minimum": 1, "maximum": 750},
+								"totalPermille": {"type": "integer", "minimum": 1, "maximum": 750},
+								"totalPermillePerLevel": {"type": "integer", "minimum": 0, "maximum": 750},
+								"maximumTotalPermille": {"type": "integer", "minimum": 1, "maximum": 750}
+							}
+						},
+						"spoilsOfAlchemy": {
+							"type": "object", "additionalProperties": false,
+							"description": "Rissa: 1 Mercury per max(minimumGoldPerMercury, goldPerMercury - goldPerMercuryPerLevel x level) Gold of enemy creatures destroyed in a won combat, at most maximumMercury.",
+							"required": ["goldPerMercury", "goldPerMercuryPerLevel", "minimumGoldPerMercury", "maximumMercury"],
+							"properties": {
+								"goldPerMercury": {"type": "integer", "minimum": 1, "maximum": 100000},
+								"goldPerMercuryPerLevel": {"type": "integer", "minimum": 0, "maximum": 10000},
+								"minimumGoldPerMercury": {"type": "integer", "minimum": 1, "maximum": 100000},
+								"maximumMercury": {"type": "integer", "minimum": 1, "maximum": 100}
+							}
+						},
+						"practiceMakesPerfect": {
+							"type": "object", "additionalProperties": false,
+							"description": "Astral: each combat cast makes that spell's Spell Power term percentPerCast stronger for him, capped at capPercentPerLevel x level per spell.",
+							"required": ["percentPerCast", "capPercentPerLevel"],
+							"properties": {
+								"percentPerCast": {"type": "integer", "minimum": 1, "maximum": 10},
+								"capPercentPerLevel": {"type": "integer", "minimum": 1, "maximum": 10}
+							}
+						},
+						"wellspringOfWealth": {
+							"type": "object", "additionalProperties": false,
+							"description": "Aine: daily Gold = Mana x min(maximum, goldPerManaPermille + goldPerManaPermillePerLevel x level) / 1000.",
+							"required": ["goldPerManaPermille", "goldPerManaPermillePerLevel", "maximumGoldPerManaPermille"],
+							"properties": {
+								"goldPerManaPermille": {"type": "integer", "minimum": 1, "maximum": 100000},
+								"goldPerManaPermillePerLevel": {"type": "integer", "minimum": 0, "maximum": 10000},
+								"maximumGoldPerManaPermille": {"type": "integer", "minimum": 1, "maximum": 100000}
+							}
+						},
+						"stormLord": {
+							"type": "object", "additionalProperties": false,
+							"description": "Solmyr: Lightning Bolt and Chain Lightning Spell Power damage bonus in percent at level 1, plus per further level, capped; Chain Lightning is learned at chainLightningLevel.",
+							"required": ["damagePercent", "damagePercentPerLevel", "maximumDamagePercent", "chainLightningLevel"],
+							"properties": {
+								"damagePercent": {"type": "integer", "minimum": 1, "maximum": 200},
+								"damagePercentPerLevel": {"type": "integer", "minimum": 0, "maximum": 200},
+								"maximumDamagePercent": {"type": "integer", "minimum": 1, "maximum": 200},
+								"chainLightningLevel": {"type": "integer", "minimum": 1, "maximum": 100}
+							}
+						},
+						"serpentsEmbraceBound": {
+							"type": "object", "additionalProperties": false,
+							"description": "Fafner: extra damage in percent a Naga stack deals to a target it has bound.",
+							"required": ["damagePercent", "damagePercentPerLevel", "maximumDamagePercent"],
+							"properties": {
+								"damagePercent": {"type": "integer", "minimum": 1, "maximum": 200},
+								"damagePercentPerLevel": {"type": "integer", "minimum": 0, "maximum": 200},
+								"maximumDamagePercent": {"type": "integer", "minimum": 1, "maximum": 200}
+							}
+						},
+						"goldStandardDiscount": {
+							"type": "object", "additionalProperties": false,
+							"description": "Josephine: discount in percent on her Iron-to-Gold Golem upgrade.",
+							"required": ["discountPercent", "discountPercentPerLevel", "maximumDiscountPercent"],
+							"properties": {
+								"discountPercent": {"type": "integer", "minimum": 1, "maximum": 90},
+								"discountPercentPerLevel": {"type": "integer", "minimum": 0, "maximum": 90},
+								"maximumDiscountPercent": {"type": "integer", "minimum": 1, "maximum": 90}
+							}
+						},
+						"inexhaustibleKnowledge": {
+							"type": "object", "additionalProperties": false,
+							"description": "Theodorus: Mana regained at the start of each combat round after the first, in permille of his maximum Mana at level 1, plus per further level, capped; rounded down, at least minimumMana.",
+							"required": ["manaPermille", "manaPermillePerLevel", "maximumManaPermille", "minimumMana"],
+							"properties": {
+								"manaPermille": {"type": "integer", "minimum": 1, "maximum": 1000},
+								"manaPermillePerLevel": {"type": "integer", "minimum": 0, "maximum": 1000},
+								"maximumManaPermille": {"type": "integer", "minimum": 1, "maximum": 1000},
+								"minimumMana": {"type": "integer", "minimum": 0, "maximum": 100}
+							}
+						},
+						"spellweaver": {
+							"type": "object", "additionalProperties": false,
+							"description": "RETIRED (2026-11-25, see the wiki Graveyard page): Halon's additional Double Cast uses per combat, raised from a hero level. Never shipped in new rules; accepted only so a capture that holds it still loads.",
+							"required": ["additionalUses", "increasedAdditionalUses", "increasedFromLevel"],
+							"properties": {
+								"additionalUses": {"type": "integer", "minimum": 1, "maximum": 3},
+								"increasedAdditionalUses": {"type": "integer", "minimum": 1, "maximum": 5},
+								"increasedFromLevel": {"type": "integer", "minimum": 1, "maximum": 100}
+							}
+						},
+						"halonNullifyingShot": {
+							"type": "object", "additionalProperties": false,
+							"description": "Theodorus's Nullifying Shot belongs to Halon, replacing Halon's extra Double Cast use; absence keeps it on Theodorus.",
+							"required": ["enabled"],
+							"properties": {"enabled": {"enum": [true]}}
+						},
+						"focusMagicSpecialty": {
+							"type": "object", "additionalProperties": false,
+							"description": "Cyra: extra Focus Magic ranged damage in permille (rounded down to whole percentage points).",
+							"required": ["rangedPermille", "rangedPermillePerLevel", "maximumRangedPermille"],
+							"properties": {
+								"rangedPermille": {"type": "integer", "minimum": 1, "maximum": 1000},
+								"rangedPermillePerLevel": {"type": "integer", "minimum": 0, "maximum": 1000},
+								"maximumRangedPermille": {"type": "integer", "minimum": 1, "maximum": 1000}
+							}
+						},
+						"sageOfTheAges": {
+							"type": "object", "additionalProperties": false,
+							"description": "Thane: raw Spell Power and Knowledge added on each gained level; absence keeps +1/+1.",
+							"required": ["spellPowerPerLevel", "knowledgePerLevel"],
+							"properties": {
+								"spellPowerPerLevel": {"type": "integer", "minimum": 0, "maximum": 10},
+								"knowledgePerLevel": {"type": "integer", "minimum": 0, "maximum": 10}
+							}
 						}
 					}
 				},
@@ -1242,8 +1360,8 @@
 					}
 				},
 				"startingBookReplacements": {
-					"description": "Complete authored 24-row default-only book replacement table (the 22 rows captured before the 2026-11-20 Castle starts remain valid). Canonical hero/source/target identities and ordinary captured roster admission are checked by the shared runtime validator.",
-					"type": "object", "minProperties": 22, "maxProperties": 24,
+					"description": "Complete authored 25-row default-only book replacement table (the 22 rows captured before the 2026-11-20 Castle starts and the 24 rows captured before the Academy starts remain valid). Canonical hero/source/target identities and ordinary captured roster admission are checked by the shared runtime validator.",
+					"type": "object", "minProperties": 22, "maxProperties": 25,
 					"additionalProperties": {
 						"type": "object", "additionalProperties": false, "required": ["from", "to"],
 						"properties": {"from": {"type": "string", "pattern": "^[^:]+:[^:]+$"}, "to": {"type": "string", "pattern": "^[^:]+:[^:]+$"}}

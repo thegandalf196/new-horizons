@@ -17,6 +17,7 @@
 #include "../entities/hero/NewHorizonsRevisedSpecialties.h"
 #include "../entities/hero/NewHorizonsCastleSpecialties.h"
 #include "../entities/hero/NewHorizonsRampartSpecialties.h"
+#include "../entities/hero/NewHorizonsAcademySpecialties.h"
 #include "../entities/hero/NewHorizonsPariahLearning.h"
 #include "../entities/hero/NewHorizonsCastleAdventureSpecialties.h"
 #include "../pathfinder/NewHorizonsProtectedMobility.h"
@@ -719,6 +720,8 @@ void CGHeroInstance::initHero(IGameRandomizer & gameRandomizer, bool isFake)
 	if(creationInitialization) // Cuthbert's Pariah mirrors his starting Light spells.
 		for(const auto & mirror : newHorizonsHeroes::pariahMirrorSpells(*this, spells, gameRandomizer.getDefault(), true))
 			spells.insert(mirror);
+	if(creationInitialization) // Solmyr's Storm Lord: a hero created at level 10 or later knows Chain Lightning.
+		newHorizonsHeroes::learnStormLordSpells(*this);
 
 	initializeBasicStartingEquipment(isFake);
 
@@ -2377,7 +2380,7 @@ bool CGHeroInstance::isNewHorizonsSpellExcluded(const SpellID & spell) const
 {
 	if(!newHorizonsMagic::rulesActive(getMagicRules()) || !getHeroType())
 		return false;
-	return vstd::contains(getHeroType()->excludedSpells, spell);
+	return vstd::contains(getHeroType()->excludedSpells, spell) && !newHorizonsHeroes::stormLordAllowsSpell(*this, spell);
 }
 
 void CGHeroInstance::removeSpellbook()
@@ -2683,6 +2686,7 @@ void CGHeroInstance::levelUp(const std::array<int, GameConstants::PRIMARY_SKILLS
 	++level;
 	refreshCreatureLineSpecialtyBonuses(false);
 	newHorizonsHeroes::refreshLevelScaledSpecialtyBonus(*this);
+	newHorizonsHeroes::learnStormLordSpells(*this);
 	refreshFortuneChildSpecialtyBonus();
 	//update specialty and other bonuses that scale with level
 	nodeHasChanged();

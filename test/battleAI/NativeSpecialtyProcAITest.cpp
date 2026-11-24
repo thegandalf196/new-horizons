@@ -181,9 +181,10 @@ TEST_F(NativeSpecialtyProcAITest, PendingOrDestroyedRecipientCannotEarnAnotherYo
 	EXPECT_TRUE(sibling->battleGetUnitByID(enemy->unitId())->alive());
 	EXPECT_TRUE(newHorizonsStun::isStunned(*sibling->battleGetUnitByID(enemy->unitId())));
 }
-TEST_F(NativeSpecialtyProcAITest, TheodorusDispelValuesOnlyStillPresentPositiveTemporaryMagic)
+TEST_F(NativeSpecialtyProcAITest, HalonDispelValuesOnlyStillPresentPositiveTemporaryMagic)
 {
-	prepare("core:theodorus", "core:archMage");
+	// Halon holds Nullifying Shot in the shipped rules (Theodorus in older captures).
+	prepare("core:halon", "core:archMage");
 	enemy->setPosition(BattleHex(9, 5));
 	passiveCast(SpellID::BLESS, *enemy, *enemy);
 	ASSERT_FALSE(newHorizonsSpecialtyProcs::dispelRemovalPlan(*enemy).empty());

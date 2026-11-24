@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../../lib/entities/hero/NewHorizonsAcademySpecialties.h"
 #include "../server/battles/NewHorizonsMaintenanceFixture.h"
 #include "../../lib/battle/NewHorizonsMaintenanceSpecialties.h"
 #include "../../lib/entities/hero/NewHorizonsOrdinaryCreatureSpecialties.h"
@@ -56,6 +57,8 @@ TEST_P(NewHorizonsMaintenanceSpecialtyTest, GoldStandardUsesActualIronIdAndDoesN
 	{
 		auto expected = gold.toCreature()->getFullRecruitCost() - upgraded->unitType()->getFullRecruitCost();
 		expected.positive();
+		// The revised Gold Standard also discounts her upgrade.
+		expected = expected * (100 - newHorizonsHeroes::goldStandardDiscountPercent(attackerSideHero)) / 100;
 		EXPECT_EQ(iron.getUpgradeCostsFor(gold), expected);
 	}
 	for(auto * unit : {actor, upgraded})

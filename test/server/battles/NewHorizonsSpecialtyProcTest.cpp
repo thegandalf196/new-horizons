@@ -76,7 +76,8 @@ TEST_F(NewHorizonsSpecialtyProcTest, PoisonUpgradesExistingNativeStatusAndWeakRe
 }
 TEST_F(NewHorizonsSpecialtyProcTest, NullifyingShotChanceIsTwentyOrFortyAndOnlyRanged)
 {
-	prepare("core:theodorus", "core:mage");
+	// Halon holds Nullifying Shot in the shipped rules (Theodorus in older captures).
+	prepare("core:halon", "core:mage");
 	const auto spell = SpellID(SpellID::DISPEL_HELPFUL_SPELLS);
 	EXPECT_EQ(newHorizonsSpecialtyProcs::attackSpellChance(*battle(), *actor, spell, true), 20);
 	EXPECT_FALSE(newHorizonsSpecialtyProcs::attackSpellChance(*battle(), *actor, spell, false));
@@ -86,7 +87,7 @@ TEST_F(NewHorizonsSpecialtyProcTest, NullifyingShotChanceIsTwentyOrFortyAndOnlyR
 }
 TEST_F(NewHorizonsSpecialtyProcTest, NullifyingNativeDispelRemovesEveryPositiveTemporaryMagicAndPreservesOtherSources)
 {
-	prepare("core:theodorus", "core:archMage");
+	prepare("core:halon", "core:archMage");
 	for(const auto id : {SpellID::BLESS, SpellID::HASTE})
 	{
 		Bonus bonus(BonusDuration::N_TURNS, BonusType::STACKS_SPEED, BonusSource::SPELL_EFFECT, 1, BonusSourceID(SpellID(id)));

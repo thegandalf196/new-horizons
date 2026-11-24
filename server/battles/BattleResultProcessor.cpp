@@ -12,6 +12,7 @@
 #include "BattleResultProcessor.h"
 #include "../../lib/entities/hero/NewHorizonsLearning.h"
 #include "NewHorizonsWellspringRecovery.h"
+#include "BattleAcademySpecialties.h"
 #include "NewHorizonsRaisedArmy.h"
 #include "../../lib/entities/hero/NewHorizonsReclaimer.h"
 #include "../../lib/entities/creature/NewHorizonsRecruitmentTraining.h"
@@ -867,7 +868,11 @@ void BattleResultProcessor::battleFinalize(const BattleID & battleID, const Batt
 		defenderIsWinner || defenderEscapes || (drawHeroesRetreat && defenderHero), defenderIsWinner, defenderCast);
 
 	if(!finishingBattle->isDraw())
+	{
 		applyWellspringVictoryRecovery(*gameHandler, battleID, winnerHero);
+		battleAcademySpecialties::grantSpoilsOfAlchemy(*gameHandler, battleID, winnerHero,
+			result.casualties[CBattleInfoEssentials::otherSide(finishingBattle->winnerSide)]);
+	}
 
 	// The declared surviving winner also qualifies when the opponent escapes or
 	// surrenders. Apply recovery after ordinary battle cleanup, before removal.

@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../../lib/entities/hero/NewHorizonsAcademySpecialties.h"
 #include "../mock/GameHandlerTestServer.h"
 #include "../mock/TinyMapGameTest.h"
 #include "../../lib/CPlayerState.h"
@@ -93,6 +94,9 @@ TEST_F(GoldStandardUpgradeTest, ActualIronOnlyUsesOrdinaryPaidUpgradeWithSevenOc
 	ASSERT_TRUE(vstd::contains(info.getAvailableUpgrades(), gold));
 	ResourceSet expected = gold.toCreature()->getFullRecruitCost() - iron.toCreature()->getFullRecruitCost();
 	expected.positive();
+	// The revised Gold Standard also discounts her upgrade (10% at level 1).
+	expected = expected * (100 - newHorizonsHeroes::goldStandardDiscountPercent(hero)) / 100;
+	EXPECT_EQ(newHorizonsHeroes::goldStandardDiscountPercent(hero), 10);
 	EXPECT_EQ(info.getUpgradeCostsFor(gold), expected);
 	ASSERT_TRUE(hero->setCreature(SlotID(1), stone, 1));
 	UpgradeInfo baseInfo(stone);

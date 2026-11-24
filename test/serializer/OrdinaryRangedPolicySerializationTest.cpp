@@ -49,7 +49,8 @@ TEST(OrdinaryRangedAdmission, FixedCurrentControllerRecipesRequire1157AndRejectM
 constexpr CurrentOrdinaryPolicyCase currentCases[] = {
 	{"core:christian", "pointBlankShotDamageBonusPercent", "Point-Blank Shot", 100},
 	{"core:jabarkas", "furyOfTheHordeAttack", "Fury of the Horde", 2},
-	{"core:theodorus", "dispellingShotMageChancePercent", "Nullifying Shot", 20},
+	// The policy keeps Theodorus's key; his current presentation is the revised Academy row.
+	{"core:theodorus", "dispellingShotMageChancePercent", "Inexhaustible Knowledge", 20},
 };
 class OrdinaryRangedPolicySerializationTest : public CurrentOrdinaryOwnerFixture, public ::testing::WithParamInterface<int> {};
 TEST_P(OrdinaryRangedPolicySerializationTest, Current1157RoundtripsHeroPoolMapSettingsWorldAndLobby)

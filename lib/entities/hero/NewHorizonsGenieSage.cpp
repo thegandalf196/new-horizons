@@ -3,6 +3,7 @@
 #include "NewHorizonsGenieSage.h"
 #include "NewHorizonsHeroRules.h"
 #include "NewHorizonsRuleValidation.h"
+#include "NewHorizonsAcademySpecialties.h"
 #include "CHero.h"
 #include "../../mapObjects/CGHeroInstance.h"
 #include <limits>
@@ -37,8 +38,10 @@ bool hasWheelOfFortune(const CGHeroInstance * hero)
 }
 std::array<int, GameConstants::PRIMARY_SKILLS> sageGrowth(const CGHeroInstance & hero)
 {
-	return hasSageOfTheAges(&hero) ? std::array<int, GameConstants::PRIMARY_SKILLS>{0, 0, 1, 1}
-		: std::array<int, GameConstants::PRIMARY_SKILLS>{};
+	if(!hasSageOfTheAges(&hero))
+		return {};
+	// The revised Academy row (+2/+2); a capture without it keeps the original +1/+1.
+	return sageOfTheAgesGrowth(hero).value_or(std::array<int, GameConstants::PRIMARY_SKILLS>{0, 0, 1, 1});
 }
 std::array<int, GameConstants::PRIMARY_SKILLS> completeSageGrowth(const CGHeroInstance & hero,
 	std::array<int, GameConstants::PRIMARY_SKILLS> gains)

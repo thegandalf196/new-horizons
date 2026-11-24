@@ -7,6 +7,7 @@
 #include "NewHorizonsHeroRules.h"
 #include "NewHorizonsRuleValidation.h"
 #include "NewHorizonsCastleSpecialties.h"
+#include "NewHorizonsAcademySpecialties.h"
 #include "CHero.h"
 #include "CHeroHandler.h"
 #include "../../mapObjects/CGHeroInstance.h"
@@ -52,6 +53,24 @@ SpellcraftCastContext capturePariahContext(const JsonNode & magic, const CGHeroI
 		magic, newHorizonsMagic::detail::registeredSpellcraftRank(hero));
 	factors.enhancedEfficiencyBasisPoints = factors.ordinaryEfficiencyPercent * (100 + bonus);
 	factors.scope = SpellcraftSpecialtyScope::NUMERICAL;
+	result.factors = factors;
+	return result;
+}
+
+/// Solmyr's Storm Lord (his lightning spells' damage term) and Astral's Practice Makes
+/// Perfect (every numerical term of a practiced spell) scale the Spell Power term like Pariah.
+SpellcraftCastContext captureAcademySpellcraftContext(const JsonNode & magic, const CGHeroInstance * hero,
+	SpellID spell, bool storm, SpellcraftCastContext result)
+{
+	const int bonus = storm ? (isStormLordSpell(spell) ? stormLordDamagePercent(hero) : 0) : practicePercent(hero, spell);
+	if(bonus <= 0 || !commonSavedHeroSpell(magic, spell))
+		return result;
+	SpellcraftSpecialtyFactors factors;
+	factors.schoolPercent = newHorizonsMagic::spellPowerCoefficientPercent(magic, hero, spell);
+	factors.ordinaryEfficiencyPercent = newHorizonsMagic::spellcraftEfficiencyPercent(
+		magic, newHorizonsMagic::detail::registeredSpellcraftRank(hero));
+	factors.enhancedEfficiencyBasisPoints = factors.ordinaryEfficiencyPercent * (100 + bonus);
+	factors.scope = storm ? SpellcraftSpecialtyScope::DAMAGE : SpellcraftSpecialtyScope::NUMERICAL;
 	result.factors = factors;
 	return result;
 }
@@ -108,6 +127,8 @@ SpellcraftCastContext captureSpellcraftContext(const JsonNode & magic, const CGH
 	const bool malekith = identity == "core:malekith";
 	if(identity == "core:cuthbert")
 		return capturePariahContext(magic, hero, spell, result);
+	if(identity == "core:solmyr" || identity == "core:astral")
+		return captureAcademySpellcraftContext(magic, hero, spell, identity == "core:solmyr", result);
 	if(!index && !malekith)
 		return result;
 	std::optional<WarlocksFormulaRules> rule;

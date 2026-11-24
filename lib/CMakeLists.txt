@@ -277,6 +277,7 @@ set(lib_MAIN_SRCS
 	battle/NewHorizonsSerpentsEmbrace.cpp
 	battle/NewHorizonsForestAmbush.cpp
 	battle/NewHorizonsRampartSpecialties.cpp
+	battle/NewHorizonsAcademySpecialties.cpp
 	battle/NewHorizonsForestAmbushState.cpp
 	battle/NewHorizonsPetrifyingBlood.cpp
 	battle/NewHorizonsLivingInferno.cpp
@@ -291,6 +292,8 @@ set(lib_MAIN_SRCS
 		entities/hero/NewHorizonsCastleAdventureSpecialties.cpp
 		entities/hero/NewHorizonsRampartSpecialties.cpp
 		entities/hero/NewHorizonsRampartSpecialtyPresentation.cpp
+		entities/hero/NewHorizonsAcademySpecialties.cpp
+		entities/hero/NewHorizonsAcademySpecialtyPresentation.cpp
 		entities/hero/NewHorizonsGenieSage.cpp
 		entities/hero/NewHorizonsGenieAbilities.cpp
 	battle/NewHorizonsSoulHarvest.cpp
@@ -825,6 +828,8 @@ set(lib_MAIN_SRCS
 	mapObjects/EstatesArtifactQuote.cpp
 	networkPacks/EstatesPacks.cpp
 	gameState/EstatesPacks.cpp
+	networkPacks/AcademySpecialtyPacks.cpp
+	gameState/AcademySpecialtyPacks.cpp
 	mapObjects/TownCapitol.cpp
 	mapObjects/NewHorizonsFourOfferLevelUp.cpp
 	gameState/EstatesState.cpp
@@ -1382,6 +1387,7 @@ set(lib_MAIN_HEADERS
 	battle/NewHorizonsSerpentsEmbrace.h
 	battle/NewHorizonsForestAmbush.h
 	battle/NewHorizonsRampartSpecialties.h
+	battle/NewHorizonsAcademySpecialties.h
 	battle/NewHorizonsForestAmbushState.h
 	battle/NewHorizonsPetrifyingBlood.h
 	battle/NewHorizonsLivingInferno.h
@@ -1393,6 +1399,7 @@ set(lib_MAIN_HEADERS
 		entities/hero/NewHorizonsPariahLearning.h
 		entities/hero/NewHorizonsCastleAdventureSpecialties.h
 		entities/hero/NewHorizonsRampartSpecialties.h
+		entities/hero/NewHorizonsAcademySpecialties.h
 		entities/hero/NewHorizonsGenieSage.h
 	battle/NewHorizonsSoulHarvest.h
 	battle/NewHorizonsOrdinaryStrike.h
@@ -1791,6 +1798,7 @@ set(lib_MAIN_HEADERS
 	mapObjects/EstatesStewardship.h
 	mapObjects/EstatesArtifactQuote.h
 	networkPacks/EstatesPacks.h
+	networkPacks/AcademySpecialtyPacks.h
 	gameState/EstatesState.h
 	entities/hero/NewHorizonsFourOfferProgression.h
 	mapObjects/Quest.h

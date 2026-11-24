@@ -121,6 +121,25 @@ Kyrre's Elusive is one check, `lib/pathfinder/NewHorizonsElusive`, used by the p
 guard query and the server movement guard check, so the adventure AI inherits it.
 Jenova's weekly collection is marked with an ordinary `ONE_WEEK` hero bonus per town,
 so no state is added to the save format.
+The Academy rows (`hardened`, `spoilsOfAlchemy`, `practiceMakesPerfect`,
+`wellspringOfWealth`, `stormLord`, `serpentsEmbraceBound`, `goldStandardDiscount`,
+`inexhaustibleKnowledge`, `halonNullifyingShot`, `focusMagicSpecialty`, `sageOfTheAges`) are parsed by
+`lib/entities/hero/NewHorizonsAcademySpecialties`. The New and Replaced rows (Neela,
+Rissa, Astral, Aine, Solmyr, Theodorus) retire that hero's historical specialty;
+`halonNullifyingShot` moves Theodorus's Nullifying Shot to Halon and retires Halon's
+flat extra Double Cast use; the stashed `spellweaver` row is retired content (listed in
+`isRetiredRevisedSpecialtyRow` and on the wiki Graveyard page): it still loads from a
+capture but is never shipped; the others revise
+the existing one, and a capture without `sageOfTheAges` keeps Thane's +1/+1. Neela's
+Hardened mark and Fafner's bound-target bonus are combat rules in
+`lib/battle/NewHorizonsAcademySpecialties`; the server applies Hardened marks, Astral's
+practice, Theodorus's round-start Mana and Rissa's Mercury in
+`server/battles/BattleAcademySpecialties`. Storm Lord and
+Practice Makes Perfect scale the Spell Power term through the Spellcraft cast context.
+Astral's per-spell practice is an ordinary permanent hero bonus set by the
+`SetNewHorizonsSpellPractice` packet, so no state is added to the save format.
+Solmyr's Lightning Bolt start is the 25th `startingBookReplacements` row; the 24-row
+(Castle) and 22-row tables of earlier captures stay valid.
 
 ### Historical perk-offer policy2
 

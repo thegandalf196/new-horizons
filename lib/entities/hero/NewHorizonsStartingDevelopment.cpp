@@ -25,9 +25,9 @@ struct StartingBookRow
 	std::string_view hero;
 	std::string_view from;
 	std::string_view to;
-	bool revised = false; // Added with the 2026-11-20 Castle starts; absent from earlier captures.
+	int revision = 0; // 1: the 2026-11-20 Castle starts, 2: the Academy starts; absent from earlier captures.
 };
-constexpr std::array<StartingBookRow, 24> startingBooks{{
+constexpr std::array<StartingBookRow, 25> startingBooks{{
 	{"core:rion", "core:stoneSkin", "new-horizons:guardianSpirit"},
 	{"core:aeris", "core:protectAir", "new-horizons:holyArmor"},
 	{"core:piquedram", "core:shield", "core:slow"},
@@ -50,22 +50,32 @@ constexpr std::array<StartingBookRow, 24> startingBooks{{
 	{"core:verdish", "core:protectFire", "new-horizons:regeneration"},
 	{"core:styg", "core:shield", "new-horizons:entangle"},
 	{"core:tiva", "core:stoneSkin", "new-horizons:regeneration"},
-	{"core:cuthbert", "core:weakness", "new-horizons:holyArmor", true},
-	{"core:loynis", "core:prayer", "new-horizons:sanctuary", true}
+	{"core:cuthbert", "core:weakness", "new-horizons:holyArmor", 1},
+	{"core:loynis", "core:prayer", "new-horizons:sanctuary", 1},
+	{"core:solmyr", "new-horizons:masterChainLightning", "core:lightningBolt", 2}
 }};
-constexpr size_t historicalStartingBooks = 22;
+/// Rows per revision: the historical table, the Castle starts and the Academy starts.
+constexpr std::array<size_t, 3> startingBookRevisionRows{22, 2, 1};
 
 void validateStartingBooks(const JsonNode & table)
 {
-	require(table.isStruct() && (table.Struct().size() == startingBooks.size()
-		|| table.Struct().size() == historicalStartingBooks), "complete starting book replacement table");
-	const bool revised = table.Struct().size() == startingBooks.size();
+	require(table.isStruct(), "complete starting book replacement table");
+	// Each revision's rows were captured together: a table holds every historical row and
+	// either all or none of the Castle rows and of the Academy rows.
+	std::array<size_t, 3> present{};
+	for(const auto & [hero, row] : table.Struct())
+		for(const auto & entry : startingBooks)
+			if(entry.hero == hero)
+				++present.at(static_cast<size_t>(entry.revision));
+	require(present[0] == startingBookRevisionRows[0] && (present[1] == 0 || present[1] == startingBookRevisionRows[1])
+		&& (present[2] == 0 || present[2] == startingBookRevisionRows[2])
+		&& present[0] + present[1] + present[2] == table.Struct().size(), "complete starting book replacement table");
 	std::set<int> seen;
 	for(const auto & [hero, row] : table.Struct())
 	{
 		const auto expected = std::find_if(startingBooks.begin(), startingBooks.end(),
 			[&hero](const StartingBookRow & entry) { return entry.hero == hero; });
-		require(expected != startingBooks.end() && (revised || !expected->revised), "authored starting book hero");
+		require(expected != startingBooks.end(), "authored starting book hero");
 		const int id = resolve(HeroTypeID::entityType(), hero);
 		require(HeroTypeID::encode(id) == hero && seen.insert(id).second
 			&& static_cast<size_t>(id) < LIBRARY->heroh->objects.size()

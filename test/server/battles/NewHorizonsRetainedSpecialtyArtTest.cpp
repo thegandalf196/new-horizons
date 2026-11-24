@@ -91,6 +91,16 @@ protected:
 			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, JsonNode());
 			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS_PERKS, JsonNode());
 		}
+		else
+		{
+			// These cases bind Halon's and Solmyr's retained art; Nullifying Shot and Storm Lord own theirs.
+			JsonNode development(JsonPath::builtin("config/newHorizonsHeroes"));
+			for(const auto * revised : {"halonNullifyingShot", "stormLord"})
+				development["revisedSpecialties"].Struct().erase(revised);
+			development["startingSkills"]["startingBookReplacements"].Struct().erase("core:solmyr");
+			development.setOverrideFlag(true);
+			loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, development);
+		}
 		JsonNode magic(JsonPath::builtin("config/newHorizonsMagic"));
 		if(magicMode == 1)
 			magic = JsonNode();
@@ -155,7 +165,8 @@ TEST_F(NewHorizonsRetainedSpecialtyArtTest, HalonDetachedArtRequiresItsOwnIdenti
 	const auto & source = prototype("core:halon");
 	const auto before = source.specialty.toJsonNode();
 	DetachedRetainedPrototype hero(source);
-	const JsonNode development(JsonPath::builtin("config/newHorizonsHeroes"));
+	JsonNode development(JsonPath::builtin("config/newHorizonsHeroes"));
+	development["revisedSpecialties"].Struct().erase("halonNullifyingShot"); // Nullifying Shot owns its own art.
 	const JsonNode magic(JsonPath::builtin("config/newHorizonsMagic"));
 	hero.identity = "test:unbound-metamagic";
 	expectRetainedFallback(hero, newHorizonsHeroes::resolveSpecialtyPresentation(hero, development, magic, std::nullopt));
@@ -229,7 +240,8 @@ TEST_F(NewHorizonsRetainedSpecialtyArtTest, SolmyrDetachedRequiresExactAuthoredM
 	const auto spells = source.spells;
 	const auto exclusions = source.excludedSpells;
 	const SpellID master(SpellID::decode("new-horizons:masterChainLightning"));
-	const JsonNode development(JsonPath::builtin("config/newHorizonsHeroes"));
+	JsonNode development(JsonPath::builtin("config/newHorizonsHeroes"));
+	development["revisedSpecialties"].Struct().erase("stormLord"); // Storm Lord owns its own art.
 	const JsonNode magic(JsonPath::builtin("config/newHorizonsMagic"));
 	for(int mismatch = 0; mismatch < 5; ++mismatch)
 	{

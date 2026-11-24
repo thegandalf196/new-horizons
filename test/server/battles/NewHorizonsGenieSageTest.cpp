@@ -14,7 +14,7 @@ TEST_F(NewHorizonsGenieSageTest, ThaneStartsHistorianAndGainsTwoRawRatingsWithou
 	EXPECT_FALSE(attackerSideHero->hasActivePerk("new-horizons:learning", "new-horizons:learning.scholar"));
 	const auto view = attackerSideHero->getPrimaryGrowthView();
 	ASSERT_TRUE(view);
-	EXPECT_EQ(view->fixedSpecialtyGrowth, (std::array<int, 4>{0, 0, 1, 1}));
+	EXPECT_EQ(view->fixedSpecialtyGrowth, (std::array<int, 4>{0, 0, 2, 2})) << "The revised Academy row: +2/+2";
 	for(int i = 0; i < 4; ++i)
 		EXPECT_EQ(attackerSideHero->getBasePrimarySkillValue(PrimarySkill(i)), view->profile.starting[i]);
 	ASSERT_TRUE(view->extraGrowth.empty());
@@ -22,7 +22,7 @@ TEST_F(NewHorizonsGenieSageTest, ThaneStartsHistorianAndGainsTwoRawRatingsWithou
 	const auto gains = gameHandler->randomizer->rollPrimarySkillsForLevelup(attackerSideHero);
 	EXPECT_EQ(wire(*gameHandler->randomizer), before);
 	for(int i = 0; i < 4; ++i)
-		EXPECT_EQ(gains[i], view->profile.growth[i] + (i >= 2 ? 1 : 0));
+		EXPECT_EQ(gains[i], view->profile.growth[i] + (i >= 2 ? 2 : 0));
 	gameHandler->onAdvInterfaceReady(attackerSideHero->getOwner());
 	attackerSideHero->setExperience(LIBRARY->heroh->reqExp(2), ChangeValueMode::ABSOLUTE);
 	gameHandler->levelUpHero(attackerSideHero);
@@ -196,10 +196,10 @@ TEST_F(NewHorizonsGenieSageTest, GainedRatingsSurviveHeroReloadWithoutRetroactiv
 	EXPECT_EQ(restored->level, 2);
 	for(int i = 0; i < 4; ++i)
 		EXPECT_EQ(restored->getBasePrimarySkillValue(PrimarySkill(i)),
-			before->base[i] + before->profile.growth[i] + (i >= 2 ? 1 : 0));
+			before->base[i] + before->profile.growth[i] + (i >= 2 ? 2 : 0));
 	const auto next = gameHandler->randomizer->rollPrimarySkillsForLevelup(restored);
 	for(int i = 0; i < 4; ++i)
-		EXPECT_EQ(next[i], before->profile.growth[i] + (i >= 2 ? 1 : 0));
+		EXPECT_EQ(next[i], before->profile.growth[i] + (i >= 2 ? 2 : 0));
 	EXPECT_EQ(restored->getSpecialtyPresentation().name, "Sage of the Ages");
 }
 

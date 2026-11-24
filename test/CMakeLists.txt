@@ -157,6 +157,7 @@ set(test_SRCS
 		server/battles/CastleFrostMantleTest.cpp
 		server/battles/RampartCombatLifecycleTest.cpp
 		server/battles/RampartCombatSpecialtyTest.cpp
+		server/battles/AcademyCombatSpecialtyTest.cpp
 		server/battles/CastleQuickStudyTest.cpp
 		server/battles/MetamagicDoubleCastTest.cpp
 		server/battles/MetamagicDoubleCastPerksTest.cpp
@@ -449,6 +450,7 @@ set(test_SRCS
 		hero/CastleSpecialtyRulesTest.cpp
 		hero/RampartSpecialtyRulesTest.cpp
 		hero/RampartStartingProfilesTest.cpp
+		hero/AcademySpecialtyRulesTest.cpp
 	hero/NewHorizonsValidatedPerkRulesTest.cpp
 	hero/NewHorizonsPerkOperationTest.cpp
 	hero/PerkInitializationReference.cpp
@@ -1082,6 +1084,7 @@ set(test_SRCS
 		server/CoreStewardshipTest.cpp
 		server/ForcedMarchSpecialtyTest.cpp
 		server/RampartAdventureSpecialtyTest.cpp
+		server/AcademyAdventureSpecialtyTest.cpp
 		server/WellConnectedSpecialtyTest.cpp
 		server/AlmsOfTheFaithfulTest.cpp
 		server/FourOfferHeroProgressionTest.cpp

@@ -23,6 +23,7 @@
 #include "NewHorizonsFrozen.h"
 #include "NewHorizonsReactiveDefense.h"
 #include "NewHorizonsRampartSpecialties.h"
+#include "NewHorizonsAcademySpecialties.h"
 #include "NewHorizonsCoordinatedMarks.h"
 #include "NewHorizonsChargeSpecialties.h"
 #include "../GameLibrary.h"
@@ -72,7 +73,9 @@ void CBattleInfoCallback::finalizeDamagePayload(const BattleAttackInfo & info,
 	payload.runicEnduranceReductionPercent = 0; // Reserved numeric envelope; the retired specialty has no producer.
 	payload.ironHideReductionPercent = newHorizonsReactiveDefense::ironHidePercent(*this, info);
 	payload.useTheGroundReductionBasisPoints = newHorizonsRampart::useTheGroundBasisPoints(*this, info);
-	payload.rampartSpecialtyDamageMultiplier = newHorizonsRampart::attackDamageMultiplier(*this, info);
+	// The revised-specialty factor also carries the Academy riders (Hardened, Serpent's Embrace).
+	payload.rampartSpecialtyDamageMultiplier = newHorizonsRampart::attackDamageMultiplier(*this, info)
+		* newHorizonsAcademy::attackDamageMultiplier(*this, info);
 	payload.legacyPhysicalDamageReductionIgnorePercent = existingProtectionIgnore;
 	const bool finalLuckPolicy = getBattle()->getRawFinalDirectPhysicalLuckPolicy();
 	const bool luckEligible = newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(info.attacker, info.physicalDamage);

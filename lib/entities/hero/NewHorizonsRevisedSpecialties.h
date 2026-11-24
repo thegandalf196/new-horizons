@@ -33,6 +33,9 @@ struct DLL_LINKAGE SpecialtyLevelScaling
 };
 
 DLL_LINKAGE void validateRevisedSpecialtiesSerialization(const JsonNode & development);
+/// Retired revised-specialty rows: still accepted from a capture, never in the shipped rules.
+/// The list lives in one place (NewHorizonsRevisedSpecialties.cpp) and on the wiki Graveyard page.
+DLL_LINKAGE bool isRetiredRevisedSpecialtyRow(std::string_view row);
 /// Captured content that requires NEW_HORIZONS_REVISED_SPECIALTIES (1166): revised hero
 /// specialties, Estates policy 2 (core Stewardship) or Spellcraft policy 2 (Precise Casting).
 DLL_LINKAGE bool requiresRevisedSpecialtyFormat(const JsonNode & document);

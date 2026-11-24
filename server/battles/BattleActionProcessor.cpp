@@ -100,6 +100,7 @@
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/entities/hero/NewHorizonsCastleSpecialties.h"
 #include "BattleRampartSpecialtyCasts.h"
+#include "BattleAcademySpecialties.h"
 
 #include <vstd/RNG.h>
 
@@ -1053,6 +1054,7 @@ bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle
 	parameters.cast(gameHandler->spellcastEnvironment(), target);
 	completeCastleSpecialtyCast(battle, ba, *h, *s, castleCast);
 	battleRampartSpecialties::completeCast(*gameHandler, battle, *h, *s, ba.side, rampartCast);
+	battleAcademySpecialties::completeCast(*gameHandler, *h, *s, automatic.automatic());
 	if(s->getId() == newHorizonsPurify::spellID())
 		completeHeroPurifyAction(*gameHandler, battle, ba, h, purifyingMandate,
 			automatic, sharedPurposePurifyAction);
@@ -3861,6 +3863,7 @@ void BattleActionProcessor::makeAttack(const CBattleInfoCallback & battle, const
 	// One event per native primary attack; collateral BSA entries never enter this hook.
 	castDivineFury(battle, attacker, defender, divineFurySide, true, divineFuryUnderOrder);
 	newHorizonsManaLeeches::apply(*gameHandler, manaLeech, attack.manaLeechSequenceSpent);
+	battleAcademySpecialties::markHardenedHits(*gameHandler, battle, bat.bsa);
 	resolveFrozenAttack(*gameHandler, frozenContext, frozenResolution);
 	for(const BattleStackAttacked & hit : bat.bsa)
 	{

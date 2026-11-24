@@ -155,13 +155,14 @@ TEST_F(MetamagicDoubleCastTest, UsesFollowRankHalonAndUsePerks)
 	learn({"arcaneCycle", "grandWeaving"});
 	EXPECT_EQ(metamagicDoubleCast::maximumUses(attackerSideHero), 6);
 	attackerSideHero->setHeroType(HeroTypeID(HeroTypeID::decode("core:halon")));
-	EXPECT_EQ(metamagicDoubleCast::maximumUses(attackerSideHero), 7);
+	EXPECT_EQ(metamagicDoubleCast::maximumUses(attackerSideHero), 6)
+		<< "Halon holds Nullifying Shot in the shipped rules; his extra use is retired";
 }
 
-TEST_F(MetamagicDoubleCastTest, HalonGainsOneUse)
+TEST_F(MetamagicDoubleCastTest, HalonNoLongerGainsAUseOnceHeHoldsNullifyingShot)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare(1, "core:halon"));
-	EXPECT_EQ(metamagicDoubleCast::maximumUses(attackerSideHero), 2);
+	EXPECT_EQ(metamagicDoubleCast::maximumUses(attackerSideHero), 1);
 }
 
 TEST_F(MetamagicDoubleCastTest, ArcaneCycleRegainsOneSpentUseOnEveryThirdRound)

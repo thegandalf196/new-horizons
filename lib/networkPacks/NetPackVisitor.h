@@ -18,6 +18,7 @@
 #include "SetScriptVariable.h"
 #include "SetStackEffect.h"
 #include "EstatesPacks.h"
+#include "AcademySpecialtyPacks.h"
 
 class ICPackVisitor
 {
@@ -42,6 +43,7 @@ public:
 	virtual void visitSetResources(SetResources & pack) {}
 	virtual void visitEstatesKingdomChanged(EstatesKingdomChanged & pack) {}
 	virtual void visitAssignTownSteward(AssignTownSteward & pack) {}
+	virtual void visitSetNewHorizonsSpellPractice(SetNewHorizonsSpellPractice & pack) {}
 	virtual void visitSetPrimarySkill(SetPrimarySkill & pack) {}
 	virtual void visitSetHeroExperience(SetHeroExperience & pack) {}
 	virtual void visitGiveStackExperience(GiveStackExperience & pack) {}

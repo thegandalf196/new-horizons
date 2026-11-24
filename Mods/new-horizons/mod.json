@@ -3283,6 +3283,61 @@
 					"forestAmbush": {
 						"shotDamagePercentPerLevel": 2,
 						"maximumShotDamagePercent": 100
+					},
+					"hardened": {
+						"hitPermille": 50,
+						"totalPermille": 100,
+						"totalPermillePerLevel": 5,
+						"maximumTotalPermille": 200
+					},
+					"spoilsOfAlchemy": {
+						"goldPerMercury": 2000,
+						"goldPerMercuryPerLevel": 50,
+						"minimumGoldPerMercury": 1000,
+						"maximumMercury": 10
+					},
+					"practiceMakesPerfect": {
+						"percentPerCast": 1,
+						"capPercentPerLevel": 2
+					},
+					"wellspringOfWealth": {
+						"goldPerManaPermille": 1500,
+						"goldPerManaPermillePerLevel": 75,
+						"maximumGoldPerManaPermille": 3000
+					},
+					"stormLord": {
+						"damagePercent": 3,
+						"damagePercentPerLevel": 3,
+						"maximumDamagePercent": 60,
+						"chainLightningLevel": 10
+					},
+					"serpentsEmbraceBound": {
+						"damagePercent": 2,
+						"damagePercentPerLevel": 2,
+						"maximumDamagePercent": 40
+					},
+					"goldStandardDiscount": {
+						"discountPercent": 10,
+						"discountPercentPerLevel": 1,
+						"maximumDiscountPercent": 30
+					},
+					"inexhaustibleKnowledge": {
+						"manaPermille": 40,
+						"manaPermillePerLevel": 2,
+						"maximumManaPermille": 200,
+						"minimumMana": 1
+					},
+					"halonNullifyingShot": {
+						"enabled": true
+					},
+					"focusMagicSpecialty": {
+						"rangedPermille": 100,
+						"rangedPermillePerLevel": 5,
+						"maximumRangedPermille": 200
+					},
+					"sageOfTheAges": {
+						"spellPowerPerLevel": 2,
+						"knowledgePerLevel": 2
 					}
 				},
 				"creatureLineSpecialties": {
@@ -3710,6 +3765,10 @@
 						"core:loynis": {
 							"from": "core:prayer",
 							"to": "new-horizons:sanctuary"
+						},
+						"core:solmyr": {
+							"from": "new-horizons:masterChainLightning",
+							"to": "core:lightningBolt"
 						}
 					},
 					"startingPerkProfiles": {
@@ -4154,8 +4213,8 @@
 						],
 						"core:theodorus": [
 							{
-								"skill": "new-horizons:learning",
-								"perk": "new-horizons:learning.scholar"
+								"skill": "new-horizons:metamagic",
+								"perk": "new-horizons:metamagic.manaSiphon"
 							}
 						],
 						"core:solmyr": [
@@ -14527,6 +14586,9 @@
 		"new-horizons.rampart.livingRemedy.log": "Living Remedy: %d %s will regenerate.",
 		"new-horizons.rampart.againstTheOdds.effect": "Against the Odds",
 		"new-horizons.rampart.againstTheOdds.log": "Against the Odds: the stronger enemy grants this army +%d Luck.",
+		"new-horizons.academy.hardened.effect": "Hardened: takes less damage from creature attacks until its next activation",
+		"new-horizons.academy.spoilsOfAlchemy.log": "Spoils of Alchemy: %s distils %d Mercury from the fallen.",
+		"new-horizons.academy.inexhaustibleKnowledge.log": "Inexhaustible Knowledge: %s regains %d Mana.",
 		"new-horizons.combat.sylvanAmbush.concealed.row": "Concealed: hidden from ranged attacks and hostile single-target spells until the delayed activation.",
 		"new-horizons.combat.sylvanAmbush.concealed.title": "Concealed",
 		"new-horizons.combat.sylvanAmbush.concealed.help": "Ranged attacks, Overwatch and hostile single-target spells cannot select this stack. Melee attacks can, and area effects still hit it. Concealment ends when the stack starts its delayed activation, attacks, is attacked or damaged, or is moved, and at the end of the round.",

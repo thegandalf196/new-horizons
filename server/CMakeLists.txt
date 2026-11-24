@@ -43,7 +43,9 @@ set(vcmiservercommon_SRCS
 	battles/BattleVolleyCommand.cpp
 	battles/BattleCastleSpecialtyCasts.cpp
 	battles/BattleRampartSpecialtyCasts.cpp
+	battles/BattleAcademySpecialties.cpp
 	battles/BattleRampartSpecialtyCasts.h
+	battles/BattleAcademySpecialties.h
 	battles/BattlePrimaryAttackCasting.cpp
 	battles/BattleStunActivation.cpp
 	battles/BattleActivationDispatch.cpp

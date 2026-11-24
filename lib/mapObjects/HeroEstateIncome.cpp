@@ -8,6 +8,7 @@
 #include "StdInc.h"
 #include "CGHeroInstance.h"
 #include "NewHorizonsEstatesPolicy.h"
+#include "../entities/hero/NewHorizonsAcademySpecialties.h"
 #include "../CPlayerState.h"
 #include "../GameLibrary.h"
 #include "../entities/ResourceTypeHandler.h"
@@ -44,6 +45,9 @@ ResourceSet CGHeroInstance::dailyIncome() const
 		&& hasActivePerk("new-horizons:estates", "new-horizons:estates.alchemist"))
 		for(const auto resource : {EGameResID::MERCURY, EGameResID::SULFUR, EGameResID::CRYSTAL, EGameResID::GEMS})
 			++income[resource];
+
+	// Aine's Wellspring of Wealth: Gold from the Mana she holds when the day starts.
+	income[EGameResID::GOLD] += newHorizonsHeroes::wellspringOfWealthGold(*this);
 
 	const auto & playerSettings = cb->getPlayerSettings(getOwner());
 	income.applyHandicap(playerSettings->handicap.percentIncome);

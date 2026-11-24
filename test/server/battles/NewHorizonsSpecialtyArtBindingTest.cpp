@@ -477,10 +477,12 @@ protected:
 		HeroCommandFixture::mapLoaded(loaded);
 		JsonNode development(JsonPath::builtin("config/newHorizonsHeroes"));
 		// These cases bind the selected art of the governing historical policies.
-		// The revised Castle and Rampart rows replace several of them and own their own art.
+		// The revised Castle, Rampart and Academy rows replace several of them and own their own art.
 		for(const auto * revised : {"volleyCommand", "aerialSupremacy", "benedictionOfArms", "pariah", "frostMantle",
 			"quickStudy", "sermon", "useTheGround", "elusive", "patroness", "giantSlayer", "livingRemedy",
-			"sorceressOfEnroth", "brittle", "againstTheOdds", "perfectMount", "treantmoot", "forestAmbush"})
+			"sorceressOfEnroth", "brittle", "againstTheOdds", "perfectMount", "treantmoot", "forestAmbush",
+			"hardened", "spoilsOfAlchemy", "practiceMakesPerfect", "wellspringOfWealth", "stormLord", "serpentsEmbraceBound",
+			"goldStandardDiscount", "inexhaustibleKnowledge", "halonNullifyingShot", "focusMagicSpecialty", "sageOfTheAges"})
 			development["revisedSpecialties"].Struct().erase(revised);
 		if(historical)
 		{

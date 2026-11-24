@@ -7,6 +7,7 @@
 #include "army/CStackInstance.h"
 #include "../gameState/UpgradeInfo.h"
 #include "../entities/hero/NewHorizonsGhostSpecialty.h"
+#include "../entities/hero/NewHorizonsAcademySpecialties.h"
 #include "../bonuses/BonusParameters.h"
 #include "../bonuses/BonusList.h"
 void CGHeroInstance::fillUpgradeInfo(UpgradeInfo & info, const CStackInstance & stack) const
@@ -23,8 +24,12 @@ void CGHeroInstance::fillUpgradeInfo(UpgradeInfo & info, const CStackInstance & 
 		if (it->parameters)
 		{
 			auto nid = it->parameters->toCreature();
-			if (nid != stack.getId()) //in very specific case the upgrade is available by default (?)
-				info.addUpgrade(nid, stack.getType());
+			if (nid == stack.getId()) //in very specific case the upgrade is available by default (?)
+				continue;
+			// Josephine's revised Gold Standard discounts her own Iron-to-Gold Golem upgrade.
+			const int discount = it->source == BonusSource::HERO_SPECIAL && it->sid == BonusSourceID(getHeroTypeID())
+				? newHorizonsHeroes::goldStandardDiscountPercent(this) : 0;
+			info.addUpgrade(nid, stack.getType(), 100 - discount);
 		}
 	}
 }

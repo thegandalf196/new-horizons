@@ -67,6 +67,7 @@
 #include <vstd/RNG.h>
 #include "../../lib/spells/NewHorizonsTimedMagnitudes.h"
 #include "BattleRampartSpecialtyCasts.h"
+#include "BattleAcademySpecialties.h"
 
 namespace
 {
@@ -529,6 +530,8 @@ void BattleFlowProcessor::startNextRound(const CBattleInfoCallback & battle, boo
 	}
 	// Expiry, form restoration and capacity normalization precede passive round healing.
 	battleRoundHealing::afterRound(*gameHandler, battle);
+	if(!isFirstRound)
+		battleAcademySpecialties::regenerateMana(*gameHandler, battle);
 	resolveDemonicGates(battle, false);
 
 	// operate on copy - removing obstacles will invalidate iterator on 'battle' container

@@ -46,6 +46,14 @@ inline JsonNode overkillRandomPrayerHeroes(JsonNode heroes)
 	for(auto & entry : heroes["startingSkills"]["startingPerkProfiles"]["core:halon"].Vector())
 		if(entry["perk"].String() == "new-horizons:metamagic.formulaRecovery")
 			entry["perk"].String() = "new-horizons:metamagic.unravelingMagic";
+	// Theodorus's Mana Siphon start (Metamagic 6) returns to his earlier Scholar start.
+	for(auto & entry : heroes["startingSkills"]["startingPerkProfiles"]["core:theodorus"].Vector())
+		if(entry["perk"].String() == "new-horizons:metamagic.manaSiphon")
+		{
+			entry["skill"].String() = "new-horizons:learning";
+			entry["perk"].String() = "new-horizons:learning.scholar";
+		}
+	heroes["startingSkills"]["startingBookReplacements"].Struct().erase("core:solmyr"); // Added with the Academy starts.
 	heroes.Struct().erase("revisedSpecialties"); // Revised specialties require format 1166.
 	omitActivatedOrdinaryCoefficients(heroes); // Nor do they carry the 0.93.1 ordinary coefficients.
 	heroes.setOverrideFlag(true);

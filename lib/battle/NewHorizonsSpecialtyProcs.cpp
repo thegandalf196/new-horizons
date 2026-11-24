@@ -10,6 +10,8 @@
 #include "../CCreatureHandler.h"
 #include "../bonuses/BonusList.h"
 #include "../nativeRules/NativeRulePilots.h"
+#include "../entities/hero/NewHorizonsAcademySpecialties.h"
+#include "../mapObjects/CGHeroInstance.h"
 #include "../combatScripts/NativeJsonParameters.h"
 #include "../spells/CSpell.h"
 #include "../spells/ISpellMechanics.h"
@@ -54,7 +56,10 @@ std::optional<int> attackSpellChance(const CBattleInfoCallback & battle, const b
 	if(spell != SpellID::DISPEL_HELPFUL_SPELLS || !ranged || !family(unit, Family::Mage)) return std::nullopt;
 	static const auto mage = CreatureID(CreatureID::decode("core:mage"));
 	const char * key = unit.creatureId() == mage ? "dispellingShotMageChancePercent" : "dispellingShotArchMageChancePercent";
-	const int chance = coefficient(battle, unit, "core:theodorus", key);
+	// Halon holds Nullifying Shot once the Academy swap is captured; Theodorus otherwise.
+	const auto visible = battle.battleGetVisibleHeroPolicy(battle.playerToSide(battle.battleGetOwner(&unit)));
+	const auto * hero = visible.kind() == VisibleHeroPolicy::Knowledge::VISIBLE_HERO ? visible.legacyHero() : nullptr;
+	const int chance = coefficient(battle, unit, newHorizonsHeroes::nullifyingShotHero(hero), key);
 	return chance > 0 ? std::optional<int>(chance) : std::nullopt;
 }
 std::vector<SpellID> additionalAttackSpells(const CBattleInfoCallback & battle, const battle::Unit & unit, bool ranged)

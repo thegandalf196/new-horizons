@@ -29,7 +29,7 @@ TEST_F(NewHorizonsOrdinaryStrikeSpecialtyTest, PerfectMountDoesNotCreateTheRetir
 }
 TEST_F(NewHorizonsOrdinaryStrikeSpecialtyTest, NullifyingShotDoesNotCreateTheRetiredDirectMdrStrip)
 {
-	prepare("core:theodorus", "core:archMage");
+	prepare("core:halon", "core:archMage");
 	noMorale(*actor); noMorale(*enemy);
 	enemy->setPosition(BattleHex(12, 5));
 	enemy->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::SPELL_DAMAGE_REDUCTION,
@@ -44,7 +44,8 @@ TEST_F(NewHorizonsOrdinaryStrikeSpecialtyTest, NullifyingShotDoesNotCreateTheRet
 class NewHorizonsStrikeCaptureTest : public NewHorizonsSpecialtyProcFixture, public ::testing::WithParamInterface<bool> {};
 TEST_P(NewHorizonsStrikeCaptureTest, CurrentCapturedPolicyAndStartingDevelopmentSurviveWorldRoundtrip)
 {
-	prepare(GetParam() ? "core:theodorus" : "core:aeris", GetParam() ? "core:archMage" : "core:silverPegasus");
+	// Halon holds Nullifying Shot in the shipped rules (Theodorus in older captures).
+	prepare(GetParam() ? "core:halon" : "core:aeris", GetParam() ? "core:archMage" : "core:silverPegasus");
 	const auto id = attackerSideHero->id;
 	CGameState restored; restored.preInit(LIBRARY); restored.loadFromMemory(gameState()->saveToMemory());
 	const auto * hero = restored.getHero(id);

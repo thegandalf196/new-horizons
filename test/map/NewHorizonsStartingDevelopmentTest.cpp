@@ -3,6 +3,7 @@
  * License: GNU General Public License v2 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../../lib/entities/hero/NewHorizonsAcademySpecialties.h"
 #include "../PerkStateFixture.h"
 #include "../server/LegacyEstatesCapture.h"
 #include "../NewHorizonsHistoricalAdventurePolicyTestUtils.h"
@@ -659,8 +660,10 @@ TEST_F(NewHorizonsStartingDevelopmentTest, AineDefaultTaxCollectorUsesActualOwne
 {
 	ownedTown = true;
 	ASSERT_NO_FATAL_FAILURE(prepare(towerStarts[3]));
-	// Ordinary +125 Estates, unchanged +350 specialty, and +100 for one town.
-	EXPECT_EQ(actor()->dailyIncome()[EGameResID::GOLD], 575);
+	// Ordinary +125 Estates and +100 for one town; Wellspring of Wealth replaces the +350
+	// specialty with Gold from her Mana.
+	EXPECT_GT(newHorizonsHeroes::wellspringOfWealthGold(*actor()), 0);
+	EXPECT_EQ(actor()->dailyIncome()[EGameResID::GOLD], 225 + newHorizonsHeroes::wellspringOfWealthGold(*actor()));
 	EXPECT_EQ(actor()->getHeroType()->getJsonKey(), "core:aine");
 }
 

@@ -5,9 +5,9 @@
 
 TEST_F(ForecastNativeAdapterTest, InertSkillMarkerRequiresExactAuthoredHeroLocalIdentityAndShape)
 {
-	ASSERT_NO_FATAL_FAILURE(prepare(false, false, false, "core:pikeman", false, false, "core:neela", false, true));
-	// Neela keeps her Armorer skill specialty marker; Volley Command retires Orrin's Archery one
-	// and Use the Ground retires Mephala's.
+	ASSERT_NO_FATAL_FAILURE(prepare(false, false, false, "core:pikeman", false, false, "core:tazar", false, true));
+	// Tazar keeps his Armorer skill specialty marker; Volley Command retires Orrin's Archery one,
+	// Use the Ground Mephala's and Hardened Neela's.
 	const auto * hero = parent->battleGetVisibleHeroPolicy(BattleSide::ATTACKER).legacyHero();
 	ASSERT_NE(hero, nullptr);
 	const auto skill = hero->getHeroType()->secondarySkillSpecialtyAlias;

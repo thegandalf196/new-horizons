@@ -92,7 +92,18 @@
 		"againstTheOdds": {"luck": 1, "levelsPerLuck": 10, "maximumLuck": 3},
 		"perfectMount": {"reductionPercent": 43, "reductionPercentPerLevel": 3, "maximumReductionPercent": 100},
 		"treantmoot": {"dendroidReductionPercent": 10, "dendroidReductionPercentPerLevel": 1, "maximumDendroidReductionPercent": 30},
-		"forestAmbush": {"shotDamagePercentPerLevel": 2, "maximumShotDamagePercent": 100}
+		"forestAmbush": {"shotDamagePercentPerLevel": 2, "maximumShotDamagePercent": 100},
+		"hardened": {"hitPermille": 50, "totalPermille": 100, "totalPermillePerLevel": 5, "maximumTotalPermille": 200},
+		"spoilsOfAlchemy": {"goldPerMercury": 2000, "goldPerMercuryPerLevel": 50, "minimumGoldPerMercury": 1000, "maximumMercury": 10},
+		"practiceMakesPerfect": {"percentPerCast": 1, "capPercentPerLevel": 2},
+		"wellspringOfWealth": {"goldPerManaPermille": 1500, "goldPerManaPermillePerLevel": 75, "maximumGoldPerManaPermille": 3000},
+		"stormLord": {"damagePercent": 3, "damagePercentPerLevel": 3, "maximumDamagePercent": 60, "chainLightningLevel": 10},
+		"serpentsEmbraceBound": {"damagePercent": 2, "damagePercentPerLevel": 2, "maximumDamagePercent": 40},
+		"goldStandardDiscount": {"discountPercent": 10, "discountPercentPerLevel": 1, "maximumDiscountPercent": 30},
+		"inexhaustibleKnowledge": {"manaPermille": 40, "manaPermillePerLevel": 2, "maximumManaPermille": 200, "minimumMana": 1},
+		"halonNullifyingShot": {"enabled": true},
+		"focusMagicSpecialty": {"rangedPermille": 100, "rangedPermillePerLevel": 5, "maximumRangedPermille": 200},
+		"sageOfTheAges": {"spellPowerPerLevel": 2, "knowledgePerLevel": 2}
 	},
 	"creatureLineSpecialties": {
 		"version": 1,
@@ -330,7 +341,8 @@
 			"core:styg": {"from": "core:shield", "to": "new-horizons:entangle"},
 			"core:tiva": {"from": "core:stoneSkin", "to": "new-horizons:regeneration"},
 			"core:cuthbert": {"from": "core:weakness", "to": "new-horizons:holyArmor"},
-			"core:loynis": {"from": "core:prayer", "to": "new-horizons:sanctuary"}
+			"core:loynis": {"from": "core:prayer", "to": "new-horizons:sanctuary"},
+			"core:solmyr": {"from": "new-horizons:masterChainLightning", "to": "core:lightningBolt"}
 		},
 		"startingPerkProfiles": {
 			"core:sylvia": [{"skill": "new-horizons:logistics", "perk": "new-horizons:logistics.navigation"}],
@@ -407,7 +419,7 @@
 			"core:fafner": [{"skill": "new-horizons:warcasting", "perk": "new-horizons:warcasting.spellward"}],
 			"core:halon": [{"skill": "new-horizons:metamagic", "perk": "new-horizons:metamagic.formulaRecovery"}],
 			"core:rissa": [{"skill": "new-horizons:estates", "perk": "new-horizons:estates.supervisor"}],
-			"core:theodorus": [{"skill": "new-horizons:learning", "perk": "new-horizons:learning.scholar"}],
+			"core:theodorus": [{"skill": "new-horizons:metamagic", "perk": "new-horizons:metamagic.manaSiphon"}],
 			"core:solmyr": [{"skill": "new-horizons:havocMagic", "perk": "new-horizons:havocMagic.stormcaller"}],
 			"core:cyra": [{"skill": "new-horizons:sorceryMagic", "perk": "new-horizons:sorceryMagic.overcharger"}],
 			"core:rashka": [{"skill": "new-horizons:demonicGating", "perk": "new-horizons:demonicGating.hellfireArrival"}],

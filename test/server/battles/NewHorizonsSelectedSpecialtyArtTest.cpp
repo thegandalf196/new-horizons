@@ -178,7 +178,9 @@ TEST_P(NewHorizonsSelectedSpecialtyArtTest, WrongIdentityOrResolvedSkillCannotCl
 {
 	using namespace newHorizonsHeroes;
 	using namespace newHorizonsHeroes::detail;
-	const JsonNode development(JsonPath::builtin("config/newHorizonsHeroes"));
+	JsonNode development(JsonPath::builtin("config/newHorizonsHeroes"));
+	// Neela's revised Hardened replaces her skill specialty; this case binds the skill path.
+	development["revisedSpecialties"].Struct().erase("hardened");
 	const JsonNode magic(JsonPath::builtin("config/newHorizonsMagic"));
 	const auto & row = selectedArtCases.at(GetParam());
 	if(GetParam() < 2)

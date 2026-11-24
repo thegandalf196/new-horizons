@@ -5,6 +5,7 @@
 #include "BattleInfo.h"
 #include "../mapObjects/CGHeroInstance.h"
 #include "../nativeRules/CompiledMetamagicRules.h"
+#include "../entities/hero/NewHorizonsAcademySpecialties.h"
 #include <algorithm>
 #include <limits>
 #include <stdexcept>
@@ -103,8 +104,12 @@ int maximumUses(const CGHeroInstance * hero)
 	const auto * rules = doubleCastRules(hero);
 	if(!rules)
 		return 0;
-	return rules->maxUses(nativeRules::metamagicSkillRank(hero), nativeRules::doubleCastPerks(hero),
-		rules->isHalon(hero->getHeroTypeID()));
+	// Once Halon holds Nullifying Shot, his flat extra use (Spellweaver) is gone; the retired
+	// level-stepped Spellweaver row, if a capture holds it, replaces the flat use.
+	const bool halon = rules->isHalon(hero->getHeroTypeID()) && !newHorizonsHeroes::halonHoldsNullifyingShot(hero);
+	const auto weaver = halon ? newHorizonsHeroes::spellweaverAdditionalUses(hero) : std::nullopt;
+	const int uses = rules->maxUses(nativeRules::metamagicSkillRank(hero), nativeRules::doubleCastPerks(hero), halon && !weaver);
+	return weaver && uses > 0 ? uses + *weaver : uses;
 }
 
 int remainingUses(const CGHeroInstance * hero, const MetamagicDoubleCastState & state)

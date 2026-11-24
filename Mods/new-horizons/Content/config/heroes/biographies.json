@@ -59,6 +59,11 @@
 			"biography": "The first time Serena cast a spell, she nearly killed herself by channeling too much magical energy into it. A Wizard in a neighboring town felt the force, sought her out and brought her to the Wizards' Guild to learn control. Her remarkable power came before she knew how to contain it."
 		}
 	},
+	"core:theodorus": {
+		"texts": {
+			"biography": "Theodorus is easily one of the best spellcasters around. Some say it is time for him to retire, but his mind is still as calculating as ever. A veritable walking library, Theodorus has read virtually every magical tome known to scholars, and few can rival his encyclopedic knowledge of the arcane arts."
+		}
+	},
 	"core:solmyr": {
 		"texts": {
 			"biography": "Solmyr was trapped in a Genie bottle for over a millennium. Grateful to the human who finally released him, he accidentally swore to serve that man for eternity. As fate would have it, the man is Gavin Magnus, immortal ruler of the Bracada Highlands."

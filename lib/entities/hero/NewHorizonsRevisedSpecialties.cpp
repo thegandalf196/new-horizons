@@ -16,6 +16,7 @@
 #include "NewHorizonsPassiveSpecialtyBonuses.h"
 #include "NewHorizonsCastleSpecialties.h"
 #include "NewHorizonsRampartSpecialties.h"
+#include "NewHorizonsAcademySpecialties.h"
 #include "../../bonuses/BonusSelector.h"
 
 #include <array>
@@ -95,7 +96,9 @@ void validateRevisedSpecialtiesSerialization(const JsonNode & development)
 	detail::fields(row, {"version", "lordOfTheCrypts", "levelScaling", "volleyCommand", "aerialSupremacy",
 		"benedictionOfArms", "pariah", "frostMantle", "quickStudy", "sermon", "forcedMarch", "wellConnected",
 		"almsOfTheFaithful", "useTheGround", "elusive", "patroness", "giantSlayer", "livingRemedy", "sorceressOfEnroth",
-		"brittle", "againstTheOdds", "perfectMount", "treantmoot", "forestAmbush"});
+		"brittle", "againstTheOdds", "perfectMount", "treantmoot", "forestAmbush", "hardened", "spoilsOfAlchemy",
+		"practiceMakesPerfect", "wellspringOfWealth", "stormLord", "serpentsEmbraceBound", "goldStandardDiscount",
+		"inexhaustibleKnowledge", "halonNullifyingShot", "spellweaver", "focusMagicSpecialty", "sageOfTheAges"});
 	detail::require(detail::integer(row["version"], 1, 1), "revised specialty version");
 	if(row.Struct().contains("levelScaling"))
 	{
@@ -112,6 +115,17 @@ void validateRevisedSpecialtiesSerialization(const JsonNode & development)
 	validateCastleSpecialtyRows(row);
 	validateCastleAdventureSpecialties(row);
 	validateRampartSpecialtyRows(row);
+	validateAcademySpecialtyRows(row);
+}
+
+bool isRetiredRevisedSpecialtyRow(std::string_view row)
+{
+	// Retired content: kept loadable for captures that hold it, never shipped in a new
+	// capture. Each entry is described on the wiki's "Graveyard" page.
+	static constexpr std::array<std::string_view, 1> retired{
+		"spellweaver" // Halon, +1 Double Cast use (+2 from level 15); retired 2026-11-25 for Nullifying Shot.
+	};
+	return std::ranges::find(retired, row) != retired.end();
 }
 
 bool requiresRevisedSpecialtyFormat(const JsonNode & document)
@@ -261,7 +275,7 @@ bool retiresSpecialtyBonus(const CGHeroInstance & hero, const Bonus & bonus)
 bool revisedSpecialtyRetiresHistorical(const CGHeroInstance & hero)
 {
 	return castleSpecialtyRetiresHistorical(hero) || retiresHistoricalCastleSpecialty(hero)
-		|| rampartSpecialtyRetiresHistorical(hero);
+		|| rampartSpecialtyRetiresHistorical(hero) || academySpecialtyRetiresHistorical(hero);
 }
 
 bool benefitsFromStewardship(const CGHeroInstance & hero, const CGTownInstance & town)

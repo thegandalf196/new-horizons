@@ -10,6 +10,7 @@
 #include "NewHorizonsSpellAvailability.h"
 #include "CSpell.h"
 #include "../mapObjects/CGHeroInstance.h"
+#include "../entities/hero/NewHorizonsAcademySpecialties.h"
 #include <cmath>
 #include <algorithm>
 
@@ -96,6 +97,10 @@ int32_t focusAdditionalRangedPercent(const CGHeroInstance * hero, SpellID spell)
 {
 	if(!hero) return 0;
 	const int perk = hero->hasActivePerk(newHorizonsSorcery::SORCERY_MAGIC_SKILL, newHorizonsSorcery::ARCANE_BALLISTICS_PERK) ? 20 : 0;
+	// Cyra's revised Focus Magic scales with her level (rounded down to whole points).
+	if(const auto permille = newHorizonsHeroes::focusMagicSpecialtyPermille(hero);
+		permille && spell.hasValue() && spell.toSpell() && spell.toSpell()->getJsonKey() == "new-horizons:focusMagic")
+		return perk + *permille / 10;
 	return perk + hero->valOfBonuses(BonusType::SPECIAL_SPELL_LEV, BonusSubtypeID(spell));
 }
 
