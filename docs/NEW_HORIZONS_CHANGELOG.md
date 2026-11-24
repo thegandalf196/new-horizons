@@ -7,6 +7,12 @@ and revisions as the game develops.
 For individual perk effects, spell formulas, creature statistics and Order rules,
 read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 
+## 0.94.0-beta.3
+
+Fixes the Windows launcher of Beta 1 and Beta 2, which stopped before opening
+its window. Windows players on those betas must download Beta 3 once; the
+in-launcher update can't run while the window doesn't open.
+
 ## 0.94.0-beta.2
 
 Sylvan Tactics becomes Ambush, and the skill, perk and spell windows tell you
