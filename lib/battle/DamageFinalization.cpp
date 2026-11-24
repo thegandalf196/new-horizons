@@ -60,7 +60,7 @@ void CBattleInfoCallback::finalizeDamagePayload(const BattleAttackInfo & info,
 	const auto inspiration = arcaneInspiration::attackPlan(*this, info);
 	payload.arcaneInspirationDamageBonusPercent = inspiration.damageBonusPercent;
 	payload.spellshockOutputPenaltyPercent = inspiration.outputPenaltyPercent;
-	payload.arcaneInspirationDefenseIgnorePercent = inspiration.defenseIgnorePercent;
+	payload.arcaneInspirationDefenseIgnorePercent = std::min(100, payload.arcaneInspirationDefenseIgnorePercent + inspiration.defenseIgnorePercent); // + Enchanted Steel
 	payload.arcaneBulwarkReductionPercent = inspiration.physicalReductionPercent;
 	if(info.physicalDamage)
 		payload.physicalDamageReductionIgnorePercent = std::min(100,

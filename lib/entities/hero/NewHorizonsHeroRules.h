@@ -49,10 +49,11 @@ DLL_LINKAGE SpecialtyPresentation resolveSpecialtyPresentation(const CHero & her
 	const CGHeroInstance * capturedHero = nullptr);
 
 constexpr int HERO_RULESET_VERSION = 1;
-/// The current offer table covers 32 Skills; the explicit policy marker selects it.
+/// The current offer table covers 33 Skills (32 plus Warcasting); the explicit
+/// policy markers select it.
 /// Keep this count beside the runtime validator
 /// so an incomplete table cannot silently fall back to legacy chances.
-constexpr size_t HERO_SKILL_OFFER_COUNT = 32;
+constexpr size_t HERO_SKILL_OFFER_COUNT = 33;
 
 struct DLL_LINKAGE SkillGrowthChance
 {

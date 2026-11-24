@@ -39,6 +39,10 @@ constexpr int PERK_MAX_PERK_CHOICES = 2;
 constexpr int PERK_MAX_PERKS_PER_SKILL = 3;
 constexpr size_t PERK_LEGACY_SKILL_COUNT = 31;
 constexpr size_t PERK_CANONICAL_SKILL_COUNT = 32;
+/// The captured Warcasting policy adds new-horizons:warcast as the 33rd Skill.
+constexpr size_t PERK_WARCAST_SKILL_COUNT = 33;
+/// Upper bound of any captured roster, for iteration limits.
+constexpr size_t PERK_MAX_SKILL_COUNT = PERK_WARCAST_SKILL_COUNT;
 constexpr size_t PERK_CANONICAL_POOL_SIZE = 10;
 constexpr size_t PERK_BASIC_POOL_SIZE = 4;
 constexpr size_t PERK_ADVANCED_POOL_SIZE = 4;
@@ -123,6 +127,14 @@ DLL_LINKAGE void validateFourOfferProgressionSerialization(const JsonNode & rule
 DLL_LINKAGE void validateUnifiedSkillProgressionSerialization(const JsonNode & rules, bool supported);
 /// Strict captured {version:1} marker; absence retains the historical 31-Skill roster.
 DLL_LINKAGE bool usesCommandAuthorityPolicy(const JsonNode & rules);
+/// Strict captured {version:1} marker for the 33-Skill roster with Warcasting
+/// (new-horizons:warcast). It requires the Command/Authority marker.
+DLL_LINKAGE bool usesWarcastPolicy(const JsonNode & rules);
+/// A Warcasting capture needs NEW_HORIZONS_WARCAST; older formats cannot hold it.
+DLL_LINKAGE bool requiresWarcastFormat(const JsonNode & rules);
+/// Sylvan Tactics 5 and Warcasting captures in the perk/hero override envelopes need their formats.
+DLL_LINKAGE void validateRosterPolicyFormats(const JsonNode & perks, const JsonNode & heroes,
+	bool sylvanAmbushSupported, bool warcastSupported, bool saving);
 DLL_LINKAGE size_t canonicalSkillCount(const JsonNode & rules);
 DLL_LINKAGE void validateSkillOfferWeightRow(const JsonNode & classWeights, const JsonNode & rules);
 /// Absence preserves the historical automatic fifth-level policy.

@@ -327,7 +327,8 @@ void validateHeroRules(const JsonNode & rules, bool requireAllClasses)
 	if(!usesRules(rules))
 		return;
 	usesCommandAuthorityPolicy(rules);
-	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "classProfiles", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties", "damageSpellSpecialties", "nonDamageSpellSpecialties", "skillSpecialties", "druidSpecialties", "remainingSpellSpecialtyReplacements", "lighthouseDeparture", "defaultCreatureLineReplacements", "fortuneChildSpecialty", "arcanePreparationSpecialty", "bottomlessMindSpecialty", "masterSpellwardSpecialty", "individualSpecialties", "schoolSpellcraftSpecialties", "additionalSpecialties", "recoverySpecialties", "learningExchangeSpecialties", "swampSeerSpecialty", "reclamationSpecialty", "ghostSpecialty", "petrifyingBloodSpecialty", "livingInfernoSpecialty", "dreadCavalrySpecialty", "genieSageSpecialties", "chosenSpecialties", "revisedSpecialties", "commandAuthorityPolicy", "skillOfferLayoutVersion", "dailyMovement"});
+	usesWarcastPolicy(rules);
+	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "classProfiles", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties", "damageSpellSpecialties", "nonDamageSpellSpecialties", "skillSpecialties", "druidSpecialties", "remainingSpellSpecialtyReplacements", "lighthouseDeparture", "defaultCreatureLineReplacements", "fortuneChildSpecialty", "arcanePreparationSpecialty", "bottomlessMindSpecialty", "masterSpellwardSpecialty", "individualSpecialties", "schoolSpellcraftSpecialties", "additionalSpecialties", "recoverySpecialties", "learningExchangeSpecialties", "swampSeerSpecialty", "reclamationSpecialty", "ghostSpecialty", "petrifyingBloodSpecialty", "livingInfernoSpecialty", "dreadCavalrySpecialty", "genieSageSpecialties", "chosenSpecialties", "revisedSpecialties", "commandAuthorityPolicy", "warcastPolicy", "skillOfferLayoutVersion", "dailyMovement"});
 	validateCurrentSpecialtyRules(rules);
 	validateOptionalBottomlessMindSpecialtyRules(rules);
 	validateOptionalMasterSpellwardSpecialtyRules(rules);
@@ -372,7 +373,8 @@ void validateResolvedHeroRules(const JsonNode & rules)
 	if(!usesRules(rules))
 		return;
 	usesCommandAuthorityPolicy(rules);
-	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "profile", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties", "damageSpellSpecialties", "nonDamageSpellSpecialties", "skillSpecialties", "druidSpecialties", "remainingSpellSpecialtyReplacements", "lighthouseDeparture", "defaultCreatureLineReplacements", "creatureLineSpecialtyTarget", "fortuneChildSpecialty", "arcanePreparationSpecialty", "bottomlessMindSpecialty", "masterSpellwardSpecialty", "individualSpecialties", "schoolSpellcraftSpecialties", "additionalSpecialties", "recoverySpecialties", "learningExchangeSpecialties", "swampSeerSpecialty", "reclamationSpecialty", "ghostSpecialty", "petrifyingBloodSpecialty", "livingInfernoSpecialty", "dreadCavalrySpecialty", "genieSageSpecialties", "chosenSpecialties", "revisedSpecialties", "commandAuthorityPolicy", "skillOfferLayoutVersion", "dailyMovement"});
+	usesWarcastPolicy(rules);
+	fields(rules, {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "profile", "skillOfferWeights", "excludedSkills", "extraGrowth", "startingSkills", "creatureLineSpecialties", "damageSpellSpecialties", "nonDamageSpellSpecialties", "skillSpecialties", "druidSpecialties", "remainingSpellSpecialtyReplacements", "lighthouseDeparture", "defaultCreatureLineReplacements", "creatureLineSpecialtyTarget", "fortuneChildSpecialty", "arcanePreparationSpecialty", "bottomlessMindSpecialty", "masterSpellwardSpecialty", "individualSpecialties", "schoolSpellcraftSpecialties", "additionalSpecialties", "recoverySpecialties", "learningExchangeSpecialties", "swampSeerSpecialty", "reclamationSpecialty", "ghostSpecialty", "petrifyingBloodSpecialty", "livingInfernoSpecialty", "dreadCavalrySpecialty", "genieSageSpecialties", "chosenSpecialties", "revisedSpecialties", "commandAuthorityPolicy", "warcastPolicy", "skillOfferLayoutVersion", "dailyMovement"});
 	validateCurrentSpecialtyRules(rules);
 	validateOptionalBottomlessMindSpecialtyRules(rules);
 	validateOptionalMasterSpellwardSpecialtyRules(rules);
@@ -402,6 +404,8 @@ JsonNode resolveHeroRules(const JsonNode & rules, HeroClassID heroClass)
 	JsonNode result;
 	if(rules.Struct().contains("commandAuthorityPolicy"))
 		result["commandAuthorityPolicy"] = rules["commandAuthorityPolicy"];
+	if(rules.Struct().contains("warcastPolicy"))
+		result["warcastPolicy"] = rules["warcastPolicy"];
 	if(rules.Struct().contains("skillOfferLayoutVersion"))
 		result["skillOfferLayoutVersion"] = rules["skillOfferLayoutVersion"];
 	for(const auto * key : {"schemaVersion", "rulesetVersion", "powerDivisor", "maxPrimary", "extraGrowth"})

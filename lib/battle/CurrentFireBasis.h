@@ -29,8 +29,11 @@ bool holdTheLineRecipient(const HeroOrderState & state, const battle::Unit * uni
 template<class Recipient>
 int holdTheLineReductionBasisPoints(const HeroOrderState * state, const battle::Unit * unit, const Recipient & recipient)
 {
-	return state && recipient(*state, unit)
-		? (state->crownAndAltarAppliesTo(unit->unitId())
-			? state->crownAndAltarHoldReductionBasisPoints : state->holdMagicalReductionBasisPoints) : 0;
+	if(!state || !recipient(*state, unit))
+		return 0;
+	const int basisPoints = state->crownAndAltarAppliesTo(unit->unitId())
+		? state->crownAndAltarHoldReductionBasisPoints : state->holdMagicalReductionBasisPoints;
+	const int warcast = state->warcastPercentFor(unit->unitId());
+	return warcast > 0 ? std::min(10000, basisPoints + basisPoints * warcast / 100) : basisPoints;
 }
 }

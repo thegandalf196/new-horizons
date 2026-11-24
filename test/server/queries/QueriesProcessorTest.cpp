@@ -475,7 +475,7 @@ protected:
 		ASSERT_EQ(state.getRules(), expectedRules);
 		const JsonNode heroRules(JsonPath::builtin("config/newHorizonsHeroes"));
 		const auto initialWeights = hero->getPrimaryGrowthRules()["skillOfferWeights"];
-		ASSERT_EQ(initialWeights.Struct().size(), newHorizonsHeroes::PERK_CANONICAL_SKILL_COUNT);
+		ASSERT_EQ(initialWeights.Struct().size(), newHorizonsHeroes::PERK_WARCAST_SKILL_COUNT);
 		ASSERT_EQ(initialWeights, heroRules["skillOfferWeights"][classId]);
 		ASSERT_EQ(state.getSelected().size(), 1u);
 		EXPECT_EQ(state.getSelected().front().perkId, heroId == "core:solmyr"

@@ -58,6 +58,8 @@ public:
 		const Environment * environment = nullptr,
 		const std::shared_ptr<CBattleInfoCallback> & projectionSource = nullptr) const;
 	float meleeDamage(const battle::Unit * attackerUnit, const battle::Unit * defenderUnit) const;
+	/// Warcasting share captured by the prepared Order for this recipient (1 when none).
+	float warcastFactor(const battle::Unit * unit) const;
 
 	// Prepared Hold forecast inputs; do not mutate between directValue and the
 	// evaluator's forecast. The owning estimate must outlive those borrowed views.

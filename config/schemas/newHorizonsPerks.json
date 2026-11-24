@@ -51,7 +51,7 @@
 	"oneOf": [
 		{
 			"required": ["commandPolicyVersion"],
-			"not": {"anyOf": [{"required": ["commandAuthorityPolicy"]}, {"required": ["warfarePolicyVersion"]}]},
+			"not": {"anyOf": [{"required": ["commandAuthorityPolicy"]}, {"required": ["warfarePolicyVersion"]}, {"required": ["warcastPolicy"]}]},
 			"properties": {
 				"skills": {"minProperties": 31, "maxProperties": 31, "not": {"required": ["new-horizons:authority"]}},
 				"necromancyPolicy": {"not": {"properties": {"version": {"enum": [3]}}}}
@@ -59,9 +59,17 @@
 		},
 		{
 			"required": ["commandAuthorityPolicy", "warfarePolicyVersion", "necromancyPolicy"],
+			"not": {"anyOf": [{"required": ["commandPolicyVersion"]}, {"required": ["warcastPolicy"]}]},
+			"properties": {
+				"skills": {"minProperties": 32, "maxProperties": 32, "required": ["new-horizons:authority"], "not": {"required": ["new-horizons:warcast"]}},
+				"necromancyPolicy": {"properties": {"version": {"enum": [2, 3, 4]}}}
+			}
+		},
+		{
+			"required": ["commandAuthorityPolicy", "warcastPolicy", "warfarePolicyVersion", "necromancyPolicy"],
 			"not": {"required": ["commandPolicyVersion"]},
 			"properties": {
-				"skills": {"minProperties": 32, "maxProperties": 32, "required": ["new-horizons:authority"]},
+				"skills": {"minProperties": 33, "maxProperties": 33, "required": ["new-horizons:authority", "new-horizons:warcast"]},
 				"necromancyPolicy": {"properties": {"version": {"enum": [2, 3, 4]}}}
 			}
 		}
@@ -71,6 +79,7 @@
 		"spellcraftPolicyVersion": {"type": "integer", "enum": [2], "description": "Captured2 makes Precise Casting halve the target's resistance chance; absence retains the historical friendly area-centre protection."},
 		"estatesPolicyVersion": {"type": "integer", "enum": [1, 2], "description": "Revised Estates catalogue and captured economy effects; 2 additionally lets every owned hero act as a 500 Gold steward (1,000 with Stewardship). Absence retains the entire historical catalogue and effects."},
 		"commandAuthorityPolicy": {"$ref": "#/definitions/commandAuthorityPolicy"},
+		"warcastPolicy": {"type": "object", "additionalProperties": false, "required": ["version"], "properties": {"version": {"type": "integer", "enum": [1]}}, "description": "Captured1 adds the Warcasting Skill (new-horizons:warcast) as the 33rd Skill. Absence keeps the 32-Skill roster; never inject it into an old capture."},
 		"warfarePolicyVersion": {"type": "integer", "enum": [1]},
 		"unifiedSkillProgressionVersion": {"type": "integer", "enum": [1], "description": "One full eligible tier choice immediately follows every acquired Skill rank. Historical random perk-offer limits do not truncate that pool."},
 		"elementalAttunementPolicy": {"type": "object", "additionalProperties": false, "required": ["version"], "properties": {"version": {"type": "integer", "enum": [1]}}, "description": "Current deterministic Conflux Attunement and revised perk meanings; a full active registry requires version 1."},
@@ -111,7 +120,7 @@
 		"skills": {
 			"type": "object",
 			"minProperties": 31,
-			"maxProperties": 32,
+			"maxProperties": 33,
 			"additionalProperties": {"$ref": "#/definitions/skill"},
 			"properties": {
 				"new-horizons:discipline": {
@@ -459,6 +468,10 @@
 	},
 	"definitions": {
 		"commandAuthorityPolicy": {
+			"type": "object", "additionalProperties": false,
+			"required": ["version"], "properties": {"version": {"type": "integer", "enum": [1]}}
+		},
+		"warcastPolicy": {
 			"type": "object", "additionalProperties": false,
 			"required": ["version"], "properties": {"version": {"type": "integer", "enum": [1]}}
 		},

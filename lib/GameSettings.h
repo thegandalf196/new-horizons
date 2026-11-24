@@ -285,8 +285,7 @@ private:
 			h.hasFeature(Handler::Version::NEW_HORIZONS_PLAGUEBEARER));
 		newHorizonsHeroes::validateSylvanTacticsSerialization(perkContext,
 			h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_TACTICS));
-		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_AMBUSH) && newHorizonsHeroes::requiresSylvanAmbushFormat(perkContext))
-			throw std::runtime_error("Cannot write Sylvan Tactics 5 rules to an older format");
+		newHorizonsHeroes::validateRosterPolicyFormats(perkContext, overrides["heroes"]["newHorizons"], h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_AMBUSH), h.hasFeature(Handler::Version::NEW_HORIZONS_WARCAST), true);
 		newHorizonsHeroes::validateCrisisCommandProfileSerialization(perkContext,
 			h.hasFeature(Handler::Version::NEW_HORIZONS_CRISIS_COMMAND));
 		newHorizonsHeroes::validateStartingDevelopmentSerialization(overrides["heroes"]["newHorizons"],
@@ -354,8 +353,7 @@ private:
 			h.hasFeature(Handler::Version::NEW_HORIZONS_DEFAULT_CREATURE_LINE_SUCCESSORS));
 		newHorizonsHeroes::validateSylvanTacticsSerialization(perkContext,
 			h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_TACTICS));
-		if(!h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_AMBUSH) && newHorizonsHeroes::requiresSylvanAmbushFormat(perkContext))
-			throw std::runtime_error("Older format claims Sylvan Tactics 5 rules");
+		newHorizonsHeroes::validateRosterPolicyFormats(perkContext, overrides["heroes"]["newHorizons"], h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_AMBUSH), h.hasFeature(Handler::Version::NEW_HORIZONS_WARCAST), false);
 		newHorizonsHeroes::validateCrisisCommandProfileSerialization(perkContext,
 			h.hasFeature(Handler::Version::NEW_HORIZONS_CRISIS_COMMAND));
 		newHorizonsHeroes::validateNavigationStartSerialization(overrides["heroes"]["newHorizons"],

@@ -4,6 +4,9 @@
 	"commandAuthorityPolicy": {
 		"version": 1
 	},
+	"warcastPolicy": {
+		"version": 1
+	},
 	"warfarePolicyVersion": 1,
 	"offerWeightPolicyVersion": 2,
 	"perkProgressionPolicyVersion": 2,
@@ -2560,7 +2563,7 @@
 		},
 		"new-horizons:warcasting": {
 			"id": "new-horizons:warcasting",
-			"name": "Warcasting",
+			"name": "Spell-Forge",
 			"domain": "Hybrid",
 			"availability": "All heroes",
 			"description": "Hero combat spells inspire friendly attacks and retaliations.",
@@ -2633,7 +2636,7 @@
 						"status": "active",
 						"description": "Inspired friendly retaliations deal an additional 15% damage."
 					},
-					"details": "While Arcane Inspiration is active, add 15 percentage points to its core damage bonus for friendly retaliations only. At Basic, Advanced and Expert Warcasting this totals +20%, +25% and +30%, before Grand Inspiration. Lingering Inspiration retains only the core bonus, not Battle Focus."
+					"details": "While Arcane Inspiration is active, add 15 percentage points to its core damage bonus for friendly retaliations only. At Basic, Advanced and Expert Spell-Forge this totals +20%, +25% and +30%, before Grand Inspiration. Lingering Inspiration retains only the core bonus, not Battle Focus."
 				},
 				{
 					"id": "new-horizons:warcasting.arcaneBulwark",
@@ -4700,6 +4703,152 @@
 					}
 				}
 			]
+		},
+		"new-horizons:warcast": {
+			"id": "new-horizons:warcast",
+			"name": "Warcasting",
+			"domain": "Hybrid",
+			"availability": "All heroes",
+			"description": "Your Orders are stronger on friendly stacks that carry your spells.",
+			"ranks": {
+				"basic": {
+					"description": "Orders are 20% stronger on friendly stacks that carry your beneficial spells.",
+					"effect": {
+						"status": "active",
+						"description": "Orders are 20% stronger on friendly stacks that carry your beneficial spells."
+					},
+					"details": "When you issue an Order, each friendly stack it affects that carries at least one beneficial spell you cast is warcast for that Order: the Order's numbers on that stack rise by 20% of their value, rounded down. This is checked once, when the Order is issued: a later Dispel or a new spell does not change it. Durations, targets and Morale do not change, and the usual caps still apply. Focus Fire! also warcasts all its shooters when the chosen enemy carries one of your hostile spells. Prayers, specialty marks and spells cast by creatures do not count."
+				},
+				"advanced": {
+					"description": "Orders are 35% stronger on friendly stacks that carry your beneficial spells.",
+					"effect": {
+						"status": "active",
+						"description": "Orders are 35% stronger on friendly stacks that carry your beneficial spells."
+					},
+					"details": "When you issue an Order, each friendly stack it affects that carries at least one beneficial spell you cast is warcast for that Order: the Order's numbers on that stack rise by 35% of their value, rounded down. This is checked once, when the Order is issued: a later Dispel or a new spell does not change it. Durations, targets and Morale do not change, and the usual caps still apply. Focus Fire! also warcasts all its shooters when the chosen enemy carries one of your hostile spells. Prayers, specialty marks and spells cast by creatures do not count."
+				},
+				"expert": {
+					"description": "Orders are 50% stronger on friendly stacks that carry your beneficial spells.",
+					"effect": {
+						"status": "active",
+						"description": "Orders are 50% stronger on friendly stacks that carry your beneficial spells."
+					},
+					"details": "When you issue an Order, each friendly stack it affects that carries at least one beneficial spell you cast is warcast for that Order: the Order's numbers on that stack rise by 50% of their value, rounded down. This is checked once, when the Order is issued: a later Dispel or a new spell does not change it. Durations, targets and Morale do not change, and the usual caps still apply. Focus Fire! also warcasts all its shooters when the chosen enemy carries one of your hostile spells. Prayers, specialty marks and spells cast by creatures do not count."
+				}
+			},
+			"perks": [
+				{
+					"id": "new-horizons:warcast.fieldEnchanter",
+					"name": "Field Enchanter",
+					"requires": "basic",
+					"description": "Your beneficial spells cost 2 less Mana (minimum 1) on a stack under one of your Orders.",
+					"effect": {
+						"status": "active",
+						"description": "Your beneficial spells cost 2 less Mana (minimum 1) on a stack under one of your Orders."
+					},
+					"details": "A beneficial hero spell aimed at a friendly stack that is under one of your active Orders costs 2 less Mana, never less than 1. Spells without a target stack keep their cost."
+				},
+				{
+					"id": "new-horizons:warcast.kindledEdge",
+					"name": "Kindled Edge",
+					"requires": "basic",
+					"description": "Warcast stacks deal 5% more damage while their Order lasts.",
+					"effect": {
+						"status": "active",
+						"description": "Warcast stacks deal 5% more damage while their Order lasts."
+					},
+					"details": "While an Order lasts on a stack it warcast, that stack's attacks and retaliations deal 5% more damage. A stack warcast by two Orders still gains 5% once."
+				},
+				{
+					"id": "new-horizons:warcast.commandersMeditation",
+					"name": "Commander's Meditation",
+					"requires": "basic",
+					"description": "Issuing an Order that warcasts a stack restores 3 Mana, once per round.",
+					"effect": {
+						"status": "active",
+						"description": "Issuing an Order that warcasts a stack restores 3 Mana, once per round."
+					},
+					"details": "When you issue an Order that warcasts at least one friendly stack, you regain 3 Mana, at most once per round and never above your maximum."
+				},
+				{
+					"id": "new-horizons:warcast.layeredEnchantment",
+					"name": "Layered Enchantment",
+					"requires": "basic",
+					"description": "Stacks carrying two or more different spells of yours get 10 more points of warcast bonus.",
+					"effect": {
+						"status": "active",
+						"description": "Stacks carrying two or more different spells of yours get 10 more points of warcast bonus."
+					},
+					"details": "A warcast stack carrying two or more different beneficial spells you cast gets 10 more percentage points of warcast bonus for that Order."
+				},
+				{
+					"id": "new-horizons:warcast.sustainingCommand",
+					"name": "Sustaining Command",
+					"requires": "advanced",
+					"description": "Your spells on warcast stacks that would end this round last one more round.",
+					"effect": {
+						"status": "active",
+						"description": "Your spells on warcast stacks that would end this round last one more round."
+					},
+					"details": "When you issue an Order, your beneficial spells on the stacks it warcasts that would end this round last one more round. Each spell on a stack can be extended this way once."
+				},
+				{
+					"id": "new-horizons:warcast.opening",
+					"name": "Opening",
+					"requires": "advanced",
+					"description": "Enemies damaged by warcast stacks are Exposed: your damaging spells deal 20% more to them.",
+					"effect": {
+						"status": "active",
+						"description": "Enemies damaged by warcast stacks are Exposed: your damaging spells deal 20% more to them."
+					},
+					"details": "An enemy stack damaged by the attack or retaliation of a stack warcast with this perk is Exposed until the end of the next round. Your hero's damaging spells deal 20% more damage to Exposed enemies."
+				},
+				{
+					"id": "new-horizons:warcast.wardedRanks",
+					"name": "Warded Ranks",
+					"requires": "advanced",
+					"description": "Warcast stacks take 15% less magical damage while their Order lasts.",
+					"effect": {
+						"status": "active",
+						"description": "Warcast stacks take 15% less magical damage while their Order lasts."
+					},
+					"details": "While an Order lasts on a stack it warcast, that stack takes 15% less magical damage. This adds to Spellward and follows the usual magical damage reduction rules."
+				},
+				{
+					"id": "new-horizons:warcast.enchantedSteel",
+					"name": "Enchanted Steel",
+					"requires": "advanced",
+					"description": "Warcast stacks' attacks and retaliations ignore 15% of the target's Defense while their Order lasts.",
+					"effect": {
+						"status": "active",
+						"description": "Warcast stacks' attacks and retaliations ignore 15% of the target's Defense while their Order lasts."
+					},
+					"details": "While an Order lasts on a stack it warcast, that stack's attacks and retaliations ignore 15% of the target's Defense. It adds to other effects that ignore Defense."
+				},
+				{
+					"id": "new-horizons:warcast.grandConvergence",
+					"name": "Grand Convergence",
+					"requires": "expert",
+					"description": "The warcast bonus rises by 15 points: 35%, 50% or 65%.",
+					"effect": {
+						"status": "active",
+						"description": "The warcast bonus rises by 15 points: 35%, 50% or 65%."
+					},
+					"details": "Add 15 percentage points to the warcast bonus at every rank: 35% at Basic, 50% at Advanced and 65% at Expert, before Layered Enchantment."
+				},
+				{
+					"id": "new-horizons:warcast.unbrokenCommand",
+					"name": "Unbroken Command",
+					"requires": "expert",
+					"description": "An Order that would end at round end stays on its warcast stacks through their next activation.",
+					"effect": {
+						"status": "active",
+						"description": "An Order that would end at round end stays on its warcast stacks through their next activation."
+					},
+					"details": "An Order that would end at the end of the round stays on the stacks it warcast until each of them finishes its next Creature Activation. Vanguard! and Second Wind! keep their own durations."
+				}
+			],
+			"details": "Warcasting links your spells to your Orders without any extra action: the spells already on your stacks make the Orders you issue to them stronger. Spell rounds and Order rounds follow from the board rather than from a required sequence."
 		}
 	},
 	"elementalAttunementPolicy": {

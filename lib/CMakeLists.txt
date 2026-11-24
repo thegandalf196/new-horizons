@@ -1137,6 +1137,9 @@ set(lib_MAIN_SRCS
 	TerrainHandler.cpp
 	TurnTimerInfo.cpp
 	GameLibrary.cpp
+	# Appended so existing Unity batches keep their membership.
+	battle/HeroCommandWarcastCapture.cpp
+	battle/NewHorizonsWarcast.cpp
 )
 
 if (NOT ENABLE_MINIMAL_LIB)
@@ -1403,6 +1406,8 @@ set(lib_MAIN_HEADERS
 	battle/NewHorizonsOpportunist.h
 	battle/NewHorizonsCrisisCommand.h
 	battle/NewHorizonsIronWill.h
+	battle/NewHorizonsWarcast.h
+	battle/HeroOrderWarcast.h
 	battle/NewHorizonsElementalRebirth.h
 	battle/NewHorizonsHeroLuck.h
 	battle/OrderActionTransition.h

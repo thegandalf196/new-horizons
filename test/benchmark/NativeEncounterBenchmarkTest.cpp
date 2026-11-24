@@ -10,6 +10,7 @@
 #include "../SpellPointTestUtils.h"
 #include "../SylvanTacticsHistoricalRules.h"
 #include "NativeAmbushEncounterObserver.h"
+#include "NativeWarcastEncounterObserver.h"
 #include "../../lib/mapping/CMap.h"
 #include "../../lib/CCreatureHandler.h"
 #include "../../lib/entities/hero/NewHorizonsLeadership.h"
@@ -56,6 +57,8 @@ protected:
 	/// External grants after the authored starting ledger has been verified.
 	std::function<void(CGHeroInstance &, CGHeroInstance *)> afterHeroes;
 	std::unique_ptr<nativeBenchmark::AmbushEncounterObserver> ambushObserver;
+	/// Optional read-only observer around each submitted action.
+	std::function<void(const BattleInfo &, const BattleAction &, bool)> observeExtra;
 
 	void mapLoaded(CMap * loaded) override
 	{
@@ -307,10 +310,12 @@ protected:
 			const auto action = callbacks[index]->pending.front();
 			submitted.push_back(action);
 			if(ambushObserver) ambushObserver->before(*current, action);
+			if(observeExtra) observeExtra(*current, action, true);
 			// Apply only after activeStack returns: forecasts never reenter live
 			// authoritative mutation from inside their submission callback.
 			ASSERT_TRUE(handler->battles->makePlayerBattleAction(BattleID(0), player, action));
 			if(ambushObserver) ambushObserver->after(*gameState()->getBattle(BattleID(0)), action);
+			if(observeExtra) observeExtra(*gameState()->getBattle(BattleID(0)), action, false);
 		}
 		RecordProperty("encounterUs", std::to_string(microseconds(started)));
 		ASSERT_TRUE(server.result) << "512-callback budget reached; not a successful whole fight";
@@ -527,6 +532,50 @@ TEST_F(DISABLED_NativeAmbushEncounterBenchmarkTest, ShootersPolicy5) { ambushEnc
 TEST_F(DISABLED_NativeAmbushEncounterBenchmarkTest, ShootersPolicy4) { ambushEncounter(4, true); }
 TEST_F(DISABLED_NativeAmbushEncounterBenchmarkTest, MeleePolicy5) { ambushEncounter(5, false); }
 TEST_F(DISABLED_NativeAmbushEncounterBenchmarkTest, MeleePolicy4) { ambushEncounter(4, false); }
+/// Warcasting AI-use and present-mechanic workloads: Josephine (Alchemist) with
+/// beneficial Light and Nature spells, with or without Expert Warcasting (Layered
+/// Enchantment, Sustaining Command, Grand Convergence), against a Castle army.
+class DISABLED_NativeWarcastEncounterBenchmarkTest : public DISABLED_NativeEncounterBenchmarkTest
+{
+protected:
+	std::unique_ptr<nativeBenchmark::WarcastEncounterObserver> warcastObserver;
+	void warcastEncounter(bool skill)
+	{
+		afterHeroes = [skill](CGHeroInstance & hybrid, CGHeroInstance *)
+		{
+			// Beneficial Light and Nature spells a hero may cast (Haste and Stoneskin have no hero access).
+			for(const auto * spell : {"core:bless", "new-horizons:massBless", "new-horizons:holyArmor",
+				"new-horizons:regeneration", "new-horizons:guardianSpirit"})
+				hybrid.addSpellToSpellbook(SpellID(SpellID::decode(spell)));
+			hybrid.setPrimarySkill(PrimarySkill::SPELL_POWER, 15, ChangeValueMode::ABSOLUTE);
+			hybrid.setPrimarySkill(PrimarySkill::KNOWLEDGE, 15, ChangeValueMode::ABSOLUTE);
+			setTestSpellPointTotal(&hybrid, 200);
+			if(!skill)
+				return;
+			const std::string id = newHorizonsWarcast::SKILL;
+			int tier = 0;
+			for(const auto * perk : {newHorizonsWarcast::LAYERED_ENCHANTMENT, newHorizonsWarcast::SUSTAINING_COMMAND,
+				newHorizonsWarcast::GRAND_CONVERGENCE})
+			{
+				hybrid.setSecSkillLevel(SecondarySkill(SecondarySkill::decode(id)), ++tier, ChangeValueMode::ABSOLUTE);
+				hybrid.applyPerkSelection({id, perk});
+				ASSERT_TRUE(hybrid.hasActivePerk(id, perk)) << perk;
+			}
+		};
+		warcastObserver = std::make_unique<nativeBenchmark::WarcastEncounterObserver>(BattleSide::ATTACKER);
+		ASSERT_NO_FATAL_FAILURE(prepare(mirrorCastleArmy(), meleeCastleArmy(), "core:josephine", true, false, false, true));
+		observeExtra = [this](const BattleInfo & battle, const BattleAction & action, bool before)
+		{
+			if(before) warcastObserver->before(battle, action); else warcastObserver->after(battle, action);
+		};
+		runEncounter();
+		RecordProperty("warcastStats", warcastObserver->summary().toString());
+		if(!skill)
+			EXPECT_EQ(warcastObserver->summary()["warcastOrders"].Integer(), 0);
+	}
+};
+TEST_F(DISABLED_NativeWarcastEncounterBenchmarkTest, HybridWarcast) { warcastEncounter(true); }
+TEST_F(DISABLED_NativeWarcastEncounterBenchmarkTest, HybridPlain) { warcastEncounter(false); }
 class DISABLED_NativeSpecialtyEncounterBenchmarkTest : public DISABLED_NativeEncounterBenchmarkTest,
 	public ::testing::WithParamInterface<SpecialtyEncounter>
 {

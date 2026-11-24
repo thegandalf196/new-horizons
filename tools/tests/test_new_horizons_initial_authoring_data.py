@@ -21,8 +21,8 @@ class InitialAuthoringDataTest(unittest.TestCase):
     row=self.perks['skills'][sid]['ranks'][rank]
     self.assertEqual(row['mechanics'],{'version':1,'operations':[{'operation':'bonus','source':'skillRank','target':'army','stage':'attachment','lifetime':'permanent','type':kind,'value':level,'valueMode':'BASE_NUMBER'}]})
     self.assertEqual(set(row['effect']),{'status','description'})
-   self.assertEqual(len(self.perks['skills']),32)
-   self.assertEqual(sum(len(s['perks'])for s in self.perks['skills'].values()),320)
+   self.assertEqual(len(self.perks['skills']),33)
+   self.assertEqual(sum(len(s['perks'])for s in self.perks['skills'].values()),330)
  def test_two_timed_rows_have_only_native_slot_contracts(self):
   for sid,pid,operation,lifetime in [('new-horizons:lightMagic','new-horizons:lightMagic.sanctuaryKeeper','sanctuaryKeeper','parentStatus'),('new-horizons:chaosMagic','new-horizons:chaosMagic.mindbreaker','creatureSuppression','rounds')]:
    row=next(p for p in self.perks['skills'][sid]['perks']if p['id']==pid)

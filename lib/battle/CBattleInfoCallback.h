@@ -568,6 +568,8 @@ protected:
 	heroCommands::TargetRejection battleFocusFireTargetRejection(BattleSide side, HeroCommand command,
 		uint32_t targetUnitId) const;
 	heroCommands::TargetRejection battleOwnOrderUnitRejection(BattleSide side, const battle::Unit * unit) const;
+	/// Warcasting recipients, shares and riders of a committed Order (hero with the Skill only).
+	void battleCaptureWarcastOrder(BattleSide side, HeroOrderState & result) const;
 	void battleCaptureHeroOrderModifiers(BattleSide side, HeroOrderState & result) const;
 	std::optional<heroCommands::RevisedOrderSnapshot> battlePrepareRevisedOrderSnapshot(
 		BattleSide side, const HeroOrderState & order, bool crown = false) const;

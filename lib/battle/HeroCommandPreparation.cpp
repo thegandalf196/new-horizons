@@ -15,6 +15,7 @@
 #include "NewHorizonsDivineMandate.h"
 #include "NewHorizonsIronWill.h"
 #include "NewHorizonsSwiftRebirth.h"
+#include "NewHorizonsWarcast.h"
 #include "../mapObjects/CGHeroInstance.h"
 #include "../bonuses/BonusSelector.h"
 
@@ -106,6 +107,8 @@ std::optional<HeroOrderState> CBattleInfoCallback::battleFinalizeHeroOrderState(
 		result.ironWillLifetime = true;
 		result.divineDisciplineRecipientUnitIds = ironRecipients;
 	}
+	if(newHorizonsWarcast::skillRank(hero) > 0)
+		battleCaptureWarcastOrder(side, result);
 	result.validateShape();
 	return result;
 }

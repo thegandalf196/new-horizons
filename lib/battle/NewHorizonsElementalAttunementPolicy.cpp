@@ -38,7 +38,7 @@ void validatePolicy(const JsonNode & rules)
 	if(!rules.Struct().contains(POLICY_KEY))
 	{
 		const auto & skills = rules["skills"];
-		if(skills.isStruct() && skills.Struct().size() == newHorizonsHeroes::PERK_CANONICAL_SKILL_COUNT)
+		if(skills.isStruct() && skills.Struct().size() >= newHorizonsHeroes::PERK_CANONICAL_SKILL_COUNT)
 			throw std::runtime_error("A complete current perk registry requires Elemental Attunement policy version 1");
 		return;
 	}

@@ -12,15 +12,21 @@
 			"oneOf": [
 				{
 					"required": ["commandAuthorityPolicy", "skillOfferWeights"],
-					"properties": {"skillOfferWeights": {"additionalProperties": {"minProperties": 32, "maxProperties": 32, "required": ["new-horizons:authority"], "properties": {"new-horizons:authority": {"type": "integer", "minimum": 1, "maximum": 100}}}}}
+					"not": {"required": ["warcastPolicy"]},
+					"properties": {"skillOfferWeights": {"additionalProperties": {"minProperties": 32, "maxProperties": 32, "required": ["new-horizons:authority"], "not": {"required": ["new-horizons:warcast"]}, "properties": {"new-horizons:authority": {"type": "integer", "minimum": 1, "maximum": 100}}}}}
 				},
 				{
-					"not": {"required": ["commandAuthorityPolicy"]},
+					"required": ["commandAuthorityPolicy", "warcastPolicy", "skillOfferWeights"],
+					"properties": {"skillOfferWeights": {"additionalProperties": {"minProperties": 33, "maxProperties": 33, "required": ["new-horizons:authority", "new-horizons:warcast"], "properties": {"new-horizons:authority": {"type": "integer", "minimum": 1, "maximum": 100}}}}}
+				},
+				{
+					"not": {"anyOf": [{"required": ["commandAuthorityPolicy"]}, {"required": ["warcastPolicy"]}]},
 					"properties": {"skillOfferWeights": {"additionalProperties": {"minProperties": 31, "maxProperties": 31, "not": {"required": ["new-horizons:authority"]}}}}
 				}
 			],
 			"properties": {
 				"commandAuthorityPolicy": {"$ref": "newHorizonsPerks.json#/definitions/commandAuthorityPolicy"},
+				"warcastPolicy": {"$ref": "newHorizonsPerks.json#/definitions/warcastPolicy"},
 				"lighthouseDeparture": {
 					"type": "object", "additionalProperties": false,
 					"required": ["enabled", "seaMovementPercent"],

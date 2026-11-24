@@ -18,6 +18,36 @@ read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 - **A smaller level-up window**: the four advancement offers no longer show a
   small scrolling description at the bottom. Right-click an offer or a perk
   to read its full description.
+- **The old Warcasting is now called Spell-Forge.** Only its name changes:
+  Arcane Inspiration, Spellward, Spellshock and its other perks work as before,
+  and heroes who already have it keep it under the new name.
+- **New Skill: Warcasting** (new games; all heroes can learn it):
+  - Your Orders are stronger on friendly stacks that already carry one of your
+    beneficial spells: +20% of the Order's effect at Basic, +35% at Advanced,
+    +50% at Expert. Such stacks are *warcast* for that Order. This is checked
+    when you issue the Order; a later Dispel does not weaken it.
+  - Durations, targets and Morale do not change, and the usual caps still
+    apply. Focus Fire! warcasts all its shooters when the chosen enemy carries
+    one of your hostile spells.
+  - Basic perks: **Field Enchanter** (your beneficial spells cost 2 less Mana
+    on a stack under one of your Orders), **Kindled Edge** (warcast stacks deal
+    5% more damage while the Order lasts), **Commander's Meditation** (an Order
+    that warcasts a stack restores 3 Mana, once per round) and **Layered
+    Enchantment** (+10 points on stacks carrying two or more of your spells).
+  - Advanced perks: **Sustaining Command** (your spells on warcast stacks that
+    would end this round last one more round, once per spell), **Opening**
+    (enemies hit by warcast stacks are Exposed until the end of the next round
+    and take 20% more damage from your spells), **Warded Ranks** (warcast
+    stacks take 15% less magical damage) and **Enchanted Steel** (warcast
+    stacks ignore 15% of the target's Defense).
+  - Expert perks: **Grand Convergence** (+15 points: 35%, 50% or 65%) and
+    **Unbroken Command** (an Order stays on its warcast stacks until each
+    finishes its next activation).
+  - Heroes whose class is balanced between might and magic are offered it most
+    often (Alchemists, Battle Mages and Planeswalkers most of all); every class
+    can get it. No hero starts with it.
+  - The combat log says how much Warcasting strengthened each Order. The AI
+    counts the bonus when it picks Orders.
 
 ## 0.94.0-beta.3
 

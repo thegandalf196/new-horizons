@@ -55,10 +55,13 @@ public:
 			const bool currentPolicies = h.hasFeature(Handler::Version::NEW_HORIZONS_DOUBLE_CAST_CHOSEN_PRAYERS);
 			const bool revisedSpecialties = h.hasFeature(Handler::Version::NEW_HORIZONS_REVISED_SPECIALTIES);
 			const bool sylvanAmbush = h.hasFeature(Handler::Version::NEW_HORIZONS_SYLVAN_AMBUSH);
+			const bool warcast = h.hasFeature(Handler::Version::NEW_HORIZONS_WARCAST);
 			if(h.saving)
 			{
 				if(!sylvanAmbush && newHorizonsHeroes::requiresSylvanAmbushFormat(documents[index]->document()))
 					throw std::runtime_error("Cannot write Sylvan Tactics 5 rules to an older format");
+				if(!warcast && newHorizonsHeroes::requiresWarcastFormat(documents[index]->document()))
+					throw std::runtime_error("Cannot write Warcasting rules to an older format");
 				if(!currentPolicies && newHorizonsMetamagic::requiresDoubleCastFormat(documents[index]->document()))
 					throw std::runtime_error("Cannot write Double Cast or Chosen Prayers rules to an older format");
 				if(!revisedSpecialties && newHorizonsHeroes::requiresRevisedSpecialtyFormat(documents[index]->document()))
@@ -75,6 +78,8 @@ public:
 					throw std::runtime_error("Older format claims revised specialty rules");
 				if(!sylvanAmbush && newHorizonsHeroes::requiresSylvanAmbushFormat(decoded))
 					throw std::runtime_error("Older format claims Sylvan Tactics 5 rules");
+				if(!warcast && newHorizonsHeroes::requiresWarcastFormat(decoded))
+					throw std::runtime_error("Older format claims Warcasting rules");
 				if(candidate.intern(kind, decoded) != index + 1)
 					throw std::runtime_error("Duplicate captured rules document identity");
 			}

@@ -35,6 +35,8 @@ struct DLL_LINKAGE IssuedOrderGrants
 	std::vector<Batch> removals;
 	std::vector<Batch> batches;
 	size_t holdFastRecipientCount = 0;
+	/// Spell effects Sustaining Command extended by one round.
+	size_t sustainedEffectCount = 0;
 };
 
 /// Read-only: delegates legality and captured formula state to the canonical callback.
@@ -42,6 +44,9 @@ DLL_LINKAGE std::optional<PreparedOrderEffects> prepareOrderEffects(
 	const CBattleInfoCallback & battle, BattleSide side, HeroCommand command,
 	const std::vector<uint32_t> & targets);
 DLL_LINKAGE void appendVanguardGrants(IssuedOrderGrants & grants, const CBattleInfoCallback & battle,
+	BattleSide side, const HeroOrderState & order);
+/// Sustaining Command: extend the caster's expiring beneficial spells on warcast recipients.
+DLL_LINKAGE void appendSustainingGrants(IssuedOrderGrants & grants, const CBattleInfoCallback & battle,
 	BattleSide side, const HeroOrderState & order);
 /// Called after the accepted Order has been installed and Shared Purpose applied.
 DLL_LINKAGE IssuedOrderGrants prepareIssuedOrderGrants(const CBattleInfoCallback & battle,

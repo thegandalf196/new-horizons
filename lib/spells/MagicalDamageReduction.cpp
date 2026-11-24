@@ -6,6 +6,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../battle/NewHorizonsWarcast.h"
 #include "MagicalDamageReduction.h"
 #include "../json/JsonNode.h"
 #include "../battle/IBattleState.h"
@@ -326,7 +327,8 @@ std::optional<int> commonMagicalProtectionBasisPoints(const CBattleInfoCallback 
 	// bonuses cannot be promoted to that channel by an informational query.
 	auto sources = commandArmyBonuses::magicalReductionBasisPoints(target);
 	appendCommonProtection(sources, target.intrinsicMagicalDamageReductionPercent(),
-		newHorizonsMagicalAbilityDamage::spellwardReductionBasisPoints(battle.battleGetOwnerHero(&target)));
+		newHorizonsMagicalAbilityDamage::spellwardReductionBasisPoints(battle.battleGetOwnerHero(&target))
+			+ newHorizonsWarcast::wardedRanksBasisPoints(battle, &target));
 	const auto remaining = calculateMagicalDamageReductionBasisPoints(PROTECTION_DISPLAY_PRECISION,
 		sources, targetMdrPenetrations(target)).damageWithPenetration;
 	return protectionBasisPoints(newHorizonsCommand::mitigateIncomingDamage(battle, &target, remaining));

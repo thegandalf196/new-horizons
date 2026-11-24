@@ -193,8 +193,39 @@ bool usesCommandAuthorityPolicy(const JsonNode & rules)
 	return true;
 }
 
+bool usesWarcastPolicy(const JsonNode & rules)
+{
+	if(!rules.isStruct() || !rules.Struct().contains("warcastPolicy"))
+		return false;
+	const auto & policy = rules["warcastPolicy"];
+	fields(policy, {"version"});
+	require(policy["version"].getType() == JsonNode::JsonType::DATA_INTEGER
+		&& policy["version"].Integer() == 1, "warcastPolicy version");
+	require(usesCommandAuthorityPolicy(rules), "Warcasting requires the Command/Authority policy");
+	return true;
+}
+
+bool requiresWarcastFormat(const JsonNode & rules)
+{
+	// Never throw for unrelated documents: callers scan every captured kind.
+	return rules.isStruct() && rules.Struct().contains("warcastPolicy");
+}
+
+void validateRosterPolicyFormats(const JsonNode & perks, const JsonNode & heroes,
+	bool sylvanAmbushSupported, bool warcastSupported, bool saving)
+{
+	if(!sylvanAmbushSupported && requiresSylvanAmbushFormat(perks))
+		throw std::runtime_error(saving ? "Cannot write Sylvan Tactics 5 rules to an older format"
+			: "Older format claims Sylvan Tactics 5 rules");
+	if(!warcastSupported && (requiresWarcastFormat(perks) || requiresWarcastFormat(heroes)))
+		throw std::runtime_error(saving ? "Cannot write Warcasting rules to an older format"
+			: "Older format claims Warcasting rules");
+}
+
 size_t canonicalSkillCount(const JsonNode & rules)
 {
+	if(usesWarcastPolicy(rules))
+		return PERK_WARCAST_SKILL_COUNT;
 	return usesCommandAuthorityPolicy(rules) ? PERK_CANONICAL_SKILL_COUNT : PERK_LEGACY_SKILL_COUNT;
 }
 
@@ -204,6 +235,8 @@ void validateSkillOfferWeightRow(const JsonNode & classWeights, const JsonNode &
 		"complete policy-specific skill offer table required");
 	require(classWeights.Struct().contains("new-horizons:authority") == usesCommandAuthorityPolicy(rules),
 		"Authority offer row requires the Command/Authority policy");
+	require(classWeights.Struct().contains("new-horizons:warcast") == usesWarcastPolicy(rules),
+		"Warcasting offer row requires the Warcasting policy");
 
 	std::set<int> seenSkills;
 	for(const auto & [skill, weight] : classWeights.Struct())
@@ -266,7 +299,7 @@ static void validatePerkRulesImpl(const JsonNode & rules, nativeRules::PreparedP
 	fields(rules, {"schemaVersion", "rulesetVersion", "sourceDocument", "sourceSha256",
 		"maxSkillChoices", "maxPerkChoices", "maxPerksPerSkill", "skills", "offerWeightPolicyVersion",
 		"perkOfferNormalization", "perkProgressionPolicyVersion", "necromancyPolicy", "sylvanTacticsPolicy", "commandPolicyVersion", "elementalAttunementPolicy", "connoisseurPolicy",
-		"metamagicPolicy", "divineMandatePolicy", "demonicGatingPolicy", "bloodragePolicy", "commandAuthorityPolicy", "warfarePolicyVersion", "unifiedSkillProgressionVersion", "fourOfferProgressionVersion", "estatesPolicyVersion", "spellcraftPolicyVersion"});
+		"metamagicPolicy", "divineMandatePolicy", "demonicGatingPolicy", "bloodragePolicy", "commandAuthorityPolicy", "warcastPolicy", "warfarePolicyVersion", "unifiedSkillProgressionVersion", "fourOfferProgressionVersion", "estatesPolicyVersion", "spellcraftPolicyVersion"});
 	usesResistancePreciseCasting(rules);
 	newHorizonsEstates::validateRevisedPolicy(rules);
 	validatePassiveFactionPolicies(rules);
@@ -330,6 +363,7 @@ static void validatePerkRulesImpl(const JsonNode & rules, nativeRules::PreparedP
 		"complete skill coverage required");
 	require(rules["skills"].Struct().contains("new-horizons:authority") == usesCommandAuthorityPolicy(rules),
 		"Authority requires the Command/Authority policy");
+	require(rules["skills"].Struct().contains("new-horizons:warcast") == usesWarcastPolicy(rules), "Warcasting requires the Warcasting policy");
 	std::set<std::string> skills;
 	std::set<std::string> identities;
 	if(nhLoadProfile::active())
@@ -436,6 +470,8 @@ void validateWeightedPerkCapture(const JsonNode & development, const JsonNode & 
 	require(development["skillOfferWeights"].isStruct(), "weighted perk capture requires the full skill offer table");
 	require(usesCommandAuthorityPolicy(development) == usesCommandAuthorityPolicy(perks),
 		"hero and perk Command/Authority markers must agree");
+	require(usesWarcastPolicy(development) == usesWarcastPolicy(perks),
+		"hero and perk Warcasting markers must agree");
 }
 
 

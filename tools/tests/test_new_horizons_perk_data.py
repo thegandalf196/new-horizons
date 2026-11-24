@@ -17,6 +17,16 @@ else:
 ROOT = Path(__file__).resolve().parents[2]
 RANKS = ("basic", "advanced", "expert")
 ACTIVE_PERKS = {
+    "new-horizons:warcast.fieldEnchanter",
+    "new-horizons:warcast.kindledEdge",
+    "new-horizons:warcast.commandersMeditation",
+    "new-horizons:warcast.layeredEnchantment",
+    "new-horizons:warcast.sustainingCommand",
+    "new-horizons:warcast.opening",
+    "new-horizons:warcast.wardedRanks",
+    "new-horizons:warcast.enchantedSteel",
+    "new-horizons:warcast.grandConvergence",
+    "new-horizons:warcast.unbrokenCommand",
     "new-horizons:command.battlePlan",
     "new-horizons:command.veteranCommander",
     "new-horizons:command.decisiveOrders",
@@ -321,6 +331,7 @@ ACTIVE_PERKS = {
     "new-horizons:havocMagic.annihilator",
 }
 ACTIVE_RANK_SKILLS = {
+    "new-horizons:warcast",
     "new-horizons:elementalRebirth",
     "new-horizons:divineMandate",
     "new-horizons:diplomacy",
@@ -385,6 +396,7 @@ EXPECTED_SKILLS = (
     "new-horizons:bloodrage",
     "new-horizons:bulwarkOfTheMire",
     "new-horizons:elementalRebirth",
+    "new-horizons:warcast",
 )
 
 
@@ -531,6 +543,8 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
         absent = json.loads(json.dumps(strict_legacy))
         del absent['necromancyPolicy']
         self.assertFalse(validator.is_valid(absent))
+        absent.pop('warcastPolicy')
+        absent['skills'].pop('new-horizons:warcast')
         absent.pop('commandAuthorityPolicy')
         absent.pop('warfarePolicyVersion')
         absent.pop('unifiedSkillProgressionVersion')
@@ -611,9 +625,9 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
         self.assertEqual(self.rules["maxPerkChoices"], 2)
         self.assertEqual(self.rules["maxPerksPerSkill"], 3)
 
-    def test_current_32_skill_roster(self):
+    def test_current_33_skill_roster(self):
         self.assertEqual(tuple(self.rules["skills"]), EXPECTED_SKILLS)
-        self.assertEqual(len(self.rules["skills"]), 32)
+        self.assertEqual(len(self.rules["skills"]), 33)
 
     def test_cleave_is_active_advanced_offense_perk(self):
         cleave = next(
@@ -752,8 +766,8 @@ class NewHorizonsPerkDataTest(unittest.TestCase):
                     self.assertTrue(perk["description"])
                     all_perk_ids.append(perk["id"])
 
-        self.assertEqual(len(all_perk_ids), 320)
-        self.assertEqual(len(set(all_perk_ids)), 320)
+        self.assertEqual(len(all_perk_ids), 330)
+        self.assertEqual(len(set(all_perk_ids)), 330)
 
     def test_historical_metamagic_text_describes_round_long_optional_spell_actions(self):
         metamagic = self.historical["skills"]["new-horizons:metamagic"]

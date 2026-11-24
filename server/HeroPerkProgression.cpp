@@ -107,7 +107,7 @@ bool CGameHandler::offerHeroRequiredPerk(const CGHeroInstance * hero)
 		return true;
 	const auto * player = gameInfo().getPlayerState(hero->getOwner());
 	const bool interactive = player && hero->getOwner().isValidPlayer();
-	for(size_t count = 0; count < newHorizonsHeroes::PERK_CANONICAL_SKILL_COUNT * newHorizonsHeroes::PERK_MAX_PERKS_PER_SKILL; ++count)
+	for(size_t count = 0; count < newHorizonsHeroes::PERK_MAX_SKILL_COUNT * newHorizonsHeroes::PERK_MAX_PERKS_PER_SKILL; ++count)
 	{
 		const auto offer = hero->getPerkState().nextRequiredPerkOffer([hero](const std::string & skill)
 			{ return hero->getPerkSkillRank(skill); });

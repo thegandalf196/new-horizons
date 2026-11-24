@@ -5,6 +5,7 @@
 #include "StdInc.h"
 #include "HeroOrderEffects.h"
 #include "HeroCommandRoyalStandard.h"
+#include "NewHorizonsWarcast.h"
 #include "PassiveDivineMandateVanguard.h"
 #include "CBattleInfoCallback.h"
 #include "Unit.h"
@@ -47,8 +48,15 @@ void appendVanguardGrants(IssuedOrderGrants & result, const CBattleInfoCallback 
 			if(!order.revision->contains(unit->unitId()))
 				continue;
 			const bool crowned = order.revision->crown && order.crownAndAltarAppliesTo(unit->unitId());
-			const int statBonus = crowned ? order.revision->crown->vanguardStatBonus : order.revision->vanguardStatBonus;
-			const int initiative = crowned ? order.revision->crown->vanguardInitiativePercent : order.revision->vanguardInitiativePercent;
+			const int moraleBonus = crowned ? order.revision->crown->vanguardStatBonus : order.revision->vanguardStatBonus;
+			int statBonus = moraleBonus;
+			int initiative = crowned ? order.revision->crown->vanguardInitiativePercent : order.revision->vanguardInitiativePercent;
+			// Warcasting raises Attack, Defense and Initiative, never Morale; the caps still bind.
+			if(const int warcast = order.warcastPercentFor(unit->unitId()))
+			{
+				statBonus = std::min(order.revision->vanguardStatCap, newHorizonsWarcast::scaled(statBonus, warcast));
+				initiative = std::min(order.revision->vanguardInitiativeCap, newHorizonsWarcast::scaled(initiative, warcast));
+			}
 			std::vector<Bonus> bonuses;
 			const auto add = [&](BonusType type, BonusSubtypeID subtype, int value, BonusValueType valueType)
 			{
@@ -69,7 +77,7 @@ void appendVanguardGrants(IssuedOrderGrants & result, const CBattleInfoCallback 
 				statBonus, BonusValueType::ADDITIVE_VALUE);
 			add(BonusType::PRIMARY_SKILL, BonusSubtypeID(PrimarySkill::DEFENSE),
 				statBonus, BonusValueType::ADDITIVE_VALUE);
-			add(BonusType::MORALE, BonusSubtypeID(), statBonus, BonusValueType::ADDITIVE_VALUE);
+			add(BonusType::MORALE, BonusSubtypeID(), moraleBonus, BonusValueType::ADDITIVE_VALUE);
 			add(BonusType::STACKS_INITIATIVE, BonusSubtypeID(),
 				initiative, BonusValueType::ADDITIVE_VALUE);
 			if(std::binary_search(order.royalStandardRecipientUnitIds.begin(),

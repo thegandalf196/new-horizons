@@ -22,6 +22,7 @@ add_executable(nhNativeAcceptanceBenchmarks EXCLUDE_FROM_ALL
 	benchmark/NativeBenchmarkEvidence.h
 	benchmark/NativeEncounterBenchmarkSupport.h
 	benchmark/NativeAmbushEncounterObserver.h
+	benchmark/NativeWarcastEncounterObserver.h
 )
 target_include_directories(nhNativeAcceptanceBenchmarks PRIVATE
 	"${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_SOURCE_DIR}")

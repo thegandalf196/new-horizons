@@ -73,9 +73,20 @@ CanonicalOrderValue::CanonicalOrderValue(const CBattleInfoCallback & battle, Bat
 	divineMandateEfficiencyBonusPercent = preparedOrder
 		? preparedOrder->divineMandateEfficiencyBonusPercent() : 0;
 	if(preparedOrder && command == secondWindCommand() && targetIds.size() == 1)
+	{
 		secondWindDamagePercent = battle.battleSecondWindPercent(side, *preparedOrder, targetIds.front());
+		if(const int warcast = preparedOrder->warcastPercentFor(targetIds.front()); warcast > 0 && secondWindDamagePercent < 100)
+			secondWindDamagePercent = std::min(100, secondWindDamagePercent + secondWindDamagePercent * warcast / 100);
+	}
 	else if(hero && command == secondWindCommand() && targetIds.size() == 1)
 		secondWindDamagePercent = battle.battleSecondWindPercent(side, HeroOrderState{}, targetIds.front());
+}
+
+float CanonicalOrderValue::warcastFactor(const battle::Unit * unit) const
+{
+	if(!preparedOrder || !unit || preparedOrder->warcast.recipients.empty())
+		return 1.0f;
+	return 1.0f + static_cast<float>(preparedOrder->warcastPercentFor(unit->unitId())) / 100.0f;
 }
 
 float CanonicalOrderValue::meleeDamage(const battle::Unit * attackerUnit, const battle::Unit * defenderUnit) const
@@ -119,7 +130,7 @@ float CanonicalOrderValue::sumOwnMeleeDamage() const
 		float best = 0.0f;
 		for(const auto * enemy : enemyUnits)
 			best = std::max(best, meleeDamage(own, enemy));
-		total += best;
+		total += best * warcastFactor(own);
 	}
 	return total;
 }
@@ -156,7 +167,7 @@ float CanonicalOrderValue::focusFire(std::optional<int> focusFireSnapshotPercent
 		// A stack chooses one attack mode during its activation.  If a shooter
 		// can also make a melee attack, value the better Focus Fire benefit rather
 		// than counting the same stack twice.
-		potential += std::max(rangedValue, meleeValue);
+		potential += std::max(rangedValue, meleeValue) * warcastFactor(unit);
 		// Orrin's Volley Command: each ready shooter also fires one immediate
 		// reduced shot at the target, with the Order's ranged bonus. Issuing
 		// early in the round, before shooters act, keeps this value.
@@ -192,8 +203,8 @@ float CanonicalOrderValue::riposte(float riposteReduction, float riposteDamage) 
 			const BattleAttackInfo incomingAttack(enemy, own, 0, false);
 			DamageEstimation retaliationEstimate;
 			const auto incomingEstimate = battle.battleEstimateDamage(incomingAttack, &retaliationEstimate);
-			incoming = std::max(incoming, averageOrderDamage(incomingEstimate));
-			retaliation = std::max(retaliation, averageOrderDamage(retaliationEstimate));
+			incoming = std::max(incoming, averageOrderDamage(incomingEstimate) * warcastFactor(own));
+			retaliation = std::max(retaliation, averageOrderDamage(retaliationEstimate) * warcastFactor(own));
 			if(hero && hero->hasActivePerk(newHorizonsOffense::SKILL, newHorizonsOffense::VENGEANCE)
 				&& isEligibleOrderUnit(battle, side, own)
 				&& own->unitSlot() != SlotID::COMMANDER_SLOT_PLACEHOLDER
@@ -238,7 +249,7 @@ float CanonicalOrderValue::brace(float braceDamage) const
 			for(const auto * own : ownUnits)
 				// Brace is a pre-emptive blow by the defending friendly stack,
 				// not a multiplier on the advancing enemy's own attack.
-				advancingDamage = std::max(advancingDamage, meleeDamage(own, enemy));
+				advancingDamage = std::max(advancingDamage, meleeDamage(own, enemy) * warcastFactor(own));
 	const auto resolvedBraceDamage = newHorizonsCombatSkills::bracePreemptivePercent(braceDamage, hero);
 	return advancingDamage * resolvedBraceDamage / 100.0f;
 }
@@ -378,7 +389,7 @@ DirectOrderValue CanonicalOrderValue::directValue(std::optional<int> focusFireSn
 				battle.battleEstimateDamage(BattleAttackInfo(own, enemy, 0, false), &counter);
 				best = std::max(best, averageOrderDamage(counter));
 			}
-			retaliation += best;
+			retaliation += best * warcastFactor(own);
 		}
 		return {retaliation * preparedOrder->revision->feintReductionPercent / 100.0f};
 	}

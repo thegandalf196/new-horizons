@@ -4,7 +4,14 @@
 
 Consecrated Arms and the replacement Metamagic profile require a new game. The
 minimum accepted format is **1164**, `NEW_HORIZONS_CONSECRATED_ARMS`; the current
-writer is **1167**, `NEW_HORIZONS_SYLVAN_AMBUSH`, which protects captured Sylvan
+writer is **1168**, `NEW_HORIZONS_WARCAST`, which protects the captured
+`warcastPolicy` marker (the 33-Skill roster with Warcasting, `new-horizons:warcast`,
+in both the perk and the hero rules) and each Order's Warcasting snapshot
+(warcast recipients and shares, riders, Commander's Meditation and the Unbroken
+Command carry). Older formats load the snapshot inert and refuse to write either.
+A 32-Skill capture keeps `new-horizons:warcasting` with its rules; admission only
+renames its displayed Skill name from Warcasting to Spell-Forge.
+1167, `NEW_HORIZONS_SYLVAN_AMBUSH`, protects captured Sylvan
 Tactics policy 5 and each battle unit's Ambush state (Concealment, pending
 strike, approach record and victim marks). Older formats load that state inert
 and refuse to write it. 1166, `NEW_HORIZONS_REVISED_SPECIALTIES`, protects captured

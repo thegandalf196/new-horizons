@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "NewHorizonsWarcast.h"
 #include "ConsecratedArmsCombat.h"
 #include "NewHorizonsFocusMagic.h"
 #include "NewHorizonsSylvanTacticsV2.h"
@@ -1211,7 +1212,8 @@ int CBattleInfoCallback::battleGetPerkMagicalReductionBasisPoints(const battle::
 	// inheritance. Mind control, summoned stacks, gated stacks, and detached AI
 	// units all use the same current-controller query.
 	const auto * controllerHero = battleGetOwnerHero(unit);
-	return newHorizonsMagicalAbilityDamage::spellwardReductionBasisPoints(controllerHero);
+	return newHorizonsMagicalAbilityDamage::spellwardReductionBasisPoints(controllerHero)
+		+ newHorizonsWarcast::wardedRanksBasisPoints(*this, unit);
 }
 
 bool CBattleInfoCallback::battleCanTriggerHeroOrderBrace(const battle::Unit * attacker,

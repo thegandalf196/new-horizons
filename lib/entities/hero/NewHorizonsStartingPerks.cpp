@@ -153,7 +153,7 @@ void validateHistoricalStartingPerkProfiles(const JsonNode & starts)
 		require(HeroTypeID::encode(id) == hero && heroes.insert(id).second,
 			"canonical unique starting perk hero");
 		require(choices.isVector() && !choices.Vector().empty()
-			&& choices.Vector().size() <= PERK_CANONICAL_SKILL_COUNT * PERK_MAX_PERKS_PER_SKILL,
+			&& choices.Vector().size() <= PERK_MAX_SKILL_COUNT * PERK_MAX_PERKS_PER_SKILL,
 			"bounded authored starting perk choices");
 		if(basic)
 			require(choices.Vector().size() == 2 && development.Struct().contains(hero),
@@ -323,7 +323,7 @@ void initializeStartingHeroPerks(PerkState & state, const JsonNode & development
 		appendPreferences(preferred, operation.definitions(), prototype);
 		appendPreferences(preferred, operation.definitions(), profile);
 		appendPreferences(preferred, operation.definitions(), defaultsFor(development, hero));
-		for(size_t count = 0; count < PERK_CANONICAL_SKILL_COUNT * PERK_MAX_PERKS_PER_SKILL; ++count)
+		for(size_t count = 0; count < PERK_MAX_SKILL_COUNT * PERK_MAX_PERKS_PER_SKILL; ++count)
 		{
 			const auto offer = operation.next(rank);
 			if(offer.empty())

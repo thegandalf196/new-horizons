@@ -4,6 +4,7 @@
 #include "SylvanFactionStatusPresentation.h"
 #include "SylvanStatusArt.h"
 #include "SylvanAmbushStatusPresentation.h"
+#include "WarcastStatusPresentation.h"
 #include "CreatureAbilityGrouping.h"
 #include "../../lib/CCreatureHandler.h"
 #include "../../lib/spells/CSpellHandler.h"
@@ -216,6 +217,10 @@ std::vector<Row> supplementalRows(const CStack * battleStack, const CStackInstan
 				status.tooltip = art.help;
 				rows.push_back(std::move(status));
 			}
+		if(battle)
+			for(auto & row : warcastStatusPresentation::rows(*battle, battleStack))
+				rows.push_back({std::move(row.text), ImagePath::builtin(row.image), BonusSource::SECONDARY_SKILL,
+					std::move(row.help)});
 		for(auto & card : sylvanAmbushStatusPresentation::cards(battleStack,
 			[](const std::string & key) { return LIBRARY->generaltexth->translate(key); }))
 			rows.push_back({std::move(card.text), ImagePath::builtin(card.image), BonusSource::SECONDARY_SKILL,

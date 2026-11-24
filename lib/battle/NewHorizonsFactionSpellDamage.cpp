@@ -5,6 +5,7 @@
 #include "CBattleInfoCallback.h"
 #include "Unit.h"
 #include "NewHorizonsShroud.h"
+#include "NewHorizonsWarcast.h"
 #include "../bonuses/BonusList.h"
 #include "../bonuses/BonusSelector.h"
 #include "../mapObjects/CGHeroInstance.h"
@@ -71,6 +72,7 @@ int bonusPercent(const CBattleInfoCallback & battle, const CGHeroInstance * hero
 	// Conflux cast-time bonuses are prepared in the accepted CastProfile.
 	// No death-output roster scan belongs in per-recipient damage evaluation.
 	if(battle.battleGetOwner(recipient) == hero->getOwner()) return result;
+	result += newHorizonsWarcast::openingSpellDamagePercent(battle, hero, recipient);
 	const auto side = battle.playerToSide(hero->getOwner());
 	if(recipient->hasBonus(CSelector([side](const Bonus * bonus) { return isExposedWeakness(bonus, side); })))
 		result += 20;

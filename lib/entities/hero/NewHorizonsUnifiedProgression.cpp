@@ -43,7 +43,7 @@ void PerkState::selectMissingPerksDeterministically(const std::function<int(cons
 	// The registry bounds completion to three selections per Skill. Work on a
 	// copy so an invalid authored rank cannot partially initialize a hero.
 	auto candidate = *this;
-	for(size_t count = 0; count < PERK_CANONICAL_SKILL_COUNT * PERK_MAX_PERKS_PER_SKILL; ++count)
+	for(size_t count = 0; count < PERK_MAX_SKILL_COUNT * PERK_MAX_PERKS_PER_SKILL; ++count)
 	{
 		const auto offer = candidate.nextRequiredPerkOffer(rankLookup);
 		if(offer.empty())

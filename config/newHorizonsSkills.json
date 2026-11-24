@@ -1003,7 +1003,7 @@
 		}
 	},
 	"warcasting": {
-		"name": "Warcasting",
+		"name": "Spell-Forge",
 		"specialty": [],
 		"tags": {
 			"special": true
@@ -1869,6 +1869,65 @@
 				"medium": "NH_elementalRebirth_rankart_v2_expert_medium.png",
 				"large": "NH_elementalRebirth_rankart_v2_expert_large.png",
 				"scenarioBonus": "NH_elementalRebirth_rankart_v2_expert_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		}
+	},
+	"warcast": {
+		"name": "Warcasting",
+		"specialty": [],
+		"tags": {
+			"special": true
+		},
+		"gainChance": {
+			"might": 0,
+			"magic": 0
+		},
+		"basic": {
+			"description": "Orders are 20% stronger on friendly stacks that carry your beneficial spells.",
+			"images": {
+				"small": "NH_warcasting2_rankart_v5_basic_small.png",
+				"medium": "NH_warcasting2_rankart_v5_basic_medium.png",
+				"large": "NH_warcasting2_rankart_v5_basic_large.png",
+				"scenarioBonus": "NH_warcasting2_rankart_v5_basic_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"advanced": {
+			"description": "Orders are 35% stronger on friendly stacks that carry your beneficial spells.",
+			"images": {
+				"small": "NH_warcasting2_rankart_v5_advanced_small.png",
+				"medium": "NH_warcasting2_rankart_v5_advanced_medium.png",
+				"large": "NH_warcasting2_rankart_v5_advanced_large.png",
+				"scenarioBonus": "NH_warcasting2_rankart_v5_advanced_scenarioBonus.png"
+			},
+			"effects": {
+				"newHorizonsPlaceholder": {
+					"type": "MORALE",
+					"valueType": "BASE_NUMBER",
+					"val": 0
+				}
+			}
+		},
+		"expert": {
+			"description": "Orders are 50% stronger on friendly stacks that carry your beneficial spells.",
+			"images": {
+				"small": "NH_warcasting2_rankart_v5_expert_small.png",
+				"medium": "NH_warcasting2_rankart_v5_expert_medium.png",
+				"large": "NH_warcasting2_rankart_v5_expert_large.png",
+				"scenarioBonus": "NH_warcasting2_rankart_v5_expert_scenarioBonus.png"
 			},
 			"effects": {
 				"newHorizonsPlaceholder": {

@@ -384,6 +384,16 @@ inline constexpr std::pair<const char *, const char *> newHorizonsPerkIconBindin
 		{"new-horizons:warcasting.lingeringInspiration", "NH_perk_tactical_weaving"},
 		{"new-horizons:warcasting.battleFocus", "NH_perk_battle_meditation"},
 		{"new-horizons:shroudOfMalassa.backstab", "NH_perk_backstab"},
+		{"new-horizons:warcast.fieldEnchanter", "NH_perk_warcasting2_field_enchanter"},
+		{"new-horizons:warcast.kindledEdge", "NH_perk_warcasting2_kindled_edge"},
+		{"new-horizons:warcast.commandersMeditation", "NH_perk_warcasting2_commanders_meditation"},
+		{"new-horizons:warcast.layeredEnchantment", "NH_perk_warcasting2_layered_enchantment"},
+		{"new-horizons:warcast.sustainingCommand", "NH_perk_warcasting2_sustaining_command"},
+		{"new-horizons:warcast.opening", "NH_perk_warcasting2_opening"},
+		{"new-horizons:warcast.wardedRanks", "NH_perk_warcasting2_warded_ranks"},
+		{"new-horizons:warcast.enchantedSteel", "NH_perk_warcasting2_enchanted_steel"},
+		{"new-horizons:warcast.grandConvergence", "NH_perk_warcasting2_grand_convergence"},
+		{"new-horizons:warcast.unbrokenCommand", "NH_perk_warcasting2_unbroken_command"},
 };
 
 inline const std::string & newHorizonsPerkIcon(const std::string & perkId)

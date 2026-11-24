@@ -5,7 +5,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 RECORD = 'assets/new-horizons/runtime-art-source-transitions.json'
-RECORD_SHA256 = 'b8cf66ada404586bcd10257366762d1604fcbcdddb0eead17a639712a7bd3b66'
+RECORD_SHA256 = 'eb2e29b7d0bda8d18b2623d5331dee43fbb2a195f9f173879607321f9fb6da21'
 
 
 def source_records():

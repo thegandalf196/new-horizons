@@ -1,5 +1,30 @@
 # Warcasting integration contract
 
+## Names
+
+`new-horizons:warcasting` is displayed as **Spell-Forge** (Arcane Inspiration and
+its perks). The separate **Warcasting** Skill is `new-horizons:warcast`; the
+captured `warcastPolicy` marker adds it as the 33rd Skill in new games. The rest
+of this document after the Warcasting Skill section describes the historical
+alternation rules (Warcasting 1), which current rules do not enable.
+
+## Warcasting Skill (`new-horizons:warcast`)
+
+When an Order is committed, `CBattleInfoCallback::battleCaptureWarcastOrder`
+stores in `HeroOrderState` every recipient that carries a beneficial spell effect
+from its own side's caster (`Bonus::spellCasterOwner`, no creature on-hit
+descriptor), with its share (20/35/50%, +10 Layered Enchantment, +15 Grand
+Convergence), the rider perks, Commander's Meditation and the Unbroken Command
+carry (the shared Divine Discipline ledger). Nothing is recomputed later.
+Consumers read `HeroOrderState::warcastPercentFor` and scale the final value of
+the Order's effect on that stack, then apply the usual caps; Morale, durations
+and targets never scale. The AI's direct Order values use the same prepared
+snapshot, and projected battles see the scaled values through the shared damage
+path, so no search branch exists for the Skill. Exposed (Opening) and the
+Sustaining Command marker are ordinary `NONE` bonuses keyed by `stacking`.
+
+## Historical alternation (retired)
+
 The detailed Warcasting section in the private design library's `canon/game-design.md`
 defines the gameplay rule. This document describes its engine boundaries; it
 does not replace the source or claim that every Warcasting perk is implemented.

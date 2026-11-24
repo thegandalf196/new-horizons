@@ -46,7 +46,7 @@ class CommandAuthorityContentTest(unittest.TestCase):
     def test_current_registries_and_entity_registration(self):
         self.perk_validator.validate(self.perks)
         self.hero_validator.validate(self.heroes)
-        self.assertEqual(len(self.perks["skills"]), 32)
+        self.assertEqual(len(self.perks["skills"]), 33)
         self.assertEqual(set(self.perks["skills"]), {"new-horizons:" + key for key in self.skills})
         entity_validator = validator("skill")
         for entity in self.skills.values():
@@ -66,6 +66,9 @@ class CommandAuthorityContentTest(unittest.TestCase):
                     candidate["commandAuthorityPolicy"] = invalid
                     self.assertFalse(check.is_valid(candidate))
         historical = legacy_estates_perks(self.perks)
+        historical.pop("warcastPolicy")
+        historical["skills"].pop("new-horizons:warcast")
+        self.perk_validator.validate(historical)  # 0.94.0-beta.1: 32 Skills, no Warcasting marker
         historical.pop("commandAuthorityPolicy")
         historical.pop("warfarePolicyVersion")
         historical["commandPolicyVersion"] = 1
@@ -76,6 +79,10 @@ class CommandAuthorityContentTest(unittest.TestCase):
         historical["commandAuthorityPolicy"] = {"version": 1}
         self.assertFalse(self.perk_validator.is_valid(historical))
         historical_heroes = copy.deepcopy(self.heroes)
+        historical_heroes.pop("warcastPolicy")
+        for row in historical_heroes["skillOfferWeights"].values():
+            row.pop("new-horizons:warcast")
+        self.hero_validator.validate(historical_heroes)
         historical_heroes.pop("commandAuthorityPolicy")
         for row in historical_heroes["skillOfferWeights"].values():
             row.pop(AUTHORITY)

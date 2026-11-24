@@ -5950,9 +5950,9 @@
       "sha256": "bbbc53778398e6ddde41a3cf7a1f47ebceed6dfadb80796c9033056bfe96fa8b"
     },
     "lib/battle/CBattleInfoCallback.h": {
-      "sha256": "256b5752ff674210a32bd39d7e11083b6a69c8960a407671bbfd58d7ef76e5ae",
-      "review": "IR-NH0921-COMPOSED4-CODEORG-20261117",
-      "rationale": "Complete exact-content callable inventory independently checked, including definitions, inline bodies, templates, lambdas and function-like macros across both NH_PERF_EXPERIMENTS branches. Original physical spans are retained; parser recovery remains explicit and does not imply empty coverage. Known recovery contexts were inspected; declaration/default-initializer syntax contributes no executable body.",
+      "sha256": "4fe97e04622535a0f5fb259d7906fd41cd65d61c788d378d7f4577d027a722dd",
+      "review": "CLAUDE-WARCAST-20261124",
+      "rationale": "Complete exact-content callable inventory independently checked, including definitions, inline bodies, templates, lambdas and function-like macros across both NH_PERF_EXPERIMENTS branches. Original physical spans are retained; parser recovery remains explicit and does not imply empty coverage. Known recovery contexts were inspected; declaration/default-initializer syntax contributes no executable body. Warcasting adds one protected declaration after the listed inline bodies; spans unchanged.",
       "functions": [
         {
           "symbol": "FirstAidHealingPreview::int64_t totalHealedHP() const#1",
@@ -5969,7 +5969,8 @@
           "start": 417,
           "end": 420
         }
-      ]
+      ],
+      "previous_review": "IR-NH0921-COMPOSED4-CODEORG-20261117"
     },
     "lib/battle/CPlayerBattleCallback.cpp": {
       "functions": [
@@ -23762,9 +23763,9 @@
       "inherited_a1_health_deferral": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.",
       "inherited_deferral": "Exact source-list bound only. Before substantive build logic, extract a cohesive target configuration section. Verify source/link membership once and retain no duplicate translation units. Prior stricter obligations remain in inherited_deferral, where present.",
       "kind": "exception",
-      "lines": 2189,
+      "lines": 2194,
       "owner": "engine_engineer",
-      "previous_review": "CLAUDE-RAMPART-0932",
+      "previous_review": "CLAUDE-SYLVAN-AMBUSH-20261123",
       "prior_a1_health_scope": {
         "kind": "exception",
         "lines": 2063,
@@ -23773,11 +23774,11 @@
         "sha256": "7058cdef35cfce13214572d190c4accfdf5721e6c144af3cdfca9f53bb68c2a0"
       },
       "prior_deferral": "Exact mechanical source/header registration only. Before substantive CMake target policy growth, extract a cohesive configuration section while verifying translation-unit membership and facade linkage. No future file growth allowance. Prior stricter obligations remain in inherited_deferral, where present.\n\nKeep registrations in their current coherent tables. Extract any future conditional target/control logic rather than growing this registry into a build framework.",
-      "rationale": "Exact successor for the 0.93.2 Rampart hero specialties (Use the Ground, Elusive, Patroness, Giant-Slayer, Living Remedy, Sorceress of Enroth, Brittle, Against the Odds, revised Perfect Mount, Treantmoot and Forest Ambush): one-line routing hooks into the focused new owners lib/entities/hero/NewHorizonsRampartSpecialties, lib/battle/NewHorizonsRampartSpecialties, lib/pathfinder/NewHorizonsElusive, server/battles/BattleRampartSpecialtyCasts, server/processors/PatronessVisit and AI/BattleAI/RampartSpecialtyValue. Existing extraction deferrals retained; no future growth credit. Exact successor for Sylvan Tactics 5 (Ambush): one-line hooks, includes, the split ranged/melee targeting predicate, one plain unit-state field and its persistence/copy plumbing, or registrations only; the rules live in the focused NewHorizonsSylvanAmbush and SylvanAmbushState units, the client presentation in SylvanAmbushStatusPresentation and SylvanAmbushWaitButton. Existing extraction deferrals retained; 2185 to 2189 lines; no future growth credit.",
-      "review": "CLAUDE-SYLVAN-AMBUSH-20261123",
+      "rationale": "Exact successor for the 0.93.2 Rampart hero specialties (Use the Ground, Elusive, Patroness, Giant-Slayer, Living Remedy, Sorceress of Enroth, Brittle, Against the Odds, revised Perfect Mount, Treantmoot and Forest Ambush): one-line routing hooks into the focused new owners lib/entities/hero/NewHorizonsRampartSpecialties, lib/battle/NewHorizonsRampartSpecialties, lib/pathfinder/NewHorizonsElusive, server/battles/BattleRampartSpecialtyCasts, server/processors/PatronessVisit and AI/BattleAI/RampartSpecialtyValue. Existing extraction deferrals retained; no future growth credit. Exact successor for Sylvan Tactics 5 (Ambush): one-line hooks, includes, the split ranged/melee targeting predicate, one plain unit-state field and its persistence/copy plumbing, or registrations only; the rules live in the focused NewHorizonsSylvanAmbush and SylvanAmbushState units, the client presentation in SylvanAmbushStatusPresentation and SylvanAmbushWaitButton. Existing extraction deferrals retained; 2185 to 2189 lines; no future growth credit. Warcasting (new-horizons:warcast): registers the focused NewHorizonsWarcast.h/.cpp, HeroOrderWarcast.h and HeroCommandWarcastCapture.cpp owners. 2189 to 2194 lines; no future growth credit.",
+      "review": "CLAUDE-WARCAST-20261124",
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "421ddf49ed884d51ea0a528d348275fd625cbe945f1f0ae1f0e160cd0d6391a3",
+      "sha256": "80eab61c1bcd2b20bafc7c8253b45525af28852bd53f0deffd595fdfad277704",
       "inherited_deferral_step2": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.\n\nExact shared-facade source/header registration only. Before conditional target/control policy growth, extract the next coherent configuration section; preserve one translation unit per implementation and consumer linkage through vcmi. No future registry-size growth credit.",
       "inherited_rampart_deferral": "Exact hash/size only. Preserve prior narrower extraction, ownership, registration, state/RNG and lifecycle obligations below; next substantive affected expansion must extract a cohesive responsibility and lower the retained bound. Owner engine_engineer.\nExact committed hash and size only, not future growth or native/build/performance approval. Owner engine_engineer must keep future conditional compile policy in focused target helpers and extract the next cohesive stage before further orchestration expansion. Preserve all stricter inherited source/link/guard/ordering obligations below.\nPreserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.\n\nExact shared-facade source/header registration only. Before conditional target/control policy growth, extract the next coherent configuration section; preserve one translation unit per implementation and consumer linkage through vcmi. No future registry-size growth credit."
     },
@@ -24078,9 +24079,9 @@
       "deferral": "Retain every inherited extraction deferral of this unit. Before further substantive growth, move the next coherent touched responsibility into its focused owner; this exact routing gives no future growth allowance.",
       "inherited_a1_health_deferral": "Only this exact native migration content/hash/size is proposed; no future growth allowance. Owner: engine_engineer. Next substantive edit must extract the affected calculation/query/forecast routing into the existing dedicated component with exact state, packet/RNG, action-choice and lifecycle regressions; preserve any narrower inherited deferral below. Next substantive damage-routing growth should extract explicit ordinary attack mitigation stages receiving callback, BattleAttackInfo const& and damage bounds, with current owner policy, physical/magical classification, caps and casualty recomputation tests. Coordinate final engine scalar API removal.",
       "kind": "exception",
-      "lines": 3658,
+      "lines": 3660,
       "owner": "gameplay_engineer",
-      "previous_review": "CLAUDE-RAMPART-0932",
+      "previous_review": "CLAUDE-SYLVAN-AMBUSH-20261123",
       "prior_a1_health_scope": {
         "kind": "exception",
         "lines": 3648,
@@ -24088,11 +24089,11 @@
         "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
         "sha256": "1e22aa20975e225f08359210d36c892fea8d36c495f574083b59359a9d0e795a"
       },
-      "rationale": "Exact successor for the 0.93.2 Rampart hero specialties (Use the Ground, Elusive, Patroness, Giant-Slayer, Living Remedy, Sorceress of Enroth, Brittle, Against the Odds, revised Perfect Mount, Treantmoot and Forest Ambush): one-line routing hooks into the focused new owners lib/entities/hero/NewHorizonsRampartSpecialties, lib/battle/NewHorizonsRampartSpecialties, lib/pathfinder/NewHorizonsElusive, server/battles/BattleRampartSpecialtyCasts, server/processors/PatronessVisit and AI/BattleAI/RampartSpecialtyValue. Existing extraction deferrals retained; no future growth credit. Exact successor for Sylvan Tactics 5 (Ambush): one-line hooks, includes, the split ranged/melee targeting predicate, one plain unit-state field and its persistence/copy plumbing, or registrations only; the rules live in the focused NewHorizonsSylvanAmbush and SylvanAmbushState units, the client presentation in SylvanAmbushStatusPresentation and SylvanAmbushWaitButton. Existing extraction deferrals retained; 3658 to 3658 lines; no future growth credit.",
-      "review": "CLAUDE-SYLVAN-AMBUSH-20261123",
+      "rationale": "Exact successor for the 0.93.2 Rampart hero specialties (Use the Ground, Elusive, Patroness, Giant-Slayer, Living Remedy, Sorceress of Enroth, Brittle, Against the Odds, revised Perfect Mount, Treantmoot and Forest Ambush): one-line routing hooks into the focused new owners lib/entities/hero/NewHorizonsRampartSpecialties, lib/battle/NewHorizonsRampartSpecialties, lib/pathfinder/NewHorizonsElusive, server/battles/BattleRampartSpecialtyCasts, server/processors/PatronessVisit and AI/BattleAI/RampartSpecialtyValue. Existing extraction deferrals retained; no future growth credit. Exact successor for Sylvan Tactics 5 (Ambush): one-line hooks, includes, the split ranged/melee targeting predicate, one plain unit-state field and its persistence/copy plumbing, or registrations only; the rules live in the focused NewHorizonsSylvanAmbush and SylvanAmbushState units, the client presentation in SylvanAmbushStatusPresentation and SylvanAmbushWaitButton. Existing extraction deferrals retained; 3658 to 3658 lines; no future growth credit. Warcasting (new-horizons:warcast): Warded Ranks joins Spellward in the perk magical-reduction query. 3658 to 3660 lines; no future growth credit.",
+      "review": "CLAUDE-WARCAST-20261124",
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "3019d1dd9ed87904595afc709175e25155e6a0e826188502f34a3b9276587d90",
+      "sha256": "400e30761d531ba7f37d825d8f7bf3fa289625be42490a5e4666f53d445bb4dd",
       "inherited_rampart_deferral": "Only this exact native migration content/hash/size is proposed; no future growth allowance. Owner: engine_engineer. Next substantive edit must extract the affected calculation/query/forecast routing into the existing dedicated component with exact state, packet/RNG, action-choice and lifecycle regressions; preserve any narrower inherited deferral below. Next substantive damage-routing growth should extract explicit ordinary attack mitigation stages receiving callback, BattleAttackInfo const& and damage bounds, with current owner policy, physical/magical classification, caps and casualty recomputation tests. Coordinate final engine scalar API removal."
     },
     "lib/battle/CBattleInfoCallback.cpp::int32_t CBattleInfoCallback::calculateBattleSpellCost(const spells::Spell * sp, const CGHeroInstance * caster, int32_t listedCostMultiplier, SpellCostBreakdown * breakdown) const#1": {
@@ -24170,15 +24171,15 @@
       "deferral": "Keep deterministic calculations in focused lib owners. Before executable facade-header growth, extract the next inline query family, preserving visibility and simulation authority. Prior stricter obligations remain in inherited_deferral, where present.\n\nBefore further affected callback API expansion, move its coherent melee-approach declaration facade to a focused interface without changing callback visibility or authoritative source legality. Preserve existing calculation/query extraction obligations. Current exact-scope addendum: engine/AI owner isolates read-only preparedHeroOrderStates(BattleSide) owning-lease capability, preserving null-unknown/proven-empty distinction, source identity and native membership/benefit predicates; not an AI valuation extraction.",
       "inherited_deferral": "Only this exact native migration content/hash/size is proposed; no future growth allowance. Owner: engine_engineer. Next substantive edit must extract the affected calculation/query/forecast routing into the existing dedicated component with exact state, packet/RNG, action-choice and lifecycle regressions; preserve any narrower inherited deferral below. Keep shared callback coefficient interface focused; any next growth must extract relevant rule context with explicit visible callback/owner facts, preserving faction allowance and captured-policy boundaries. Expanded exact review: Engine/AI engineers: further Warfare/hero-derived query definitions stay in the focused query components with callback-visible immutable inputs. Preserve hostile visibility and parent/child provider isolation; no immediate declaration-only extraction is required for575 lines.",
       "kind": "exception",
-      "lines": 588,
+      "lines": 590,
       "owner": "engine_engineer",
-      "previous_review": "IR-REACH-CURSOR-FORT-ENTRY-EDGE-INDEPENDENT-20261113-V1",
-      "rationale": "Six-line default optional immutable HeroOrderState lease accessor: null denotes unknown; proven empty is an owning empty snapshot. Native Order benefit/membership formulas unchanged.",
-      "review": "IR-NH0921-COMPOSED4-CODEORG-20261117",
+      "previous_review": "IR-NH0921-COMPOSED4-CODEORG-20261117",
+      "rationale": "Six-line default optional immutable HeroOrderState lease accessor: null denotes unknown; proven empty is an owning empty snapshot. Native Order benefit/membership formulas unchanged. Warcasting (new-horizons:warcast): one protected declaration for the focused battleCaptureWarcastOrder owner. 588 to 590 lines; no future growth credit.",
+      "review": "CLAUDE-WARCAST-20261124",
       "review_category": "component-interface-review",
       "review_scope": "Exact recorded composed4 physical size and content hash only; no future growth credit or relaxed ceiling. All inherited technical requirements, extraction triggers and runtime holds remain. Source organization review does not establish compilation, functional/native/rendered acceptance, timing, balance or publication authority.",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_NATIVE_UNRUN",
-      "sha256": "256b5752ff674210a32bd39d7e11083b6a69c8960a407671bbfd58d7ef76e5ae",
+      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
+      "sha256": "4fe97e04622535a0f5fb259d7906fd41cd65d61c788d378d7f4577d027a722dd",
       "inherited_exact_source_review": {
         "review": "IR-NH092-ORG-3E82D142-20261116",
         "sha256": "897828be1238a1c89e03984c957c2a92631f7772fcf3685485d4722e38a0b3a0",
@@ -24340,13 +24341,13 @@
       "kind": "exception",
       "lines": 121,
       "owner": "engine_engineer",
-      "previous_review": "CLAUDE-CASTLE-COMBAT-0931",
-      "rationale": "Exact successor for the 0.93.2 Rampart hero specialties (Use the Ground, Elusive, Patroness, Giant-Slayer, Living Remedy, Sorceress of Enroth, Brittle, Against the Odds, revised Perfect Mount, Treantmoot and Forest Ambush): one-line routing hooks into the focused new owners lib/entities/hero/NewHorizonsRampartSpecialties, lib/battle/NewHorizonsRampartSpecialties, lib/pathfinder/NewHorizonsElusive, server/battles/BattleRampartSpecialtyCasts, server/processors/PatronessVisit and AI/BattleAI/RampartSpecialtyValue. Existing extraction deferrals retained; no future growth credit.",
-      "review": "CLAUDE-RAMPART-0932",
+      "previous_review": "CLAUDE-RAMPART-0932",
+      "rationale": "Exact successor for the 0.93.2 Rampart hero specialties (Use the Ground, Elusive, Patroness, Giant-Slayer, Living Remedy, Sorceress of Enroth, Brittle, Against the Odds, revised Perfect Mount, Treantmoot and Forest Ambush): one-line routing hooks into the focused new owners lib/entities/hero/NewHorizonsRampartSpecialties, lib/battle/NewHorizonsRampartSpecialties, lib/pathfinder/NewHorizonsElusive, server/battles/BattleRampartSpecialtyCasts, server/processors/PatronessVisit and AI/BattleAI/RampartSpecialtyValue. Existing extraction deferrals retained; no future growth credit. Warcasting (new-horizons:warcast): bounded Warcasting routing into the focused owners (NewHorizonsWarcast, HeroOrderWarcast). 121 to 121 lines; no future growth credit.",
+      "review": "CLAUDE-WARCAST-20261124",
       "review_category": "ordinary-function-review",
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "25e3c94953512b60755d4b3d871e13c5cf311332b5fc09c137d67b4821ab5b39",
+      "sha256": "22a7ddaa196eae239230bf7e597c106d81455a558541097871a96c7a323ae158",
       "deferral": "Retain every inherited extraction deferral of this unit. Before further substantive growth, move the next coherent touched responsibility into its focused owner; this exact routing gives no future growth allowance.",
       "inherited_exact_source_review": {
         "review": "IR-NH092-ORG-3E82D142-20261116",
@@ -24367,15 +24368,15 @@
       "deferral": "Before new damage Order policy, extract the touched Order-specific numeric modifier stage from common payload preparation; preserve controller/owner checks and exact modifiers. Cap this renewal to the recorded exact size and hash; independent review and relevant runtime validation remain required.",
       "inherited_deferral": " Exact finite prefix successor only; retain all inherited extraction/lifetime/visibility/order/RNG obligations. No future/unrelated growth, source authority, default activation or higher ceiling is granted. Before further substantive expansion, engine/gameplay owner must extract the next touched coherent formula-family, typed validation or presentation/registry group with a narrow interface and exact unchanged state/packet/RNG ordering. This approval permits only the exact deletion/signature/text migration; no future growth credit.",
       "kind": "exception",
-      "lines": 129,
+      "lines": 139,
       "owner": "ai_engineer",
-      "previous_review": "IR-COMMAND-AUTHORITY-SCOPED-ORGANIZATION-20261109-UNITS",
+      "previous_review": "IR-NH092-ORG-3E82D142-20261116",
       "proposed_review": "IR-DAMAGE-PREFIX-PAIR-REUSE-R6-SOURCE-20261101",
-      "rationale": "Exact 129 to 129 physical lines: One typed BuiltinCombatPerk key replaces the string Shock Assault query at unchanged size. This proposed exception covers only the recorded hash/span, not future growth.",
-      "review": "IR-NH092-ORG-3E82D142-20261116",
+      "rationale": "Exact 129 to 129 physical lines: One typed BuiltinCombatPerk key replaces the string Shock Assault query at unchanged size. This proposed exception covers only the recorded hash/span, not future growth. Warcasting (new-horizons:warcast): bounded Warcasting routing into the focused owners (NewHorizonsWarcast, HeroOrderWarcast). 129 to 139 lines; no future growth credit.",
+      "review": "CLAUDE-WARCAST-20261124",
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "41f29fe6a20def6c1151eb8b9b69f8f830b7520eb0e8d8427a12678e500a5fef"
+      "sha256": "226a648bda6e5969b0e4ee61398fbc59af489a79a283cf2d07db46e79ecfa46e"
     },
     "lib/battle/DamagePayloadPreparation.cpp::void CBattleInfoCallback::prepareAttackDamageContext(const BattleAttackInfo & info, DamagePayloadPreparation & p) const#1": {
       "deferral": " Exact finite prefix successor only; retain all inherited extraction/lifetime/visibility/order/RNG obligations. No future/unrelated growth, source authority, default activation or higher ceiling is granted.",
@@ -24433,10 +24434,12 @@
     "lib/battle/HeroCommand.h": {
       "deferral": "Engine: extract the issuance-efficiency save-profile preflight/append stage with an explicit feature flag; verify Order byte sequence, nested side rejection-before-prefix and historical zeros.",
       "kind": "exception",
-      "lines": 501,
-      "rationale": "1158 Battle Plan issuance efficiency is guarded before enclosing Order writes, appended after existing passive state, zeroed for old reads and shape-checked; no older field reordered.",
-      "review": "IR-COMMAND-AUTHORITY-SCOPED-ORGANIZATION-20261109-UNITS",
-      "sha256": "21ecdfde2a4ea70f562e8ac5ea89551a05f939538de0148d4dbde31f9d85a667"
+      "lines": 511,
+      "rationale": "1158 Battle Plan issuance efficiency is guarded before enclosing Order writes, appended after existing passive state, zeroed for old reads and shape-checked; no older field reordered. Warcasting (new-horizons:warcast): the HeroOrderState gains one WarcastSnapshot field (HeroOrderWarcast.h), rider aliases and two accessors; its appended serialization lives in the snapshot. 501 to 511 lines; no future growth credit.",
+      "review": "CLAUDE-WARCAST-20261124",
+      "sha256": "b9406f1ee870e78bb6e199394a734eae5224dbf97e720a669e4dc501962f8243",
+      "previous_review": "IR-COMMAND-AUTHORITY-SCOPED-ORGANIZATION-20261109-UNITS",
+      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW"
     },
     "lib/battle/HeroCommand.h::HeroOrderState::void serialize(Handler & h)#1": {
       "completed_p_predecessor": {
@@ -24448,33 +24451,35 @@
       },
       "deferral": "Engine engineer: before another capability family expands this codec, extract non-writing capability admission into the HeroOrder state owner with explicit supported-feature booleans. Preserve the same Handler field sequence, presence bit, reused-object defaults and final validation. Minimum checks: current1156 complete roundtrip, absent optional reset, invalid passive/mixed snapshot rejection before writer prefix, and identical serialized bytes for unchanged states. Current exact Command/Authority scope: Engine: extract the issuance-efficiency save-profile preflight/append stage with an explicit feature flag; verify Order byte sequence, nested side rejection-before-prefix and historical zeros.",
       "kind": "exception",
-      "lines": 139,
+      "lines": 140,
       "owner": "engine_engineer",
-      "previous_review": "IR-WARCASTING-SCALAR-REMOVAL-EXACT-ORGANIZATION-20261103",
-      "rationale": "1158 Battle Plan issuance efficiency is guarded before enclosing Order writes, appended after existing passive state, zeroed for old reads and shape-checked; no older field reordered.",
-      "review": "IR-COMMAND-AUTHORITY-SCOPED-ORGANIZATION-20261109-UNITS",
+      "previous_review": "IR-COMMAND-AUTHORITY-SCOPED-ORGANIZATION-20261109-UNITS",
+      "rationale": "1158 Battle Plan issuance efficiency is guarded before enclosing Order writes, appended after existing passive state, zeroed for old reads and shape-checked; no older field reordered. Warcasting (new-horizons:warcast): bounded Warcasting routing into the focused owners (NewHorizonsWarcast, HeroOrderWarcast). 139 to 140 lines; no future growth credit.",
+      "review": "CLAUDE-WARCAST-20261124",
       "review_scope": "Exact current bytes and identified interface/codec/call-routing responsibilities only. No new limits or exclusions, blanket hotspot allowance, behavior acceptance or publication authority.",
-      "review_status": "INDEPENDENT_ORGANIZATION_ONLY_NATIVE_RENDERED_UNRUN",
-      "sha256": "2b3c98ae6afe7a669f84c9b4fae56f95fe315211c93c7e2d57e60d517630fa1f"
+      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
+      "sha256": "2edd76c7ce651b8cf7e2209339063cad105e28818892dee80d31482d19e05d50"
     },
     "lib/battle/HeroCommandBattleValidation.cpp::void BattleInfo::validateFocusFireStates() const#1": {
       "kind": "review",
-      "lines": 89,
-      "rationale": "New cohesive extracted rules/state/query component; callable responsibility reviewed at the80-line trigger and below150-line ceiling.",
-      "review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
-      "sha256": "913d21b41fc32f190961611f8581f4daa6e0caf4d45181a8d495075ac1c42569"
+      "lines": 88,
+      "rationale": "New cohesive extracted rules/state/query component; callable responsibility reviewed at the80-line trigger and below150-line ceiling. Warcasting (new-horizons:warcast): bounded Warcasting routing into the focused owners (NewHorizonsWarcast, HeroOrderWarcast). 89 to 88 lines; no future growth credit.",
+      "review": "CLAUDE-WARCAST-20261124",
+      "sha256": "6a829bba4dd789fc5a9c81c0b798e77533cbd6ab28e130462fca9e23ac29c324",
+      "previous_review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
+      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW"
     },
     "lib/battle/HeroCommandPreparation.cpp::std::optional<HeroOrderState> CBattleInfoCallback::battleFinalizeHeroOrderState(BattleSide side, HeroOrderState result) const#1": {
       "deferral": "Next substantive Order finalizer expansion should split validated allowance/recipient/coefficient capture with explicit side, proposed Order and current callback state; preserve rejection before mutation and shared Spell-or-Order budget/faction exceptions.",
       "kind": "exception",
-      "lines": 91,
+      "lines": 93,
       "owner": "gameplay_engineer",
-      "previous_review": "IR-ORDERS-LIGHT-REVISION-SOURCE-20261026",
-      "rationale": "Long finalizer91 unchanged size drops obsolete Warcasting modifiers/riders while retaining canonical preparation, faction budget, recipient snapshots and validated Order facts.",
-      "review": "IR-ARCANE-INSPIRATION-EXACT-PRODUCTION-20261103",
+      "previous_review": "IR-ARCANE-INSPIRATION-EXACT-PRODUCTION-20261103",
+      "rationale": "Long finalizer91 unchanged size drops obsolete Warcasting modifiers/riders while retaining canonical preparation, faction budget, recipient snapshots and validated Order facts. Warcasting (new-horizons:warcast): bounded Warcasting routing into the focused owners (NewHorizonsWarcast, HeroOrderWarcast). 91 to 93 lines; no future growth credit.",
+      "review": "CLAUDE-WARCAST-20261124",
       "review_scope": "Exact frozen production patch only. Conditional on root serialized engine/AI/UI/content/test composition; no future growth, old-save matrix, native/render/runtime proof or adoption authorization.",
-      "review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_RENDERED_UNRUN",
-      "sha256": "a3df169bde7081610937d9a732fa6b8fb81d02e2e41bfaed95293805cf3c5e73"
+      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
+      "sha256": "1d143e2839dcd31a6b83c4a934e81488e5a3413bb9972e9479d7f1770fc5210f"
     },
     "lib/battle/HeroCommandPreparation.cpp::std::optional<HeroOrderState> CBattleInfoCallback::battlePrepareHeroOrderStateImpl(BattleSide side, HeroCommand command, const std::vector<uint32_t> & targetUnitIds, heroCommands::TargetRejection & rejection) const#1": {
       "completed_p_predecessor": {
@@ -24500,14 +24505,14 @@
       },
       "deferral": "Gameplay/engine owner: before further validator growth, split pure ordered validation stages for revised/carry snapshots, recipient identities and command-specific payloads, taking const HeroOrderState and retaining current first-failure order. Minimum checks: malformed recipients, duplicate/unsorted IDs, invalid mixed passive/legacy policy, command mismatch, current codec pre-prefix rejection and no state/RNG change. Current exact Command/Authority scope: Engine: extract only the issuance-efficiency value validation with its serializer envelope into a typed Order issuance-state helper; preserve shape rejection before the Order writer prefix and existing recipient/side validation order.",
       "kind": "exception",
-      "lines": 104,
+      "lines": 105,
       "owner": "gameplay_engineer",
-      "previous_review": "IR-WARCASTING-SCALAR-REMOVAL-EXACT-ORGANIZATION-20261103",
-      "rationale": "Exactly two leading shape-check lines validate the 1158 Battle Plan issuance-efficiency range0-1000; full remaining validation order unchanged. The serializer invokes shape validation before saving and after decoding; this adds no packet mutation or RNG.",
-      "review": "IR-COMMAND-AUTHORITY-SCOPED-ORGANIZATION-20261109-UNITS",
+      "previous_review": "IR-COMMAND-AUTHORITY-SCOPED-ORGANIZATION-20261109-UNITS",
+      "rationale": "Exactly two leading shape-check lines validate the 1158 Battle Plan issuance-efficiency range0-1000; full remaining validation order unchanged. The serializer invokes shape validation before saving and after decoding; this adds no packet mutation or RNG. Warcasting (new-horizons:warcast): bounded Warcasting routing into the focused owners (NewHorizonsWarcast, HeroOrderWarcast). 104 to 105 lines; no future growth credit.",
+      "review": "CLAUDE-WARCAST-20261124",
       "review_scope": "Exact current bytes and identified interface/codec/call-routing responsibilities only. No new limits or exclusions, blanket hotspot allowance, behavior acceptance or publication authority.",
-      "review_status": "INDEPENDENT_ORGANIZATION_ONLY_NATIVE_RENDERED_UNRUN",
-      "sha256": "7b274a0c9457d517e0465dbf92e025b3b945a7bb683cb608ebb288f0405534ab"
+      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
+      "sha256": "8550bef356240cc62fac6f35eeb7498b377f5df85a71b1834f323bc9e1f9b4de"
     },
     "lib/battle/NewHorizonsConfusion.cpp::newHorizonsConfusion::Choices enumerateChoices(const CBattleInfoCallback & battle, const battle::Unit * unit)#1": {
       "deferral": "Before further growth, extract the unreachable-target approach step of enumerateChoices into a focused helper; exact 117-line bound, no later growth allowance.",
@@ -24964,9 +24969,9 @@
       "deferral": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.\n\nBefore any further substantive expansion, extract the next cohesive touched policy, callback/read adapter or ordered admission stage into its focused owner. Preserve exact capture metadata, source visibility, schema rejection, RNG/packet ordering and standalone/world wire identity; no future growth credit from this exception.",
       "inherited_a1_health_deferral": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.",
       "kind": "exception",
-      "lines": 781,
+      "lines": 785,
       "owner": "engine_engineer",
-      "previous_review": "IR-NH092-ORG-E8CD1819-20261116",
+      "previous_review": "CLAUDE-SPECIALTIES-0931",
       "prior_a1_health_scope": {
         "kind": "exception",
         "lines": 779,
@@ -24975,11 +24980,11 @@
         "sha256": "1352330b5da9beb0f13b36514a2de735aa1a2eef895cba15bdc390c5024a278a"
       },
       "prior_deferral": "Owner: Gameplay engineer. Interface/acceptance: Extract captured optional specialty clause dispatch with stable validation errors and historical absence; test resolved/unresolved rules, fresh initialization and old saves without installing defaults.",
-      "rationale": "Exact successor for 0.93.1 beta step 1 (Precise Casting resistance halving, core Stewardship and Lord of the Crypts, +3%/level specialty scaling, activation of unchanged extended ordinary specialties): bounded routing hooks and focused owners only. Existing extraction deferrals retained; no future growth credit.",
-      "review": "CLAUDE-SPECIALTIES-0931",
+      "rationale": "Exact successor for 0.93.1 beta step 1 (Precise Casting resistance halving, core Stewardship and Lord of the Crypts, +3%/level specialty scaling, activation of unchanged extended ordinary specialties): bounded routing hooks and focused owners only. Existing extraction deferrals retained; no future growth credit. Warcasting (new-horizons:warcast): the hero rules accept and resolve the captured warcastPolicy marker. 781 to 785 lines; no future growth credit.",
+      "review": "CLAUDE-WARCAST-20261124",
       "review_scope": "Exact source organization hash/count/span only; no runtime, performance, rendered or future-growth approval.",
-      "review_status": "APPROVED_EXACT_ORGANIZATION_METADATA",
-      "sha256": "f0f6c07706d10f9bdf6359ac08a521e104d2d832196d5b5ec6d70b72ba4b513f"
+      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
+      "sha256": "556b8f0f13857c0b887fd13d4d57144ab5c83ba422d4339cd84944c05146d65a"
     },
     "lib/entities/hero/NewHorizonsLeadership.cpp::newHorizonsHeroes::bool canMergeArmies(const CCreatureSet * source, const CCreatureSet * destination, const CGHeroInstance * hero)#1": {
       "completed_p_predecessor": {
@@ -25049,16 +25054,16 @@
       "deferral": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.",
       "inherited_deferral": "Gameplay engineer: further policy-version growth should factor the captured policy-header/coherence stage into a pure validator before the unchanged skill iteration; preserve rejection before prepared-rule installation and strict historical readers. Current111-line schema traversal is a normal review-trigger unit.",
       "kind": "exception",
-      "lines": 120,
+      "lines": 121,
       "owner": "engine_engineer",
-      "previous_review": "IR-NH092-ORG-3E82D142-20261116",
+      "previous_review": "CLAUDE-SPECIALTIES-20261120",
       "prior_deferral": "Before further unified shape growth, extract a named policy validator. Preserve required/null/version controls and strict captured tier identity. Prior stricter obligations remain in inherited_deferral, where present.",
-      "rationale": "Precise Casting moves to captured Spellcraft policy 2: one added validation call and allowed-field token in the perk validator, and one gated condition in the shared area-centre query; the resistance halving lives in the focused resistance helper. Existing extraction deferrals retained; no future growth credit.",
-      "review": "CLAUDE-SPECIALTIES-20261120",
+      "rationale": "Precise Casting moves to captured Spellcraft policy 2: one added validation call and allowed-field token in the perk validator, and one gated condition in the shared area-centre query; the resistance halving lives in the focused resistance helper. Existing extraction deferrals retained; no future growth credit. Warcasting (new-horizons:warcast): bounded Warcasting routing into the focused owners (NewHorizonsWarcast, HeroOrderWarcast). 120 to 121 lines; no future growth credit.",
+      "review": "CLAUDE-WARCAST-20261124",
       "review_category": "ordinary-function-review",
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "5ad0011ebb2d8e8538ad4c0afd5c2949c9f1e6d466c942f40a97504b59f55f9b"
+      "sha256": "46d00ba810bc49dbcc9d2d7a94da1d059706b17dc47d835a85528eb214cd37e8"
     },
     "lib/entities/hero/NewHorizonsPerkState.cpp::newHorizonsHeroes::std::vector<PerkOfferCandidate> PerkState::prepareOffer( const std::function<int(const std::string &)> & rankLookup, uint64_t seed, const OfferWeightContext & weightContext) const#1": {
       "deferral": "Before any further prepareOffer edit, extract the historical weighted sampler cohesively. Preserve captured semantics, exact RNG draws/weights and current early delegation; exact84 method bound only. Prior stricter obligations remain in inherited_deferral, where present. Current scope: 84 physical lines, SHA256 a6263a3f16f89ea1b860c980f842bd9a6dd9236ebbe123c5d87f25551708a5fc; this renewal grants no future growth. The current getRules accessor substitution does not perform the inherited historical weighted-sampler extraction; that extraction remains due before any subsequent prepareOffer edit.",
@@ -27146,15 +27151,15 @@
       "deferral": "Exact enum bound only. Future format changes require independent serialized ownership and file-loader/connection compatibility evidence. Prior stricter obligations remain in inherited_deferral, where present.",
       "inherited_deferral": "Preserve append-only feature values, historical aliases and explicit read/write capability tests; do not place runtime mechanics in this registry. Owner: engine_engineer. Before further serialization-family growth, extract cohesive non-writing capability preflight with explicit wire-stage boundaries; retain direct/enclosing prefix rejection, exact enum/field order, historical clear defaults and malformed-input rejection. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance. Fafner bounded follow-up: Keep append-only feature values/aliases and direct/enclosing capability tests; do not add runtime mechanics to the feature registry. Keep the stable version registry coherent. Bound growth to six physical lines and this one capability; remove old versions only in a separate reviewed minimum-version migration with native historical fixtures. No future numeric ceiling increase. Future1146 hold: Root must first qualify the current1145/first19 cohort, preserve BATTLE_WIDE and all13 selected artwork bindings on rebase, review final coherent composition and execute the full direct/enclosing/history matrix including hero/map/pool/world and captured identity/default-absence controls. The nine authored central cases and two retargeted zero cases remain UNCOMPILED/UNRUN and do not discharge those obligations. Neutral start-option follow-up: retain host/NEW_GAME scope, absent map/default preservation, historical reused-read clearing, direct/enclosing zero-prefix admission, and no rescaling on load. Require native and rendered acceptance before delivery; preserve every inherited extraction and historical-policy obligation. 1148 bounded follow-up: Continue separate captured JSON and exact-marker codec admission; retain old13/four/neutral domains, no implicit policy repair, and prove direct/enclosing old-prefix rejection plus current full snapshot identity. Exact bounded1151 change only. Exact651to656 appends named1151 plus static boundary assertions and CURRENT alias update. All prior numeric values/aliases exceptCURRENT remain exact; capability facts are nonserialized and no payload field changes. No ceiling increase, coverage exclusion or unrelated/future growth allowance. Engine: preserve explicit known wire-to-Bonus profile mapping, zero-prefix policy refusal and current/default separation. Quarantine indistinguishable obsolete private experiments by provenance; no universal rejection or migration claim. Before delivery require fresh coherent2/Bonus1 native andgenuinefirstwriter/save/resave/replay/rendered acceptance plus1151historical/refusal controls. No automaticpromotion or futureformat approval. Engine engineer: retain one intended registration per target and platform/facade linkage parity; any new target-configuration algorithm needs its own focused component. Exact current registry only, with no implementation or future size allowance. Current exact Command/Authority scope: Engine: split only the Command registration/source/visitTyped subgroup into a focused registry owner on the next edit; preserve IDs310-313, no duplicate/omitted registration, same source-target linkage and dispatch order. Exception is exact current bytes/size only; build/native acceptance remains pending.",
       "kind": "exception",
-      "lines": 692,
+      "lines": 693,
       "neutral_predecessor_review": "IR-EXTENDED-CURE-1152-COMPOSED-20261030",
       "owner": "engine_engineer",
-      "previous_review": "CLAUDE-SPECIALTIES-0931",
-      "rationale": "Exact successor for 0.93.1 beta step 1 (Precise Casting resistance halving, core Stewardship and Lord of the Crypts, +3%/level specialty scaling, activation of unchanged extended ordinary specialties): bounded routing hooks and focused owners only. Existing extraction deferrals retained; no future growth credit. Exact successor for Sylvan Tactics 5 (Ambush): one-line hooks, includes, the split ranged/melee targeting predicate, one plain unit-state field and its persistence/copy plumbing, or registrations only; the rules live in the focused NewHorizonsSylvanAmbush and SylvanAmbushState units, the client presentation in SylvanAmbushStatusPresentation and SylvanAmbushWaitButton. Existing extraction deferrals retained; 691 to 692 lines; no future growth credit.",
-      "review": "CLAUDE-SYLVAN-AMBUSH-20261123",
+      "previous_review": "CLAUDE-SYLVAN-AMBUSH-20261123",
+      "rationale": "Exact successor for 0.93.1 beta step 1 (Precise Casting resistance halving, core Stewardship and Lord of the Crypts, +3%/level specialty scaling, activation of unchanged extended ordinary specialties): bounded routing hooks and focused owners only. Existing extraction deferrals retained; no future growth credit. Exact successor for Sylvan Tactics 5 (Ambush): one-line hooks, includes, the split ranged/melee targeting predicate, one plain unit-state field and its persistence/copy plumbing, or registrations only; the rules live in the focused NewHorizonsSylvanAmbush and SylvanAmbushState units, the client presentation in SylvanAmbushStatusPresentation and SylvanAmbushWaitButton. Existing extraction deferrals retained; 691 to 692 lines; no future growth credit. Warcasting (new-horizons:warcast): one append-only format, NEW_HORIZONS_WARCAST (1168). 692 to 693 lines; no future growth credit.",
+      "review": "CLAUDE-WARCAST-20261124",
       "review_scope": "Exact recorded C14 source hash, physical span and organization delta only. No future growth, whole-mechanic, compiler, native, rendered, performance, save-resume, publication or promotion acceptance.",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "07d97070ad62b61f79dd43bc90f319201f4f6ddccef1f3dd70f4db967e44aaf9"
+      "sha256": "7b6b1609c7f18550013f5187acafd1d822826b76d8c62b47a7b4b3719d56ffba"
     },
     "lib/serializer/JsonSerializeFormat.h": {
       "kind": "legacy",

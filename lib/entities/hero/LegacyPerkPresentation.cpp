@@ -33,6 +33,30 @@ void normalizeLegacyHeroProcText(JsonNode & rules)
 	// Resource services are initialized before world/crossover loading. Load the
 	// shipped text only when a recognized legacy row is present, never cache a
 	// second catalogue or replace the saved gameplay registry/provenance.
+	// Warcasting 2 (Arcane Inspiration) is displayed as Spell-Forge since the
+	// separate Warcasting Skill exists. Only the exact historical strings change.
+	{
+		auto & skills = rules["skills"].Struct();
+		const auto skill = skills.find("new-horizons:warcasting");
+		if(skill != skills.end() && static_cast<const JsonNode &>(skill->second).isStruct())
+		{
+			auto & name = skill->second["name"];
+			if(name.isString() && name.String() == "Warcasting")
+				name.String() = "Spell-Forge";
+			if(static_cast<const JsonNode &>(skill->second)["perks"].isVector())
+				for(auto & perk : skill->second["perks"].Vector())
+				{
+					const auto & view = static_cast<const JsonNode &>(perk);
+					if(!view.isStruct() || !view["details"].isString())
+						continue;
+					auto & details = perk["details"].String();
+					constexpr std::string_view oldText = "At Basic, Advanced and Expert Warcasting this totals";
+					constexpr std::string_view newText = "At Basic, Advanced and Expert Spell-Forge this totals";
+					if(const auto at = details.find(oldText); at != std::string::npos)
+						details.replace(at, oldText.size(), newText);
+				}
+		}
+	}
 	std::optional<JsonNode> canonical;
 	for(const auto & entry : legacy)
 	{

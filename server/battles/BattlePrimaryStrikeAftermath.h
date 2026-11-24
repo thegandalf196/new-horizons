@@ -23,6 +23,7 @@ struct Prepared
 	newHorizonsOrdinaryStrike::EffectPlan lanceFormation;
 	newHorizonsOrdinaryStrike::EffectPlan graveDust;
 	newHorizonsOrdinaryStrike::EffectPlan exposedWeakness;
+	newHorizonsOrdinaryStrike::EffectPlan warcastOpening;
 	newHorizonsOrdinaryStrike::EffectPlan quickRedeployment;
 };
 Prepared prepare(const CBattleInfoCallback & battle, const BattleAttackInfo & attack,

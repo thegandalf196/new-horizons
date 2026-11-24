@@ -7,6 +7,7 @@
 #include "FocusFireQueries.h"
 #include "NewHorizonsDivineMandate.h"
 #include "NewHorizonsIronWill.h"
+#include "NewHorizonsWarcast.h"
 #include "../CStack.h"
 #include "../mapObjects/CGHeroInstance.h"
 
@@ -64,8 +65,7 @@ void BattleInfo::validateFocusFireStates() const
 				}
 				if(!order.divineDisciplineRecipientUnitIds.empty())
 				{
-					if((order.ironWillLifetime ? !newHorizonsIronWill::hasPerk(getSideHero(side))
-						: !newHorizonsDivineMandate::hasDivineDisciplinePerk(getSideHero(side)))
+					if(!newHorizonsWarcast::carryAuthorized(order, getSideHero(side))
 						|| (order.issuedRound == round && !order.divineDisciplineCompletedUnitIds.empty()))
 						throw std::runtime_error("Invalid Divine Discipline captured Order context");
 					for(const auto id : order.divineDisciplineRecipientUnitIds)

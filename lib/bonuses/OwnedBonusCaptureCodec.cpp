@@ -53,6 +53,7 @@ OwnedBonusCaptureCodec OwnedBonusCaptureCodec::fromSourceEpoch(ESerializationVer
 	case Version::NEW_HORIZONS_DOUBLE_CAST_CHOSEN_PRAYERS: // Battle state and action fields only.
 	case Version::NEW_HORIZONS_REVISED_SPECIALTIES: // Captured rule documents only.
 	case Version::NEW_HORIZONS_SYLVAN_AMBUSH: // Plain unit state and captured rules only.
+	case Version::NEW_HORIZONS_WARCAST: // Order snapshot fields and captured rules only.
 		profile = Version::NEW_HORIZONS_CONSECRATED_ARMS;
 		break;
 	default:

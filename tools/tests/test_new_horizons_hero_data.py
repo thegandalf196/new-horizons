@@ -43,7 +43,16 @@ CANONICAL_SKILLS = (
     'new-horizons:metamagic', 'new-horizons:demonicGating', 'new-horizons:necromancy',
     'new-horizons:shroudOfMalassa', 'new-horizons:bloodrage',
     'new-horizons:bulwarkOfTheMire', 'new-horizons:elementalRebirth', 'new-horizons:authority',
+    'new-horizons:warcast',
 )
+# Warcasting favours balanced classes: 10 minus half the class's per-level
+# Might/Magic growth imbalance (Attack+Defense against Spell Power+Knowledge).
+WARCAST_WEIGHTS = {
+    'core:alchemist': 10, 'core:battlemage': 10, 'core:planeswalker': 10, 'core:deathknight': 9,
+    'core:knight': 8, 'core:cleric': 8, 'core:ranger': 8, 'core:demoniac': 8, 'core:heretic': 8,
+    'core:necromancer': 8, 'core:overlord': 8, 'core:warlock': 7, 'core:witch': 7, 'core:druid': 7,
+    'core:wizard': 6, 'core:elementalist': 6, 'core:barbarian': 6, 'core:beastmaster': 6,
+}
 
 CANONICAL_WEIGHT_ROWS = {
     'core:knight': '4 6 3 5 3 5 4 5 4 2 0 5 1 1 1 4 1 6 8 7 3 5 10 0 0 0 0 0 0 0 0',
@@ -508,14 +517,23 @@ class HeroDataTest(unittest.TestCase):
 
     def test_every_class_has_exact_canonical_skill_offer_weights(self):
         self.assertEqual(set(self.rules['skillOfferWeights']), set(CANONICAL_WEIGHT_ROWS))
-        self.assertEqual(len(CANONICAL_SKILLS), 32)
+        self.assertEqual(len(CANONICAL_SKILLS), 33)
         authority_weights = dict(zip(CANONICAL_STARTS, (8, 3, 8, 2, 6, 1, 8, 3, 7, 3, 8, 2, 10, 6, 10, 2, 6, 1)))
         for class_id, row in CANONICAL_WEIGHT_ROWS.items():
             with self.subTest(hero_class=class_id):
-                values = [int(value) for value in row.split()] + [authority_weights[class_id]]
+                values = [int(value) for value in row.split()] + [authority_weights[class_id], WARCAST_WEIGHTS[class_id]]
                 self.assertEqual(len(values), len(CANONICAL_SKILLS))
                 self.assertEqual(self.rules['skillOfferWeights'][class_id],
                                  dict(zip(CANONICAL_SKILLS, values)))
+
+    def test_warcast_weights_follow_the_class_might_magic_balance(self):
+        self.assertEqual(self.rules['warcastPolicy'], {'version': 1})
+        for class_id, profile in self.rules['classProfiles'].items():
+            attack, defense, power, knowledge = profile['growth']
+            imbalance = abs((attack + defense) - (power + knowledge)) // 2
+            with self.subTest(hero_class=class_id):
+                self.assertEqual(WARCAST_WEIGHTS[class_id], 10 - imbalance // 2)
+        self.assertLessEqual(max(WARCAST_WEIGHTS.values()), 2 * min(WARCAST_WEIGHTS.values()))
 
     def test_retired_skills_are_excluded_and_only_explicit_skills_grant_growth(self):
         self.assertEqual(set(self.rules['excludedSkills']), {

@@ -27,7 +27,8 @@ bool heroCommands::sameIssuance(const HeroOrderState & previous, const HeroOrder
 		&& previous.divineDisciplineRecipientUnitIds == next.divineDisciplineRecipientUnitIds
 		&& previous.crownAndAltarRecipientUnitIds == next.crownAndAltarRecipientUnitIds
 		&& previous.crownAndAltarFocusFirePercent == next.crownAndAltarFocusFirePercent
-		&& previous.crownAndAltarHoldReductionBasisPoints == next.crownAndAltarHoldReductionBasisPoints;
+		&& previous.crownAndAltarHoldReductionBasisPoints == next.crownAndAltarHoldReductionBasisPoints
+		&& previous.warcast == next.warcast;
 }
 
 void HeroOrderState::validateShape() const
@@ -64,6 +65,7 @@ void HeroOrderState::validateShape() const
 		throw std::runtime_error("Vanguard cannot carry round-only Order lifetime extensions");
 	if(ironWillLifetime && (command == HeroCommand::SECOND_WIND || divineDisciplineRecipientUnitIds.empty()))
 		throw std::runtime_error("Invalid Iron Will Order carry");
+	validateWarcastShape();
 	const auto validIds = [](const auto & ids)
 	{
 		return std::is_sorted(ids.begin(), ids.end())
@@ -133,6 +135,24 @@ void HeroOrderState::validateShape() const
 		previous = target.unitId;
 		firstFlankTarget = false;
 	}
+}
+
+void HeroOrderState::validateWarcastShape() const
+{
+	if(warcast.unbroken && (command == HeroCommand::SECOND_WIND || command == HeroCommand::VANGUARD
+		|| warcast.recipients.empty() || divineDisciplineRecipientUnitIds.empty()))
+		throw std::runtime_error("Invalid Unbroken Command Order carry");
+	for(size_t index = 0; index < warcast.recipients.size(); ++index)
+	{
+		const auto & entry = warcast.recipients[index];
+		if(entry.unitId > static_cast<uint32_t>(std::numeric_limits<int32_t>::max())
+			|| entry.percent < 1 || entry.percent > heroCommands::WarcastSnapshot::MAX_PERCENT
+			|| (index > 0 && warcast.recipients[index - 1].unitId >= entry.unitId))
+			throw std::runtime_error("Invalid Warcasting Order recipients");
+	}
+	if((warcast.riders & ~heroCommands::WarcastSnapshot::RIDERS) != 0
+		|| (warcast.recipients.empty() && (warcast.riders != 0 || warcast.meditation)))
+		throw std::runtime_error("Invalid Warcasting Order riders");
 }
 
 bool HeroOrderState::completeDisciplineActivation(uint32_t unitId, int32_t currentRound)

@@ -144,6 +144,7 @@ ACTIVE_RANK_EFFECTS = {
 # zero-valued placeholder while the canonical registry marks them active.
 RUNTIME_ACTIVE_RANKS = {
     "elementalRebirth",
+    "warcast",
     "divineMandate",
     "armorer",
     "archery",
@@ -204,7 +205,7 @@ class NewHorizonsSkillEntitiesTest(unittest.TestCase):
         canonical_ids = tuple(self.perks["skills"])
         runtime_ids = tuple(f"new-horizons:{key}" for key in self.skills)
         self.assertEqual(runtime_ids, canonical_ids)
-        self.assertEqual(len(runtime_ids), 32)
+        self.assertEqual(len(runtime_ids), 33)
         for key, skill in self.skills.items():
             with self.subTest(skill=key):
                 self.assertNotIn(":", key)

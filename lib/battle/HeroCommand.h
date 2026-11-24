@@ -13,6 +13,7 @@
 #include "../json/JsonNode.h"
 #include "NewHorizonsHeroLuck.h"
 #include "HeroCommandRevision.h"
+#include "HeroOrderWarcast.h"
 
 #include <algorithm>
 #include <array>
@@ -135,6 +136,14 @@ struct DLL_LINKAGE HeroOrderState
 	uint32_t heroMoraleActionGrantId = 0;
 	int32_t heroicSpiritEfficiencyBonusPercent = 0;
 	int32_t battlePlanEfficiencyBonusPercent = 0;
+	/// Warcasting snapshot captured at commit (HeroOrderWarcast.h); empty without the Skill.
+	heroCommands::WarcastSnapshot warcast;
+	static constexpr uint8_t WARCAST_KINDLED = heroCommands::WarcastSnapshot::KINDLED;
+	static constexpr uint8_t WARCAST_OPENING = heroCommands::WarcastSnapshot::OPENING;
+	static constexpr uint8_t WARCAST_WARDED = heroCommands::WarcastSnapshot::WARDED;
+	static constexpr uint8_t WARCAST_STEEL = heroCommands::WarcastSnapshot::STEEL;
+	int warcastPercentFor(uint32_t unitId) const { return warcast.percentFor(unitId); }
+	void validateWarcastShape() const;
 	bool luckyDay() const { return heroLuck && heroLuck->has(newHorizonsHeroLuck::Proc::LuckyDay); }
 	template<typename Handler> void validateHeroLuckSerialization(Handler & h) const
 	{
@@ -399,6 +408,7 @@ struct DLL_LINKAGE HeroOrderState
 			h & battlePlanEfficiencyBonusPercent;
 		else if(!h.saving)
 			battlePlanEfficiencyBonusPercent = 0;
+		warcast.serializeAppended(h);
 		validateHeroLuckSerialization(h);
 		if(!h.saving)
 			validateShape();

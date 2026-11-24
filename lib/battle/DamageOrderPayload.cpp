@@ -14,6 +14,7 @@
 #include "NewHorizonsCombatSkills.h"
 #include "NewHorizonsDivineMandate.h"
 #include "PassiveDivineMandate.h"
+#include "NewHorizonsWarcast.h"
 
 namespace
 {
@@ -99,9 +100,10 @@ void CBattleInfoCallback::prepareAttackerDamageOrders(const BattleAttackInfo & i
 					&& mark->targetUnitId == info.defender->unitId()
 					&& std::binary_search(mark->recipientUnitIds.begin(), mark->recipientUnitIds.end(), info.attacker->unitId()))
 				{
-					const auto combinedArmsDamagePercent = heroCommands::combinedArmsFocusFirePercent(
+					const auto combinedArmsDamagePercent = newHorizonsWarcast::scaled(heroCommands::combinedArmsFocusFirePercent(
 						(attackerState.crownAndAltarAppliesTo(info.attacker->unitId())
-							? attackerState.crownAndAltarFocusFirePercent : mark->rangedDamagePercent), *attack);
+							? attackerState.crownAndAltarFocusFirePercent : mark->rangedDamagePercent), *attack),
+						attackerState.warcastPercentFor(info.attacker->unitId()));
 					p.payload.combinedArmsDamagePercent += combinedArmsDamagePercent;
 					if(combinedArmsDamagePercent > 0)
 						recordAttackerCause(HeroCommand::FOCUS_FIRE);
@@ -114,11 +116,12 @@ void CBattleInfoCallback::prepareAttackerDamageOrders(const BattleAttackInfo & i
 			{
 				const int intrinsic = heroCommandCoefficient(rules["charge"]["effects"]["meleeDamagePercent"],
 					*attack, attackerState.divineMandateEfficiencyBonusPercent());
-				const int orderDamagePercent = heroCommands::orderPotency(intrinsic + 2 * (info.chargeDistance - 3),
+				const int orderDamagePercent = newHorizonsWarcast::scaled(heroCommands::orderPotency(intrinsic + 2 * (info.chargeDistance - 3),
 					heroOrderCoefficient(rules["charge"]["effects"]["meleeDamagePercent"], attack, &attackerState, info.attacker->unitId(), false)
 						+ 2 * (info.chargeDistance - 3), attackerState, getBattle()->getMagicRules())
 					+ (info.physicalDamage
-						? heroCommands::revisedPerkBonus(getBattle()->getHeroCommandRules(), attack, HeroCommand::CHARGE) : 0);
+						? heroCommands::revisedPerkBonus(getBattle()->getHeroCommandRules(), attack, HeroCommand::CHARGE) : 0),
+					attackerState.warcastPercentFor(info.attacker->unitId()));
 				p.payload.heroOrderDamagePercent += orderDamagePercent;
 				if(orderDamagePercent > 0)
 					recordAttackerCause(HeroCommand::CHARGE);
@@ -130,7 +133,8 @@ void CBattleInfoCallback::prepareAttackerDamageOrders(const BattleAttackInfo & i
 		case HeroCommand::RIPOSTE:
 			if(eligibleDamageOrderUnit(info.attacker) && info.retaliation && !info.shooting)
 			{
-				const int orderDamagePercent = heroOrderCoefficient(rules["riposte"]["effects"]["retaliationDamagePercent"], attack, &attackerState, info.attacker->unitId());
+				const int orderDamagePercent = newHorizonsWarcast::scaled(heroOrderCoefficient(rules["riposte"]["effects"]["retaliationDamagePercent"], attack, &attackerState, info.attacker->unitId()),
+					attackerState.warcastPercentFor(info.attacker->unitId()));
 				p.payload.heroOrderDamagePercent += orderDamagePercent;
 				if(orderDamagePercent > 0)
 					recordAttackerCause(HeroCommand::RIPOSTE);
@@ -144,8 +148,9 @@ void CBattleInfoCallback::prepareAttackerDamageOrders(const BattleAttackInfo & i
 				const int companion = newHorizonsCombatSkills::bracePreemptivePercent(ordinary, attack) - ordinary;
 				const int intrinsic = heroCommandCoefficient(rules["brace"]["effects"]["preemptiveDamagePercent"],
 					*attack, attackerState.divineMandateEfficiencyBonusPercent());
-				const int orderMultiplier = heroCommands::orderPotency(intrinsic, ordinary,
-					attackerState, getBattle()->getMagicRules()) + companion;
+				const int orderMultiplier = newHorizonsWarcast::scaled(heroCommands::orderPotency(intrinsic, ordinary,
+					attackerState, getBattle()->getMagicRules()) + companion,
+					attackerState.warcastPercentFor(info.attacker->unitId()));
 				p.payload.heroOrderFinalDamageMultipliers.push_back(orderMultiplier);
 				if(p.payload.heroOrderFinalDamageMultiplier == 100)
 					p.payload.heroOrderFinalDamageMultiplier = orderMultiplier;
@@ -181,10 +186,13 @@ void CBattleInfoCallback::prepareAttackerDamageOrders(const BattleAttackInfo & i
 		case HeroCommand::SECOND_WIND:
 			if(attackerState.secondWindActive && attackerState.primaryTargetUnitId == info.attacker->unitId())
 			{
-				const int orderMultiplier = heroCommands::orderPotency(
+				const int ordinaryMultiplier = heroCommands::orderPotency(
 					battleSecondWindPercent(attackerSide, attackerState, info.attacker->unitId()),
 					battleSecondWindPercent(attackerSide, attackerState, info.attacker->unitId(), true),
 					attackerState, getBattle()->getMagicRules());
+				const int warcastPercent = attackerState.warcastPercentFor(info.attacker->unitId());
+				const int orderMultiplier = warcastPercent > 0 && ordinaryMultiplier < 100
+					? std::min(100, newHorizonsWarcast::scaled(ordinaryMultiplier, warcastPercent)) : ordinaryMultiplier;
 				if(orderMultiplier != 100)
 				{
 					p.payload.heroOrderFinalDamageMultipliers.push_back(orderMultiplier);
@@ -198,6 +206,9 @@ void CBattleInfoCallback::prepareAttackerDamageOrders(const BattleAttackInfo & i
 			break;
 		}
 	}
+	if(p.readAttackerOwner(*this, info) != p.readDefenderOwner(*this, info))
+		newHorizonsWarcast::addAttackRiders(attackerStates, info.attacker->unitId(), battleGetRound(),
+			p.payload.heroOrderDamagePercent, p.payload.arcaneInspirationDefenseIgnorePercent);
 }
 
 void CBattleInfoCallback::prepareDefenderDamageOrders(const BattleAttackInfo & info,
@@ -243,6 +254,13 @@ void CBattleInfoCallback::prepareDefenderDamageOrders(const BattleAttackInfo & i
 		}
 		if(orderDamageReductionPercent > 0)
 		{
+			if(const int warcastPercent = defenderState.warcastPercentFor(info.defender->unitId()))
+			{
+				orderDamageReductionPercent = newHorizonsWarcast::scaled(orderDamageReductionPercent, warcastPercent);
+				if(defenderState.command == HeroCommand::FEINT && defenderState.revision)
+					orderDamageReductionPercent = std::min(orderDamageReductionPercent, defenderState.revision->feintCap);
+				orderDamageReductionPercent = std::min(orderDamageReductionPercent, 100);
+			}
 			if(p.payload.heroOrderDamageReductionPercent == 0)
 				p.payload.heroOrderDamageReductionPercent = orderDamageReductionPercent;
 			p.payload.heroOrderDamageReductionPercents.push_back(orderDamageReductionPercent);

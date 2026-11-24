@@ -1266,6 +1266,7 @@ if(ENABLE_BATTLE_AI)
 		server/battles/NewHorizonsHavocPerksTest.cpp
 		server/battles/NewHorizonsPlaguebearerTest.cpp
 		server/battles/NewHorizonsIronWillTest.cpp
+		server/battles/NewHorizonsWarcastTest.cpp
 		server/battles/NewHorizonsHeroicSpiritTest.cpp
 		server/battles/NewHorizonsMercenaryCombatTest.cpp
 		server/battles/NewHorizonsOpportunistTest.cpp

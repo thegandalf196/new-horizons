@@ -294,7 +294,7 @@ void CGHeroInstance::levelUpAutomatically(IGameRandomizer & gameRandomizer)
 	const auto completePerks = [this, unified]()
 	{
 		if(!unified) return;
-		for(size_t count = 0; count < newHorizonsHeroes::PERK_CANONICAL_SKILL_COUNT * newHorizonsHeroes::PERK_MAX_PERKS_PER_SKILL; ++count)
+		for(size_t count = 0; count < newHorizonsHeroes::PERK_MAX_SKILL_COUNT * newHorizonsHeroes::PERK_MAX_PERKS_PER_SKILL; ++count)
 		{
 			const auto offer = perkState.nextRequiredPerkOffer([this](const std::string & skill) { return getPerkSkillRank(skill); });
 			if(offer.empty()) return;

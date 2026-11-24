@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../../lib/battle/NewHorizonsWarcast.h"
 #include "BattlePrimaryStrikeAftermath.h"
 #include "../../lib/battle/NewHorizonsSpecialtyEvents.h"
 #include "../../lib/battle/NewHorizonsSpecialtyProcs.h"
@@ -41,6 +42,28 @@ newHorizonsOrdinaryStrike::EffectPlan prepareGraveDust(const CBattleInfoCallback
 	if(!before) throw std::runtime_error("Grave Dust requires a concrete prehit body snapshot");
 	const auto bodyLoss = battle::bodyHealthLoss(primary->damageAmount, before->health.getTemporaryHitPoints());
 	return newHorizonsGraveDustStrike::plan(battle, context, bodyLoss, false);
+}
+}
+
+namespace
+{
+/// Opening: an enemy damaged by a warcast stack's attack or retaliation is Exposed.
+newHorizonsOrdinaryStrike::EffectPlan warcastOpening(const CBattleInfoCallback & battle, const BattleAttackInfo & attack)
+{
+	newHorizonsOrdinaryStrike::EffectPlan result;
+	if(battle.battleGetOwner(attack.attacker) == battle.battleGetOwner(attack.defender)
+		|| !newHorizonsWarcast::riderActive(battle, attack.attacker, HeroOrderState::WARCAST_OPENING))
+		return result;
+	const auto side = battle.playerToSide(battle.battleGetOwner(attack.attacker));
+	if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)
+		return result;
+	result.target = attack.defender->unitId();
+	const auto existing = attack.defender->getBonusesOfType(BonusType::NONE);
+	for(const auto & bonus : *existing)
+		if(newHorizonsWarcast::isExposedMarker(bonus.get(), side))
+			result.remove.push_back(*bonus);
+	result.add.push_back(newHorizonsWarcast::exposedMarker(side));
+	return result;
 }
 }
 
@@ -87,6 +110,8 @@ Prepared prepare(const CBattleInfoCallback & battle, const BattleAttackInfo & at
 	if(primary != hits.end())
 	{
 		result.exposedWeakness = newHorizonsFactionSpellDamage::exposedWeakness(battle, attack);
+		if(damage > 0 && !attack.secondaryAttack)
+			result.warcastOpening = warcastOpening(battle, attack);
 		result.quickRedeployment = newHorizonsSylvanTacticsRevision::quickRedeployment(battle, attack);
 	}
 	return result;
@@ -106,6 +131,7 @@ void apply(CGameHandler & game, const CBattleInfoCallback & battle, const Prepar
 	applyOrdinaryEffect(game, battle, prepared.lanceFormation);
 	if(!prepared.graveDust.add.empty()) applyOrdinaryEffect(game, battle, prepared.graveDust);
 	applyOrdinaryEffect(game, battle, prepared.exposedWeakness);
+	applyOrdinaryEffect(game, battle, prepared.warcastOpening);
 	applyOrdinaryEffect(game, battle, prepared.quickRedeployment);
 	applyOrdinaryEffect(game, battle, prepared.attackController.cripple);
 }

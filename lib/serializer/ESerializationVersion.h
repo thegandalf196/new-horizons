@@ -335,8 +335,9 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_DOUBLE_CAST_CHOSEN_PRAYERS = 1165, // Double Cast offer/use state and chosen prayer action fields
 	NEW_HORIZONS_REVISED_SPECIALTIES = 1166, // captured revised specialties, core Stewardship and Precise Casting policy
 	NEW_HORIZONS_SYLVAN_AMBUSH = 1167, // Sylvan Tactics policy 5 captures and per-unit Ambush battle state
+	NEW_HORIZONS_WARCAST = 1168, // Warcasting Skill roster captures and warcast Order snapshots
 	MINIMAL = NEW_HORIZONS_CONSECRATED_ARMS,
-	CURRENT = NEW_HORIZONS_SYLVAN_AMBUSH,
+	CURRENT = NEW_HORIZONS_WARCAST,
 };
 
 static_assert(ESerializationVersion::NEW_HORIZONS_COMMAND_AUTHORITY > ESerializationVersion::NEW_HORIZONS_NATIVE_RULES_REDESIGN,

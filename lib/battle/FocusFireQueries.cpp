@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "NewHorizonsWarcast.h"
 #include "FocusFireQueries.h"
 #include "CBattleInfoCallback.h"
 #include "IBattleState.h"
@@ -67,8 +68,11 @@ int CBattleInfoCallback::battleTargetedRangedCommandPercent(const battle::Unit *
 		return mark->rangedDamagePercent;
 	const int value = order && order->crownAndAltarAppliesTo(attacker->unitId())
 		? order->crownAndAltarFocusFirePercent : mark->rangedDamagePercent;
-	return order ? heroCommands::orderPotency(mark->rangedDamagePercent, value,
-		*order, getBattle()->getMagicRules()) : value;
+	if(!order)
+		return value;
+	const int potency = heroCommands::orderPotency(mark->rangedDamagePercent, value, *order, getBattle()->getMagicRules());
+	const int warcast = order->warcastPercentFor(attacker->unitId());
+	return warcast > 0 ? std::min(heroCommands::MAX_EFFECT_PERCENT, newHorizonsWarcast::scaled(potency, warcast)) : potency;
 }
 
 void focusFireQueries::validateMarkContext(const CBattleInfoCallback & battle, BattleSide side,

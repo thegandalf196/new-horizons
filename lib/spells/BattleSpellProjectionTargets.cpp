@@ -5,6 +5,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../battle/NewHorizonsWarcast.h"
 
 #include "BattleSpellMechanics.h"
 #include "NewHorizonsMetamagicEffects.h"
@@ -129,7 +130,7 @@ int64_t BattleSpellMechanics::getTargetAwareEffectValue(const battle::Unit * tar
 	return eventSnapshot->mechanicsForTarget({Destination(target)})->getEffectValue();
 }
 
-int32_t Mechanics::getTargetAwareManaCost(const Target &) const
+int32_t Mechanics::getTargetAwareManaCost(const Target & target) const
 {
 	const auto * hero = getHeroCaster();
 	const auto * callback = battle();
@@ -140,6 +141,8 @@ int32_t Mechanics::getTargetAwareManaCost(const Target &) const
 	if(newHorizonsMagic::magicArrowOverchargeEnabled(callback->getBattle()->getMagicRules(), getSpellId()))
 		result = newHorizonsMagic::magicArrowManaCost(callback->getBattle()->getMagicRules(), getSpellId(),
 			result, getOvercharge()).value_or(std::numeric_limits<int32_t>::max());
+	if(!target.empty() && target.front().unitValue && result != std::numeric_limits<int32_t>::max())
+		result = newHorizonsWarcast::fieldEnchanterCost(*this, target.front().unitValue, result);
 	return result;
 }
 

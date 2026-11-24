@@ -1,10 +1,10 @@
 {
   "format": 1,
-  "purpose": "Exact reversible source-consumer changes; selected artwork bytes, original hashes and approval records remain unchanged. Current Metamagic and Consecrated Arms have distinct selected perk artwork. Metamagic 6 perks bind provisional stand-ins that reuse selected historical paintings; Metamagic 5 bindings remain for captured policy-6 games. Sylvan Tactics 5 (Ambush) perks bind their selected icons.",
+  "purpose": "Exact reversible source-consumer changes; selected artwork bytes, original hashes and approval records remain unchanged. Current Metamagic and Consecrated Arms have distinct selected perk artwork. Metamagic 6 perks bind provisional stand-ins that reuse selected historical paintings; Metamagic 5 bindings remain for captured policy-6 games. Sylvan Tactics 5 (Ambush) perks bind their selected icons. Warcasting perks bind their selected icons.",
   "files": {
     "client/windows/NewHorizonsPerkIcons.h": {
       "historicalSha256": "8d67c0ddcd521aeb37566c39d5ac8cb28dd7ebec8d280773c9eca01a7dadb8aa",
-      "currentSha256": "623039e7b9b9f64691afeb0ec56743afa17088f127e5c933219066651ffab71a",
+      "currentSha256": "9546be7cc2a7699c743cd2799791cc948b50c8e80fc563c782128954997377dd",
       "changes": [
         {
           "before": "\t\t{\"new-horizons:authority.veteranCorps\", \"NH_perk_authority_veteran_corps\"},\n\t\t{\"new-horizons:metamagic.arcaneCatalyst\", \"NH_perk_arcane_acquisition\"},\n\t\t{\"new-horizons:metamagic.arcaneShield\", \"NH_perk_echoed_duration\"},\n\t\t{\"new-horizons:metamagic.manaConduit\", \"NH_perk_arcane_economy\"},\n\t\t{\"new-horizons:metamagic.lingeringMagic\", \"NH_perk_spell_sequencing\"},\n\t\t{\"new-horizons:metamagic.arcaneFeedback\", \"NH_perk_focused_pairing\"},\n\t\t{\"new-horizons:metamagic.spellFracture\", \"NH_perk_perfect_sequence\"},\n\t\t{\"new-horizons:metamagic.arcaneWellspring\", \"NH_perk_countersequence\"},\n\t\t{\"new-horizons:metamagic.arcaneAttunement\", \"NH_perk_spell_buffer_v2\"},\n\t\t{\"new-horizons:metamagic.arcaneEcho\", \"NH_perk_formula_reserve\"},\n\t\t{\"new-horizons:metamagic.arcaneSingularity\", \"NH_perk_grand_metamagic\"},\n\t\t{\"new-horizons:divineMandate.knightlyValor\", \"NH_perk_knightly_sequence\"},\n",
@@ -37,6 +37,10 @@
         {
           "before": "\t\t{\"new-horizons:sylvanLuck.cascadingFortune\", \"NH_perk_cascading_fortune\"},\n",
           "after": "\t\t{\"new-horizons:sylvanLuck.cascadingFortune\", \"NH_perk_cascading_fortune\"},\n\t\t{\"new-horizons:sylvanLuck.forestCover\", \"NH_perk_sylvan_tactics_forest_cover\"},\n\t\t{\"new-horizons:sylvanLuck.startle\", \"NH_perk_sylvan_tactics_startle\"},\n\t\t{\"new-horizons:sylvanLuck.apexPredator\", \"NH_perk_sylvan_tactics_apex_predator\"},\n"
+        },
+        {
+          "before": "\t\t{\"new-horizons:shroudOfMalassa.backstab\", \"NH_perk_backstab\"},\n",
+          "after": "\t\t{\"new-horizons:shroudOfMalassa.backstab\", \"NH_perk_backstab\"},\n\t\t{\"new-horizons:warcast.fieldEnchanter\", \"NH_perk_warcasting2_field_enchanter\"},\n\t\t{\"new-horizons:warcast.kindledEdge\", \"NH_perk_warcasting2_kindled_edge\"},\n\t\t{\"new-horizons:warcast.commandersMeditation\", \"NH_perk_warcasting2_commanders_meditation\"},\n\t\t{\"new-horizons:warcast.layeredEnchantment\", \"NH_perk_warcasting2_layered_enchantment\"},\n\t\t{\"new-horizons:warcast.sustainingCommand\", \"NH_perk_warcasting2_sustaining_command\"},\n\t\t{\"new-horizons:warcast.opening\", \"NH_perk_warcasting2_opening\"},\n\t\t{\"new-horizons:warcast.wardedRanks\", \"NH_perk_warcasting2_warded_ranks\"},\n\t\t{\"new-horizons:warcast.enchantedSteel\", \"NH_perk_warcasting2_enchanted_steel\"},\n\t\t{\"new-horizons:warcast.grandConvergence\", \"NH_perk_warcasting2_grand_convergence\"},\n\t\t{\"new-horizons:warcast.unbrokenCommand\", \"NH_perk_warcasting2_unbroken_command\"},\n"
         }
       ]
     },

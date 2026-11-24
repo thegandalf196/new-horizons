@@ -30,6 +30,9 @@ newHorizonsHeroes::PerkState state()
 	rules.Struct().erase("unifiedSkillProgressionVersion");
 	rules.Struct().erase("sylvanTacticsPolicy");
 	rules.Struct().erase("necromancyPolicy");
+	// ... and the 33rd Skill, Warcasting (format 1168).
+	rules.Struct().erase("warcastPolicy");
+	rules["skills"].Struct().erase("new-horizons:warcast");
 	rules.Struct().erase("quickStudyPolicy");
 	// Pure legacy offer states do not carry later faction or reroll captures.
 	for(const auto * key : {"metamagicPolicy", "divineMandatePolicy", "demonicGatingPolicy", "bloodragePolicy", "connoisseurPolicy"})
@@ -1588,7 +1591,8 @@ TEST(NewHorizonsPerkState, R2WizardFourParentsUseFullClassBoundsRegardlessOfPerk
 	std::map<std::string, int> row;
 	for(const auto & [id, value] : development["skillOfferWeights"]["core:wizard"].Struct())
 		row[id] = static_cast<int>(value.Integer());
-	ASSERT_EQ(row.size(), newHorizonsHeroes::PERK_CANONICAL_SKILL_COUNT);
+	ASSERT_EQ(row.size(), newHorizonsHeroes::PERK_WARCAST_SKILL_COUNT);
+	row.erase("new-horizons:warcast"); // The fixture registry is a 32-Skill capture.
 	const std::array<std::string, 4> ids = {"new-horizons:sorceryMagic", "new-horizons:spellcraft",
 		"new-horizons:havocMagic", "new-horizons:offense"};
 	const std::array<int, 4> authoredWeights = {10, 9, 8, 1};

@@ -167,7 +167,7 @@ void initialize(PerkState & state, const JsonNode & development, HeroTypeID hero
 	appendPreferences(preferred, proposed, prototype);
 	appendPreferences(preferred, proposed, profile);
 	appendPreferences(preferred, proposed, defaultsFor(development, hero));
-	for(size_t count = 0; count < PERK_CANONICAL_SKILL_COUNT * PERK_MAX_PERKS_PER_SKILL; ++count)
+	for(size_t count = 0; count < PERK_MAX_SKILL_COUNT * PERK_MAX_PERKS_PER_SKILL; ++count)
 	{
 		const auto offer = referenceNext(proposed, rank);
 		if(offer.empty())

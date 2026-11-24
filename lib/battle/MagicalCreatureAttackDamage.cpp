@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "NewHorizonsWarcast.h"
 #include "NewHorizonsPassiveSpecialties.h"
 #include "MagicalCreatureAttackDamage.h"
 #include "NewHorizonsRampartSpecialties.h"
@@ -34,7 +35,8 @@ void applyMagicalAttackReduction(const CBattleInfoCallback & callback,
 	if(const int mount = newHorizonsRampart::perfectMountReductionPercent(*attack.defender))
 		reductions.push_back(mount * 100);
 	const int spellward = newHorizonsMagicalAbilityDamage::spellwardReductionBasisPoints(
-		callback.battleGetOwnerHero(attack.defender));
+		callback.battleGetOwnerHero(attack.defender))
+		+ newHorizonsWarcast::wardedRanksBasisPoints(callback, attack.defender);
 	if(spellward > 0)
 		reductions.push_back(std::clamp(spellward, 0, 10000));
 	if(reductions.empty())

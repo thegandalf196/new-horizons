@@ -142,14 +142,30 @@ TEST(CapturedRulePool, InvalidTableAdmissionPreservesExistingPool)
 
 TEST(CapturedRulePool, ConsecratedArmsMinimumAndWriterRejectEarlierFormats)
 {
-	EXPECT_EQ(ESerializationVersion::CURRENT, ESerializationVersion::NEW_HORIZONS_SYLVAN_AMBUSH);
-	EXPECT_EQ(static_cast<int>(ESerializationVersion::CURRENT), 1167);
+	EXPECT_EQ(ESerializationVersion::CURRENT, ESerializationVersion::NEW_HORIZONS_WARCAST);
+	EXPECT_EQ(static_cast<int>(ESerializationVersion::CURRENT), 1168);
+	EXPECT_EQ(static_cast<int>(ESerializationVersion::NEW_HORIZONS_SYLVAN_AMBUSH), 1167);
 	EXPECT_EQ(static_cast<int>(ESerializationVersion::NEW_HORIZONS_REVISED_SPECIALTIES), 1166);
 	EXPECT_EQ(static_cast<int>(ESerializationVersion::NEW_HORIZONS_DOUBLE_CAST_CHOSEN_PRAYERS), 1165);
 	EXPECT_EQ(ESerializationVersion::MINIMAL, ESerializationVersion::NEW_HORIZONS_CONSECRATED_ARMS);
 	EXPECT_EQ(static_cast<int>(ESerializationVersion::MINIMAL), 1164);
 	EXPECT_LT(ESerializationVersion::NEW_HORIZONS_SHARED_CAPTURED_RULES, ESerializationVersion::MINIMAL);
 	EXPECT_LT(ESerializationVersion::NEW_HORIZONS_SORCERY_RETIREMENT, ESerializationVersion::MINIMAL);
+}
+
+namespace
+{
+/// Captures written before format 1168 never held the 33rd Skill, Warcasting.
+JsonNode beforeWarcast(JsonNode rules)
+{
+	rules.Struct().erase("warcastPolicy");
+	if(rules.Struct().contains("skills"))
+		rules["skills"].Struct().erase("new-horizons:warcast");
+	if(rules.Struct().contains("skillOfferWeights"))
+		for(auto & [heroClass, row] : rules["skillOfferWeights"].Struct())
+			row.Struct().erase("new-horizons:warcast");
+	return rules;
+}
 }
 
 TEST(CapturedRulePool, DoubleCastAndChosenPrayerRulesRefuseTheConsecratedArmsFormat)
@@ -172,7 +188,7 @@ TEST(CapturedRulePool, DoubleCastAndChosenPrayerRulesRefuseTheConsecratedArmsFor
 	EXPECT_THROW(forged.iser & decoded, std::runtime_error);
 
 	CapturedRulePool legacy;
-	legacy.intern(CapturedRuleKind::Perks, overkillRandomPrayerRules());
+	legacy.intern(CapturedRuleKind::Perks, beforeWarcast(overkillRandomPrayerRules()));
 	CMemorySerializer stored;
 	stored.oser.version = ESerializationVersion::NEW_HORIZONS_CONSECRATED_ARMS;
 	stored.iser.version = ESerializationVersion::NEW_HORIZONS_CONSECRATED_ARMS;
@@ -231,7 +247,7 @@ TEST(CapturedRulePool, ActivatedOrdinaryCoefficientsRoundtripAndOlderCapturesSta
 			EXPECT_EQ(policy(restored, id)[key].Integer(), value) << key;
 
 	// 1164 and 1165 saves keep their captured absence; nothing is synthesized on load.
-	const auto older = overkillRandomPrayerHeroes();
+	const auto older = beforeWarcast(overkillRandomPrayerHeroes());
 	for(const auto version : {ESerializationVersion::NEW_HORIZONS_CONSECRATED_ARMS,
 		ESerializationVersion::NEW_HORIZONS_DOUBLE_CAST_CHOSEN_PRAYERS, ESerializationVersion::CURRENT})
 	{
