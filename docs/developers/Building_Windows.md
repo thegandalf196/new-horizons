@@ -346,6 +346,18 @@ it. The job summary counts the passed, failed, skipped and crashed cases and
 lists every case that did not pass. The `Windows-test-logs` artifact keeps the
 CTest logs, JUnit files, the `vcmitest` log, the case list and `.ninja_log`.
 
+The same build and tests can also run on Linux before a push, using Microsoft's
+compiler under Wine through [msvc-wine](https://github.com/mstorsjo/msvc-wine).
+Install the v142 toolset (`--msvc-version 14.29`, which accepts the Build Tools
+license) and a Windows SDK under `$HOME`, with a dedicated Wine prefix. Run this
+workflow's Conan and CMake commands on Linux. Add a host-profile overlay that
+points `tools.build:compiler_executables` at the msvc-wine `cl`. Set
+`CMAKE_CROSSCOMPILING_EMULATOR` to a headless `wine` script that sets both SDL
+drivers to `dummy` and puts the dependency DLLs and the MSVC debug runtime in
+`WINEPATH`. Without `winbind`, dependency builds need `/Z7` instead of `/Zi`.
+Compile errors match CI, but a test pass under Wine does not replace the Windows
+run.
+
 ## Updating an existing checkout
 
 For normal day-to-day updates, keep the Conan cache and existing solution:
