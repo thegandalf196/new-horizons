@@ -11,6 +11,7 @@
 #include "../SylvanTacticsHistoricalRules.h"
 #include "NativeAmbushEncounterObserver.h"
 #include "NativeWarcastEncounterObserver.h"
+#include "NativeAmbushQuickCombatInputs.h"
 #include "../../lib/mapping/CMap.h"
 #include "../../lib/CCreatureHandler.h"
 #include "../../lib/entities/hero/NewHorizonsLeadership.h"
@@ -59,6 +60,9 @@ protected:
 	std::unique_ptr<nativeBenchmark::AmbushEncounterObserver> ambushObserver;
 	/// Optional read-only observer around each submitted action.
 	std::function<void(const BattleInfo &, const BattleAction &, bool)> observeExtra;
+	/// Quick-combat field: real start columns, obstacles, a seed-dependent tile.
+	bool realField = false;
+	int3 battleTile{4, 4, 0};
 
 	void mapLoaded(CMap * loaded) override
 	{
@@ -192,7 +196,7 @@ protected:
 			builder.hero({5, 5, 0}, HeroTypeID(HeroTypeID::decode(heroName)), PlayerColor(0)).heroGarrison(placeholder);
 			if(neutralDefender)
 			{
-				ASSERT_EQ(right.size(), 1u);
+				ASSERT_GE(right.size(), 1u);
 				builder.monster({7, 7, 0}, right.front().first, right.front().second);
 			}
 			else
@@ -208,6 +212,9 @@ protected:
 		std::shared_ptr<CArmedInstance> leftPlain, rightPlain;
 		const auto * neutral = neutralDefender ? findFirst<CGCreature>() : nullptr;
 		if(neutralDefender) ASSERT_NE(neutral, nullptr);
+		// A map monster splits into stacks when a hero attacks it; arrange that split.
+		if(neutral && right.size() > 1)
+			ASSERT_NO_FATAL_FAILURE(arrangeRuntimeArmy(*const_cast<CGCreature *>(neutral), right));
 		if(heroName)
 		{
 			ASSERT_NE(leftHero, nullptr);
@@ -244,12 +251,12 @@ protected:
 		constexpr std::array<int, 7> rows{0, 2, 4, 5, 6, 8, 10};
 		for(size_t slot = 0; slot < 7; ++slot)
 		{
-			layout.units[BattleSide::ATTACKER][slot] = BattleHex(2, rows[slot]);
-			layout.units[BattleSide::DEFENDER][slot] = BattleHex(13, rows[slot]);
+			layout.units[BattleSide::ATTACKER][slot] = BattleHex(realField ? 1 : 2, rows[slot]);
+			layout.units[BattleSide::DEFENDER][slot] = BattleHex(realField ? 15 : 13, rows[slot]);
 		}
-		layout.obstaclesAllowed = false;
+		layout.obstaclesAllowed = realField;
 		layout.tacticsAllowed = false;
-		handler->battles->startBattle(leftArmy, rightArmy, int3(4, 4, 0), leftHero, rightHero, layout, nullptr);
+		handler->battles->startBattle(leftArmy, rightArmy, battleTile, leftHero, rightHero, layout, nullptr);
 		const auto * current = gameState()->getBattle(BattleID(0));
 		ASSERT_NE(current, nullptr);
 		initial["terrain"].Integer() = current->getTerrainType().getNum();
@@ -271,7 +278,7 @@ protected:
 			preferences.enableSpellsUsage = options;
 			preferences.enableTacticsUsage = false;
 			ais[index]->initBattleInterface(environment, callbacks[index], preferences);
-			ais[index]->battleStart(BattleID(0), leftArmy, rightArmy, int3(4, 4, 0), leftHero, rightHero,
+			ais[index]->battleStart(BattleID(0), leftArmy, rightArmy, battleTile, leftHero, rightHero,
 				index == 0 ? BattleSide::ATTACKER : BattleSide::DEFENDER, false);
 		}
 	}
@@ -484,6 +491,18 @@ TEST_F(DISABLED_NativeEncounterBenchmarkTest, MirrorRampartHeroOptions)
 	ASSERT_NO_FATAL_FAILURE(prepare(army, army, "core:mephala", true, false, false, true, "core:ivor"));
 	runEncounter();
 }
+/// Cross-version Necropolis workload: Jenova's Rampart army against Galthran's
+/// Necropolis army, shipped rules and native hero defaults (comparable across builds).
+TEST_F(DISABLED_NativeEncounterBenchmarkTest, RampartAgainstNecropolisHero)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(mirrorRampartArmy(), mirrorNecropolisArmy(), "core:jenova", true, false, false, true, "core:galthran"));
+	runEncounter();
+}
+TEST_F(DISABLED_NativeEncounterBenchmarkTest, RampartAgainstCastleHero)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(mirrorRampartArmy(), mirrorCastleArmy(), "core:jenova", true, false, false, true, "core:rion"));
+	runEncounter();
+}
 TEST_F(DISABLED_NativeEncounterBenchmarkTest, MirrorNecropolisHeroOptions)
 {
 	const auto army = mirrorNecropolisArmy();
@@ -576,6 +595,44 @@ protected:
 };
 TEST_F(DISABLED_NativeWarcastEncounterBenchmarkTest, HybridWarcast) { warcastEncounter(true); }
 TEST_F(DISABLED_NativeWarcastEncounterBenchmarkTest, HybridPlain) { warcastEncounter(false); }
+/// Quick-combat shaped Sylvan Tactics workloads (see NativeAmbushQuickCombatInputs.h):
+/// the same seed and build under policy 4 and policy 5.
+class DISABLED_NativeAmbushQuickCombatBenchmarkTest : public DISABLED_NativeEncounterBenchmarkTest,
+	public ::testing::WithParamInterface<AmbushQuickCombatCase>
+{
+};
+TEST_P(DISABLED_NativeAmbushQuickCombatBenchmarkTest, Encounter)
+{
+	const auto [opponentIndex, buildIndex, policy] = GetParam();
+	const auto opponent = ambushOpponents().at(opponentIndex);
+	const auto build = sylvanBuilds().at(buildIndex);
+	sylvanPolicy = policy;
+	realField = true;
+	battleTile = int3(3 + seed % 6, 3 + (seed / 6) % 6, 0);
+	afterHeroes = [policy, build](CGHeroInstance & rampart, CGHeroInstance *)
+	{
+		const std::string skill = "new-horizons:sylvanLuck";
+		rampart.setSecSkillLevel(SecondarySkill(SecondarySkill::decode(skill)), build.rank, ChangeValueMode::ABSOLUTE);
+		for(const auto * perk : policy == 4 ? build.perks4 : build.perks5)
+		{
+			rampart.applyPerkSelection({skill, skill + "." + perk});
+			ASSERT_TRUE(rampart.hasActivePerk(skill, skill + "." + perk)) << perk;
+		}
+	};
+	ambushObserver = std::make_unique<nativeBenchmark::AmbushEncounterObserver>(BattleSide::ATTACKER);
+	ASSERT_NO_FATAL_FAILURE(prepare(mirrorRampartArmy(), opponent.army(), "core:jenova", true, false,
+		opponent.hero == nullptr, true, opponent.hero));
+	RecordProperty("obstaclesAtStart", std::to_string(gameState()->getBattle(BattleID(0))->obstacles.size()));
+	runEncounter();
+	EXPECT_EQ(ambushObserver->summary()["rangedOrSingleSpellOnConcealed"].Integer(), 0);
+}
+INSTANTIATE_TEST_SUITE_P(QuickCombat, DISABLED_NativeAmbushQuickCombatBenchmarkTest,
+	::testing::ValuesIn(ambushQuickCombatCases()), [](const auto & info)
+	{
+		// No structured binding: its commas would split the macro argument.
+		return std::string(ambushOpponents().at(std::get<0>(info.param)).name) + "_"
+			+ sylvanBuilds().at(std::get<1>(info.param)).name + "_Policy" + std::to_string(std::get<2>(info.param));
+	});
 class DISABLED_NativeSpecialtyEncounterBenchmarkTest : public DISABLED_NativeEncounterBenchmarkTest,
 	public ::testing::WithParamInterface<SpecialtyEncounter>
 {
