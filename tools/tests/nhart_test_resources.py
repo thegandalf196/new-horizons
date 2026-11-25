@@ -84,6 +84,10 @@ def resource_before_wave(name, waves, index, reader=None):
                 from .nhart_academy_town_masks import historical_payload as mask_payload
                 payload = mask_payload(wave, replacement, payload)
                 continue
+            if 'academyHallIcons' in wave:
+                from .nhart_academy_hall_icons import historical_payload as hall_payload
+                payload = hall_payload(wave, replacement, payload)
+                continue
             if not name.endswith('.json') or set(replacement) != {'previous', 'current', 'removeAppendedSequence'}:
                 raise ValueError('Unsupported reversible resource change')
             descriptor = json.loads(payload)

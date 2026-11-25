@@ -1,0 +1,51 @@
+{
+  "format": 1,
+  "selection": "Owner-approved Academy Town Hall icons 2026-11-24",
+  "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
+  "origin": "Recomposed from the selected Academy town animation building art over the approved Academy landscape; owner-selected 2026-11-24",
+  "slot": "Town Hall build-window icon, 150x70 opaque RGBA, no own border",
+  "entries": [
+    {
+      "resource": "SPRITES/NH_academy/ui/hall/frame-016.png",
+      "role": "academy-town-hall-icon",
+      "building": "blacksmith",
+      "buildingArt": "SPRITES/NH_academy/town/buildings/tbtwblak.png",
+      "buildingArtSha256": "6e9342612881732b2f7e7db680d5ad273ec8f76e3e06447d8f02d47b5cbbf21c",
+      "variant": "with the forge smoke of the animated blacksmith",
+      "dimensions": [
+        150,
+        70
+      ],
+      "previousSha256": "77c7bfe6c5b9817bb8f7c72c23ceaddbae488480e92a145b3bd6f4e5cb9cd768",
+      "sha256": "16b8a4cfab6a6b28bd2436ce09f76ca29d92ee21858c5ed4ee259ec26d1b17e9"
+    },
+    {
+      "resource": "SPRITES/NH_academy/ui/hall/frame-032.png",
+      "role": "academy-town-hall-icon",
+      "building": "dwellingLvl3",
+      "buildingArt": "SPRITES/NH_academy/town/buildings/tbtwdw_2.png",
+      "buildingArtSha256": "8b8a14c54ca2d8bdf22eba7c9bdc7ec5c35d2e68e868e34343ca41ef848ba493",
+      "variant": "rest pose",
+      "dimensions": [
+        150,
+        70
+      ],
+      "previousSha256": "dbbdb21efe207e40ee5a83e5cff30e88876afd8adebbe4170903b31c0233e33a",
+      "sha256": "7e38a0558b43ad268ffa7045be8378541c3604f0991881c86a10f858da9214a2"
+    },
+    {
+      "resource": "SPRITES/NH_academy/ui/hall/frame-039.png",
+      "role": "academy-town-hall-icon",
+      "building": "dwellingUpLvl3",
+      "buildingArt": "SPRITES/NH_academy/town/buildings/tbtwup_2.png",
+      "buildingArtSha256": "171160d90bc40bf33e119f3bec195345b0f7dd5a02fccec4be4bb3b7c2704175",
+      "variant": "rest pose",
+      "dimensions": [
+        150,
+        70
+      ],
+      "previousSha256": "b3f3b9efd0011a2705bccba9ba901a729484888463925d08aedbafb02c5f124e",
+      "sha256": "672bd12d769ee1d159cf2925504c18f3781ad1a9fe7248c0b3f993ec6f05fe93"
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "format": 1,
+  "selection": "Owner-selected Theodorus Inexhaustible Knowledge specialty icon, option B, 2026-11-25",
+  "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
+  "origin": "Selected Codex CLI built-in imagegen painting, corrected; owner-selected option B 2026-11-25",
+  "hero": "core:theodorus",
+  "specialty": "Inexhaustible Knowledge",
+  "artwork": "newHorizons/heroSpecialties/TheodorusInexhaustibleKnowledge",
+  "slot": "Hero specialty icon: 44x44 and 32x32 transparent RGBA, 2px clear border, group 0 frame 0 descriptors",
+  "provenance": {
+    "privateRoot": "Masters, prompts and logs stay in the private New Horizons art-work library; not distributed.",
+    "generation": "Codex CLI 0.170.0 exec, built-in imagegen; 1254x1254 RGBA with genuine alpha; three concepts, owner selected option B (stack of tomes ringed by mana)",
+    "originalMasterSha256": "d3d5b9f1767f0f7faed9d0af71667ee66182288e2bf882c54c0371a607d2512c",
+    "correction": "Deterministic colour grade of the luminous mana pixels only (hue pulled toward 224 deg, saturation and value compressed) to match the Mana Furnace and Mana Leeches blues; books untouched. No repainting.",
+    "correctedMasterSha256": "d953a7e5048d9c50e9d213f92f62526ac8b1826f09a69b86baa9ee5842a74ecf",
+    "export": "Matte clean (a<8 -> 0, a>=240 -> 255), crop alpha>=24 bbox, premultiplied LANCZOS fit 40 (44) / 28 (32), centred, zero RGB under alpha<4.",
+    "notPacked": "Options A and C, the uncorrected option B and the grading trials"
+  },
+  "entries": [
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/TheodorusInexhaustibleKnowledge/32.json",
+      "role": "specialty-icon-descriptor32",
+      "image": "SPRITES/newHorizons/heroSpecialties/TheodorusInexhaustibleKnowledge/icon-32.png",
+      "sha256": "810966bb4d508fc1323f31a0bca23a765e35b4472d5b23073705f6e9b540159a"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/TheodorusInexhaustibleKnowledge/44.json",
+      "role": "specialty-icon-descriptor44",
+      "image": "SPRITES/newHorizons/heroSpecialties/TheodorusInexhaustibleKnowledge/icon-44.png",
+      "sha256": "2764c69118f08da9741170648c1dadd8165ba11ecc2acde645b21559d1c22fd2"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/TheodorusInexhaustibleKnowledge/icon-32.png",
+      "role": "specialty-icon-native32",
+      "dimensions": [
+        32,
+        32
+      ],
+      "alphaBoundingBox": [
+        3,
+        2,
+        28,
+        30
+      ],
+      "sourceMasterSha256": "d953a7e5048d9c50e9d213f92f62526ac8b1826f09a69b86baa9ee5842a74ecf",
+      "sha256": "7e3a65a320087f198a1570b29c4533f60d829872bf0fba699d5bde1b2fe0f3e9"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/TheodorusInexhaustibleKnowledge/icon-44.png",
+      "role": "specialty-icon-native44",
+      "dimensions": [
+        44,
+        44
+      ],
+      "alphaBoundingBox": [
+        4,
+        2,
+        40,
+        42
+      ],
+      "sourceMasterSha256": "d953a7e5048d9c50e9d213f92f62526ac8b1826f09a69b86baa9ee5842a74ecf",
+      "sha256": "d189a165faeb0987d93418b394a155d47c9c63f3224878a19d4037b029beee7b"
+    }
+  ]
+}

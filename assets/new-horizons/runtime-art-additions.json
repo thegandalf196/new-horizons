@@ -21685,6 +21685,127 @@
         }
       ],
       "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "baselineArchiveSha256": "cdc15c8b29bdbdfa54821a437a8168a0e46ac941a117e19b496b88e28b0cf363",
+      "baselineManifestSha256": "08590de7adb8b4a849f1e1b080a32145d9b6e9b6ecf4937f19ad38d40458204f",
+      "baselineEntriesSha256": "7c62b2d459c92016925967737936c0a8b2b283cec36be6cbd2dd1e29fc7c2ecc",
+      "baselineCount": 6759,
+      "entryCount": 6759,
+      "newArchiveSha256": "8da3356b97c5258614ff5b4c5e20f3b0a14d118f62f70b5fca6cdd9540e64258",
+      "resources": [],
+      "replacedEntries": [
+        {
+          "previous": {
+            "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
+            "family": "academy-town-and-portrait-ui",
+            "origin": "selected-supplied-or-modified-composite",
+            "resource": "SPRITES/NH_academy/ui/hall/frame-016.png",
+            "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
+            "sha256": "77c7bfe6c5b9817bb8f7c72c23ceaddbae488480e92a145b3bd6f4e5cb9cd768",
+            "size": 34169,
+            "source": "Mods/new-horizons/Images/NH_academy/ui/hall/frame-016.png"
+          },
+          "current": {
+            "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
+            "family": "academy-town-and-portrait-ui",
+            "origin": "Recomposed from the selected Academy town animation building art over the approved Academy landscape; owner-selected 2026-11-24",
+            "resource": "SPRITES/NH_academy/ui/hall/frame-016.png",
+            "selection": "Owner-approved Academy Town Hall icons 2026-11-24",
+            "sha256": "16b8a4cfab6a6b28bd2436ce09f76ca29d92ee21858c5ed4ee259ec26d1b17e9",
+            "size": 29420,
+            "source": "Mods/new-horizons/Images/NH_academy/ui/hall/frame-016.png"
+          }
+        },
+        {
+          "previous": {
+            "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
+            "family": "academy-town-and-portrait-ui",
+            "origin": "selected-supplied-or-modified-composite",
+            "resource": "SPRITES/NH_academy/ui/hall/frame-032.png",
+            "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
+            "sha256": "dbbdb21efe207e40ee5a83e5cff30e88876afd8adebbe4170903b31c0233e33a",
+            "size": 34165,
+            "source": "Mods/new-horizons/Images/NH_academy/ui/hall/frame-032.png"
+          },
+          "current": {
+            "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
+            "family": "academy-town-and-portrait-ui",
+            "origin": "Recomposed from the selected Academy town animation building art over the approved Academy landscape; owner-selected 2026-11-24",
+            "resource": "SPRITES/NH_academy/ui/hall/frame-032.png",
+            "selection": "Owner-approved Academy Town Hall icons 2026-11-24",
+            "sha256": "7e38a0558b43ad268ffa7045be8378541c3604f0991881c86a10f858da9214a2",
+            "size": 29204,
+            "source": "Mods/new-horizons/Images/NH_academy/ui/hall/frame-032.png"
+          }
+        },
+        {
+          "previous": {
+            "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
+            "family": "academy-town-and-portrait-ui",
+            "origin": "selected-supplied-or-modified-composite",
+            "resource": "SPRITES/NH_academy/ui/hall/frame-039.png",
+            "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
+            "sha256": "b3f3b9efd0011a2705bccba9ba901a729484888463925d08aedbafb02c5f124e",
+            "size": 34292,
+            "source": "Mods/new-horizons/Images/NH_academy/ui/hall/frame-039.png"
+          },
+          "current": {
+            "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
+            "family": "academy-town-and-portrait-ui",
+            "origin": "Recomposed from the selected Academy town animation building art over the approved Academy landscape; owner-selected 2026-11-24",
+            "resource": "SPRITES/NH_academy/ui/hall/frame-039.png",
+            "selection": "Owner-approved Academy Town Hall icons 2026-11-24",
+            "sha256": "672bd12d769ee1d159cf2925504c18f3781ad1a9fe7248c0b3f993ec6f05fe93",
+            "size": 29346,
+            "source": "Mods/new-horizons/Images/NH_academy/ui/hall/frame-039.png"
+          }
+        }
+      ],
+      "perks": [],
+      "statuses": [],
+      "reusedBindings": [],
+      "academyHallIcons": [
+        {
+          "resources": [],
+          "replaced": [
+            "SPRITES/NH_academy/ui/hall/frame-016.png",
+            "SPRITES/NH_academy/ui/hall/frame-032.png",
+            "SPRITES/NH_academy/ui/hall/frame-039.png"
+          ],
+          "selectionRecordSha256": "a3e09da7c724eda3460533b27247c97c98b00feb030ea6b4572b3c893fbeb1b5"
+        }
+      ],
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "baselineArchiveSha256": "8da3356b97c5258614ff5b4c5e20f3b0a14d118f62f70b5fca6cdd9540e64258",
+      "baselineManifestSha256": "8df7524162dcd56cf119318b0168ee4d75c2094ffa1376efa65ce68c11c8cc5a",
+      "baselineEntriesSha256": "17ba3d7518685e23bbb9b8f992022a6bd41a27d5b05cab7d53b1af9bc6c544ca",
+      "baselineCount": 6759,
+      "entryCount": 6763,
+      "newArchiveSha256": "71b30185648f35ba507a80d0cb184530745d2e9f79ab1574e6ca7da2eb41251c",
+      "resources": [
+        "SPRITES/newHorizons/heroSpecialties/TheodorusInexhaustibleKnowledge/32.json",
+        "SPRITES/newHorizons/heroSpecialties/TheodorusInexhaustibleKnowledge/44.json",
+        "SPRITES/newHorizons/heroSpecialties/TheodorusInexhaustibleKnowledge/icon-32.png",
+        "SPRITES/newHorizons/heroSpecialties/TheodorusInexhaustibleKnowledge/icon-44.png"
+      ],
+      "perks": [],
+      "statuses": [],
+      "reusedBindings": [],
+      "inexhaustibleKnowledgeSpecialty": [
+        {
+          "resources": [
+            "SPRITES/newHorizons/heroSpecialties/TheodorusInexhaustibleKnowledge/32.json",
+            "SPRITES/newHorizons/heroSpecialties/TheodorusInexhaustibleKnowledge/44.json",
+            "SPRITES/newHorizons/heroSpecialties/TheodorusInexhaustibleKnowledge/icon-32.png",
+            "SPRITES/newHorizons/heroSpecialties/TheodorusInexhaustibleKnowledge/icon-44.png"
+          ],
+          "selectionRecordSha256": "19342735f253606263400e99e37a7c7fa6486c5f43b768166ac7266cc10a5778"
+        }
+      ],
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
     }
   ]
 }

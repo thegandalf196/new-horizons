@@ -37,7 +37,7 @@
     "ghost-creature-portraits": 2,
     "guild-room-composites-and-bindings": 10,
     "hero-interface-buttons": 11,
-    "hero-specialty-icons": 236,
+    "hero-specialty-icons": 240,
     "mage-guild-town-art-and-ui": 87,
     "magi-and-archmagi": 348,
     "mummy-runtime": 102,
@@ -3080,13 +3080,13 @@
       "source": "Mods/new-horizons/Images/NH_academy/ui/hall/frame-015.png"
     },
     {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
       "family": "academy-town-and-portrait-ui",
-      "origin": "selected-supplied-or-modified-composite",
+      "origin": "Recomposed from the selected Academy town animation building art over the approved Academy landscape; owner-selected 2026-11-24",
       "resource": "SPRITES/NH_academy/ui/hall/frame-016.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "77c7bfe6c5b9817bb8f7c72c23ceaddbae488480e92a145b3bd6f4e5cb9cd768",
-      "size": 34169,
+      "selection": "Owner-approved Academy Town Hall icons 2026-11-24",
+      "sha256": "16b8a4cfab6a6b28bd2436ce09f76ca29d92ee21858c5ed4ee259ec26d1b17e9",
+      "size": 29420,
       "source": "Mods/new-horizons/Images/NH_academy/ui/hall/frame-016.png"
     },
     {
@@ -3240,13 +3240,13 @@
       "source": "Mods/new-horizons/Images/NH_academy/ui/hall/frame-031.png"
     },
     {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
       "family": "academy-town-and-portrait-ui",
-      "origin": "selected-supplied-or-modified-composite",
+      "origin": "Recomposed from the selected Academy town animation building art over the approved Academy landscape; owner-selected 2026-11-24",
       "resource": "SPRITES/NH_academy/ui/hall/frame-032.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "dbbdb21efe207e40ee5a83e5cff30e88876afd8adebbe4170903b31c0233e33a",
-      "size": 34165,
+      "selection": "Owner-approved Academy Town Hall icons 2026-11-24",
+      "sha256": "7e38a0558b43ad268ffa7045be8378541c3604f0991881c86a10f858da9214a2",
+      "size": 29204,
       "source": "Mods/new-horizons/Images/NH_academy/ui/hall/frame-032.png"
     },
     {
@@ -3310,13 +3310,13 @@
       "source": "Mods/new-horizons/Images/NH_academy/ui/hall/frame-038.png"
     },
     {
-      "approval": "user-selected-runtime-art-bundle-2026-10-08; not blanket-original-archive-authorization",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending",
       "family": "academy-town-and-portrait-ui",
-      "origin": "selected-supplied-or-modified-composite",
+      "origin": "Recomposed from the selected Academy town animation building art over the approved Academy landscape; owner-selected 2026-11-24",
       "resource": "SPRITES/NH_academy/ui/hall/frame-039.png",
-      "selection": "pinned-current-runtime-1c720ae7826b8819b6e776d9af2652c79e8f72eb311806189e83ec07eeb3526e",
-      "sha256": "b3f3b9efd0011a2705bccba9ba901a729484888463925d08aedbafb02c5f124e",
-      "size": 34292,
+      "selection": "Owner-approved Academy Town Hall icons 2026-11-24",
+      "sha256": "672bd12d769ee1d159cf2925504c18f3781ad1a9fe7248c0b3f993ec6f05fe93",
+      "size": 29346,
       "source": "Mods/new-horizons/Images/NH_academy/ui/hall/frame-039.png"
     },
     {
@@ -67637,6 +67637,46 @@
       "family": "builtin-skills-perks-orders-and-ui",
       "origin": "Original Codex CLI built-in imagegen transparent foreground; premultiplied-alpha native export",
       "selection": "Owner-approved Warcasting rank and perk art 2026-11-23/24",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/TheodorusInexhaustibleKnowledge/icon-44.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/TheodorusInexhaustibleKnowledge/icon-44.png",
+      "size": 3885,
+      "sha256": "d189a165faeb0987d93418b394a155d47c9c63f3224878a19d4037b029beee7b",
+      "family": "hero-specialty-icons",
+      "origin": "Selected Codex CLI built-in imagegen painting, corrected; owner-selected option B 2026-11-25",
+      "selection": "Owner-selected Theodorus Inexhaustible Knowledge specialty icon, option B, 2026-11-25",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/TheodorusInexhaustibleKnowledge/icon-32.png",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/TheodorusInexhaustibleKnowledge/icon-32.png",
+      "size": 2134,
+      "sha256": "7e3a65a320087f198a1570b29c4533f60d829872bf0fba699d5bde1b2fe0f3e9",
+      "family": "hero-specialty-icons",
+      "origin": "Selected Codex CLI built-in imagegen painting, corrected; owner-selected option B 2026-11-25",
+      "selection": "Owner-selected Theodorus Inexhaustible Knowledge specialty icon, option B, 2026-11-25",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/TheodorusInexhaustibleKnowledge/44.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/TheodorusInexhaustibleKnowledge/44.json",
+      "size": 158,
+      "sha256": "2764c69118f08da9741170648c1dadd8165ba11ecc2acde645b21559d1c22fd2",
+      "family": "hero-specialty-icons",
+      "origin": "Authored group 0 frame 0 descriptor for the selected specialty icon",
+      "selection": "Owner-selected Theodorus Inexhaustible Knowledge specialty icon, option B, 2026-11-25",
+      "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
+    },
+    {
+      "resource": "SPRITES/newHorizons/heroSpecialties/TheodorusInexhaustibleKnowledge/32.json",
+      "source": "Mods/new-horizons/Images/newHorizons/heroSpecialties/TheodorusInexhaustibleKnowledge/32.json",
+      "size": 158,
+      "sha256": "810966bb4d508fc1323f31a0bca23a765e35b4472d5b23073705f6e9b540159a",
+      "family": "hero-specialty-icons",
+      "origin": "Authored group 0 frame 0 descriptor for the selected specialty icon",
+      "selection": "Owner-selected Theodorus Inexhaustible Knowledge specialty icon, option B, 2026-11-25",
       "approval": "Selected provisional runtime; not Final; rendered acceptance pending"
     }
   ]

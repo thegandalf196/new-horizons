@@ -22,6 +22,8 @@ from .nhart_academy_town_masks import town_mask_wave
 from .nhart_sylvan_ambush_art import sylvan_ambush_wave
 from .nhart_spell_school_badges import school_badge_wave
 from .nhart_warcasting_art import warcasting_wave
+from .nhart_academy_hall_icons import hall_icon_wave
+from .nhart_inexhaustible_knowledge_art import inexhaustible_knowledge_wave
 
 AUTHORITY_CURRENT = (
     ('massedRanks', 'offensive_drills'), ('veteranCadre', 'defensive_drills'),
@@ -103,6 +105,8 @@ def released_predecessor_entries(entries, waves, digest):
     sylvan_ambush_wave(waves)
     school_badge_wave(waves)
     warcasting_wave(waves)
+    hall_icon_wave(waves)
+    inexhaustible_knowledge_wave(waves)
     matches = [i for i, wave in enumerate(waves) if wave['baselineArchiveSha256'] == BRIDGE_NEXT_ARCHIVE]
     if len(matches) != 1 or matches[0] == 0:
         raise ValueError('Missing exact released-art bridge boundary')
@@ -152,6 +156,9 @@ def baseline_payload_proof(row, payload):
             return 'verified-selected-replacement'
         from .nhart_academy_town_masks import town_mask_replacement_proof
         if town_mask_replacement_proof(row, payload):
+            return 'verified-selected-replacement'
+        from .nhart_academy_hall_icons import hall_icon_replacement_proof
+        if hall_icon_replacement_proof(row, payload):
             return 'verified-selected-replacement'
         raise ValueError('Historical baseline payload changed')
     return 'verified-matching-payload'
