@@ -8,6 +8,7 @@
 
 void HypotheticBattle::captureCurrentBonusOperations(const Subject & source)
 {
+	sourceBinding.adjacencyMemo.invalidate();
 	if(const auto * parent = dynamic_cast<const HypotheticBattle *>(source.get()))
 		committedBonusOperations = parent->committedBonusOperations;
 	else

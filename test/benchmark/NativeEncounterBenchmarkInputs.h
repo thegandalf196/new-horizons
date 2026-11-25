@@ -139,6 +139,11 @@ inline std::vector<SpecialtyEncounter> specialtyEncounters()
 			"core:rion", {}, true},
 		{"Ryland", "core:ryland", +[] { return withSlot(mirrorRampartArmy(), 3, "core:dendroidSoldier", 6); }, castle,
 			"core:rion", {}, true},
+		// The other adjacency-aura specialists (the battle AI re-derives their auras per projected unit).
+		{"Charna", "core:charna", mirrorNecropolisArmy, mirrorNecropolisArmy, "core:ivor", {}, true},
+		{"Vey", "core:vey", strongholdArmy, strongholdArmy, "core:ivor", {}, true},
+		{"Pasis", "core:pasis", +[] { return withSlot(confluxArmy(), 4, "core:psychicElemental", 5); }, confluxArmy,
+			"core:ivor", {}, true},
 	};
 }
 }

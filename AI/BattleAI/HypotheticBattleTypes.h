@@ -16,12 +16,12 @@
 #include "../../lib/constants/EntityIdentifiers.h"
 #include "../../lib/battle/BattleHex.h"
 #include "../../lib/battle/HeroActionAllowanceState.h"
+#include "ProjectedAdjacencyMemo.h"
 
 class JsonNode;
 class StackWithBonuses;
 class CBattleInfoCallback;
 class InitialExportBattleSubject;
-struct ProjectedAdjacencySources;
 
 /// Invocation-local no-op witness: mutable flags copy independently of its frozen JSON.
 struct HypotheticLifeDrainFriendlyObservation
@@ -44,6 +44,8 @@ class HypotheticSourceBinding final
 	std::shared_ptr<const ProjectedAdjacencySources> adjacency;
 	bool matches(const std::shared_ptr<CBattleInfoCallback> & subject) const;
 public:
+	/// Derived answers for the adjacency sources above; reset by rebinding.
+	ProjectedAdjacencyMemoSlot adjacencyMemo;
 	/// Exact existing subject/control-block identity; not a lifetime lease.
 	bool isCurrentSource(const std::shared_ptr<CBattleInfoCallback> & subject) const { return matches(subject); }
 	HypotheticSourceBinding(const std::shared_ptr<CBattleInfoCallback> & subject,

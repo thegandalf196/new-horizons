@@ -133,6 +133,26 @@ TEST_F(NativePassiveSpecialtyProjectionTest, UnknownChillingPresenceFollowsCurre
 	EXPECT_EQ(child->battleGetVisibleHeroPolicy(BattleSide::ATTACKER).kind(), VisibleHeroPolicy::Knowledge::HIDDEN_UNKNOWN);
 	EXPECT_EQ(observation(), outside);
 }
+/// The AI's adjacency memo keys on roster values, not on mutator calls: a
+/// neighbour moved through a held state, with no branch mutator, still changes
+/// the reused answer, and moving it back restores the first one.
+TEST_F(NativePassiveSpecialtyProjectionTest, ChillingPresenceFollowsAHeldNeighbourMovedWithoutABranchMutator)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare("core:charna"));
+	const auto * wight = addStack(BattleSide::ATTACKER, creatureByName("core:wight"), BattleHex(7, 4), 100);
+	const auto * victim = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(8, 4), 100);
+	ASSERT_NE(wight, nullptr); ASSERT_NE(victim, nullptr);
+	ASSERT_NO_FATAL_FAILURE(branches(PlayerColor(1)));
+	const auto mover = child->getForUpdate(wight->unitId());
+	const auto recipient = child->getForUpdate(victim->unitId());
+	const auto morale = recipient->valOfBonuses(BonusType::MORALE);
+	EXPECT_EQ(recipient->valOfBonuses(BonusType::MORALE), morale);
+	mover->setPosition(BattleHex(4, 2));
+	EXPECT_EQ(recipient->valOfBonuses(BonusType::MORALE), morale + 1);
+	EXPECT_EQ(recipient->valOfBonuses(BonusType::MORALE), morale + 1);
+	mover->setPosition(wight->getPosition());
+	EXPECT_EQ(recipient->valOfBonuses(BonusType::MORALE), morale);
+}
 TEST_F(NativePassiveSpecialtyProjectionTest, TreantmootPrunesDeliberateTargetsButKeepsCollateralDamage)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare("core:ryland"));

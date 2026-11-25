@@ -51,6 +51,9 @@ read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 - Fixed the battle AI falling one move behind after one of its moves was
   refused: for the rest of that combat it worked out every move twice and had
   every other one refused, which slowed quick combat.
+- Quick combat is faster in battles with Galthran, Ryland, Charna, Vey or
+  Pasis: the battle AI no longer works out their aura specialties from scratch
+  for every stack it considers. Its choices do not change.
 
 ## 0.94.0-beta.3
 

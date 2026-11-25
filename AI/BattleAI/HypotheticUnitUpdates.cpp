@@ -48,6 +48,7 @@ std::optional<SpellID> entangleSpellId()
 
 void HypotheticBattle::addUnit(uint32_t id, const JsonNode & data)
 {
+	sourceBinding.adjacencyMemo.invalidate();
 	if(forecastState()) throw std::logic_error("Roster creation requires a preflighted reference closure");
 	if(usesOwnedFrameQueries()) throw std::logic_error("Owned creation requires an admitted source-domain recipe");
 	invalidateLifeDrainFriendlyObservation(id);
@@ -72,6 +73,7 @@ void HypotheticBattle::addUnit(uint32_t id, const JsonNode & data)
 
 void HypotheticBattle::moveUnit(uint32_t id, const BattleHex & destination)
 {
+	sourceBinding.adjacencyMemo.invalidate();
 	if(forecast::NativeAdapter::moveUnit(*this, id, destination)) return;
 	std::shared_ptr<StackWithBonuses> changed = getForUpdate(id);
 	const bool moved = changed->position != destination;
@@ -192,6 +194,7 @@ std::vector<ProjectedOverwatchHit> HypotheticBattle::projectVoluntaryMovement(ui
 
 void HypotheticBattle::updateUnit(uint32_t id, const JsonNode & data, int64_t healthDelta)
 {
+	sourceBinding.adjacencyMemo.invalidate();
 	if(forecast::NativeAdapter::updateUnit(*this, id, data, healthDelta)) return;
 	std::shared_ptr<StackWithBonuses> changed = getForUpdateImpl(id);
 	const bool wasAlive = changed->alive();
@@ -243,6 +246,7 @@ void HypotheticBattle::updateUnit(uint32_t id, const JsonNode & data, int64_t he
 
 void HypotheticBattle::removeUnit(uint32_t id)
 {
+	sourceBinding.adjacencyMemo.invalidate();
 	if(forecastState()) throw std::logic_error("Roster removal requires a preflighted reference closure");
 	std::set<uint32_t> ids;
 	ids.insert(id);
@@ -347,6 +351,7 @@ battle::BattleEffectSnapshot HypotheticBattle::captureBattleEffects(uint32_t id)
 
 void HypotheticBattle::exchangeBattleEffects(const battle::BattleEffectExchange & exchange)
 {
+	sourceBinding.adjacencyMemo.invalidate();
 	if(forecastState() && !exchange.endpoints.empty())
 		throw std::logic_error("Effect exchange requires a preflighted reference closure");
 	if(usesOwnedFrameQueries()) throw std::logic_error("Owned exchange requires its canonical transaction metadata");
@@ -375,6 +380,7 @@ void HypotheticBattle::exchangeBattleEffects(const battle::BattleEffectExchange 
 
 void HypotheticBattle::addUnitBonus(uint32_t id, const std::vector<Bonus> & bonus)
 {
+	sourceBinding.adjacencyMemo.invalidate();
 	if(forecastState())
 	{
 		std::optional<int32_t> stamp;
@@ -388,6 +394,7 @@ void HypotheticBattle::addUnitBonus(uint32_t id, const std::vector<Bonus> & bonu
 
 void HypotheticBattle::updateUnitBonus(uint32_t id, const std::vector<Bonus> & bonus)
 {
+	sourceBinding.adjacencyMemo.invalidate();
 	if(forecast::NativeAdapter::effectUpdate(*this, id, bonus)) return;
 	getForUpdate(id)->updateUnitBonus(bonus);
 	bonusTreeVersion++;
@@ -395,6 +402,7 @@ void HypotheticBattle::updateUnitBonus(uint32_t id, const std::vector<Bonus> & b
 
 void HypotheticBattle::removeUnitBonus(uint32_t id, const std::vector<Bonus> & bonus)
 {
+	sourceBinding.adjacencyMemo.invalidate();
 	if(forecast::NativeAdapter::effectApplication(*this, id, bonus, {})) return;
 	const auto unit = getForUpdate(id);
 	const auto markers = unit->getBonuses(CSelector(battle::isPolymorphMarker));

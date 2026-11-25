@@ -625,70 +625,70 @@
       "functions": [
         {
           "symbol": "HypotheticSourceBinding::bool isCurrentSource(const std::shared_ptr<CBattleInfoCallback> & subject) const#1",
-          "start": 48,
-          "end": 48
+          "start": 50,
+          "end": 50
         },
         {
           "symbol": "HypotheticSourceBinding::std::shared_ptr<const ProjectedAdjacencySources> adjacencySources( const std::shared_ptr<CBattleInfoCallback> & subject) const#1",
-          "start": 52,
-          "end": 56
+          "start": 54,
+          "end": 58
         },
         {
           "symbol": "HypotheticLifecycleTiming::StageTiming::void accumulate(const StageTiming & sample)#1",
-          "start": 67,
-          "end": 72
+          "start": 69,
+          "end": 74
         },
         {
           "symbol": "RNGStub::int nextInt() override#1",
-          "start": 109,
-          "end": 112
+          "start": 111,
+          "end": 114
         },
         {
           "symbol": "RNGStub::int nextBinomialInt(int coinsCount, double coinChance) override#1",
-          "start": 114,
-          "end": 117
+          "start": 116,
+          "end": 119
         },
         {
           "symbol": "RNGStub::int nextInt(int lower, int upper) override#1",
-          "start": 119,
-          "end": 122
+          "start": 121,
+          "end": 124
         },
         {
           "symbol": "RNGStub::int64_t nextInt64(int64_t lower, int64_t upper) override#1",
-          "start": 123,
-          "end": 126
+          "start": 125,
+          "end": 128
         },
         {
           "symbol": "RNGStub::double nextDouble(double lower, double upper) override#1",
-          "start": 127,
-          "end": 130
+          "start": 129,
+          "end": 132
         },
         {
           "symbol": "RNGStub::int nextInt(int upper) override#1",
-          "start": 132,
-          "end": 135
+          "start": 134,
+          "end": 137
         },
         {
           "symbol": "RNGStub::int64_t nextInt64(int64_t upper) override#1",
-          "start": 136,
-          "end": 139
+          "start": 138,
+          "end": 141
         },
         {
           "symbol": "RNGStub::double nextDouble(double upper) override#1",
-          "start": 140,
-          "end": 143
+          "start": 142,
+          "end": 145
         },
         {
           "symbol": "HypotheticProjectedActionReceipt::bool isHeroAction() const#1",
-          "start": 170,
-          "end": 173
+          "start": 172,
+          "end": 175
         }
       ],
       "prefix_predecessor_review": "IR-ORDINARY-P0-DUST-CLOCK-R7-SOURCE-20261101",
-      "previous_review": "IR-DAMAGE-PREFIX-PAIR-REUSE-R6-SOURCE-20261101",
+      "previous_review": "IR-NH0921-MSVC-OBSERVATION-INVENTORY-20261118",
       "proposed_review": "IR-DAMAGE-PREFIX-PAIR-REUSE-R6-SOURCE-20261101",
-      "rationale": "Complete exact174-line types header inventory independently checked against prior162-line source. All12 original handwritten callable bodies remain byte-identical, with physical spans shifted by12. New JsonNode forward declaration and passive HypotheticLifeDrainFriendlyObservation aggregate add six data fields only, including the const shared snapshot owner; no handwritten constructor, method, lambda or function-like macro is added. All existing nested timing/callback/source-binding bodies remain covered. Exact complete callable coverage only; no numeric waiver, future growth or native/MSVC/rendered/performance acceptance.",
-      "review": "IR-NH0921-MSVC-OBSERVATION-INVENTORY-20261118",
+      "rationale": "Complete exact174-line types header inventory independently checked against prior162-line source. All12 original handwritten callable bodies remain byte-identical, with physical spans shifted by12. New JsonNode forward declaration and passive HypotheticLifeDrainFriendlyObservation aggregate add six data fields only, including the const shared snapshot owner; no handwritten constructor, method, lambda or function-like macro is added. All existing nested timing/callback/source-binding bodies remain covered. Exact complete callable coverage only; no numeric waiver, future growth or native/MSVC/rendered/performance acceptance. Adjacency memo: the source binding gains one ProjectedAdjacencyMemoSlot data member with its comment, and the ProjectedAdjacencySources forward declaration becomes an include of ProjectedAdjacencyMemo.h; no callable is added and the twelve bodies are unchanged, shifted by up to two lines.",
+      "review": "CLAUDE-ADJACENCY-MEMO-20261125",
       "review_history": [
         {
           "functions": [
@@ -765,7 +765,7 @@
       ],
       "review_scope": "Complete exact-content callable inventory of unchanged comparison-source bytes; historical review fields are provenance only.",
       "review_status": "INDEPENDENT_COMPLETE_EXACT_SOURCE_COVERAGE_REVIEWED",
-      "sha256": "03119c2b66f53294367082f1193c47a7daf346215119eae8aaff92d6ffef2e8b"
+      "sha256": "212ab0fcc82fd15ef199f8f83838d157c219b030578dc776f37401cc300e40b4"
     },
     "AI/BattleAI/SpellTargetsEvaluator.h": {
       "sha256": "90f9058af637b63449b499a629b388e397c7e003ea7db56e4c4566d6b587016b",

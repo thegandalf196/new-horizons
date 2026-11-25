@@ -206,6 +206,7 @@ set(battleAI_SRCS
 		PossibleSpellcast.cpp
 		PotentialTargets.cpp
 		ProjectedAdjacencyBonuses.cpp
+		ProjectedAdjacencyMemo.cpp
 		StackWithBonuses.cpp
 		StackWithBonusesEffects.cpp
 		HypotheticBattle.cpp
@@ -418,6 +419,7 @@ set(battleAI_HEADERS
 		PossibleSpellcast.h
 		NewHorizonsHexOfPain.h
 		ProjectedAdjacencyBonuses.h
+		ProjectedAdjacencyMemo.h
 		StackWithBonuses.h
 		HypotheticEffectSnapshotRules.h
 		HypotheticLifecycleTimingScope.h

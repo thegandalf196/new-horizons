@@ -9,6 +9,7 @@
 #include "StackWithBonuses.h"
 #include "HypotheticBattle.h"
 #include "InitialExportBattleSubject.h"
+#include "ProjectedAdjacencyMemo.h"
 #include "../../lib/CStack.h"
 #include "../../lib/CCreatureHandler.h"
 #include "../../lib/battle/BattleInfo.h"
@@ -27,11 +28,6 @@
 #include <string_view>
 #include <typeinfo>
 #include <vector>
-
-struct ProjectedAdjacencySources
-{
-	std::vector<std::shared_ptr<Bonus>> records;
-};
 
 namespace
 {
@@ -254,7 +250,6 @@ TConstBonusListPtr ProjectedAdjacencyBonuses::query(const StackWithBonuses & uni
 	const auto * native = nativeSource(unit);
 	if(!native)
 		return {}; // Foreign providers retain their existing unsupported semantics.
-	const auto policy = unit.owner->battleGetVisibleHeroPolicy(native->unitSide());
 	auto units = unit.owner->battleGetUnitsIf([](const battle::Unit *) { return true; });
 	const auto found = std::ranges::find_if(units, [&unit](const battle::Unit * candidate)
 		{ return candidate && candidate->unitId() == unit.unitId(); });
@@ -264,8 +259,27 @@ TConstBonusListPtr ProjectedAdjacencyBonuses::query(const StackWithBonuses & uni
 	if(*found != native && (!projected || nativeSource(*projected) != native))
 		return {};
 	*found = &unit; // Same authorized occurrence; preserve its current scalar view.
-	const ProjectedBonusRoster roster(std::vector<const battle::Unit *>(units.begin(), units.end()));
-	const auto * nativeBattle = native->getBattle();
+	const std::vector<const battle::Unit *> roster(units.begin(), units.end());
+	const auto & owner = *unit.owner;
+	const ProjectedAdjacencyBranchFacts branch{native, sources, owner.committedBonusOperations,
+		owner.getTreeVersion(), owner.getRound(), owner.getActiveStackID()};
+	const auto baseline = owner.sourceBinding.adjacencyMemo.lookup(unit, branch, roster,
+		[&unit, native, &sources, &roster]() { return projectedBaseline(unit, *native, sources, roster); });
+	if(!baseline.records)
+		return {};
+	ProjectedAdjacencyQuery query;
+	query.veteranCohesionEarned = baseline.veteranCohesionEarned;
+	query.baseline = baseline.records;
+	return unit.mergeBonusesImpl(selector, cachingStr, unstacked, &query);
+}
+
+ProjectedAdjacencyBaseline ProjectedAdjacencyBonuses::projectedBaseline(const StackWithBonuses & unit,
+	const CStack & native, const std::shared_ptr<const ProjectedAdjacencySources> & sources,
+	const std::vector<const battle::Unit *> & units)
+{
+	const auto policy = unit.owner->battleGetVisibleHeroPolicy(native.unitSide());
+	const ProjectedBonusRoster roster(units);
+	const auto * nativeBattle = native.getBattle();
 	// First-party projected additions own a cold CStack bearer. Retain the real
 	// subject chain for this query, rather than storing a borrowed callback.
 	auto source = unit.owner->subject;
@@ -284,24 +298,22 @@ TConstBonusListPtr ProjectedAdjacencyBonuses::query(const StackWithBonuses & uni
 	}
 	if(!nativeBattle)
 		return {}; // Foreign provenance has no authorized adjacency domain.
-	TConstBonusListPtr baseline;
+	TConstBonusListPtr nativeList;
 	{
 		NativeBonusGraphAccess access;
-		baseline = native->CBonusSystemNode::getUnstackedBonuses(Selector::all);
+		nativeList = native.CBonusSystemNode::getUnstackedBonuses(Selector::all);
 	}
-	const auto numeric = unit.owner->currentBonusOperationBaseline(*native, unit, roster, *baseline);
+	auto baseline = nativeList;
+	const auto numeric = unit.owner->currentBonusOperationBaseline(native, unit, roster, *baseline);
 	if(!numeric && !sources) return {};
 	if(numeric) baseline = numeric;
 	if(sources)
 	{
-		const BonusEvaluationContext evaluation(*native, unit, roster,
+		const BonusEvaluationContext evaluation(native, unit, roster,
 			{policy.legacyHero(), nativeBattle});
-		baseline = projectedNativeBaseline(*native, evaluation, *sources, baseline, !numeric);
+		baseline = projectedNativeBaseline(native, evaluation, *sources, baseline, !numeric);
 	}
-	ProjectedAdjacencyQuery query;
-	query.veteranCohesionEarned = native->veteranCohesionEarned;
-	query.baseline = std::move(baseline);
-	return unit.mergeBonusesImpl(selector, cachingStr, unstacked, &query);
+	return {baseline, native.veteranCohesionEarned, nativeList};
 }
 
 TConstBonusListPtr StackWithBonuses::mergeBonuses(const CSelector & selector,

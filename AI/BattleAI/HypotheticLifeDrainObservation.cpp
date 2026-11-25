@@ -14,6 +14,7 @@ std::optional<size_t> HypotheticBattle::ownedForecastSize() const noexcept
 
 std::shared_ptr<StackWithBonuses> HypotheticBattle::getForUpdateImpl(uint32_t id)
 {
+	sourceBinding.adjacencyMemo.invalidate();
 	if(acceptedReplayAcquisitions) acceptedReplayAcquisitions->insert(id);
 	auto iter = stackStates.find(id);
 
