@@ -102,16 +102,12 @@ public:
 
 struct ProjectedAdjacencyQuery
 {
-	TConstBonusListPtr baseline;
-	bool veteranCohesionEarned = false;
+	ProjectedAdjacencyBaseline baseline;
 
 	TConstBonusListPtr nativeBonuses(const CSelector & selector, bool unstacked) const
 	{
-		auto result = std::make_shared<BonusList>(*baseline);
-		if(!unstacked)
-			result->stackBonuses();
-		result->remove_if([&selector](const Bonus * bonus) { return !selector(bonus); });
-		return newHorizonsDiscipline::veteranCohesionBonuses(result, selector, veteranCohesionEarned);
+		return newHorizonsDiscipline::veteranCohesionBonuses(
+			selectProjectedAdjacencyRecords(baseline, selector, unstacked), selector, baseline.veteranCohesionEarned);
 	}
 };
 
@@ -247,7 +243,14 @@ TConstBonusListPtr ProjectedAdjacencyBonuses::query(const StackWithBonuses & uni
 	// Reject a rebound proxy certificate before following borrowed native
 	// providers or asking the graph to execute any updater.
 	unit.owner->validateCurrentBonusOperationSource();
-	const auto * native = nativeSource(unit);
+	const auto & memo = unit.owner->sourceBinding.adjacencyMemo;
+	const auto layerSource = [&memo](const StackWithBonuses & layer)
+	{
+		const bool scoring = layer.damageScoringBonuses.has_value() || layer.damageScoringUnstackedBonuses.has_value();
+		const ProjectedAdjacencyLayerFacts facts{layer.origBearer, layer.originalUnit, scoring, layer.getTreeVersion()};
+		return memo.nativeSource(layer, facts, [&layer]() { return nativeSource(layer); });
+	};
+	const auto * native = layerSource(unit);
 	if(!native)
 		return {}; // Foreign providers retain their existing unsupported semantics.
 	auto units = unit.owner->battleGetUnitsIf([](const battle::Unit *) { return true; });
@@ -256,20 +259,17 @@ TConstBonusListPtr ProjectedAdjacencyBonuses::query(const StackWithBonuses & uni
 	if(found == units.end())
 		return {};
 	const auto * projected = dynamic_cast<const StackWithBonuses *>(*found);
-	if(*found != native && (!projected || nativeSource(*projected) != native))
+	if(*found != native && (!projected || layerSource(*projected) != native))
 		return {};
 	*found = &unit; // Same authorized occurrence; preserve its current scalar view.
 	const std::vector<const battle::Unit *> roster(units.begin(), units.end());
 	const auto & owner = *unit.owner;
 	const ProjectedAdjacencyBranchFacts branch{native, sources, owner.committedBonusOperations,
 		owner.getTreeVersion(), owner.getRound(), owner.getActiveStackID()};
-	const auto baseline = owner.sourceBinding.adjacencyMemo.lookup(unit, branch, roster,
-		[&unit, native, &sources, &roster]() { return projectedBaseline(unit, *native, sources, roster); });
-	if(!baseline.records)
+	ProjectedAdjacencyQuery query{memo.lookup(unit, branch, roster,
+		[&unit, native, &sources, &roster]() { return projectedBaseline(unit, *native, sources, roster); })};
+	if(!query.baseline.records)
 		return {};
-	ProjectedAdjacencyQuery query;
-	query.veteranCohesionEarned = baseline.veteranCohesionEarned;
-	query.baseline = baseline.records;
 	return unit.mergeBonusesImpl(selector, cachingStr, unstacked, &query);
 }
 

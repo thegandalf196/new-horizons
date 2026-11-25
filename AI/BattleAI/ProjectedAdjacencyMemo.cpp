@@ -59,26 +59,6 @@ bool sameBranch(const ProjectedAdjacencyBranchFacts & left, const ProjectedAdjac
 		&& left.treeVersion == right.treeVersion && left.round == right.round && left.activeStack == right.activeStack;
 }
 
-/// Indices of records the original query creates afresh on every call: neither
-/// a native node record nor an authorized source record.
-std::vector<size_t> freshRecords(const ProjectedAdjacencyBaseline & value, const ProjectedAdjacencySources * sources)
-{
-	std::vector<size_t> result;
-	if(!value.records)
-		return result;
-	std::set<const Bonus *> stable;
-	if(value.native)
-		for(const auto & record : *value.native)
-			stable.insert(record.get());
-	if(sources)
-		for(const auto & record : sources->records)
-			stable.insert(record.get());
-	for(size_t index = 0; index < value.records->size(); ++index)
-		if(!stable.contains((*value.records)[index].get()))
-			result.push_back(index);
-	return result;
-}
-
 bool sameValue(const Bonus & left, const Bonus & right)
 {
 	return left.duration == right.duration && left.val == right.val && left.turnsRemain == right.turnsRemain
@@ -89,6 +69,58 @@ bool sameValue(const Bonus & left, const Bonus & right)
 		&& left.propagationUpdater == right.propagationUpdater && left.bonusOwner == right.bonusOwner
 		&& left.appliedByEnemy == right.appliedByEnemy && left.spellCasterOwner == right.spellCasterOwner
 		&& left.statusIdentity == right.statusIdentity && left.hidden == right.hidden;
+}
+
+/// Positions of records the original query creates afresh on every call:
+/// neither a native node record nor an authorized source record. Also stacks
+/// the baseline once and finds the same records among the stacked ones.
+void prepare(ProjectedAdjacencyBaseline & value, const ProjectedAdjacencySources * sources)
+{
+	value.fresh.clear();
+	value.freshStacked.clear();
+	value.stacked.reset();
+	if(!value.records)
+		return;
+	std::set<const Bonus *> stable;
+	if(value.native)
+		for(const auto & record : *value.native)
+			stable.insert(record.get());
+	if(sources)
+		for(const auto & record : sources->records)
+			stable.insert(record.get());
+	std::set<const Bonus *> fresh;
+	for(size_t index = 0; index < value.records->size(); ++index)
+		if(!stable.contains((*value.records)[index].get()))
+		{
+			value.fresh.push_back(index);
+			fresh.insert((*value.records)[index].get());
+		}
+	auto stacked = std::make_shared<BonusList>(*value.records);
+	stacked->stackBonuses();
+	for(size_t index = 0; index < stacked->size(); ++index)
+		if(fresh.contains((*stacked)[index].get()))
+			value.freshStacked.push_back(index);
+	value.stacked = stacked;
+}
+
+/// Checker mode: one list of a reused answer must equal a fresh computation,
+/// record by record (identity for stable records, value for fresh ones).
+std::string listMismatch(const BonusList & reused, const BonusList & computed, const std::vector<size_t> & fresh)
+{
+	if(reused.size() != computed.size())
+		return "record count differs";
+	for(size_t index = 0, next = 0; index < computed.size(); ++index)
+	{
+		const bool isFresh = next < fresh.size() && fresh[next] == index;
+		if(isFresh)
+			++next;
+		const auto & expected = computed[index];
+		const auto & actual = reused[index];
+		if(isFresh ? !sameValue(*expected, *actual) : expected != actual)
+			return "record " + std::to_string(index) + " (type " + std::to_string(static_cast<int>(expected->type))
+				+ ", value " + std::to_string(expected->val) + ") differs";
+	}
+	return {};
 }
 
 bool environmentFlag(const char * name, std::string_view value)
@@ -110,38 +142,54 @@ bool memoDisabled()
 	return disabled;
 }
 
-/// Checker mode: a reused answer must equal a fresh computation, record by
-/// record (identity for stable records, value for fresh ones).
-void verifyReuse(uint32_t unitId, const ProjectedAdjacencyBaseline & reused, const std::vector<size_t> & fresh,
-	const ProjectedAdjacencyBaseline & computed, const ProjectedAdjacencySources * sources)
+[[noreturn]] void mismatch(uint32_t unitId, const std::string & what)
 {
-	const auto fail = [unitId](const std::string & what)
-	{
-		logAi->error("Projected adjacency memo mismatch for unit %d: %s", unitId, what);
-		std::abort();
-	};
+	logAi->error("Projected adjacency memo mismatch for unit %d: %s", unitId, what);
+	std::abort();
+}
+
+/// Checker mode: a reused answer must equal a freshly computed and prepared one.
+void verifyReuse(uint32_t unitId, const ProjectedAdjacencyBaseline & reused, ProjectedAdjacencyBaseline computed,
+	const ProjectedAdjacencySources * sources)
+{
+	prepare(computed, sources);
 	if(!reused.records != !computed.records)
-		fail("projection presence differs");
+		mismatch(unitId, "projection presence differs");
 	if(reused.veteranCohesionEarned != computed.veteranCohesionEarned)
-		fail("Veteran Cohesion differs");
+		mismatch(unitId, "Veteran Cohesion differs");
 	if(!computed.records)
 		return;
-	if(reused.records->size() != computed.records->size())
-		fail("record count differs");
-	if(freshRecords(computed, sources) != fresh)
-		fail("fresh record positions differ");
-	for(size_t index = 0, next = 0; index < computed.records->size(); ++index)
+	if(reused.fresh != computed.fresh || reused.freshStacked != computed.freshStacked)
+		mismatch(unitId, "fresh record positions differ");
+	if(const auto what = listMismatch(*reused.records, *computed.records, computed.fresh); !what.empty())
+		mismatch(unitId, "unstacked " + what);
+	if(const auto what = listMismatch(*reused.stacked, *computed.stacked, computed.freshStacked); !what.empty())
+		mismatch(unitId, "stacked " + what);
+}
+}
+
+TConstBonusListPtr selectProjectedAdjacencyRecords(const ProjectedAdjacencyBaseline & baseline,
+	const CSelector & selector, bool unstacked)
+{
+	if(!unstacked && !baseline.stacked)
 	{
-		const auto & expected = (*computed.records)[index];
-		const auto & actual = (*reused.records)[index];
+		auto result = std::make_shared<BonusList>(*baseline.records);
+		result->stackBonuses();
+		result->remove_if([&selector](const Bonus * bonus) { return !selector(bonus); });
+		return result;
+	}
+	const auto & records = unstacked ? *baseline.records : *baseline.stacked;
+	const auto & fresh = unstacked ? baseline.fresh : baseline.freshStacked;
+	auto result = std::make_shared<BonusList>();
+	for(size_t index = 0, next = 0; index < records.size(); ++index)
+	{
 		const bool isFresh = next < fresh.size() && fresh[next] == index;
 		if(isFresh)
 			++next;
-		if(isFresh ? !sameValue(*expected, *actual) : expected != actual)
-			fail("record " + std::to_string(index) + " (type " + std::to_string(static_cast<int>(expected->type))
-				+ ", value " + std::to_string(expected->val) + ") differs");
+		if(selector(records[index].get()))
+			result->push_back(isFresh ? std::make_shared<Bonus>(*records[index]) : records[index]);
 	}
-}
+	return result;
 }
 
 struct ProjectedAdjacencyMemoSlot::State
@@ -153,9 +201,15 @@ struct ProjectedAdjacencyMemoSlot::State
 		std::weak_ptr<const StackWithBonuses> unit;
 		std::vector<UnitFacts> roster;
 		ProjectedAdjacencyBaseline value;
-		std::vector<size_t> fresh;
+	};
+	struct Layer
+	{
+		std::weak_ptr<const StackWithBonuses> unit;
+		ProjectedAdjacencyLayerFacts facts;
+		const CStack * native = nullptr;
 	};
 	std::unordered_map<uint32_t, Entry> entries;
+	std::unordered_map<const StackWithBonuses *, Layer> layers;
 };
 
 ProjectedAdjacencyMemoSlot::ProjectedAdjacencyMemoSlot() = default;
@@ -186,26 +240,37 @@ ProjectedAdjacencyBaseline ProjectedAdjacencyMemoSlot::lookup(const StackWithBon
 		if(entry.epoch == epoch && sameBranch(entry.branch, branch) && entry.unit.lock().get() == &unit
 			&& entry.roster == facts)
 		{
-			ProjectedAdjacencyBaseline reused = entry.value;
-			const auto fresh = entry.fresh;
-			if(reused.records && !fresh.empty())
-			{
-				auto copy = std::make_shared<BonusList>(*reused.records);
-				for(const auto index : fresh)
-					(*copy)[index] = std::make_shared<Bonus>(*(*copy)[index]);
-				reused.records = copy;
-			}
+			const auto reused = entry.value;
 			if(checkerEnabled())
-				verifyReuse(unit.unitId(), reused, fresh, compute(), branch.sources.get());
+				verifyReuse(unit.unitId(), reused, compute(), branch.sources.get());
 			return reused;
 		}
 	}
 	const auto startEpoch = epoch;
 	auto value = compute();
+	prepare(value, branch.sources.get());
 	if(epoch == startEpoch) // A mutation during compute() leaves nothing to reuse.
-	{
-		auto fresh = freshRecords(value, branch.sources.get());
-		state->entries[unit.unitId()] = {branch, epoch, self, std::move(facts), value, std::move(fresh)};
-	}
+		state->entries[unit.unitId()] = {branch, epoch, self, std::move(facts), value};
 	return value;
+}
+
+const CStack * ProjectedAdjacencyMemoSlot::nativeSource(const StackWithBonuses & unit,
+	const ProjectedAdjacencyLayerFacts & layer, const std::function<const CStack *()> & compute) const
+{
+	auto self = unit.weak_from_this();
+	if(self.expired() || memoDisabled())
+		return compute();
+	if(!state)
+		state = std::make_unique<State>();
+	if(const auto found = state->layers.find(&unit); found != state->layers.end()
+		&& found->second.facts == layer && found->second.unit.lock().get() == &unit)
+	{
+		const auto * native = found->second.native;
+		if(checkerEnabled() && compute() != native)
+			mismatch(unit.unitId(), "native source differs");
+		return native;
+	}
+	const auto * native = compute();
+	state->layers[&unit] = {self, layer, native};
+	return native;
 }
