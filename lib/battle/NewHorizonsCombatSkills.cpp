@@ -9,7 +9,7 @@
 
 #include "../mapObjects/CGHeroInstance.h"
 #include "CUnitState.h"
-#include "Unit.h"
+#include "UnitHotStatsQuery.h"
 #include "../bonuses/Bonus.h"
 
 namespace
@@ -92,8 +92,13 @@ int formationFightingReductionPercent(const CGHeroInstance * hero)
 
 bool isOrdinaryCreatureAttacker(const battle::Unit * attacker)
 {
-	return attacker && !attacker->isTurret()
-		&& !attacker->hasBonusOfType(BonusType::SIEGE_WEAPON)
+	if(!attacker || attacker->isTurret())
+		return false;
+	const auto siegeWeapon = [attacker]()
+	{
+		return attacker->hasBonusOfType(BonusType::SIEGE_WEAPON);
+	};
+	return !battle::hotStat(*attacker, battle::HotStat::SIEGE_WEAPON, siegeWeapon)
 		&& attacker->unitSlot() != SlotID::COMMANDER_SLOT_PLACEHOLDER;
 }
 

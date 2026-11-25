@@ -1,6 +1,7 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
 #include "CUnitState.h"
+#include "UnitHotStatsQuery.h"
 
 namespace battle
 {
@@ -18,13 +19,17 @@ bool CUnitState::canMove(int turn) const
 
 bool CUnitState::isHypnotized() const
 {
-	return mayHaveBonusType(BonusType::HYPNOTIZED)
-		&& bonusCache.hasBonus(UnitBonusValuesProxy::HYPNOTIZED);
+	return hotStat(*this, HotStat::HYPNOTIZED, [this]()
+	{
+		return mayHaveBonusType(BonusType::HYPNOTIZED) && bonusCache.hasBonus(UnitBonusValuesProxy::HYPNOTIZED);
+	}) != 0;
 }
 
 bool CUnitState::isInvincible() const
 {
-	return mayHaveBonusType(BonusType::INVINCIBLE)
-		&& bonusCache.hasBonus(UnitBonusValuesProxy::INVINCIBLE);
+	return hotStat(*this, HotStat::INVINCIBLE, [this]()
+	{
+		return mayHaveBonusType(BonusType::INVINCIBLE) && bonusCache.hasBonus(UnitBonusValuesProxy::INVINCIBLE);
+	}) != 0;
 }
 }

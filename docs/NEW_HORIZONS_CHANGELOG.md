@@ -54,6 +54,10 @@ read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 - Quick combat is faster in battles with Galthran, Ryland, Charna, Vey or
   Pasis: the battle AI no longer works out their aura specialties from scratch
   for every stack it considers. Its choices do not change.
+- Quick combat is faster in every battle, and most against those aura heroes:
+  the battle AI remembers each stack's most-asked answers, such as whether it
+  is hypnotised or frozen and its maximum health, until something about that
+  stack changes. Its choices do not change.
 - **Faster computer turns in long games**: the computer players plan routes
   faster once heroes can fly or walk on water. The check for dug holes, the
   Warfare rule values and the flight-barrier rules are now read once per route

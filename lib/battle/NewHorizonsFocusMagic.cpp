@@ -2,7 +2,7 @@
 #include "StdInc.h"
 #include "NewHorizonsFocusMagic.h"
 #include "FocusMagicValueState.h"
-#include "Unit.h"
+#include "UnitHotStatsQuery.h"
 #include "../bonuses/BonusList.h"
 #include "../bonuses/BonusParameters.h"
 
@@ -30,11 +30,14 @@ bool isChargeMarker(const Bonus & bonus)
 
 int charges(const battle::Unit & unit)
 {
-	int result = 0;
-	const auto bonuses = unit.getBonusesOfType(BonusType::NONE);
-	for(const auto & bonus : *bonuses)
-		if(isChargeMarker(*bonus)) result = std::max(result, bonus->val);
-	return result;
+	return battle::hotStat(unit, battle::HotStat::FOCUS_MAGIC_CHARGES, [&unit]()
+	{
+		int result = 0;
+		const auto bonuses = unit.getBonusesOfType(BonusType::NONE);
+		for(const auto & bonus : *bonuses)
+			if(isChargeMarker(*bonus)) result = std::max(result, bonus->val);
+		return result;
+	});
 }
 
 bool active(const battle::Unit & unit) { return charges(unit) > 0; }

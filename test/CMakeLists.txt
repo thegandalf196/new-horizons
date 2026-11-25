@@ -606,6 +606,7 @@ set(test_SRCS
 		battle/MechanicsPresenceTest.cpp
 		battleAI/FlatDamageInputsTest.cpp
 		battleAI/MechanicsPresenceAITest.cpp
+		battleAI/UnitHotStatsAITest.cpp
 		battleAI/HeroRefinementBudgetTest.cpp
 		battleAI/NativeRosterDecisionProfileTest.cpp
 		hero/CompiledPerkCatalogueTest.cpp

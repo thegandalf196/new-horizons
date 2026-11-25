@@ -10,6 +10,7 @@
 #include "HypotheticBattle.h"
 #include "InitialExportBattleSubject.h"
 #include "ProjectedAdjacencyMemo.h"
+#include "ProjectedAdjacencyRoster.h"
 #include "../../lib/CStack.h"
 #include "../../lib/CCreatureHandler.h"
 #include "../../lib/battle/BattleInfo.h"
@@ -233,6 +234,17 @@ bool ProjectedAdjacencyBonuses::canProveTypeAbsence(const StackWithBonuses & uni
 	return !branch;
 }
 
+uint64_t ProjectedAdjacencyBonuses::unitStateEpoch(const HypotheticBattle & branch) noexcept
+{
+	return branch.sourceBinding.adjacencyMemo.revision();
+}
+
+bool ProjectedAdjacencyBonuses::projectsRoster(const HypotheticBattle & branch)
+{
+	// Conservative and cheap: sourcesFor() also checks every ancestor binding.
+	return branch.committedBonusOperations || branch.sourceBinding.adjacencySources(branch.subject);
+}
+
 TConstBonusListPtr ProjectedAdjacencyBonuses::query(const StackWithBonuses & unit,
 	const CSelector & selector, const std::string & cachingStr, bool unstacked)
 {
@@ -253,7 +265,8 @@ TConstBonusListPtr ProjectedAdjacencyBonuses::query(const StackWithBonuses & uni
 	const auto * native = layerSource(unit);
 	if(!native)
 		return {}; // Foreign providers retain their existing unsupported semantics.
-	auto units = unit.owner->battleGetUnitsIf([](const battle::Unit *) { return true; });
+	const auto branchRoster = cachedRoster(*unit.owner);
+	std::vector<const battle::Unit *> units = branchRoster->units;
 	const auto found = std::ranges::find_if(units, [&unit](const battle::Unit * candidate)
 		{ return candidate && candidate->unitId() == unit.unitId(); });
 	if(found == units.end())
@@ -262,11 +275,13 @@ TConstBonusListPtr ProjectedAdjacencyBonuses::query(const StackWithBonuses & uni
 	if(*found != native && (!projected || layerSource(*projected) != native))
 		return {};
 	*found = &unit; // Same authorized occurrence; preserve its current scalar view.
-	const std::vector<const battle::Unit *> roster(units.begin(), units.end());
+	std::vector<const battle::CUnitState *> states = branchRoster->states;
+	states[found - units.begin()] = &unit;
+	const std::vector<const battle::Unit *> & roster = units;
 	const auto & owner = *unit.owner;
 	const ProjectedAdjacencyBranchFacts branch{native, sources, owner.committedBonusOperations,
 		owner.getTreeVersion(), owner.getRound(), owner.getActiveStackID()};
-	ProjectedAdjacencyQuery query{memo.lookup(unit, branch, roster,
+	ProjectedAdjacencyQuery query{memo.lookup(unit, branch, roster, states,
 		[&unit, native, &sources, &roster]() { return projectedBaseline(unit, *native, sources, roster); })};
 	if(!query.baseline.records)
 		return {};

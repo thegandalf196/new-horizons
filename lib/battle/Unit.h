@@ -21,6 +21,7 @@
 
 #include "IUnitInfo.h"
 #include "BattleHexArray.h"
+#include "UnitHotStats.h"
 
 enum class EMetaText : uint8_t;
 class MetaString;
@@ -112,6 +113,9 @@ public:
 
 	virtual bool isHypnotized() const = 0;
 	virtual bool isInvincible() const = 0;
+	/// Slots and current validity key for answers memoised by battle::hotStat.
+	/// Unit kinds without a complete validity key memoise nothing.
+	virtual UnitHotStatsAccess hotStatsAccess() const { return {}; }
 
 	virtual bool isClone() const = 0;
 	virtual bool hasClone() const = 0;

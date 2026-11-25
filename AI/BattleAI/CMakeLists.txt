@@ -269,6 +269,8 @@ set(battleAI_SRCS
 		BattleExchangeMembership.cpp
 		BattleShroudStrike.cpp
 		PrimaryFortuneReceipt.cpp
+		StackHotStats.cpp
+		ProjectedAdjacencyRoster.cpp
 )
 
 set(battleAI_HEADERS
@@ -420,6 +422,8 @@ set(battleAI_HEADERS
 		NewHorizonsHexOfPain.h
 		ProjectedAdjacencyBonuses.h
 		ProjectedAdjacencyMemo.h
+		StackHotStats.h
+		ProjectedAdjacencyRoster.h
 		StackWithBonuses.h
 		HypotheticEffectSnapshotRules.h
 		HypotheticLifecycleTimingScope.h

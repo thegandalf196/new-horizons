@@ -7,6 +7,7 @@
 #include "StackWithBonuses.h"
 #include "../../lib/CStack.h"
 #include "../../lib/bonuses/BonusList.h"
+#include "../../lib/battle/UnitPlainState.h"
 #include <cstdlib>
 #include <set>
 #include <string_view>
@@ -21,6 +22,9 @@ namespace
 struct UnitFacts
 {
 	const battle::Unit * unit = nullptr;
+	/// Typed units: their plain state stands for every scalar below (the unit
+	/// object fixes ID, side and owner; the form revision fixes creature and width).
+	battle::UnitPlainState plain;
 	uint32_t id = 0;
 	BattleHex position;
 	bool alive = false;
@@ -35,18 +39,29 @@ struct UnitFacts
 	bool operator==(const UnitFacts &) const = default;
 };
 
-std::vector<UnitFacts> rosterFacts(const std::vector<const battle::Unit *> & roster)
+std::vector<UnitFacts> rosterFacts(const std::vector<const battle::Unit *> & roster,
+	const std::vector<const battle::CUnitState *> & states)
 {
 	std::vector<UnitFacts> result;
 	result.reserve(roster.size());
-	for(const auto * unit : roster)
+	for(size_t index = 0; index < roster.size(); ++index)
 	{
+		const auto * unit = roster[index];
 		if(!unit)
 		{
 			result.emplace_back();
 			continue;
 		}
-		result.push_back({unit, unit->unitId(), unit->getPosition(), unit->alive(), unit->isGhost(), unit->doubleWide(),
+		if(const auto * state = index < states.size() ? states[index] : nullptr)
+		{
+			UnitFacts facts;
+			facts.unit = unit;
+			facts.plain = battle::plainState(*state);
+			facts.treeVersion = unit->getTreeVersion();
+			result.push_back(facts);
+			continue;
+		}
+		result.push_back({unit, {}, unit->unitId(), unit->getPosition(), unit->alive(), unit->isGhost(), unit->doubleWide(),
 			unit->unitSide(), unit->unitOwner(), unit->creatureId(), unit->unitType(), unit->getCount(),
 			unit->getTreeVersion()});
 	}
@@ -224,12 +239,12 @@ ProjectedAdjacencyMemoSlot::~ProjectedAdjacencyMemoSlot() = default;
 
 ProjectedAdjacencyBaseline ProjectedAdjacencyMemoSlot::lookup(const StackWithBonuses & unit,
 	const ProjectedAdjacencyBranchFacts & branch, const std::vector<const battle::Unit *> & roster,
-	const Compute & compute) const
+	const std::vector<const battle::CUnitState *> & states, const Compute & compute) const
 {
 	auto self = unit.weak_from_this();
 	if(self.expired() || memoDisabled())
 		return compute(); // Without shared ownership the unit has no identity to key.
-	auto facts = rosterFacts(roster);
+	auto facts = rosterFacts(roster, states);
 	if(!state)
 		state = std::make_unique<State>();
 	// No reference into the map survives compute(): a limiter may query another

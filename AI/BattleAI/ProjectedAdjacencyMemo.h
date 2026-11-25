@@ -13,7 +13,7 @@ struct Bonus;
 class CSelector;
 class CStack;
 class StackWithBonuses;
-namespace battle { class Unit; class CommittedBonusOperations; }
+namespace battle { class Unit; class CUnitState; class CommittedBonusOperations; }
 
 /// Visible hero specialty records (adjacency auras, Pasis) that the AI
 /// re-evaluates for every projected unit.
@@ -83,8 +83,12 @@ public:
 	~ProjectedAdjacencyMemoSlot();
 	/// A branch mutation that may change a unit's bonuses, form or adjacency.
 	void invalidate() const noexcept { ++epoch; }
+	/// Advances with every invalidate() and assignment; other branch memos key on it.
+	uint64_t revision() const noexcept { return epoch; }
+	/// `states[i]` is roster[i]'s typed state, or null for a foreign unit kind.
 	ProjectedAdjacencyBaseline lookup(const StackWithBonuses & unit, const ProjectedAdjacencyBranchFacts & branch,
-		const std::vector<const battle::Unit *> & roster, const Compute & compute) const;
+		const std::vector<const battle::Unit *> & roster, const std::vector<const battle::CUnitState *> & states,
+		const Compute & compute) const;
 	/// The native stack behind a projected unit, reused while its layer facts hold.
 	const CStack * nativeSource(const StackWithBonuses & unit, const ProjectedAdjacencyLayerFacts & layer,
 		const std::function<const CStack *()> & compute) const;

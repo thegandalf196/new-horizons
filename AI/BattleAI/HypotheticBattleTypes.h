@@ -17,6 +17,7 @@
 #include "../../lib/battle/BattleHex.h"
 #include "../../lib/battle/HeroActionAllowanceState.h"
 #include "ProjectedAdjacencyMemo.h"
+#include "ProjectedAdjacencyRoster.h"
 
 class JsonNode;
 class StackWithBonuses;
@@ -46,6 +47,8 @@ class HypotheticSourceBinding final
 public:
 	/// Derived answers for the adjacency sources above; reset by rebinding.
 	ProjectedAdjacencyMemoSlot adjacencyMemo;
+	/// The adjacency query roster, reused while the branch chain's units are.
+	ProjectedAdjacencyRosterSlot adjacencyRoster;
 	/// Exact existing subject/control-block identity; not a lifetime lease.
 	bool isCurrentSource(const std::shared_ptr<CBattleInfoCallback> & subject) const { return matches(subject); }
 	HypotheticSourceBinding(const std::shared_ptr<CBattleInfoCallback> & subject,

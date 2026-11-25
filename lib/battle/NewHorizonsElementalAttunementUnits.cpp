@@ -2,6 +2,7 @@
 #include "StdInc.h"
 #include "NewHorizonsElementalAttunement.h"
 #include "CUnitState.h"
+#include "UnitHotStatsQuery.h"
 #include "BattleInfo.h"
 #include "LiveUnitEnvironmentContext.h"
 #include "../CStack.h"
@@ -35,7 +36,11 @@ uint32_t newHorizonsElementalAttunement::maximumHealth(const battle::Unit & unit
 
 uint32_t battle::CUnitState::getMaxHealth() const
 {
-	const int ordinary = std::max(1, bonusCache.getBonusValue(UnitBonusValuesProxy::STACK_HEALTH));
-	return newHorizonsElementalAttunement::maximumHealth(*this, ordinary);
+	// Both terms are at least 1 and at most INT32_MAX, so the slot holds them.
+	return static_cast<uint32_t>(hotStat(*this, HotStat::MAX_HEALTH, [this]()
+	{
+		const int ordinary = std::max(1, bonusCache.getBonusValue(UnitBonusValuesProxy::STACK_HEALTH));
+		return newHorizonsElementalAttunement::maximumHealth(*this, ordinary);
+	}));
 }
 

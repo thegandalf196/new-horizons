@@ -53,6 +53,7 @@ private:
 
 	bool doubleWideCached = false;
 	const CCreature * formBonusSource = nullptr; // transient effective native source while polymorphed
+	battle::UnitHotStats nativeHotStats; // derived answers keyed by this node's tree version; never saved
 
 public:
 	void postDeserialize(const CArmedInstance * army);
@@ -86,6 +87,7 @@ public:
 	void afterNewRound(bool isFirstRound = false, bool deferBattleFormRestoration = false);
 	bool acceptsBonus(const Bonus & bonus) const override;
 	bool mayHaveBonusType(BonusType type) const override;
+	battle::UnitHotStatsAccess hotStatsAccess() const override;
 	TConstBonusListPtr getAllBonuses(const CSelector & selector, const std::string & cachingStr = {}) const override;
 	TConstBonusListPtr getUnstackedBonuses(const CSelector & selector) const override;
 	TConstBonusListPtr getBonusesBeforeCreatureAbilitySuppression(
@@ -154,11 +156,7 @@ public:
 		return this->owner;
 	}
 
-	void validateTimedSummonSerialization() const
-	{
-		if(summonRoundsRemaining > 0)
-			throw std::runtime_error("Cannot save a timed summon without its unit health state");
-	}
+	void validateTimedSummonSerialization() const;
 
 	template <typename Handler> void validateParalyzingGazeSerialization(Handler & h) const
 	{
@@ -212,13 +210,7 @@ public:
 				bonus->validateSwiftRebirthSerialization(h);
 	}
 
-	void validateVeteranDamageHistorySerialization(bool supported) const
-	{
-		if(veteranPhysicalDamageSinceActivation < 0)
-			throw std::runtime_error("Invalid negative Veteran damage accumulator");
-		if(!supported && veteranPhysicalDamageSinceActivation != 0)
-			throw std::runtime_error("Cannot discard Veteran damage history in an older stack format");
-	}
+	void validateVeteranDamageHistorySerialization(bool supported) const;
 
 	template <typename Handler> void validateVeteranCohesionSerialization(Handler & h) const
 	{

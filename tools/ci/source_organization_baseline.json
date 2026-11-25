@@ -625,70 +625,70 @@
       "functions": [
         {
           "symbol": "HypotheticSourceBinding::bool isCurrentSource(const std::shared_ptr<CBattleInfoCallback> & subject) const#1",
-          "start": 50,
-          "end": 50
+          "start": 53,
+          "end": 53
         },
         {
           "symbol": "HypotheticSourceBinding::std::shared_ptr<const ProjectedAdjacencySources> adjacencySources( const std::shared_ptr<CBattleInfoCallback> & subject) const#1",
-          "start": 54,
-          "end": 58
+          "start": 57,
+          "end": 61
         },
         {
           "symbol": "HypotheticLifecycleTiming::StageTiming::void accumulate(const StageTiming & sample)#1",
-          "start": 69,
-          "end": 74
+          "start": 72,
+          "end": 77
         },
         {
           "symbol": "RNGStub::int nextInt() override#1",
-          "start": 111,
-          "end": 114
+          "start": 114,
+          "end": 117
         },
         {
           "symbol": "RNGStub::int nextBinomialInt(int coinsCount, double coinChance) override#1",
-          "start": 116,
-          "end": 119
+          "start": 119,
+          "end": 122
         },
         {
           "symbol": "RNGStub::int nextInt(int lower, int upper) override#1",
-          "start": 121,
-          "end": 124
+          "start": 124,
+          "end": 127
         },
         {
           "symbol": "RNGStub::int64_t nextInt64(int64_t lower, int64_t upper) override#1",
-          "start": 125,
-          "end": 128
+          "start": 128,
+          "end": 131
         },
         {
           "symbol": "RNGStub::double nextDouble(double lower, double upper) override#1",
-          "start": 129,
-          "end": 132
+          "start": 132,
+          "end": 135
         },
         {
           "symbol": "RNGStub::int nextInt(int upper) override#1",
-          "start": 134,
-          "end": 137
+          "start": 137,
+          "end": 140
         },
         {
           "symbol": "RNGStub::int64_t nextInt64(int64_t upper) override#1",
-          "start": 138,
-          "end": 141
+          "start": 141,
+          "end": 144
         },
         {
           "symbol": "RNGStub::double nextDouble(double upper) override#1",
-          "start": 142,
-          "end": 145
+          "start": 145,
+          "end": 148
         },
         {
           "symbol": "HypotheticProjectedActionReceipt::bool isHeroAction() const#1",
-          "start": 172,
-          "end": 175
+          "start": 175,
+          "end": 178
         }
       ],
       "prefix_predecessor_review": "IR-ORDINARY-P0-DUST-CLOCK-R7-SOURCE-20261101",
-      "previous_review": "IR-NH0921-MSVC-OBSERVATION-INVENTORY-20261118",
+      "previous_review": "CLAUDE-ADJACENCY-MEMO-20261125",
       "proposed_review": "IR-DAMAGE-PREFIX-PAIR-REUSE-R6-SOURCE-20261101",
-      "rationale": "Complete exact174-line types header inventory independently checked against prior162-line source. All12 original handwritten callable bodies remain byte-identical, with physical spans shifted by12. New JsonNode forward declaration and passive HypotheticLifeDrainFriendlyObservation aggregate add six data fields only, including the const shared snapshot owner; no handwritten constructor, method, lambda or function-like macro is added. All existing nested timing/callback/source-binding bodies remain covered. Exact complete callable coverage only; no numeric waiver, future growth or native/MSVC/rendered/performance acceptance. Adjacency memo: the source binding gains one ProjectedAdjacencyMemoSlot data member with its comment, and the ProjectedAdjacencySources forward declaration becomes an include of ProjectedAdjacencyMemo.h; no callable is added and the twelve bodies are unchanged, shifted by up to two lines.",
-      "review": "CLAUDE-ADJACENCY-MEMO-20261125",
+      "rationale": "Complete exact174-line types header inventory independently checked against prior162-line source. All12 original handwritten callable bodies remain byte-identical, with physical spans shifted by12. New JsonNode forward declaration and passive HypotheticLifeDrainFriendlyObservation aggregate add six data fields only, including the const shared snapshot owner; no handwritten constructor, method, lambda or function-like macro is added. All existing nested timing/callback/source-binding bodies remain covered. Exact complete callable coverage only; no numeric waiver, future growth or native/MSVC/rendered/performance acceptance. Adjacency memo: the source binding gains one ProjectedAdjacencyMemoSlot data member with its comment, and the ProjectedAdjacencySources forward declaration becomes an include of ProjectedAdjacencyMemo.h; no callable is added and the twelve bodies are unchanged, shifted by up to two lines. Hot stats: CStack gains the never-saved battle::UnitHotStats member and its hotStatsAccess override; its two non-template save guards move out of line to StackSerializationChecks.cpp; Unit gains the one-line hotStatsAccess default; lib lists UnitHotStats.cpp, StackSerializationChecks.cpp and three headers; HypotheticSourceBinding gains one ProjectedAdjacencyRosterSlot data member and its include. Callable inventory 12 to 12: every retained body is byte-identical with its span remapped by diff.",
+      "review": "CLAUDE-HOT-STATS-20261126",
       "review_history": [
         {
           "functions": [
@@ -765,7 +765,7 @@
       ],
       "review_scope": "Complete exact-content callable inventory of unchanged comparison-source bytes; historical review fields are provenance only.",
       "review_status": "INDEPENDENT_COMPLETE_EXACT_SOURCE_COVERAGE_REVIEWED",
-      "sha256": "212ab0fcc82fd15ef199f8f83838d157c219b030578dc776f37401cc300e40b4"
+      "sha256": "1c7185977ec5110c4c4a9f5933e4f7b8fc22bbad0bae130e08963f3b9eb9ab5f"
     },
     "AI/BattleAI/SpellTargetsEvaluator.h": {
       "sha256": "90f9058af637b63449b499a629b388e397c7e003ea7db56e4c4566d6b587016b",
@@ -5023,132 +5023,122 @@
       "sha256": "b510e3c2aec7a67625dbc8a06b7b94eca8c790f2bdb63511e118500f47b94f90"
     },
     "lib/CStack.h": {
-      "sha256": "d88358b01460f00fdde04c6a320d764dc42e8f08eb20f784e1f0c0f247e99be6",
-      "review": "CLAUDE-SYLVAN-AMBUSH-20261123",
-      "rationale": "All24 inline/template bodies are included: three ordinary scalar/accessor bodies, the owner accessor,19 codec/preflight methods including the152-line serializer, and the explicit native-width query. The two empty-string default-argument recovery sites are declarations, not missing bodies. Complete original-file callable inventory independently checked against the pinned parser and a syntax-only probe retaining every original body span. Original source and span hashes remain authoritative; this is no diagnostics waiver or content/size/runtime approval.",
+      "sha256": "c5522097c614fdf178251acdac6740c40a78983a47f508881c223e1feb795a25",
+      "review": "CLAUDE-HOT-STATS-20261126",
+      "rationale": "All24 inline/template bodies are included: three ordinary scalar/accessor bodies, the owner accessor,19 codec/preflight methods including the152-line serializer, and the explicit native-width query. The two empty-string default-argument recovery sites are declarations, not missing bodies. Complete original-file callable inventory independently checked against the pinned parser and a syntax-only probe retaining every original body span. Original source and span hashes remain authoritative; this is no diagnostics waiver or content/size/runtime approval. Hot stats: CStack gains the never-saved battle::UnitHotStats member and its hotStatsAccess override; its two non-template save guards move out of line to StackSerializationChecks.cpp; Unit gains the one-line hotStatsAccess default; lib lists UnitHotStats.cpp, StackSerializationChecks.cpp and three headers; HypotheticSourceBinding gains one ProjectedAdjacencyRosterSlot data member and its include. Callable inventory 24 to 22: every retained body is byte-identical with its span remapped by diff.",
       "functions": [
         {
           "symbol": "CStack::void validateRapidResponseSerialization(Handler & h) const#1",
-          "start": 76,
-          "end": 84
+          "start": 77,
+          "end": 85
         },
         {
           "symbol": "CStack::int64_t getBattleStartMaximumAggregateHP() const override#1",
-          "start": 117,
-          "end": 117
+          "start": 119,
+          "end": 119
         },
         {
           "symbol": "CStack::int64_t getRebirthOriginalAggregateHP() const override#1",
-          "start": 118,
-          "end": 118
+          "start": 120,
+          "end": 120
         },
         {
           "symbol": "CStack::bool doubleWide() const override#1",
-          "start": 127,
-          "end": 127
+          "start": 129,
+          "end": 129
         },
         {
           "symbol": "CStack::const BattleInfo * getBattle() const#1",
-          "start": 130,
-          "end": 130
+          "start": 132,
+          "end": 132
         },
         {
           "symbol": "CStack::PlayerColor getOwner() const override#1",
-          "start": 152,
-          "end": 155
-        },
-        {
-          "symbol": "CStack::void validateTimedSummonSerialization() const#1",
-          "start": 157,
-          "end": 161
+          "start": 154,
+          "end": 157
         },
         {
           "symbol": "CStack::void validateParalyzingGazeSerialization(Handler & h) const#1",
-          "start": 163,
-          "end": 167
+          "start": 161,
+          "end": 165
         },
         {
           "symbol": "CStack::void validateSerpentsEmbraceSerialization(Handler & h) const#1",
-          "start": 169,
-          "end": 173
+          "start": 167,
+          "end": 171
         },
         {
           "symbol": "CStack::void validatePetrifyingBloodSerialization(Handler & h) const#1",
-          "start": 175,
-          "end": 180
+          "start": 173,
+          "end": 178
         },
         {
           "symbol": "CStack::void validateFrozenSerialization(Handler & h) const#1",
-          "start": 181,
-          "end": 190
+          "start": 179,
+          "end": 188
         },
         {
           "symbol": "CStack::void validateMoraleActivationSerialization(Handler & h) const#1",
-          "start": 192,
-          "end": 198
+          "start": 190,
+          "end": 196
         },
         {
           "symbol": "CStack::void validateHeroicSpiritSerialization(Handler & h) const#1",
-          "start": 200,
-          "end": 206
+          "start": 198,
+          "end": 204
         },
         {
           "symbol": "CStack::void validateSwiftRebirthSerialization(Handler & h) const#1",
-          "start": 208,
-          "end": 213
-        },
-        {
-          "symbol": "CStack::void validateVeteranDamageHistorySerialization(bool supported) const#1",
-          "start": 215,
-          "end": 221
+          "start": 206,
+          "end": 211
         },
         {
           "symbol": "CStack::void validateVeteranCohesionSerialization(Handler & h) const#1",
-          "start": 223,
-          "end": 227
+          "start": 215,
+          "end": 219
         },
         {
           "symbol": "CStack::void validatePlagueSerialization(Handler & h) const#1",
-          "start": 229,
-          "end": 233
+          "start": 221,
+          "end": 225
         },
         {
           "symbol": "CStack::void validateTrainingSerialization(Handler & h) const#1",
-          "start": 234,
-          "end": 244
+          "start": 226,
+          "end": 236
         },
         {
           "symbol": "CStack::void validateOpportunistSerialization(Handler & h) const#1",
-          "start": 246,
-          "end": 253
+          "start": 238,
+          "end": 245
         },
         {
           "symbol": "CStack::void validateWaitActionSerialization(const Handler & h) const#1",
-          "start": 255,
-          "end": 268
+          "start": 247,
+          "end": 260
         },
         {
           "symbol": "CStack::void serializeOverwatchState(Handler & h)#1",
-          "start": 270,
-          "end": 285
+          "start": 262,
+          "end": 277
         },
         {
           "symbol": "CStack::void validateAerialSupremacySerialization(Handler & h) const#1",
-          "start": 287,
-          "end": 294
+          "start": 279,
+          "end": 286
         },
         {
           "symbol": "CStack::void validateSerializationPrefix(Handler & h)#1",
-          "start": 296,
-          "end": 365
+          "start": 288,
+          "end": 357
         },
         {
           "symbol": "CStack::void serialize(Handler & h)#1",
-          "start": 367,
-          "end": 518
+          "start": 359,
+          "end": 510
         }
       ],
-      "previous_review": "CLAUDE-METAMAGIC6-PHASE4-20261120"
+      "previous_review": "CLAUDE-SYLVAN-AMBUSH-20261123"
     },
     "lib/Color.h": {
       "functions": [
@@ -6357,177 +6347,182 @@
       "sha256": "1ce32da6652ba987cdf6e2b25a88567ba629931b82f1e8a29f070358b0a4ee83"
     },
     "lib/battle/Unit.h": {
-      "sha256": "d1e93358d78da45227b4ebed1e157b6b47a18f68e3fd5fd6a006b55b56844dd6",
-      "review": "CLAUDE-METAMAGIC6-PHASE4-20261120",
-      "rationale": "All31 bodies are included: HealInfo constructor/accumulator, Unit default implementations and helpers, the inline maximum-health helper, and UnitInfo script serializer. Pure virtual declarations, defaulted/deleted members and aggregate declarations have no omitted handwritten body. The empty-string default recovery occurs in the included five-line native-bonus-view method. Complete original-file callable inventory independently checked against the pinned parser and a syntax-only probe retaining every original body span. Original source and span hashes remain authoritative; this is no diagnostics waiver or content/size/runtime approval.",
+      "sha256": "deb925c6208cd2f69341df4627f7f8d630358150813628ce4267f1d0f64fa875",
+      "review": "CLAUDE-HOT-STATS-20261126",
+      "rationale": "All31 bodies are included: HealInfo constructor/accumulator, Unit default implementations and helpers, the inline maximum-health helper, and UnitInfo script serializer. Pure virtual declarations, defaulted/deleted members and aggregate declarations have no omitted handwritten body. The empty-string default recovery occurs in the included five-line native-bonus-view method. Complete original-file callable inventory independently checked against the pinned parser and a syntax-only probe retaining every original body span. Original source and span hashes remain authoritative; this is no diagnostics waiver or content/size/runtime approval. Hot stats: CStack gains the never-saved battle::UnitHotStats member and its hotStatsAccess override; its two non-template save guards move out of line to StackSerializationChecks.cpp; Unit gains the one-line hotStatsAccess default; lib lists UnitHotStats.cpp, StackSerializationChecks.cpp and three headers; HypotheticSourceBinding gains one ProjectedAdjacencyRosterSlot data member and its include. Callable inventory 33 to 34: every retained body is byte-identical with its span remapped by diff.",
       "functions": [
         {
           "symbol": "battle::HealInfo::HealInfo(int64_t healedHP, int32_t resurrected) : healedHealthPoints(healedHP), resurrectedCount(resurrected)#1",
-          "start": 61,
-          "end": 63
+          "start": 62,
+          "end": 64
         },
         {
           "symbol": "battle::HealInfo::HealInfo & operator+=(const HealInfo & other)#1",
-          "start": 68,
-          "end": 73
+          "start": 69,
+          "end": 74
         },
         {
           "symbol": "battle::Unit::virtual bool hasOpenedDemonicGate() const#1",
-          "start": 101,
-          "end": 101
+          "start": 102,
+          "end": 102
         },
         {
           "symbol": "battle::Unit::virtual BattleSide physicalPoisonSpellOrigin() const#1",
-          "start": 103,
-          "end": 103
+          "start": 104,
+          "end": 104
+        },
+        {
+          "symbol": "battle::Unit::virtual UnitHotStatsAccess hotStatsAccess() const#1",
+          "start": 118,
+          "end": 118
         },
         {
           "symbol": "battle::Unit::virtual TConstBonusListPtr getBonusesBeforeCreatureAbilitySuppression( const CSelector & selector, const std::string & cachingStr = {}, bool unstacked = false) const#1",
-          "start": 127,
-          "end": 131
+          "start": 131,
+          "end": 135
         },
         {
           "symbol": "battle::Unit::virtual int32_t getCurrentOriginalCreatureCount() const#1",
-          "start": 142,
-          "end": 142
-        },
-        {
-          "symbol": "battle::Unit::virtual std::optional<int64_t> maximumBodyDamageForCasualties(int32_t) const#1",
           "start": 146,
           "end": 146
         },
         {
+          "symbol": "battle::Unit::virtual std::optional<int64_t> maximumBodyDamageForCasualties(int32_t) const#1",
+          "start": 150,
+          "end": 150
+        },
+        {
           "symbol": "battle::Unit::virtual int32_t getUnusableRemains() const#1",
-          "start": 152,
-          "end": 152
-        },
-        {
-          "symbol": "battle::Unit::virtual int32_t intrinsicMagicalDamageReductionPercent() const#1",
-          "start": 154,
-          "end": 154
-        },
-        {
-          "symbol": "battle::Unit::virtual int32_t intrinsicPhysicalDamageReductionPercent() const#1",
-          "start": 155,
-          "end": 155
-        },
-        {
-          "symbol": "battle::Unit::virtual newHorizonsNecromancy::CombatPassives necromancyCombatPassives() const#1",
           "start": 156,
           "end": 156
         },
         {
+          "symbol": "battle::Unit::virtual int32_t intrinsicMagicalDamageReductionPercent() const#1",
+          "start": 158,
+          "end": 158
+        },
+        {
+          "symbol": "battle::Unit::virtual int32_t intrinsicPhysicalDamageReductionPercent() const#1",
+          "start": 159,
+          "end": 159
+        },
+        {
+          "symbol": "battle::Unit::virtual newHorizonsNecromancy::CombatPassives necromancyCombatPassives() const#1",
+          "start": 160,
+          "end": 160
+        },
+        {
           "symbol": "battle::Unit::virtual newHorizonsElementalAttunement::UnitPassives elementalAttunementPassives() const#1",
-          "start": 157,
-          "end": 157
+          "start": 161,
+          "end": 161
         },
         {
           "symbol": "battle::Unit::virtual int64_t getSurvivingMissingHealth() const#1",
-          "start": 162,
-          "end": 165
+          "start": 166,
+          "end": 169
         },
         {
           "symbol": "battle::Unit::virtual int64_t getShadowGiftCurrentHealth() const#1",
-          "start": 171,
-          "end": 171
+          "start": 175,
+          "end": 175
         },
         {
           "symbol": "battle::Unit::virtual int64_t getShadowGiftMaximumHealth() const#1",
-          "start": 174,
-          "end": 174
-        },
-        {
-          "symbol": "battle::Unit::virtual int64_t getShadowGiftMaximumHealthLost() const#1",
-          "start": 176,
-          "end": 176
-        },
-        {
-          "symbol": "battle::Unit::virtual int64_t getPhantomIntegrity() const#1",
           "start": 178,
           "end": 178
         },
         {
-          "symbol": "battle::Unit::virtual int64_t getPhantomInitialIntegrity() const#1",
+          "symbol": "battle::Unit::virtual int64_t getShadowGiftMaximumHealthLost() const#1",
           "start": 180,
           "end": 180
         },
         {
-          "symbol": "battle::Unit::virtual int64_t getGuardianSpiritHitPoints() const#1",
+          "symbol": "battle::Unit::virtual int64_t getPhantomIntegrity() const#1",
           "start": 182,
           "end": 182
         },
         {
-          "symbol": "battle::Unit::virtual int64_t getRedemptionShieldHitPoints() const#1",
-          "start": 183,
-          "end": 183
-        },
-        {
-          "symbol": "battle::Unit::virtual int64_t getRedemptionShieldCapacity() const#1",
+          "symbol": "battle::Unit::virtual int64_t getPhantomInitialIntegrity() const#1",
           "start": 184,
           "end": 184
         },
         {
-          "symbol": "battle::Unit::virtual int64_t getArcaneWardHitPoints() const#1",
+          "symbol": "battle::Unit::virtual int64_t getGuardianSpiritHitPoints() const#1",
           "start": 186,
           "end": 186
         },
         {
-          "symbol": "battle::Unit::virtual int64_t getArcaneWardCapacity() const#1",
+          "symbol": "battle::Unit::virtual int64_t getRedemptionShieldHitPoints() const#1",
           "start": 187,
           "end": 187
         },
         {
-          "symbol": "battle::Unit::virtual bool hasCompletedActionThisRound() const#1",
+          "symbol": "battle::Unit::virtual int64_t getRedemptionShieldCapacity() const#1",
           "start": 188,
           "end": 188
         },
         {
-          "symbol": "battle::Unit::virtual int32_t getGuardianSpiritRoundsRemaining() const#1",
+          "symbol": "battle::Unit::virtual int64_t getArcaneWardHitPoints() const#1",
           "start": 190,
           "end": 190
         },
         {
-          "symbol": "battle::Unit::virtual int64_t getBattleStartMaximumAggregateHP() const#1",
+          "symbol": "battle::Unit::virtual int64_t getArcaneWardCapacity() const#1",
+          "start": 191,
+          "end": 191
+        },
+        {
+          "symbol": "battle::Unit::virtual bool hasCompletedActionThisRound() const#1",
           "start": 192,
           "end": 192
         },
         {
-          "symbol": "battle::Unit::virtual int64_t getRebirthOriginalAggregateHP() const#1",
+          "symbol": "battle::Unit::virtual int32_t getGuardianSpiritRoundsRemaining() const#1",
           "start": 194,
           "end": 194
         },
         {
-          "symbol": "battle::Unit::virtual int32_t getPersonalBloodrageIncrement() const#1",
+          "symbol": "battle::Unit::virtual int64_t getBattleStartMaximumAggregateHP() const#1",
           "start": 196,
           "end": 196
         },
         {
+          "symbol": "battle::Unit::virtual int64_t getRebirthOriginalAggregateHP() const#1",
+          "start": 198,
+          "end": 198
+        },
+        {
+          "symbol": "battle::Unit::virtual int32_t getPersonalBloodrageIncrement() const#1",
+          "start": 200,
+          "end": 200
+        },
+        {
           "symbol": "battle::Unit::virtual int getDefenseIgnoringDefensiveStance(bool ranged) const#1",
-          "start": 202,
-          "end": 202
+          "start": 206,
+          "end": 206
         },
         {
           "symbol": "battle::Unit::virtual bool battlecraftWaitBonusAvailable() const#1",
-          "start": 215,
-          "end": 215
+          "start": 219,
+          "end": 219
         },
         {
           "symbol": "battle::Unit::virtual TConstBonusListPtr ownedNativeFormBonuses(const CUnitState &, const CSelector &, bool) const#1",
-          "start": 220,
-          "end": 220
+          "start": 224,
+          "end": 224
         },
         {
           "symbol": "battle::inline int64_t getMaximumHealth(const Unit & unit)#1",
-          "start": 270,
-          "end": 274
+          "start": 274,
+          "end": 278
         },
         {
           "symbol": "battle::UnitInfo::void serializeScript(Serializer & s)#1",
-          "start": 304,
-          "end": 316
+          "start": 308,
+          "end": 320
         }
       ],
-      "previous_review": "IR-NH0921-C14-1164-CODEORG-20261117"
+      "previous_review": "CLAUDE-METAMAGIC6-PHASE4-20261120"
     },
     "lib/bonuses/Bonus.h": {
       "sha256": "0498f3043b82f5b7ac9ebef89cded0143342bb785d918e5cf01edf451649e7c2",
@@ -23763,9 +23758,9 @@
       "inherited_a1_health_deferral": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.",
       "inherited_deferral": "Exact source-list bound only. Before substantive build logic, extract a cohesive target configuration section. Verify source/link membership once and retain no duplicate translation units. Prior stricter obligations remain in inherited_deferral, where present.",
       "kind": "exception",
-      "lines": 2194,
+      "lines": 2199,
       "owner": "engine_engineer",
-      "previous_review": "CLAUDE-SYLVAN-AMBUSH-20261123",
+      "previous_review": "CLAUDE-WARCAST-20261124",
       "prior_a1_health_scope": {
         "kind": "exception",
         "lines": 2063,
@@ -23774,11 +23769,11 @@
         "sha256": "7058cdef35cfce13214572d190c4accfdf5721e6c144af3cdfca9f53bb68c2a0"
       },
       "prior_deferral": "Exact mechanical source/header registration only. Before substantive CMake target policy growth, extract a cohesive configuration section while verifying translation-unit membership and facade linkage. No future file growth allowance. Prior stricter obligations remain in inherited_deferral, where present.\n\nKeep registrations in their current coherent tables. Extract any future conditional target/control logic rather than growing this registry into a build framework.",
-      "rationale": "Exact successor for the 0.93.2 Rampart hero specialties (Use the Ground, Elusive, Patroness, Giant-Slayer, Living Remedy, Sorceress of Enroth, Brittle, Against the Odds, revised Perfect Mount, Treantmoot and Forest Ambush): one-line routing hooks into the focused new owners lib/entities/hero/NewHorizonsRampartSpecialties, lib/battle/NewHorizonsRampartSpecialties, lib/pathfinder/NewHorizonsElusive, server/battles/BattleRampartSpecialtyCasts, server/processors/PatronessVisit and AI/BattleAI/RampartSpecialtyValue. Existing extraction deferrals retained; no future growth credit. Exact successor for Sylvan Tactics 5 (Ambush): one-line hooks, includes, the split ranged/melee targeting predicate, one plain unit-state field and its persistence/copy plumbing, or registrations only; the rules live in the focused NewHorizonsSylvanAmbush and SylvanAmbushState units, the client presentation in SylvanAmbushStatusPresentation and SylvanAmbushWaitButton. Existing extraction deferrals retained; 2185 to 2189 lines; no future growth credit. Warcasting (new-horizons:warcast): registers the focused NewHorizonsWarcast.h/.cpp, HeroOrderWarcast.h and HeroCommandWarcastCapture.cpp owners. 2189 to 2194 lines; no future growth credit.",
-      "review": "CLAUDE-WARCAST-20261124",
+      "rationale": "Exact successor for the 0.93.2 Rampart hero specialties (Use the Ground, Elusive, Patroness, Giant-Slayer, Living Remedy, Sorceress of Enroth, Brittle, Against the Odds, revised Perfect Mount, Treantmoot and Forest Ambush): one-line routing hooks into the focused new owners lib/entities/hero/NewHorizonsRampartSpecialties, lib/battle/NewHorizonsRampartSpecialties, lib/pathfinder/NewHorizonsElusive, server/battles/BattleRampartSpecialtyCasts, server/processors/PatronessVisit and AI/BattleAI/RampartSpecialtyValue. Existing extraction deferrals retained; no future growth credit. Exact successor for Sylvan Tactics 5 (Ambush): one-line hooks, includes, the split ranged/melee targeting predicate, one plain unit-state field and its persistence/copy plumbing, or registrations only; the rules live in the focused NewHorizonsSylvanAmbush and SylvanAmbushState units, the client presentation in SylvanAmbushStatusPresentation and SylvanAmbushWaitButton. Existing extraction deferrals retained; 2185 to 2189 lines; no future growth credit. Warcasting (new-horizons:warcast): registers the focused NewHorizonsWarcast.h/.cpp, HeroOrderWarcast.h and HeroCommandWarcastCapture.cpp owners. 2189 to 2194 lines; no future growth credit. Hot stats: CStack gains the never-saved battle::UnitHotStats member and its hotStatsAccess override; its two non-template save guards move out of line to StackSerializationChecks.cpp; Unit gains the one-line hotStatsAccess default; lib lists UnitHotStats.cpp, StackSerializationChecks.cpp and three headers; HypotheticSourceBinding gains one ProjectedAdjacencyRosterSlot data member and its include. Exact 2194 to 2199 lines; no future growth credit.",
+      "review": "CLAUDE-HOT-STATS-20261126",
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "80eab61c1bcd2b20bafc7c8253b45525af28852bd53f0deffd595fdfad277704",
+      "sha256": "19308acf47874a3efd20f2ed2cd0fac57130f825519f340ec229f0b080c659fa",
       "inherited_deferral_step2": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.\n\nExact shared-facade source/header registration only. Before conditional target/control policy growth, extract the next coherent configuration section; preserve one translation unit per implementation and consumer linkage through vcmi. No future registry-size growth credit.",
       "inherited_rampart_deferral": "Exact hash/size only. Preserve prior narrower extraction, ownership, registration, state/RNG and lifecycle obligations below; next substantive affected expansion must extract a cohesive responsibility and lower the retained bound. Owner engine_engineer.\nExact committed hash and size only, not future growth or native/build/performance approval. Owner engine_engineer must keep future conditional compile policy in focused target helpers and extract the next cohesive stage before further orchestration expansion. Preserve all stricter inherited source/link/guard/ordering obligations below.\nPreserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.\n\nExact shared-facade source/header registration only. Before conditional target/control policy growth, extract the next coherent configuration section; preserve one translation unit per implementation and consumer linkage through vcmi. No future registry-size growth credit."
     },
@@ -23822,15 +23817,15 @@
       },
       "deferral": "Keep the native attacked-state interface narrow; any further substantive declaration growth must accompany focused attacked-state/reporting owner with explicit mutation/RNG ordering and caller characterization. Expanded exact review: Engine engineer: retain environment definitions in StackUnitEnvironment and consolidate added feature checks in the existing serialization-prefix owner before further growth; characterize pre-prefix rejection and native/projected environment rebinding. Exact534-line interface review does not exempt later header growth. Engine engineer: before further affected stack codec growth, extract the contiguous physical-Poison base/ticks/source/side/descriptor wire group into serializePhysicalPoisonState at the exact existing call position, reducing serialize151 below150 without changing the earlier completed-action receipt. Require exact bytes/current roundtrip, old-writer before-prefix rejection, malformed-read and localInit receipt characterization.",
       "kind": "exception",
-      "lines": 538,
+      "lines": 530,
       "owner": "engine_engineer",
-      "previous_review": "CLAUDE-METAMAGIC6-PHASE4-20261120",
-      "rationale": "Exact successor for Metamagic 6 Double Cast phase 4 (perk effects): one-line hooks, includes, accessor overrides, registrations or Arcane Ward unit-state plumbing only; the completion effects live in the focused MetamagicDoubleCastCompletion unit and the derived Crescendo/Spellstorm terms in MetamagicDoubleCast. Existing extraction deferrals retained; no future growth credit. Exact successor for Sylvan Tactics 5 (Ambush): one-line hooks, includes, the split ranged/melee targeting predicate, one plain unit-state field and its persistence/copy plumbing, or registrations only; the rules live in the focused NewHorizonsSylvanAmbush and SylvanAmbushState units, the client presentation in SylvanAmbushStatusPresentation and SylvanAmbushWaitButton. Existing extraction deferrals retained; 534 to 538 lines; no future growth credit.",
-      "review": "CLAUDE-SYLVAN-AMBUSH-20261123",
+      "previous_review": "CLAUDE-SYLVAN-AMBUSH-20261123",
+      "rationale": "Exact successor for Metamagic 6 Double Cast phase 4 (perk effects): one-line hooks, includes, accessor overrides, registrations or Arcane Ward unit-state plumbing only; the completion effects live in the focused MetamagicDoubleCastCompletion unit and the derived Crescendo/Spellstorm terms in MetamagicDoubleCast. Existing extraction deferrals retained; no future growth credit. Exact successor for Sylvan Tactics 5 (Ambush): one-line hooks, includes, the split ranged/melee targeting predicate, one plain unit-state field and its persistence/copy plumbing, or registrations only; the rules live in the focused NewHorizonsSylvanAmbush and SylvanAmbushState units, the client presentation in SylvanAmbushStatusPresentation and SylvanAmbushWaitButton. Existing extraction deferrals retained; 534 to 538 lines; no future growth credit. Hot stats: CStack gains the never-saved battle::UnitHotStats member and its hotStatsAccess override; its two non-template save guards move out of line to StackSerializationChecks.cpp; Unit gains the one-line hotStatsAccess default; lib lists UnitHotStats.cpp, StackSerializationChecks.cpp and three headers; HypotheticSourceBinding gains one ProjectedAdjacencyRosterSlot data member and its include. Exact 538 to 530 lines; no future growth credit.",
+      "review": "CLAUDE-HOT-STATS-20261126",
       "review_category": "component-interface-and-prefix-review",
       "review_scope": "Exact recorded C14 source hash, physical span and organization delta only. No future growth, whole-mechanic, compiler, native, rendered, performance, save-resume, publication or promotion acceptance.",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "d88358b01460f00fdde04c6a320d764dc42e8f08eb20f784e1f0c0f247e99be6"
+      "sha256": "c5522097c614fdf178251acdac6740c40a78983a47f508881c223e1feb795a25"
     },
     "lib/CStack.h::CStack::void serialize(Handler & h)#1": {
       "completed_p_predecessor": {

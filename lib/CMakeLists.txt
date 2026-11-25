@@ -1140,6 +1140,8 @@ set(lib_MAIN_SRCS
 	# Appended so existing Unity batches keep their membership.
 	battle/HeroCommandWarcastCapture.cpp
 	battle/NewHorizonsWarcast.cpp
+	battle/UnitHotStats.cpp
+	battle/StackSerializationChecks.cpp
 )
 
 if (NOT ENABLE_MINIMAL_LIB)
@@ -1237,6 +1239,9 @@ set(lib_MAIN_HEADERS
 	battle/OwnedUnitStateLoanSource.h
 	battle/OrdinaryUnitTransitions.h
 	battle/MechanicsPresence.h
+	battle/UnitHotStats.h
+	battle/UnitHotStatsQuery.h
+	battle/UnitPlainState.h
 	entities/hero/CompiledPerkCatalogue.h
 	nativeRules/CapturedPerkRules.h
 	nativeRules/CapturedRuleEnvelope.h

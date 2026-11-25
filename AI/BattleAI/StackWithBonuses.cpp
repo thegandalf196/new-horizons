@@ -108,6 +108,7 @@ StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle:
 	else bindStateEnvironment(Owner->unitEnvironment());
 
 	battle::CUnitState::operator=(*Stack);
+	hotStats.invalidate();
 	if(ownedQuerySource) { ownedQuerySource->finishInitialization(); return; }
 	const bool snapshotSpellTimers = hasTimedMagicalSpellEffects(*this);
 	if(snapshotSpellTimers)
@@ -141,6 +142,7 @@ StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle:
 
 	auto state = Stack->acquireState();
 	battle::CUnitState::operator=(*state);
+	hotStats.invalidate();
 	if(ownedQuerySource) { ownedQuerySource->finishInitialization(); return; }
 	const bool snapshotSpellTimers = hasTimedMagicalSpellEffects(*this);
 	if(snapshotSpellTimers)
@@ -195,6 +197,7 @@ StackWithBonuses::~StackWithBonuses() = default;
 StackWithBonuses & StackWithBonuses::operator=(const battle::CUnitState & other)
 {
 	battle::CUnitState::operator=(other);
+	hotStats.invalidate(); // Answers computed during the copy belong to no stamp.
 	battleStartMaximumAggregateHP = other.getBattleStartMaximumAggregateHP();
 	return *this;
 }

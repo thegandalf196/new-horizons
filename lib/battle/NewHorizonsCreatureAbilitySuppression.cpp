@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "NewHorizonsCreatureAbilitySuppression.h"
+#include "UnitHotStatsQuery.h"
 #include "../bonuses/BonusList.h"
 #include "../bonuses/BonusSelector.h"
 
@@ -108,9 +109,8 @@ bool isMindbreakerSuppressedType(const BonusType type)
 			return false;
 	}
 }
-}
 
-int32_t suppressionLevel(const battle::Unit & unit)
+int32_t computeSuppressionLevel(const battle::Unit & unit)
 {
 	if(!unit.mayHaveBonusType(BonusType::CREATURE_ABILITY_SUPPRESSION)) return 0;
 	static const CSelector markerSelector = Selector::type()(BonusType::CREATURE_ABILITY_SUPPRESSION);
@@ -132,6 +132,16 @@ int32_t suppressionLevel(const battle::Unit & unit)
 	}
 
 	return level;
+}
+}
+
+int32_t suppressionLevel(const battle::Unit & unit)
+{
+	// Every status and bonus query of a unit starts here; reuse the answer.
+	return battle::hotStat(unit, battle::HotStat::SUPPRESSION_LEVEL, [&unit]()
+	{
+		return computeSuppressionLevel(unit);
+	});
 }
 
 bool isSuppressed(const Bonus & bonus, const int32_t level)

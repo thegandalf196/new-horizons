@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "HypotheticBattleTypes.h"
+#include "StackHotStats.h"
 #include "../../lib/bonuses/Bonus.h"
 #include "../../lib/bonuses/IBonusBearer.h"
 #include "../../lib/bonuses/RecipientBonusOverlay.h"
@@ -100,6 +101,7 @@ public:
 	int32_t getTreeVersion() const override;
 	bool isBonusCacheable() const override;
 	bool mayHaveBonusType(BonusType type) const override;
+	battle::UnitHotStatsAccess hotStatsAccess() const override;
 	/// Conservative raw-source proof for movement forecasts, not a re-evaluation
 	/// of limited bonuses. Caller retains the original immutable world/graph.
 	bool hasMovementInvariantBonusSources() const;
@@ -219,4 +221,9 @@ private:
 	BattleSide side;
 	PlayerColor player;
 	SlotID slot;
+	/// Memoised hot answers (battle::hotStat); derived, never copied or saved.
+	StackHotStats hotStats;
+	/// False when a layer below cannot be stamped; the view then memoises nothing.
+	bool hotStatsStamp(StackHotStatsStamp & stamp) const;
+	void mixHotStatsOverlay(uint64_t & digest) const;
 };

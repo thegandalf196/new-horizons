@@ -153,6 +153,31 @@ TEST_F(NativePassiveSpecialtyProjectionTest, ChillingPresenceFollowsAHeldNeighbo
 	mover->setPosition(wight->getPosition());
 	EXPECT_EQ(recipient->valOfBonuses(BonusType::MORALE), morale);
 }
+/// The reused adjacency roster follows the branch's unit map, and each
+/// neighbour's plain state follows direct edits: a neighbour replaced in the
+/// map, or killed through its held state, with no branch mutator, both count.
+TEST_F(NativePassiveSpecialtyProjectionTest, ChillingPresenceFollowsAReplacedOrKilledHeldNeighbour)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare("core:charna"));
+	const auto * wight = addStack(BattleSide::ATTACKER, creatureByName("core:wight"), BattleHex(7, 4), 100);
+	const auto * victim = addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(8, 4), 100);
+	ASSERT_NE(wight, nullptr); ASSERT_NE(victim, nullptr);
+	ASSERT_NO_FATAL_FAILURE(branches(PlayerColor(1)));
+	const auto held = child->getForUpdate(wight->unitId());
+	const auto recipient = child->getForUpdate(victim->unitId());
+	const auto morale = recipient->valOfBonuses(BonusType::MORALE);
+	const battle::CUnitState * heldState = held.get();
+	auto moved = std::make_shared<StackWithBonuses>(child.get(), heldState);
+	moved->setPosition(BattleHex(4, 2));
+	child->stackStates[wight->unitId()] = moved;
+	EXPECT_EQ(recipient->valOfBonuses(BonusType::MORALE), morale + 1);
+	child->stackStates[wight->unitId()] = held;
+	EXPECT_EQ(recipient->valOfBonuses(BonusType::MORALE), morale);
+	int64_t lethal = held->getAvailableHealth();
+	held->damage(lethal);
+	ASSERT_FALSE(held->alive());
+	EXPECT_EQ(recipient->valOfBonuses(BonusType::MORALE), morale + 1);
+}
 TEST_F(NativePassiveSpecialtyProjectionTest, TreantmootPrunesDeliberateTargetsButKeepsCollateralDamage)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare("core:ryland"));

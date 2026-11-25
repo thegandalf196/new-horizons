@@ -8,6 +8,7 @@
 #include "NewHorizonsFrozen.h"
 #include "TimedEffectValueTransitions.h"
 #include "CUnitState.h"
+#include "UnitHotStatsQuery.h"
 #include "PhysicalAffliction.h"
 #include "NewHorizonsCombatSkills.h"
 #include "BattleAttackInfo.h"
@@ -145,7 +146,10 @@ std::optional<int32_t> markerApplicationRound(const Bonus & bonus)
 
 bool isFrozen(const battle::Unit & unit)
 {
-	return unit.mayHaveBonusType(BonusType::PHYSICAL_AFFLICTION) && unit.hasBonus(CSelector(isMarker));
+	return battle::hotStat(unit, battle::HotStat::FROZEN, [&unit]()
+	{
+		return unit.mayHaveBonusType(BonusType::PHYSICAL_AFFLICTION) && unit.hasBonus(CSelector(isMarker));
+	}) != 0;
 }
 
 bool canApply(const battle::CUnitState & unit, int32_t round)
