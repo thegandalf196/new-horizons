@@ -69,7 +69,7 @@ Frame::Inputs inputs(uint32_t id = 17)
 	inputs.environment.magicRules.emplace(); inputs.environment.skeletonUpgrades.emplace();
 	inputs.peerInputs.emplace(); inputs.recipientPosition = 0;
 	SeedInfo info(*inputs.creatures); SeedView view; battle::CUnitStateDetached seed(&info, &view);
-	view.subject = &seed; seed.localInit(nullptr); seed.position = BattleHex(50);
+	view.subject = &seed; seed.localInit(nullptr); seed.setPosition(BattleHex(50));
 	inputs.state = seed.save();
 	return inputs;
 }
@@ -113,7 +113,7 @@ using OwnedFrameBranchQueriesTest = vcmiTestData::OriginalDataTest;
 TEST_F(OwnedFrameBranchQueriesTest, CurrentScalarTransactionKeepsStableAddressAndIsolatesSibling)
 {
 	auto root = frame(); auto current = root->fork(); auto sibling = root->fork();
-	auto scratch = current->scratch(); scratch.unit().position = BattleHex(51);
+	auto scratch = current->scratch(); scratch.unit().setPosition(BattleHex(51));
 	const auto * address = &current->unit();
 	WithoutLibrary absent;
 	Bridge::synchronize(*current, {{current, &scratch.unit()}});

@@ -41,11 +41,11 @@ bool applyRound(const CBattleInfoCallback & battle, battle::CUnitState & unit, i
 		? coefficient(battle, unit, "core:kalt", "risingTideCreaturesPerRound", true) : 0;
 	const int healing = family(unit, Family::WalkingDead)
 		? coefficient(battle, unit, "core:straker", "undyingHealingHP", true) : 0;
-	if(growth > 0) unit.health.appendTemporaryCreatures(growth);
+	if(growth > 0) unit.editHealth()->appendTemporaryCreatures(growth);
 	if(healing > 0)
 	{
 		const auto capacity = std::max<int64_t>(0, int64_t(unit.unitBaseAmount()) * unit.getMaxHealth()
-			- unit.health.getCreatureHealthAvailable());
+			- unit.getHealth().getCreatureHealthAvailable());
 		int64_t amount = std::min<int64_t>(healing, capacity);
 		unit.heal(amount, EHealLevel::RESURRECT, EHealPower::PERMANENT);
 	}

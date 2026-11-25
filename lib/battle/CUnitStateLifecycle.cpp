@@ -20,7 +20,7 @@ void CUnitState::localInit(const IUnitEnvironment * env_)
 {
 	bindStateEnvironment(env_);
 	reset();
-	health.init();
+	editHealth()->init();
 }
 
 void CUnitState::reset()
@@ -46,8 +46,8 @@ void CUnitState::reset()
 	hadMorale = false;
 	moraleExtraActivation = false;
 	castSpellThisTurn = false;
-	ghost = false;
-	ghostPending = false;
+	setGhost(false);
+	setGhostPending(false);
 	movedThisRound = false;
 	completedActionThisRound = false;
 	rangedFollowUpDamagePercent = 0;
@@ -87,11 +87,11 @@ void CUnitState::reset()
 	guardianSpiritHitPoints = 0;
 	guardianSpiritRoundsRemaining = 0;
 	phantomInitialIntegrity = 0;
-	phantomIntegrity = 0;
+	setPhantomIntegrity(0);
 	phantomRoundsRemaining = 0;
 	phantomShadowGiftMaximumHealthLost = 0;
 	capacityHealthReferenceMax = 0;
-	battleFormOriginalHealth.reset();
+	editOriginalHealth()->reset();
 	battleFormCreatureId = CreatureID(-1);
 	battleFormOriginalCreatureId = CreatureID(-1);
 	battleFormRoundsRemaining = 0;
@@ -105,12 +105,12 @@ void CUnitState::reset()
 
 	casts.reset();
 	counterAttacks.reset();
-	health.reset();
+	editHealth()->reset();
 	shots.reset();
 
 	cloneID = -1;
 
-	position = BattleHex::INVALID;
+	setPosition(BattleHex::INVALID);
 	archeryCounterfireRound = -1;
 	archeryDeadeyeRound = -1;
 	archerySuppressionActivationSerial = -1;
@@ -162,6 +162,7 @@ void CUnitState::afterNewRound(bool isFirstRound, bool deferBattleFormRestoratio
 	{
 		// The preserved initiative only represents the remainder of the round
 		// in which the form was cast.
+		const StateRevisionScope formRounds(stateRevision);
 		battleFormInitiativeSnapshotActive = false;
 		if(battleFormRoundsRemaining <= 1)
 		{
@@ -256,12 +257,12 @@ void CUnitState::makeGhost()
 	arcaneWard.clear();
 	guardianSpiritHitPoints = 0;
 	guardianSpiritRoundsRemaining = 0;
-	phantomIntegrity = 0;
+	setPhantomIntegrity(0);
 	phantomRoundsRemaining = 0;
 	capacityHealthReferenceMax = 0;
 	capacityRegenerationRemainderTenths = 0;
-	health.reset();
-	ghostPending = true;
+	editHealth()->reset();
+	setGhostPending(true);
 }
 
 void CUnitState::onRemoved()
@@ -282,17 +283,17 @@ void CUnitState::onRemoved()
 	// Ghost stacks can be removed from the battlefield before the final result
 	// is assembled; clearing the ledger here would make those direct-hit
 	// casualties look like ordinary Necromancy-eligible deaths.
-	health.reset(false);
+	editHealth()->reset(false);
 	capacityHealthReferenceMax = 0;
 	capacityRegenerationRemainderTenths = 0;
 	redemptionShield.clear();
 	arcaneWard.clear();
 	guardianSpiritHitPoints = 0;
 	guardianSpiritRoundsRemaining = 0;
-	phantomIntegrity = 0;
+	setPhantomIntegrity(0);
 	phantomRoundsRemaining = 0;
-	ghostPending = false;
-	ghost = true;
+	setGhostPending(false);
+	setGhost(true);
 }
 void CUnitState::clearDeadUnitTransientState()
 {

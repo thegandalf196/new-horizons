@@ -180,14 +180,14 @@ TEST_F(ForecastEffectConsumerTest, MaximumHealthRemovalUpdatesDetachedContextBef
 	const auto snapshot = battle::UnitStateValueSnapshot::capture(*target);
 	EXPECT_THROW(snapshot.restore(*baseline), std::invalid_argument);
 	EXPECT_EQ(baseline->save(), baselineBefore); // Strict mismatched-context rejection is atomic.
-	auto casualtyDamage = int64_t(target->health.getFirstHPleft()) + 1;
+	auto casualtyDamage = int64_t(target->getHealth().getFirstHPleft()) + 1;
 	ASSERT_TRUE(forecast::NativeAdapter::damage(*model, *target, casualtyDamage,
 		battle::DamageProvenance::OTHER, nullptr));
 	ASSERT_LT(target->getCount(), initialCount);
 	const auto targetBeforeDraft = target->save();
 	auto prepared = forecast::NativeAdapter::prepareEffectDraft(*target);
 	EXPECT_EQ(prepared->getMaxHealth(), base + 4);
-	EXPECT_EQ(prepared->health.valueContext(), target->health.valueContext());
+	EXPECT_EQ(prepared->getHealth().valueContext(), target->getHealth().valueContext());
 	EXPECT_EQ(prepared->save(), targetBeforeDraft);
 	EXPECT_EQ(target->save(), targetBeforeDraft); // Preparing never changes the live recipient.
 	ASSERT_TRUE(forecast::NativeAdapter::effectApplication(*model, id, {health}, {}));
@@ -195,7 +195,7 @@ TEST_F(ForecastEffectConsumerTest, MaximumHealthRemovalUpdatesDetachedContextBef
 	EXPECT_EQ(model->forecastState()->unit(id)->health.valueContext().maximumHealth, base);
 	auto amount = int64_t(7);
 	ASSERT_TRUE(forecast::NativeAdapter::damage(*model, *target, amount, battle::DamageProvenance::OTHER, nullptr));
-	EXPECT_EQ(model->forecastState()->unit(id)->health.available(), target->health.available());
+	EXPECT_EQ(model->forecastState()->unit(id)->health.available(), target->getHealth().available());
 }
 
 TEST_F(ForecastEffectConsumerTest, ChildPublicationKeepsImmutableParentAndSiblingNativeValues)

@@ -19,7 +19,7 @@ TEST_F(OwnedExportMeleeTest, DirectScalarMovementUsesCurrentCanonicalPositionNot
 	auto left = std::make_shared<HypotheticBattle>(environment.get(), known);
 	auto right = std::make_shared<HypotheticBattle>(environment.get(), known);
 	const int originalAttack = right->battleGetUnitByID(incoming->unitId())->getAttack(false);
-	left->getForUpdate(incoming->unitId())->position = BattleHex(90);
+	left->getForUpdate(incoming->unitId())->setPosition(BattleHex(90));
 	EXPECT_EQ(left->battleGetUnitByID(incoming->unitId())->getAttack(false), originalAttack + 4);
 	EXPECT_EQ(right->battleGetUnitByID(incoming->unitId())->getAttack(false), originalAttack);
 	EXPECT_EQ(incoming->getPosition(), BattleHex(89));

@@ -512,7 +512,7 @@ void BattleFlowProcessor::startNextRound(const CBattleInfoCallback & battle, boo
 		if(!stack)
 			continue;
 		auto state = stack->acquireState();
-		if(!state->health.isCapacityHealthTracking())
+		if(!state->getHealth().isCapacityHealthTracking())
 			continue;
 		state->normalizeCapacityHealth();
 		const bool capacityRemains = stack->hasBonus(hydrasCapacitySelector);
@@ -723,7 +723,7 @@ void BattleFlowProcessor::activateNextStack(const CBattleInfoCallback & battle)
 		removeGhosts.battleID = battle.getBattle()->getBattleID();
 
 		auto pendingGhosts = battle.battleGetStacksIf([](const CStack * stack){
-			return stack->ghostPending;
+			return stack->isGhostPending();
 		});
 
 		for(const auto * stack : pendingGhosts)
@@ -1327,8 +1327,8 @@ bool BattleFlowProcessor::tryMakeAutomaticActionOfMeleeUnit(const CBattleInfoCal
 	const TStacks possibleTargets = battle.battleGetStacksIf([&actingStack, &battle](const CStack * s)
 	{
 		return s->unitOwner() != actingStack->unitOwner() && s->isValidTarget()
-		&& (!battle.isEnemyUnitWithinSpecifiedRange(actingStack->position, s, actingStack->getMovementRange())
-		|| (battle.isEnemyUnitWithinSpecifiedRange(actingStack->position, s, actingStack->getMovementRange()) && !s->getAttackableHexes(actingStack).empty()));
+		&& (!battle.isEnemyUnitWithinSpecifiedRange(actingStack->getPosition(), s, actingStack->getMovementRange())
+		|| (battle.isEnemyUnitWithinSpecifiedRange(actingStack->getPosition(), s, actingStack->getMovementRange()) && !s->getAttackableHexes(actingStack).empty()));
 	});
 
 	TargetInfo bestTarget;

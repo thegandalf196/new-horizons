@@ -68,9 +68,9 @@ TEST_F(CreatureBurnRedemptionTest, ActualPeriodicProducerAbsorbsBeforeBodyThenPa
 	// Its casualty grants three HP only after the full tick, so it cannot absorb itself.
 	EXPECT_EQ(recipient->redemptionShield.remaining, 3);
 	EXPECT_EQ(recipient->redemptionShield.capacity, 200);
-	EXPECT_EQ(recipient->health.getCasualtyCount(battle::DamageProvenance::OTHER), 1);
-	EXPECT_EQ(recipient->health.getCasualtyCount(battle::DamageProvenance::SPELL), 0);
-	EXPECT_EQ(recipient->health.getCasualtyCount(battle::DamageProvenance::MAGICAL_CREATURE), 0);
+	EXPECT_EQ(recipient->getHealth().getCasualtyCount(battle::DamageProvenance::OTHER), 1);
+	EXPECT_EQ(recipient->getHealth().getCasualtyCount(battle::DamageProvenance::SPELL), 0);
+	EXPECT_EQ(recipient->getHealth().getCasualtyCount(battle::DamageProvenance::MAGICAL_CREATURE), 0);
 	EXPECT_FALSE(recipient->hasBonus(CSelector(newHorizonsCreatureBurn::isBurn)));
 	EXPECT_FALSE(battleCreatureBurn::onActivation(*gameHandler, *battle(), *recipient,
 		BattleUnitTurnReason::TURN_QUEUE));

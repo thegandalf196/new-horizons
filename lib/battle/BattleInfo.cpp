@@ -1648,7 +1648,7 @@ void BattleInfo::moveUnit(uint32_t id, const BattleHex & destination)
 			}
 		}
 	}
-	sta->position = destination;
+	sta->setPosition(destination);
 	expireSeparatedHeroOrderProtect();
 	//Bonuses can be limited by unit placement, so, change tree version
 	//to force updating a bonus. TODO: update version only when such bonuses are present

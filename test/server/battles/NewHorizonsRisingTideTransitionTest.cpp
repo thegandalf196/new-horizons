@@ -111,14 +111,14 @@ TEST_F(NewHorizonsRisingTideTransitionTest, GrowthPreservesWoundsAndPermanentCas
 	prepare("core:waterElemental");
 	ASSERT_GT(elemental->getMaxHealth(), 15u);
 	const auto initialCount = elemental->getCount();
-	const auto temporary = elemental->health.getResurrected();
+	const auto temporary = elemental->getHealth().getResurrected();
 	// prepare() has already begun Round1 and may have grown a temporary body.
 	// Spend that temporary-first cohort AND one permanent creature, leaving a
 	// wound. Later growth must not erase the permanent casualty or heal it.
 	injure((static_cast<int64_t>(temporary) + 1) * elemental->getMaxHealth() + 15);
 	const auto count = elemental->getCount();
 	ASSERT_EQ(count, initialCount - temporary - 1);
-	ASSERT_EQ(elemental->health.getResurrected(), 0);
+	ASSERT_EQ(elemental->getHealth().getResurrected(), 0);
 	const auto wounded = elemental->getAvailableHealth();
 	roundPhase();
 	EXPECT_EQ(elemental->getAvailableHealth(), wounded + elemental->getMaxHealth());
@@ -127,7 +127,7 @@ TEST_F(NewHorizonsRisingTideTransitionTest, GrowthPreservesWoundsAndPermanentCas
 	EXPECT_EQ(elemental->getAvailableHealth(), wounded + 2 * elemental->getMaxHealth());
 	EXPECT_EQ(elemental->getCount(), count + 2);
 	EXPECT_EQ(elemental->getSurvivingMissingHealth(), 15);
-	EXPECT_EQ(elemental->health.getResurrected(), 2);
+	EXPECT_EQ(elemental->getHealth().getResurrected(), 2);
 }
 TEST_F(NewHorizonsRisingTideTransitionTest, DestroyedStacksDoNotGrow)
 {

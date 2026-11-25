@@ -95,7 +95,7 @@ std::shared_ptr<Frame> fixtureFrame(const std::vector<std::shared_ptr<Bonus>> & 
 	input.environment.magicRules.emplace(); input.environment.skeletonUpgrades.emplace();
 	input.peerInputs.emplace(); input.recipientPosition = 0; // Explicit pure one-unit domain, no player/capture grant.
 	SeedInfo info(*input.creatures); SeedBonuses bonuses; battle::CUnitStateDetached seed(&info, &bonuses); bonuses.subject = &seed;
-	seed.localInit(nullptr); seed.position = BattleHex(50);
+	seed.localInit(nullptr); seed.setPosition(BattleHex(50));
 	if(formed) seed.beginBattleForm(CreatureID(2), 2);
 	input.state = seed.save();
 	return Frame::fromOwnedInputs(std::move(input));

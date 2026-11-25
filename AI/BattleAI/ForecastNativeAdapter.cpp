@@ -162,7 +162,7 @@ bool closedLifecycle(const StackWithBonuses & unit, const forecastEffects::State
 	const CGHeroInstance * visibleHero)
 {
 	// Raw capability (not effective-list absence) protects dormant sources too.
-	if(unit.health.isCapacityHealthTracking()) return false;
+	if(unit.getHealth().isCapacityHealthTracking()) return false;
 	const auto * inertCart = ammoCartAdmission::intrinsic(unit);
 	for(const auto type : {BonusType::COMBAT_EVENT_TRIGGER, BonusType::REBIRTH,
 		BonusType::DISINTEGRATE, BonusType::CREATURE_ABILITY_SUPPRESSION,
@@ -186,7 +186,7 @@ bool closedLifecycle(const StackWithBonuses & unit, const forecastEffects::State
 		}
 	}
 	if(inertCart && std::ranges::none_of(*raw, [&](const auto & row) { return row.get() == inertCart; })) return false;
-	return !unit.isClone() && !unit.isGhost() && !unit.ghostPending && !unit.summoned && !unit.hasBattleFormState()
+	return !unit.isClone() && !unit.isGhost() && !unit.isGhostPending() && !unit.summoned && !unit.hasBattleFormState()
 		&& unit.getPhantomIntegrity() == 0 && unit.guardianSpiritHitPoints == 0
 		&& unit.regenerationRateMillionths == 0 && unit.regenerationPendingMicroHealth == 0
 		&& unit.pursuitMovementRemaining == 0 && unit.rangedFollowUpDamagePercent == 0
@@ -243,7 +243,7 @@ UnitInput captureUnit(const StackWithBonuses & unit, const HypotheticBattle & so
 			definition->numeric[mode] = std::make_shared<const nativeDamage::PreparedUnit>(std::move(*facts));
 		}
 	}
-	UnitDelta value(battle::CHealth::detached(unit.health, unit.health.valueContext()));
+	UnitDelta value(battle::CHealth::detached(unit.getHealth(), unit.getHealth().valueContext()));
 	value.numeric = definition->numeric;
 	value.focus = NativeAdapter::captureFocus(unit);
 	value.effects = std::move(effects);
@@ -389,7 +389,7 @@ bool NativeAdapter::publish(const State & state, UnitId id, HypotheticBattle & b
 	if(!definition || !value || target.unitId() != id || branch.battleGetUnitByID(id) != &target
 		|| !target.usesStateEnvironment(*branch.unitEnvironment())
 		|| branch.getBattleID() != state.source().battle || branch.battleGetRound() != state.currentRound()
-		|| target.health.valueContext() != value->health.valueContext()) return false;
+		|| target.getHealth().valueContext() != value->health.valueContext()) return false;
 	// Membership can alter the allowance without consuming a retaliation.
 	// Preserve native used-count provenance rather than comparing availability
 	// from two different totals (for example a lost Order extra retaliation).
@@ -405,7 +405,7 @@ bool NativeAdapter::publish(const State & state, UnitId id, HypotheticBattle & b
 		|| (prepared.limited && retaliation > observed.available)) return false;
 	auto stagedHealth = value->health; // Allocate all health-ledger copies FIRST.
 	if(retaliation) preparedValues->counterAttacks.use(static_cast<int32_t>(retaliation));
-	preparedValues->health.swapPreparedContents(stagedHealth);
+	preparedValues->editHealth()->swapPreparedContents(stagedHealth);
 	preparedValues->setPosition(value->position);
 	preparedValues->movedThisRound = value->activation.moved;
 	preparedValues->waiting = value->activation.waiting;

@@ -73,7 +73,7 @@ protected:
 		add(BonusType::SHOTS, 5);
 		add(BonusType::CASTS, 3);
 		unit.localInit(&environment);
-		unit.position = BattleHex(5, 5);
+		unit.setPosition(BattleHex(5, 5));
 	}
 
 	void add(BonusType type, int value)
@@ -245,8 +245,8 @@ TEST_F(UnitLifecycleTest, removalPreservesDestroyedRemainsWhileClearingTransient
 	unit.guardianSpiritHitPoints = 17;
 	unit.guardianSpiritRoundsRemaining = 2;
 	unit.onRemoved();
-	EXPECT_TRUE(unit.ghost);
-	EXPECT_FALSE(unit.ghostPending);
+	EXPECT_TRUE(unit.isGhost());
+	EXPECT_FALSE(unit.isGhostPending());
 	EXPECT_EQ(unit.getAvailableHealth(), 0);
 	EXPECT_EQ(unit.getUnusableRemains(), 2);
 	EXPECT_EQ(unit.getGuardianSpiritHitPoints(), 0);
@@ -257,29 +257,29 @@ TEST_F(UnitLifecycleTest, ghostTransitionSeparatesPendingFromActualRemoval)
 {
 	seed();
 	unit.makeGhost();
-	EXPECT_TRUE(unit.ghostPending);
-	EXPECT_FALSE(unit.ghost);
+	EXPECT_TRUE(unit.isGhostPending());
+	EXPECT_FALSE(unit.isGhost());
 	EXPECT_FALSE(unit.moraleExtraActivation);
 	EXPECT_EQ(unit.pursuitMovementRemaining, 0);
 	EXPECT_FALSE(unit.cleaveUsedThisActivation);
 	EXPECT_EQ(unit.getActivationMovementBonus(), 0);
 	EXPECT_EQ(unit.getAvailableHealth(), 0);
 	unit.onRemoved();
-	EXPECT_TRUE(unit.ghost);
-	EXPECT_FALSE(unit.ghostPending);
+	EXPECT_TRUE(unit.isGhost());
+	EXPECT_FALSE(unit.isGhostPending());
 }
 
 TEST_F(UnitLifecycleTest, roundGhostsUnmarkedCloneButRetainsMarkedClone)
 {
 	unit.cloned = true;
 	unit.afterNewRound();
-	EXPECT_TRUE(unit.ghostPending);
+	EXPECT_TRUE(unit.isGhostPending());
 	unit.localInit(&environment);
 	unit.cloned = true;
 	bonuses.addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
 		BonusType::NONE, BonusSource::SPELL_EFFECT, 0, BonusSourceID(SpellID(SpellID::CLONE))));
 	unit.afterNewRound();
-	EXPECT_FALSE(unit.ghostPending);
+	EXPECT_FALSE(unit.isGhostPending());
 	EXPECT_TRUE(unit.alive());
 }
 

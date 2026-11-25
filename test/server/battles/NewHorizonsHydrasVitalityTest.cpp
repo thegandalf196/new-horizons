@@ -230,15 +230,15 @@ TEST_F(NewHorizonsHydrasVitalityBattleTest, TemporaryResurrectionCleanupRemovesE
 	ASSERT_EQ(heal(target, 22, EHealLevel::RESURRECT, EHealPower::ONE_BATTLE), 22);
 	ASSERT_EQ(target->getCount(), initialCount);
 	ASSERT_EQ(target->getAvailableHealth(), 33);
-	ASSERT_EQ(target->health.getResurrected(), 2);
+	ASSERT_EQ(target->getHealth().getResurrected(), 2);
 	ASSERT_TRUE(castOn(attackerSideHero, hydrasVitalitySpell(), target));
 	EXPECT_EQ(target->getAvailableHealth(), 33);
 	EXPECT_GT(target->getMaxHealth(), 10u);
 	auto cleanup = target->acquireState();
-	cleanup->health.takeResurrected();
+	cleanup->editHealth()->takeResurrected();
 	applyState(target, cleanup);
 	EXPECT_EQ(target->getCount(), countBeforeResurrection);
-	EXPECT_EQ(target->health.getResurrected(), 0);
+	EXPECT_EQ(target->getHealth().getResurrected(), 0);
 	EXPECT_EQ(target->getAvailableHealth(), 20);
 }
 
@@ -266,7 +266,7 @@ TEST_F(NewHorizonsHydrasVitalityBattleTest, RecastDoesNotCompoundAndExpiryClamps
 	EXPECT_EQ(target->getCount(), 100);
 	EXPECT_EQ(target->getAvailableHealth(), static_cast<int64_t>(target->getCount()) * originalMaximum)
 		<< "expiry clamps each survivor to its original per-creature maximum without casualties";
-	EXPECT_FALSE(target->health.isCapacityHealthTracking());
+	EXPECT_FALSE(target->getHealth().isCapacityHealthTracking());
 }
 
 TEST_F(NewHorizonsHydrasVitalityBattleTest, SavedV2RulesRejectTheSpellWithoutSpendingMana)

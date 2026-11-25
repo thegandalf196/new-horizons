@@ -69,7 +69,7 @@ std::shared_ptr<battle::CUnitState> NativeAdapter::acquireOwnedState(const Hypot
 			if(writable->damageScoringBonuses || writable->damageScoringUnstackedBonuses)
 			{
 				const bonusDependencies::QueryFrameBinding binding{current->unitId(), current->creatureId(), current->getCount(),
-					current->unitOwner(), current->unitSide(), current->unitSlot(), current->ghost, current->summoned,
+					current->unitOwner(), current->unitSide(), current->unitSlot(), current->isGhost(), current->summoned,
 					current->natureSummoned, definition->readDescriptor->creatures};
 				scoring = writable->captureFrozenScoringSource(binding);
 				if(!scoring) throw std::invalid_argument("Unowned frozen scoring loan source");

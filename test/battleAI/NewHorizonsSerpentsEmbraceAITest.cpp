@@ -184,7 +184,7 @@ TEST_F(NewHorizonsSerpentsEmbraceAITest, ImpliedCloneDeathReleasesItsHoldWithout
 	EXPECT_EQ(selected->battleGetUnitByID(clone->unitId())->getAvailableHealth(), priorCloneHealth);
 	}
 	battle()->updateUnit(source->unitId(), source->save(), -source->getAvailableHealth());
-	EXPECT_TRUE(clone->ghostPending);
+	EXPECT_TRUE(clone->isGhostPending());
 	EXPECT_GT(target->getMovementRange(), 0);
 }
 

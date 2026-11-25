@@ -17,12 +17,12 @@ std::shared_ptr<const bonusDependencies::OwnedBonusQueryFrame> StackWithBonuses:
 	auto binding = modifierQueryFrame->binding();
 	if(binding.recipientId != unitId() || binding.creature != creatureId()
 		|| binding.owner != unitOwner() || binding.side != unitSide() || binding.slot != unitSlot()
-		|| binding.ghost != ghost || binding.summoned != summoned || binding.natureSummoned != natureSummoned)
+		|| binding.ghost != isGhost() || binding.summoned != summoned || binding.natureSummoned != natureSummoned)
 		throw std::logic_error("Owned native modifier profile changed without preparation");
-	const bool countChanged = binding.count != health.getCount();
+	const bool countChanged = binding.count != getHealth().getCount();
 	const bool leafChanged = modifierQueriesVersion != treeVersionLocal;
 	if(!countChanged && !leafChanged) return modifierQueryFrame;
-	binding.count = health.getCount();
+	binding.count = getHealth().getCount();
 	auto program = modifierCurrentProgram;
 	if(leafChanged)
 	{

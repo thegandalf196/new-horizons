@@ -17,7 +17,7 @@ std::optional<Prepared> prepare(const AttackPossibility & action, int shots,
 	const auto * target = dynamic_cast<const battle::CUnitState *>(attack.defender);
 	const auto * source = action.attackerState.get();
 	if(!target || !source || target->isClone() || target->getPhantomInitialIntegrity() > 0
-		|| target->health.isCapacityHealthTracking() || shots <= 0) return {};
+		|| target->getHealth().isCapacityHealthTracking() || shots <= 0) return {};
 	shots = std::min(shots, source->shots.available());
 	if(shots <= 0) return {};
 	auto nominal = attack;
@@ -33,7 +33,7 @@ std::optional<Prepared> prepare(const AttackPossibility & action, int shots,
 	const bool guardian = battleAIDamageProvenance(source, attack.physicalDamage) == battle::DamageProvenance::PHYSICAL_CREATURE
 		&& target->getGuardianSpiritRoundsRemaining() > 0;
 	const barrageProbability::TargetWindow window{target->getFirstHPleft(), target->getAvailableHealth(),
-		target->health.getTemporaryHitPoints(),
+		target->getHealth().getTemporaryHitPoints(),
 		guardian ? target->getGuardianSpiritHitPoints() : 0};
 	return Prepared{barrageProbability::primaryCasualtyAndSurvival(damage, source->getCount(), shots, window), shots, percent};
 }

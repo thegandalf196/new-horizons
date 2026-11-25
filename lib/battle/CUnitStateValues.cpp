@@ -27,6 +27,12 @@ CUnitState & CUnitState::operator=(const CUnitState & other)
 	return *this;
 }
 
+void CUnitState::setHealth(const CHealth & value)
+{
+	const StateRevisionScope changing(stateRevision);
+	health = value; // Copies the ledger, never its owner.
+}
+
 void exchangePreparedUnitStateValues(CUnitState & destination, CUnitState & prepared) noexcept
 {
 	UnitStateValueFields::exchange(destination, prepared);

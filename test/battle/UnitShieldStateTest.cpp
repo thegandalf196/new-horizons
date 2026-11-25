@@ -105,7 +105,7 @@ protected:
 		bonuses.addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
 			BonusType::STACK_HEALTH, BonusSource::OTHER, 10, BonusSourceID()));
 		unit.localInit(&environment);
-		unit.position = BattleHex(5, 5);
+		unit.setPosition(BattleHex(5, 5));
 	}
 	void redemption()
 	{
@@ -125,7 +125,7 @@ TEST_F(ConsecratedShieldUnitTest, GuardianThenRedemptionThenTemporaryBodyAndShar
 	redemption();
 	unit.redemptionShield.remaining = 50;
 	unit.guardianSpiritHitPoints = 20; unit.guardianSpiritRoundsRemaining = 3;
-	unit.health.addTemporaryHitPoints(50);
+	unit.editHealth()->addTemporaryHitPoints(50);
 	auto quota = VowCasualtyQuota::capture(7, 100, 6000);
 	DamageContext context{DamageClass::PHYSICAL, DamageOrigin::CREATURE_STRIKE, &quota};
 	const auto preview = previewShieldDamage(unit, 10000, DamageProvenance::PHYSICAL_CREATURE, &context);
@@ -233,7 +233,7 @@ TEST_F(ConsecratedShieldUnitTest, VowUsesActualWoundedRearCohortsInsteadOfFullCr
 {
 	JsonNode health;
 	JsonSerializer writer(nullptr, health);
-	unit.health.serializeJson(writer);
+	unit.editHealth()->serializeJson(writer);
 	health["firstHPleft"].Integer() = 4;
 	health["fullUnits"].Integer() = 0;
 	health["capacityHealthTracking"].Bool() = true;
@@ -243,9 +243,9 @@ TEST_F(ConsecratedShieldUnitTest, VowUsesActualWoundedRearCohortsInsteadOfFullCr
 	strong["hitPoints"].Integer() = 8; strong["count"].Integer() = 4;
 	health["capacityHealthCohorts"].Vector() = {weak, strong};
 	JsonDeserializer reader(nullptr, health);
-	unit.health.serializeJson(reader);
+	unit.editHealth()->serializeJson(reader);
 	ASSERT_EQ(unit.getCount(), 10);
-	EXPECT_EQ(unit.health.maximumDamageForCasualties(4), 15);
+	EXPECT_EQ(unit.getHealth().maximumDamageForCasualties(4), 15);
 	auto quota = VowCasualtyQuota::capture(7, 10, 4000);
 	DamageContext context{DamageClass::PHYSICAL, DamageOrigin::CREATURE_STRIKE, &quota};
 	int64_t damage = 10000;
@@ -256,13 +256,13 @@ TEST_F(ConsecratedShieldUnitTest, VowUsesActualWoundedRearCohortsInsteadOfFullCr
 }
 TEST_F(ConsecratedShieldUnitTest, TemporaryHpBypassDoesNotBypassVowButHealthCostDoes)
 {
-	unit.health.addTemporaryHitPoints(50);
+	unit.editHealth()->addTemporaryHitPoints(50);
 	auto quota = VowCasualtyQuota::capture(7, 100, 6000);
 	DamageContext context{DamageClass::MAGICAL, DamageOrigin::HERO_SPELL, &quota};
 	int64_t damage = 10000;
 	unit.damageWithContext(damage, false, DamageProvenance::SPELL, context, nullptr, true);
 	EXPECT_EQ(unit.getCount(), 40);
-	EXPECT_EQ(unit.health.getTemporaryHitPoints(), 50);
+	EXPECT_EQ(unit.getHealth().getTemporaryHitPoints(), 50);
 	context.damageClass = DamageClass::HEALTH_COST;
 	damage = 10000;
 	unit.damageWithContext(damage, false, DamageProvenance::OTHER, context, nullptr, true);
@@ -320,7 +320,7 @@ TEST_F(ConsecratedShieldUnitTest, LancePrimaryBypassesAbsorptionButSecondaryDoes
 {
 	redemption();
 	unit.redemptionShield.remaining = 50;
-	unit.health.addTemporaryHitPoints(50);
+	unit.editHealth()->addTemporaryHitPoints(50);
 	auto secondary = unit.acquireState();
 	auto primaryQuota = VowCasualtyQuota::capture(7, 100, 6000);
 	DamageContext primary{DamageClass::MAGICAL, DamageOrigin::HERO_SPELL, &primaryQuota};
@@ -331,14 +331,14 @@ TEST_F(ConsecratedShieldUnitTest, LancePrimaryBypassesAbsorptionButSecondaryDoes
 	int64_t damage = 10000;
 	unit.damageWithContext(damage, false, DamageProvenance::SPELL, primary);
 	EXPECT_EQ(unit.getCount(), 40);
-	EXPECT_EQ(unit.health.getTemporaryHitPoints(), 50);
+	EXPECT_EQ(unit.getHealth().getTemporaryHitPoints(), 50);
 	EXPECT_EQ(unit.redemptionShield.remaining, 50);
 	auto secondaryQuota = VowCasualtyQuota::capture(7, 100, 6000);
 	DamageContext spill{DamageClass::MAGICAL, DamageOrigin::HERO_SPELL, &secondaryQuota};
 	damage = 10000;
 	secondary->damageWithContext(damage, false, DamageProvenance::SPELL, spill);
 	EXPECT_EQ(secondary->getCount(), 40);
-	EXPECT_EQ(secondary->health.getTemporaryHitPoints(), 0);
+	EXPECT_EQ(secondary->getHealth().getTemporaryHitPoints(), 0);
 	EXPECT_EQ(secondary->redemptionShield.remaining, 0);
 }
 TEST_F(ConsecratedShieldUnitTest, AbsorptionBypassCannotBeGrantedToAnUnclassifiedProducer)

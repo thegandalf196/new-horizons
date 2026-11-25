@@ -325,7 +325,7 @@ float BattleExchangeVariant::trackAttack(
 				const auto healthBefore = target->getAvailableHealth();
 				const auto projectedDamage = battleAIProjectDamage(target.get(), appliedDamage,
 					strike.damageProvenance);
-				const auto temporaryHealthBefore = target->health.getTemporaryHitPoints();
+				const auto temporaryHealthBefore = target->getHealth().getTemporaryHitPoints();
 				tactics.damage(*hb, projectedAttack, *target, appliedDamage, strike.damageProvenance);
 				if(unitId == strike.defenderId)
 					primaryBodyHealthLoss = newHorizonsCreatureBurn::bodyHealthLoss(appliedDamage, temporaryHealthBefore);
@@ -606,7 +606,7 @@ float BattleExchangeVariant::trackAttackWithSelectedDamage(
 	const auto projectedAttackDamage = battleAIProjectDamage(
 		defender.get(), attackDamage, attackDamageProvenance);
 	const int64_t actualDamage = projectedAttackDamage.appliedDamage;
-	const auto primaryBodyHealthLoss = newHorizonsCreatureBurn::bodyHealthLoss(actualDamage, defender->health.getTemporaryHitPoints());
+	const auto primaryBodyHealthLoss = newHorizonsCreatureBurn::bodyHealthLoss(actualDamage, defender->getHealth().getTemporaryHitPoints());
 	float defenderDamageReduce = ordinaryHit.damageReduce(projectedAttackDamage.healthLoss);
 	float attackerDamageReduce = 0;
 	std::vector<petrifyingBloodAI::Pending> localBloodSequence;
@@ -879,7 +879,7 @@ float BattleExchangeVariant::trackAttackWithSelectedDamage(
 		}
 
 		const int64_t actualDamage = projectedRetaliationDamage.appliedDamage;
-		const auto retaliationBodyHealthLoss = newHorizonsCreatureBurn::bodyHealthLoss(actualDamage, attacker->health.getTemporaryHitPoints());
+		const auto retaliationBodyHealthLoss = newHorizonsCreatureBurn::bodyHealthLoss(actualDamage, attacker->getHealth().getTemporaryHitPoints());
 		const bool counterHarvestEligible = newHorizonsSoulHarvest::qualifies(*hb,
 			*defender, *attacker, retaliationAttack.physicalDamage);
 		const bool attackerWasAlive = attacker->alive();

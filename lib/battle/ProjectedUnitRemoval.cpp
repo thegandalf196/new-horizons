@@ -55,7 +55,7 @@ battle::ProjectedUnitRemoval::Result battle::ProjectedUnitRemoval::removeValuesA
 			auto * toRemove = find(toRemoveId);
 			if(!toRemove)
 				return {false, toRemoveId}; // preserve the live early-return boundary
-			if(!toRemove->state->ghost)
+			if(!toRemove->state->isGhost())
 			{
 				toRemove->state->onRemoved(); // synchronous form hooks precede detach
 				graph.detachFromAll(*toRemove->original);

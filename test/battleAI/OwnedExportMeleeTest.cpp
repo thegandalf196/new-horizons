@@ -187,7 +187,7 @@ TEST_F(OwnedExportMeleeTest, SiblingScalarsAndPropagatedOriginEditsStayInTheirAc
 	const int before = right->battleGetUnitByID(braced->unitId())->getAttack(false);
 	const auto record = aura(BonusDuration::ONE_BATTLE);
 	left->getForUpdate(incoming->unitId())->addUnitBonus({record});
-	left->getForUpdate(incoming->unitId())->position = BattleHex(90);
+	left->getForUpdate(incoming->unitId())->setPosition(BattleHex(90));
 	EXPECT_EQ(left->battleGetUnitByID(braced->unitId())->getAttack(false), before + 4);
 	EXPECT_EQ(right->battleGetUnitByID(braced->unitId())->getAttack(false), before);
 	EXPECT_EQ(incoming->getPosition(), BattleHex(89));

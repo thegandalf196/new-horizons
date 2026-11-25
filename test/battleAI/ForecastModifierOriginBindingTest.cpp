@@ -18,7 +18,7 @@ protected:
 		QueryFrameBinding result;
 		result.recipientId=unit.unitId(); result.creature=unit.creatureId(); result.count=unit.getCount();
 		result.owner=unit.unitOwner(); result.side=unit.unitSide(); result.slot=unit.unitSlot();
-		result.ghost=unit.ghost; result.summoned=unit.summoned; result.natureSummoned=unit.natureSummoned;
+		result.ghost=unit.isGhost(); result.summoned=unit.summoned; result.natureSummoned=unit.natureSummoned;
 		result.profileOwner=std::make_shared<const battle::OwnedUnitCreatureResolver>(std::vector{body});
 		return result;
 	}

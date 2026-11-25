@@ -50,32 +50,32 @@ TEST_F(NewHorizonsSpecialtyRoundEventsTest, RisingTideAddsExactlyOneWithoutHeali
 {
 	prepare("core:kalt", "core:waterElemental");
 	auto state = actor->acquireState();
-	int64_t damage = 5; state->health.damage(damage);
-	const auto before = state->health.getCreatureHealthAvailable();
+	int64_t damage = 5; state->editHealth()->damage(damage);
+	const auto before = state->getHealth().getCreatureHealthAvailable();
 	const auto wounds = state->getSurvivingMissingHealth();
 	ASSERT_TRUE(newHorizonsSpecialtyEvents::applyRound(*battle(), *state, 1));
 	EXPECT_EQ(state->getCount(), 6);
-	EXPECT_EQ(state->health.getResurrected(), 1);
-	EXPECT_EQ(state->health.getCreatureHealthAvailable(), before + state->getMaxHealth());
+	EXPECT_EQ(state->getHealth().getResurrected(), 1);
+	EXPECT_EQ(state->getHealth().getCreatureHealthAvailable(), before + state->getMaxHealth());
 	EXPECT_EQ(state->getSurvivingMissingHealth(), wounds);
 	EXPECT_FALSE(newHorizonsSpecialtyEvents::applyRound(*battle(), *state, 1));
-	state->health.takeResurrected();
+	state->editHealth()->takeResurrected();
 	EXPECT_EQ(state->getCount(), 5);
 }
 TEST_F(NewHorizonsSpecialtyRoundEventsTest, RisingTidePreservesWoundedCapacityCohorts)
 {
 	prepare("core:kalt", "core:iceElemental");
 	auto state = actor->acquireState();
-	state->health.preserveCapacityHealth();
+	state->editHealth()->preserveCapacityHealth();
 	actor->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::STACK_HEALTH,
 		BonusSource::OTHER, 50, BonusSourceID(), BonusSubtypeID(), BonusValueType::PERCENT_TO_ALL));
 	state->normalizeCapacityHealth();
 	const auto missing = state->getSurvivingMissingHealth();
 	ASSERT_GT(missing, 0);
-	const auto before = state->health.getCreatureHealthAvailable();
+	const auto before = state->getHealth().getCreatureHealthAvailable();
 	ASSERT_TRUE(newHorizonsSpecialtyEvents::applyRound(*battle(), *state, 1));
 	EXPECT_EQ(state->getCount(), 6);
-	EXPECT_EQ(state->health.getCreatureHealthAvailable(), before + state->getMaxHealth());
+	EXPECT_EQ(state->getHealth().getCreatureHealthAvailable(), before + state->getMaxHealth());
 	EXPECT_EQ(state->getSurvivingMissingHealth(), missing);
 }
 TEST_F(NewHorizonsSpecialtyRoundEventsTest, CreatedTemporaryMembersDieBeforePermanentCasualtiesAndNeverBecomePermanent)
@@ -84,18 +84,18 @@ TEST_F(NewHorizonsSpecialtyRoundEventsTest, CreatedTemporaryMembersDieBeforePerm
 	auto state = actor->acquireState();
 	const auto health = state->getMaxHealth();
 	int64_t damage = 2 * health;
-	state->health.damage(damage, false, false, battle::DamageProvenance::SPELL);
+	state->editHealth()->damage(damage, false, false, battle::DamageProvenance::SPELL);
 	ASSERT_EQ(state->getCount(), 3);
 	ASSERT_TRUE(newHorizonsSpecialtyEvents::applyRound(*battle(), *state, 1));
 	ASSERT_EQ(state->getCount(), 4);
 	damage = health;
-	state->health.damage(damage, false, false, battle::DamageProvenance::PHYSICAL_CREATURE);
+	state->editHealth()->damage(damage, false, false, battle::DamageProvenance::PHYSICAL_CREATURE);
 	EXPECT_EQ(state->getCount(), 3);
-	EXPECT_EQ(state->health.getResurrected(), 0);
-	EXPECT_EQ(state->health.getCasualtyCount(battle::DamageProvenance::SPELL), 2);
+	EXPECT_EQ(state->getHealth().getResurrected(), 0);
+	EXPECT_EQ(state->getHealth().getCasualtyCount(battle::DamageProvenance::SPELL), 2);
 	int64_t restoration = 100 * health;
 	state->heal(restoration, EHealLevel::RESURRECT, EHealPower::PERMANENT);
-	state->health.takeResurrected();
+	state->editHealth()->takeResurrected();
 	EXPECT_EQ(state->getCount(), 5);
 }
 TEST_F(NewHorizonsSpecialtyRoundEventsTest, SummonedWaterGrowsOnOwnedStateWithoutChangingTheSource)
@@ -147,10 +147,10 @@ TEST_F(NewHorizonsSpecialtyRoundEventsTest, UndyingHealsSurvivorsThenCasualtiesW
 	prepare("core:straker", "core:walkingDead", 20);
 	auto state = actor->acquireState();
 	int64_t damage = 8 * state->getMaxHealth() + state->getMaxHealth() / 2;
-	state->health.damage(damage);
-	const auto before = state->health.getCreatureHealthAvailable();
+	state->editHealth()->damage(damage);
+	const auto before = state->getHealth().getCreatureHealthAvailable();
 	ASSERT_TRUE(newHorizonsSpecialtyEvents::applyRound(*battle(), *state, 1));
-	EXPECT_EQ(state->health.getCreatureHealthAvailable() - before, std::min<int64_t>(100, damage));
+	EXPECT_EQ(state->getHealth().getCreatureHealthAvailable() - before, std::min<int64_t>(100, damage));
 	EXPECT_LE(state->getCount(), 20);
 	EXPECT_FALSE(newHorizonsSpecialtyEvents::applyRound(*battle(), *state, 1));
 	ASSERT_TRUE(newHorizonsSpecialtyEvents::applyRound(*battle(), *state, 2));
@@ -161,10 +161,10 @@ TEST_F(NewHorizonsSpecialtyRoundEventsTest, UndyingDoesNotRestoreDestroyedStacks
 	prepare("core:straker", "core:zombieLord", 20);
 	auto state = actor->acquireState();
 	int64_t damage = 5 * state->getMaxHealth();
-	state->health.damage(damage, true);
+	state->editHealth()->damage(damage, true);
 	ASSERT_TRUE(newHorizonsSpecialtyEvents::applyRound(*battle(), *state, 1));
 	EXPECT_EQ(state->getCount(), 15);
-	damage = state->getAvailableHealth(); state->health.damage(damage);
+	damage = state->getAvailableHealth(); state->editHealth()->damage(damage);
 	ASSERT_FALSE(state->alive());
 	ASSERT_TRUE(newHorizonsSpecialtyEvents::applyRound(*battle(), *state, 2));
 	EXPECT_FALSE(state->alive());
@@ -176,7 +176,7 @@ TEST_F(NewHorizonsSpecialtyRoundEventsTest, RoundReceiptCopiesRoundtripsAndRejec
 	auto state = actor->acquireState();
 	ASSERT_TRUE(newHorizonsSpecialtyEvents::applyRound(*battle(), *state, 1));
 	int64_t damage = 7;
-	state->health.damage(damage);
+	state->editHealth()->damage(damage);
 	state->afterAttack(false, true);
 	const auto saved = state->save();
 	UnitChanges sent(actor->unitId(), UnitChanges::EOperation::UPDATE);
@@ -191,7 +191,7 @@ TEST_F(NewHorizonsSpecialtyRoundEventsTest, RoundReceiptCopiesRoundtripsAndRejec
 	auto restored = actor->acquireState();
 	restored->load(received.data);
 	EXPECT_EQ(restored->save(), saved);
-	EXPECT_EQ(restored->health.getResurrected(), state->health.getResurrected());
+	EXPECT_EQ(restored->getHealth().getResurrected(), state->getHealth().getResurrected());
 	EXPECT_EQ(restored->getCount(), state->getCount());
 	EXPECT_EQ(restored->ordinarySpecialtyLastRound, 1);
 	EXPECT_FALSE(newHorizonsSpecialtyEvents::applyRound(*battle(), *restored, 1));
@@ -230,10 +230,10 @@ TEST_F(NewHorizonsSpecialtyRoundEventsTest, UndyingUsesOrdinaryReceivedHealingRe
 		BonusType::HEALING_RECEIVED_REDUCTION_BASIS_POINTS, BonusSource::OTHER, 5000, BonusSourceID(),
 		BonusSubtypeID(), BonusValueType::BASE_NUMBER));
 	auto state = actor->acquireState();
-	int64_t damage = 8 * state->getMaxHealth(); state->health.damage(damage);
-	const auto before = state->health.getCreatureHealthAvailable();
+	int64_t damage = 8 * state->getMaxHealth(); state->editHealth()->damage(damage);
+	const auto before = state->getHealth().getCreatureHealthAvailable();
 	ASSERT_TRUE(newHorizonsSpecialtyEvents::applyRound(*battle(), *state, 1));
-	EXPECT_EQ(state->health.getCreatureHealthAvailable() - before, 50);
+	EXPECT_EQ(state->getHealth().getCreatureHealthAvailable() - before, 50);
 }
 
 
@@ -242,7 +242,7 @@ TEST_F(NewHorizonsSpecialtyRoundEventsTest, UndyingPublishesHydraVisualOnlyAfter
 	prepare("core:straker", "core:walkingDead", 20);
 	auto state = actor->acquireState();
 	int64_t damage = 5 * state->getMaxHealth() + 3;
-	state->health.damage(damage);
+	state->editHealth()->damage(damage);
 	publish(*state);
 	const auto before = actor->getAvailableHealth();
 	const auto countBefore = actor->getCount();
@@ -265,7 +265,7 @@ TEST_F(NewHorizonsSpecialtyRoundEventsTest, RisingTidePublishesTentVisualWithout
 	prepare("core:kalt", "core:waterElemental");
 	auto state = actor->acquireState();
 	int64_t damage = 5;
-	state->health.damage(damage);
+	state->editHealth()->damage(damage);
 	publish(*state);
 	const auto before = actor->getAvailableHealth();
 	const auto wounds = actor->getSurvivingMissingHealth();
@@ -278,7 +278,7 @@ TEST_F(NewHorizonsSpecialtyRoundEventsTest, RisingTidePublishesTentVisualWithout
 	EXPECT_EQ(actor->getCount(), 6);
 	EXPECT_EQ(actor->getAvailableHealth(), before + actor->getMaxHealth());
 	EXPECT_EQ(actor->getSurvivingMissingHealth(), wounds);
-	EXPECT_EQ(actor->health.getResurrected(), 1);
+	EXPECT_EQ(actor->getHealth().getResurrected(), 1);
 	expectRecoveryVisual(recorder, *actor);
 	battleRoundHealing::afterRound(handler, *battle());
 	expectRecoveryVisual(recorder, *actor);
@@ -297,7 +297,7 @@ TEST_F(NewHorizonsSpecialtyRoundEventsTest, FullAndFullyBlockedUndyingDoNotPubli
 
 	auto state = actor->acquireState();
 	int64_t damage = 150;
-	state->health.damage(damage);
+	state->editHealth()->damage(damage);
 	publish(*state);
 	actor->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
 		BonusType::HEALING_RECEIVED_REDUCTION_BASIS_POINTS, BonusSource::OTHER, 10000,
@@ -314,7 +314,7 @@ TEST_F(NewHorizonsSpecialtyRoundEventsTest, DestroyedWaterStacksDoNotPublishFals
 	prepare("core:kalt", "core:iceElemental");
 	auto state = actor->acquireState();
 	int64_t damage = state->getAvailableHealth();
-	state->health.damage(damage);
+	state->editHealth()->damage(damage);
 	publish(*state);
 	ASSERT_FALSE(actor->alive());
 	BattleNextRound next; next.battleID = battle()->getBattleID();

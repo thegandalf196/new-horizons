@@ -39,7 +39,7 @@ void requireIdentity(const HypotheticBattle & branch, const battle::CUnitState &
 		&& accepted.unitId() == target.unitId() && accepted.creatureId() == target.creatureId()
 		&& accepted.unitSide() == target.unitSide() && accepted.unitOwner() == target.unitOwner()
 		&& accepted.unitBaseAmount() == target.unitBaseAmount()
-		&& accepted.health.valueContext() == target.health.valueContext());
+		&& accepted.getHealth().valueContext() == target.getHealth().valueContext());
 }
 }
 std::shared_ptr<const newHorizonsFocusMagic::ValueState> NativeAdapter::captureFocus(const battle::CUnitState & unit)

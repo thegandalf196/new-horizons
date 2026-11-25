@@ -3368,7 +3368,7 @@ static std::string meleeAttackStatusMessage(BattleInterface & owner, PossiblePla
 	assert(attackFromHex.isValid());
 	if(!attackFromHex.isValid())
 		return "";
-	int distance = attacker->position.isValid() ? owner.getBattle()->battleGetDistances(attacker, attacker->getPosition())[attackFromHex.toInt()] : 0;
+	int distance = attacker->getPosition().isValid() ? owner.getBattle()->battleGetDistances(attacker, attacker->getPosition())[attackFromHex.toInt()] : 0;
 	DamageEstimation retaliation;
 	BattleAttackInfo attackInfo(attacker, targetStack, distance, false);
 	attackInfo.attackerPos = attackFromHex;

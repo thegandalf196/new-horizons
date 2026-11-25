@@ -281,7 +281,7 @@ void CStack::prepareAttacked(BattleStackAttacked & bsa, vstd::RNG & rand,
 	// leave those earlier bodies available to resurrection and Necromancy.
 	if(destroyRemains && !customState->alive()
 		&& customState->getUnusableRemains() >= customState->unitBaseAmount())
-		customState->ghostPending = true;
+		customState->setGhostPending(true);
 
 	bsa.newState.data = customState->save();
 	bsa.newState.healthDelta = -bsa.damageAmount;

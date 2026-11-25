@@ -97,7 +97,7 @@ TEST_F(ProjectedUnitEnvironmentTest, AllNineCallbacksRejectLiveOrForeignSubjects
 	expectAllRefuse(&subject);
 	battle::CUnitStateDetached outside(&subject, &subject);
 	battle::UnitStateValueFields::copy(outside, subject);
-	outside.health.reset();
+	outside.editHealth()->reset();
 	expectAllRefuse(&outside);
 }
 
@@ -132,7 +132,7 @@ TEST_F(ProjectedUnitEnvironmentTest, FirstDeadCartBlocksLaterLivingCartWithoutSo
 {
 	initialize();
 	ASSERT_TRUE(environment->unitHasAmmoCart(units[0].get()));
-	units[1]->health.reset();
+	units[1]->editHealth()->reset();
 	ASSERT_TRUE(units[2]->alive());
 	EXPECT_FALSE(environment->unitHasAmmoCart(units[0].get()));
 	EXPECT_TRUE(callback.battleUnitHasAmmoCart(&subject));
@@ -145,7 +145,7 @@ TEST_F(ProjectedUnitEnvironmentTest, HypnotizedCartOwnershipIsAsymmetricAndKeeps
 	graph.addExported(firstCart, bonus(BonusType::HYPNOTIZED, 1));
 	ASSERT_EQ(environment->unitEffectiveOwner(units[1].get()), PlayerColor(1));
 	EXPECT_TRUE(environment->unitHasAmmoCart(units[0].get()));
-	units[2]->health.reset();
+	units[2]->editHealth()->reset();
 	EXPECT_FALSE(environment->unitHasAmmoCart(units[0].get()));
 	EXPECT_TRUE(callback.battleUnitHasAmmoCart(&subject));
 }
@@ -196,8 +196,8 @@ TEST_F(ProjectedUnitEnvironmentTest, PersonalBloodrageThresholdChangesWithoutASe
 TEST_F(ProjectedUnitEnvironmentTest, DeadGhostBloodrageStopsButExistingFortuneTokenDoesNotInventAliveCheck)
 {
 	initialize();
-	units[0]->health.reset();
-	units[0]->ghost = true;
+	units[0]->editHealth()->reset();
+	units[0]->setGhost(true);
 	EXPECT_EQ(environment->unitFortuneSpeed(units[0].get()), 2);
 	EXPECT_EQ(environment->unitSpeedBonus(units[0].get()), 0);
 	EXPECT_EQ(environment->unitAdditionalRetaliations(units[0].get()), 0);

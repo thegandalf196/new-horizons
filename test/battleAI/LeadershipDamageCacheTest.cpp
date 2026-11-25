@@ -160,7 +160,7 @@ TEST_F(LeadershipDamageCacheTest, CachedCurrentDamageFollowsCasualtiesResurrecti
 	actor->heal(healing, EHealLevel::RESURRECT, EHealPower::PERMANENT);
 	ASSERT_EQ(actor->getCount(), 1000);
 	EXPECT_EQ(cached(cache, branch), baseline);
-	ASSERT_TRUE(actor->health.appendTemporaryCreatures(500));
+	ASSERT_TRUE(actor->editHealth()->appendTemporaryCreatures(500));
 	ASSERT_EQ(actor->getCount(), 1500);
 	EXPECT_NEAR(cached(cache, branch), damage(branch), 2);
 	EXPECT_TRUE(cache.matchesSnapshot(original));
@@ -207,7 +207,7 @@ TEST_F(LeadershipDamageCacheTest, CacheFilledAtCapacityStillAppliesEfficiencyAft
 	cache.cacheDamage(parent->battleGetUnitByID(actorId), parent->battleGetUnitByID(targetId), parent);
 	const auto before = damage(parent);
 	const auto branch = child();
-	ASSERT_TRUE(branch->getForUpdate(actorId)->health.appendTemporaryCreatures(100));
+	ASSERT_TRUE(branch->getForUpdate(actorId)->editHealth()->appendTemporaryCreatures(100));
 	ASSERT_EQ(branch->battleGetUnitByID(actorId)->getCount(), 200);
 	DamageCacheProbeTiming timing;
 	const auto value = cached(cache, branch, &timing);
@@ -279,7 +279,7 @@ TEST_F(LeadershipDamageCacheTest, LinearCacheSaturatesWhenReinforcementExceedsIn
 	DamageCache cache;
 	cache.cacheDamage(parent->battleGetUnitByID(actorId), parent->battleGetUnitByID(targetId), parent);
 	const auto branch = child();
-	ASSERT_TRUE(branch->getForUpdate(actorId)->health.appendTemporaryCreatures(std::numeric_limits<int32_t>::max() - 1));
+	ASSERT_TRUE(branch->getForUpdate(actorId)->editHealth()->appendTemporaryCreatures(std::numeric_limits<int32_t>::max() - 1));
 	DamageCacheProbeTiming timing;
 	EXPECT_EQ(cached(cache, branch, &timing), std::numeric_limits<int64_t>::max());
 	EXPECT_EQ(timing.dynamicBypasses, 0u);

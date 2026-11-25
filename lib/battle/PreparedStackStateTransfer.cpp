@@ -112,5 +112,6 @@ void battle::PreparedStackStateTransfer::exchangePrepared() noexcept
 	destination.formBonusSource = newSource.get();
 	destination.doubleWideCached = finalWidth;
 	destination.battleFormViewRevision = finalRevision;
+	destination.stateRevision.bump();
 	consumed = true;
 }

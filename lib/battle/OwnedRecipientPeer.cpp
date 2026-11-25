@@ -98,7 +98,7 @@ public:
 		subject = std::make_shared<CUnitStateDetached>(&info, &view);
 		// Opaque peers need ONLY count/alive, ghost and geometry plus canonical query metadata.
 		// Keep the original/effective form receipt in source.facts.acceptance, not a mutable injury clone.
-		subject->health = input.values->health; subject->ghost = input.values->ghost; subject->position = input.values->position;
+		subject->setHealth(input.values->getHealth()); subject->setGhost(input.values->isGhost()); subject->setPosition(input.values->getPosition());
 	}
 	TConstBonusListPtr query(const CSelector & selector, bool unstacked) const
 	{
@@ -128,7 +128,7 @@ public:
 		: owner(owner), identity(other.identity), body(other.body), graph(other.graph), source(other.source), variants(other.variants), ledger(other.ledger), pendingPayloads(other.pendingPayloads), sourceReplacements(other.sourceReplacements), info(body, owner.creatures), view(*this)
 	{
 		subject = std::make_shared<CUnitStateDetached>(&info, &view);
-		subject->health = other.subject->health; subject->ghost = other.subject->ghost; subject->position = other.subject->position;
+		subject->setHealth(other.subject->getHealth()); subject->setGhost(other.subject->isGhost()); subject->setPosition(other.subject->getPosition());
 	}
 	std::shared_ptr<Peer> currentCopy(const Data & destination, const Data & current) const
 	{
@@ -144,9 +144,9 @@ public:
 		result->ledger = current.ledger;
 		result->pendingPayloads = current.pendingPayloads;
 		result->sourceReplacements = current.sourceReplacements;
-		result->subject->health = current.subject->health;
-		result->subject->ghost = current.subject->ghost;
-		result->subject->position = current.subject->position;
+		result->subject->setHealth(current.subject->getHealth());
+		result->subject->setGhost(current.subject->isGhost());
+		result->subject->setPosition(current.subject->getPosition());
 		auto & state = result->source.facts.acceptance->state;
 		state.ghost = current.subject->isGhost(); state.summoned = current.subject->summoned;
 		state.natureSummoned = current.subject->natureSummoned;

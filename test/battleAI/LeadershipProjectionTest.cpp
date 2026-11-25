@@ -111,7 +111,7 @@ TEST_P(LeadershipProjectionTest, SelectedCompositionPerkSurvivesCasualtiesAndTem
 	const auto descendantSummon = grandchild->getForUpdate(summon.id);
 	ASSERT_EQ(descendantSummon->getCount(), 1);
 	EXPECT_EQ(grandchild->battleLeadershipReadout(descendantSummon.get()).capacity, before.capacity);
-	ASSERT_TRUE(descendantSummon->health.appendTemporaryCreatures(4));
+	ASSERT_TRUE(descendantSummon->editHealth()->appendTemporaryCreatures(4));
 	EXPECT_EQ(descendantSummon->getCount(), 5);
 	EXPECT_EQ(child->battleGetUnitByID(summon.id)->getCount(), 1);
 	damage = grandchild->battleGetUnitByID(pikeId)->getMaxHealth() * 100;

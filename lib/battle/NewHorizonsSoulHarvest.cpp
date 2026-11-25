@@ -26,7 +26,7 @@ bool qualifies(const CBattleInfoCallback & battle, const battle::Unit & actor,
 		return false;
 	const auto * actorState = dynamic_cast<const battle::CUnitState *>(&actor);
 	if(!actorState || actorState->hasBattleForm()
-		|| actorState->health.getShadowGiftMaximumHealthLost() > 0)
+		|| actorState->getHealth().getShadowGiftMaximumHealthLost() > 0)
 		return false;
 	return true;
 }
@@ -41,7 +41,7 @@ bool grant(battle::CUnitState & actor, int64_t killedCreatures)
 	if(killedCreatures <= 0 || !actor.alive()
 		|| actor.isClone() || actor.isSummoned() || actor.hasBattleForm()
 		|| killedCreatures > std::numeric_limits<int32_t>::max() - actor.getCount()
-		|| actor.health.getShadowGiftMaximumHealthLost() > 0)
+		|| actor.getHealth().getShadowGiftMaximumHealthLost() > 0)
 		return false;
 	// The count bound above limits this product to int32_max squared in int64.
 	int64_t growth = static_cast<int64_t>(actor.getMaxHealth())

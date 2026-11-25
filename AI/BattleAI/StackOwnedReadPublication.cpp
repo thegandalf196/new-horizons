@@ -13,9 +13,9 @@ bool StackWithBonuses::stageOwnedModifierFacts(
 	const auto & fixed = modifierQueryFrame->binding();
 	const auto & binding = queries->binding();
 	if(binding.profileOwner != fixed.profileOwner || binding.recipientId != unitId()
-		|| binding.count != health.getCount() || binding.creature != creatureId()
+		|| binding.count != getHealth().getCount() || binding.creature != creatureId()
 		|| binding.owner != unitOwner() || binding.side != unitSide() || binding.slot != unitSlot()
-		|| binding.ghost != ghost || binding.summoned != summoned
+		|| binding.ghost != isGhost() || binding.summoned != summoned
 		|| binding.natureSummoned != natureSummoned) return false;
 	// Never swap fixed base, source lease, owner, environment, proxy or cache.
 	modifierCurrentProgram = std::move(program);

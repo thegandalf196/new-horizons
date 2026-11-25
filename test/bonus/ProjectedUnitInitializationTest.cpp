@@ -107,7 +107,7 @@ TEST_F(ProjectedUnitInitializationTest, DefaultRosterStillRejectsEqualPacketIds)
 TEST_F(ProjectedUnitInitializationTest, OccurrenceRosterRetainsPhysicalOrderAndFirstMatchEvenWhenGhost)
 {
 	ProjectedBonusRoster roster({&one, &two}, ProjectedBonusRoster::Identity::OrderedOccurrences);
-	one.ghost = true;
+	one.setGhost(true);
 	ASSERT_EQ(roster.orderedUnits().size(), 2);
 	EXPECT_EQ(roster.orderedUnits()[0], &one);
 	EXPECT_EQ(roster.orderedUnits()[1], &two);
@@ -248,13 +248,14 @@ TEST_F(ProjectedUnitInitializationTest, ResetStillClearsNoncarriedValuesAndSummo
 	auto summonHealth = initializationBonus(BonusType::STACK_HEALTH, 1);
 	summonHealth->updater = std::make_shared<SummonSensitiveInitializationUpdater>();
 	graph.addExported(first, summonHealth);
-	one.ghost = one.cloned = true;
+	one.setGhost(true);
+	one.cloned = true;
 	one.cloneID = 29;
 	one.guardianSpiritHitPoints = 40;
 	one.setActivationMovementBonus(3);
 	battle::StackInitializationReceipts receipts(one);
 	receipts.initialize(one, &environment, BattleHex(5, 5));
-	EXPECT_FALSE(one.summoned || one.natureSummoned || one.ghost || one.cloned);
+	EXPECT_FALSE(one.summoned || one.natureSummoned || one.isGhost() || one.cloned);
 	EXPECT_EQ(one.cloneID, -1);
 	EXPECT_EQ(one.guardianSpiritHitPoints, 0);
 	EXPECT_EQ(one.getActivationMovementBonus(), 0);

@@ -441,7 +441,7 @@ TEST_F(DamageApplyTest, GetHealthChangeConsumesTemporaryHealthOnCopyBeforeCreatu
 	unitsFake.setDefaultBonusExpectations();
 	auto targetUnitState = std::make_shared<CUnitStateDetached>(&targetUnit, &targetUnit);
 	targetUnitState->localInit(&unitEnvironmentMock);
-	targetUnitState->health.addTemporaryHitPoints(40);
+	targetUnitState->editHealth()->addTemporaryHitPoints(40);
 	const auto healthBefore = targetUnitState->getAvailableHealth();
 	const auto countBefore = targetUnitState->getCount();
 	ASSERT_EQ(healthBefore, unitAmount * unitHP + 40);
@@ -463,11 +463,11 @@ TEST_F(DamageApplyTest, GetHealthChangeConsumesTemporaryHealthOnCopyBeforeCreatu
 	EXPECT_EQ(forecastState->getAvailableHealth(), healthBefore - effectValue);
 	EXPECT_EQ(forecastState->getCount(), countBefore);
 	EXPECT_EQ(forecastState->getFirstHPleft(), 20);
-	EXPECT_EQ(forecastState->health.getTemporaryHitPoints(), 0);
+	EXPECT_EQ(forecastState->getHealth().getTemporaryHitPoints(), 0);
 	EXPECT_EQ(targetUnitState->getAvailableHealth(), healthBefore);
 	EXPECT_EQ(targetUnitState->getCount(), countBefore);
 	EXPECT_EQ(targetUnitState->getFirstHPleft(), unitHP);
-	EXPECT_EQ(targetUnitState->health.getTemporaryHitPoints(), 40);
+	EXPECT_EQ(targetUnitState->getHealth().getTemporaryHitPoints(), 40);
 }
 
 TEST_F(DamageApplyTest, AppliesChainFactorToSubsequentTargets)

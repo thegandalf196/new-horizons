@@ -4182,7 +4182,7 @@ TEST_F(NewHorizonsMagicAITest, ShadowGiftAIEnumeratesSacrificeTiersAndValuesThre
 	injure.changedStacks.back().healthDelta = -priorWounds;
 	gameHandler->sendAndApply(injure);
 	ASSERT_LT(recipient->getAvailableHealth(), recipient->getTotalHealth());
-	recipient->health.addTemporaryHitPoints(120);
+	recipient->editHealth()->addTemporaryHitPoints(120);
 	ASSERT_GT(recipient->getAvailableHealth(), recipient->getShadowGiftCurrentHealth())
 		<< "Temporary HP must not enter Shadow Gift's creature-health sacrifice pool";
 	BattleSetActiveStack activate;
@@ -4242,7 +4242,7 @@ TEST_F(NewHorizonsMagicAITest, ShadowGiftAIEnumeratesSacrificeTiersAndValuesThre
 	EXPECT_EQ(recipient->getShadowGiftCurrentHealth(), initialGiftHealth);
 	EXPECT_EQ(recipient->getShadowGiftMaximumHealth(), initialGiftMaximum);
 	EXPECT_EQ(recipient->getShadowGiftMaximumHealthLost(), initialGiftMaximumLost);
-	EXPECT_EQ(recipient->health.getTemporaryHitPoints(), 120);
+	EXPECT_EQ(recipient->getHealth().getTemporaryHitPoints(), 120);
 }
 
 TEST_F(NewHorizonsMagicAITest, ShadowGiftAIPricesPhantomIntegrityWithoutMutatingTheLiveCopy)
@@ -5513,7 +5513,7 @@ TEST_F(NewHorizonsMagicAITest, ReanimateAICastsForUsableCasualtiesAndProjectsTem
 	mechanics->castEval(projected->getServerCallback(), target);
 	EXPECT_EQ(projectedCasualties->getAvailableHealth() - healthBefore, *expectedHealing);
 	EXPECT_GT(projectedCasualties->getCount(), countBefore);
-	EXPECT_EQ(projectedCasualties->health.getResurrected(),
+	EXPECT_EQ(projectedCasualties->getHealth().getResurrected(),
 		projectedCasualties->getCount() - countBefore)
 		<< "restored creatures are temporary and must remain in the one-battle resurrection ledger";
 
@@ -5529,7 +5529,7 @@ TEST_F(NewHorizonsMagicAITest, ReanimateAICastsForUsableCasualtiesAndProjectsTem
 	remainsMechanics->castEval(projectedRemainsBattle->getServerCallback(), remainsTarget);
 	EXPECT_EQ(projectedRemains->getCount(), 1);
 	EXPECT_EQ(projectedRemains->getAvailableHealth(), remainsMaxHealth);
-	EXPECT_EQ(projectedRemains->health.getResurrected(), 1)
+	EXPECT_EQ(projectedRemains->getHealth().getResurrected(), 1)
 		<< "a dead eligible stack is restored as a temporary one-battle casualty";
 	EXPECT_FALSE(usableRemains->alive());
 	EXPECT_EQ(usableRemains->getAvailableHealth(), 0);

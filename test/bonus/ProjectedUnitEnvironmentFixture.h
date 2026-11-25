@@ -122,11 +122,11 @@ struct Projection
 			health->sid = BonusSourceID(original->unitType()->getId());
 			original->addNewBonus(health);
 			original->base = &base;
-			original->health.init();
-			original->position = BattleHex(12, 8);
+			original->editHealth()->init();
+			original->setPosition(BattleHex(12, 8));
 		}
-		subject.position = BattleHex(5, 5);
-		supporter.position = BattleHex(6, 5);
+		subject.setPosition(BattleHex(5, 5));
+		supporter.setPosition(BattleHex(6, 5));
 		subject.personalBloodrageIncrement = 8;
 		subject.addNewBonus(bonus(BonusType::MAGIC_RESISTANCE, 20));
 		supporter.addNewBonus(bonus(BonusType::SPELL_RESISTANCE_AURA, 25));

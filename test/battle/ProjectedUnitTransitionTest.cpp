@@ -189,8 +189,8 @@ TEST_F(ProjectedUnitTransitionTest, KilledCloneBacklinksAndCloneGhostTransitionM
 	capture();
 	arena->updateUnit(subject->unitId(), data, -damage);
 	const auto expected = arena->snapshotAt(subjectIndex() + 1);
-	EXPECT_TRUE(arena->unitAt(subjectIndex() + 1).ghostPending);
-	EXPECT_FALSE(neighbor->ghostPending);
+	EXPECT_TRUE(arena->unitAt(subjectIndex() + 1).isGhostPending());
+	EXPECT_FALSE(neighbor->isGhostPending());
 	arena.reset();
 	battle()->updateUnit(subject->unitId(), data, -damage);
 	EXPECT_EQ(neighbor->save(), expected);

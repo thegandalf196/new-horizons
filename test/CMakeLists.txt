@@ -251,6 +251,7 @@ set(test_SRCS
 		battle/StackEffectRefreshTest.cpp
 		battle/CUnitStateLifecycleTest.cpp
 		battle/UnitStateValueExchangeTest.cpp
+		battle/UnitStateRevisionTest.cpp
 		battle/PreparedStackStateTransferTest.cpp
 		battle/PreparedBattleUnitRootsTest.cpp
 		battle/PreparedBattleWorldCommitTest.cpp

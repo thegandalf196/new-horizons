@@ -69,7 +69,7 @@ TEST_F(NewHorizonsForceLanceAdmissionTest, FullAuthoritativeCastBypassesImmunity
 	defend(BonusType::MAGIC_MIRROR, 100);
 	enemy->guardianSpiritHitPoints = 500;
 	enemy->guardianSpiritRoundsRemaining = 3;
-	enemy->health.addTemporaryHitPoints(300);
+	enemy->editHealth()->addTemporaryHitPoints(300);
 	const auto initialHealth = enemy->getAvailableHealth();
 	const auto allyHealth = ally->getAvailableHealth();
 	const auto mana = attackerSideHero->getManaAvailable();
@@ -81,7 +81,7 @@ TEST_F(NewHorizonsForceLanceAdmissionTest, FullAuthoritativeCastBypassesImmunity
 	ASSERT_TRUE(castOn(attackerSideHero, lance, enemy));
 	EXPECT_EQ(enemy->getAvailableHealth(), initialHealth - raw);
 	EXPECT_EQ(enemy->guardianSpiritHitPoints, 500);
-	EXPECT_EQ(enemy->health.getTemporaryHitPoints(), 300);
+	EXPECT_EQ(enemy->getHealth().getTemporaryHitPoints(), 300);
 	EXPECT_EQ(ally->getAvailableHealth(), allyHealth);
 	EXPECT_LT(attackerSideHero->getManaAvailable(), mana);
 	ASSERT_EQ(server.casts.size(), casts + 1);

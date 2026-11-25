@@ -252,14 +252,14 @@ TEST_F(NewHorizonsCreatureBurnTest, ActualDamageStateSeparatesGuardianTemporaryA
 	setup();
 	auto state = victim->acquireState();
 	state->guardianSpiritHitPoints = 40; state->guardianSpiritRoundsRemaining = 3;
-	state->health.addTemporaryHitPoints(30);
-	const auto temporaryBefore = state->health.getTemporaryHitPoints();
-	const auto bodyBefore = state->health.getCreatureHealthAvailable();
+	state->editHealth()->addTemporaryHitPoints(30);
+	const auto temporaryBefore = state->getHealth().getTemporaryHitPoints();
+	const auto bodyBefore = state->getHealth().getCreatureHealthAvailable();
 	int64_t damage = 90;
 	state->damage(damage, false, battle::DamageProvenance::PHYSICAL_CREATURE);
 	EXPECT_EQ(damage, 50);
 	EXPECT_EQ(burn::bodyHealthLoss(damage, temporaryBefore), 20);
-	EXPECT_EQ(bodyBefore - state->health.getCreatureHealthAvailable(), 20);
+	EXPECT_EQ(bodyBefore - state->getHealth().getCreatureHealthAvailable(), 20);
 	EXPECT_EQ(burn::damageBudget(burn::bodyHealthLoss(damage, temporaryBefore), 20), 4);
 }
 

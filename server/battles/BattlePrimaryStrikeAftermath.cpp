@@ -40,7 +40,7 @@ newHorizonsOrdinaryStrike::EffectPlan prepareGraveDust(const CBattleInfoCallback
 	if(!newHorizonsGraveDustStrike::eligible(battle, context)) return {};
 	const auto * before = dynamic_cast<const battle::CUnitState *>(attack.defender);
 	if(!before) throw std::runtime_error("Grave Dust requires a concrete prehit body snapshot");
-	const auto bodyLoss = battle::bodyHealthLoss(primary->damageAmount, before->health.getTemporaryHitPoints());
+	const auto bodyLoss = battle::bodyHealthLoss(primary->damageAmount, before->getHealth().getTemporaryHitPoints());
 	return newHorizonsGraveDustStrike::plan(battle, context, bodyLoss, false);
 }
 }
@@ -101,7 +101,7 @@ Prepared prepare(const CBattleInfoCallback & battle, const BattleAttackInfo & at
 		const auto * before = dynamic_cast<const battle::CUnitState *>(attack.defender);
 		if(!before)
 			throw std::runtime_error("Creature burn requires a concrete prehit health snapshot");
-		bodyLoss = newHorizonsCreatureBurn::bodyHealthLoss(damage, before->health.getTemporaryHitPoints());
+		bodyLoss = newHorizonsCreatureBurn::bodyHealthLoss(damage, before->getHealth().getTemporaryHitPoints());
 	}
 	result.ordinary = newHorizonsOrdinaryStrike::plan(battle, attack, damage, bodyLoss);
 	if(primary != hits.end())

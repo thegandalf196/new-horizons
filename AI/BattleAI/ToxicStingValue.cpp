@@ -135,7 +135,7 @@ std::optional<newHorizonsToxicSting::Plan> prepare(const CBattleInfoCallback & b
 	auto physical = attack;
 	physical.physicalDamage = attack.physicalDamage && provenance == battle::DamageProvenance::PHYSICAL_CREATURE;
 	return newHorizonsToxicSting::prepare(battle, physical,
-		battle::bodyHealthLoss(applied, target->health.getTemporaryHitPoints()));
+		battle::bodyHealthLoss(applied, target->getHealth().getTemporaryHitPoints()));
 }
 float Opportunities::value(const std::shared_ptr<HypotheticBattle> & battle,
 	const BattleAttackInfo & attack, int64_t bodyLoss, DamageCache & cache)

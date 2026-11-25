@@ -36,7 +36,6 @@ public:
 	}
 
 	BattleSide unitSide() const override { return mockedSide; }
-	bool isGhost() const override { return false; }
 	int32_t creatureIndex() const override { return 0; }  // not ARROW_TOWERS
 
 	const IBonusBearer * getBonusBearer() const override { return &bonusFake; }

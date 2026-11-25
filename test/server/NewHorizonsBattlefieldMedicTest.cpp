@@ -216,7 +216,7 @@ TEST_F(NewHorizonsBattlefieldMedicTest, NormalHealThenHalfCalculatedOutputRestor
 	EXPECT_EQ(preview.restoredHP, std::min<int64_t>(budget, 40 * hp));
 	EXPECT_GT(preview.restoredCount, 0);
 	ASSERT_NO_FATAL_FAILURE(healAndCheckPreview());
-	EXPECT_EQ(target->health.getResurrected(), 0);
+	EXPECT_EQ(target->getHealth().getResurrected(), 0);
 	const auto permanentCount = target->getCount();
 	ASSERT_NO_FATAL_FAILURE(finishAndCheckArmy(permanentCount));
 }
@@ -266,7 +266,7 @@ TEST_F(NewHorizonsBattlefieldMedicTest, RestorationCapsAtBattleStartAndCannotRec
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	const auto hp = target->getMaxHealth();
 	ASSERT_NO_FATAL_FAILURE(injure(3 * hp, true));
-	ASSERT_EQ(target->health.getUnusableRemains(), 3);
+	ASSERT_EQ(target->getHealth().getUnusableRemains(), 3);
 	ASSERT_NO_FATAL_FAILURE(injure(hp + 3));
 	const auto preview = battle()->battleGetFirstAidHealingPreview(tent, target);
 	EXPECT_EQ(preview.survivorHealedHP, 3);
@@ -274,7 +274,7 @@ TEST_F(NewHorizonsBattlefieldMedicTest, RestorationCapsAtBattleStartAndCannotRec
 	EXPECT_EQ(preview.restoredCount, 1);
 	ASSERT_NO_FATAL_FAILURE(healAndCheckPreview());
 	EXPECT_EQ(target->getCount(), initialCount - 3);
-	EXPECT_EQ(target->health.getUnusableRemains(), 3);
+	EXPECT_EQ(target->getHealth().getUnusableRemains(), 3);
 	ASSERT_NO_FATAL_FAILURE(finishAndCheckArmy(initialCount - 3));
 }
 
@@ -331,13 +331,13 @@ TEST_F(NewHorizonsBattlefieldMedicTest, MedicPermanentRestorationDoesNotMakeEarl
 	action.spell = spell;
 	action.aimToUnit(target);
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
-	const auto temporary = target->health.getResurrected();
+	const auto temporary = target->getHealth().getResurrected();
 	ASSERT_GT(temporary, 0);
 	EXPECT_EQ(target->getCount(), permanentBefore + temporary);
 	const auto preview = battle()->battleGetFirstAidHealingPreview(tent, target);
 	ASSERT_GT(preview.restoredCount, 0);
 	ASSERT_NO_FATAL_FAILURE(healAndCheckPreview());
-	EXPECT_EQ(target->health.getResurrected(), temporary)
+	EXPECT_EQ(target->getHealth().getResurrected(), temporary)
 		<< "The Tent's permanent pool must not promote an earlier temporary Re-animate cohort";
 	const auto expectedPermanent = permanentBefore + preview.restoredCount;
 	EXPECT_EQ(target->getCount(), expectedPermanent + temporary);

@@ -76,7 +76,7 @@ TEST_F(ProjectedUnitEnvironmentHeroInputsTest, ActualHeroAmmoArtifactDoesNotOver
 	projected.initialize();
 	ASSERT_TRUE(projected.state->inputs(BattleSide::ATTACKER).ammoArtifact);
 	EXPECT_TRUE(projected.environment->unitHasAmmoCart(projected.units[0].get()));
-	projected.units[1]->health.reset();
+	projected.units[1]->editHealth()->reset();
 	ASSERT_TRUE(projected.units[2]->alive());
 	EXPECT_FALSE(projected.environment->unitHasAmmoCart(projected.units[0].get()));
 	EXPECT_TRUE(battle::heroHasAmmoCartArtifact(attackerSideHero));

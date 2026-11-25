@@ -33,7 +33,7 @@ protected:
 			for(size_t mode = 0; mode < 2; ++mode)
 				if(auto prepared = nativeDamage::prepareUnit(*unit, mode != 0))
 					definition->numeric[mode] = std::make_shared<const nativeDamage::PreparedUnit>(*prepared);
-			forecast::UnitDelta state(battle::CHealth::detached(unit->health, unit->health.valueContext()));
+			forecast::UnitDelta state(battle::CHealth::detached(unit->getHealth(), unit->getHealth().valueContext()));
 			state.numeric = definition->numeric;
 			state.activation.moved = unit->movedThisRound;
 			state.activation.waited = unit->waitedThisTurn;
@@ -72,7 +72,7 @@ TEST_F(ForecastStateTest, ConsecutiveNativeHealthMutationsRetainForkAndSiblingIs
 	auto branch = parentState.fork();
 	auto sibling = parentState.fork();
 	const auto id = incoming->unitId();
-	auto expected = battle::CHealth::detached(child->getForUpdate(id)->health, child->getForUpdate(id)->health.valueContext());
+	auto expected = battle::CHealth::detached(child->getForUpdate(id)->getHealth(), child->getForUpdate(id)->getHealth().valueContext());
 	for(const int64_t request : {17, 23, 61})
 	{
 		auto amount = request;

@@ -22,13 +22,11 @@ class StrengthStack final : public test::MockCStack
 public:
 	CreatureID creature;
 	int32_t count = 0;
-	bool ghost = false;
 	bool turret = false;
 	bool living = true;
 	CreatureID creatureId() const override { return creature; }
 	int32_t getCount() const override { return count; }
 	int32_t creatureIndex() const override { return turret ? CreatureID::ARROW_TOWERS : creature.getNum(); }
-	bool isGhost() const override { return ghost; }
 	bool alive() const override { return living; }
 };
 
@@ -142,7 +140,7 @@ TEST_F(BattleStrengthRatioTest, ExistingGhostTurretAndDeadRosterEligibilityIsUnc
 {
 	add(BattleSide::ATTACKER, 20, pikeman).living = false;
 	add(BattleSide::DEFENDER, 10, pikeman);
-	add(BattleSide::ATTACKER, std::numeric_limits<int32_t>::max(), strongest).ghost = true;
+	add(BattleSide::ATTACKER, std::numeric_limits<int32_t>::max(), strongest).setGhost(true);
 	add(BattleSide::DEFENDER, std::numeric_limits<int32_t>::max(), strongest).turret = true;
 	EXPECT_FLOAT_EQ(battleAI::strengthRatio(callback, BattleSide::ATTACKER), 2.0f);
 }

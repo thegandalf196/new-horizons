@@ -344,7 +344,7 @@ TEST_F(NewHorizonsSerpentsEmbraceBattleTest, OriginalLethalityReleasesLinkedClon
 	// Lethal provenance plus an immediately revived original still kills its clone.
 	battle()->updateUnit(source->unitId(), source->save(), -source->getAvailableHealth());
 	EXPECT_TRUE(source->alive());
-	EXPECT_TRUE(clone->ghostPending);
+	EXPECT_TRUE(clone->isGhostPending());
 	EXPECT_FALSE(heldBy(clone));
 	EXPECT_GT(target->getMovementRange(), 0);
 }
@@ -357,7 +357,7 @@ TEST_F(NewHorizonsSerpentsEmbraceBattleTest, RemovingAlreadyGhostedOriginalStill
 	clone->cloned = true;
 	install(clone, target);
 	source->makeGhost();
-	source->ghost = true;
+	source->setGhost(true);
 	battle()->removeUnit(source->unitId());
 	EXPECT_FALSE(heldBy(clone));
 	EXPECT_GT(target->getMovementRange(), 0);

@@ -316,7 +316,7 @@ protected:
 		int64_t appliedDamage = requestedDamage;
 		// A live Clone disappears on its first hit. Copying an already-wounded source
 		// produces the same valid injured-Clone state without exercising that lifecycle.
-		state->health.damage(appliedDamage);
+		state->editHealth()->damage(appliedDamage);
 		UnitChanges change(stack->unitId(), UnitChanges::EOperation::UPDATE);
 		change.data = state->save();
 		change.healthDelta = -appliedDamage;
@@ -393,7 +393,7 @@ protected:
 		EXPECT_EQ(target->getAvailableHealth() - before, expectedHP);
 		EXPECT_EQ(target->getCount() - countBefore, forecast.unitsDelta);
 		EXPECT_EQ(manaBefore - attackerSideHero->getManaAvailable(), cost);
-		EXPECT_EQ(target->health.getResurrected(), 0);
+		EXPECT_EQ(target->getHealth().getResurrected(), 0);
 		EXPECT_LE(target->getCount(), target->unitBaseAmount());
 		EXPECT_FALSE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), resurrectionAction(target)));
 	}
@@ -538,7 +538,7 @@ TEST_F(NewHorizonsResurrectionFoundationTest, AcceptedCastMatchesLuaForecastAndP
 	EXPECT_EQ(friendly->getCount() - countBefore, forecast.unitsDelta);
 	EXPECT_EQ(friendly->getCount(), 3);
 	EXPECT_LE(friendly->getCount(), friendly->unitBaseAmount()) << "Resurrection cannot exceed its battle-start count";
-	EXPECT_EQ(friendly->health.getResurrected(), 0) << "Restored creatures are real, not one-battle casualties";
+	EXPECT_EQ(friendly->getHealth().getResurrected(), 0) << "Restored creatures are real, not one-battle casualties";
 	EXPECT_EQ(manaBefore - attackerSideHero->getManaAvailable(), 22);
 	EXPECT_TRUE(battle()->hasCompletedHeroSpellCast(BattleSide::ATTACKER));
 	EXPECT_TRUE(friendly->hasBonus(Selector::source(BonusSource::SPELL_EFFECT,
@@ -598,7 +598,7 @@ TEST_F(NewHorizonsResurrectionFoundationTest, TemporaryStacksAreRejectedButAcces
 	EXPECT_EQ(friendly->getAvailableHealth(), forecast.hpDelta);
 	EXPECT_EQ(friendly->getPosition(), corpsePosition);
 	EXPECT_LE(friendly->getCount(), friendly->unitBaseAmount());
-	EXPECT_EQ(friendly->health.getResurrected(), 0);
+	EXPECT_EQ(friendly->getHealth().getResurrected(), 0);
 }
 
 TEST_F(NewHorizonsResurrectionFoundationTest, SmallWoundNeedsNoFullCreatureThreshold)
@@ -629,7 +629,7 @@ TEST_F(NewHorizonsResurrectionFoundationTest, SmallWoundNeedsNoFullCreatureThres
 	EXPECT_EQ(friendly->getAvailableHealth() - woundedHealth, forecast.hpDelta);
 	EXPECT_EQ(friendly->getAvailableHealth(), healthBeforeDamage);
 	EXPECT_EQ(friendly->getCount(), friendly->unitBaseAmount());
-	EXPECT_EQ(friendly->health.getResurrected(), 0);
+	EXPECT_EQ(friendly->getHealth().getResurrected(), 0);
 	EXPECT_EQ(manaBefore - attackerSideHero->getManaAvailable(), 22);
 }
 

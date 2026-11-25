@@ -252,7 +252,7 @@ TEST_F(NewHorizonsTemporaryDemonicGatingTest, ReinforcedArrivalUsesSeparateShiel
 	const auto creatureHealth = gated->getTotalHealth();
 	const auto shield = creatureHealth * 20 / 100;
 	EXPECT_EQ(gated->getCount(), 3);
-	EXPECT_EQ(gated->health.getTemporaryHitPoints(), shield);
+	EXPECT_EQ(gated->getHealth().getTemporaryHitPoints(), shield);
 	EXPECT_EQ(gated->getAvailableHealth(), creatureHealth + shield);
 	const auto floor = gated->getBonusesOfType(BonusType::MINIMUM_MORALE);
 	ASSERT_EQ(floor->size(), 1u);
@@ -261,7 +261,7 @@ TEST_F(NewHorizonsTemporaryDemonicGatingTest, ReinforcedArrivalUsesSeparateShiel
 	auto copy = gated->acquireState();
 	int64_t damage = shield;
 	copy->damage(damage);
-	EXPECT_EQ(copy->health.getTemporaryHitPoints(), 0);
+	EXPECT_EQ(copy->getHealth().getTemporaryHitPoints(), 0);
 	EXPECT_EQ(copy->getCount(), gated->getCount());
 	EXPECT_EQ(copy->getAvailableHealth(), creatureHealth);
 }

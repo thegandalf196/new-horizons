@@ -76,7 +76,7 @@ void HypotheticBattle::moveUnit(uint32_t id, const BattleHex & destination)
 	sourceBinding.adjacencyMemo.invalidate();
 	if(forecast::NativeAdapter::moveUnit(*this, id, destination)) return;
 	std::shared_ptr<StackWithBonuses> changed = getForUpdate(id);
-	const bool moved = changed->position != destination;
+	const bool moved = changed->getPosition() != destination;
 	if(moved)
 		changed->sylvanAmbush.reveal(); // Matches BattleInfo::moveUnit.
 	if(moved && changed->hasBonusOfType(BonusType::BIND_EFFECT))
@@ -85,7 +85,7 @@ void HypotheticBattle::moveUnit(uint32_t id, const BattleHex & destination)
 			changed->removeUnitBonus(CSelector([entangleSpell](const Bonus * bonus)
 				{ return battle::timedEffects::targetMoveBreaks(*bonus, true, entangleSpell); }));
 	}
-	changed->position = destination;
+	changed->setPosition(destination);
 	if(!moved)
 		return;
 	// Native current-army auras depend on the whole projected roster. Moving
@@ -259,7 +259,7 @@ void HypotheticBattle::removeUnit(uint32_t id)
 		const bool wasAlive = toRemove->alive();
 
 		releaseSerpentBindingsForDeath(*toRemove);
-		if(!toRemove->ghost)
+		if(!toRemove->isGhost())
 		{
 			toRemove->onRemoved();
 

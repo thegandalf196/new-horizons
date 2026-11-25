@@ -71,8 +71,8 @@ protected:
 		add(secondBonuses, BonusType::SHOTS, 9);
 		first.localInit(&firstEnvironment);
 		second.localInit(&secondEnvironment);
-		first.position = BattleHex(5, 5);
-		second.position = BattleHex(10, 5);
+		first.setPosition(BattleHex(5, 5));
+		second.setPosition(BattleHex(10, 5));
 	}
 
 	void seedFirst()
@@ -93,7 +93,7 @@ protected:
 		first.confusionState.applyPending(PlayerColor(0), true);
 		int64_t damage = 25;
 		first.damage(damage, true);
-		first.health.addTemporaryHitPoints(3);
+		first.editHealth()->addTemporaryHitPoints(3);
 		first.shots.use();
 		first.casts.use();
 		first.counterAttacks.use();
@@ -103,7 +103,7 @@ protected:
 TEST_F(UnitStateValueExchangeTest, CompleteSerializedValuesExchangeAndInverse)
 {
 	seedFirst();
-	second.health.addTemporaryHitPoints(8);
+	second.editHealth()->addTemporaryHitPoints(8);
 	const auto beforeFirst = first.save(), beforeSecond = second.save();
 	static_assert(noexcept(battle::exchangePreparedUnitStateValues(first, second)));
 	battle::exchangePreparedUnitStateValues(first, second);
@@ -127,8 +127,8 @@ TEST_F(UnitStateValueExchangeTest, DescriptorAmmoCacheEnvironmentAndHealthOwners
 	EXPECT_EQ(first.shots.available(), 4);
 	EXPECT_EQ(second.shots.available(), 8);
 	EXPECT_CALL(secondInfo, unitBaseAmount()).WillRepeatedly(Return(12));
-	first.health.init();
-	second.health.init();
+	first.editHealth()->init();
+	second.editHealth()->init();
 	EXPECT_EQ(first.getCount(), 10);
 	EXPECT_EQ(second.getCount(), 12);
 }
@@ -224,7 +224,7 @@ TEST_F(UnitStateValueExchangeTest, PassiveFactionReceiptsSurviveNativeRebindingA
 {
 	seedFirst();
 	const battle::StackInitializationReceipts receipts(first);
-	receipts.initialize(first, &firstEnvironment, first.position);
+	receipts.initialize(first, &firstEnvironment, first.getPosition());
 	EXPECT_TRUE(first.hasOpenedDemonicGate());
 	EXPECT_EQ(first.physicalPoisonSpellOrigin(), BattleSide::ATTACKER);
 	EXPECT_EQ(first.physicalPoisonBaseDamage, 10);

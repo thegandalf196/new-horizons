@@ -65,9 +65,9 @@ protected:
 				BonusType::STACK_HEALTH, BonusSource::CREATURE_ABILITY, 20, BonusSourceID(CreatureID(0))));
 		projected.localInit(&environment);
 		neighbor.localInit(&environment);
-		original.position = BattleHex(2, 2);
-		projected.position = BattleHex(5, 5);
-		neighbor.position = BattleHex(6, 5);
+		original.setPosition(BattleHex(2, 2));
+		projected.setPosition(BattleHex(5, 5));
+		neighbor.setPosition(BattleHex(6, 5));
 	}
 
 	Decision decision(const ILimiter & limiter, const BonusEvaluationContext & evaluation)
@@ -140,12 +140,12 @@ TEST_F(ProjectedBonusLimitationTest, ChangedPositionAndDoubleWideFootprintReachH
 	projected.beginBattleForm(CreatureID(10), 3);
 	ASSERT_TRUE(projected.doubleWide());
 	ASSERT_EQ(projected.getHexes().size(), 2);
-	const auto rear = battle::Unit::occupiedHex(projected.position, true, projected.unitSide());
+	const auto rear = battle::Unit::occupiedHex(projected.getPosition(), true, projected.unitSide());
 	UnitOnHexLimiter hex(BattleHexArray{rear});
 	const BonusEvaluationContext context(original, projected);
 	EXPECT_EQ(decision(hex, context), Decision::ACCEPT);
 	EXPECT_EQ(decision(hex, original), Decision::DISCARD);
-	projected.position = BattleHex(10, 5);
+	projected.setPosition(BattleHex(10, 5));
 	EXPECT_EQ(decision(hex, context), Decision::DISCARD);
 }
 
@@ -160,9 +160,9 @@ TEST_F(ProjectedBonusLimitationTest, RosterReadsSequentialNeighborFormMovementAn
 	EXPECT_EQ(decision(adjacent, context), Decision::DISCARD);
 	adjacent.targetUnit = CreatureID(14);
 	EXPECT_EQ(decision(adjacent, context), Decision::ACCEPT);
-	neighbor.position = BattleHex(12, 5);
+	neighbor.setPosition(BattleHex(12, 5));
 	EXPECT_EQ(decision(adjacent, context), Decision::DISCARD);
-	neighbor.position = BattleHex(6, 5);
+	neighbor.setPosition(BattleHex(6, 5));
 	int64_t damage = neighbor.getAvailableHealth();
 	neighbor.damage(damage);
 	ASSERT_FALSE(neighbor.alive());
@@ -175,7 +175,7 @@ TEST_F(ProjectedBonusLimitationTest, RosterMatchesActualLiveCallbackOrderAndShar
 	for(int id = 0; id < 3; ++id)
 	{
 		auto unit = std::make_unique<CStack>(&descriptor, PlayerColor(id), id, BattleSide::ATTACKER);
-		unit->position = BattleHex(5 + id, 5);
+		unit->setPosition(BattleHex(5 + id, 5));
 		battle.stacks.push_back(std::move(unit));
 	}
 	const auto * subject = battle.stacks[0].get();
@@ -253,7 +253,7 @@ TEST_F(ProjectedBonusLimitationTest, SameContextDrivesUpdaterAndIterativeDepende
 	ASSERT_EQ(accepted.size(), 2);
 	EXPECT_EQ(accepted[0], provider);
 	EXPECT_EQ(accepted[1]->val, projected.getCount());
-	neighbor.position = BattleHex(12, 5);
+	neighbor.setPosition(BattleHex(12, 5));
 	accepted.clear();
 	limitBonuses(all, accepted, context);
 	EXPECT_TRUE(accepted.empty());
@@ -321,7 +321,7 @@ TEST_F(ProjectedBonusLimitationTest, InvalidRosterIdentityAndMissingRosterNeverF
 	UnitAdjacentLimiter adjacent;
 	adjacent.targetUnit = CreatureID(0);
 	EXPECT_THROW(decision(adjacent, BonusEvaluationContext(original, projected)), std::logic_error);
-	projected.position = BattleHex::INVALID;
+	projected.setPosition(BattleHex::INVALID);
 	EXPECT_EQ(decision(adjacent, BonusEvaluationContext(original, projected)), Decision::DISCARD);
 	EXPECT_THROW((BonusLimitationContext(input, original, accepted, pending, BonusEvaluationContext(*original.unitType()))), std::invalid_argument);
 }
@@ -342,7 +342,7 @@ TEST_F(ProjectedBonusLimitationTest, GenericFilteredAdjacencyKeepsNativeArmyWhen
 	EXPECT_EQ(decision(limiter, context), Decision::ACCEPT);
 	limiter.filter.relationship = AdjacentUnitFilter::Relationship::OPPOSING_ARMY;
 	EXPECT_EQ(decision(limiter, context), Decision::DISCARD);
-	neighbor.position = BattleHex(12, 5);
+	neighbor.setPosition(BattleHex(12, 5));
 	limiter.filter.relationship = AdjacentUnitFilter::Relationship::SAME_ARMY;
 	EXPECT_EQ(decision(limiter, context), Decision::DISCARD);
 }

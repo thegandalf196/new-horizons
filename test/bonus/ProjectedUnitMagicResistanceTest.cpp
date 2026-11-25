@@ -82,11 +82,11 @@ protected:
 			health->sid = BonusSourceID(CreatureID(0));
 			original->addNewBonus(health);
 			original->base = &base; // defined based terrain; never execute unbound terrain UB
-			original->health.init();
+			original->editHealth()->init();
 		}
-		subject.position = BattleHex(5, 5);
-		ally.position = BattleHex(6, 5);
-		enemy.position = BattleHex(5, 6);
+		subject.setPosition(BattleHex(5, 5));
+		ally.setPosition(BattleHex(6, 5));
+		enemy.setPosition(BattleHex(5, 6));
 		subject.addNewBonus(resistanceValue(BonusType::MAGIC_RESISTANCE, 20));
 		aura = resistanceValue(BonusType::SPELL_RESISTANCE_AURA, 25);
 		ally.addNewBonus(aura);
@@ -154,9 +154,9 @@ TEST_F(ProjectedUnitMagicResistanceTest, SequentialMovementChangesAdjacencyWitho
 	initialize();
 	const auto before = ally.save();
 	EXPECT_EQ(units[0]->magicResistance(), 40);
-	units[1]->position = BattleHex(12, 8);
+	units[1]->setPosition(BattleHex(12, 8));
 	EXPECT_EQ(units[0]->magicResistance(), 20);
-	units[1]->position = BattleHex(6, 5);
+	units[1]->setPosition(BattleHex(6, 5));
 	EXPECT_EQ(units[0]->magicResistance(), 40);
 	EXPECT_EQ(live.battleGetMagicResistance(&subject), 40);
 	EXPECT_EQ(ally.save(), before);
@@ -166,7 +166,7 @@ TEST_F(ProjectedUnitMagicResistanceTest, SequentialDeathRemovesAuraButRetainsOri
 {
 	initialize();
 	const auto before = ally.save();
-	units[1]->health.reset();
+	units[1]->editHealth()->reset();
 	ASSERT_FALSE(units[1]->alive());
 	EXPECT_EQ(units[0]->magicResistance(), 20);
 	EXPECT_EQ(live.battleGetMagicResistance(&subject), 40);
@@ -200,7 +200,7 @@ TEST_F(ProjectedUnitMagicResistanceTest, NestedAuraUpdaterUsesLatestProjectedCou
 	EXPECT_EQ(live.battleGetMagicResistance(&subject), 39); // floor(20 +24 -4.8)
 	EXPECT_EQ(units[0]->magicResistance(), 39);
 	int64_t damage = 80;
-	units[1]->health.damage(damage);
+	units[1]->editHealth()->damage(damage);
 	ASSERT_EQ(units[1]->getCount(), 4);
 	EXPECT_EQ(units[0]->magicResistance(), 29); // floor(20 +12 -2.4)
 	EXPECT_EQ(live.battleGetMagicResistance(&subject), 39);
@@ -231,7 +231,7 @@ TEST_F(ProjectedUnitMagicResistanceTest, HypnotizedEnemyAuraStillUsesRawOwnerAsL
 
 TEST_F(ProjectedUnitMagicResistanceTest, SynchronousProjectedFormRearHexChangesResistanceAdjacency)
 {
-	ally.position = BattleHex(7, 5); // one hex leaves a gap; cavalry rear closes it
+	ally.setPosition(BattleHex(7, 5)); // one hex leaves a gap; cavalry rear closes it
 	const auto original = ally.save();
 	ally.beginBattleForm(CreatureID(10), 2);
 	ASSERT_TRUE(ally.doubleWide());

@@ -67,13 +67,13 @@ TEST_F(OptionalHydraForecastTest, CoreCapacityRoundForecastRequiresNoOptionalHyd
 	unit->addUnitBonus({capacity});
 	unit->normalizeCapacityHealth();
 	ASSERT_EQ(unit->getMaxHealth(), originalMaximum + 50);
-	ASSERT_TRUE(unit->health.isCapacityHealthTracking());
+	ASSERT_TRUE(unit->getHealth().isCapacityHealthTracking());
 	ASSERT_GT(unit->getCapacityHealthReferenceMax(), 0);
 	ASSERT_EQ(unit->save()["state"]["capacityHealthReferenceMax"].Integer(), originalMaximum);
 	ASSERT_EQ(unit->getAvailableHealth(), health);
 	ASSERT_NO_THROW(unit->advanceTimedRound());
 	EXPECT_EQ(unit->save()["state"]["capacityHealthReferenceMax"].Integer(), 0);
-	EXPECT_FALSE(unit->health.isCapacityHealthTracking());
+	EXPECT_FALSE(unit->getHealth().isCapacityHealthTracking());
 	EXPECT_EQ(unit->getMaxHealth(), originalMaximum);
 	EXPECT_EQ(unit->getCapacityHealthReferenceMax(), originalMaximum);
 	EXPECT_EQ(unit->getAvailableHealth(), health);

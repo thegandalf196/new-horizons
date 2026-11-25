@@ -653,8 +653,8 @@ TEST_F(BattleSpellCastTest, battleResurrection)
 //		EXPECT_THAT(problemMock.log, ContainerEq(expLog));
 	}
 
-	EXPECT_EQ(unit->health.getCount(), 10);
-	EXPECT_EQ(unit->health.getResurrected(), 0);
+	EXPECT_EQ(unit->getHealth().getCount(), 10);
+	EXPECT_EQ(unit->getHealth().getResurrected(), 0);
 }
 
 TEST_F(BattleSpellCastTest, battleInterference)

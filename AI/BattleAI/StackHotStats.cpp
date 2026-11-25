@@ -97,7 +97,7 @@ bool StackWithBonuses::hotStatsStamp(StackHotStatsStamp & stamp) const
 	stamp.activeStack = owner->getActiveStackID();
 	stamp.count = getCount();
 	stamp.firstHitPoints = getFirstHPleft();
-	stamp.position = static_cast<int16_t>(position.toInt());
+	stamp.position = static_cast<int16_t>(getPosition().toInt());
 	stamp.flags = static_cast<uint16_t>((veteranCohesionEarned ? HOT_STATS_VETERAN_COHESION : 0)
 		| (hasBattleFormState() ? HOT_STATS_FORM_STATE : 0) | (isGhost() ? HOT_STATS_GHOST : 0)
 		| (exactLocalSpellEffects ? HOT_STATS_EXACT_LOCAL_EFFECTS : 0));

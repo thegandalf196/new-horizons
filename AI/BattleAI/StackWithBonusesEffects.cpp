@@ -458,7 +458,7 @@ void StackWithBonuses::advanceTimedRound(HypotheticLifecycleTiming::EffectWorkTi
 	ageRecords(bonusesToUpdate);
 	++treeVersionLocal;
 	restoreGuardianSpiritFromExistingBonuses(*this);
-	if(health.isCapacityHealthTracking() && getCapacityHealthReferenceMax() > 0)
+	if(getHealth().isCapacityHealthTracking() && getCapacityHealthReferenceMax() > 0)
 	{
 		// Match the authoritative round-expiry hook for Hydra's Vitality. Timed
 		// capacity effects disappear inside round aging rather than via a bonus

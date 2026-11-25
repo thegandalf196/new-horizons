@@ -184,7 +184,7 @@ StackWithBonuses::StackWithBonuses(const HypotheticBattle * Owner, const battle:
 
 	localInit(Owner->unitEnvironment());
 
-	position = info.position;
+	setPosition(info.position);
 	summoned = info.summoned;
 	natureSummoned = info.natureSummoned;
 	summonRoundsRemaining = info.summonRoundsRemaining;

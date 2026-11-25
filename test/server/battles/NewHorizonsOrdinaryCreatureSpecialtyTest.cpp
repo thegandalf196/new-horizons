@@ -295,7 +295,7 @@ TEST_P(NewHorizonsOrdinaryCreatureSpecialtyTest, ExistingConsumersUseCapturedBon
 		const auto maximum = unit->getMaxHealth();
 		const auto count = unit->getCount();
 		int64_t wound = 5;
-		unit->health.damage(wound);
+		unit->editHealth()->damage(wound);
 		const auto wounded = unit->getAvailableHealth();
 		attackerSideHero->initHero(*gameHandler->randomizer);
 		EXPECT_EQ(unit->getAvailableHealth(), wounded);
@@ -348,7 +348,7 @@ TEST_F(DaceOrdinaryRetaliationTest, AuthoritativeCounterAndScriptedFireShieldUse
 	// reflected damage observable without casualty or absorbed-health caps.
 	shielded->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE, BonusType::STACK_HEALTH,
 		BonusSource::OTHER, 10000, BonusSourceID()));
-	shielded->health.init(); // authored full-health fixture after its explicit HP grant
+	shielded->editHealth()->init(); // authored full-health fixture after its explicit HP grant
 	forceMaximumDamage(retaliator);
 	forceMaximumDamage(shielded);
 	// Four arguments select the typed lookup, not (scope, fullName, bool).

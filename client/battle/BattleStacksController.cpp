@@ -709,7 +709,7 @@ void BattleStacksController::stackAttacking( const StackAttackInfo & info )
 
 	if (info.indirectAttack || longWeaponMelee)
 	{
-		needsReverse = shouldRotate(attacker, attacker->position, info.tile);
+		needsReverse = shouldRotate(attacker, attacker->getPosition(), info.tile);
 	}
 	else
 	{

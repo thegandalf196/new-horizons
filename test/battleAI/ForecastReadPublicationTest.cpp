@@ -77,8 +77,8 @@ TEST_F(ForecastNativeAdapterTest, PublishedPureCasualtyAndTemporaryResurrectionO
 	{
 		const auto & updated = child->forecastState()->unit(id)->numeric[mode];
 		ASSERT_TRUE(updated); EXPECT_NE(updated, woundedNumbers[mode]);
-		EXPECT_EQ(updated->unit.firstHealth, expected->health.getFirstHPleft());
-		EXPECT_EQ(updated->unit.availableHealth, static_cast<double>(expected->health.available()));
+		EXPECT_EQ(updated->unit.firstHealth, expected->getHealth().getFirstHPleft());
+		EXPECT_EQ(updated->unit.availableHealth, static_cast<double>(expected->getHealth().available()));
 	}
 	int64_t healing = actual->getMaxHealth() * 2, nativeHealing = healing;
 	expected->heal(nativeHealing, EHealLevel::RESURRECT, EHealPower::ONE_BATTLE);

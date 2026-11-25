@@ -10,8 +10,8 @@ namespace battle
 /// The bonus-free scalars of one battle unit that limiters, updaters and
 /// adjacency rules read: hex, life and count (from the raw health ledger),
 /// ghost state and the battle-form view revision (which covers the effective
-/// creature, width and form). Read from the public fields themselves, so an
-/// edit by any writer, mutator or not, changes the signature.
+/// creature, width and form). Compares the values themselves, so equal states
+/// reached through different writes still share a signature.
 struct UnitPlainState
 {
 	BattleHex position;
@@ -24,7 +24,7 @@ struct UnitPlainState
 
 inline UnitPlainState plainState(const CUnitState & unit)
 {
-	return {unit.position, unit.health.getCount(), unit.health.getFirstHPleft(), unit.getBattleFormViewRevision(),
-		unit.ghost};
+	return {unit.getPosition(), unit.getHealth().getCount(), unit.getHealth().getFirstHPleft(),
+		unit.getBattleFormViewRevision(), unit.isGhost()};
 }
 }

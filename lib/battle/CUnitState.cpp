@@ -325,7 +325,8 @@ void CHealth::swapPreparedContents(CHealth & prepared) noexcept
 
 void CUnitState::commitPreparedCapacityHealth(CUnitState & prepared) noexcept
 {
-	health.swapPreparedContents(prepared.health);
+	const StateRevisionScope preparedChange(prepared.stateRevision);
+	editHealth()->swapPreparedContents(prepared.health);
 	capacityHealthReferenceMax = prepared.capacityHealthReferenceMax;
 }
 
@@ -1374,11 +1375,6 @@ bool CUnitState::alive() const
 	return health.getCount() > 0;
 }
 
-bool CUnitState::isGhost() const
-{
-	return ghost;
-}
-
 bool CUnitState::isFrozen() const
 {
 	return hasBonus(Selector::source(BonusSource::SPELL_EFFECT, BonusSourceID(SpellID(SpellID::STONE_GAZE))));
@@ -1504,14 +1500,14 @@ void CUnitState::addShadowGiftMaximumHealthLoss(const int64_t amount)
 	if(battleFormOriginalHealth.isBattleFormProvenance())
 	{
 		const int64_t oldLoss = battleFormOriginalHealth.getShadowGiftMaximumHealthLost();
-		battleFormOriginalHealth.addShadowGiftMaximumHealthLoss(amount);
+		editOriginalHealth()->addShadowGiftMaximumHealthLoss(amount);
 		const int64_t addedLoss = battleFormOriginalHealth.getShadowGiftMaximumHealthLost() - oldLoss;
 		if(addedLoss > 0)
-			health.addShadowGiftMaximumHealthLoss(addedLoss);
+			editHealth()->addShadowGiftMaximumHealthLoss(addedLoss);
 	}
 	else
 	{
-		health.addShadowGiftMaximumHealthLoss(amount);
+		editHealth()->addShadowGiftMaximumHealthLoss(amount);
 	}
 }
 
@@ -1545,7 +1541,7 @@ void CUnitState::initializePhantomProfile(int64_t integrity, int32_t duration)
 		throw std::invalid_argument("Invalid Phantom Army profile");
 
 	phantomInitialIntegrity = integrity;
-	phantomIntegrity = integrity;
+	setPhantomIntegrity(integrity);
 	phantomRoundsRemaining = duration;
 }
 
@@ -1593,6 +1589,7 @@ void CUnitState::beginBattleForm(const CreatureID creature, const int32_t rounds
 	const bool wasActive = hasBattleForm();
 	const int32_t currentInitiative = getInitiative(0);
 	const int64_t currentCreatureHealth = health.getCreatureHealthAvailable();
+	const StateRevisionScope changing(stateRevision);
 	if(!battleFormOriginalHealth.isBattleFormProvenance())
 	{
 		if(!battleFormOriginalCreatureId.hasValue())
@@ -1601,9 +1598,10 @@ void CUnitState::beginBattleForm(const CreatureID creature, const int32_t rounds
 		battleFormOriginalCount = unitBaseAmount();
 		battleFormOriginalCapacityHealthReferenceMax = capacityHealthReferenceMax;
 		battleFormOriginalCapacityRegenerationRemainderTenths = capacityRegenerationRemainderTenths;
-		battleFormOriginalHealth = health;
-		battleFormOriginalHealth.setTemporaryHitPoints(0);
-		battleFormOriginalHealth.preserveBattleFormProvenance(battleFormOriginalMaxHealth);
+		CHealth source = health; // The swap moves ledger contents only, as assignment would.
+		editOriginalHealth()->swapPreparedContents(source);
+		editOriginalHealth()->setTemporaryHitPoints(0);
+		editOriginalHealth()->preserveBattleFormProvenance(battleFormOriginalMaxHealth);
 	}
 
 	if(health.getCreatureHealthAvailable() != battleFormOriginalHealth.getCreatureHealthAvailable())
@@ -1619,7 +1617,7 @@ void CUnitState::beginBattleForm(const CreatureID creature, const int32_t rounds
 	if(!wasActive || previousForm != creature)
 	{
 		onBattleFormChanged();
-		health.repartitionForBattleForm(static_cast<int32_t>(getMaxHealth()),
+		editHealth()->repartitionForBattleForm(static_cast<int32_t>(getMaxHealth()),
 			battleFormOriginalHealth.total(), currentCreatureHealth);
 	}
 }
@@ -1639,6 +1637,7 @@ void CUnitState::endBattleForm()
 	const int32_t activeInitiativeSnapshot = battleFormInitiativeSnapshot;
 	const bool activeInitiativeSnapshotEnabled = battleFormInitiativeSnapshotActive;
 	const int64_t temporaryHitPoints = health.getTemporaryHitPoints();
+	const StateRevisionScope changing(stateRevision);
 	battleFormCreatureId = CreatureID(-1);
 	battleFormRoundsRemaining = 0;
 	battleFormRestorationPending = false;
@@ -1660,10 +1659,10 @@ void CUnitState::endBattleForm()
 		throw std::logic_error("Restoring a battle form changed source-species HP");
 	}
 
-	health = restoredHealth;
+	setHealth(restoredHealth);
 	capacityHealthReferenceMax = battleFormOriginalCapacityHealthReferenceMax;
 	capacityRegenerationRemainderTenths = battleFormOriginalCapacityRegenerationRemainderTenths;
-	battleFormOriginalHealth.reset();
+	editOriginalHealth()->reset();
 	battleFormOriginalMaxHealth = 0;
 	battleFormOriginalCount = 0;
 	battleFormOriginalCapacityHealthReferenceMax = 0;
@@ -1676,11 +1675,13 @@ void CUnitState::deferBattleFormRestoration()
 		return;
 	battleFormRoundsRemaining = 1;
 	battleFormRestorationPending = true;
+	stateRevision.bump();
 }
 
 void CUnitState::onBattleFormChanged()
 {
 	++battleFormViewRevision;
+	stateRevision.bump();
 }
 
 int32_t CUnitState::getBattleFormViewRevision() const
@@ -1688,16 +1689,6 @@ int32_t CUnitState::getBattleFormViewRevision() const
 	return battleFormViewRevision;
 }
 
-
-BattleHex CUnitState::getPosition() const
-{
-	return position;
-}
-
-void CUnitState::setPosition(const BattleHex & hex)
-{
-	position = hex;
-}
 
 int32_t CUnitState::getInitiative(int turn) const
 {
@@ -2048,7 +2039,7 @@ void CUnitState::serializeJson(JsonSerializeFormat & handler)
 
 	si16 posValue = position.toInt();
 	handler.serializeInt("position", posValue);
-	position = posValue;
+	if(!handler.saving) setPosition(posValue); // JSON load ends with a revision bump.
 }
 
 bool CUnitState::archeryCrossfireAvailable(BattleSide side, uint32_t currentShooter, int32_t round) const
@@ -2228,21 +2219,21 @@ void CUnitState::damageInternal(int64_t & amount, bool destroyRemains, bool bypa
 			// before clearing health so a temporary form cannot retain a stale HP
 			// provenance ledger through ghosting, removal, or result processing.
 			endBattleForm();
-			health.reset();
+			editHealth()->reset();
 		}
 	}
 	else if(phantomInitialIntegrity > 0)
 	{
 		amount = std::clamp<int64_t>(amount, 0, phantomIntegrity);
-		phantomIntegrity -= amount;
+		setPhantomIntegrity(phantomIntegrity - amount);
 		if(phantomIntegrity == 0)
 		{
 			// Integrity is independent of the copied offensive body. Clear that
 			// body's form provenance before its normal terminal health reset.
 			endBattleForm();
 			phantomRoundsRemaining = 0;
-			health.reset();
-			ghostPending = true;
+			editHealth()->reset();
+			setGhostPending(true);
 		}
 	}
 	else
@@ -2251,7 +2242,7 @@ void CUnitState::damageInternal(int64_t & amount, bool destroyRemains, bool bypa
 		if(postShieldBeforeCasualties) *postShieldBeforeCasualties = amount;
 		const int64_t creatureHealthBefore = health.getCreatureHealthAvailable();
 		const bool activeBattleForm = battleFormOriginalHealth.isBattleFormProvenance();
-		health.damage(amount, activeBattleForm ? false : destroyRemains, bypassTemporaryHitPoints,
+		editHealth()->damage(amount, activeBattleForm ? false : destroyRemains, bypassTemporaryHitPoints,
 			provenance, !activeBattleForm);
 		normalizeCapacityHealth();
 		if(context && context->vow && context->damageClass != DamageClass::HEALTH_COST)
@@ -2262,7 +2253,7 @@ void CUnitState::damageInternal(int64_t & amount, bool destroyRemains, bool bypa
 			if(creatureHealthAfter < creatureHealthBefore)
 			{
 				int64_t provenanceDamage = creatureHealthBefore - creatureHealthAfter;
-				battleFormOriginalHealth.damage(provenanceDamage, destroyRemains, true, provenance, true);
+				editOriginalHealth()->damage(provenanceDamage, destroyRemains, true, provenance, true);
 				if(provenanceDamage != creatureHealthBefore - creatureHealthAfter)
 					throw std::logic_error("Battle-form source HP provenance rejected applied damage");
 			}
@@ -2284,7 +2275,7 @@ void CUnitState::damageInternal(int64_t & amount, bool destroyRemains, bool bypa
 
 	bool disintegrate = hasBonusOfType(BonusType::DISINTEGRATE);
 	if(health.available() <= 0 && (cloned || summoned || disintegrate))
-		ghostPending = true;
+		setGhostPending(true);
 
 	const int64_t availableHealthAfter = getAvailableHealth();
 	if(eligibleCohesion && availableHealthAfter < availableHealthBefore
@@ -2369,12 +2360,12 @@ void CUnitState::preserveCreatureHealthOnCapacityIncrease()
 		capacityHealthReferenceMax = static_cast<int32_t>(getMaxHealth());
 		capacityRegenerationRemainderTenths = 0;
 	}
-	health.preserveCapacityHealth();
+	editHealth()->preserveCapacityHealth();
 }
 
 void CUnitState::normalizeCapacityHealth()
 {
-	health.normalizeCapacityHealth(capacityHealthReferenceMax > 0);
+	editHealth()->normalizeCapacityHealth(capacityHealthReferenceMax > 0);
 }
 
 int32_t CUnitState::getCapacityHealthReferenceMax() const

@@ -119,7 +119,7 @@ void HypotheticBattle::nextRound(HypotheticLifecycleTiming * timing)
 		}
 		forUpdate->afterNewRound(firstRound, true);
 		consecratedArms::refreshDivinePurpose(*this, *forUpdate);
-		if(forUpdate->ghostPending)
+		if(forUpdate->isGhostPending())
 			pendingRemoval.push_back(unit->unitId());
 	}
 	// The authoritative flow flushes pending ghosts after round updates. This
@@ -254,7 +254,7 @@ void HypotheticBattle::applyProjectedActivationStartEffects(uint32_t unitId,
 	const auto hydrasVitalityMarker = newHorizonsMagic::hydrasVitalitySource(getMagicRules())
 		.And(Selector::type()(BonusType::HP_REGENERATION));
 	if(unit->alive() && unit->getCapacityHealthReferenceMax() > 0
-		&& unit->health.isCapacityHealthTracking()
+		&& unit->getHealth().isCapacityHealthTracking()
 		&& unit->hasBonus(hydrasVitalityMarker))
 		unit->consumeCapacityRegeneration();
 

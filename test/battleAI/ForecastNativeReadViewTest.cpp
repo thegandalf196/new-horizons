@@ -59,7 +59,7 @@ OwnedNativeCase captureOwned(HypotheticBattle & source)
 		auto descriptor = std::make_shared<const forecast::NativeReadDescriptor>(forecast::NativeReadDescriptor{
 			values->identity(), {unit->getBattleStartMaximumAggregateHP(), unit->getRebirthOriginalAggregateHP()}, creatures});
 		bonusDependencies::QueryFrameBinding binding{unit->unitId(), unit->creatureId(), unit->getCount(),
-			unit->unitOwner(), unit->unitSide(), unit->unitSlot(), unit->ghost, unit->summoned, unit->natureSummoned, creatures};
+			unit->unitOwner(), unit->unitSide(), unit->unitSlot(), unit->isGhost(), unit->summoned, unit->natureSummoned, creatures};
 		auto program = unit->captureModifierFacts(nullptr);
 		if(!program) throw std::logic_error("Native test source has no closed C5 raw program");
 		program = program->bindQueries(binding, unit->localSpellEffects());
@@ -106,18 +106,18 @@ TEST_F(ForecastNativeAdapterTest, CompleteSnapshotRestoresCanonicalValuesWithout
 	source->shots.use(); source->counterAttacks.use();
 	int64_t damage = 17;
 	source->damage(damage, false, battle::DamageProvenance::SPELL);
-	source->health.setTemporaryHitPoints(13);
+	source->editHealth()->setTemporaryHitPoints(13);
 	source->guardianSpiritHitPoints = 17; source->guardianSpiritRoundsRemaining = 2;
 	source->demonicGateOpened = true; source->cleaveUsedThisActivation = true;
 	const auto snapshot = battle::UnitStateValueSnapshot::capture(*source);
 	const auto expected = observe(*source);
 	auto receiver = source->acquireState();
-	const auto beforeContext = receiver->health.valueContext();
+	const auto beforeContext = receiver->getHealth().valueContext();
 	receiver->afterNewRound(false); receiver->archeryCrossfireAttackers.clear();
 	snapshot.restore(*receiver);
 	EXPECT_EQ(observe(*receiver), expected);
-	EXPECT_EQ(receiver->health.valueContext(), beforeContext);
-	EXPECT_FALSE(receiver->health.isDetached()); // Receiver remains native Unit-owned.
+	EXPECT_EQ(receiver->getHealth().valueContext(), beforeContext);
+	EXPECT_FALSE(receiver->getHealth().isDetached()); // Receiver remains native Unit-owned.
 	const auto sourceHp = source->getAvailableHealth();
 	damage = 1; receiver->damage(damage, false, battle::DamageProvenance::PHYSICAL_CREATURE);
 	EXPECT_EQ(source->getAvailableHealth(), sourceHp);

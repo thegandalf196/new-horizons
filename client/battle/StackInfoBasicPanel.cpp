@@ -358,7 +358,7 @@ newHorizonsBattleStatus::StackInfoStatusSnapshot currentStackInfoStatus(
 		result.confusion = newHorizonsBattleStatus::confusionStatus(*confusionMarkers, stack->confusionState);
 		result.battleForm = newHorizonsStackSpellPresentation::battleFormStatus(*stack);
 		result.temporaryCreatures = newHorizonsBattleStatus::makeTemporaryCreatureStatus(
-			stack->health.getResurrected());
+			stack->getHealth().getResurrected());
 		const auto retributionProtectionBonuses = stack->getBonuses(
 			Selector::type()(BonusType::DIVINE_RETRIBUTION));
 		if(retributionProtectionBonuses)

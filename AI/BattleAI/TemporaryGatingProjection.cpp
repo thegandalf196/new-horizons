@@ -71,7 +71,7 @@ std::optional<float> outcomeValue(const Environment * environment,
 	auto gated = state->getForUpdate(info.id);
 	const auto perks = newHorizonsDemonicGating::arrivalPerks(state->battleGetFightingHero(side));
 	if(perks.reinforced)
-		gated->health.addTemporaryHitPoints(newHorizonsDemonicGating::reinforcedHitPoints(gated->getAvailableHealth()));
+		gated->editHealth()->addTemporaryHitPoints(newHorizonsDemonicGating::reinforcedHitPoints(gated->getAvailableHealth()));
 	const bool beacon = perks.beacon && newHorizonsDemonicGating::beaconEligible(*state, *gated, side);
 	state->addUnitBonus(info.id, newHorizonsDemonicGating::arrivalBonuses(perks, plan->atEndOfRound, beacon));
 	float fire = 0;

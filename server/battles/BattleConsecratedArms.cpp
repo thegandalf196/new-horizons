@@ -48,7 +48,7 @@ std::vector<Judgment> prepareJudgment(const CBattleInfoCallback & battle,
 		if(!target || !target->alive() || !before || hit.damageAmount <= 0
 			|| battle.battleGetOwner(target) == battle.battleGetOwner(&source))
 			continue;
-		const int64_t bodyLoss = battle::bodyHealthLoss(hit.damageAmount, before->health.getTemporaryHitPoints());
+		const int64_t bodyLoss = battle::bodyHealthLoss(hit.damageAmount, before->getHealth().getTemporaryHitPoints());
 		const int64_t raw = consecratedArms::judgmentRawDamage(potency, *target, bodyLoss);
 		if(raw > 0)
 		{

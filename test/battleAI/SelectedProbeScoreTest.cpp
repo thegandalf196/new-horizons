@@ -74,9 +74,9 @@ protected:
 		environment = std::make_shared<projectedHitTest::Environment>(gameState());
 		auto live = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
 		model = std::make_shared<HypotheticBattle>(environment.get(), live);
-		model->getForUpdate(ids[1])->position = BattleHex(4, 2);
-		model->getForUpdate(ids[2])->position = BattleHex(4, 3);
-		model->getForUpdate(ids[3])->position = BattleHex(3, 4);
+		model->getForUpdate(ids[1])->setPosition(BattleHex(4, 2));
+		model->getForUpdate(ids[2])->setPosition(BattleHex(4, 3));
+		model->getForUpdate(ids[3])->setPosition(BattleHex(3, 4));
 		for(const auto & stack : battle()->stacks) (void)stack->counterAttacks.available();
 		for(const auto id : ids)
 		{
@@ -112,7 +112,7 @@ protected:
 				unit->addUnitBonus({Bonus(BonusDuration::ONE_BATTLE, BonusType::STACK_HEALTH,
 					BonusSource::HERO_SPECIAL, 5, BonusSourceID())});
 				unit->normalizeCapacityHealth();
-				ASSERT_TRUE(unit->health.isCapacityHealthTracking());
+				ASSERT_TRUE(unit->getHealth().isCapacityHealthTracking());
 			}
 		if(unknownSource)
 		{

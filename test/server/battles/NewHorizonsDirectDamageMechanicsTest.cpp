@@ -1684,13 +1684,13 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, MagicArrowOverchargeHealthChangeFor
 	attackerSideHero->setPrimarySkill(PrimarySkill::SPELL_POWER, 100, ChangeValueMode::ABSOLUTE);
 
 	int64_t initialWound = 1;
-	target->health.damage(initialWound);
+	target->editHealth()->damage(initialWound);
 	ASSERT_EQ(initialWound, 1);
-	target->health.addTemporaryHitPoints(std::max<int64_t>(1, target->getMaxHealth() / 2));
+	target->editHealth()->addTemporaryHitPoints(std::max<int64_t>(1, target->getMaxHealth() / 2));
 	const auto healthBefore = target->getAvailableHealth();
 	const auto countBefore = target->getCount();
 	const auto firstHPBefore = target->getFirstHPleft();
-	const auto temporaryHealthBefore = target->health.getTemporaryHitPoints();
+	const auto temporaryHealthBefore = target->getHealth().getTemporaryHitPoints();
 
 	spells::Target aim;
 	aim.emplace_back(target);
@@ -1730,7 +1730,7 @@ TEST_F(NewHorizonsDirectDamageMechanicsTest, MagicArrowOverchargeHealthChangeFor
 	EXPECT_EQ(target->getAvailableHealth(), healthBefore);
 	EXPECT_EQ(target->getCount(), countBefore);
 	EXPECT_EQ(target->getFirstHPleft(), firstHPBefore);
-	EXPECT_EQ(target->health.getTemporaryHitPoints(), temporaryHealthBefore);
+	EXPECT_EQ(target->getHealth().getTemporaryHitPoints(), temporaryHealthBefore);
 
 	BattleAction action;
 	action.actionType = EActionType::HERO_SPELL;

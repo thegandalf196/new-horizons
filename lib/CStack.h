@@ -339,7 +339,7 @@ public:
 			dreadCavalryState.validateSerialization(h);
 		if(h.saving && getPhantomRoundsRemaining() > 3)
 			throw std::runtime_error("Binary stack descriptors cannot preserve extended Phantom lifetime");
-		if(h.saving && health.getResurrected() != 0)
+		if(h.saving && getHealth().getResurrected() != 0)
 			throw std::runtime_error("Cannot save temporary creature members without their health state");
 		if(h.saving && hasCasualtyProvenanceState())
 			throw std::runtime_error("Cannot save magical casualty provenance without its health state");

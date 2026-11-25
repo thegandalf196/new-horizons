@@ -390,7 +390,7 @@ TEST_F(NewHorizonsGraveKnowledgeAdmissionTest, CloneSummonedAndUnboundCandidates
 	// Every exclusion uses the same real original-roster deficit. A full-health
 	// candidate would capture zero even if all exclusion guards were removed.
 	int64_t injury = static_cast<int64_t>(candidate.getMaxHealth()) * 10;
-	candidate.health.damage(injury, false);
+	candidate.editHealth()->damage(injury, false);
 	ASSERT_EQ(candidate.getCount(), 10);
 	ASSERT_EQ(candidate.getKilled(), 10);
 	BattleResult result;

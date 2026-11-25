@@ -103,8 +103,8 @@ TEST_F(OwnedBonusEnvelopeTest, RuntimeBattleNodeAndRetainedDeadStackProtectBattl
 		{
 			ASSERT_FALSE(battle()->stacks.empty());
 			auto & victim = battle()->stacks.back();
-			int64_t damage = victim->health.available();
-			victim->health.damage(damage);
+			int64_t damage = victim->getHealth().available();
+			victim->editHealth()->damage(damage);
 			ASSERT_FALSE(victim->alive());
 			victim->addNewBonus(marker());
 			CMemorySerializer old;

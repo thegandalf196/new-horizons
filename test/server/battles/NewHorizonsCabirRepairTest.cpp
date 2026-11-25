@@ -243,7 +243,7 @@ TEST_F(NewHorizonsCabirRepairTest, AcceptedCastPermanentlyRepairsGolemAndMatches
 	EXPECT_EQ(stoneGolem->getCount() - countBefore, forecast.unitsDelta);
 	EXPECT_EQ(stoneGolem->getCount(), 5)
 		<< "permanent Repair restores an eligible casualty rather than adding a temporary body";
-	EXPECT_EQ(stoneGolem->health.getResurrected(), 0);
+	EXPECT_EQ(stoneGolem->getHealth().getResurrected(), 0);
 	EXPECT_EQ(caster->casts.available(), castsBefore - 1);
 	EXPECT_TRUE(caster->castSpellThisTurn);
 	EXPECT_NE(battle()->battleActiveUnit(), activeBefore)
@@ -344,5 +344,5 @@ TEST_F(NewHorizonsCabirRepairTest, PhantomCasterHealsWoundsButCannotRestoreGolem
 		<< "a phantom caster inherits heal-only limits while still repairing survivor wounds";
 	EXPECT_EQ(stoneGolem->getCount(), countBefore)
 		<< "phantom Repair does not resurrect permanently lost Golems";
-	EXPECT_EQ(stoneGolem->health.getResurrected(), 0);
+	EXPECT_EQ(stoneGolem->getHealth().getResurrected(), 0);
 }

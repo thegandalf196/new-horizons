@@ -59,7 +59,7 @@ protected:
 		if(std::string(std::get<0>(GetParam())) == "core:vokial")
 		{
 			int64_t wound = 1;
-			victim->health.damage(wound);
+			victim->editHealth()->damage(wound);
 		}
 		return {actor, victim};
 	}
@@ -192,7 +192,7 @@ TEST_P(NewHorizonsConditionalCreatureSpecialtyTest, LivePredicateUsesCurrentCoun
 	{
 		EXPECT_EQ(newHorizonsHeroes::ordinaryCreatureAttackPercent(attackerSideHero, attack), 20);
 		int64_t casualty = actor->getMaxHealth();
-		actor->health.damage(casualty);
+		actor->editHealth()->damage(casualty);
 		EXPECT_EQ(actor->getCount(), victim->getCount());
 		EXPECT_EQ(newHorizonsHeroes::ordinaryCreatureAttackPercent(attackerSideHero, attack), 0);
 	}
@@ -208,9 +208,9 @@ TEST_P(NewHorizonsConditionalCreatureSpecialtyTest, LivePredicateUsesCurrentCoun
 		auto * friend2 = addStack(BattleSide::ATTACKER, creatureByName("core:pikeman"), BattleHex(rightHex + 17), 1);
 		EXPECT_EQ(newHorizonsHeroes::ordinaryCreatureDamageMultiplier(*battle(), attack), 100);
 		int64_t first = friend1->getAvailableHealth();
-		friend1->health.damage(first);
+		friend1->editHealth()->damage(first);
 		int64_t second = friend2->getAvailableHealth();
-		friend2->health.damage(second);
+		friend2->editHealth()->damage(second);
 		EXPECT_EQ(newHorizonsHeroes::ordinaryCreatureDamageMultiplier(*battle(), attack), 100);
 		addStack(BattleSide::DEFENDER, creatureByName("core:pikeman"), BattleHex(rightHex + 1), 1);
 		EXPECT_EQ(newHorizonsHeroes::ordinaryCreatureDamageMultiplier(*battle(), attack), 100);
@@ -219,19 +219,19 @@ TEST_P(NewHorizonsConditionalCreatureSpecialtyTest, LivePredicateUsesCurrentCoun
 	{
 		EXPECT_EQ(newHorizonsHeroes::ordinaryCreatureAttackPercent(attackerSideHero, attack), 20);
 		int64_t finishWoundedTop = victim->getFirstHPleft();
-		victim->health.damage(finishWoundedTop);
+		victim->editHealth()->damage(finishWoundedTop);
 		EXPECT_LT(victim->getCount(), 9);
 		EXPECT_EQ(victim->getFirstHPleft(), victim->getMaxHealth());
 		EXPECT_EQ(newHorizonsHeroes::ordinaryCreatureAttackPercent(attackerSideHero, attack), 0)
 			<< "Casualties with a full next top creature must not impersonate a top wound";
 		auto * undead = addStack(BattleSide::DEFENDER, creatureByName("core:skeleton"), BattleHex(rightHex + 5), 10);
 		int64_t wound = 1;
-		undead->health.damage(wound);
+		undead->editHealth()->damage(wound);
 		attack.defender = undead;
 		EXPECT_EQ(newHorizonsHeroes::ordinaryCreatureAttackPercent(attackerSideHero, attack), 0);
 		auto * construct = addStack(BattleSide::DEFENDER, creatureByName("core:ironGolem"), BattleHex(rightHex + 7), 10);
 		wound = 1;
-		construct->health.damage(wound);
+		construct->editHealth()->damage(wound);
 		attack.defender = construct;
 		EXPECT_EQ(newHorizonsHeroes::ordinaryCreatureAttackPercent(attackerSideHero, attack), 0);
 	}

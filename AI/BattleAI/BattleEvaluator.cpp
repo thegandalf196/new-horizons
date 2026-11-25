@@ -2696,7 +2696,7 @@ BattleAction BattleEvaluator::moveOrAttack(const CStack * stack, const BattleHex
 	}
 	else
 	{
-		if(stack->position == hex)
+		if(stack->getPosition() == hex)
 			return BattleAction::makeDefend(stack);
 		else
 		{

@@ -67,7 +67,7 @@ TEST_F(SoulHarvestPresentationTest, RetaliationGrowthUsesTheSameEffect)
 	target->removeBonus((*blocks)[0]);
 	server.battleAnimations.clear();
 	ASSERT_TRUE(attack(target, ghost->getPosition()));
-	ASSERT_EQ(ghost->health.getResurrected(), 3);
+	ASSERT_EQ(ghost->getHealth().getResurrected(), 3);
 	expectHarvestVisual();
 }
 

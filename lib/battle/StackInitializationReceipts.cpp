@@ -70,5 +70,5 @@ void battle::StackInitializationReceipts::initialize(CUnitState & state,
 	state.noQuarterMoraleActivationsRemaining = restoredNoQuarterLifetime;
 	state.luckyOwnAttackSequence = restoredLuckyOwnAttackSequence;
 	state.pursuitMovementRemaining = restoredPostAttackMovement;
-	state.position = initialPosition;
+	state.setPosition(initialPosition);
 }

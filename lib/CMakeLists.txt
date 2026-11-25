@@ -409,6 +409,7 @@ set(lib_MAIN_SRCS
 	battle/CObstacleInstance.cpp
 	battle/CPlayerBattleCallback.cpp
 	battle/CHealthValueContext.cpp
+	battle/UnitStateRevision.cpp
 	battle/SpellPointBattleTransitions.cpp
 	battle/CUnitState.cpp
 	battle/UnitStateHealing.cpp
@@ -1480,6 +1481,7 @@ set(lib_MAIN_HEADERS
 	battle/CPlayerBattleCallback.h
 	battle/CHealth.h
 	battle/CHealthValueContext.h
+	battle/UnitStateRevision.h
 	battle/SpellPointBattleTransitions.h
 	battle/CUnitAmmo.h
 	battle/CUnitState.h

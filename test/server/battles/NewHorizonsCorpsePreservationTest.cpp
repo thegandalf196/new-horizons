@@ -628,7 +628,7 @@ TEST_F(NewHorizonsCorpsePreservationTest, PaidReanimateThenDisintegrateCannotRes
 	ASSERT_LT(defenderSideHero->getManaAvailable(), defenderMana);
 	ASSERT_EQ(battle()->battleCastSpells(BattleSide::DEFENDER), castsBefore + 1);
 	const auto raised = target->acquireState();
-	const auto temporaryCount = raised->health.getResurrected();
+	const auto temporaryCount = raised->getHealth().getResurrected();
 	ASSERT_GT(temporaryCount, 0);
 	ASSERT_EQ(temporaryCount, originalCasualties);
 	ASSERT_EQ(raised->getAvailableHealth(), initialHealth);
@@ -651,7 +651,7 @@ TEST_F(NewHorizonsCorpsePreservationTest, PaidReanimateThenDisintegrateCannotRes
 		<< "The real spell must destroy the raised cohort, not merely wound survivors";
 	ASSERT_GT(destroyed->getCount(), 0);
 	EXPECT_EQ(destroyed->getUnusableRemains(), destroyedCount);
-	EXPECT_EQ(destroyed->health.getResurrected(), 0);
+	EXPECT_EQ(destroyed->getHealth().getResurrected(), 0);
 	EXPECT_EQ(destroyed->getMagicalCasualties(), 0);
 	ASSERT_EQ(destroyed->getFirstHPleft(), destroyed->getMaxHealth())
 		<< "This refusal control requires no surviving wound that Re-animate could heal";

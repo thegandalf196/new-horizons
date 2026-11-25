@@ -12,7 +12,7 @@ newHorizonsBattleStatus::BattleFormStatus battleFormStatus(const CStack & stack)
 	const auto originalCreature = stack.battleFormOriginalCreature();
 	return newHorizonsBattleStatus::makeBattleFormStatus(true,
 		currentCreature.getNum(), originalCreature.getNum(), stack.getBattleFormRoundsRemaining(),
-		stack.health.getCreatureHealthAvailable(),
+		stack.getHealth().getCreatureHealthAvailable(),
 		currentCreature.toCreature()->getNamePluralTranslated(),
 		originalCreature.toCreature()->getNamePluralTranslated(), stack.isBattleFormRestorationPending());
 }

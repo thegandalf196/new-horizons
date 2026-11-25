@@ -67,7 +67,7 @@ int64_t reinforce(CGameHandler & game, const CBattleInfoCallback & battle, uint3
 		return 0;
 	auto state = stack->acquireState();
 	const int64_t health = newHorizonsDemonicGating::reinforcedHitPoints(state->getAvailableHealth());
-	state->health.addTemporaryHitPoints(health);
+	state->editHealth()->addTemporaryHitPoints(health);
 	BattleUnitsChanged update;
 	update.battleID = battle.getBattle()->getBattleID();
 	UnitChanges changed(id, UnitChanges::EOperation::UPDATE);

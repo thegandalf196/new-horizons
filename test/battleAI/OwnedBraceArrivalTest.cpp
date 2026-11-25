@@ -161,7 +161,7 @@ TEST_F(OwnedBraceArrivalTest, MovementActivatedOverwatchCannotBecomeAnAcceptedBr
 	ASSERT_NO_FATAL_FAILURE(own());
 	const auto rng = projectedHitTest::serialized(*gameHandler->randomizer);
 	auto control = std::make_shared<HypotheticBattle>(environment.get(), known);
-	control->getForUpdate(incoming->unitId())->position = BattleHex(92);
+	control->getForUpdate(incoming->unitId())->setPosition(BattleHex(92));
 	const auto * projectedShooter = control->battleGetUnitByID(shooter->unitId());
 	const auto * projectedMover = control->battleGetUnitByID(incoming->unitId());
 	ASSERT_FALSE(projectedShooter->hasBonusOfType(BonusType::NOT_ACTIVE));

@@ -254,7 +254,7 @@ TEST_F(MetamagicOverflowPipeline, ProjectionOutcomeIsChosenBeforeEffectsAndKeeps
 TEST_F(MetamagicOverflowPipeline, ConsumedTemporaryHpBelongsToPrimaryHealthExactlyOnce)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
-	primary->health.addTemporaryHitPoints(20);
+	primary->editHealth()->addTemporaryHitPoints(20);
 	auto event = cast(); auto mechanics = event.getSpell()->battleMechanics(&event);
 	const auto preview = previewOverflow(*mechanics, {spells::Destination(primary)});
 	ASSERT_TRUE(preview);
@@ -271,7 +271,7 @@ TEST_F(MetamagicOverflowPipeline, ForceLanceUsesBypassedPrimaryHpButSpillKeepsOr
 	const auto lance = SpellID(SpellID::decode(newHorizonsSorcerySpells::FORCE_LANCE));
 	attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:sorceryMagic")), 3, ChangeValueMode::ABSOLUTE);
 	attackerSideHero->addSpellToSpellbook(lance);
-	primary->health.addTemporaryHitPoints(300);
+	primary->editHealth()->addTemporaryHitPoints(300);
 	bonus(*secondary, BonusType::SPELL_IMMUNITY, 1, BonusSubtypeID(lance));
 	spells::BattleCast event(battle(), attackerSideHero, spells::Mode::HERO, lance.toSpell());
 	event.setEffectValue(200);

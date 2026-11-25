@@ -86,7 +86,7 @@ void applyExistingRecovery(CGameHandler * gameHandler, const CBattleInfoCallback
 	const auto hydrasVitalityMarker = newHorizonsMagic::hydrasVitalitySource(battle.getBattle()->getMagicRules())
 		.And(Selector::type()(BonusType::HP_REGENERATION));
 	if(creatureStack->alive() && state
-		&& state->health.isCapacityHealthTracking()
+		&& state->getHealth().isCapacityHealthTracking()
 		&& creatureStack->hasBonus(hydrasVitalityMarker))
 	{
 		const int64_t healing = state->consumeCapacityRegeneration();

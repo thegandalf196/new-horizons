@@ -546,7 +546,7 @@ TEST_F(NewHorizonsDisintegrateStackTest, LethalDestroyRemainsPreservesOrdinaryCa
 
 	EXPECT_EQ(attacked.killedAmount, 2);
 	EXPECT_FALSE(state->alive());
-	EXPECT_FALSE(state->ghostPending);
+	EXPECT_FALSE(state->isGhostPending());
 	EXPECT_EQ(state->getUnusableRemains(), 2);
 
 	int64_t resurrection = unitHealth * 10;
@@ -569,7 +569,7 @@ TEST_F(NewHorizonsDisintegrateStackTest, LethalDestroyRemainsGhostsWhenEveryCasu
 
 	EXPECT_EQ(attacked.killedAmount, 10);
 	EXPECT_FALSE(state->alive());
-	EXPECT_TRUE(state->ghostPending);
+	EXPECT_TRUE(state->isGhostPending());
 	EXPECT_EQ(state->getUnusableRemains(), 10);
 }
 
@@ -592,7 +592,7 @@ TEST_F(NewHorizonsDisintegrateStackTest, RebirthRestoresOnlyOrdinaryCasualties)
 	EXPECT_EQ(attacked.killedAmount, 2);
 	EXPECT_TRUE(attacked.willRebirth());
 	EXPECT_TRUE(state->alive());
-	EXPECT_FALSE(state->ghostPending);
+	EXPECT_FALSE(state->isGhostPending());
 	EXPECT_EQ(state->getCount(), 8);
 	EXPECT_EQ(state->getUnusableRemains(), 2);
 }

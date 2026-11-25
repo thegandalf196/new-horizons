@@ -56,7 +56,7 @@ void captureOwnSkeletonCasualties(const CStack & stack, const battle::CUnitState
 	// Run the same temporary-resurrection cleanup as strategic accounting on a
 	// detached copy, including capacity-health cohorts. Never mutate the battle.
 	auto retainedState = state.acquireState();
-	retainedState->health.takeResurrected();
+	retainedState->editHealth()->takeResurrected();
 	const int64_t retained = retainedState->alive() ? retainedState->getCount() : 0;
 	const auto lost = std::clamp<int64_t>(stack.base->getCount() - retained, 0, eligibleCasualties);
 	auto & captured = result.necromancyUndeadEligibleCasualties[result.winner][state.creatureId()];

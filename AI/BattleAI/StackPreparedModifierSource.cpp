@@ -47,7 +47,7 @@ std::shared_ptr<const bonusDependencies::CapturedModifiers> StackWithBonuses::ca
 		const auto & binding = staged.modifierQueryFrame->binding();
 		if(binding.recipientId != staged.unitId() || binding.creature != staged.creatureId()
 			|| binding.owner != staged.unitOwner() || binding.side != staged.unitSide() || binding.slot != staged.unitSlot()
-			|| binding.ghost != staged.ghost || binding.summoned != staged.summoned
+			|| binding.ghost != staged.isGhost() || binding.summoned != staged.summoned
 			|| binding.natureSummoned != staged.natureSummoned) return {};
 		const auto leaf = staged.ownModifierLayer();
 		const auto result = modifierBaseProgram->appendRecipientLayer(leaf,

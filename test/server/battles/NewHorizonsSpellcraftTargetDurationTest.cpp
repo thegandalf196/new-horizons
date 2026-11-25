@@ -128,7 +128,7 @@ TEST_F(NewHorizonsSpellcraftTargetDurationTest, AreaOneStackQualifiesButTwoStack
 	// The common melee fixture starts the ally inside Fireball's radius.
 	// Move its entire footprint away before asserting the one-recipient case.
 	auto relocated = ally->acquireState();
-	relocated->position = BattleHex(leftHex - 4);
+	relocated->setPosition(BattleHex(leftHex - 4));
 	BattleUnitsChanged update;
 	update.battleID = BattleID(0);
 	update.changedStacks.emplace_back(ally->unitId(), UnitChanges::EOperation::UPDATE);

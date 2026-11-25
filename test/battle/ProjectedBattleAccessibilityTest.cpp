@@ -84,7 +84,7 @@ TEST_F(ProjectedBattleAccessibilityTest, CapturedLiveParityComparesEveryTileAndR
 TEST_F(ProjectedBattleAccessibilityTest, EarlierProjectedMoveFreesOldFootprintAndBlocksNewWithoutLiveFallback)
 {
 	const auto state = capture();
-	units[0]->position = BattleHex(8, 5);
+	units[0]->setPosition(BattleHex(8, 5));
 	const auto projected = query(state);
 	EXPECT_EQ(projected[BattleHex(5, 5).toInt()], EAccessibility::ACCESSIBLE);
 	EXPECT_EQ(projected[BattleHex(8, 5).toInt()], EAccessibility::ALIVE_STACK);
@@ -95,10 +95,10 @@ TEST_F(ProjectedBattleAccessibilityTest, EarlierProjectedMoveFreesOldFootprintAn
 TEST_F(ProjectedBattleAccessibilityTest, OccupiedCorpsePlacementUsesLatestRosterBeforeAnyIncomingLoad)
 {
 	const auto state = capture();
-	units[0]->health.reset();
-	units[3]->position = units[0]->getPosition();
+	units[0]->editHealth()->reset();
+	units[3]->setPosition(units[0]->getPosition());
 	EXPECT_FALSE(query(state).accessible(units[0]->getPosition(), units[0].get()));
-	units[3]->position = BattleHex(6, 5);
+	units[3]->setPosition(BattleHex(6, 5));
 	EXPECT_TRUE(query(state).accessible(units[0]->getPosition(), units[0].get()));
 	EXPECT_TRUE(subject.alive());
 }
@@ -106,9 +106,9 @@ TEST_F(ProjectedBattleAccessibilityTest, OccupiedCorpsePlacementUsesLatestRoster
 TEST_F(ProjectedBattleAccessibilityTest, DeathAndGhostRetainExactValidTargetPredicateWithoutExtraGhostFilter)
 {
 	const auto state = capture();
-	units[0]->health.reset();
+	units[0]->editHealth()->reset();
 	EXPECT_EQ(query(state)[BattleHex(5, 5).toInt()], EAccessibility::ACCESSIBLE);
-	units[3]->ghost = true;
+	units[3]->setGhost(true);
 	ASSERT_TRUE(units[3]->alive());
 	EXPECT_EQ(query(state)[BattleHex(6, 5).toInt()], EAccessibility::ALIVE_STACK);
 	EXPECT_EQ(callback.getAccessibility()[BattleHex(6, 5).toInt()], EAccessibility::ALIVE_STACK);
@@ -132,9 +132,9 @@ TEST_F(ProjectedBattleAccessibilityTest, SynchronousProjectedFormChangesCurrentF
 TEST_F(ProjectedBattleAccessibilityTest, SideColumnOrInvalidTurretFootprintsDoNotOverwriteBoundary)
 {
 	const auto state = capture();
-	units[0]->position = BattleHex(0, 5);
+	units[0]->setPosition(BattleHex(0, 5));
 	EXPECT_EQ(query(state)[BattleHex(0, 5).toInt()], EAccessibility::SIDE_COLUMN);
-	units[0]->position = BattleHex::INVALID;
+	units[0]->setPosition(BattleHex::INVALID);
 	EXPECT_EQ(query(state)[BattleHex(5, 5).toInt()], EAccessibility::ACCESSIBLE);
 }
 
@@ -189,7 +189,7 @@ TEST_F(ProjectedBattleAccessibilityTest, WallsAfterObstacleAfterUnitAfterGateAft
 	state.impassable = BattleHexArray{BattleHex(8, 5), BattleHex(BattleHex::GATE_OUTER)};
 	state.obstacles = {BattleHexArray{wall.second, BattleHex(8, 5), BattleHex(BattleHex::GATE_OUTER)}};
 	state.wallStates.at(static_cast<size_t>(wall.first)) = EWallState::INTACT;
-	units[0]->position = BattleHex(8, 5);
+	units[0]->setPosition(BattleHex(8, 5));
 	auto map = query(state);
 	EXPECT_EQ(map[BattleHex(8, 5).toInt()], EAccessibility::OBSTACLE);
 	EXPECT_EQ(map[wall.second.toInt()], EAccessibility::DESTRUCTIBLE_WALL);

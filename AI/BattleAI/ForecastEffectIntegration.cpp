@@ -105,9 +105,9 @@ bool NativeAdapter::stageEffects(State & draft, HypotheticBattle & branch, UnitI
 	}
 	if(focusAfter) next.focus = std::move(focusAfter);
 	else if(focusChanged) next.focus = captureFocus(staged);
-	const bool healthChanged = next.health.available() != staged.health.available()
-		|| next.health.getCount() != staged.health.getCount()
-		|| next.health.valueContext() != staged.health.valueContext();
+	const bool healthChanged = next.health.available() != staged.getHealth().available()
+		|| next.health.getCount() != staged.getHealth().getCount()
+		|| next.health.valueContext() != staged.getHealth().valueContext();
 	// Raw replacements own a new program even when their numbers are unchanged.
 	if(!receipt.changes.empty())
 	{
@@ -115,7 +115,7 @@ bool NativeAdapter::stageEffects(State & draft, HypotheticBattle & branch, UnitI
 		if(!replacement || !draft.definition(id)->readDescriptor) return false;
 		const auto & descriptor = *draft.definition(id)->readDescriptor;
 		bonusDependencies::QueryFrameBinding binding{staged.unitId(), staged.creatureId(), staged.getCount(),
-			staged.unitOwner(), staged.unitSide(), staged.unitSlot(), staged.ghost, staged.summoned,
+			staged.unitOwner(), staged.unitSide(), staged.unitSlot(), staged.isGhost(), staged.summoned,
 			staged.natureSummoned, descriptor.creatures};
 		auto queries = replacement->refreshQueries(binding, bonusDependencies::Change::Count);
 		if(!queries || !staged.stageOwnedModifierFacts(replacement, queries)) return false;

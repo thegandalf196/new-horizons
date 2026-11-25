@@ -286,8 +286,8 @@ TEST_F(BattleEffectExchangeTest, CapacityTransferPreservesRecipientBodyAndCasual
 	EXPECT_EQ(second->getCount(), 10);
 	EXPECT_EQ(second->getMaxHealth(), 20);
 	EXPECT_EQ(second->getCapacityHealthReferenceMax(), 10);
-	EXPECT_EQ(first->health.getUnusableRemains(), 0);
-	EXPECT_EQ(second->health.getUnusableRemains(), 0);
+	EXPECT_EQ(first->getHealth().getUnusableRemains(), 0);
+	EXPECT_EQ(second->getHealth().getUnusableRemains(), 0);
 }
 
 TEST_F(BattleEffectExchangeTest, CurrentPacketRoundTripPreservesExactDynamicOwnersAndMetadata)

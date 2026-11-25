@@ -37,7 +37,7 @@ TEST_F(NewHorizonsSpecialtyStrikeEventsTest, GoblinFrenzyConsumesExactlyOneAccep
 	EXPECT_EQ(newHorizonsSpecialtyEvents::firstStrikeFinalMultiplier(*battle(), attack), 100);
 	EXPECT_TRUE(newHorizonsSpecialtyEvents::acceptedStrike(*battle(), attack).empty());
 	int64_t damage = actor->getAvailableHealth();
-	actor->health.damage(damage);
+	actor->editHealth()->damage(damage);
 	ASSERT_FALSE(actor->alive());
 	int64_t restore = actor->getTotalHealth();
 	actor->heal(restore, EHealLevel::RESURRECT, EHealPower::PERMANENT);
@@ -55,7 +55,7 @@ TEST_F(NewHorizonsSpecialtyStrikeEventsTest, GoblinFrenzyIgnoresPreemptiveAndCol
 	EXPECT_TRUE(newHorizonsSpecialtyEvents::acceptedStrike(*battle(), attack).empty());
 	attack.secondaryAttack = false;
 	const auto prepared = newHorizonsSpecialtyEvents::acceptedStrike(*battle(), attack);
-	int64_t damage = actor->getAvailableHealth(); actor->health.damage(damage);
+	int64_t damage = actor->getAvailableHealth(); actor->editHealth()->damage(damage);
 	apply(prepared);
 	EXPECT_TRUE(actor->hasBonus(CSelector(newHorizonsSpecialtyEvents::isGoblinFrenzySpent)));
 }

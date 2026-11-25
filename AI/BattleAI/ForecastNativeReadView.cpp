@@ -168,7 +168,7 @@ const std::shared_ptr<const frozenScoring::OwnedSource> & NativeReadView::Group:
 	{
 		const auto & profile = source->binding();
 		const auto & unit = *receiver.state;
-		require(unit.creatureId() == profile.creature && unit.ghost == profile.ghost
+		require(unit.creatureId() == profile.creature && unit.isGhost() == profile.ghost
 			&& unit.summoned == profile.summoned && unit.natureSummoned == profile.natureSummoned);
 	}
 	return source;
@@ -181,9 +181,9 @@ std::shared_ptr<const bonusDependencies::OwnedBonusQueryFrame> NativeReadView::G
 	const auto & unit = *receiver.state;
 	// Static identity/descriptor ownership was sealed once by the factory.
 	// Only native mutable profile bits and the owned count can change here.
-	require(unit.creatureId() == previous.creature && unit.ghost == previous.ghost
+	require(unit.creatureId() == previous.creature && unit.isGhost() == previous.ghost
 		&& unit.summoned == previous.summoned && unit.natureSummoned == previous.natureSummoned);
-	const auto count = unit.health.getCount(); // Direct owned ledger read: no virtual/provider recursion.
+	const auto count = unit.getHealth().getCount(); // Direct owned ledger read: no virtual/provider recursion.
 	if(count != previous.count)
 	{
 		auto next = previous;

@@ -362,7 +362,7 @@ TEST_F(PreparedBattleWorldCommitTest, PositionAndProtectSidecarTransferTogetherW
 	ASSERT_TRUE(expected[0].protectBroken);
 	prepare(*owner);
 	ASSERT_TRUE(owner->commitSimulation());
-	EXPECT_EQ(first->position, BattleHex(leftHex - 4));
+	EXPECT_EQ(first->getPosition(), BattleHex(leftHex - 4));
 	EXPECT_EQ(battle()->getHeroOrderStates(BattleSide::ATTACKER), expected);
 }
 

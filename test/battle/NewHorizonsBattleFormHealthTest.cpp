@@ -150,8 +150,8 @@ TEST(NewHorizonsBattleFormHealthTest, PreservesHealthProvenanceAcrossRepartition
 	int64_t damage = 37;
 	source.damage(damage);
 	ASSERT_EQ(damage, 37);
-	ASSERT_EQ(source.health.getCreatureHealthAvailable(), 263);
-	source.health.addTemporaryHitPoints(25);
+	ASSERT_EQ(source.getHealth().getCreatureHealthAvailable(), 263);
+	source.editHealth()->addTemporaryHitPoints(25);
 	const auto originalUnitID = source.unitId();
 
 	source.beginBattleForm(SMALL_FORM, 3);
@@ -162,7 +162,7 @@ TEST(NewHorizonsBattleFormHealthTest, PreservesHealthProvenanceAcrossRepartition
 	EXPECT_EQ(source.getMaxHealth(), 50);
 	EXPECT_EQ(source.getCount(), 6);
 	EXPECT_EQ(source.getFirstHPleft(), 13);
-	EXPECT_EQ(source.health.getCreatureHealthAvailable(), 263);
+	EXPECT_EQ(source.getHealth().getCreatureHealthAvailable(), 263);
 	EXPECT_EQ(source.getAvailableHealth(), 288);
 	EXPECT_EQ(source.getTotalHealth(), 300);
 
@@ -179,7 +179,7 @@ TEST(NewHorizonsBattleFormHealthTest, PreservesHealthProvenanceAcrossRepartition
 	EXPECT_EQ(restored.battleFormOriginalCreature(), SOURCE_CREATURE);
 	EXPECT_EQ(restored.getMaxHealth(), 50);
 	EXPECT_EQ(restored.getCount(), 6);
-	EXPECT_EQ(restored.health.getCreatureHealthAvailable(), 263);
+	EXPECT_EQ(restored.getHealth().getCreatureHealthAvailable(), 263);
 	EXPECT_EQ(restored.getAvailableHealth(), 288);
 
 	// A detached wrapper can itself be copied and expire without falling back
@@ -197,57 +197,57 @@ TEST(NewHorizonsBattleFormHealthTest, PreservesHealthProvenanceAcrossRepartition
 	EXPECT_FALSE(intermediate.hasBattleForm());
 	EXPECT_EQ(intermediate.battleFormCreature(), SOURCE_CREATURE);
 	EXPECT_EQ(intermediate.unitType(), SOURCE_CREATURE.toCreature());
-	EXPECT_EQ(intermediate.health.getCreatureHealthAvailable(), 263);
+	EXPECT_EQ(intermediate.getHealth().getCreatureHealthAvailable(), 263);
 
 	// Both growth and shrinkage of unit count derive only from creature HP;
 	// temporary HP remains a separate pool and does not affect either count.
 	restored.beginBattleForm(LARGE_FORM, 3);
 	EXPECT_EQ(restored.getMaxHealth(), 200);
 	EXPECT_EQ(restored.getCount(), 2);
-	EXPECT_EQ(restored.health.getCreatureHealthAvailable(), 263);
-	EXPECT_EQ(restored.health.getTemporaryHitPoints(), 25);
+	EXPECT_EQ(restored.getHealth().getCreatureHealthAvailable(), 263);
+	EXPECT_EQ(restored.getHealth().getTemporaryHitPoints(), 25);
 	restored.beginBattleForm(SMALL_FORM, 3);
 	EXPECT_EQ(restored.getCount(), 6);
-	EXPECT_EQ(restored.health.getTemporaryHitPoints(), 25);
+	EXPECT_EQ(restored.getHealth().getTemporaryHitPoints(), 25);
 
 	// A transformed-count casualty is not an original-species unusable corpse.
 	damage = 39; // 25 temporary HP plus 14 creature HP
 	restored.damage(damage, true);
-	EXPECT_EQ(restored.health.getCreatureHealthAvailable(), 249);
+	EXPECT_EQ(restored.getHealth().getCreatureHealthAvailable(), 249);
 	EXPECT_EQ(restored.getKilled(), 0);
 	EXPECT_EQ(restored.getUnusableRemains(), 0);
 	int64_t healing = 51;
 	restored.heal(healing, EHealLevel::RESURRECT, EHealPower::ONE_BATTLE);
 	EXPECT_EQ(healing, 51);
-	EXPECT_EQ(restored.health.getCreatureHealthAvailable(), 300);
+	EXPECT_EQ(restored.getHealth().getCreatureHealthAvailable(), 300);
 
-	restored.health.addTemporaryHitPoints(25);
+	restored.editHealth()->addTemporaryHitPoints(25);
 	damage = 10;
 	restored.damage(damage);
 	EXPECT_EQ(damage, 10);
-	EXPECT_EQ(restored.health.getTemporaryHitPoints(), 15);
-	EXPECT_EQ(restored.health.getCreatureHealthAvailable(), 300);
+	EXPECT_EQ(restored.getHealth().getTemporaryHitPoints(), 15);
+	EXPECT_EQ(restored.getHealth().getCreatureHealthAvailable(), 300);
 	damage = 30;
 	restored.damage(damage);
-	EXPECT_EQ(restored.health.getTemporaryHitPoints(), 0);
-	EXPECT_EQ(restored.health.getCreatureHealthAvailable(), 285);
+	EXPECT_EQ(restored.getHealth().getTemporaryHitPoints(), 0);
+	EXPECT_EQ(restored.getHealth().getCreatureHealthAvailable(), 285);
 
 	// Source-species casualty provenance, including one-battle restoration,
 	// remains independent from the transformed count and no-remains wounds.
 	damage = 150;
 	restored.damage(damage);
-	EXPECT_EQ(restored.health.getCreatureHealthAvailable(), 135);
+	EXPECT_EQ(restored.getHealth().getCreatureHealthAvailable(), 135);
 	EXPECT_EQ(restored.getKilled(), 1);
 
 	healing = 100;
 	restored.heal(healing, EHealLevel::RESURRECT, EHealPower::ONE_BATTLE);
 	EXPECT_EQ(healing, 100);
-	EXPECT_EQ(restored.health.getCreatureHealthAvailable(), 235);
+	EXPECT_EQ(restored.getHealth().getCreatureHealthAvailable(), 235);
 	EXPECT_EQ(restored.getKilled(), 1);
 
 	damage = 100;
 	restored.damage(damage, true);
-	EXPECT_EQ(restored.health.getCreatureHealthAvailable(), 135);
+	EXPECT_EQ(restored.getHealth().getCreatureHealthAvailable(), 135);
 	EXPECT_EQ(restored.getUnusableRemains(), 1);
 	// The destroyed temporary resurrection is no longer alive to remove at
 	// battle end; it does not create a second permanent source casualty.
@@ -256,7 +256,7 @@ TEST(NewHorizonsBattleFormHealthTest, PreservesHealthProvenanceAcrossRepartition
 	healing = 1000;
 	restored.heal(healing, EHealLevel::RESURRECT, EHealPower::ONE_BATTLE);
 	EXPECT_EQ(healing, 65);
-	EXPECT_EQ(restored.health.getCreatureHealthAvailable(), 200);
+	EXPECT_EQ(restored.getHealth().getCreatureHealthAvailable(), 200);
 	EXPECT_EQ(restored.getUnusableRemains(), 1);
 	EXPECT_EQ(restored.getKilled(), 1);
 
@@ -271,7 +271,7 @@ TEST(NewHorizonsBattleFormHealthTest, PreservesHealthProvenanceAcrossRepartition
 	EXPECT_EQ(restored.getMaxHealth(), 100);
 	EXPECT_EQ(restored.getCount(), 2);
 	EXPECT_EQ(restored.getFirstHPleft(), 100);
-	EXPECT_EQ(restored.health.getCreatureHealthAvailable(), 200);
+	EXPECT_EQ(restored.getHealth().getCreatureHealthAvailable(), 200);
 	EXPECT_EQ(restored.getAvailableHealth(), 200);
 	EXPECT_EQ(restored.getKilled(), 1);
 	EXPECT_EQ(restored.getUnusableRemains(), 1);
@@ -291,7 +291,7 @@ TEST(NewHorizonsBattleFormHealthTest, AcquiredCStackStateUsesReplacementNativeBo
 	CStackBasicDescriptor descriptor(sourceCreatureID, STACK_SIZE);
 	CStack liveStack(&descriptor, PlayerColor::NEUTRAL, 17, BattleSide::ATTACKER, SlotID(0), true);
 	liveStack.attachToSource(*sourceCreature);
-	liveStack.health.init();
+	liveStack.editHealth()->init();
 	auto state = liveStack.acquireState();
 	ASSERT_TRUE(state);
 	ASSERT_EQ(state->getMaxHealth(), sourceCreature->getMaxHealth());
@@ -299,13 +299,13 @@ TEST(NewHorizonsBattleFormHealthTest, AcquiredCStackStateUsesReplacementNativeBo
 
 	int64_t damage = 1;
 	state->damage(damage);
-	ASSERT_EQ(state->health.getCreatureHealthAvailable(), static_cast<int64_t>(sourceCreature->getMaxHealth()) * STACK_SIZE - 1);
-	const int64_t originalHP = state->health.getCreatureHealthAvailable();
+	ASSERT_EQ(state->getHealth().getCreatureHealthAvailable(), static_cast<int64_t>(sourceCreature->getMaxHealth()) * STACK_SIZE - 1);
+	const int64_t originalHP = state->getHealth().getCreatureHealthAvailable();
 	state->beginBattleForm(formCreatureID, 2);
 	EXPECT_EQ(state->unitId(), originalUnitID);
 	EXPECT_EQ(state->battleFormOriginalCreature(), sourceCreatureID);
 	EXPECT_EQ(state->getMaxHealth(), formCreature->getMaxHealth());
-	EXPECT_EQ(state->health.getCreatureHealthAvailable(), originalHP);
+	EXPECT_EQ(state->getHealth().getCreatureHealthAvailable(), originalHP);
 	EXPECT_EQ(state->getCount(), (originalHP + formCreature->getMaxHealth() - 1) / formCreature->getMaxHealth());
 
 	const auto nativeForForm = [formCreatureID](const Bonus * bonus)
@@ -327,7 +327,7 @@ TEST(NewHorizonsBattleFormHealthTest, AcquiredCStackStateUsesReplacementNativeBo
 	restored->load(saved);
 	EXPECT_TRUE(restored->hasBattleForm());
 	EXPECT_EQ(restored->getMaxHealth(), formCreature->getMaxHealth());
-	EXPECT_EQ(restored->health.getCreatureHealthAvailable(), originalHP);
+	EXPECT_EQ(restored->getHealth().getCreatureHealthAvailable(), originalHP);
 	EXPECT_FALSE(restored->getAllBonuses(CSelector(nativeForForm))->empty());
 	EXPECT_FALSE(restored->getUnstackedBonuses(CSelector(nativeForForm))->empty());
 
@@ -335,7 +335,7 @@ TEST(NewHorizonsBattleFormHealthTest, AcquiredCStackStateUsesReplacementNativeBo
 	EXPECT_FALSE(restored->hasBattleForm());
 	EXPECT_EQ(restored->battleFormCreature(), sourceCreatureID);
 	EXPECT_EQ(restored->getMaxHealth(), sourceCreature->getMaxHealth());
-	EXPECT_EQ(restored->health.getCreatureHealthAvailable(), originalHP);
+	EXPECT_EQ(restored->getHealth().getCreatureHealthAvailable(), originalHP);
 	EXPECT_FALSE(restored->getAllBonuses(CSelector(nativeForSource))->empty());
 	EXPECT_TRUE(restored->getAllBonuses(CSelector(nativeForForm))->empty());
 	EXPECT_FALSE(restored->getUnstackedBonuses(CSelector(nativeForSource))->empty());
@@ -355,13 +355,13 @@ TEST(NewHorizonsBattleFormHealthTest, ReversionRelocatesOriginalFootprintWithout
 		CStackBasicDescriptor descriptor(original, STACK_SIZE);
 		CStack live(&descriptor, PlayerColor::NEUTRAL, 17, side, SlotID(0), true);
 		live.attachToSource(*original.toCreature());
-		live.health.init();
+		live.editHealth()->init();
 		const BattleHex anchor(8, 5);
 		live.setPosition(anchor);
 		auto state = live.acquireState();
 		int64_t damage = 1;
 		state->damage(damage);
-		const auto hp = state->health.getCreatureHealthAvailable();
+		const auto hp = state->getHealth().getCreatureHealthAvailable();
 		state->beginBattleForm(replacement, 2);
 		AccessibilityInfo field;
 		field.fill(EAccessibility::ACCESSIBLE);
@@ -374,7 +374,7 @@ TEST(NewHorizonsBattleFormHealthTest, ReversionRelocatesOriginalFootprintWithout
 		EXPECT_FALSE(state->hasBattleForm());
 		EXPECT_EQ(state->getPosition(), *expected);
 		EXPECT_TRUE(field.accessible(state->getPosition(), true, side));
-		EXPECT_EQ(state->health.getCreatureHealthAvailable(), hp);
+		EXPECT_EQ(state->getHealth().getCreatureHealthAvailable(), hp);
 		EXPECT_EQ(state->getCount(), STACK_SIZE);
 		EXPECT_EQ(live.getPosition(), anchor);
 		EXPECT_FALSE(live.hasBattleForm());
@@ -390,7 +390,7 @@ TEST(NewHorizonsBattleFormHealthTest, ImpossibleReversionDoesNotMutateTheStack)
 	CStackBasicDescriptor descriptor(original, STACK_SIZE);
 	CStack live(&descriptor, PlayerColor::NEUTRAL, 17, BattleSide::ATTACKER, SlotID(0), true);
 	live.attachToSource(*original.toCreature());
-	live.health.init();
+	live.editHealth()->init();
 	live.setPosition(BattleHex(8, 5));
 	auto state = live.acquireState();
 	state->beginBattleForm(replacement, 2);
@@ -433,7 +433,7 @@ TEST(NewHorizonsBattleFormHealthTest, CloneKeepsOneHitDeathAndClearsFormProvenan
 	ASSERT_TRUE(restored.isClone());
 	ASSERT_TRUE(restored.hasBattleForm());
 
-	const int64_t sourceHealth = restored.health.getCreatureHealthAvailable();
+	const int64_t sourceHealth = restored.getHealth().getCreatureHealthAvailable();
 	restored.beginBattleForm(LARGE_FORM, 2);
 	ASSERT_TRUE(restored.hasBattleForm());
 	EXPECT_EQ(restored.battleFormCreature(), LARGE_FORM);
@@ -446,7 +446,7 @@ TEST(NewHorizonsBattleFormHealthTest, CloneKeepsOneHitDeathAndClearsFormProvenan
 	EXPECT_FALSE(restored.hasBattleForm());
 	EXPECT_TRUE(restored.isClone());
 	EXPECT_EQ(restored.battleFormCreature(), SOURCE_CREATURE);
-	EXPECT_EQ(restored.health.getCreatureHealthAvailable(), sourceHealth);
+	EXPECT_EQ(restored.getHealth().getCreatureHealthAvailable(), sourceHealth);
 	restored.beginBattleForm(SMALL_FORM, 2);
 	ASSERT_TRUE(restored.hasBattleForm());
 
@@ -456,7 +456,7 @@ TEST(NewHorizonsBattleFormHealthTest, CloneKeepsOneHitDeathAndClearsFormProvenan
 	EXPECT_FALSE(restored.alive());
 	EXPECT_TRUE(restored.isClone());
 	EXPECT_FALSE(restored.hasBattleForm());
-	EXPECT_FALSE(restored.health.isBattleFormProvenance());
+	EXPECT_FALSE(restored.getHealth().isBattleFormProvenance());
 	EXPECT_EQ(restored.battleFormCreature(), SOURCE_CREATURE);
 	EXPECT_EQ(restored.getKilled(), STACK_SIZE);
 
@@ -500,8 +500,8 @@ TEST(NewHorizonsBattleFormHealthTest, IncomingReceiptUsesCommonRawCapOnceAndKeep
 	int64_t request = 1000;
 	EXPECT_EQ(state.heal(request, EHealLevel::HEAL, EHealPower::PERMANENT).healedHealthPoints, 19);
 	EXPECT_EQ(request, 19);
-	EXPECT_EQ(state.health.getCreatureHealthAvailable(), 282);
+	EXPECT_EQ(state.getHealth().getCreatureHealthAvailable(), 282);
 	ASSERT_NO_THROW(state.endBattleForm());
 	EXPECT_EQ(state.getCount(), 3);
-	EXPECT_EQ(state.health.getCreatureHealthAvailable(), 282);
+	EXPECT_EQ(state.getHealth().getCreatureHealthAvailable(), 282);
 }

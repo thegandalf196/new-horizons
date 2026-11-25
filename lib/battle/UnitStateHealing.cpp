@@ -77,8 +77,8 @@ HealInfo CUnitState::applyHealing(int64_t & amount, EHealLevel level, EHealPower
 			if(sourceAmount != accepted || effectiveAmount != accepted)
 				throw std::logic_error("Battle-form health ledgers disagree on accepted healing");
 
-			battleFormOriginalHealth = nextSource;
-			health = nextEffective;
+			editOriginalHealth()->swapPreparedContents(nextSource);
+			setHealth(nextEffective);
 			amount = accepted;
 			normalizeCapacityHealth();
 			return result;
@@ -86,7 +86,7 @@ HealInfo CUnitState::applyHealing(int64_t & amount, EHealLevel level, EHealPower
 
 		if(reduction > 0)
 			amount = receivedHealing(rawHealingCapacity(amount, level, power), reduction);
-		auto result = health.heal(amount, level, power);
+		auto result = editHealth()->heal(amount, level, power);
 		normalizeCapacityHealth();
 		return result;
 	}
@@ -113,8 +113,8 @@ int64_t CUnitState::consumeCapacityRegeneration()
 	const int64_t eligible = reduction > 0 ? health.capacityRegenerationProjectedHeal(perCreatureHeal) : 0;
 	const int64_t received = reduction > 0 ? receivedHealing(eligible, reduction) : 0;
 	capacityRegenerationRemainderTenths = static_cast<int32_t>(numerator % 10);
-	return reduction > 0 ? health.consumeCapacityRegeneration(perCreatureHeal, received)
-		: health.consumeCapacityRegeneration(perCreatureHeal);
+	return reduction > 0 ? editHealth()->consumeCapacityRegeneration(perCreatureHeal, received)
+		: editHealth()->consumeCapacityRegeneration(perCreatureHeal);
 }
 
 }

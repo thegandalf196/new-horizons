@@ -204,7 +204,7 @@ TEST_F(BattleFormEffectCastTest, UsesUniformCapturedCategoryPoolAndRelocatesWith
 	auto injured = target->acquireState();
 	injured->damage(damage);
 	ASSERT_EQ(damage, 19);
-	const auto sourceHealth = injured->health.getCreatureHealthAvailable();
+	const auto sourceHealth = injured->getHealth().getCreatureHealthAvailable();
 	ASSERT_GT(sourceHealth, 0);
 	BattleUnitsChanged injury;
 	injury.battleID = BattleID(0);
@@ -276,7 +276,7 @@ TEST_F(BattleFormEffectCastTest, UsesUniformCapturedCategoryPoolAndRelocatesWith
 	EXPECT_TRUE(transformed->hasBattleForm());
 	EXPECT_EQ(transformed->battleFormOriginalCreature(), sourceCreature);
 	EXPECT_EQ(transformed->battleFormCreature(), expectedForm->getId());
-	EXPECT_EQ(transformed->health.getCreatureHealthAvailable(), sourceHealth);
+	EXPECT_EQ(transformed->getHealth().getCreatureHealthAvailable(), sourceHealth);
 	EXPECT_EQ(transformed->save()["state"]["battleFormRoundsRemaining"].Integer(), 2);
 }
 
@@ -311,12 +311,12 @@ TEST_F(BattleFormEffectCastTest, KeepsPhantomArmyInTargetFlowAndPreservesBodyHea
 	std::vector<std::string> messages;
 	problem.getAll(messages);
 	EXPECT_TRUE(messages.empty());
-	const auto bodyHP = this->target->health.getCreatureHealthAvailable();
+	const auto bodyHP = this->target->getHealth().getCreatureHealthAvailable();
 	ASSERT_GT(bodyHP, this->target->getPhantomIntegrity());
 	effect.apply(gameHandler->spellcastEnvironment(), &mechanics, filtered);
 	EXPECT_TRUE(this->target->hasBattleForm());
 	EXPECT_EQ(this->target->getPhantomIntegrity(), 50);
-	EXPECT_EQ(this->target->health.getCreatureHealthAvailable(), bodyHP);
+	EXPECT_EQ(this->target->getHealth().getCreatureHealthAvailable(), bodyHP);
 	EXPECT_EQ(this->target->getCount(), (bodyHP + this->target->getMaxHealth() - 1) / this->target->getMaxHealth());
 }
 
@@ -343,7 +343,7 @@ TEST_F(BattleFormEffectCastTest, AppliesThroughBattleStatePacketToARealClone)
 	const auto originalOwner = clone->unitOwner();
 	const auto originalSide = clone->unitSide();
 	const auto sourceCreature = clone->creatureId();
-	const auto originalHealth = clone->acquireState()->health.getCreatureHealthAvailable();
+	const auto originalHealth = clone->acquireState()->getHealth().getCreatureHealthAvailable();
 
 	spells::MechanicsMock mechanics;
 	ON_CALL(mechanics, battle()).WillByDefault(Return(battle()));
@@ -368,7 +368,7 @@ TEST_F(BattleFormEffectCastTest, AppliesThroughBattleStatePacketToARealClone)
 	EXPECT_EQ(transformed->unitOwner(), originalOwner);
 	EXPECT_EQ(transformed->unitSide(), originalSide);
 	EXPECT_EQ(transformed->battleFormOriginalCreature(), sourceCreature);
-	EXPECT_EQ(transformed->health.getCreatureHealthAvailable(), originalHealth);
+	EXPECT_EQ(transformed->getHealth().getCreatureHealthAvailable(), originalHealth);
 
 	const auto saved = transformed->save();
 	const auto restored = clone->acquireState();
@@ -376,7 +376,7 @@ TEST_F(BattleFormEffectCastTest, AppliesThroughBattleStatePacketToARealClone)
 	EXPECT_TRUE(restored->isClone());
 	EXPECT_TRUE(restored->hasBattleForm());
 	EXPECT_EQ(restored->battleFormOriginalCreature(), sourceCreature);
-	EXPECT_EQ(restored->health.getCreatureHealthAvailable(), originalHealth);
+	EXPECT_EQ(restored->getHealth().getCreatureHealthAvailable(), originalHealth);
 }
 
 TEST(BattleFormEffectConfigTest, RejectsUnknownParametersAndInvalidDurations)

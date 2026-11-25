@@ -239,19 +239,19 @@ TEST_F(NewHorizonsStingHarriersTest, NativeShieldOnlyHitDoesNotApplyPoison)
 	beginCombat(); ASSERT_EQ(battle()->battleActiveUnit(), actor);
 	ASSERT_TRUE(victim->hasBonusOfType(BonusType::GUARDIAN_SPIRIT));
 	ASSERT_EQ(victim->guardianSpiritHitPoints, 100000); ASSERT_EQ(victim->guardianSpiritRoundsRemaining, 3);
-	const auto bodyBefore = victim->health.getCreatureHealthAvailable();
+	const auto bodyBefore = victim->getHealth().getCreatureHealthAvailable();
 	ASSERT_TRUE(attack(actor, victim->getPosition())); ASSERT_FALSE(observed.attacks.empty());
 	const auto primary = std::ranges::find(observed.attacks.front().bsa, victim->unitId(), &BattleStackAttacked::stackAttacked);
 	ASSERT_NE(primary, observed.attacks.front().bsa.end()); EXPECT_EQ(primary->damageAmount, 0);
-	EXPECT_EQ(victim->health.getCreatureHealthAvailable(), bodyBefore);
+	EXPECT_EQ(victim->getHealth().getCreatureHealthAvailable(), bodyBefore);
 	EXPECT_EQ(observed.poisonApplications, 0); EXPECT_EQ(victim->physicalPoisonBaseDamage, 0);
 }
 TEST_F(NewHorizonsStingHarriersTest, NativePrimaryReceiptExcludesTemporaryHealthWithoutSubtractingGuardianTwice)
 {
-	prepare(); victim->health.addTemporaryHitPoints(9); giveVictimGuardianPool(13);
+	prepare(); victim->editHealth()->addTemporaryHitPoints(9); giveVictimGuardianPool(13);
 	beginCombat(); ASSERT_EQ(battle()->battleActiveUnit(), actor);
 	ASSERT_EQ(victim->guardianSpiritHitPoints, 13); ASSERT_EQ(victim->guardianSpiritRoundsRemaining, 3);
-	ASSERT_EQ(victim->health.getTemporaryHitPoints(), 9);
+	ASSERT_EQ(victim->getHealth().getTemporaryHitPoints(), 9);
 	ASSERT_TRUE(attack(actor, victim->getPosition()));
 	ASSERT_EQ(observed.poisonApplications, 1) << "Full Poison snapshots: " << observed.poisonStateSnapshots;
 	EXPECT_EQ(observed.poisonTarget, victim->unitId()); EXPECT_EQ(observed.poisonSource, actor->unitId());
@@ -259,14 +259,14 @@ TEST_F(NewHorizonsStingHarriersTest, NativePrimaryReceiptExcludesTemporaryHealth
 	const auto primary = std::ranges::find(observed.attacks.front().bsa, victim->unitId(), &BattleStackAttacked::stackAttacked);
 	ASSERT_NE(primary, observed.attacks.front().bsa.end()); ASSERT_GT(primary->damageAmount, 9);
 	EXPECT_NE(primary->flags & BattleStackAttacked::GUARDIAN_SPIRIT_EXHAUSTED, 0u);
-	EXPECT_EQ(victim->guardianSpiritHitPoints, 0); EXPECT_EQ(victim->health.getTemporaryHitPoints(), 0);
+	EXPECT_EQ(victim->guardianSpiritHitPoints, 0); EXPECT_EQ(victim->getHealth().getTemporaryHitPoints(), 0);
 	EXPECT_EQ(observed.poisonBase, std::max<int64_t>(1, (primary->damageAmount - 9) / 4));
 }
 TEST_F(NewHorizonsStingHarriersTest, PrehitBodyReceiptSubtractsTemporaryPoolRatherThanUsingNetPostRevivalHealth)
 {
 	prepare(); auto state = victim->acquireState();
-	state->health.addTemporaryHitPoints(9); victim->load(state->save());
-	ASSERT_EQ(victim->health.getTemporaryHitPoints(), 9);
+	state->editHealth()->addTemporaryHitPoints(9); victim->load(state->save());
+	ASSERT_EQ(victim->getHealth().getTemporaryHitPoints(), 9);
 	BattleStackAttacked hit; hit.stackAttacked = victim->unitId(); hit.attackerID = actor->unitId(); hit.damageAmount = 13;
 	const auto plan = battleToxicSting::prepare(*battle(), BattleAttackInfo(actor, victim, 0, false), {hit});
 	ASSERT_TRUE(plan); EXPECT_EQ(plan->baseDamage, 1);
@@ -819,7 +819,7 @@ TEST_F(NewHorizonsStingHarriersTest, SyncaOrdinaryRetaliationAddsNominalPoisonUt
 }
 TEST_F(NewHorizonsStingHarriersTest, SyncaRealShieldOnlyPrimaryCallerSuppliesZeroBodyLossAndNoPoisonValue)
 {
-	chance = 20; prepare(); victim->health.addTemporaryHitPoints(100000); HarriersEnvironment env(gameState());
+	chance = 20; prepare(); victim->editHealth()->addTemporaryHitPoints(100000); HarriersEnvironment env(gameState());
 	auto branch = std::make_shared<HypotheticBattle>(&env, std::shared_ptr<CBattleInfoCallback>(gameState(), battle()));
 	DamageCache cache;
 	const auto preview = AttackPossibility::evaluate(BattleAttackInfo(branch->battleGetUnitByID(actor->unitId()),

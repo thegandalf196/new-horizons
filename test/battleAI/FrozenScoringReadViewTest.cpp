@@ -58,7 +58,7 @@ FrozenNativeCase captureFrozen(HypotheticBattle & source)
 		auto descriptor = std::make_shared<const forecast::NativeReadDescriptor>(forecast::NativeReadDescriptor{
 			values->identity(), {unit->getBattleStartMaximumAggregateHP(), unit->getRebirthOriginalAggregateHP()}, creatures});
 		bonusDependencies::QueryFrameBinding binding{unit->unitId(), unit->creatureId(), unit->getCount(),
-			unit->unitOwner(), unit->unitSide(), unit->unitSlot(), unit->ghost, unit->summoned, unit->natureSummoned, creatures};
+			unit->unitOwner(), unit->unitSide(), unit->unitSlot(), unit->isGhost(), unit->summoned, unit->natureSummoned, creatures};
 		auto scoring = unit->captureFrozenScoringSource(binding);
 		if(!scoring) throw std::logic_error("Native test source has no owned frozen scoring snapshot");
 		result.occurrences.push_back({std::move(descriptor), std::move(values), {}, {}, std::move(scoring)});

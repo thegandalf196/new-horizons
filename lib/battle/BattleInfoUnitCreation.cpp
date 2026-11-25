@@ -89,7 +89,7 @@ void BattleInfo::removeUnit(uint32_t id)
 		}
 
 		newHorizonsSerpentsEmbrace::releaseDeathBindings(*this, *toRemove);
-		if(!toRemove->ghost)
+		if(!toRemove->isGhost())
 		{
 			toRemove->onRemoved();
 			toRemove->detachFromAll();

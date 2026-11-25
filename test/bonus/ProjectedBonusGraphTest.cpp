@@ -130,8 +130,8 @@ protected:
 		// All terrain queries in this suite have a defined adventure-base value;
 		// do not execute the separate pre-existing baseless-terrain defect.
 		original.base = &stableBase;
-		original.health.init();
-		original.position = BattleHex(5, 5);
+		original.editHealth()->init();
+		original.setPosition(BattleHex(5, 5));
 	}
 
 	void initialize()

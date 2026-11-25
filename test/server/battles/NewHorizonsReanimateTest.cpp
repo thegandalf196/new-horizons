@@ -187,7 +187,7 @@ TEST_F(NewHorizonsReanimateTest, ReanimatorAddsQuarterOfCasualtyPoolAfterSurvivo
 	const auto countBefore = target->getCount();
 	ASSERT_TRUE(cast(target));
 	EXPECT_EQ(target->getCount() - countBefore, 27);
-	EXPECT_EQ(target->health.getResurrected(), 27);
+	EXPECT_EQ(target->getHealth().getResurrected(), 27);
 	EXPECT_EQ(target->getAvailableHealth(), 595 + 273);
 	EXPECT_LT(attackerSideHero->getManaAvailable(), manaBefore);
 }
@@ -205,7 +205,7 @@ TEST_F(NewHorizonsReanimateTest, CastHealsFirstSurvivorThenRestoresUsableUndeadA
 	ASSERT_TRUE(cast(target));
 	EXPECT_EQ(target->getAvailableHealth(), 357 + 220);
 	EXPECT_EQ(target->getCount() - originalCount, 37);
-	EXPECT_EQ(target->health.getResurrected(), 37);
+	EXPECT_EQ(target->getHealth().getResurrected(), 37);
 	EXPECT_TRUE(target->unitType()->hasBonusOfType(BonusType::UNDEAD));
 	ASSERT_FALSE(server.battleLogLines.empty());
 	EXPECT_NE(server.battleLogLines.back().find("Re-animate restores 220 health"), std::string::npos);
@@ -214,7 +214,7 @@ TEST_F(NewHorizonsReanimateTest, CastHealsFirstSurvivorThenRestoresUsableUndeadA
 	EXPECT_EQ(saved["state"]["health"]["resurrected"].Integer(), 37);
 	auto restored = target->acquireState();
 	ASSERT_NO_THROW(restored->load(saved));
-	EXPECT_EQ(restored->health.getResurrected(), 37);
+	EXPECT_EQ(restored->getHealth().getResurrected(), 37);
 	EXPECT_EQ(restored->getAvailableHealth(), target->getAvailableHealth());
 }
 
@@ -227,7 +227,7 @@ TEST_F(NewHorizonsReanimateTest, DeadStackWithUsableRemainsCanBeReanimated)
 
 	ASSERT_TRUE(cast(target));
 	EXPECT_EQ(target->getCount(), 22);
-	EXPECT_EQ(target->health.getResurrected(), 22);
+	EXPECT_EQ(target->getHealth().getResurrected(), 22);
 	EXPECT_EQ(target->getAvailableHealth(), 220);
 }
 
@@ -238,19 +238,19 @@ TEST_F(NewHorizonsReanimateTest, RecastRestoresMoreUsableRemainsAndTemporaryCoun
 	ASSERT_EQ(target->getCount(), 45);
 	ASSERT_TRUE(cast(target));
 	ASSERT_EQ(target->getCount(), 67);
-	ASSERT_EQ(target->health.getResurrected(), 22);
+	ASSERT_EQ(target->getHealth().getResurrected(), 22);
 
 	advanceRound();
 	ASSERT_TRUE(cast(target));
 	ASSERT_EQ(target->getCount(), 89);
-	ASSERT_EQ(target->health.getResurrected(), 44);
+	ASSERT_EQ(target->getHealth().getResurrected(), 44);
 	EXPECT_EQ(target->save()["state"]["health"]["resurrected"].Integer(), 44);
 
 	auto resultState = target->acquireState();
-	resultState->health.takeResurrected();
+	resultState->editHealth()->takeResurrected();
 	EXPECT_EQ(resultState->getCount(), 45)
 		<< "the same cleanup primitive used by BattleResultProcessor discards only temporary bodies";
-	EXPECT_EQ(resultState->health.getResurrected(), 0);
+	EXPECT_EQ(resultState->getHealth().getResurrected(), 0);
 }
 
 TEST_F(NewHorizonsReanimateTest, RejectsHostileFullNoRemainsCloneAndPhantomTargets)
@@ -298,7 +298,7 @@ TEST_F(NewHorizonsReanimateTest, DisintegratedCasualtiesCannotAuthorizeCastButSu
 	ASSERT_TRUE(cast(target));
 	EXPECT_EQ(target->getAvailableHealth(), 600);
 	EXPECT_EQ(target->getCount(), 60);
-	EXPECT_EQ(target->health.getResurrected(), 0);
+	EXPECT_EQ(target->getHealth().getResurrected(), 0);
 	ASSERT_FALSE(server.battleLogLines.empty());
 	EXPECT_NE(server.battleLogLines.back().find("Re-animate heals 5 health"), std::string::npos);
 }
@@ -307,14 +307,14 @@ TEST_F(NewHorizonsReanimateTest, TemporaryShieldHpDoesNotHideCreatureWoundsFromR
 {
 	prepare();
 	damageStack(target, target->getMaxHealth() * 40 + target->getMaxHealth() / 2);
-	updateUnitState(target, [](battle::CUnitState & state) { state.health.addTemporaryHitPoints(405); });
+	updateUnitState(target, [](battle::CUnitState & state) { state.editHealth()->addTemporaryHitPoints(405); });
 	ASSERT_EQ(target->getAvailableHealth(), target->getTotalHealth())
 		<< "available HP includes the shield, but actual creature HP is still missing 405";
 
 	ASSERT_TRUE(cast(target));
 	EXPECT_EQ(target->getCount(), 82);
 	EXPECT_EQ(target->getAvailableHealth(), target->getTotalHealth() + 220);
-	EXPECT_EQ(target->health.getResurrected(), 22);
+	EXPECT_EQ(target->getHealth().getResurrected(), 22);
 }
 
 TEST_F(NewHorizonsReanimateTest, RejectsDeadCorpseWhenAnotherUnitBlocksItsHex)

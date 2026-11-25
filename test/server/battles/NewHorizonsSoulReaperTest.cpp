@@ -201,7 +201,7 @@ TEST_F(NewHorizonsSoulReaperTest, TemporaryHealthCountsAsCurrentHealthAndForecas
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	damageStack(target, 600);
-	target->health.addTemporaryHitPoints(200);
+	target->editHealth()->addTemporaryHitPoints(200);
 	ASSERT_EQ(target->getShadowGiftMaximumHealth(), 1000);
 	ASSERT_EQ(target->getAvailableHealth(), 600);
 

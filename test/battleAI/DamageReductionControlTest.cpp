@@ -151,7 +151,7 @@ TEST_F(DamageReductionControlTest, HypotheticPhantomKeepsOpeningDurationAndExpir
 		ASSERT_NE(phantomModel, nullptr);
 		EXPECT_TRUE(phantomModel->alive());
 		EXPECT_TRUE(phantom->alive());
-		EXPECT_FALSE(phantom->ghostPending);
+		EXPECT_FALSE(phantom->isGhostPending());
 	}
 
 	model.nextRound();
@@ -162,7 +162,7 @@ TEST_F(DamageReductionControlTest, HypotheticPhantomKeepsOpeningDurationAndExpir
 	EXPECT_TRUE(expiredModel->isGhost());
 	EXPECT_FALSE(expiredModel->isValidTarget());
 	EXPECT_FALSE(phantom->alive());
-	EXPECT_TRUE(phantom->ghostPending);
+	EXPECT_TRUE(phantom->isGhostPending());
 	EXPECT_EQ(phantom->getPhantomIntegrity(), 0);
 }
 

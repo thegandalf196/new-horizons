@@ -399,9 +399,9 @@ protected:
 		ASSERT_TRUE(heroCommands::isRevisedRules(model->getHeroCommandRules()));
 		// Opening AP strikes the OTHER enemy and blocks retaliation, leaving the
 		// intended selector actor and both targets untouched before its activation.
-		model->getForUpdate(ids[1])->position = BattleHex(4, 2);
-		model->getForUpdate(ids[2])->position = BattleHex(4, 3);
-		model->getForUpdate(ids[3])->position = BattleHex(3, 4);
+		model->getForUpdate(ids[1])->setPosition(BattleHex(4, 2));
+		model->getForUpdate(ids[2])->setPosition(BattleHex(4, 3));
+		model->getForUpdate(ids[3])->setPosition(BattleHex(3, 4));
 		for(const auto id : ids)
 			model->getForUpdate(id)->addUnitBonus({
 				Bonus(BonusDuration::ONE_BATTLE, BonusType::BLOCKS_RETALIATION, BonusSource::OTHER, 1, BonusSourceID()),
@@ -679,7 +679,7 @@ protected:
 		// opposing targets contactable and the native Protect pair adjacent.
 		for(const auto & [index, hex] : {std::pair{0u, BattleHex(3, 3)}, std::pair{1u, BattleHex(3, 2)},
 			std::pair{2u, BattleHex(4, 3)}, std::pair{3u, BattleHex(3, 4)}})
-			battle()->getStack(ids[index], false)->position = hex;
+			battle()->getStack(ids[index], false)->setPosition(hex);
 		if(!specialized)
 		{
 			// Native active-unit priority is part of public round0 membership.

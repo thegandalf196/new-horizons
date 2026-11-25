@@ -89,7 +89,7 @@ float AttackPossibility::calculateDamageReduce(
 	const auto capacityReferenceMax = capacityTrackedDefender
 		? capacityTrackedDefender->getCapacityHealthReferenceMax() : 0;
 	const auto maxHealth = defender->getMaxHealth();
-	if(capacityTrackedDefender && capacityTrackedDefender->health.isCapacityHealthTracking())
+	if(capacityTrackedDefender && capacityTrackedDefender->getHealth().isCapacityHealthTracking())
 	{
 		// A capacity change can leave survivors with different current HP, even
 		// after the effect expires. The first-creature-plus-full-rear-units formula

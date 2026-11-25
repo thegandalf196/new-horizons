@@ -311,7 +311,7 @@ BattleAction CStupidAI::goTowards(const BattleID & battleID, const CStack * stac
 	{
 		if(avHexes.contains(hex))
 		{
-			if(stack->position == hex)
+			if(stack->getPosition() == hex)
 				return BattleAction::makeDefend(stack);
 			return BattleAction::makeMove(stack, hex);
 		}
@@ -355,7 +355,7 @@ BattleAction CStupidAI::goTowards(const BattleID & battleID, const CStack * stac
 
 			if(avHexes.contains(currentDest))
 			{
-				if(stack->position == currentDest)
+				if(stack->getPosition() == currentDest)
 					return BattleAction::makeDefend(stack);
 				return BattleAction::makeMove(stack, currentDest);
 			}

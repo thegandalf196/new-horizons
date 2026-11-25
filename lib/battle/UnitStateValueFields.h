@@ -252,18 +252,22 @@ public:
 		auto prepared = values; // All vector/health allocation completes before the swap prefix.
 		if(retaliationCache) std::get<RetaliationValue>(prepared).totalCache = *retaliationCache;
 		restoreFields(target, prepared, sequence);
+		destination.stateRevision.bump();
 	}
 
 	static void copy(CUnitState & destination, const CUnitState & source)
 	{
 		auto target = references(destination);
 		copyFields(target, references(source), std::make_index_sequence<std::tuple_size_v<decltype(target)>>{});
+		destination.stateRevision.bump(); // The revision itself is never part of the copied inventory.
 	}
 
 	static void exchange(CUnitState & destination, CUnitState & prepared) noexcept
 	{
 		auto target = references(destination);
 		exchangeFields(target, references(prepared), std::make_index_sequence<std::tuple_size_v<decltype(target)>>{});
+		destination.stateRevision.bump();
+		prepared.stateRevision.bump();
 	}
 
 private:

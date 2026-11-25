@@ -167,7 +167,7 @@ TEST_P(NewHorizonsCreatureAuraSpecialtyTest, LethalOriginalUpdateRetiresLinkedCl
 	auto surviving = original->acquireState();
 	publish(original, *surviving, -original->getAvailableHealth());
 	ASSERT_TRUE(original->alive());
-	EXPECT_TRUE(clone->ghostPending);
+	EXPECT_TRUE(clone->isGhostPending());
 	EXPECT_FALSE(clone->alive());
 	EXPECT_EQ(original->cloneID, -1);
 	EXPECT_EQ(value(subject), baseline);

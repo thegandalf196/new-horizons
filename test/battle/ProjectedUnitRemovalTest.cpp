@@ -40,16 +40,16 @@ TEST_F(ProjectedUnitRemovalTest, ConcreteCloneRemovalChangesOwnedValuesAndEdgesW
 	const auto generation = PreparedBonusGraphStorage::currentGeneration();
 	const auto result = removal.removeValuesAndEdges(17);
 	ASSERT_TRUE(result.completed);
-	EXPECT_TRUE(units[0]->ghost);
-	EXPECT_TRUE(units[1]->ghost);
-	EXPECT_FALSE(units[2]->ghost);
+	EXPECT_TRUE(units[0]->isGhost());
+	EXPECT_TRUE(units[1]->isGhost());
+	EXPECT_FALSE(units[2]->isGhost());
 	EXPECT_EQ(units[0]->guardianSpiritHitPoints, 0);
 	EXPECT_EQ(units[0]->cloneID, -1);
 	EXPECT_EQ(units[2]->cloneID, -1);
 	EXPECT_TRUE(graph.parents(subject).empty());
 	EXPECT_TRUE(graph.parents(firstCart).empty());
 	EXPECT_TRUE(subject.alive());
-	EXPECT_FALSE(subject.ghost);
+	EXPECT_FALSE(subject.isGhost());
 	EXPECT_TRUE(firstCart.alive());
 	EXPECT_EQ(PreparedBonusGraphStorage::currentGeneration(), generation);
 }
@@ -57,12 +57,12 @@ TEST_F(ProjectedUnitRemovalTest, ConcreteCloneRemovalChangesOwnedValuesAndEdgesW
 TEST_F(ProjectedUnitRemovalTest, AlreadyGhostSkipsItsLinksButStillCompletesAsOriginalKernel)
 {
 	initialize();
-	units[0]->ghost = true;
+	units[0]->setGhost(true);
 	units[0]->cloneID = 18;
 	battle::ProjectedUnitRemoval removal(graph, *roster, bindings());
 	EXPECT_TRUE(removal.removeValuesAndEdges(17).completed);
 	EXPECT_EQ(units[0]->cloneID, 18);
-	EXPECT_FALSE(units[1]->ghost);
+	EXPECT_FALSE(units[1]->isGhost());
 }
 
 TEST_F(ProjectedUnitRemovalTest, MissingCloneReturnsAfterPrivatePrefixAndBeforeWorldCompletionStage)
@@ -73,7 +73,7 @@ TEST_F(ProjectedUnitRemovalTest, MissingCloneReturnsAfterPrivatePrefixAndBeforeW
 	const auto result = removal.removeValuesAndEdges(17);
 	EXPECT_FALSE(result.completed);
 	EXPECT_EQ(result.missingId, 999u);
-	EXPECT_TRUE(units[0]->ghost);
+	EXPECT_TRUE(units[0]->isGhost());
 	EXPECT_TRUE(subject.alive());
 	// Legacy early return is not a malformed-state rejection; later operations
 	// may still use this private owner, while skipping completion sidecars.
@@ -100,7 +100,7 @@ TEST_F(ProjectedUnitRemovalTest, ActiveFormRemovalRunsSynchronousEndBeforeGenera
 	ASSERT_TRUE(removal.removeValuesAndEdges(17).completed);
 	EXPECT_FALSE(units[0]->hasBattleForm());
 	EXPECT_TRUE(graph.parents(subject).empty());
-	EXPECT_TRUE(units[0]->ghost);
+	EXPECT_TRUE(units[0]->isGhost());
 	EXPECT_FALSE(subject.hasBattleForm());
 }
 
@@ -122,8 +122,8 @@ TEST_F(ProjectedUnitRemovalTest, StaleGraphFailureAfterPrivateValuePrefixAbandon
 	subject.nodeHasChanged();
 	const auto generation = PreparedBonusGraphStorage::currentGeneration();
 	EXPECT_THROW(removal.removeValuesAndEdges(17), std::logic_error);
-	EXPECT_TRUE(units[0]->ghost); // failure may leave private values partially staged
-	EXPECT_FALSE(subject.ghost);
+	EXPECT_TRUE(units[0]->isGhost()); // failure may leave private values partially staged
+	EXPECT_FALSE(subject.isGhost());
 	EXPECT_TRUE(subject.alive());
 	EXPECT_EQ(PreparedBonusGraphStorage::currentGeneration(), generation);
 	EXPECT_THROW(graph.query(subject, Selector::all, false), std::logic_error);

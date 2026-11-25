@@ -6,9 +6,9 @@ std::shared_ptr<const frozenScoring::OwnedSource> StackWithBonuses::captureFroze
 	bonusDependencies::QueryFrameBinding binding) const
 {
 	if(typeid(*this) != typeid(StackWithBonuses) || !damageScoringBonuses
-		|| binding.recipientId != unitId() || binding.creature != creatureId() || binding.count != health.getCount()
+		|| binding.recipientId != unitId() || binding.creature != creatureId() || binding.count != getHealth().getCount()
 		|| binding.owner != unitOwner() || binding.side != unitSide() || binding.slot != unitSlot()
-		|| binding.ghost != ghost || binding.summoned != summoned || binding.natureSummoned != natureSummoned) return {};
+		|| binding.ghost != isGhost() || binding.summoned != summoned || binding.natureSummoned != natureSummoned) return {};
 	// Already materialized frozen answers only. No source graph/provider/callback
 	// is captured or imported; this grants no originating raw/canonical rights.
 	return frozenScoring::OwnedSource::capture(std::move(binding), *damageScoringBonuses,

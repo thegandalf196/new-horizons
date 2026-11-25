@@ -28,7 +28,7 @@ public:
 			&& std::ranges::any_of(strike->bsa, [&](const auto & hit) { return hit.stackAttacked == recipient; });
 		auto * before = gameState ? gameState->getBattle(BattleID(0)) : nullptr;
 		const auto * target = before ? before->getStack(recipient, false) : nullptr;
-		const auto health = sourceStrike && target ? target->health.getCreatureHealthAvailable() : 0;
+		const auto health = sourceStrike && target ? target->getHealth().getCreatureHealthAvailable() : 0;
 		if(observeTick)
 			if(const auto * injury = dynamic_cast<const StacksInjured *>(&pack))
 				for(const auto & hit : injury->stacks)
@@ -41,7 +41,7 @@ public:
 		if(sourceStrike)
 		{
 			const auto * after = gameState->getBattle(BattleID(0))->getStack(recipient, false);
-			actualBodyLoss = health - after->health.getCreatureHealthAvailable();
+			actualBodyLoss = health - after->getHealth().getCreatureHealthAvailable();
 			primaryFlags = strike->flags;
 		}
 	}
@@ -106,7 +106,7 @@ protected:
 						BonusSource::OTHER, 2, BonusSourceID(), subtype, bound));
 			}
 		}
-		recipient->health.addTemporaryHitPoints(7); recipient->guardianSpiritHitPoints = 5; recipient->guardianSpiritRoundsRemaining = 3;
+		recipient->editHealth()->addTemporaryHitPoints(7); recipient->guardianSpiritHitPoints = 5; recipient->guardianSpiritRoundsRemaining = 3;
 		observed.source = source->unitId(); observed.recipient = recipient->unitId();
 		ASSERT_TRUE(battle()->battleUsesNewHorizonsMultiplicativeMDR());
 	}

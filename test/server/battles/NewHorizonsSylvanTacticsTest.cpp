@@ -321,7 +321,7 @@ TEST_F(NewHorizonsSylvanTacticsTest, OpaqueOwnedAcceptanceKeepsCanonicalGhostSlo
 		ASSERT_TRUE(facts.acceptance); auto current = native->acquireState(); std::array<bool, 2> expected{};
 		for(unsigned flags = 0; flags < expected.size(); ++flags)
 		{
-			current->ghost = flags != 0; current->summoned = true; current->natureSummoned = false;
+			current->setGhost(flags != 0); current->summoned = true; current->natureSummoned = false;
 			expected[flags] = battle::acceptsBattleBonus(*native, *current, bonus);
 		}
 		EXPECT_EQ(expected[0], expectedOrdinary); EXPECT_FALSE(expected[1]);

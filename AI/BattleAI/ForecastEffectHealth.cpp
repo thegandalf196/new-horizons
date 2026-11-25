@@ -47,7 +47,7 @@ void importHealth(const State & draft, UnitId id, StackWithBonuses & staged)
 	// The detached native ledger has already performed damage/healing ONCE.
 	// Never re-enter damageInternal's provider/cohesion/Bloodrage scans here.
 	auto values = draft.unit(id)->health;
-	staged.health.swapPreparedContents(values);
+	staged.editHealth()->swapPreparedContents(values);
 	staged.veteranPhysicalDamageSinceActivation = draft.unit(id)->veteranPhysicalDamage;
 }
 }

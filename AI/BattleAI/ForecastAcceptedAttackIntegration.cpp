@@ -191,8 +191,8 @@ bool NativeAdapter::applyAcceptedAttack(HypotheticBattle & branch, const battle:
 			auto next = *draft.unit(id);
 			// Import the COMPLETE accepted ledger even when HP/count happen to be
 			// unchanged: casualty provenance and temporary/cohort capacity can differ.
-			next.health.updateDetachedContext(after.health.valueContext());
-			next.health = battle::CHealth::detached(after.health, after.health.valueContext());
+			next.health.updateDetachedContext(after.getHealth().valueContext());
+			next.health = battle::CHealth::detached(after.getHealth(), after.getHealth().valueContext());
 			const bool moved = next.position != after.getPosition();
 			next.position = after.getPosition();
 			next.controller = prospective.battleGetActionController(&after);

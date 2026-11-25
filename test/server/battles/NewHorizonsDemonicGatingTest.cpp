@@ -1233,7 +1233,7 @@ TEST_F(NewHorizonsDemonicGatingTest, ReinforcedGateAddsTwentyPercentTemporaryHea
 	ASSERT_EQ(gated.size(), 1u);
 	const int64_t creatureHealth = gated.front()->getTotalHealth();
 	const int64_t temporaryHealth = creatureHealth * 20 / 100;
-	EXPECT_EQ(gated.front()->health.getTemporaryHitPoints(), temporaryHealth);
+	EXPECT_EQ(gated.front()->getHealth().getTemporaryHitPoints(), temporaryHealth);
 	EXPECT_EQ(gated.front()->getAvailableHealth(), creatureHealth + temporaryHealth);
 	EXPECT_TRUE(hasBattleLogFragment("Reinforced Gate grants " + std::to_string(temporaryHealth)
 		+ " temporary Health"));
@@ -1244,7 +1244,7 @@ TEST_F(NewHorizonsDemonicGatingTest, ReinforcedGateAddsTwentyPercentTemporaryHea
 	int64_t damage = temporaryHealth;
 	state->damage(damage);
 	EXPECT_EQ(damage, temporaryHealth);
-	EXPECT_EQ(state->health.getTemporaryHitPoints(), 0);
+	EXPECT_EQ(state->getHealth().getTemporaryHitPoints(), 0);
 	EXPECT_EQ(state->getAvailableHealth(), creatureHealth);
 	EXPECT_EQ(state->getCount(), gated.front()->getCount());
 }
@@ -2152,7 +2152,7 @@ public:
 					{
 						healthAtReservePublication = unit->getAvailableHealth();
 						countAtReservePublication = unit->getCount();
-						temporaryCountAtReservePublication = unit->health.getResurrected();
+						temporaryCountAtReservePublication = unit->getHealth().getResurrected();
 					}
 		}
 		RecordingGameServer::applyPack(pack);
@@ -2431,7 +2431,7 @@ TEST_F(NewHorizonsEndlessLegionResultTest, TemporaryReanimateTroopsDisappearBefo
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), restore));
 	EXPECT_LT(attackerSideHero->getManaAvailable(), manaBefore);
 	ASSERT_EQ(gated->getCount(), 12);
-	ASSERT_EQ(gated->health.getResurrected(), 7);
+	ASSERT_EQ(gated->getHealth().getResurrected(), 7);
 	const auto temporaryHealth = gated->getAvailableHealth();
 	resultServer.watchedUnit = gated->unitId();
 	resultServer.watchedOwner = ownerId;

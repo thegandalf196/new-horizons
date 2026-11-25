@@ -23,7 +23,7 @@ std::optional<newHorizonsToxicSting::Plan> prepare(const CBattleInfoCallback & b
 	if(hit == hits.end() || !before)
 		return std::nullopt;
 	return newHorizonsToxicSting::prepare(battle, attack,
-		battle::bodyHealthLoss(hit->damageAmount, before->health.getTemporaryHitPoints()));
+		battle::bodyHealthLoss(hit->damageAmount, before->getHealth().getTemporaryHitPoints()));
 }
 void apply(CGameHandler & game, BattleProcessor & processor, const CBattleInfoCallback & battle,
 	const std::optional<newHorizonsToxicSting::Plan> & prepared)

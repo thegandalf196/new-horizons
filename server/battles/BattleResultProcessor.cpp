@@ -136,7 +136,7 @@ CasualtiesAfterBattle::CasualtiesAfterBattle(const CBattleInfoCallback & battle,
 
 		logGlobal->debug("Calculating casualties for %s", stConst->nodeName());
 
-		st->health.takeResurrected();
+		st->editHealth()->takeResurrected();
 
 		if(st->unitSlot() == SlotID::WAR_MACHINES_SLOT)
 		{
@@ -451,7 +451,7 @@ void BattleResultProcessor::endBattleConfirm(const CBattleInfoCallback & battle)
 				// Temporary restorations do not become permanent reserve troops.
 				// Both survivor return and Endless Legion use this detached view.
 				if(originalFormState)
-					originalFormState->health.takeResurrected();
+					originalFormState->editHealth()->takeResurrected();
 				const battle::CUnitState * resultState = originalFormState.get();
 				const TQuantity survivors = resultState && resultState->alive() ? resultState->getCount() : 0;
 				if(survivors > 0)

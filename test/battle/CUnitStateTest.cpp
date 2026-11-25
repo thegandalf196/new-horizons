@@ -77,7 +77,7 @@ public:
 	void initUnit()
 	{
 		subject.localInit(&envMock);
-		subject.position = DEFAULT_POSITION;
+		subject.setPosition(DEFAULT_POSITION);
 	}
 };
 

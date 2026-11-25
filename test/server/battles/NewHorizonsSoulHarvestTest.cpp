@@ -72,7 +72,7 @@ int64_t harvestForecast(const std::shared_ptr<CGameState> & game, CBattleInfoCal
 	const auto result = replay->getForUpdate(harvestingGhost->unitId());
 	EXPECT_EQ(result->getCount(), projected->getCount());
 	EXPECT_EQ(result->getAvailableHealth(), projected->getAvailableHealth());
-	EXPECT_EQ(result->health.getResurrected(), projected->health.getResurrected());
+	EXPECT_EQ(result->getHealth().getResurrected(), projected->getHealth().getResurrected());
 	EXPECT_EQ(model->battleGetUnitByID(harvestingGhost->unitId())->getAvailableHealth(), harvestingGhost->getAvailableHealth());
 	EXPECT_EQ(sibling->battleGetUnitByID(harvestingGhost->unitId())->getAvailableHealth(), harvestingGhost->getAvailableHealth());
 	EXPECT_EQ(harvestingGhost->save(), native);
@@ -86,7 +86,7 @@ TEST_F(NewHorizonsSoulHarvestTest, LiveKillAddsExactlyOneTemporaryGhost)
 	ASSERT_TRUE(attack(ghost, target->getPosition()));
 	EXPECT_FALSE(target->alive());
 	EXPECT_EQ(ghost->getCount(), 11);
-	EXPECT_EQ(ghost->health.getResurrected(), 1);
+	EXPECT_EQ(ghost->getHealth().getResurrected(), 1);
 	ASSERT_FALSE(server.attacks.empty());
 }
 TEST_F(NewHorizonsSoulHarvestTest, WoundedActorGainsOneWholeBodyWithoutHealingExistingWound)
@@ -98,7 +98,7 @@ TEST_F(NewHorizonsSoulHarvestTest, WoundedActorGainsOneWholeBodyWithoutHealingEx
 	ASSERT_TRUE(attack(ghost, target->getPosition()));
 	EXPECT_EQ(ghost->getCount(), 11);
 	EXPECT_EQ(ghost->getAvailableHealth(), hp + ghost->getMaxHealth());
-	ghost->health.takeResurrected();
+	ghost->editHealth()->takeResurrected();
 	EXPECT_EQ(ghost->getCount(), 10);
 	EXPECT_EQ(ghost->getAvailableHealth(), hp);
 }
@@ -109,10 +109,10 @@ TEST_F(NewHorizonsSoulHarvestTest, CleanupRetainsRealLossAndNeverConvertsTempora
 	ghost->damage(damage, false, battle::DamageProvenance::PHYSICAL_CREATURE);
 	ASSERT_TRUE(attack(ghost, target->getPosition()));
 	EXPECT_EQ(ghost->getCount(), 10);
-	EXPECT_EQ(ghost->health.getResurrected(), 1);
-	ghost->health.takeResurrected();
+	EXPECT_EQ(ghost->getHealth().getResurrected(), 1);
+	ghost->editHealth()->takeResurrected();
 	EXPECT_EQ(ghost->getCount(), 9);
-	EXPECT_EQ(ghost->health.getCasualtyCount(battle::DamageProvenance::PHYSICAL_CREATURE), 1);
+	EXPECT_EQ(ghost->getHealth().getCasualtyCount(battle::DamageProvenance::PHYSICAL_CREATURE), 1);
 }
 TEST_F(NewHorizonsSoulHarvestTest, DamagingSurvivorDoesNotHarvest)
 {
@@ -210,10 +210,10 @@ TEST_F(NewHorizonsSoulHarvestTest, KilledTemporaryBodyDoesNotBecomeAnotherCasual
 	int64_t damage = ghost->getMaxHealth();
 	ghost->damage(damage, false, battle::DamageProvenance::PHYSICAL_CREATURE);
 	EXPECT_EQ(ghost->getCount(), 10);
-	EXPECT_EQ(ghost->health.getResurrected(), 0);
-	ghost->health.takeResurrected();
+	EXPECT_EQ(ghost->getHealth().getResurrected(), 0);
+	ghost->editHealth()->takeResurrected();
 	EXPECT_EQ(ghost->getCount(), 10);
-	EXPECT_EQ(ghost->health.getCasualtyCount(battle::DamageProvenance::PHYSICAL_CREATURE), 0);
+	EXPECT_EQ(ghost->getHealth().getCasualtyCount(battle::DamageProvenance::PHYSICAL_CREATURE), 0);
 }
 TEST_F(NewHorizonsSoulHarvestTest, HostileCollateralGrantsPerVictimWithoutIncreasingThisBlowsDamage)
 {
@@ -225,7 +225,7 @@ TEST_F(NewHorizonsSoulHarvestTest, HostileCollateralGrantsPerVictimWithoutIncrea
 	EXPECT_FALSE(target->alive());
 	EXPECT_FALSE(second->alive());
 	EXPECT_EQ(ghost->getCount(), 12);
-	EXPECT_EQ(ghost->health.getResurrected(), 2);
+	EXPECT_EQ(ghost->getHealth().getResurrected(), 2);
 }
 TEST_F(NewHorizonsSoulHarvestTest, EffectiveFriendlyMindControlledVictimCannotFuelHarvest)
 {
@@ -278,7 +278,7 @@ TEST_F(NewHorizonsSoulHarvestTest, PreviewReplayAndLiveAgreeWithoutMutatingSibli
 	EXPECT_FALSE(replay->getForUpdate(target->unitId())->alive());
 	ASSERT_TRUE(attack(ghost, target->getPosition()));
 	EXPECT_EQ(replay->getForUpdate(ghost->unitId())->getCount(), ghost->getCount());
-	EXPECT_EQ(replay->getForUpdate(ghost->unitId())->health.getResurrected(), ghost->health.getResurrected());
+	EXPECT_EQ(replay->getForUpdate(ghost->unitId())->getHealth().getResurrected(), ghost->getHealth().getResurrected());
 }
 TEST_F(NewHorizonsSoulHarvestTest, FutureStrikeAppliesGrowthButReadOnlyProbeLeavesUnitsUnchanged)
 {
@@ -364,7 +364,7 @@ TEST_F(NewHorizonsSoulHarvestTest, ProductionCasualtyCommitRemovesGrowthAndPrese
 	ghost->damage(realLoss, false, battle::DamageProvenance::PHYSICAL_CREATURE);
 	ASSERT_TRUE(attack(ghost, target->getPosition()));
 	ASSERT_EQ(ghost->getCount(), 5);
-	ASSERT_EQ(ghost->health.getResurrected(), 1);
+	ASSERT_EQ(ghost->getHealth().getResurrected(), 1);
 	EXPECT_EQ(attackerSideHero->getStackCount(SlotID(0)), 5);
 	CasualtiesAfterBattle casualties(*battle(), BattleSide::ATTACKER);
 	casualties.updateArmy(gameHandler.get());
@@ -384,7 +384,7 @@ TEST_F(NewHorizonsSoulHarvestTest, ActualSecondKillAfterResurrectionGrantsAnothe
 	ASSERT_TRUE(attack(ghost, target->getPosition()));
 	EXPECT_FALSE(target->alive());
 	EXPECT_EQ(ghost->getCount(), 12);
-	EXPECT_EQ(ghost->health.getResurrected(), 2);
+	EXPECT_EQ(ghost->getHealth().getResurrected(), 2);
 }
 TEST_F(NewHorizonsSoulHarvestTest, ActualNativeRebirthDefersHarvestUntilFinalDestruction)
 {
@@ -422,7 +422,7 @@ TEST_F(NewHorizonsSoulHarvestTest, DuplicateVictimRecordsInOnePendingBlowCreditO
 	std::vector<BattleStackAttacked> duplicated{hit, hit};
 	battleCreatureKillRewards::finishStrike(*battle(), *ghost, duplicated, false, false, true);
 	EXPECT_EQ(ghost->getCount(), 11);
-	EXPECT_EQ(ghost->health.getResurrected(), 1);
+	EXPECT_EQ(ghost->getHealth().getResurrected(), 1);
 }
 TEST_F(NewHorizonsSoulHarvestTest, ReapplyingCompletionForAlreadyDeadVictimCannotAwardAgain)
 {
@@ -434,7 +434,7 @@ TEST_F(NewHorizonsSoulHarvestTest, ReapplyingCompletionForAlreadyDeadVictimCanno
 	auto repeated = server.attacks.back().bsa;
 	battleCreatureKillRewards::finishStrike(*battle(), *ghost, repeated, false, false, true);
 	EXPECT_EQ(ghost->getCount(), 11);
-	EXPECT_EQ(ghost->health.getResurrected(), 1);
+	EXPECT_EQ(ghost->getHealth().getResurrected(), 1);
 }
 
 TEST_F(NewHorizonsSoulHarvestTest, UndeadImmunityStillRejectsForgetfulnessWithoutVulnerabilityOrb)
@@ -459,7 +459,7 @@ TEST_F(NewHorizonsSoulHarvestTest, LegalForgetfulnessSuppressesHarvestAndNatural
 	ASSERT_TRUE(attack(ghost, target->getPosition()));
 	EXPECT_FALSE(target->alive());
 	EXPECT_EQ(ghost->getCount(), 10);
-	EXPECT_EQ(ghost->health.getResurrected(), 0);
+	EXPECT_EQ(ghost->getHealth().getResurrected(), 0);
 #ifdef ENABLE_BATTLE_AI
 	EXPECT_EQ(ghost->getAvailableHealth(), suppressedHP);
 #endif
@@ -475,7 +475,7 @@ TEST_F(NewHorizonsSoulHarvestTest, LegalForgetfulnessSuppressesHarvestAndNatural
 	ASSERT_TRUE(attack(ghost, target->getPosition()));
 	EXPECT_FALSE(target->alive());
 	EXPECT_EQ(ghost->getCount(), 11);
-	EXPECT_EQ(ghost->health.getResurrected(), 1);
+	EXPECT_EQ(ghost->getHealth().getResurrected(), 1);
 #ifdef ENABLE_BATTLE_AI
 	EXPECT_EQ(ghost->getAvailableHealth(), restoredHP);
 #endif
@@ -502,7 +502,7 @@ TEST_F(NewHorizonsSoulHarvestTest, RevertedBattleFormRetainsIdentityThroughCodec
 	ASSERT_TRUE(attack(ghost, target->getPosition()));
 	EXPECT_FALSE(target->alive());
 	EXPECT_EQ(ghost->getCount(), 11);
-	EXPECT_EQ(ghost->health.getResurrected(), 1);
+	EXPECT_EQ(ghost->getHealth().getResurrected(), 1);
 #ifdef ENABLE_BATTLE_AI
 	EXPECT_EQ(ghost->getAvailableHealth(), projectedHP);
 #endif
@@ -520,7 +520,7 @@ TEST_F(NewHorizonsSoulHarvestTest, BulwarkPreemptiveGhostKillAgreesInPreviewSele
 	EXPECT_FALSE(target->alive());
 	EXPECT_TRUE(ghost->bulwarkPreemptiveUsed);
 	EXPECT_EQ(ghost->getCount(), 11);
-	EXPECT_EQ(ghost->health.getResurrected(), 1);
+	EXPECT_EQ(ghost->getHealth().getResurrected(), 1);
 #ifdef ENABLE_BATTLE_AI
 	EXPECT_EQ(ghost->getAvailableHealth(), projectedHP);
 #endif
@@ -540,7 +540,7 @@ TEST_F(NewHorizonsSoulHarvestTest, SoulHarvestGainCannotMaskBulwarkReflectedLoss
 	ASSERT_TRUE(attack(ghost, target->getPosition()));
 	EXPECT_FALSE(target->alive());
 	EXPECT_EQ(ghost->getCount(), 11);
-	EXPECT_EQ(ghost->health.getResurrected(), 1);
+	EXPECT_EQ(ghost->getHealth().getResurrected(), 1);
 	EXPECT_LT(ghost->getAvailableHealth(), before + ghost->getMaxHealth());
 	EXPECT_GT(ghost->getAvailableHealth(), before);
 #ifdef ENABLE_BATTLE_AI
@@ -565,7 +565,7 @@ TEST_F(NewHorizonsSoulHarvestTest, SuppressedGhostKeepsZeroGrowthAndOrdinaryRefl
 	ASSERT_TRUE(attack(ghost, target->getPosition()));
 	EXPECT_FALSE(target->alive());
 	EXPECT_EQ(ghost->getCount(), 10);
-	EXPECT_EQ(ghost->health.getResurrected(), 0);
+	EXPECT_EQ(ghost->getHealth().getResurrected(), 0);
 	EXPECT_LT(ghost->getAvailableHealth(), before);
 #ifdef ENABLE_BATTLE_AI
 	EXPECT_EQ(ghost->getAvailableHealth(), projectedHP);
@@ -578,8 +578,8 @@ TEST_F(NewHorizonsSoulHarvestTest, DestroyingThreeCreaturesAddsThreeTemporaryGho
 	ASSERT_TRUE(attack(ghost, target->getPosition()));
 	ASSERT_FALSE(target->alive());
 	EXPECT_EQ(ghost->getCount(), 13);
-	EXPECT_EQ(ghost->health.getResurrected(), 3);
-	ghost->health.takeResurrected();
+	EXPECT_EQ(ghost->getHealth().getResurrected(), 3);
+	ghost->editHealth()->takeResurrected();
 	EXPECT_EQ(ghost->getCount(), 10);
 }
 TEST_F(NewHorizonsSoulHarvestTest, WoundedGhostHarvestsThreeWholeBodiesWithoutFillingOriginalWound)
@@ -591,7 +591,7 @@ TEST_F(NewHorizonsSoulHarvestTest, WoundedGhostHarvestsThreeWholeBodiesWithoutFi
 	ASSERT_TRUE(attack(ghost, target->getPosition()));
 	EXPECT_EQ(ghost->getCount(), 13);
 	EXPECT_EQ(ghost->getAvailableHealth(), before + 3LL * ghost->getMaxHealth());
-	ghost->health.takeResurrected();
+	ghost->editHealth()->takeResurrected();
 	EXPECT_EQ(ghost->getCount(), 10);
 	EXPECT_EQ(ghost->getAvailableHealth(), before);
 }
@@ -616,7 +616,7 @@ TEST_F(NewHorizonsSoulHarvestTest, PartialCasualtiesWithUnusedRebirthAgreeInPrev
 	EXPECT_EQ(target->getCount(), 1000 - casualties);
 	EXPECT_TRUE(target->canCast()); // No whole-stack Rebirth was triggered.
 	EXPECT_EQ(ghost->getCount(), 10 + casualties);
-	EXPECT_EQ(ghost->health.getResurrected(), casualties);
+	EXPECT_EQ(ghost->getHealth().getResurrected(), casualties);
 #ifdef ENABLE_BATTLE_AI
 	EXPECT_EQ(ghost->getAvailableHealth(), projectedHP);
 #endif
@@ -630,10 +630,10 @@ TEST_F(NewHorizonsSoulHarvestTest, ReplayedPartialCompletionCannotCreditSameAppl
 	ASSERT_GT(ghost->getCount(), 10);
 	ASSERT_FALSE(server.attacks.empty());
 	const auto count = ghost->getCount();
-	const auto temporary = ghost->health.getResurrected();
+	const auto temporary = ghost->getHealth().getResurrected();
 	battleCreatureKillRewards::finishStrike(*battle(), *ghost, server.attacks.back().bsa, false, false, true);
 	EXPECT_EQ(ghost->getCount(), count);
-	EXPECT_EQ(ghost->health.getResurrected(), temporary);
+	EXPECT_EQ(ghost->getHealth().getResurrected(), temporary);
 }
 TEST_F(NewHorizonsSoulHarvestTest, ResurrectedThreeCreatureStackCanFuelThreeNewCasualtiesAgain)
 {
@@ -647,7 +647,7 @@ TEST_F(NewHorizonsSoulHarvestTest, ResurrectedThreeCreatureStackCanFuelThreeNewC
 	ASSERT_TRUE(attack(ghost, target->getPosition()));
 	EXPECT_FALSE(target->alive());
 	EXPECT_EQ(ghost->getCount(), 16);
-	EXPECT_EQ(ghost->health.getResurrected(), 6);
+	EXPECT_EQ(ghost->getHealth().getResurrected(), 6);
 }
 TEST_F(NewHorizonsSoulHarvestTest, ExistingVersionOneCaptureLoadsUnchangedThenHarvestsNextThreeCasualties)
 {
@@ -696,7 +696,7 @@ TEST_F(NewHorizonsSoulHarvestTest, ExistingVersionOneCaptureLoadsUnchangedThenHa
 	ASSERT_FALSE(hit.killed());
 	battleCreatureKillRewards::finishStrike(*loadedBattle, *loadedGhost, {hit}, false, false, true);
 	EXPECT_EQ(loadedGhost->getCount(), 13);
-	EXPECT_EQ(loadedGhost->health.getResurrected(), 3);
+	EXPECT_EQ(loadedGhost->getHealth().getResurrected(), 3);
 }
 TEST_F(NewHorizonsSoulHarvestTest, CombinedCasualtiesRejectCountOverflowWithoutPartialGrowth)
 {
@@ -725,7 +725,7 @@ TEST_F(NewHorizonsSoulHarvestTest, GhostCounterHarvestCreditsThreeCreaturesExact
 	ASSERT_TRUE(attack(target, ghost->getPosition()));
 	EXPECT_FALSE(target->alive());
 	EXPECT_EQ(ghost->getCount(), 1000 - lost + 3);
-	EXPECT_EQ(ghost->health.getResurrected(), 3);
+	EXPECT_EQ(ghost->getHealth().getResurrected(), 3);
 	const auto counter = std::ranges::find_if(server.attacks, [&](const auto & packet)
 		{ return packet.counter() && packet.stackAttacking == ghost->unitId(); });
 	ASSERT_NE(counter, server.attacks.end());
@@ -735,7 +735,7 @@ TEST_F(NewHorizonsSoulHarvestTest, GhostCounterHarvestCreditsThreeCreaturesExact
 	auto completedCounter = ghost->acquireState();
 	completedCounter->load(snapshot->data);
 	EXPECT_EQ(completedCounter->getCount(), 1000 - lost + 3);
-	EXPECT_EQ(completedCounter->health.getResurrected(), 3);
+	EXPECT_EQ(completedCounter->getHealth().getResurrected(), 3);
 #ifdef ENABLE_BATTLE_AI
 	EXPECT_EQ(completedCounter->getAvailableHealth(), projectedHP);
 #endif

@@ -20,7 +20,7 @@ TEST_P(GraveDustCapturedShotTest, ActualMagicalPrimaryAppliesOnlyCurrentEntitlem
 	beginCombat();
 	ASSERT_EQ(battle()->battleActiveUnit(), actor);
 	ASSERT_FALSE(BattleAttackInfo(actor, victim, 0, true).physicalDamage);
-	const auto before = victim->health.getCreatureHealthAvailable();
+	const auto before = victim->getHealth().getCreatureHealthAvailable();
 	const auto collateralBefore = collateral->getAvailableHealth();
 	ASSERT_TRUE(shoot());
 	ASSERT_FALSE(observed->attacks.empty());
@@ -34,7 +34,7 @@ TEST_P(GraveDustCapturedShotTest, ActualMagicalPrimaryAppliesOnlyCurrentEntitlem
 	BattleAttackInfo cloudContext(actor, collateral, 0, true);
 	cloudContext.secondaryAttack = true;
 	EXPECT_TRUE(battlePrimaryStrikeAftermath::prepare(*battle(), cloudContext, attack.bsa).graveDust.add.empty());
-	EXPECT_LT(victim->health.getCreatureHealthAvailable(), before);
+	EXPECT_LT(victim->getHealth().getCreatureHealthAvailable(), before);
 	EXPECT_LT(collateral->getAvailableHealth(), collateralBefore);
 	EXPECT_EQ(battle::healingReceivedReduction(*victim), mode == 0 ? 5000 : 0);
 	EXPECT_EQ(battle::healingReceivedReduction(*collateral), 0);
@@ -61,12 +61,12 @@ class GraveDustCurrentShotTest : public GraveDustPrimaryShotFixture, public ::te
 TEST_P(GraveDustCurrentShotTest, TemporaryOnlyAbsorptionDoesNotDepositDust)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare(GetParam()));
-	victim->health.addTemporaryHitPoints(10'000);
-	const auto bodyBefore = victim->health.getCreatureHealthAvailable();
+	victim->editHealth()->addTemporaryHitPoints(10'000);
+	const auto bodyBefore = victim->getHealth().getCreatureHealthAvailable();
 	beginCombat();
 	ASSERT_TRUE(shoot());
-	EXPECT_EQ(victim->health.getCreatureHealthAvailable(), bodyBefore);
-	EXPECT_LT(victim->health.getTemporaryHitPoints(), 10'000);
+	EXPECT_EQ(victim->getHealth().getCreatureHealthAvailable(), bodyBefore);
+	EXPECT_LT(victim->getHealth().getTemporaryHitPoints(), 10'000);
 	EXPECT_TRUE(observed->dustRecipients.empty());
 	EXPECT_EQ(battle::healingReceivedReduction(*victim), 0);
 }

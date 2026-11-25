@@ -17,6 +17,7 @@
 #include "BattleUnitTurnReason.h"
 #include "CUnitAmmo.h"
 #include "CHealth.h"
+#include "UnitStateRevision.h"
 #include "NewHorizonsConfusionState.h"
 #include "DreadCavalryState.h"
 #include "UnitShieldState.h"
@@ -55,17 +56,11 @@ class DLL_LINKAGE CUnitState : public Unit
 	friend class PreparedStackStateTransfer;
 	friend class PreparedBattleUnitRoots;
 public:
-	bool cloned;
-	bool defending;
-	bool drainedMana;
-	bool fear;
-	bool hadMorale;
+	bool cloned, defending, drainedMana, fear, hadMorale;
 	/// Origin of this unit\'s current genuine activation, not its round-long Morale history.
 	/// Only the captured current combat rule arms this; continuations preserve it.
 	bool moraleExtraActivation = false;
 	bool castSpellThisTurn;
-	bool ghost;
-	bool ghostPending;
 	bool movedThisRound;
 	/// Pending forced activation and battle-long Confusion result history.
 	/// Ordinary round/activation boundaries do not clear this value implicitly.
@@ -193,16 +188,20 @@ public:
 
 	CCasts casts;
 	CRetaliations counterAttacks;
-	CHealth health;
 	CShots shots;
 
 	///id of alive clone of this stack clone if any
 	si32 cloneID;
 
-	///position on battlefield; -2 - keep, -3 - lower tower, -4 - upper tower
-	BattleHex position;
-
 	CUnitState();
+	/// Plain-state revision; UnitStateRevision.h states exactly what changes it.
+	uint64_t getStateRevision() const noexcept { return stateRevision.value(); }
+	const CHealth & getHealth() const noexcept { return health; }
+	HealthEdit editHealth() noexcept { return {health, stateRevision}; }
+	void setHealth(const CHealth & value);
+	bool isGhostPending() const noexcept { return ghostPending; }
+	void setGhost(bool value) noexcept { ghost = value; stateRevision.bump(); }
+	void setGhostPending(bool value) noexcept { ghostPending = value; stateRevision.bump(); }
 
 	CUnitState(const CUnitState & other) = delete;
 	CUnitState(CUnitState && other) = delete;
@@ -239,7 +238,7 @@ public:
 
 	bool ableToRetaliate() const override;
 	bool alive() const override;
-	bool isGhost() const override;
+	bool isGhost() const final { return ghost; }
 	bool isFrozen() const override;
 	bool isNewHorizonsFrozen() const;
 	int32_t frozenLastAppliedRound() const;
@@ -324,8 +323,8 @@ public:
 	virtual void onBattleFormChanged();
 	int32_t getBattleFormViewRevision() const;
 
-	BattleHex getPosition() const override;
-	void setPosition(const BattleHex & hex) override;
+	BattleHex getPosition() const final { return position; }
+	void setPosition(const BattleHex & hex) final { position = hex; stateRevision.bump(); }
 	int32_t getInitiative(int turn = 0) const override;
 	uint8_t getRangedFullDamageDistance() const;
 	uint8_t getShootingRangeDistance() const;
@@ -442,19 +441,24 @@ private:
 	bool validStateCreature(CreatureID id) const;
 	void serializeStateCreature(JsonSerializeFormat & handler, const std::string & field, CreatureID & id) const;
 	const IUnitEnvironment * env = nullptr;
+	UnitStateRevision stateRevision; // Runtime only: never copied, exchanged or saved.
+	CHealth health;
+	///position on battlefield; -2 - keep, -3 - lower tower, -4 - upper tower
+	BattleHex position;
+	bool ghost, ghostPending;
 	/// Environment identity only: rebound with env, never copied as gameplay state.
 	const CBattleInfoCallback * warfareContext = nullptr;
 	int warfareStatBonus() const;
 	int32_t activationMovementBonus = 0;
 	int32_t frozenAppliedRound = -1;
-	int64_t phantomInitialIntegrity = 0;
-	int64_t phantomIntegrity = 0;
+	int64_t phantomInitialIntegrity = 0, phantomIntegrity = 0;
+	void setPhantomIntegrity(int64_t value) noexcept { phantomIntegrity = value; stateRevision.bump(); }
 	int32_t phantomRoundsRemaining = 0;
 	int64_t phantomShadowGiftMaximumHealthLost = 0;
 	int32_t capacityHealthReferenceMax = 0;
 	CHealth battleFormOriginalHealth;
-	CreatureID battleFormCreatureId = CreatureID(-1);
-	CreatureID battleFormOriginalCreatureId = CreatureID(-1);
+	HealthEdit editOriginalHealth() noexcept { return {battleFormOriginalHealth, stateRevision}; }
+	CreatureID battleFormCreatureId = CreatureID(-1), battleFormOriginalCreatureId = CreatureID(-1);
 	int32_t battleFormRoundsRemaining = 0;
 	bool battleFormRestorationPending = false;
 	int32_t battleFormOriginalMaxHealth = 0;
@@ -465,14 +469,8 @@ private:
 	int32_t battleFormOriginalCapacityRegenerationRemainderTenths = 0;
 	int32_t battleFormViewRevision = 0;
 
-	BonusCachePerTurn initiativeBasePerTurn;
-	BonusCachePerTurn initiativeBasePresencePerTurn;
-	BonusCachePerTurn initiativePercentPerTurn;
-	BonusCachePerTurn initiativeFlatPerTurn;
-	BonusCachePerTurn stackSpeedPerTurn;
-	BonusCachePerTurn initiativeSpeedWithoutSlowPerTurn;
-	BonusCachePerTurn movementRangePerTurn;
-	BonusCachePerTurn immobilizedPerTurn;
+	BonusCachePerTurn initiativeBasePerTurn, initiativeBasePresencePerTurn, initiativePercentPerTurn, initiativeFlatPerTurn;
+	BonusCachePerTurn stackSpeedPerTurn, initiativeSpeedWithoutSlowPerTurn, movementRangePerTurn, immobilizedPerTurn;
 	UnitBonusValuesProxy bonusCache;
 
 	void reset();

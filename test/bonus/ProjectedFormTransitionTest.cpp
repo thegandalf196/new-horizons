@@ -134,8 +134,8 @@ protected:
 			BonusSource::CREATURE_ABILITY, 20, BonusSourceID(CreatureID(0)));
 		original.addNewBonus(health);
 		original.base = &base; // defined NONE terrain, not an unbound battle fallback
-		original.health.init();
-		original.position = BattleHex(5, 5);
+		original.editHealth()->init();
+		original.setPosition(BattleHex(5, 5));
 	}
 
 	void initialize()

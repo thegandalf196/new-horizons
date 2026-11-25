@@ -11,7 +11,7 @@ std::unique_ptr<CStack> source(CreatureID creature)
 {
 	CStackBasicDescriptor descriptor(creature, 3);
 	auto result = std::make_unique<CStack>(&descriptor, PlayerColor(0), 17, BattleSide::ATTACKER, SlotID(0), true);
-	result->attachToSource(*creature.toCreature()); result->health.init();
+	result->attachToSource(*creature.toCreature()); result->editHealth()->init();
 	return result;
 }
 }

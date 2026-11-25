@@ -85,14 +85,14 @@ void NativeAdapter::stageNativeReadValue(State & draft, UnitId id, const battle:
 	const bool changedProgram = !next.currentModifiers->ownsQueryFrame(*next.queries);
 	const auto & descriptor = *definition->readDescriptor;
 	bonusDependencies::QueryFrameBinding binding{source.unitId(), source.creatureId(), source.getCount(),
-		source.unitOwner(), source.unitSide(), source.unitSlot(), source.ghost, source.summoned,
+		source.unitOwner(), source.unitSide(), source.unitSlot(), source.isGhost(), source.summoned,
 		source.natureSummoned, descriptor.creatures};
 	auto queries = next.currentModifiers->refreshQueries(binding, bonusDependencies::Change::Count,
 		changedProgram ? nullptr : next.queries);
 	require(queries && next.currentModifiers->ownsQueryFrame(*queries));
 	next.queries = std::move(queries);
-	next.health.updateDetachedContext(source.health.valueContext());
-	next.health = battle::CHealth::detached(source.health, source.health.valueContext());
+	next.health.updateDetachedContext(source.getHealth().valueContext());
+	next.health = battle::CHealth::detached(source.getHealth(), source.getHealth().valueContext());
 	const int previousWarfare = next.warfareStat;
 	require(warfare >= 0);
 	next.warfareStat = warfare; // Exact environment result supplied by the accepted native owner.
@@ -141,9 +141,9 @@ void NativeAdapter::stagePureReadValue(State & draft, HypotheticBattle & branch,
 	const auto * registered = branch.battleGetUnitByID(id);
 	require(registered && registered->unitId() == id);
 	auto source = registered->acquireState();
-	require(source && source->health.valueContext() == current->health.valueContext());
-	source->health = current->health; // Canonical resolved ledger; do not damage/heal twice.
-	if(source->health.isCapacityHealthTracking()) source->normalizeCapacityHealth();
+	require(source && source->getHealth().valueContext() == current->health.valueContext());
+	source->setHealth(current->health); // Canonical resolved ledger; do not damage/heal twice.
+	if(source->getHealth().isCapacityHealthTracking()) source->normalizeCapacityHealth();
 	source->veteranPhysicalDamageSinceActivation = current->veteranPhysicalDamage;
 	stageNativeReadValue(draft, id, *source, current->warfareStat);
 }

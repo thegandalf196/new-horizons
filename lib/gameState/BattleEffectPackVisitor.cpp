@@ -77,7 +77,7 @@ void BattleStatePackVisitor::visitSetStackEffect(SetStackEffect & pack)
 		}))
 	{
 		auto state = unit->acquireState();
-		if(!state->health.isCapacityHealthTracking())
+		if(!state->getHealth().isCapacityHealthTracking())
 			continue;
 		state->normalizeCapacityHealth();
 		if(!unit->hasBonus(hydrasCapacity) && !unit->hasBonus(hydrasRegeneration))

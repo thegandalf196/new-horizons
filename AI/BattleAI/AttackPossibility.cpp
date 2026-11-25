@@ -831,7 +831,7 @@ AttackPossibility AttackPossibility::evaluate(
 				const bool wasAlive = defenderState->alive();
 				const int32_t harvestCountBefore = harvestEligible ? defenderState->getCount() : 0;
 				strike.hits.emplace_back(u->unitId(), incomingDamage);
-				const auto temporaryHealthBefore = defenderState->health.getTemporaryHitPoints();
+				const auto temporaryHealthBefore = defenderState->getHealth().getTemporaryHitPoints();
 				if(u->unitId() == strike.defenderId)
 					stingPlan = toxicStingAI::prepare(*state, victimAttack, damageToApply, damageProvenance);
 				const bool fury = passiveDivineFuryAI::admitted(*state, victimAttack);
@@ -1508,7 +1508,7 @@ AttackPossibility AttackPossibility::evaluate(
 						retaliationAttack.attacker, retaliationAttack.physicalDamage)
 						&& luckState.battleHasBastionProtection(targetState.get());
 				}
-				const auto temporaryHealthBefore = targetState->health.getTemporaryHitPoints();
+				const auto temporaryHealthBefore = targetState->getHealth().getTemporaryHitPoints();
 				std::optional<newHorizonsToxicSting::Plan> counterSting;
 				const bool targetWasAlive = mayReleaseSerpents() && targetState->alive();
 				if(retaliation)

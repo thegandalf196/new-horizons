@@ -110,7 +110,7 @@ Frame::Inputs inputs(bool form = false, bool clone = false)
 	input.environment.magicRules.emplace(); input.environment.skeletonUpgrades.emplace();
 	input.environmentUnits = {nullptr}; input.recipientPosition = 0; // Explicit complete one-unit fixture roster.
 	SeedInfo info(*input.creatures); SeedView view; battle::CUnitStateDetached seed(&info, &view); view.subject = &seed;
-	seed.localInit(nullptr); seed.position = BattleHex(50); if(form) seed.beginBattleForm(CreatureID(2), 2); seed.cloned = clone;
+	seed.localInit(nullptr); seed.setPosition(BattleHex(50)); if(form) seed.beginBattleForm(CreatureID(2), 2); seed.cloned = clone;
 	input.state = seed.save(); return input;
 }
 }

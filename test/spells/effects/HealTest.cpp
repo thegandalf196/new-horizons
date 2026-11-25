@@ -475,7 +475,7 @@ TEST_P(HealApplyTest, Heals)
 	targetUnitState->localInit(&unitEnvironmentMock);
 	{
 		int64_t initialDmg = unitAmount * unitHP / 2 - 1;
-		targetUnitState->health.damage(initialDmg);
+		targetUnitState->editHealth()->damage(initialDmg);
 	}
 
 	mechanicsMock.caster = &actualCaster;
@@ -524,7 +524,7 @@ TEST_P(HealApplyTest, Heals)
 	switch(healPower)
 	{
 	case EHealPower::PERMANENT:
-		EXPECT_EQ(targetUnitState->health.getResurrected(), 0);
+		EXPECT_EQ(targetUnitState->getHealth().getResurrected(), 0);
 		break;
 	case EHealPower::ONE_BATTLE:
 		{
@@ -532,15 +532,15 @@ TEST_P(HealApplyTest, Heals)
 			switch(healLevel)
 			{
 			case EHealLevel::HEAL:
-				EXPECT_EQ(targetUnitState->health.getResurrected(), 0);
+				EXPECT_EQ(targetUnitState->getHealth().getResurrected(), 0);
 				break;
 			case EHealLevel::RESURRECT:
-				EXPECT_EQ(targetUnitState->health.getResurrected(), unitAmount - initialCount);
+				EXPECT_EQ(targetUnitState->getHealth().getResurrected(), unitAmount - initialCount);
 				break;
 			case EHealLevel::OVERHEAL:
 				{
 					const int64_t available = static_cast<int64_t>(unitAmount) * unitHP / 2 + 1 + effectValue;
-					EXPECT_EQ(targetUnitState->health.getResurrected(), (int32_t)((available + unitHP - 1) / unitHP) - initialCount);
+					EXPECT_EQ(targetUnitState->getHealth().getResurrected(), (int32_t)((available + unitHP - 1) / unitHP) - initialCount);
 				}
 				break;
 			default:
@@ -619,7 +619,7 @@ TEST_F(HealApplyOneOffTest, GetHealthChangeReturnsHealedHP)
 	targetUnitState->localInit(&unitEnvironmentMock);
 	{
 		int64_t initialDmg = unitAmount * unitHP / 2 - 1;
-		targetUnitState->health.damage(initialDmg);
+		targetUnitState->editHealth()->damage(initialDmg);
 	}
 
 	EXPECT_CALL(mechanicsMock, getEffectValue()).WillRepeatedly(Return(effectValue));
@@ -664,7 +664,7 @@ TEST_F(HealApplyOneOffTest, ApplyResurrectsFullyDeadUnit)
 	targetUnitState->localInit(&unitEnvironmentMock);
 	{
 		int64_t initialDmg = static_cast<int64_t>(unitAmount) * unitHP;
-		targetUnitState->health.damage(initialDmg);
+		targetUnitState->editHealth()->damage(initialDmg);
 	}
 
 	EXPECT_CALL(mechanicsMock, getEffectValue()).WillRepeatedly(Return(effectValue));
@@ -685,7 +685,7 @@ TEST_F(HealApplyOneOffTest, ApplyResurrectsFullyDeadUnit)
 
 	EXPECT_EQ(targetUnitState->getCount(), effectValue / unitHP);
 	EXPECT_EQ(targetUnitState->getFirstHPleft(), unitHP);
-	EXPECT_EQ(targetUnitState->health.getResurrected(), 0);
+	EXPECT_EQ(targetUnitState->getHealth().getResurrected(), 0);
 }
 
 TEST_F(HealApplyOneOffTest, ApplyHealsMultipleTargets)
@@ -725,14 +725,14 @@ TEST_F(HealApplyOneOffTest, ApplyHealsMultipleTargets)
 	state1->localInit(&unitEnvironmentMock);
 	{
 		int64_t initialDmg = unitAmount * unitHP / 2 - 1;
-		state1->health.damage(initialDmg);
+		state1->editHealth()->damage(initialDmg);
 	}
 
 	auto state2 = std::make_shared<CUnitStateDetached>(&targetUnit2, &targetUnit2);
 	state2->localInit(&unitEnvironmentMock);
 	{
 		int64_t initialDmg = unitAmount * unitHP / 2 - 1;
-		state2->health.damage(initialDmg);
+		state2->editHealth()->damage(initialDmg);
 	}
 
 	EXPECT_CALL(mechanicsMock, getEffectValue()).WillRepeatedly(Return(effectValue));
@@ -786,7 +786,7 @@ TEST_F(HealApplyOneOffTest, PhantomCasterPreviewCannotCreateCreatures)
 	auto state = std::make_shared<CUnitStateDetached>(&targetUnit, &targetUnit);
 	state->localInit(&unitEnvironmentMock);
 	int64_t initialDamage = 150;
-	state->health.damage(initialDamage);
+	state->editHealth()->damage(initialDamage);
 	ASSERT_EQ(state->getCount(), 3);
 
 	PhantomUnitCasterFake caster;
@@ -834,7 +834,7 @@ TEST_F(HealApplyOneOffTest, PhantomCasterHealsLivingTroopsWithoutResurrectingOrO
 	auto state = std::make_shared<CUnitStateDetached>(&targetUnit, &targetUnit);
 	state->localInit(&unitEnvironmentMock);
 	int64_t initialDamage = 150;
-	state->health.damage(initialDamage);
+	state->editHealth()->damage(initialDamage);
 	const auto existingCount = state->getCount();
 	ASSERT_EQ(existingCount, 3);
 

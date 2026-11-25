@@ -93,8 +93,8 @@ protected:
 			stack->base = &base; // Defined adventure NONE, no invented battle membership.
 			stack->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT,
 				BonusType::STACK_HEALTH, BonusSource::CREATURE_ABILITY, 20, BonusSourceID(CreatureID(0))));
-			stack->health.init();
-			stack->position = BattleHex(5, 5);
+			stack->editHealth()->init();
+			stack->setPosition(BattleHex(5, 5));
 		}
 	}
 	JsonNode incoming(CreatureID creature)

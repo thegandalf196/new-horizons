@@ -24,7 +24,7 @@ std::unique_ptr<PreparedOwnedReadSource> StackWithBonuses::prepareOwnedReadSourc
 	prepared->program = std::move(program);
 	prepared->queries = prepared->source->queryFrame();
 	if(!prepared->queries || !prepared->program->ownsQueryFrame(*prepared->queries)
-		|| !prepared->queries->matches(id, health.getCount(), creatureId()))
+		|| !prepared->queries->matches(id, getHealth().getCount(), creatureId()))
 		throw std::invalid_argument("Foreign owned query source");
 	prepared->sourceLease = prepared->program->bindRecipientLayerSource(prepared->queries);
 	if(!prepared->sourceLease) throw std::invalid_argument("Unbound fixed recipient source lease");

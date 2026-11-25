@@ -168,7 +168,7 @@ protected:
 			ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), action));
 		}
 		EXPECT_EQ(target->getAvailableHealth() - before, expectedPool);
-		EXPECT_EQ(target->health.getResurrected(), target->getCount() - countBefore);
+		EXPECT_EQ(target->getHealth().getResurrected(), target->getCount() - countBefore);
 		EXPECT_EQ(mana - attackerSideHero->getManaAvailable(), 16);
 		EXPECT_LE(target->getCount(), 100);
 	}
@@ -280,9 +280,9 @@ TEST_F(NewHorizonsThantReanimateSpecialtyTest, CurrentWorldRoundtripPreservesSta
 	const auto saved = target->save();
 	auto restoredUnit = target->acquireState();
 	restoredUnit->load(saved);
-	EXPECT_EQ(restoredUnit->health.getResurrected(), target->health.getResurrected());
-	restoredUnit->health.takeResurrected();
-	EXPECT_EQ(restoredUnit->health.getResurrected(), 0);
+	EXPECT_EQ(restoredUnit->getHealth().getResurrected(), target->getHealth().getResurrected());
+	restoredUnit->editHealth()->takeResurrected();
+	EXPECT_EQ(restoredUnit->getHealth().getResurrected(), 0);
 }
 
 TEST_F(NewHorizonsThantReanimateSpecialtyTest, PreviousHasteFormatRejectsRulePayloadBeforeOuterPrefixes)

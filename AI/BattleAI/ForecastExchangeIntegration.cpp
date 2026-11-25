@@ -216,8 +216,8 @@ void NativeAdapter::importReceipt(HypotheticBattle & branch, const battle::CUnit
 	auto draft = *branch.compactForecast;
 	importFocusReceipt(draft, target, branch);
 	const auto * current = draft.unit(target.unitId());
-	require(current && current->health.available() == target.health.available()
-		&& current->health.getCount() == target.health.getCount());
+	require(current && current->health.available() == target.getHealth().available()
+		&& current->health.getCount() == target.getHealth().getCount());
 	auto next = *current;
 	const bool moved = next.position != target.getPosition();
 	// SelectedAttackReceipt already validated native movement and copied exact

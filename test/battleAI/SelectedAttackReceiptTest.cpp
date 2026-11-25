@@ -38,7 +38,7 @@ TEST_F(SelectedAttackReceiptTest, CollectionPreservesOccurrenceOrderAndLastWrite
 	ASSERT_FALSE(preview->affectedUnits.empty());
 	// A duplicate is an existing representable preview, not a deduplicated graph.
 	auto duplicate = preview->affectedUnits.front()->acquireState();
-	duplicate->health.addTemporaryHitPoints(7); // Local ledger only; no borrowed-environment damage call.
+	duplicate->editHealth()->addTemporaryHitPoints(7); // Local ledger only; no borrowed-environment damage call.
 	preview->affectedUnits.push_back(duplicate);
 	auto branch = std::make_shared<HypotheticBattle>(environment.get(), known);
 	SelectedAttackReceipt receipt(*preview);

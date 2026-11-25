@@ -12,8 +12,8 @@
 void StackInfoBasicPanel::appendVitalStatus(const CStack * stack)
 {
 	auto healthRemaining = TextOperations::formatMetric(stack->getFirstHPleft(), 4);
-	if(stack->health.getTemporaryHitPoints() > 0)
-		healthRemaining += "+" + TextOperations::formatMetric(stack->health.getTemporaryHitPoints(), 4);
+	if(stack->getHealth().getTemporaryHitPoints() > 0)
+		healthRemaining += "+" + TextOperations::formatMetric(stack->getHealth().getTemporaryHitPoints(), 4);
 	labels.push_back(std::make_shared<CLabel>(9, 168, EFonts::FONT_TINY, ETextAlignment::TOPLEFT, Colors::WHITE, LIBRARY->generaltexth->translate("vcmi.battleWindow.killed") + ":"));
 	labels.push_back(std::make_shared<CLabel>(9, 180, EFonts::FONT_TINY, ETextAlignment::TOPLEFT, Colors::WHITE, LIBRARY->generaltexth->allTexts[389] + ":"));
 	labels.push_back(std::make_shared<CLabel>(69, 180, EFonts::FONT_TINY, ETextAlignment::BOTTOMRIGHT, Colors::WHITE, std::to_string(stack->getKilled())));

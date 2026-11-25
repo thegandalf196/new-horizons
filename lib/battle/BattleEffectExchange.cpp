@@ -264,7 +264,7 @@ PreparedBattleEffectHealth prepareBattleEffectHealth(const CUnitState & unit,
 		view->bonuses.push_back(std::make_shared<Bonus>(after));
 	}
 	++view->version;
-	if(projected->health.isCapacityHealthTracking())
+	if(projected->getHealth().isCapacityHealthTracking())
 		projected->normalizeCapacityHealth();
 	const auto hydra = newHorizonsMagic::hydrasVitalitySourceId(magicRules);
 	std::vector<Bonus> originalHydraRegeneration, replacementHydraRegeneration;

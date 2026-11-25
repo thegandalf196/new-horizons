@@ -221,7 +221,7 @@ TEST_F(NewHorizonsSorceryEffects, LanceActualHitBypassesAbsorptionAndPreservesNo
 	{
 		changed = std::make_shared<::battle::CUnitStateDetached>(&target, &target);
 		changed->localInit(&environment);
-		changed->health.addTemporaryHitPoints(500);
+		changed->editHealth()->addTemporaryHitPoints(500);
 		changed->guardianSpiritHitPoints = 500;
 		changed->guardianSpiritRoundsRemaining = 3;
 		return changed;
@@ -261,7 +261,7 @@ TEST_F(NewHorizonsSorceryEffects, LanceActualHitBypassesAbsorptionAndPreservesNo
 		EXPECT_EQ(preview.unitsDelta, -amount / 100);
 		subject->apply(&serverMock, &mechanicsMock, {::battle::Destination(&target)});
 		ASSERT_TRUE(changed);
-		EXPECT_EQ(changed->health.getTemporaryHitPoints(), 500);
+		EXPECT_EQ(changed->getHealth().getTemporaryHitPoints(), 500);
 		EXPECT_EQ(changed->getCount(), 2 - amount / 100);
 		if(amount == 100)
 		{
@@ -278,7 +278,7 @@ TEST_F(NewHorizonsSorceryEffects, LanceActualHitBypassesAbsorptionAndPreservesNo
 			EXPECT_EQ(changed->guardianSpiritRoundsRemaining, 0);
 		}
 		EXPECT_EQ(changed->getUnusableRemains(), 0);
-		EXPECT_FALSE(changed->ghostPending);
+		EXPECT_FALSE(changed->isGhostPending());
 	}
 }
 

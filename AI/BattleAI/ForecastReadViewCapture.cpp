@@ -72,7 +72,7 @@ void NativeAdapter::bindRootReadViews(HypotheticBattle & source, std::vector<Uni
 		definition->readDescriptor = std::make_shared<const NativeReadDescriptor>(NativeReadDescriptor{
 			values->identity(), {unit.getBattleStartMaximumAggregateHP(), unit.getRebirthOriginalAggregateHP()}, creatures});
 		bonusDependencies::QueryFrameBinding binding{unit.unitId(), unit.creatureId(), unit.getCount(), unit.unitOwner(),
-			unit.unitSide(), unit.unitSlot(), unit.ghost, unit.summoned, unit.natureSummoned, creatures};
+			unit.unitSide(), unit.unitSlot(), unit.isGhost(), unit.summoned, unit.natureSummoned, creatures};
 		auto program = input.state.currentModifiers->bindQueries(binding, unit.localSpellEffects());
 		if(!program) throw std::invalid_argument("Root modifiers lack an owning query binding");
 		auto queries = program->refreshQueries(binding, bonusDependencies::Change::None);

@@ -31,14 +31,14 @@ TEST_P(BodyHealthLossNativeTest, PreparedDamageMatchesActualBodyLedgerWithGuardi
 	auto state = target->acquireState();
 	const bool form = std::get<0>(GetParam());
 	const bool physical = std::get<1>(GetParam());
-	const auto sourceHealth = state->health.getCreatureHealthAvailable();
+	const auto sourceHealth = state->getHealth().getCreatureHealthAvailable();
 	if(form) state->beginBattleForm(creatureByName("core:peasant"), 2);
 	ASSERT_EQ(state->hasBattleForm(), form);
-	state->health.addTemporaryHitPoints(6);
+	state->editHealth()->addTemporaryHitPoints(6);
 	state->guardianSpiritHitPoints = 10;
 	state->guardianSpiritRoundsRemaining = 1;
-	const auto bodyBefore = state->health.getCreatureHealthAvailable();
-	const auto temporaryBefore = state->health.getTemporaryHitPoints();
+	const auto bodyBefore = state->getHealth().getCreatureHealthAvailable();
+	const auto temporaryBefore = state->getHealth().getTemporaryHitPoints();
 	BattleStackAttacked hit;
 	hit.damageAmount = 20;
 	CStack::prepareAttacked(hit, gameHandler->getRandomGenerator(), state, false, false,
@@ -48,16 +48,16 @@ TEST_P(BodyHealthLossNativeTest, PreparedDamageMatchesActualBodyLedgerWithGuardi
 	const auto bodyLoss = battle::bodyHealthLoss(hit.damageAmount, temporaryBefore);
 	EXPECT_EQ(hit.damageAmount, physical ? 10 : 20);
 	EXPECT_EQ(bodyLoss, physical ? 4 : 14);
-	EXPECT_EQ(state->health.getTemporaryHitPoints(), 0);
+	EXPECT_EQ(state->getHealth().getTemporaryHitPoints(), 0);
 	EXPECT_EQ(state->guardianSpiritHitPoints, physical ? 0 : 10);
-	EXPECT_EQ(bodyBefore - state->health.getCreatureHealthAvailable(), bodyLoss);
+	EXPECT_EQ(bodyBefore - state->getHealth().getCreatureHealthAvailable(), bodyLoss);
 	if(form)
 	{
 		state->endBattleForm();
-		EXPECT_EQ(sourceHealth - state->health.getCreatureHealthAvailable(), bodyLoss);
+		EXPECT_EQ(sourceHealth - state->getHealth().getCreatureHealthAvailable(), bodyLoss);
 	}
-	EXPECT_EQ(target->health.getCreatureHealthAvailable(), sourceHealth);
-	EXPECT_EQ(target->health.getTemporaryHitPoints(), 0);
+	EXPECT_EQ(target->getHealth().getCreatureHealthAvailable(), sourceHealth);
+	EXPECT_EQ(target->getHealth().getTemporaryHitPoints(), 0);
 	EXPECT_FALSE(target->hasBattleForm());
 }
 INSTANTIATE_TEST_SUITE_P(StandardAndDualFormPhysicalAndMagical, BodyHealthLossNativeTest,
@@ -73,15 +73,15 @@ TEST_F(BodyHealthLossRebirthTest, RecreatedBodyDoesNotEraseTheActualOldBodyLossF
 	target->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::REBIRTH, BonusSource::OTHER, 100, BonusSourceID()));
 	target->addNewBonus(std::make_shared<Bonus>(BonusDuration::PERMANENT, BonusType::CASTS, BonusSource::OTHER, 1, BonusSourceID()));
 	auto state = target->acquireState();
-	const auto bodyBefore = state->health.getCreatureHealthAvailable();
-	state->health.addTemporaryHitPoints(6);
-	const auto temporaryBefore = state->health.getTemporaryHitPoints();
+	const auto bodyBefore = state->getHealth().getCreatureHealthAvailable();
+	state->editHealth()->addTemporaryHitPoints(6);
+	const auto temporaryBefore = state->getHealth().getTemporaryHitPoints();
 	BattleStackAttacked hit;
 	hit.damageAmount = 1000;
 	CStack::prepareAttacked(hit, gameHandler->getRandomGenerator(), state);
 	ASSERT_TRUE(hit.killed());
 	ASSERT_TRUE(hit.willRebirth());
-	EXPECT_EQ(state->health.getCreatureHealthAvailable(), bodyBefore);
+	EXPECT_EQ(state->getHealth().getCreatureHealthAvailable(), bodyBefore);
 	EXPECT_EQ(battle::bodyHealthLoss(hit.damageAmount, temporaryBefore), bodyBefore);
 }
 }

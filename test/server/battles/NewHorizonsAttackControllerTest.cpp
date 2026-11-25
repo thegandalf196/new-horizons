@@ -284,7 +284,7 @@ TEST_F(NewHorizonsAttackControllerTest, AcceptedOgreBloodlustPrecedesLethalFireS
 	passiveCast(SpellID(SpellID::FIRE_SHIELD), *enemy, *enemy);
 	auto state = actor->acquireState();
 	int64_t wound = state->getAvailableHealth() - 1;
-	state->health.damage(wound);
+	state->editHealth()->damage(wound);
 	publish(*state);
 	const auto actorId = actor->unitId();
 	beginCombat();

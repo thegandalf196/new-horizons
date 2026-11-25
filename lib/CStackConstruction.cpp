@@ -20,7 +20,7 @@ CStack::CStack(const CStackInstance * Base, const PlayerColor & O, int I, Battle
 	slot(S),
 	side(Side)
 {
-	health.init(); //???
+	editHealth()->init(); //???
 	doubleWideCached = battle::CUnitState::doubleWide();
 }
 
@@ -51,7 +51,7 @@ CStack::CStack(const CStackBasicDescriptor * stack, const PlayerColor & O, int I
 {
 	if(!hypothetical && terrain.terrain)
 		throw std::invalid_argument("Terrain-only query metadata requires a hypothetical identity");
-	health.init(); //???
+	editHealth()->init(); //???
 	doubleWideCached = battle::CUnitState::doubleWide();
 }
 

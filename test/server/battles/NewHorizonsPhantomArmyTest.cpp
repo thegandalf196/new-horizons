@@ -166,11 +166,11 @@ protected:
 		if(!source)
 			return false;
 		if(sourceHasExtraHealth)
-			source->health.addTemporaryHitPoints(source->getTotalHealth() * 3);
+			source->editHealth()->addTemporaryHitPoints(source->getTotalHealth() * 3);
 		if(sourceDamageBeforeCast > 0)
 		{
 			int64_t damage = sourceDamageBeforeCast;
-			source->health.damage(damage);
+			source->editHealth()->damage(damage);
 			if(damage != sourceDamageBeforeCast)
 				return false;
 		}
