@@ -7,6 +7,15 @@ and revisions as the game develops.
 For individual perk effects, spell formulas, creature statistics and Order rules,
 read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 
+## 0.94.0-beta.4
+
+- **Castle prayers without the extra window**: when a Castle hero with Chosen
+  Prayers issues an Order, the spellbook opens on its Prayers bookmark. Pick a
+  prayer, then click the stack that receives it on the battlefield. You can
+  now skip the prayer; the Order still goes out: closing the book,
+  right-clicking or pressing Escape issues it without a prayer. Loynis's
+  Sermon works the same way after a Light spell.
+
 ## 0.94.0-beta.3
 
 Fixes the Windows launcher of Beta 1 and Beta 2, which stopped before opening

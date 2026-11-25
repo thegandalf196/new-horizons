@@ -8,9 +8,10 @@
 #include <string>
 #include <vector>
 
-/// Consecrated Arms 4 (Chosen Prayers) picker state. Pure presentation state:
-/// it never touches the battle; `apply` only fills the request fields of a
-/// copied action after rechecking them against a freshly computed request.
+/// Consecrated Arms 4 (Chosen Prayers) choice state for the spellbook's Prayers
+/// bookmark and the battlefield recipient click. Pure presentation state: it
+/// never touches the battle; `apply` only fills the request fields of a copied
+/// action after rechecking them against a freshly computed request.
 namespace consecratedArmsPrayerChoice
 {
 using consecratedArms::Prayer;
@@ -91,18 +92,37 @@ public:
 	}
 };
 
-inline std::string promptText(const Selection & selection)
+/// The action as it is sent when the prayer is skipped: no choice fields, so
+/// the authority admits it as an ordinary Order or spell without a prayer.
+inline BattleAction withoutPrayer(BattleAction action)
 {
-	if(!selection.prayersComplete())
-	{
-		if(selection.requiredPrayers() == 2)
-			return selection.chosenPrayers().empty() ? "Choose two different prayers."
-				: "Choose one more prayer.";
-		return "Choose one prayer.";
-	}
-	if(!selection.chosenRecipient())
-		return "Choose the stack that receives the prayer"
-			+ std::string(selection.requiredPrayers() == 2 ? "s." : ".");
-	return "Ready. Confirm to issue the Order.";
+	action.prayerChoices.clear();
+	action.prayerRecipient = BattleAction::NO_PRAYER_RECIPIENT;
+	return action;
+}
+
+enum class RecipientClick
+{
+	SEND_WITH_PRAYER,    ///< `action` now carries the prayers and this recipient.
+	SEND_WITHOUT_PRAYER, ///< No stack can receive the prayer any more; send the plain action.
+	REFUSE               ///< This stack cannot receive it; keep choosing.
+};
+
+/// Battlefield click on `unit` after the prayers were chosen, checked against a
+/// freshly computed request. Never touches the battle.
+inline RecipientClick resolveRecipientClick(const Selection & chosen, uint32_t unit,
+	const consecratedArms::ChoiceRequest & current, BattleAction & action)
+{
+	if(!chosen.prayersComplete() || current.prayers != chosen.requiredPrayers() || current.recipients.empty())
+		return RecipientClick::SEND_WITHOUT_PRAYER;
+	// Recipients may have changed since the prayers were chosen: re-read them.
+	Selection fresh(current.prayers, current.recipients);
+	for(const auto prayer : chosen.chosenPrayers())
+		fresh.togglePrayer(prayer);
+	auto completed = action;
+	if(!fresh.chooseRecipient(unit) || !fresh.apply(completed, current))
+		return RecipientClick::REFUSE;
+	action = completed;
+	return RecipientClick::SEND_WITH_PRAYER;
 }
 }

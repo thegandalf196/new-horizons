@@ -615,6 +615,8 @@ void CSpellWindow::closeSpellbook()
 
 void CSpellWindow::fadvSpellsb()
 {
+	if(prayerChoice)
+		return; // Choosing an Order's prayer: the book stays on its Prayers bookmark.
 	if(prayerCatalogueSelected)
 		selectSchool(selectedTab);
 	if(battleSpellsOnly == true)
@@ -628,6 +630,8 @@ void CSpellWindow::fadvSpellsb()
 
 void CSpellWindow::fbattleSpellsb()
 {
+	if(prayerChoice)
+		return;
 	if(prayerCatalogueSelected)
 		selectSchool(selectedTab);
 	if(battleSpellsOnly == false)
@@ -649,36 +653,6 @@ void CSpellWindow::toggleSearchBoxFocus()
 
 void CSpellWindow::fmanaPtsb()
 {
-}
-
-void CSpellWindow::selectSchool(SpellSchool school)
-{
-	if(!vstd::contains(schoolNavigation, school))
-		return;
-	const bool returningFromPrayers = prayerCatalogueSelected;
-	prayerCatalogueSelected = false;
-	if(returningFromPrayers)
-		processSpells();
-	if(selectedTab != school)
-	{
-		const bool forward = usesLegacyTabs ? selectedTab < school
-			: std::find(schoolNavigation.begin(), schoolNavigation.end(), selectedTab) < std::find(schoolNavigation.begin(), schoolNavigation.end(), school);
-		if(forward)
-			turnPageLeft();
-		else
-			turnPageRight();
-		selectedTab = school;
-		setSchoolImages(selectedTab);
-		setCurrentPage(0);
-	}
-	else if(returningFromPrayers)
-		setCurrentPage(std::min(currentPage, std::max(0, pagesWithinCurrentTab() - 1)));
-	if(allSchoolsSelected)
-	{
-		allSchoolsSelected->setEnabled(selectedTab == SpellSchool::ANY);
-		allSchoolsInactive->setEnabled(selectedTab != SpellSchool::ANY);
-	}
-	computeSpellsPerArea();
 }
 
 void CSpellWindow::fLcornerb()

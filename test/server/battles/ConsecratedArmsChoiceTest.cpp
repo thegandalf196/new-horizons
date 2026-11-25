@@ -7,7 +7,9 @@
 #include "../../../AI/BattleAI/ConsecratedArmsValue.h"
 #include "../../../AI/BattleAI/AttackPossibility.h"
 #include "../../../client/battle/ConsecratedArmsPrayerChoice.h"
+#include "../../../lib/battle/CUnitState.h"
 #include "../../../lib/modding/CModHandler.h"
+#include "../../../lib/networkPacks/PacksForClientBattle.h"
 #include "../../../lib/serializer/CMemorySerializer.h"
 
 namespace
@@ -110,14 +112,85 @@ TEST_F(ConsecratedArmsChoiceTest, InvalidRecipientIsRejected)
 	expectRejected(charge({0}, BattleAction::NO_PRAYER_RECIPIENT));
 }
 
-TEST_F(ConsecratedArmsChoiceTest, WrongCountUnknownOrMissingPrayersAreRejected)
+TEST_F(ConsecratedArmsChoiceTest, WrongCountUnknownOrPartialChoicesAreRejected)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare());
 	const auto id = friendly.front()->unitId();
-	expectRejected(charge({}, BattleAction::NO_PRAYER_RECIPIENT));
 	expectRejected(charge({}, id));
 	expectRejected(charge({0, 1}, id));
 	expectRejected(charge({6}, id));
+}
+
+TEST_F(ConsecratedArmsChoiceTest, SkippedPrayerStillIssuesTheOrder)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	ASSERT_EQ(choiceRequest(*battle(), charge({}, BattleAction::NO_PRAYER_RECIPIENT)).prayers, 1u);
+	const auto allowances = battle()->getHeroActionAllowances(ATTACKER);
+	ASSERT_TRUE(submit(charge({}, BattleAction::NO_PRAYER_RECIPIENT)));
+	EXPECT_NE(battle()->getHeroActionAllowances(ATTACKER), allowances) << "The Order spent the Hero Action";
+	EXPECT_EQ(prayerTotal(), 0);
+	expectRejected(charge({0}, friendly.front()->unitId())); // One Hero Action per round.
+}
+
+TEST_F(ConsecratedArmsChoiceTest, PlayerFlowSpendsNothingBeforeTheRecipientClick)
+{
+	using consecratedArmsPrayerChoice::RecipientClick;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto allowances = battle()->getHeroActionAllowances(ATTACKER);
+	const int mana = attackerSideHero->getManaAvailable();
+	const auto order = BattleAction::makeHeroCommand(ATTACKER, HeroCommand::CHARGE);
+	const auto request = choiceRequest(*battle(), order);
+	consecratedArmsPrayerChoice::Selection chosen(request.prayers, request.recipients);
+	ASSERT_TRUE(chosen.togglePrayer(Prayer::DAUNTLESS_ASSAULT)); // Picked in the spellbook.
+	const battle::Unit * enemy = nullptr;
+	for(const auto * unit : battle()->battleGetAllStacks(false))
+		if(unit->unitSide() == BattleSide::DEFENDER)
+			enemy = unit;
+	ASSERT_NE(enemy, nullptr);
+	auto action = order;
+	EXPECT_EQ(consecratedArmsPrayerChoice::resolveRecipientClick(chosen, enemy->unitId(),
+		choiceRequest(*battle(), order), action), RecipientClick::REFUSE);
+	EXPECT_EQ(battle()->getHeroActionAllowances(ATTACKER), allowances);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), mana);
+	EXPECT_EQ(prayerTotal(), 0);
+	ASSERT_EQ(consecratedArmsPrayerChoice::resolveRecipientClick(chosen, friendly.at(2)->unitId(),
+		choiceRequest(*battle(), order), action), RecipientClick::SEND_WITH_PRAYER);
+	EXPECT_EQ(battle()->getHeroActionAllowances(ATTACKER), allowances) << "Resolving a click sends nothing";
+	ASSERT_TRUE(submit(action));
+	EXPECT_TRUE(activePrayer(*friendly.at(2), Prayer::DAUNTLESS_ASSAULT));
+	EXPECT_EQ(prayerTotal(), 1);
+}
+
+TEST_F(ConsecratedArmsChoiceTest, RecipientKilledBeforeTheClickFallsBackWithoutLosingTheOrder)
+{
+	using consecratedArmsPrayerChoice::RecipientClick;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto order = BattleAction::makeHeroCommand(ATTACKER, HeroCommand::CHARGE);
+	const auto request = choiceRequest(*battle(), order);
+	consecratedArmsPrayerChoice::Selection chosen(request.prayers, request.recipients);
+	ASSERT_TRUE(chosen.togglePrayer(Prayer::VICARIOUS_REDEMPTION));
+	const auto * victim = friendly.at(1);
+	const auto victimId = victim->unitId();
+	auto dead = victim->acquireState();
+	int64_t damage = dead->getAvailableHealth();
+	dead->damage(damage);
+	BattleUnitsChanged kill;
+	kill.battleID = BattleID(0);
+	kill.changedStacks.emplace_back(victimId, UnitChanges::EOperation::UPDATE);
+	kill.changedStacks.back().data = dead->save();
+	kill.changedStacks.back().healthDelta = -damage;
+	gameHandler->sendAndApply(kill);
+	ASSERT_FALSE(victim->alive());
+
+	auto action = order;
+	EXPECT_EQ(consecratedArmsPrayerChoice::resolveRecipientClick(chosen, victimId, choiceRequest(*battle(), order),
+		action), RecipientClick::REFUSE) << "The dead stack can no longer be chosen";
+	EXPECT_TRUE(action.prayerChoices.empty());
+	// Another live recipient still receives it.
+	ASSERT_EQ(consecratedArmsPrayerChoice::resolveRecipientClick(chosen, friendly.at(0)->unitId(),
+		choiceRequest(*battle(), order), action), RecipientClick::SEND_WITH_PRAYER);
+	ASSERT_TRUE(submit(action));
+	EXPECT_TRUE(activePrayer(*friendly.at(0), Prayer::VICARIOUS_REDEMPTION));
 }
 
 TEST_F(ConsecratedArmsChoiceTest, AntiphonalAppliesTwoDifferentChosenPrayers)
@@ -145,6 +218,21 @@ TEST_F(ConsecratedArmsChoiceTest, AiFallbackChoiceWithoutABoardKeepsOrdersLegal)
 	ASSERT_TRUE(submit(action));
 	EXPECT_EQ(prayerTotal(), 1);
 	EXPECT_TRUE(activePrayer(*battle()->battleGetUnitByID(action.prayerRecipient), Prayer::DIVINE_PURPOSE));
+}
+
+TEST_F(ConsecratedArmsChoiceTest, AiStillChoosesEveryPrayerNowThatSkippingIsLegal)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(MasteryLevel::EXPERT));
+	for(const auto * perk : {".enduringPrayer", ".sacredAccord", ".antiphonalPrayer"})
+		attackerSideHero->applyPerkSelection({SKILL, std::string(SKILL) + perk});
+	auto action = BattleAction::makeHeroCommand(ATTACKER, HeroCommand::CHARGE);
+	const auto request = choiceRequest(*battle(), action);
+	ASSERT_EQ(request.prayers, 2u);
+	consecratedArmsAI::applyChosenPrayers(*battle(), nullptr, {}, action);
+	EXPECT_EQ(action.prayerChoices.size(), request.prayers) << "The AI never skips an available prayer";
+	EXPECT_TRUE(std::ranges::binary_search(request.recipients, action.prayerRecipient));
+	ASSERT_TRUE(submit(action));
+	EXPECT_EQ(prayerTotal(), 2);
 }
 
 TEST_F(ConsecratedArmsChoiceTest, ChoiceRequestMatchesAuthorityAndPlayerPickerChoiceIsAccepted)
@@ -225,6 +313,15 @@ TEST(ConsecratedArmsChoiceSerialization, ChoiceFieldsRoundTripAndRefuseOlderForm
 	BattleAction decoded;
 	current.iser & decoded;
 	EXPECT_EQ(decoded, action);
+
+	// A skipped prayer is an Order without choice fields; it round-trips unchanged.
+	const auto skipped = BattleAction::makeHeroCommand(ATTACKER, HeroCommand::CHARGE);
+	CMemorySerializer skippedStream;
+	skippedStream.oser & skipped;
+	BattleAction skippedDecoded;
+	skippedDecoded.prayerChoices = {4};
+	skippedStream.iser & skippedDecoded;
+	EXPECT_EQ(skippedDecoded, skipped);
 
 	CMemorySerializer older;
 	older.oser.version = ESerializationVersion::NEW_HORIZONS_CONSECRATED_ARMS;

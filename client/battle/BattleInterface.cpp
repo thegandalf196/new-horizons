@@ -36,7 +36,7 @@
 #include "TemporalFieldWindow.h"
 
 #include "../CPlayerInterface.h"
-#include "ConsecratedArmsPrayerWindow.h"
+#include "ConsecratedArmsPrayerFlow.h"
 #include "../GameEngine.h"
 #include "../CServerHandler.h"
 #include "../GameInstance.h"

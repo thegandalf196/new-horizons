@@ -66,7 +66,6 @@ function(nh_enable_unity_build target)
 			battle/ShadowGiftWindow.cpp
 			battle/SelectiveDispelWindow.cpp
 			battle/TemporalFieldWindow.cpp
-			battle/ConsecratedArmsPrayerWindow.cpp
 			mainmenu/ReleaseUpdateTransport.cpp
 			windows/wiki/WikiHeroContent.cpp
 			windows/wiki/WikiArtifactContent.cpp)

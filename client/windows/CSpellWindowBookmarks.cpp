@@ -152,6 +152,36 @@ CSpellWindow::InteractiveArea::InteractiveArea(const Rect & bounds, const std::f
 	addUsedEvents(LCLICK | SHOW_POPUP | HOVER);
 }
 
+void CSpellWindow::selectSchool(SpellSchool school)
+{
+	if(prayerChoice || !vstd::contains(schoolNavigation, school))
+		return;
+	const bool returningFromPrayers = prayerCatalogueSelected;
+	prayerCatalogueSelected = false;
+	if(returningFromPrayers)
+		processSpells();
+	if(selectedTab != school)
+	{
+		const bool forward = usesLegacyTabs ? selectedTab < school
+			: std::find(schoolNavigation.begin(), schoolNavigation.end(), selectedTab) < std::find(schoolNavigation.begin(), schoolNavigation.end(), school);
+		if(forward)
+			turnPageLeft();
+		else
+			turnPageRight();
+		selectedTab = school;
+		setSchoolImages(selectedTab);
+		setCurrentPage(0);
+	}
+	else if(returningFromPrayers)
+		setCurrentPage(std::min(currentPage, std::max(0, pagesWithinCurrentTab() - 1)));
+	if(allSchoolsSelected)
+	{
+		allSchoolsSelected->setEnabled(selectedTab == SpellSchool::ANY);
+		allSchoolsInactive->setEnabled(selectedTab != SpellSchool::ANY);
+	}
+	computeSpellsPerArea();
+}
+
 void CSpellWindow::createPrayerCatalogue()
 {
 	if(!prayerTab)
@@ -205,4 +235,30 @@ void CSpellWindow::navigateSpellbookTabs(bool down)
 		return;
 	}
 	selectSchool(schoolNavigation[(index + (down ? 1 : -1) + count) % count]);
+}
+
+bool CSpellWindow::choosePrayers(SpellbookPrayerChoice choice)
+{
+	if(!prayerCatalogue || prayerChoice)
+		return false;
+	selectPrayers();
+	prayerChoice = std::make_shared<SpellbookPrayerChoice>(std::move(choice));
+	prayerCatalogue->enableChoice(*prayerChoice, [this](std::vector<consecratedArms::Prayer> prayers)
+	{
+		const auto finished = std::exchange(prayerChoice, nullptr);
+		closeSpellbook();
+		if(finished && finished->chosen)
+			finished->chosen(std::move(prayers));
+	});
+	return true;
+}
+
+void CSpellWindow::close()
+{
+	// Every way of closing the book without a finished choice skips the prayer,
+	// never the Order or spell it accompanies.
+	const auto unfinished = std::exchange(prayerChoice, nullptr);
+	CWindowObject::close();
+	if(unfinished && unfinished->skipped)
+		unfinished->skipped();
 }

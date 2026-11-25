@@ -5,6 +5,7 @@
 #include "../battle/CurrentFactionSkillPresentation.h"
 #include "../GameEngine.h"
 #include "../gui/WindowHandler.h"
+#include "../widgets/GraphicalPrimitiveCanvas.h"
 #include "../widgets/MiscWidgets.h"
 #include "../widgets/Images.h"
 #include "../widgets/TextControls.h"
@@ -47,6 +48,9 @@ class PrayerEntry final : public CIntObject
 	std::shared_ptr<CGStatusBar> status;
 	PlayerColor player;
 	std::vector<std::shared_ptr<CIntObject>> elements;
+	std::shared_ptr<TransparentFilledRectangle> chosenFrame;
+	/// Choice mode: left-click chooses this prayer instead of explaining it.
+	std::function<void()> choose;
 public:
 	PrayerEntry(Rect bounds, Prayer prayer, std::string explanation, std::string hint,
 		std::shared_ptr<CGStatusBar> status, PlayerColor player)
@@ -56,6 +60,10 @@ public:
 		pos.w = bounds.w;
 		pos.h = bounds.h;
 		OBJECT_CONSTRUCTION;
+		// Behind the entry: a chosen prayer stays marked while a second one is picked.
+		chosenFrame = std::make_shared<TransparentFilledRectangle>(Rect(-3, 1, bounds.w + 3, bounds.h),
+			ColorRGBA(214, 167, 74, 90), ColorRGBA(96, 32, 16, 255), 2);
+		chosenFrame->setEnabled(false);
 		auto image = std::make_shared<CPicture>(ImagePath::builtin(prayerImage(prayer)), 0, 4);
 		image->removeUsedEvents(LCLICK | SHOW_POPUP);
 		elements.push_back(std::move(image));
@@ -64,8 +72,26 @@ public:
 		elements.push_back(std::make_shared<CMultiLineLabel>(Rect(48, 34, bounds.w - 48, bounds.h - 34),
 			FONT_TINY, ETextAlignment::TOPLEFT, Colors::BLACK, prayerSummary(prayer)));
 	}
+	void enableChoice(std::function<void()> chooser, std::string hint)
+	{
+		choose = std::move(chooser);
+		hoverHint = std::move(hint);
+	}
+	void setChosen(bool chosen)
+	{
+		if(chosenFrame->isDisabled() != chosen)
+			return;
+		chosenFrame->setEnabled(chosen);
+		redraw();
+	}
 	void clickPressed(const Point &) override
 	{
+		if(choose)
+		{
+			const auto chooser = choose; // May close the book.
+			chooser();
+			return;
+		}
 		ENGINE->windows().pushWindow(std::make_shared<PrayerDetails>("{" + title + "}\n\n" + details, player));
 	}
 	void showPopupWindow(const Point &) override
@@ -82,7 +108,8 @@ public:
 std::string prayerDetails(Prayer prayer, const consecratedArms::Policy & policy, int faith)
 {
 	const std::string automatic = std::string(policy.chosen
-		? "When this hero issues an Order, choose which prayer it grants and which of its recipients receives it. "
+		? "When this hero issues an Order, this page opens: choose a prayer, then the stack among the Order's "
+			"recipients that receives it. Close the book to issue the Order without a prayer. "
 		: "Orders grant prayers automatically to their recipients. ")
 		+ "These entries provide information and cannot be cast from the spellbook.";
 	if(!policy.rank)
@@ -132,8 +159,8 @@ SpellbookPrayers::SpellbookPrayers(Rect bounds, int rightColumn, bool large,
 		ETextAlignment::CENTER, Colors::BLACK, "Faith " + std::to_string(faith)));
 	const std::string hint = policy.rank ? grantHint(policy)
 		: "Learn Consecrated Arms to grant prayers through Orders";
-	elements.push_back(std::make_shared<CMultiLineLabel>(Rect(rightColumn, 16, entryWidth, 46),
-		FONT_TINY, ETextAlignment::CENTER, Colors::BLACK, hint));
+	hintLabel = std::make_shared<CMultiLineLabel>(Rect(rightColumn, 16, entryWidth, 46),
+		FONT_TINY, ETextAlignment::CENTER, Colors::BLACK, hint);
 	const int rowHeight = large ? 115 : 86;
 	for(size_t index = 0; index < PRAYER_COUNT; ++index)
 	{
@@ -153,4 +180,48 @@ void SpellbookPrayers::filter(const std::string & search)
 {
 	for(size_t index = 0; index < entries.size(); ++index)
 		entries[index]->setEnabled(search.empty() || TextOperations::isFuzzyMatch(search, entryNames[index]));
+}
+
+void SpellbookPrayers::enableChoice(const SpellbookPrayerChoice & choice,
+	std::function<void(std::vector<consecratedArms::Prayer>)> complete)
+{
+	requiredChoices = std::clamp<size_t>(choice.required, 1, 2);
+	onComplete = std::move(complete);
+	chosenPrayers.clear();
+	const std::string usage = choice.spell ? "cast " : "issue ";
+	const std::string count = requiredChoices == 2 ? "two different prayers" : "a prayer";
+	hintLabel->setText("Choose " + count + " for " + choice.purpose + ", then its stack on the battlefield. "
+		"Close the book to " + usage + "it without a prayer.");
+	for(size_t index = 0; index < entries.size(); ++index)
+	{
+		const auto prayer = static_cast<Prayer>(index);
+		if(auto entry = std::dynamic_pointer_cast<PrayerEntry>(entries[index]))
+			entry->enableChoice([this, prayer] { toggle(prayer); },
+				"Choose " + std::string(consecratedArms::name(prayer)) + " for " + choice.purpose);
+	}
+	refreshChoice();
+}
+
+void SpellbookPrayers::toggle(Prayer prayer)
+{
+	if(!requiredChoices)
+		return;
+	const auto found = std::find(chosenPrayers.begin(), chosenPrayers.end(), prayer);
+	if(found != chosenPrayers.end())
+		chosenPrayers.erase(found); // Antiphonal Prayer: a second click takes it back.
+	else
+		chosenPrayers.push_back(prayer);
+	refreshChoice();
+	if(chosenPrayers.size() < requiredChoices || !onComplete)
+		return;
+	const auto complete = std::exchange(onComplete, nullptr); // Exactly once; closes the book.
+	complete(chosenPrayers);
+}
+
+void SpellbookPrayers::refreshChoice()
+{
+	for(size_t index = 0; index < entries.size(); ++index)
+		if(auto entry = std::dynamic_pointer_cast<PrayerEntry>(entries[index]))
+			entry->setChosen(std::find(chosenPrayers.begin(), chosenPrayers.end(), static_cast<Prayer>(index))
+				!= chosenPrayers.end());
 }

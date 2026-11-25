@@ -47,7 +47,9 @@ set(vcmiclientcommon_SRCS
 	battle/BattleHeroActionAvailability.cpp
 	battle/MagicArrowOverchargeWindow.cpp
 	battle/PurifyWindow.cpp
-	battle/ConsecratedArmsPrayerWindow.cpp
+	battle/ConsecratedArmsPrayerFlow.cpp
+	battle/ConsecratedArmsPrayerTargeting.cpp
+	battle/BattleHeroOrderTargeting.cpp
 	battle/DoubleCastCue.cpp
 	battle/ShadowGiftWindow.cpp
 	battle/SelectiveDispelWindow.cpp
@@ -386,7 +388,8 @@ set(vcmiclientcommon_HEADERS
 	battle/MagicArrowOverchargeWindow.h
 	battle/PurifyWindow.h
 	battle/ConsecratedArmsPrayerChoice.h
-	battle/ConsecratedArmsPrayerWindow.h
+	battle/ConsecratedArmsPrayerFlow.h
+	battle/ConsecratedArmsPrayerTargeting.h
 	battle/DoubleCastCue.h
 	battle/SelectiveDispelWindow.h
 	battle/TemporalFieldWindow.h

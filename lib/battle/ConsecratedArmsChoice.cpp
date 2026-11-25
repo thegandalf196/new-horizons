@@ -29,6 +29,10 @@ std::optional<std::string> chosenRefusal(const BattleAction & action,
 			return std::string("This Order has no eligible prayer recipient to choose");
 		return std::nullopt;
 	}
+	// The prayer is optional: an Order or Sermon spell without any choice
+	// fields skips it and is otherwise unchanged. Partial choices are refused.
+	if(!hasChoiceFields(action))
+		return std::nullopt;
 	if(action.prayerChoices.size() != required)
 		return std::string(required == 2
 			? "Antiphonal Prayer requires two different chosen prayers"

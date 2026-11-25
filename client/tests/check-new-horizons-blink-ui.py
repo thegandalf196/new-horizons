@@ -101,7 +101,7 @@ def main() -> None:
     submit = between(
         CONTROLLER,
         "bool BattleActionsController::submitHeroSpellAction(",
-        "namespace\n{\nconst char * heroOrderTargetName",
+        "bool BattleActionsController::landMinePlacementModeActive() const",
     )
     immediate = between(submit, "const auto preview = buildFriendlyFirePreview", "const auto snapshot = preview->snapshot")
     assert "if(!preview || (preview->recipients.empty() && preview->pandemoniumText.empty()))" in immediate

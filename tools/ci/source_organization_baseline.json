@@ -17727,12 +17727,6 @@
         }
       ]
     },
-    "client/battle/ConsecratedArmsPrayerWindow.h": {
-      "functions": [],
-      "rationale": "Declaration-only header: the window constructor gains a braced default argument for the Sermon sender (consecratedArmsPrayerUI::HeroSpellSender sender = {}) and a HeroSpellSender alias. No inline named function, lambda or other implementation body.",
-      "review": "CLAUDE-CASTLE-COMBAT-0931",
-      "sha256": "c4f86bbb045ef9e553ca0a214c3684363539c22d218780889e3730f85812101f"
-    },
     "tools/windows/Player-Launcher-Log.ps1": {
       "sha256": "50ab1a3437f08e588a21271be8aa2332d783f207568bb69575ba2d24af19fa87",
       "review": "CLAUDE-PRERELEASE-VERSIONS-20261123",
@@ -20332,18 +20326,18 @@
       "hybrid_predecessor_review": "IR-0911-BOUNDED-DIRECT-MAP-COMPOSITION-V3",
       "inherited_deferral": "Owner: ui_developer / gameplay_engineer. Bounded exception for Major System Rework: Leadership attribute restoration, square-root damage scaling, and hero UI panel integration. Hotspots remain subject to ongoing shrinking and modularization policy.\nExact source-list bound only. Before substantive build logic, extract a cohesive target configuration section. Verify source/link membership once and retain no duplicate translation units. Prior stricter obligations remain in inherited_deferral, where present.\n\nBefore introducing conditional build logic, extract a cohesive target helper; retain exact source/link membership, one registration per translation unit and existing inherited obligations.",
       "kind": "exception",
-      "lines": 792,
+      "lines": 795,
       "owner": "ui_developer",
       "previous_exact_review": "IR-PERFORMANCE-STEP2-BUILD-ORG-V1",
       "previous_proposal_review": "PROPOSED-EXACT-REGISTRY-SIX-SOURCE-20261103",
-      "previous_review": "CLAUDE-SYLVAN-AMBUSH-20261123",
+      "previous_review": "CLAUDE-SPELL-SCHOOL-BADGE-20261124",
       "prior_deferral": "Before substantive build-control growth, extract a cohesive target helper; retain all inherited deferrals and one registration per translation unit.",
       "proposal_predecessor_review": "PROPOSED-CLIENT225-BOUNDED-20261103",
-      "rationale": "Exact successor for 0.93.1 beta step 1 (Precise Casting resistance halving, core Stewardship and Lord of the Crypts, +3%/level specialty scaling, activation of unchanged extended ordinary specialties): bounded routing hooks and focused owners only. Existing extraction deferrals retained; no future growth credit. Hero class lean (Might/Magic) row: three source-list lines register the focused HeroClassLean.h, HeroClassLeanIndicator.h/.cpp owner. 781 to 784 lines; no future growth credit. Hero window stat row: Leadership, Mana, Regen, Movement and Vision merge into one row owned by the focused HeroWindowStatRow.cpp/HeroStatRowLayout.h (shared with the generated background); the class line and lean row move up 4 px; the skills panel moves up one row. 784 to 786 lines; no future growth credit. Town structure frame mode: two source-list lines register the focused TownStructureStateFrames.h/.cpp owner. 786 to 788 lines; no future growth credit. Exact successor for Sylvan Tactics 5 (Ambush): two source-list lines register the focused SylvanAmbushWaitButton.h/.cpp owner; the rules live in the focused NewHorizonsSylvanAmbush and SylvanAmbushState units. 788 to 790 lines; no future growth credit. Spell school badge: two source-list lines register the focused SpellSchoolBadge.h/.cpp owner. 790 to 792 lines; no future growth credit.",
-      "review": "CLAUDE-SPELL-SCHOOL-BADGE-20261124",
+      "rationale": "Exact successor for 0.93.1 beta step 1 (Precise Casting resistance halving, core Stewardship and Lord of the Crypts, +3%/level specialty scaling, activation of unchanged extended ordinary specialties): bounded routing hooks and focused owners only. Existing extraction deferrals retained; no future growth credit. Hero class lean (Might/Magic) row: three source-list lines register the focused HeroClassLean.h, HeroClassLeanIndicator.h/.cpp owner. 781 to 784 lines; no future growth credit. Hero window stat row: Leadership, Mana, Regen, Movement and Vision merge into one row owned by the focused HeroWindowStatRow.cpp/HeroStatRowLayout.h (shared with the generated background); the class line and lean row move up 4 px; the skills panel moves up one row. 784 to 786 lines; no future growth credit. Town structure frame mode: two source-list lines register the focused TownStructureStateFrames.h/.cpp owner. 786 to 788 lines; no future growth credit. Exact successor for Sylvan Tactics 5 (Ambush): two source-list lines register the focused SylvanAmbushWaitButton.h/.cpp owner; the rules live in the focused NewHorizonsSylvanAmbush and SylvanAmbushState units. 788 to 790 lines; no future growth credit. Spell school badge: two source-list lines register the focused SpellSchoolBadge.h/.cpp owner. 790 to 792 lines; no future growth credit. The Chosen Prayers modal source pair is replaced by the prayer flow, the battlefield prayer-recipient selector and the extracted Order targeting unit: exact source-list membership only, one registration per translation unit. Exact 792 to 795 lines; no future growth credit.",
+      "review": "PROPOSED-CLAUDE-ORDER-PRAYER-SPELLBOOK-FLOW-20261124",
       "review_scope": "Exact bounded source organization and failure-path review only; native/rendered acceptance and future growth unapproved.",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "f9db1f9071489e7e1502b4df7e9463644a1de6f6600ab881df80416ed55f8d2f",
+      "sha256": "c58ba8bdaabd52ea0b4c8624b11b74e9d2f8a58ca9f98444303e2d839d4a5d57",
       "inherited_deferral_step2": "Exact current size only. Retain all prior obligations below; further renderer/cache expansion must extract its specific presentation or map-cache policy behind a focused interface and verify clipping, zoom, wrap, retained ownership, both backends and guarded scene/quit behavior before accepting it."
     },
     "client/CPlayerInterface.cpp": {
@@ -20592,7 +20586,7 @@
     "client/battle/BattleActionsController.cpp": {
       "deferral": "Preserve ALL inherited deferrals and exact prior shrinking baselines. Further growth must extract a cohesive domain owner before expansion; no future growth credit or limit increase. Optional UI includes a pure ordered selection extraction into the existing picker/model; actual session/stale-choice/native-resolution journeys remain required, no gameplay mutation or new layout acceptance.\n\nNext bounded extraction (ui_developer; gameplay_engineer retains spell rules, spans [[1157, 1468], [2862, 2934], [3174, 3194]]): Before the next substantive Storm targeting change, extract that single ordered selection session and preview builder; reduce the controller to start/hover/select/undo/confirm/cancel routing, rather than moving all selectors into another giant file. Interface: Explicit battle/hero/player/round/casting-session identity plus ordered unit IDs; synchronous read-only mechanics queries return value previews and an optional complete BattleAction. Widget/statusbar/command dispatch remains with the current UI owner. Invariants: Ordered distinct IDs and complete-vector legality are re-read before submission; Friendly-fire confirmation and weak callback lifetime remain on the existing path; Cancel/reset invalidates preview and session before redraw or input reentry; Paint getters do not evaluate mechanics, draw authoritative RNG or mutate gameplay; Continuation/action-controller identity and shared command validation remain unchanged. Acceptance: Characterize moved/dead/stale targets, primary order, undo/cancel/reopen, Autofight/tactics/side changes and late callbacks; compare submitted action fields and preview order. Ratchet controller and affected functions down, inventory destination units, and later obtain guarded rendered input/transition evidence. Existing stronger deferrals remain.",
       "kind": "exception",
-      "lines": 5172,
+      "lines": 4846,
       "next_bounded_extraction": {
         "acceptance": "Characterize moved/dead/stale targets, primary order, undo/cancel/reopen, Autofight/tactics/side changes and late callbacks; compare submitted action fields and preview order. Ratchet controller and affected functions down, inventory destination units, and later obtain guarded rendered input/transition evidence. Existing stronger deferrals remain.",
         "interface": "Explicit battle/hero/player/round/casting-session identity plus ordered unit IDs; synchronous read-only mechanics queries return value previews and an optional complete BattleAction. Widget/statusbar/command dispatch remains with the current UI owner.",
@@ -20621,9 +20615,9 @@
         ]
       },
       "owner": "ui_developer",
-      "previous_review": "CLAUDE-CASTLE-COMBAT-0931",
-      "rationale": "Comment-only successor: one comment now names the native Phantom Army owner instead of the retired Lua script; physical line count, responsibilities and code unchanged. No future growth credit. Previous rationale: Exact successor for 0.93.1 Castle combat specialties (Volley Command, revised Aerial Supremacy, Benediction of Arms, Pariah, Frost Mantle, Quick Study, Sermon): bounded routing hooks into focused new owners only. Existing extraction deferrals retained; no future growth credit.",
-      "review": "CLAUDE-LUA-RETIRE-20261124",
+      "previous_review": "CLAUDE-LUA-RETIRE-20261124",
+      "rationale": "Comment-only successor: one comment now names the native Phantom Army owner instead of the retired Lua script; physical line count, responsibilities and code unchanged. No future growth credit. Previous rationale: Exact successor for 0.93.1 Castle combat specialties (Volley Command, revised Aerial Supremacy, Benediction of Arms, Pariah, Frost Mantle, Quick Study, Sermon): bounded routing hooks into focused new owners only. Existing extraction deferrals retained; no future growth credit. Extracted the complete targeted-Order battlefield selector (context, legal targets, status, begin/cancel, click) into BattleHeroOrderTargeting.cpp, which also routes the new Chosen Prayers recipient phase; two dead accessors removed. Right-click keeps one routing branch that skips the prayer and still issues the Order. Exact 5172 to 4846 lines; no future growth credit.",
+      "review": "PROPOSED-CLAUDE-ORDER-PRAYER-SPELLBOOK-FLOW-20261124",
       "review_history": [
         {
           "kind": "exception",
@@ -20636,7 +20630,7 @@
       ],
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "25ae7b0f8e0e6c8452f82f27a2cb3aac0cbc0983046b6211f2f296fead88db14"
+      "sha256": "fc0702b8a88d3d4b44adeea3d71681ca8407593fc2b43441aed2fa75138706c0"
     },
     "client/battle/BattleActionsController.cpp::StormOfDaggersSelectionPreview BattleActionsController::getStormOfDaggersSelectionPreview() const#1": {
       "kind": "legacy",
@@ -20774,14 +20768,14 @@
     "client/battle/BattleActionsController.h": {
       "deferral": "UI exact544 bound only; extract coherent controller responsibilities and reduce their header interface before substantive declaration or state growth. This renewal covers only six extracted private declarations at550 lines; further declaration/state growth must perform the inherited interface reduction.",
       "kind": "exception",
-      "lines": 549,
+      "lines": 552,
       "owner": "ui_developer",
-      "previous_review": "IR-RELEASE0882-CLIENT-STRUCTURE-20261103",
-      "rationale": "Exact 550 to 549-line scope. Client presentation/input routing integrates current spell/action receipts and validated captured views. Preserve command submission, session/teardown ownership, native layout and ordinary input behavior; no direct gameplay mutation is introduced.",
-      "review": "IR-NH092-ORG-3E82D142-20261116",
+      "previous_review": "IR-NH092-ORG-3E82D142-20261116",
+      "rationale": "Exact 550 to 549-line scope. Client presentation/input routing integrates current spell/action receipts and validated captured views. Preserve command submission, session/teardown ownership, native layout and ordinary input behavior; no direct gameplay mutation is introduced. One forward declaration, one owned prayer-recipient selector member and one begin method for the Chosen Prayers recipient phase; two unused accessors (heroOrderTargetingCommand, heroOrderTargetingFirstSelected) removed. Exact 549 to 552 lines; no future growth credit.",
+      "review": "PROPOSED-CLAUDE-ORDER-PRAYER-SPELLBOOK-FLOW-20261124",
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "711467080737c3d2d65e1d9208305089e6d7e0a0ee79bcb3e53ce362ca4ee3bf"
+      "sha256": "c159322fe3a004af15771d9b94be9ef3671efd8f5b162f03811dd8a2f10517c1"
     },
     "client/battle/BattleAnimationClasses.cpp": {
       "deferral": "Owner: ui_developer. Split cohesive melee and movement animation implementations behind the existing class interfaces. Preserve default-origin behavior, event ordering, sound and borrowed-stack ownership; characterize null/zero/nonzero visual origin, both facings/widths and lethal reflection, then verify rendered flight/restart/quit cleanup before further substantive growth.\n\nNext bounded extraction (ui_developer with engine_engineer reviewing lifetime integration, spans [[401, 653]]): Extract the complete movement/start/end/reverse family behind its existing class interfaces on the next affected change, including rotateStack's narrow facing boundary. Interface: Existing BattleStackAnimation access to borrowed stack, shared CreatureAnimation, facing/position queries and frame-advance interval; scheduler ownership remains unchanged. Invariants: Visual origin is presentation-only; no logical position mutation; Sprite and position share effective elapsed time and per-hex residual; Missing frame/dead stack self-completion and pending raw-pointer nulling remain intact; Move-loop sound stops on destruction; cursor restoration and facing order are retained; HIT and hero/effect barriers keep their explicit order. Acceptance: Retain zero/nonzero origin, both facings/widths, missing frames, lethal reflection and phase-start characterization; obtain later rendered movement/restart/Quit evidence. Reduce source concentration without transferring the entire file to a helper.",
@@ -20868,9 +20862,9 @@
         ]
       },
       "owner": "ui_developer",
-      "previous_review": "IR-NH0923-OVERFLOW-LIFETIME-ESTATE-SOURCE-20261118",
-      "rationale": "Exact successor for 0.93.1 Castle combat specialties (Volley Command, revised Aerial Supremacy, Benediction of Arms, Pariah, Frost Mantle, Quick Study, Sermon): bounded routing hooks into focused new owners only. Existing extraction deferrals retained; no future growth credit.",
-      "review": "CLAUDE-CASTLE-COMBAT-0931",
+      "previous_review": "CLAUDE-CASTLE-COMBAT-0931",
+      "rationale": "Exact successor for 0.93.1 Castle combat specialties (Volley Command, revised Aerial Supremacy, Benediction of Arms, Pariah, Frost Mantle, Quick Study, Sermon): bounded routing hooks into focused new owners only. Existing extraction deferrals retained; no future growth credit. Include renamed from the removed prayer window to the prayer flow header; no logic change. Exact 1718 to 1718 lines; no future growth credit.",
+      "review": "PROPOSED-CLAUDE-ORDER-PRAYER-SPELLBOOK-FLOW-20261124",
       "review_history": [
         {
           "kind": "exception",
@@ -20882,8 +20876,8 @@
         }
       ],
       "review_scope": "Exact source organization and bounded state/lifetime review only. No compile, rendered acceptance, publication or future growth allowance.",
-      "review_status": "INDEPENDENT_SOURCE_REVIEW_NATIVE_RENDERED_UNRUN",
-      "sha256": "68b4c2e69ce5da2c7094223c7b2262b9dc0821d721eacd35987329d5d66ab61e"
+      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
+      "sha256": "029f13a240159b1eee2042106a96fa73fe0eeb09eb2f8c83b551258d62abba58"
     },
     "client/battle/BattleInterface.cpp::BattleInterface::installPurifyUI()::[this](const BattleAction & pending, const BattleHex & center)#1": {
       "deferral": "Preserve ALL inherited deferrals and exact prior shrinking baselines. Further growth must extract a cohesive domain owner before expansion; no future growth credit or limit increase. Optional UI includes a pure ordered selection extraction into the existing picker/model; actual session/stale-choice/native-resolution journeys remain required, no gameplay mutation or new layout acceptance.\n\nNext bounded extraction (ui_developer, spans [[347, 388]]): Extract pure eligible-stack to PurifyStackChoices/context-value mapping within the focused picker adapter before adding another effect choice. Interface: Ordered shared eligible records plus visible names and maximum-choice/automatic-clear facts return owned display rows; no retained CStack pointer, callback or widget in the mapping result. Invariants: Automatic poison/grave-dust/stun/cripple clearing stays distinct from selected spell groups; Shared eligibleStacks and validatedPurifyChoices remain authoritative query helpers; Confirm rechecks session, hero, side, live eligibility and mechanics before one submission; Cancel performs no resource/effect mutation. Acceptance: Compare row order/names/counts and empty/automatic-only cases; stale session or choices must preserve current rejection/submission behavior. Reduce this lambda and C07 without duplicating the nested callback inventory.",
@@ -22590,16 +22584,16 @@
     "client/windows/CSpellWindow.cpp": {
       "deferral": "Owner: UI developer. Interface/acceptance: Extract cost-stage label formatting to a focused formatter; test every existing stage and exact breakdown ordering/text, with native spellbook rendering before acceptance. Preserve inherited spellbook state/casting/help/resize requirements. Next substantive selection change extracts context/admission stages with current-only cost/target/action tests; actual current-policy spellbook click/render evidence remains separately recorded.",
       "kind": "exception",
-      "lines": 949,
+      "lines": 923,
       "owner": "ui_developer",
       "previous_exact_review": "IR-SPELLBOOK-FULL75-V21-EXACT-SOURCE-20261030",
-      "previous_review": "CLAUDE-0925-DOUBLECAST-CHOSEN-PRAYERS-PHASE23-20261120",
+      "previous_review": "CLAUDE-CASTLE-COMBAT-0931",
       "proposal_predecessor_review": "PROPOSED-CLIENT225-BOUNDED-20261103",
-      "rationale": "Exact successor for 0.93.1 Castle combat specialties (Volley Command, revised Aerial Supremacy, Benediction of Arms, Pariah, Frost Mantle, Quick Study, Sermon): bounded routing hooks into focused new owners only. Existing extraction deferrals retained; no future growth credit.",
-      "review": "CLAUDE-CASTLE-COMBAT-0931",
+      "rationale": "Exact successor for 0.93.1 Castle combat specialties (Volley Command, revised Aerial Supremacy, Benediction of Arms, Pariah, Frost Mantle, Quick Study, Sermon): bounded routing hooks into focused new owners only. Existing extraction deferrals retained; no future growth credit. selectSchool moved to the bookmark navigation unit (CSpellWindowBookmarks.cpp) with a guard that keeps a prayer-choosing book on its Prayers bookmark; the combat/adventure toggles gain the same guard. Exact 949 to 923 lines; no future growth credit.",
+      "review": "PROPOSED-CLAUDE-ORDER-PRAYER-SPELLBOOK-FLOW-20261124",
       "review_scope": "Exact source organization and bounded correctness review only; no compilation, rendered acceptance or future growth approval.",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_REVIEW_NATIVE_UNRUN",
-      "sha256": "b931bd1f83b8d625a51d24cb3bb8b8aea62736c1af098ae86eef482c286b520d"
+      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
+      "sha256": "3fd000339b8dc8cf2a34e3e604e330214b4473484918dc78cdb1f3194eaa4b1b"
     },
     "client/windows/CSpellWindow.cpp::CSpellWindow::CSpellWindow(const CGHeroInstance * _myHero, CPlayerInterface * _myInt, bool openOnBattleSpells, const std::function<void(SpellID)> & onSpellSelect): CWindowObject(PLAYER_COLORED | (settings[\"gameTweaks\"][\"enableLargeSpellbook\"].Bool() ? BORDERED : 0)), battleSpellsOnly(openOnBattleSpells), selectedTab(SpellSchool::ANY), currentPage(0), myHero(_myHero), myInt(_myInt), openOnBattleSpells(openOnBattleSpells), onSpellSelect(onSpellSelect), isBigSpellbook(settings[\"gameTweaks\"][\"enableLargeSpellbook\"].Bool()), spellsPerPage(24), offL(-11), offR(195), offRM(110), offT(-37), offB(56)#1": {
       "kind": "legacy",

@@ -82,7 +82,7 @@ void BattleActionProcessor::grantConsecratedPrayers(const CBattleInfoCallback & 
 	const auto recipients = heroCommands::recipientIds(battle, side, order);
 	if(policy.chosen)
 	{
-		// Version 4: admitted before StartAction, so no draw. Empty only without a recipient.
+		// Version 4: admitted before StartAction, so no draw. Empty without a recipient or when the prayer was skipped.
 		const auto prayers = consecratedArms::chosenPrayerList(action.prayerChoices);
 		if(prayers.empty())
 		{

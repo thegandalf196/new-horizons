@@ -21,6 +21,9 @@ action = (ACTION.read_text(encoding="utf-8")
           + (ROOT / "client/battle/BattleHeroActionAvailability.cpp").read_text(encoding="utf-8")
           + (ROOT / "client/battle/NewHorizonsOrderPresentation.h").read_text(encoding="utf-8"))
 controller = CONTROLLER.read_text(encoding="utf-8")
+order_targeting_source = (ROOT / "client/battle/BattleHeroOrderTargeting.cpp").read_text(encoding="utf-8")
+controller += order_targeting_source
+prayer_flow = (ROOT / "client/battle/ConsecratedArmsPrayerFlow.cpp").read_text(encoding="utf-8")
 creature_window = CREATURE_WINDOW.read_text(encoding="utf-8") + (ROOT / "client/windows/CreatureLeadershipPresentation.cpp").read_text(encoding="utf-8") + (ROOT / "client/windows/NewHorizonsOrderIndicators.h").read_text(encoding="utf-8")
 hero_window = HERO_WINDOW.read_text(encoding="utf-8")
 hero_window += (ROOT / "client/windows/CHeroWindowLayout.cpp").read_text(encoding="utf-8")
@@ -62,7 +65,11 @@ assert "beginHeroOrderTargeting(command)" in action
 assert "BattleAction::makePairedHeroCommand(side, command" in controller
 assert "BattleAction::makeTargetedHeroCommand(side, command" in controller
 assert "consecratedArmsPrayerUI::submitOrder(CPlayerInterface::battleInt, action)" in controller
-assert "battleMakeSpellAction(owner->getBattleID(), order)" in (ROOT / "client/battle/ConsecratedArmsPrayerWindow.cpp").read_text(encoding="utf-8")
+# Chosen Prayers: the Order is sent through the ordinary hero-action request,
+# with or without the optional prayer; the separate prayer window is gone.
+assert "battleMakeSpellAction(battle->getBattleID(), action)" in prayer_flow
+assert "prayerFlowSkip(*pending)" in prayer_flow
+assert not (ROOT / "client/battle/ConsecratedArmsPrayerWindow.cpp").exists()
 assert "battlePrepareHeroOrderState" in controller
 assert "battlePrepareFocusFireState" in controller
 assert "isCanonicalRules" in controller
@@ -70,9 +77,7 @@ assert "heroOrderTargetingModeActive" in controller
 assert "getHeroOrderTargetingLegalHexes" in (ROOT / "client/battle/BattleFieldController.cpp").read_text(encoding="utf-8")
 # Orders must ask the shared rules for targets. Other controller modes, such as
 # Demonic Gating placement, legitimately use distance for their previews.
-order_targeting = controller.split("bool BattleActionsController::heroOrderTargetingContextIsCurrent()", 1)[1].split(
-    "bool BattleActionsController::landMinePlacementModeActive()", 1
-)[0]
+order_targeting = order_targeting_source.split("bool BattleActionsController::heroOrderTargetingContextIsCurrent()", 1)[1]
 assert "BattleHex::getDistance" not in order_targeting
 assert "adjacent(*" not in order_targeting
 assert "visibleCommandDisplays" in action

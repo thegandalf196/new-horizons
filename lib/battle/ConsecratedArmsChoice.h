@@ -12,9 +12,10 @@ class BattleAction;
 class CBattleInfoCallback;
 
 /// Consecrated Arms 4 (Chosen Prayers, captured divineMandatePolicy 4): the
-/// commander chooses one prayer (two different ones with Antiphonal Prayer) and
-/// one recipient among the Order's recipients. Version 3 keeps its random draw
-/// and must carry no choice fields.
+/// commander may choose one prayer (two different ones with Antiphonal Prayer)
+/// and one recipient among the Order's recipients, or skip the prayer by
+/// sending no choice fields. Version 3 keeps its random draw and must carry no
+/// choice fields.
 namespace consecratedArms
 {
 /// Order recipients that can actually hold a prayer, sorted and unique.
@@ -36,7 +37,8 @@ struct DLL_LINKAGE ChoiceRequest
 };
 DLL_LINKAGE ChoiceRequest choiceRequest(const CBattleInfoCallback & battle, const BattleAction & action);
 /// Authority admission before StartAction. `prepared` is the prepared Order
-/// snapshot (empty for non-Order actions or non-canonical rules).
+/// snapshot (empty for non-Order actions or non-canonical rules). An action
+/// without choice fields is admitted: its prayer was skipped.
 DLL_LINKAGE std::optional<std::string> choiceRefusal(const CBattleInfoCallback & battle,
 	const BattleAction & action, const std::optional<HeroOrderState> & prepared);
 }

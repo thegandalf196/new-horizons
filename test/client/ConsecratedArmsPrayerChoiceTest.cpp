@@ -21,13 +21,11 @@ TEST(ConsecratedArmsPrayerChoice, SinglePrayerIsARadioChoiceAndRecipientFollowsI
 {
 	Selection selection(1, {3, 7, 9});
 	EXPECT_FALSE(selection.chosenRecipient());
-	EXPECT_EQ(consecratedArmsPrayerChoice::promptText(selection), "Choose one prayer.");
 	EXPECT_FALSE(selection.chooseRecipient(7)); // Prayer first, then recipient.
 	ASSERT_TRUE(selection.togglePrayer(Prayer::DIVINE_PURPOSE));
 	ASSERT_TRUE(selection.togglePrayer(Prayer::UNBROKEN_VOW));
 	EXPECT_EQ(selection.chosenPrayers(), std::vector<Prayer>{Prayer::UNBROKEN_VOW});
 	EXPECT_FALSE(selection.complete());
-	EXPECT_EQ(consecratedArmsPrayerChoice::promptText(selection), "Choose the stack that receives the prayer.");
 	EXPECT_FALSE(selection.chooseRecipient(8)); // Not an Order recipient.
 	ASSERT_TRUE(selection.chooseRecipient(7));
 	EXPECT_TRUE(selection.complete());
@@ -42,7 +40,6 @@ TEST(ConsecratedArmsPrayerChoice, AntiphonalNeedsTwoDifferentPrayersAndBlocksATh
 {
 	Selection selection(2, {4, 5});
 	ASSERT_TRUE(selection.togglePrayer(Prayer::STEADFAST_SOUL));
-	EXPECT_EQ(consecratedArmsPrayerChoice::promptText(selection), "Choose one more prayer.");
 	ASSERT_TRUE(selection.togglePrayer(Prayer::HEAVENS_JUDGMENT));
 	EXPECT_TRUE(selection.prayersComplete());
 	EXPECT_FALSE(selection.canToggle(Prayer::DIVINE_PURPOSE));
@@ -50,9 +47,7 @@ TEST(ConsecratedArmsPrayerChoice, AntiphonalNeedsTwoDifferentPrayersAndBlocksATh
 	EXPECT_TRUE(selection.togglePrayer(Prayer::STEADFAST_SOUL)); // Deselect frees a slot.
 	EXPECT_FALSE(selection.prayersComplete());
 	ASSERT_TRUE(selection.togglePrayer(Prayer::DAUNTLESS_ASSAULT));
-	EXPECT_EQ(consecratedArmsPrayerChoice::promptText(selection), "Choose the stack that receives the prayers.");
 	ASSERT_TRUE(selection.chooseRecipient(5));
-	EXPECT_EQ(consecratedArmsPrayerChoice::promptText(selection), "Ready. Confirm to issue the Order.");
 	BattleAction action = BattleAction::makeHeroCommand(BattleSide::ATTACKER, HeroCommand::CHARGE);
 	ASSERT_TRUE(selection.apply(action, request(2, {4, 5})));
 	EXPECT_EQ(action.prayerChoices, (std::vector<uint8_t>{static_cast<uint8_t>(Prayer::HEAVENS_JUDGMENT),
@@ -71,6 +66,67 @@ TEST(ConsecratedArmsPrayerChoice, SingleRecipientIsPreselectedAndStaleRequestsAr
 	EXPECT_FALSE(selection.apply(action, request(2, {11})));
 	EXPECT_TRUE(action.prayerChoices.empty());
 	EXPECT_EQ(action.prayerRecipient, BattleAction::NO_PRAYER_RECIPIENT);
+}
+
+TEST(ConsecratedArmsPrayerChoice, SkippedPrayerSendsThePlainAction)
+{
+	BattleAction action = BattleAction::makeHeroCommand(BattleSide::ATTACKER, HeroCommand::RIPOSTE);
+	action.prayerChoices = {3};
+	action.prayerRecipient = 9;
+	const auto plain = consecratedArmsPrayerChoice::withoutPrayer(action);
+	EXPECT_TRUE(plain.prayerChoices.empty());
+	EXPECT_EQ(plain.prayerRecipient, BattleAction::NO_PRAYER_RECIPIENT);
+	EXPECT_EQ(plain.actionType, EActionType::HERO_COMMAND);
+	EXPECT_EQ(plain.command, HeroCommand::RIPOSTE);
+}
+
+TEST(ConsecratedArmsPrayerChoice, RecipientClickGrantsOnlyToAFreshlyEligibleStack)
+{
+	using consecratedArmsPrayerChoice::RecipientClick;
+	Selection chosen(1, {3, 7, 9});
+	ASSERT_TRUE(chosen.togglePrayer(Prayer::HEAVENS_JUDGMENT));
+	const auto plain = BattleAction::makeHeroCommand(BattleSide::ATTACKER, HeroCommand::CHARGE);
+
+	auto action = plain;
+	EXPECT_EQ(consecratedArmsPrayerChoice::resolveRecipientClick(chosen, 8, request(1, {3, 7, 9}), action),
+		RecipientClick::REFUSE); // Not a recipient of the Order.
+	EXPECT_TRUE(action.prayerChoices.empty());
+	EXPECT_EQ(consecratedArmsPrayerChoice::resolveRecipientClick(chosen, 7, request(1, {3, 9}), action),
+		RecipientClick::REFUSE); // Died or left since the prayer was chosen.
+	EXPECT_EQ(action.prayerRecipient, BattleAction::NO_PRAYER_RECIPIENT);
+	auto summoned = plain;
+	EXPECT_EQ(consecratedArmsPrayerChoice::resolveRecipientClick(chosen, 12, request(1, {3, 12}), summoned),
+		RecipientClick::SEND_WITH_PRAYER); // Became a recipient since then.
+	EXPECT_EQ(summoned.prayerRecipient, 12u);
+	ASSERT_EQ(consecratedArmsPrayerChoice::resolveRecipientClick(chosen, 9, request(1, {3, 7, 9}), action),
+		RecipientClick::SEND_WITH_PRAYER);
+	EXPECT_EQ(action.prayerChoices, std::vector<uint8_t>{static_cast<uint8_t>(Prayer::HEAVENS_JUDGMENT)});
+	EXPECT_EQ(action.prayerRecipient, 9u);
+
+	// Nobody can receive it any more, or the Order changed: the Order goes ahead without it.
+	action = plain;
+	EXPECT_EQ(consecratedArmsPrayerChoice::resolveRecipientClick(chosen, 7, request(1, {}), action),
+		RecipientClick::SEND_WITHOUT_PRAYER);
+	EXPECT_EQ(consecratedArmsPrayerChoice::resolveRecipientClick(chosen, 7, request(0, {}), action),
+		RecipientClick::SEND_WITHOUT_PRAYER);
+	EXPECT_TRUE(action.prayerChoices.empty());
+	EXPECT_EQ(action.prayerRecipient, BattleAction::NO_PRAYER_RECIPIENT);
+}
+
+TEST(ConsecratedArmsPrayerChoice, AntiphonalRecipientClickNeedsBothPrayers)
+{
+	using consecratedArmsPrayerChoice::RecipientClick;
+	Selection chosen(2, {4, 5});
+	ASSERT_TRUE(chosen.togglePrayer(Prayer::DIVINE_PURPOSE));
+	auto action = BattleAction::makeHeroCommand(BattleSide::DEFENDER, HeroCommand::BRACE);
+	EXPECT_EQ(consecratedArmsPrayerChoice::resolveRecipientClick(chosen, 5, request(2, {4, 5}), action),
+		RecipientClick::SEND_WITHOUT_PRAYER);
+	ASSERT_TRUE(chosen.togglePrayer(Prayer::STEADFAST_SOUL));
+	ASSERT_EQ(consecratedArmsPrayerChoice::resolveRecipientClick(chosen, 5, request(2, {4, 5}), action),
+		RecipientClick::SEND_WITH_PRAYER);
+	EXPECT_EQ(action.prayerChoices, (std::vector<uint8_t>{static_cast<uint8_t>(Prayer::DIVINE_PURPOSE),
+		static_cast<uint8_t>(Prayer::STEADFAST_SOUL)}));
+	EXPECT_EQ(action.prayerRecipient, 5u);
 }
 
 TEST(ConsecratedArmsPrayerChoice, SkillReadoutDescribesChosenOrRandomPrayersByCapturedPolicy)

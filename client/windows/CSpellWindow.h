@@ -32,6 +32,7 @@ class CButton;
 class VideoWidgetOnce;
 class LRClickableAreaWText;
 class SpellbookPrayers;
+struct SpellbookPrayerChoice;
 
 /// The spell window
 class CSpellWindow : public CWindowObject, public IVideoHolder
@@ -100,6 +101,8 @@ class CSpellWindow : public CWindowObject, public IVideoHolder
 	std::shared_ptr<CAnimImage> prayerTab;
 	std::shared_ptr<SpellbookPrayers> prayerCatalogue;
 	bool prayerCatalogueSelected = false;
+	/// Choosing a committed Order's prayer: the book is locked to the Prayers bookmark.
+	std::shared_ptr<SpellbookPrayerChoice> prayerChoice;
 
 	std::array<std::shared_ptr<SpellArea>, 24> spellAreas;
 	std::shared_ptr<CLabel> mana;
@@ -188,6 +191,11 @@ class CSpellWindow : public CWindowObject, public IVideoHolder
 public:
 	CSpellWindow(const CGHeroInstance * _myHero, CPlayerInterface * _myInt, bool openOnBattleSpells = true, const std::function<void(SpellID)> & onSpellSelect = nullptr);
 	~CSpellWindow();
+
+	/// Opens on the Prayers bookmark to choose a Chosen Prayers Order's (or
+	/// Sermon's) prayer. False when this hero's book has no Prayers bookmark.
+	bool choosePrayers(SpellbookPrayerChoice choice);
+	void close() override;
 
 	void fexitb();
 	void closeForSpellSelection();

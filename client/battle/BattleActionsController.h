@@ -35,6 +35,7 @@ enum class Mode;
 }
 
 class BattleInterface;
+class PrayerRecipientTargeting;
 
 struct StormOfDaggersTargetPreview
 {
@@ -245,6 +246,8 @@ class BattleActionsController
 	/// again for every hover/click and the submitted action contains only the
 	/// selected unit identities.
 	std::optional<HeroCommand> selectedHeroOrderCommand;
+	/// The same selector choosing the optional prayer recipient of a Chosen Prayers Order or Sermon.
+	std::shared_ptr<PrayerRecipientTargeting> prayerRecipientTargeting;
 	std::optional<uint32_t> heroOrderTargetingFirst;
 	BattleID heroOrderTargetingBattleID;
 	BattleSide heroOrderTargetingSide = BattleSide::NONE;
@@ -422,9 +425,9 @@ public:
 	/// Start/cancel the direct battlefield selector used by targeted Orders.
 	/// No battle state is changed until the callback receives the final action.
 	bool beginHeroOrderTargeting(HeroCommand command);
+	/// Prayer recipient phase: cancelling it still sends the Order or spell, without the prayer.
+	bool beginPrayerRecipientTargeting(std::shared_ptr<PrayerRecipientTargeting> targeting);
 	bool heroOrderTargetingModeActive() const;
-	HeroCommand heroOrderTargetingCommand() const;
-	bool heroOrderTargetingFirstSelected() const;
 	BattleHexArray getHeroOrderTargetingLegalHexes() const;
 	BattleHexArray getHeroOrderTargetingSelectedHexes() const;
 	std::optional<newHorizonsProtectLink::Link> getProposedProtectLink(const BattleHex & hoveredHex) const;

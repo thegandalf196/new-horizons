@@ -14,7 +14,7 @@
 #include "CureAfflictionPresenter.h"
 
 #include "../CPlayerInterface.h"
-#include "ConsecratedArmsPrayerWindow.h"
+#include "ConsecratedArmsPrayerFlow.h"
 #include "../GameEngine.h"
 #include "../gui/WindowHandler.h"
 #include "../windows/GUIClasses.h"

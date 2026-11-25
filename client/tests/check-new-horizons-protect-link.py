@@ -6,6 +6,8 @@ ROOT = Path(__file__).resolve().parents[2]
 helper = (ROOT / "client/battle/NewHorizonsProtectLink.h").read_text()
 renderer = (ROOT / "client/battle/BattleFieldController.cpp").read_text()
 actions = (ROOT / "client/battle/BattleActionsController.cpp").read_text()
+# Order (and Chosen Prayers recipient) targeting lives in its own controller file.
+actions += (ROOT / "client/battle/BattleHeroOrderTargeting.cpp").read_text()
 
 
 def section(source, start, end):

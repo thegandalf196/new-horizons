@@ -10,7 +10,7 @@
 #include "BattleInterface.h"
 #include "BattleWindow.h"
 #include "BattleActionsController.h"
-#include "ConsecratedArmsPrayerWindow.h"
+#include "ConsecratedArmsPrayerFlow.h"
 #include "NewHorizonsBattleStatus.h"
 #include "NewHorizonsOrderPresentation.h"
 #include "../CPlayerInterface.h"

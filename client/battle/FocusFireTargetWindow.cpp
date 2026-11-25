@@ -5,7 +5,7 @@
 #include "StdInc.h"
 #include "FocusFireTargetWindow.h"
 #include "BattleHeroActionWindow.h"
-#include "ConsecratedArmsPrayerWindow.h"
+#include "ConsecratedArmsPrayerFlow.h"
 #include "../GameEngine.h"
 #include "../gui/WindowHandler.h"
 #include "BattleInterface.h"
