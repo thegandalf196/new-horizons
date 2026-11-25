@@ -28965,14 +28965,14 @@
     "server/battles/BattleProcessor.cpp": {
       "deferral": "Owner: engine_engineer. Before further continuation routing changes, extract the canonical continuation completion/admission predicate at this same existing processor boundary. Preserve NO_ACTION/decline, effective accepted action, activation-bonus expiry order and end-of-action dispatch; require existing pending/decline native coverage. Exact652 one-expression exception only, no future growth.",
       "kind": "exception",
-      "lines": 646,
+      "lines": 631,
       "owner": "engine_engineer",
-      "previous_review": "IR-TAMIKA-FINAL-ORDERED-NATIVE-ACTIVATION-20261029",
-      "rationale": "Exact645 to646 line shared-clock integration scope. Narrow reviewed native clock/expiry/Bind predicate extraction delegates to shared TimedEffectValueTransitions; preserves original ordering/current gates and removes duplicated predicates. Global BattleInfo activation uses explicit battle:: namespace. No new gameplay behavior or future growth allowance.",
-      "review": "IR-NH092-ORG-35804FB8-20261116",
-      "review_scope": "Only the seven exact units after-records enumerated in DELTA.json. Organization metadata source hash/count/span approval only; no runtime, broad programme, full gate, future growth, publication or merge approval.",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
-      "sha256": "8319294150a605ca59c95d7f92e1bfc73a213ad33429f54638eb8099a82b037a"
+      "previous_review": "IR-NH092-ORG-35804FB8-20261116",
+      "rationale": "Exact 646 to 631 physical-line reduction: the rejected-action re-prompt moves to the focused BattleRejectedActionRecovery.cpp, which also stops re-prompting when the rejected unit action answered an earlier prompt. No responsibility added here and no future growth credit. Previous rationale: Exact645 to646 line shared-clock integration scope. Narrow reviewed native clock/expiry/Bind predicate extraction delegates to shared TimedEffectValueTransitions; preserves original ordering/current gates and removes duplicated predicates. Global BattleInfo activation uses explicit battle:: namespace. No new gameplay behavior or future growth allowance.",
+      "review": "CLAUDE-REJECTED-PROMPT-20261125",
+      "review_scope": "Exact bounded source organization only; runtime acceptance and future growth unapproved.",
+      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
+      "sha256": "651c082ef464e966ae9dd50494cfaf67242cfc82758107c7c1b8f73d7c67b29c"
     },
     "server/battles/BattleProcessor.cpp::BattleID BattleProcessor::setupBattle(int3 tile, BattleSideArray<const CArmedInstance *> armies, BattleSideArray<const CGHeroInstance *> heroes, const BattleLayout & layout, const CGTownInstance *town, std::optional<BattleSideArray<int32_t>> preservedFirstRoundMoraleModifiers, std::optional<newHorizonsTraining::Batch> preservedTraining)#1": {
       "kind": "legacy",

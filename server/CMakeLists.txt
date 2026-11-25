@@ -63,6 +63,7 @@ set(vcmiservercommon_SRCS
 		battles/NewHorizonsLivingInferno.cpp
 		battles/BattleFlowProcessor.cpp
 		battles/BattleProcessor.cpp
+		battles/BattleRejectedActionRecovery.cpp
 		battles/BattleWisdomRecovery.cpp
 	battles/BattleResultProcessor.cpp
 		battles/NewHorizonsWellspringRecovery.cpp

@@ -459,22 +459,7 @@ bool BattleProcessor::makePlayerBattleAction(const BattleID & battleID, PlayerCo
 		// A rejected action never crossed the authoritative action boundary. In
 		// particular, do not let a failed hero spell release Time Stop or let a
 		// failed stopped-stack request advance the queue a second time.
-		// BattleInterface relinquishes its local active stack before sending the
-		// request. Return control explicitly, without advancing the queue or
-		// replaying any activation lifecycle on server or clients.
-		const auto * currentBattle = gameHandler->gameState().getBattle(battleID);
-		const auto * recoveryStack = currentBattle && activeStackID >= 0
-			? currentBattle->battleGetStackByID(static_cast<uint32_t>(activeStackID), false) : nullptr;
-		if(currentBattle && !resultProcessor->battleIsEnding(*currentBattle)
-			&& recoveryStack && recoveryStack->alive()
-			&& currentBattle->getActiveStackID() == activeStackID)
-		{
-			BattleSetActiveStack recovery;
-			recovery.battleID = battleID;
-			recovery.stack = static_cast<uint32_t>(activeStackID);
-			recovery.reason = BattleUnitTurnReason::ACTION_REJECTED;
-			gameHandler->sendAndApply(recovery);
-		}
+		returnControlAfterRejectedAction(battleID, activeStackID, ba);
 		return false;
 	}
 	const auto * updatedBattle = gameHandler->gameState().getBattle(battleID);

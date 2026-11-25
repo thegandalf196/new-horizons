@@ -48,6 +48,9 @@ read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
     can get it. No hero starts with it.
   - The combat log says how much Warcasting strengthened each Order. The AI
     counts the bonus when it picks Orders.
+- Fixed the battle AI falling one move behind after one of its moves was
+  refused: for the rest of that combat it worked out every move twice and had
+  every other one refused, which slowed quick combat.
 
 ## 0.94.0-beta.3
 

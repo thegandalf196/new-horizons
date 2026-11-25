@@ -8,6 +8,7 @@
 #include "../../../lib/CRandomGenerator.h"
 
 #include <array>
+#include <deque>
 #include <mutex>
 #include "../../../server/queries/BattleQueries.h"
 #include "../../../server/queries/QueriesProcessor.h"
@@ -128,7 +129,9 @@ protected:
 		gameHandler->sendAndApply(effect);
 		ASSERT_GT(active->getMovementRange(), speed);
 	}
-	void expectLiveRefusal(const BattleAction & action, const std::string & expectedReason)
+	/// `reprompt`: the active stack is prompted again (ACTION_REJECTED). A stale
+	/// unit action answers an earlier prompt and must not be re-prompted.
+	void expectLiveRefusal(const BattleAction & action, const std::string & expectedReason, bool reprompt = true)
 	{
 		ASSERT_NO_FATAL_FAILURE(addExpirySentinel());
 		const auto battleId = battle()->getBattleID();
@@ -139,7 +142,13 @@ protected:
 		AdmissionErrorCapture errors;
 		submit(action);
 		ASSERT_EQ(gameState()->getBattle(battleId), originalBattle);
-		ASSERT_NO_FATAL_FAILURE(sameRejectedActivation(starts, activations, static_cast<uint32_t>(state.activeId)));
+		if(reprompt)
+			ASSERT_NO_FATAL_FAILURE(sameRejectedActivation(starts, activations, static_cast<uint32_t>(state.activeId)));
+		else
+		{
+			EXPECT_EQ(server.startedActions.size(), starts);
+			EXPECT_EQ(server.stackActivations.size(), activations);
+		}
 		EXPECT_EQ(admissionState(*battle()), state);
 		EXPECT_EQ(errors.messages(), std::vector<std::string>{expectedReason});
 	}
@@ -168,8 +177,39 @@ TEST_F(BattleResultActionAdmissionTest, StaleStackIdentityRejectsWhileBattleQuer
 	request.player = PlayerColor(0);
 	request.battleID = BattleID(0);
 	ASSERT_FALSE(gameHandler->isBlockedByQueries(&request, request.player));
-	ASSERT_NO_FATAL_FAILURE(expectLiveRefusal(action, "Can not make actions - stack is not active!"));
+	ASSERT_NO_FATAL_FAILURE(expectLiveRefusal(action, "Can not make actions - stack is not active!", false));
 	EXPECT_FALSE(battle()->getHeroCommandUsed(BattleSide::ATTACKER));
+}
+/// A controller that answers each prompt once, in order, after a stack's
+/// activation was replaced inside one action: it still holds the old prompt and
+/// the current one. Its stale answer is rejected once; it must not receive a
+/// duplicate prompt, or it stays one prompt behind with every answer rejected.
+TEST_F(BattleResultActionAdmissionTest, StaleAnswerToReplacedPromptDoesNotLeaveControllerOnePromptBehind)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto * active = battle()->battleActiveUnit();
+	ASSERT_NE(active, nullptr);
+	const auto id = active->unitId();
+	const auto units = battle()->battleGetAllStacks();
+	const auto other = std::find_if(units.begin(), units.end(), [id](const CStack * stack) { return stack->unitId() != id; });
+	ASSERT_NE(other, units.end());
+	std::deque<uint32_t> prompts{(*other)->unitId(), id};
+	size_t seen = server.stackActivations.size();
+	AdmissionErrorCapture errors;
+	for(int answer = 0; answer < 12 && !prompts.empty(); ++answer)
+	{
+		const auto * stack = battle()->getStack(prompts.front(), false);
+		prompts.pop_front();
+		ASSERT_NE(stack, nullptr);
+		submit(BattleAction::makeDefend(stack), battle()->battleGetActionController(stack));
+		for(; seen < server.stackActivations.size(); ++seen)
+			prompts.push_back(server.stackActivations[seen].stack);
+	}
+	EXPECT_EQ(errors.messages(), std::vector<std::string>{"Can not make actions - stack is not active!"});
+	EXPECT_EQ(prompts.size(), 1u) << "exactly the current prompt is outstanding";
+	ASSERT_NE(battle()->battleActiveUnit(), nullptr);
+	if(!prompts.empty())
+		EXPECT_EQ(prompts.front(), battle()->battleActiveUnit()->unitId());
 }
 TEST_F(BattleResultActionAdmissionTest, SharedBudgetRejectionDoesNotReserveOrAdvanceAnotherActivation)
 {

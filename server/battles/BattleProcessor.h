@@ -62,6 +62,9 @@ class BattleProcessor : boost::noncopyable
 		std::optional<newHorizonsTraining::Batch> preservedTraining = std::nullopt);
 
 	bool makeAutomaticBattleAction(const CBattleInfoCallback & battle, const BattleAction & ba);
+	/// After a rejected action, prompts the still-active stack again unless the
+	/// action answered an earlier prompt (see BattleRejectedActionRecovery.cpp).
+	void returnControlAfterRejectedAction(const BattleID & battleID, int32_t activeStackID, const BattleAction & ba);
 	void expireStackActivationBonuses(const BattleID & battleID, const BattleAction & action);
 	void processBattleEventTriggers(const CBattleInfoCallback & battle, CombatEventType event, const battle::Unit * target, const battle::Unit * secondary);
 
