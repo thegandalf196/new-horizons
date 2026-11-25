@@ -9,6 +9,7 @@
 #include "NewHorizonsCombatSkills.h"
 #include "Unit.h"
 #include "../mapObjects/CGHeroInstance.h"
+#include "../nativeRules/CapturedPerkRules.h"
 #include "../json/JsonNode.h"
 #include <algorithm>
 #include <stdexcept>
@@ -35,6 +36,7 @@ int value(const JsonNode & parameters, const char * key, int maximum = 1000)
 	if(!integer(parameters[key], maximum)) throw std::runtime_error("Invalid Warfare numerical parameter");
 	return parameters[key].Integer();
 }
+}
 
 Policy readPolicy(const JsonNode & rules)
 {
@@ -57,6 +59,8 @@ Policy readPolicy(const JsonNode & rules)
 	return result;
 }
 
+namespace
+{
 const CGHeroInstance * benefitingHero(const CBattleInfoCallback & battle, const battle::Unit * unit, const char * perk)
 {
 	const auto * hero = unit ? battle.battleGetOwnerHero(unit) : nullptr;
@@ -96,6 +100,9 @@ void validateRulesSerialization(const JsonNode & rules, bool supported)
 
 std::optional<Policy> policy(const CGHeroInstance * hero)
 {
+	// Parsed once by the hero's immutable captured rules; a new game or load captures anew.
+	const auto * owner = hero ? hero->getPerkState().capturedOwner().get() : nullptr;
+	if(const auto * compiled = owner ? owner->warfarePolicy() : nullptr) return *compiled;
 	if(!enabled(hero)) return {};
 	return readPolicy(hero->getPerkState().getRules());
 }

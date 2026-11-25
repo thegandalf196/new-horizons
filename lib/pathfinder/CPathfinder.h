@@ -17,6 +17,7 @@ class PathfinderConfig;
 class CGWhirlpool;
 class TurnInfo;
 class CGTeleport;
+class CGHeroInstance;
 struct PathfinderOptions;
 
 using FowTilesType = std::set<int3>;
@@ -66,12 +67,26 @@ private:
 	CGPathNode * topAndPop();
 };
 
+/// Rule facts and hole tiles read once per helper. Every pathfinder run makes its
+/// own helpers, so a hole dug or a game loaded afterwards is seen by the next run.
+/// Never saved. An unset flag means the rules did not validate: each use re-reads
+/// them and throws exactly as before.
+struct DLL_LINKAGE PathfinderRuleSnapshot
+{
+	bool holesBlockDisembark = false;
+	std::vector<int3> holes; ///< Sorted Obj::HOLE anchors, collected only when holes block.
+	std::optional<bool> protectedMobility;
+	std::optional<bool> tracksFlight;
+	PathfinderRuleSnapshot(const IGameInfoCallback & gameInfo, const CGHeroInstance & hero);
+};
+
 class DLL_LINKAGE CPathfinderHelper : boost::noncopyable
 {
 	/// returns base movement cost for movement between specific tiles. Does not accounts for diagonal movement or last tile exception
 	ui32 getTileMovementCost(const TerrainTile & dest, const TerrainTile & from, const TurnInfo * ti) const;
 
 	const IGameInfoCallback & gameInfo;
+	const PathfinderRuleSnapshot ruleSnapshot;
 	std::optional<newHorizonsTravel::Plan> planWaterLanding(const int3 & source, int movement) const;
 	std::optional<newHorizonsTravel::Plan> planAirLanding(const int3 & source, int movement, bool ordinary) const;
 public:
@@ -144,7 +159,11 @@ public:
 	bool passOneTurnLimitCheck(const PathNodeInfo & source) const;
 
 	int getGuardiansCount(int3 tile) const;
+	/// Same answer as getTileDigStatus(tile) == TILE_OCCUPIED, without scanning the map.
 	bool isTileBlockedByHole(const int3 & tile) const;
+	/// newHorizonsProtectedMobility::enabled / tracksFlight for this hero's rules.
+	bool protectedMobilityEnabled() const;
+	bool tracksProtectedFlight() const;
 
 	/// Read-only reserve check: ordinary visible, unguarded land reachable today.
 	/// Uses this helper's captured day/cost context; never casts or advances a day.

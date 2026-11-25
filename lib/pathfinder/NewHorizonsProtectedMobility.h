@@ -40,4 +40,6 @@ DLL_LINKAGE JsonNode writeTiles(const std::vector<int3> & tiles);
 DLL_LINKAGE bool segmentClear(const std::vector<int3> & tiles, const int3 & source, const int3 & destination);
 DLL_LINKAGE bool segmentClear(const CGHeroInstance & hero, const CMap & map,
 	const int3 & source, const int3 & destination);
+/// The hero form with enabled(hero.getMagicRules()) already read by the caller.
+DLL_LINKAGE bool segmentClear(bool enabled, const CMap & map, const int3 & source, const int3 & destination);
 }

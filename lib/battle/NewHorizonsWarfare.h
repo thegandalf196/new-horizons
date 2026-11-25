@@ -29,12 +29,15 @@ struct DLL_LINKAGE Policy
 	int decisiveOrdersDamagePercent;
 	int unbrokenRanksReductionPercent;
 	int combinedArmsFocusFirePercent;
+	bool operator==(const Policy &) const = default;
 };
 DLL_LINKAGE bool usesRules(const JsonNode & combatRules);
 DLL_LINKAGE bool enabled(const JsonNode & perkRules);
 DLL_LINKAGE bool enabled(const CGHeroInstance * hero);
 DLL_LINKAGE void validatePolicy(const JsonNode & perkRules);
 DLL_LINKAGE void validateRulesSerialization(const JsonNode & rules, bool supported);
+/// Parses the policy; throws for an invalid one. CapturedPerkRules keeps the result.
+DLL_LINKAGE Policy readPolicy(const JsonNode & perkRules);
 DLL_LINKAGE std::optional<Policy> policy(const CGHeroInstance * hero);
 DLL_LINKAGE int perkValue(const CGHeroInstance & hero, const char * perkId, const char * parameter);
 DLL_LINKAGE int battlePlanBonus(const CBattleInfoCallback & battle, BattleSide side);

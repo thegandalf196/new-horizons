@@ -60,14 +60,17 @@ Plan completedPlan(Plan plan, int3 destination, const std::map<int3, Previous> &
 	std::reverse(plan.steps.begin(), plan.steps.end());
 	return annotateTerminal(std::move(plan), hero);
 }
-bool ordinaryLanding(const IGameInfoCallback & gameInfo, const CGHeroInstance & hero, const int3 & position)
+/// A helper, when given, answers the hole check from its snapshot (same result).
+bool ordinaryLanding(const IGameInfoCallback & gameInfo, const CGHeroInstance & hero, const int3 & position,
+	const CPathfinderHelper * helper = nullptr)
 {
 	const auto * tile = gameInfo.getTile(position);
 	if(!tile || !tile->isLand() || !tile->getTerrain()->isPassable()
 		|| !gameInfo.isVisibleFor(position, hero.getOwner())
 		|| !gameInfo.getGuardingCreatures(position, &hero).empty()
-		|| (gameInfo.getSettings().getBoolean(EGameSettings::PATHFINDER_BLOCK_DISEMBARK_ON_HOLE)
-			&& gameInfo.getTileDigStatus(position) == EDiggingStatus::TILE_OCCUPIED))
+		|| (helper ? helper->isTileBlockedByHole(position)
+			: (gameInfo.getSettings().getBoolean(EGameSettings::PATHFINDER_BLOCK_DISEMBARK_ON_HOLE)
+				&& gameInfo.getTileDigStatus(position) == EDiggingStatus::TILE_OCCUPIED)))
 		return false;
 	const auto onlyHero = [&hero](const auto & objects)
 	{
@@ -76,7 +79,7 @@ bool ordinaryLanding(const IGameInfoCallback & gameInfo, const CGHeroInstance & 
 	return onlyHero(tile->blockingObjects) && onlyHero(tile->visitableObjects);
 }
 bool dayEndEligible(const IGameInfoCallback & gameInfo, const CGHeroInstance & hero,
-	const int3 & position, EPathfindingLayer layer)
+	const int3 & position, EPathfindingLayer layer, const CPathfinderHelper * helper = nullptr)
 {
 	if(hero.inBoat())
 		return true;
@@ -90,8 +93,50 @@ bool dayEndEligible(const IGameInfoCallback & gameInfo, const CGHeroInstance & h
 		return false;
 	if(requireLand && !tile->isLand())
 		return false;
-	return !requireOrdinary || ordinaryLanding(gameInfo, hero, position);
+	return !requireOrdinary || ordinaryLanding(gameInfo, hero, position, helper);
 }
+}
+
+PathfinderRuleSnapshot::PathfinderRuleSnapshot(const IGameInfoCallback & gameInfo, const CGHeroInstance & hero)
+	: holesBlockDisembark(gameInfo.getSettings().getBoolean(EGameSettings::PATHFINDER_BLOCK_DISEMBARK_ON_HOLE))
+{
+	if(holesBlockDisembark)
+		for(const auto & object : gameInfo.gameState().getMap().getObjects())
+			if(object->ID == Obj::HOLE)
+				holes.push_back(object->anchorPos());
+	std::sort(holes.begin(), holes.end());
+	try
+	{
+		protectedMobility = newHorizonsProtectedMobility::enabled(hero.getMagicRules());
+		tracksFlight = newHorizonsProtectedMobility::tracksFlight(hero.getMagicRules());
+	}
+	catch(const std::exception &)
+	{
+		// Left unset: each use re-reads the rules and throws as before.
+	}
+}
+
+bool CPathfinderHelper::isTileBlockedByHole(const int3 & tile) const
+{
+	if(!ruleSnapshot.holesBlockDisembark)
+		return false;
+	// CGameInfoCallback::getTileDigStatus: invisible is UNKNOWN, a hole is TILE_OCCUPIED,
+	// otherwise the tile's own status. getTile(tile, false) is null exactly when invisible.
+	const auto * visible = gameInfo.getTile(tile, false);
+	return visible && (std::binary_search(ruleSnapshot.holes.begin(), ruleSnapshot.holes.end(), tile)
+		|| visible->getDiggingStatus() == EDiggingStatus::TILE_OCCUPIED);
+}
+
+bool CPathfinderHelper::protectedMobilityEnabled() const
+{
+	return ruleSnapshot.protectedMobility ? *ruleSnapshot.protectedMobility
+		: newHorizonsProtectedMobility::enabled(hero->getMagicRules());
+}
+
+bool CPathfinderHelper::tracksProtectedFlight() const
+{
+	return ruleSnapshot.tracksFlight ? *ruleSnapshot.tracksFlight
+		: newHorizonsProtectedMobility::tracksFlight(hero->getMagicRules());
 }
 
 std::optional<Plan> CPathfinderHelper::planWaterLanding(const int3 & source, int remainingMovement) const
@@ -200,7 +245,7 @@ std::optional<Plan> CPathfinderHelper::planAirLanding(const int3 & source, int r
 		if(best.at(position) != movement)
 			continue;
 		// Eligibility does not emit or require a fictitious same-coordinate move.
-		const bool eligible = ordinary ? ordinaryLanding(gameInfo, *hero, position) : gameInfo.getTile(position)->isLand();
+		const bool eligible = ordinary ? ordinaryLanding(gameInfo, *hero, position, this) : gameInfo.getTile(position)->isLand();
 		if(eligible)
 			return completedPlan(emptyPlan(gameInfo, source, remainingMovement, turn), position, previous, *hero);
 		const auto * sourceTile = gameInfo.getTile(position);
@@ -211,7 +256,7 @@ std::optional<Plan> CPathfinderHelper::planAirLanding(const int3 & source, int r
 			const auto * tile = gameInfo.getTile(destination);
 			if(!tile || !tile->getTerrain()->isPassable()
 				|| !gameInfo.isVisibleFor(destination, owner) || !isPatrolMovementAllowed(destination)
-				|| !newHorizonsProtectedMobility::segmentClear(*hero, gameInfo.gameState().getMap(), position, destination))
+				|| !newHorizonsProtectedMobility::segmentClear(protectedMobilityEnabled(), gameInfo.gameState().getMap(), position, destination))
 				continue;
 			// AIR transit never visits objects or initiates battles.
 			const int cost = getMovementCost(position, destination, EPathfindingLayer::AIR,
@@ -243,7 +288,7 @@ std::optional<Plan> CPathfinderHelper::planSameDayLanding(
 		return emptyPlan(gameInfo, source, movement, turn);
 	if(layer == EPathfindingLayer::WATER && newHorizonsMagic::requiresWaterWalkLegalDayEnd(hero->getMagicRules()))
 		return planWaterLanding(source, movement);
-	if(layer == EPathfindingLayer::AIR && !dayEndEligible(gameInfo, *hero, source, layer))
+	if(layer == EPathfindingLayer::AIR && !dayEndEligible(gameInfo, *hero, source, layer, this))
 		return planAirLanding(source, movement, newHorizonsMagic::requiresFlyLegalDayEnd(hero->getMagicRules()));
 	return emptyPlan(gameInfo, source, movement, turn);
 }

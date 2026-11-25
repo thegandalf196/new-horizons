@@ -54,6 +54,13 @@ read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 - Quick combat is faster in battles with Galthran, Ryland, Charna, Vey or
   Pasis: the battle AI no longer works out their aura specialties from scratch
   for every stack it considers. Its choices do not change.
+- **Faster computer turns in long games**: the computer players plan routes
+  faster once heroes can fly or walk on water. The check for dug holes, the
+  Warfare rule values and the flight-barrier rules are now read once per route
+  search instead of at every step; their decisions are unchanged. The game log
+  no longer records the computer players' most detailed (trace) messages; add
+  `{ "domain" : "ai", "level" : "trace" }` to `logging.loggers` in
+  `settings.json` to get them back.
 
 ## 0.94.0-beta.3
 

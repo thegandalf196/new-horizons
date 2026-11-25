@@ -383,11 +383,9 @@ PathfinderBlockingRule::BlockingReason MovementToDestinationRule::getBlockingRea
 
 	if(destination.node->accessible == EPathAccessibility::BLOCKED)
 		return BlockingReason::DESTINATION_BLOCKED;
-	if(pathfinderHelper->hero && !pathfinderHelper->hero->inBoat()
-		&& newHorizonsProtectedMobility::enabled(pathfinderHelper->hero->getMagicRules())
+	if(pathfinderHelper->hero && !pathfinderHelper->hero->inBoat() && pathfinderHelper->protectedMobilityEnabled()
 		&& (source.node->layer == EPathfindingLayer::AIR || destination.node->layer == EPathfindingLayer::AIR)
-		&& !newHorizonsProtectedMobility::segmentClear(*pathfinderHelper->hero,
-			pathfinderHelper->hero->cb->gameState().getMap(), source.coord, destination.coord))
+		&& !newHorizonsProtectedMobility::segmentClear(true, pathfinderHelper->hero->cb->gameState().getMap(), source.coord, destination.coord))
 		return BlockingReason::DESTINATION_BLOCKED;
 
 	switch(destination.node->layer.toEnum())

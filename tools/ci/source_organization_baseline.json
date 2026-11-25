@@ -26595,14 +26595,14 @@
     },
     "lib/pathfinder/CPathfinder.cpp": {
       "kind": "exception",
-      "lines": 894,
+      "lines": 887,
       "owner": "engine_engineer",
-      "rationale": "Exact successor for the 0.93.2 Rampart hero specialties (Use the Ground, Elusive, Patroness, Giant-Slayer, Living Remedy, Sorceress of Enroth, Brittle, Against the Odds, revised Perfect Mount, Treantmoot and Forest Ambush): one-line routing hooks into the focused new owners lib/entities/hero/NewHorizonsRampartSpecialties, lib/battle/NewHorizonsRampartSpecialties, lib/pathfinder/NewHorizonsElusive, server/battles/BattleRampartSpecialtyCasts, server/processors/PatronessVisit and AI/BattleAI/RampartSpecialtyValue. Existing extraction deferrals retained; no future growth credit.",
-      "review": "CLAUDE-RAMPART-0932",
+      "rationale": "Exact successor for the 0.93.2 Rampart hero specialties (Use the Ground, Elusive, Patroness, Giant-Slayer, Living Remedy, Sorceress of Enroth, Brittle, Against the Odds, revised Perfect Mount, Treantmoot and Forest Ambush): one-line routing hooks into the focused new owners lib/entities/hero/NewHorizonsRampartSpecialties, lib/battle/NewHorizonsRampartSpecialties, lib/pathfinder/NewHorizonsElusive, server/battles/BattleRampartSpecialtyCasts, server/processors/PatronessVisit and AI/BattleAI/RampartSpecialtyValue. Existing extraction deferrals retained; no future growth credit. Adventure turn-time fix: rule facts and hole tiles are read once per helper (PathfinderRuleSnapshot, owned by NewHorizonsTravelSafety); this unit only routes to it.",
+      "review": "CLAUDE-ADVFIX-20261125",
       "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
       "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "011004ecec9aab65a46fb0a4a200f6ad8d3525fa5912cb23043b49a7fb22b0f8",
-      "previous_review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
+      "sha256": "9f50defc0eb6e6a712369416872c4db8651b5551878dad4773a1d415ec99629e",
+      "previous_review": "CLAUDE-RAMPART-0932",
       "deferral": "Retain every inherited extraction deferral of this unit. Before further substantive growth, move the next coherent touched responsibility into its focused owner; this exact routing gives no future growth allowance."
     },
     "lib/pathfinder/CPathfinder.cpp::int CPathfinderHelper::getMovementCost( const int3 & src, const int3 & dst, const EPathfindingLayer & dstLayer, const int remainingMovePoints, const bool checkLast, const TerrainTile * srcTile, const TerrainTile * dstTile, const EPathfindingLayer & srcLayer) const#1": {
@@ -26610,11 +26610,12 @@
       "kind": "exception",
       "lines": 168,
       "owner": "engine_engineer",
-      "rationale": "Bounded Fly captured-policy/version/receipt/shared-landing integration only, 168 to 168 lines. Fixed mechanical routing/validation or serializer guards; shared substantive travel implementation extracted to NewHorizonsTravelSafety and NewHorizonsTravelDayEnd. Exact size only, not future growth or runtime approval.",
-      "review": "IR-FLY-V2-SCOPED-GROWTH-20261020",
-      "review_scope": "fly-v2-producer-and-validated-ai-consumer-only",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "sha256": "942d9856914fb285373a08d35f46281dfb3dba9b8204c10056d679e5105cc729"
+      "rationale": "Bounded Fly captured-policy/version/receipt/shared-landing integration only, 168 to 168 lines. Fixed mechanical routing/validation or serializer guards; shared substantive travel implementation extracted to NewHorizonsTravelSafety and NewHorizonsTravelDayEnd. Exact size only, not future growth or runtime approval. Adventure turn-time fix: rule facts and hole tiles are read once per helper (PathfinderRuleSnapshot, owned by NewHorizonsTravelSafety); this unit only routes to it.",
+      "review": "CLAUDE-ADVFIX-20261125",
+      "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
+      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
+      "sha256": "dcf0181ebbe392112e2d87e73866212d710d8c834e37a0fb15c1fbc3d4ce70e5",
+      "previous_review": "IR-FLY-V2-SCOPED-GROWTH-20261020"
     },
     "lib/pathfinder/CPathfinder.cpp::void CPathfinder::calculatePaths()#1": {
       "kind": "legacy",
@@ -26628,13 +26629,14 @@
     "lib/pathfinder/PathfindingRules.cpp": {
       "deferral": "engine_engineer owns next substantive movement-cost change: extract ordered cost settlement (ordinary versus embark/disembark/lighthouse conversion) into a focused component returning an explicit immutable cost/remaining-MP/departure result, with a narrow read-only source/destination/turn-info interface. Keep preparation/day selection, reserve/barrier validation and node commit in their existing visible order. Characterize exact-budget path/server agreement, rollover, WATER/AIR reserve rejection, barriers and boat preference. Whole95-line method relocation alone does not discharge this boundary; no extraction required in this urgent2-line fix.",
       "kind": "exception",
-      "lines": 565,
+      "lines": 563,
       "owner": "engine_engineer",
-      "rationale": "Urgent exact-budget terminal landing correction adds2 lines,563\u2192565 file/93\u219295 function. Same-turn admission delegates existing destination turn-limit helper; source rollover, preparation, reserve/barrier/layer/boat stages remain byte-identical. Actual paid-spell CPathsInfo regression fails only30MP before and passes29/30/31+native server movement after; focused9/0skip GREEN preserves negative boundaries. Coupled structural rewrite would enlarge risk of this localized predicate repair; no future growth/limit/exclusion granted.",
-      "review": "IR-WATER-WALK-EXACT-BUDGET-LANDING-20261104",
-      "review_scope": "exact-same-turn-terminal-landing-zero-MP-admission-only; production-consumer-RED-GREEN9; no-AUTO-water-or-source-rollover-change; rendered-pending",
-      "review_status": "REVIEWED_EXACT_SOURCE_ONLY",
-      "sha256": "8a600b77612bb4d493266a067d934a721c85b9d1253eab353db0d99423c803a3"
+      "rationale": "Urgent exact-budget terminal landing correction adds2 lines,563\u2192565 file/93\u219295 function. Same-turn admission delegates existing destination turn-limit helper; source rollover, preparation, reserve/barrier/layer/boat stages remain byte-identical. Actual paid-spell CPathsInfo regression fails only30MP before and passes29/30/31+native server movement after; focused9/0skip GREEN preserves negative boundaries. Coupled structural rewrite would enlarge risk of this localized predicate repair; no future growth/limit/exclusion granted. Adventure turn-time fix: rule facts and hole tiles are read once per helper (PathfinderRuleSnapshot, owned by NewHorizonsTravelSafety); this unit only routes to it.",
+      "review": "CLAUDE-ADVFIX-20261125",
+      "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
+      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
+      "sha256": "48556762e38f98af755d2327bb54f99468e96c77de019c4b45f3911da1e4561f",
+      "previous_review": "IR-WATER-WALK-EXACT-BUDGET-LANDING-20261104"
     },
     "lib/pathfinder/PathfindingRules.cpp::void DestinationActionRule::process( const PathNodeInfo & source, CDestinationNodeInfo & destination, const PathfinderConfig * pathfinderConfig, CPathfinderHelper * pathfinderHelper) const#1": {
       "kind": "legacy",

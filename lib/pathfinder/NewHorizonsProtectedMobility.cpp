@@ -155,7 +155,12 @@ bool segmentClear(const std::vector<int3> & tiles, const int3 & source, const in
 bool segmentClear(const CGHeroInstance & hero, const CMap & map,
 	const int3 & source, const int3 & destination)
 {
-	return !enabled(hero.getMagicRules()) || (map.isInTheMap(source) && map.isInTheMap(destination)
+	return segmentClear(enabled(hero.getMagicRules()), map, source, destination);
+}
+
+bool segmentClear(bool enabled, const CMap & map, const int3 & source, const int3 & destination)
+{
+	return !enabled || (map.isInTheMap(source) && map.isInTheMap(destination)
 		&& segmentClear(map.getProtectedAdventureMobilityTiles(), source, destination));
 }
 }

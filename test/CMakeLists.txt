@@ -483,6 +483,7 @@ set(test_SRCS
 		hero/HeroMetamagicPointPresentationTest.cpp
 		hero/HistoricalHeroEpochFixture.h
 		hero/NewHorizonsHeroRulesFixture.h
+		game/AdventureRuleSnapshotTest.cpp
 		game/MovementCostTest.cpp
 		game/NewHorizonsLogisticsMovementPerksTest.cpp
 		game/NewHorizonsMovementLevelGrowthTest.cpp

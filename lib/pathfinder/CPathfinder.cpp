@@ -543,16 +543,9 @@ int CPathfinderHelper::getGuardiansCount(int3 tile) const
 	return guardians.size();
 }
 
-bool CPathfinderHelper::isTileBlockedByHole(const int3 & tile) const
-{
-	if(!gameInfo.getSettings().getBoolean(EGameSettings::PATHFINDER_BLOCK_DISEMBARK_ON_HOLE))
-		return false;
-
-	return gameInfo.getTileDigStatus(tile) == EDiggingStatus::TILE_OCCUPIED;
-}
-
 CPathfinderHelper::CPathfinderHelper(const IGameInfoCallback & gameInfo, const CGHeroInstance * Hero, const PathfinderOptions & Options):
 	gameInfo(gameInfo),
+	ruleSnapshot(gameInfo, *Hero),
 	turn(-1),
 	owner(Hero->tempOwner),
 	hero(Hero),
@@ -780,7 +773,7 @@ int CPathfinderHelper::getMovementCost(
 		&& !hero->inBoat() && srcTile->isWater();
 	const bool isFlightLanding = usesNewHorizonsMovement && !sourceSailing && dstLayer == EPathfindingLayer::LAND && !hero->inBoat()
 		&& (sourceHasUnwalkableObject(*srcTile)
-			|| (newHorizonsProtectedMobility::tracksFlight(hero->getMagicRules()) && sourceLayer == EPathfindingLayer::AIR));
+			|| (tracksProtectedFlight() && sourceLayer == EPathfindingLayer::AIR));
 	const bool isSpecialTravel = usesNewHorizonsMovement && !hero->inBoat()
 		&& (dstLayer == EPathfindingLayer::AIR || dstLayer == EPathfindingLayer::WATER
 			|| isWaterWalkLanding || isFlightLanding);

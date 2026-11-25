@@ -17,6 +17,11 @@ CapturedPerkRules::CapturedPerkRules(JsonNode document)
 	compiled = std::make_shared<const newHorizonsHeroes::CompiledPerkCatalogue>(*admission);
 	leadership.emplace(coldDocument);
 	metamagicRules.emplace(*this);
+	if(newHorizonsWarfare::usesRules(coldDocument))
+	{
+		try { warfare = newHorizonsWarfare::readPolicy(coldDocument); }
+		catch(const std::exception &) {} // Left unset: each policy() call re-reads and throws as before.
+	}
 }
 
 std::shared_ptr<const CapturedPerkRules> CapturedPerkRules::compile(JsonNode document)

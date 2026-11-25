@@ -5,6 +5,7 @@
 #include "PreparedPilotRules.h"
 #include "CompiledLeadershipRules.h"
 #include "CompiledMetamagicRules.h"
+#include "../battle/NewHorizonsWarfare.h"
 #include <memory>
 
 namespace newHorizonsHeroes { class CompiledPerkCatalogue; class ValidatedPerkRules; }
@@ -16,6 +17,7 @@ class DLL_LINKAGE CapturedPerkRules final
 	JsonNode coldDocument;
 	std::optional<CompiledLeadershipDiscounts> leadership;
 	std::optional<CompiledMetamagicRules> metamagicRules;
+	std::optional<newHorizonsWarfare::Policy> warfare;
 	std::shared_ptr<const PreparedPilotPerks> native;
 	std::shared_ptr<const newHorizonsHeroes::CompiledPerkCatalogue> compiled;
 	std::shared_ptr<const newHorizonsHeroes::ValidatedPerkRules> admission;
@@ -25,6 +27,8 @@ public:
 	const JsonNode & document() const { return coldDocument; }
 	const CompiledLeadershipDiscounts & leadershipDiscounts() const { return *leadership; }
 	const CompiledMetamagicRules & metamagic() const { return *metamagicRules; }
+	/// Null without a valid Warfare policy; newHorizonsWarfare::policy then re-reads the document.
+	const newHorizonsWarfare::Policy * warfarePolicy() const { return warfare ? &*warfare : nullptr; }
 	std::shared_ptr<const PreparedPilotPerks> prepared() const { return native; }
 	const newHorizonsHeroes::CompiledPerkCatalogue & catalogue() const { return *compiled; }
 	const newHorizonsHeroes::ValidatedPerkRules & admitted() const { return *admission; }
