@@ -15,6 +15,9 @@ read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
   now skip the prayer; the Order still goes out: closing the book,
   right-clicking or pressing Escape issues it without a prayer. Loynis's
   Sermon works the same way after a Light spell.
+- **A smaller level-up window**: the four advancement offers no longer show a
+  small scrolling description at the bottom. Right-click an offer or a perk
+  to read its full description.
 
 ## 0.94.0-beta.3
 

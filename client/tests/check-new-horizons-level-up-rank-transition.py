@@ -88,7 +88,8 @@ def verify_rank_transition_wiring() -> None:
 
 def verify_four_offer_presentation() -> None:
     require(FOUR_CHOICES, "const int x = slot % 2 == 0 ? 44 : 344;", "original offer columns")
-    require(FOUR_CHOICES, "const int y = slot < 2 ? 286 : 384;", "Skills above perks")
+    require(FOUR_CHOICES, "fourOfferLayout::OFFER_ROW_TOP[slot < 2 ? 0 : 1]", "Skills above perks")
+    assert "CTextBox" not in FOUR_CHOICES, "full descriptions are right-click help, not a scrolling box"
     require(FOUR_CHOICES, 'currentName + " -> " + nextName', "font-safe rank transition")
     assert "→" not in FOUR_CHOICES
     assert "TransparentFilledRectangle" not in FOUR_CHOICES

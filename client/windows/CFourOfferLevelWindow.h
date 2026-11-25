@@ -17,7 +17,22 @@ class CButton;
 class CComponentBox;
 class CLabel;
 class CSelectableComponent;
-class CTextBox;
+
+/// Compact four-offer layout (window coordinates). The native header from
+/// newHorizonsLevelUpBackground.png keeps its rows; everything below it is
+/// tight, and each option's full description is its right-click help.
+namespace fourOfferLayout
+{
+constexpr int WIDTH = 640;
+constexpr int HEIGHT = 474;
+constexpr int STAT_ROW = 186;
+constexpr int INSTRUCTION = 248;
+constexpr int OFFER_ROW_TOP[2] = {278, 358};
+constexpr int OFFER_HEIGHT = 64;
+constexpr int PERK_TITLE = 268;
+constexpr int PERK_GRID_TOP = 284;
+constexpr int CONTROLS = 432;
+}
 
 /// A single saved advancement. Opening a perk group is local navigation;
 /// only a final Skill or perk choice replies to the authoritative query.
@@ -46,7 +61,6 @@ private:
 	std::array<std::shared_ptr<CComponentBox>, 4> slotBoxes;
 	std::array<std::shared_ptr<CButton>, 2> rerollButtons;
 	std::shared_ptr<CComponentBox> perkBox;
-	std::shared_ptr<CTextBox> description;
 	std::shared_ptr<CLabel> instruction;
 	std::shared_ptr<CButton> confirm;
 	std::shared_ptr<CButton> back;

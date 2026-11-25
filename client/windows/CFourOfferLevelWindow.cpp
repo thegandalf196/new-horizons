@@ -21,11 +21,18 @@ CFourOfferLevelWindow::CFourOfferLevelWindow(const CGHeroInstance * heroInstance
 	const newHorizonsHeroes::FourOfferProgressionOffer & savedOffers, QueryID queryID,
 	std::function<int(int)> callback, bool rerollAvailable, std::function<int(size_t)> rerollCallback,
 	const std::optional<PrimaryGainSnapshot> & gains)
-	: CWindowObject(PLAYER_COLORED | BORDERED, ImagePath::builtin("newHorizonsLevelUpBackground.png")),
+	: CWindowObject(PLAYER_COLORED | BORDERED),
 	  hero(heroInstance), offers(savedOffers), query(queryID), submit(std::move(callback)),
 	  reroll(std::move(rerollCallback)), primaryGains(gains)
 {
 	OBJECT_CONSTRUCTION;
+	// The shared level-up leather and native header, cut to the compact height.
+	background = std::make_shared<CPicture>(ImagePath::builtin("newHorizonsLevelUpBackground.png"),
+		Rect(0, 0, fourOfferLayout::WIDTH, fourOfferLayout::HEIGHT), 0, 0);
+	pos.w = fourOfferLayout::WIDTH;
+	pos.h = fourOfferLayout::HEIGHT;
+	center();
+	updateShadow();
 	GAME->interface()->showingDialog->setBusy();
 	createHeader(primary);
 	calculateEligibility(rerollAvailable);
@@ -60,18 +67,20 @@ void CFourOfferLevelWindow::createHeader(PrimarySkill primary)
 		for(size_t i = 0; i < GameConstants::PRIMARY_SKILLS; ++i)
 		{
 			const int x = 36 + static_cast<int>(i) * 148;
+			const int y = fourOfferLayout::STAT_ROW;
 			const int gain = primaryGains->gains[i];
-			header.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("PSKIL42"), i, 0, x, 196));
-			header.push_back(std::make_shared<CLabel>(x + 78, 209, FONT_SMALL, ETextAlignment::CENTER,
+			header.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("PSKIL42"), i, 0, x, y));
+			header.push_back(std::make_shared<CLabel>(x + 78, y + 13, FONT_SMALL, ETextAlignment::CENTER,
 				Colors::WHITE, GAME->translator().translate("core.priskill", i), 90));
-			header.push_back(std::make_shared<CLabel>(x + 78, 235, FONT_MEDIUM, ETextAlignment::CENTER,
+			header.push_back(std::make_shared<CLabel>(x + 78, y + 39, FONT_MEDIUM, ETextAlignment::CENTER,
 				Colors::YELLOW, std::string(gain > 0 ? "+" : "") + std::to_string(gain), 90));
 		}
 	}
 	else
 	{
-		header.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("PSKIL42"), primary.getNum(), 0, 246, 196));
-		header.push_back(std::make_shared<CLabel>(364, 218, FONT_MEDIUM, ETextAlignment::CENTER,
+		header.push_back(std::make_shared<CAnimImage>(AnimationPath::builtin("PSKIL42"), primary.getNum(), 0, 246,
+			fourOfferLayout::STAT_ROW));
+		header.push_back(std::make_shared<CLabel>(364, fourOfferLayout::STAT_ROW + 22, FONT_MEDIUM, ETextAlignment::CENTER,
 			Colors::WHITE, GAME->translator().translate("core.priskill", primary.getNum()) + " +1"));
 	}
 }
@@ -81,18 +90,19 @@ void CFourOfferLevelWindow::createControls()
 	OBJECT_CONSTRUCTION;
 	// Keep navigation controls alive while they rebuild their choice children.
 	// Destroying a button inside its own callback can invalidate callback dispatch.
-	confirm = std::make_shared<CButton>(Point(288, 516), AnimationPath::builtin("IOKAY"),
+	const int y = fourOfferLayout::CONTROLS;
+	confirm = std::make_shared<CButton>(Point(288, y), AnimationPath::builtin("IOKAY"),
 		CButton::tooltip("Confirm", "Confirm the selected advancement."), [this] { confirmSelection(); }, EShortcut::GLOBAL_ACCEPT);
-	back = std::make_shared<CButton>(Point(184, 516), AnimationPath::builtin("settingsWindow/button80"),
+	back = std::make_shared<CButton>(Point(184, y), AnimationPath::builtin("settingsWindow/button80"),
 		CButton::tooltip("Back", "Return to the same four offers without spending this advancement."), [this] { showOffers(); }, EShortcut::GLOBAL_CANCEL);
 	back->setTextOverlay("Back", FONT_SMALL, Colors::YELLOW);
-	previousPage = std::make_shared<CButton>(Point(24, 516), AnimationPath::builtin("HSBTNS3"),
+	previousPage = std::make_shared<CButton>(Point(24, y), AnimationPath::builtin("HSBTNS3"),
 		CButton::tooltip("Previous perks", "Inspect the previous page of eligible perks."), [this] { changePage(-1); }, EShortcut::MOVE_LEFT);
-	nextPage = std::make_shared<CButton>(Point(66, 516), AnimationPath::builtin("HSBTNS5"),
+	nextPage = std::make_shared<CButton>(Point(66, y), AnimationPath::builtin("HSBTNS5"),
 		CButton::tooltip("More perks", "Inspect the next page of eligible perks."), [this] { changePage(1); }, EShortcut::MOVE_RIGHT);
 	for(size_t slot = 0; slot < rerollButtons.size(); ++slot)
 	{
-		rerollButtons[slot] = std::make_shared<CButton>(Point(slot == 0 ? 130 : 430, 516),
+		rerollButtons[slot] = std::make_shared<CButton>(Point(slot == 0 ? 130 : 430, y),
 			AnimationPath::builtin("settingsWindow/button80"), CButton::tooltip("Reroll", "Replace this Skill offer once."),
 			[this, slot] { requestReroll(slot); });
 		rerollButtons[slot]->setTextOverlay(slot == 0 ? "Reroll I" : "Reroll II", FONT_SMALL, Colors::YELLOW);

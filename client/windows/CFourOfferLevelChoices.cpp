@@ -27,7 +27,7 @@ public:
 		: CSelectableComponent(ComponentType::SEC_SKILL, skill, rank, CComponent::medium)
 	{
 		customSubtitle = caption;
-		setHorizontalLayout(252, 80);
+		setHorizontalLayout(252, fourOfferLayout::OFFER_HEIGHT);
 	}
 };
 }
@@ -75,7 +75,6 @@ void CFourOfferLevelWindow::clearChoices()
 	choiceLabels.clear();
 	slotBoxes = {};
 	perkBox.reset();
-	description.reset();
 	instruction.reset();
 }
 
@@ -83,9 +82,10 @@ void CFourOfferLevelWindow::createChoices()
 {
 	OBJECT_CONSTRUCTION;
 	clearChoices();
-	instruction = std::make_shared<CLabel>(320, 260, FONT_SMALL, ETextAlignment::CENTER,
-		Colors::YELLOW, openGroup ? "Choose one perk, or return to the offers." : "Choose one advancement.", 580);
-	description = std::make_shared<CTextBox>("", openGroup ? Rect(44, 454, 552, 52) : Rect(44, 470, 552, 36), 0, FONT_SMALL);
+	// No description box: right-click an option for its full help.
+	instruction = std::make_shared<CLabel>(320, fourOfferLayout::INSTRUCTION, FONT_SMALL, ETextAlignment::CENTER,
+		Colors::YELLOW, openGroup ? "Choose one perk, or return to the offers. Right-click a perk for details."
+			: "Choose one advancement. Right-click an option for details.", 580);
 	if(openGroup)
 		createPerkChoices();
 	else
@@ -99,22 +99,24 @@ void CFourOfferLevelWindow::createOfferSlots()
 	OBJECT_CONSTRUCTION;
 	const auto previous = selectedSlot;
 	constexpr std::array<const char *, 4> titles = {"Skill I — improve", "Skill II — learn", "Perk I — specialize", "Perk II — explore"};
-	constexpr std::array<const char *, 4> unavailable = {"No Skill can advance.", "No new Skill is available.", "No perk group is available.", "No other perk group is available."};
+	constexpr std::array<const char *, 4> unavailable = {"No Skill to improve", "No new Skill", "No perk group", "No other perk group"};
+	const ColorRGBA muted(158, 146, 118);
 	for(size_t slot = 0; slot < slotBoxes.size(); ++slot)
 	{
 		const int x = slot % 2 == 0 ? 44 : 344;
-		const int y = slot < 2 ? 286 : 384;
-		choiceLabels.push_back(std::make_shared<CLabel>(x + 126, y - 13, FONT_SMALL,
+		const int y = fourOfferLayout::OFFER_ROW_TOP[slot < 2 ? 0 : 1];
+		const int h = fourOfferLayout::OFFER_HEIGHT;
+		choiceLabels.push_back(std::make_shared<CLabel>(x + 126, y - 9, FONT_SMALL,
 			ETextAlignment::CENTER, Colors::YELLOW, titles[slot], 252));
 		const bool offered = slot < 2 ? offers.skills[slot] != SecondarySkill::NONE : !offers.perkSkills[slot - 2].empty();
 		if(!offered)
 		{
-			choiceLabels.push_back(std::make_shared<CMultiLineLabel>(Rect(x + 8, y + 8, 236, 64),
-				FONT_SMALL, ETextAlignment::CENTER, Colors::WHITE, unavailable[slot]));
+			choiceLabels.push_back(std::make_shared<CLabel>(x + 126, y + h / 2, FONT_SMALL,
+				ETextAlignment::CENTER, muted, unavailable[slot], 236));
 			continue;
 		}
 		auto component = offerComponent(slot);
-		slotBoxes[slot] = std::make_shared<CComponentBox>(std::vector{component}, Rect(x, y, 252, 80),
+		slotBoxes[slot] = std::make_shared<CComponentBox>(std::vector{component}, Rect(x, y, 252, h),
 			[this, slot](int) { selectSlot(slot); }, 0, 0, 0, 1, false);
 		slotBoxes[slot]->setShortcuts({vstd::next(EShortcut::SELECT_INDEX_1, static_cast<int>(slot))});
 		slotBoxes[slot]->setInputEnabled(slotAvailable(slot));
@@ -133,7 +135,7 @@ void CFourOfferLevelWindow::createOfferSlots()
 				break;
 			}
 	if(legalReplies.empty())
-		description->setText("No advancement remains available from these offers. Continue to retain your level and attribute gains.");
+		instruction->setText("No advancement remains. Confirm to keep your level and attribute gains.");
 }
 
 void CFourOfferLevelWindow::createPerkChoices()
@@ -141,7 +143,7 @@ void CFourOfferLevelWindow::createPerkChoices()
 	OBJECT_CONSTRUCTION;
 	const auto & group = perkGroups[*openGroup];
 	const auto previous = selectedPerk;
-	choiceLabels.push_back(std::make_shared<CLabel>(320, 282, FONT_MEDIUM, ETextAlignment::CENTER,
+	choiceLabels.push_back(std::make_shared<CLabel>(320, fourOfferLayout::PERK_TITLE, FONT_MEDIUM, ETextAlignment::CENTER,
 		Colors::YELLOW, newHorizonsPerkHelp::skillName(hero, group.front().selection.skillId), 552));
 	std::vector<std::shared_ptr<CSelectableComponent>> components;
 	for(size_t i = page * 4; i < std::min(group.size(), page * 4 + 4); ++i)
@@ -149,13 +151,13 @@ void CFourOfferLevelWindow::createPerkChoices()
 		auto component = perkComponent(i);
 		components.push_back(std::move(component));
 	}
-	perkBox = std::make_shared<CComponentBox>(components, Rect(56, 304, 528, 144),
+	perkBox = std::make_shared<CComponentBox>(components, Rect(56, fourOfferLayout::PERK_GRID_TOP, 528, 144),
 		[this](int index) { if(index >= 0) selectPerk(page * 4 + static_cast<size_t>(index)); }, 56, 10, 16, 2, false);
 	if(previous && *previous / 4 == page)
 		perkBox->selectIndex(*previous % 4);
 	if(group.size() > 4)
 	{
-		choiceLabels.push_back(std::make_shared<CLabel>(132, 532, FONT_SMALL, ETextAlignment::CENTER,
+		choiceLabels.push_back(std::make_shared<CLabel>(132, fourOfferLayout::CONTROLS + 16, FONT_SMALL, ETextAlignment::CENTER,
 			Colors::WHITE, std::to_string(page + 1) + "/" + std::to_string((group.size() + 3) / 4)));
 	}
 }

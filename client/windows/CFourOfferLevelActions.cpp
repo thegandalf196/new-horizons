@@ -1,7 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
 #include "CFourOfferLevelWindow.h"
-#include "NewHorizonsPerkHelp.h"
 #include "../widgets/Buttons.h"
 #include "../widgets/CComponent.h"
 #include "../widgets/TextControls.h"
@@ -14,13 +13,6 @@ void CFourOfferLevelWindow::selectSlot(size_t slot)
 	for(size_t i = 0; i < slotBoxes.size(); ++i)
 		if(i != slot && slotBoxes[i])
 			slotBoxes[i]->clearSelection();
-	if(slot < 2)
-		description->setText(newHorizonsPerkHelp::skillDescription(hero, offers.skills[slot],
-			offers.targetRanks[slot]));
-	else
-		description->setText("Inspect every eligible perk in "
-			+ newHorizonsPerkHelp::skillName(hero, offers.perkSkills[slot - 2])
-			+ ". Opening this group spends no advancement.");
 	refreshControls();
 }
 
@@ -29,9 +21,7 @@ void CFourOfferLevelWindow::selectPerk(size_t index)
 	if(waiting || resolved)
 		return;
 	selectedPerk = index;
-	const auto & perk = perkGroups[*openGroup].at(index);
-	description->setText(newHorizonsPerkHelp::tierName(perk.requiredRank) + " — " + perk.description);
-	instruction->setText("Choose one perk, or return to the offers.");
+	instruction->setText("Choose one perk, or return to the offers. Right-click a perk for details.");
 	refreshControls();
 }
 
