@@ -19933,14 +19933,14 @@
       "deferral": "Retain every inherited extraction deferral of this unit. Before further substantive growth, move the next coherent touched responsibility into its focused owner; this exact routing gives no future growth allowance.",
       "inherited_deferral": "Keep deterministic eligibility, affordability and discounts in their shared owners; AI owns candidate policy and utility. Before further substantive growth, extract the next touched object-specific quote/command stage preserving actual buyer, current resources, iteration/command order, visibility, exactly-once reservation and source/RNG purity. Existing above-ceiling command/dispatcher debt must continue shrinking.",
       "kind": "exception",
-      "lines": 1795,
+      "lines": 1810,
       "owner": "ai_engineer",
-      "previous_review": "PROPOSED-0920-EXACT-SOURCE-ORGANIZATION",
-      "rationale": "Exact successor for the 0.93.2 Rampart hero specialties (Use the Ground, Elusive, Patroness, Giant-Slayer, Living Remedy, Sorceress of Enroth, Brittle, Against the Odds, revised Perfect Mount, Treantmoot and Forest Ambush): one-line routing hooks into the focused new owners lib/entities/hero/NewHorizonsRampartSpecialties, lib/battle/NewHorizonsRampartSpecialties, lib/pathfinder/NewHorizonsElusive, server/battles/BattleRampartSpecialtyCasts, server/processors/PatronessVisit and AI/BattleAI/RampartSpecialtyValue. Existing extraction deferrals retained; no future growth credit.",
-      "review": "CLAUDE-RAMPART-0932",
-      "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
-      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "79b56962de872d8eacd5c656c396212e29ac5348541419466b7ee9cb15165703",
+      "previous_review": "CLAUDE-RAMPART-0932",
+      "rationale": "Exact successor for the 0.93.2 Rampart hero specialties (Use the Ground, Elusive, Patroness, Giant-Slayer, Living Remedy, Sorceress of Enroth, Brittle, Against the Odds, revised Perfect Mount, Treantmoot and Forest Ambush): one-line routing hooks into the focused new owners lib/entities/hero/NewHorizonsRampartSpecialties, lib/battle/NewHorizonsRampartSpecialties, lib/pathfinder/NewHorizonsElusive, server/battles/BattleRampartSpecialtyCasts, server/processors/PatronessVisit and AI/BattleAI/RampartSpecialtyValue. Existing extraction deferrals retained; no future growth credit.\n\nCLAUDE-ACADEMY-0942: Exact successor for the 0.94.0-beta.4 Academy hero specialties (Hardened, Spoils of Alchemy, Practice Makes Perfect, Wellspring of Wealth, Storm Lord, revised Serpent's Embrace, Gold Standard, Inexhaustible Knowledge, Halon's Nullifying Shot, Focus Magic and Sage of the Ages): one-line routing hooks or registrations into the focused new owners lib/entities/hero/NewHorizonsAcademySpecialties, lib/battle/NewHorizonsAcademySpecialties, lib/networkPacks/AcademySpecialtyPacks and server/battles/BattleAcademySpecialties. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-ACADEMY-0942",
+      "review_scope": "Exact source organization hash/count/span only; no runtime or future-growth approval.",
+      "review_status": "AUTHOR_GENERATED_PENDING_INDEPENDENT_REVIEW",
+      "sha256": "3660df245ca252fea10d45480c91d9f80255767e509e20db8952cb67d0931259",
       "inherited_rampart_deferral": "Before further upgrade-reward growth, extract getUpgradeArmyReward into the focused upgrade valuation boundary. Preserve bounded request counts versus full power and ordinary/saturation tests; no future file growth allowance. Prior stricter obligations remain in inherited_deferral, where present."
     },
     "AI/Nullkiller2/Engine/PriorityEvaluator.cpp::NK2AI::BuildThisEvaluationContextBuilder::void buildEvaluationContext(EvaluationContext & evaluationContext, Goals::TSubgoal task) const override#1": {
@@ -23761,9 +23761,9 @@
       "inherited_a1_health_deferral": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.",
       "inherited_deferral": "Exact source-list bound only. Before substantive build logic, extract a cohesive target configuration section. Verify source/link membership once and retain no duplicate translation units. Prior stricter obligations remain in inherited_deferral, where present.",
       "kind": "exception",
-      "lines": 2201,
+      "lines": 2209,
       "owner": "engine_engineer",
-      "previous_review": "CLAUDE-HOT-STATS-20261126",
+      "previous_review": "PROPOSED-CLAUDE-UNIT-STATE-REVISION-20261125",
       "prior_a1_health_scope": {
         "kind": "exception",
         "lines": 2063,
@@ -23772,11 +23772,11 @@
         "sha256": "7058cdef35cfce13214572d190c4accfdf5721e6c144af3cdfca9f53bb68c2a0"
       },
       "prior_deferral": "Exact mechanical source/header registration only. Before substantive CMake target policy growth, extract a cohesive configuration section while verifying translation-unit membership and facade linkage. No future file growth allowance. Prior stricter obligations remain in inherited_deferral, where present.\n\nKeep registrations in their current coherent tables. Extract any future conditional target/control logic rather than growing this registry into a build framework.",
-      "rationale": "Exact successor for the 0.93.2 Rampart hero specialties (Use the Ground, Elusive, Patroness, Giant-Slayer, Living Remedy, Sorceress of Enroth, Brittle, Against the Odds, revised Perfect Mount, Treantmoot and Forest Ambush): one-line routing hooks into the focused new owners lib/entities/hero/NewHorizonsRampartSpecialties, lib/battle/NewHorizonsRampartSpecialties, lib/pathfinder/NewHorizonsElusive, server/battles/BattleRampartSpecialtyCasts, server/processors/PatronessVisit and AI/BattleAI/RampartSpecialtyValue. Existing extraction deferrals retained; no future growth credit. Exact successor for Sylvan Tactics 5 (Ambush): one-line hooks, includes, the split ranged/melee targeting predicate, one plain unit-state field and its persistence/copy plumbing, or registrations only; the rules live in the focused NewHorizonsSylvanAmbush and SylvanAmbushState units, the client presentation in SylvanAmbushStatusPresentation and SylvanAmbushWaitButton. Existing extraction deferrals retained; 2185 to 2189 lines; no future growth credit. Warcasting (new-horizons:warcast): registers the focused NewHorizonsWarcast.h/.cpp, HeroOrderWarcast.h and HeroCommandWarcastCapture.cpp owners. 2189 to 2194 lines; no future growth credit. Hot stats: CStack gains the never-saved battle::UnitHotStats member and its hotStatsAccess override; its two non-template save guards move out of line to StackSerializationChecks.cpp; Unit gains the one-line hotStatsAccess default; lib lists UnitHotStats.cpp, StackSerializationChecks.cpp and three headers; HypotheticSourceBinding gains one ProjectedAdjacencyRosterSlot data member and its include. Exact 2194 to 2199 lines; no future growth credit. Unit-state revision: CUnitState position, ghost, ghostPending and health are private; reads use the inline accessors getPosition, isGhost, isGhostPending and getHealth, writes the revision-bumping mutators setPosition, setGhost, setGhostPending, setHealth and editHealth()->. One-to-one mechanical rewrites, no behaviour change. Exact 2199 to 2201 lines; no future growth credit.",
-      "review": "PROPOSED-CLAUDE-UNIT-STATE-REVISION-20261125",
-      "review_scope": "Exact recorded source hash, physical span and organization delta only. No future growth, whole-mechanic, compiler, native, rendered, performance, save-resume, publication or promotion acceptance.",
-      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "7be68377421c5195b771accfa0c874b4e554cf8ed62ec7c6060d46408dd3d180",
+      "rationale": "Exact successor for the 0.93.2 Rampart hero specialties (Use the Ground, Elusive, Patroness, Giant-Slayer, Living Remedy, Sorceress of Enroth, Brittle, Against the Odds, revised Perfect Mount, Treantmoot and Forest Ambush): one-line routing hooks into the focused new owners lib/entities/hero/NewHorizonsRampartSpecialties, lib/battle/NewHorizonsRampartSpecialties, lib/pathfinder/NewHorizonsElusive, server/battles/BattleRampartSpecialtyCasts, server/processors/PatronessVisit and AI/BattleAI/RampartSpecialtyValue. Existing extraction deferrals retained; no future growth credit. Exact successor for Sylvan Tactics 5 (Ambush): one-line hooks, includes, the split ranged/melee targeting predicate, one plain unit-state field and its persistence/copy plumbing, or registrations only; the rules live in the focused NewHorizonsSylvanAmbush and SylvanAmbushState units, the client presentation in SylvanAmbushStatusPresentation and SylvanAmbushWaitButton. Existing extraction deferrals retained; 2185 to 2189 lines; no future growth credit. Warcasting (new-horizons:warcast): registers the focused NewHorizonsWarcast.h/.cpp, HeroOrderWarcast.h and HeroCommandWarcastCapture.cpp owners. 2189 to 2194 lines; no future growth credit. Hot stats: CStack gains the never-saved battle::UnitHotStats member and its hotStatsAccess override; its two non-template save guards move out of line to StackSerializationChecks.cpp; Unit gains the one-line hotStatsAccess default; lib lists UnitHotStats.cpp, StackSerializationChecks.cpp and three headers; HypotheticSourceBinding gains one ProjectedAdjacencyRosterSlot data member and its include. Exact 2194 to 2199 lines; no future growth credit. Unit-state revision: CUnitState position, ghost, ghostPending and health are private; reads use the inline accessors getPosition, isGhost, isGhostPending and getHealth, writes the revision-bumping mutators setPosition, setGhost, setGhostPending, setHealth and editHealth()->. One-to-one mechanical rewrites, no behaviour change. Exact 2199 to 2201 lines; no future growth credit.\n\nCLAUDE-ACADEMY-0942: Exact successor for the 0.94.0-beta.4 Academy hero specialties (Hardened, Spoils of Alchemy, Practice Makes Perfect, Wellspring of Wealth, Storm Lord, revised Serpent's Embrace, Gold Standard, Inexhaustible Knowledge, Halon's Nullifying Shot, Focus Magic and Sage of the Ages): one-line routing hooks or registrations into the focused new owners lib/entities/hero/NewHorizonsAcademySpecialties, lib/battle/NewHorizonsAcademySpecialties, lib/networkPacks/AcademySpecialtyPacks and server/battles/BattleAcademySpecialties. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-ACADEMY-0942",
+      "review_scope": "Exact source organization hash/count/span only; no runtime or future-growth approval.",
+      "review_status": "AUTHOR_GENERATED_PENDING_INDEPENDENT_REVIEW",
+      "sha256": "769f43ff10a09311f4b2a79903f8d9b56377b63590ae81950f9c28b7f8159a0d",
       "inherited_deferral_step2": "Preserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.\n\nExact shared-facade source/header registration only. Before conditional target/control policy growth, extract the next coherent configuration section; preserve one translation unit per implementation and consumer linkage through vcmi. No future registry-size growth credit.",
       "inherited_rampart_deferral": "Exact hash/size only. Preserve prior narrower extraction, ownership, registration, state/RNG and lifecycle obligations below; next substantive affected expansion must extract a cohesive responsibility and lower the retained bound. Owner engine_engineer.\nExact committed hash and size only, not future growth or native/build/performance approval. Owner engine_engineer must keep future conditional compile policy in focused target helpers and extract the next cohesive stage before further orchestration expansion. Preserve all stricter inherited source/link/guard/ordering obligations below.\nPreserve the current state/packet/render pipeline during measurement. Before adding substantive behavior or expanding observer sites, extract its specific initialization/serialization/render-probe responsibility behind an explicit interface and verify ordering, OFF-path, state/RNG/roundtrip and rendered equivalence. This allowance is capped to the exact source hash and line count.\n\nExact shared-facade source/header registration only. Before conditional target/control policy growth, extract the next coherent configuration section; preserve one translation unit per implementation and consumer linkage through vcmi. No future registry-size growth credit."
     },
@@ -24337,15 +24337,15 @@
       "composition_predecessor_review": "IR-COMMON-NATIVE48-AI71-CLEANSING-UI-FINITE-E3-20261031",
       "inherited_deferral": "Owner: ui_developer / gameplay_engineer. Bounded exception for Major System Rework: Leadership attribute restoration, square-root damage scaling, and hero UI panel integration. Hotspots remain subject to ongoing shrinking and modularization policy.",
       "kind": "exception",
-      "lines": 121,
+      "lines": 123,
       "owner": "engine_engineer",
-      "previous_review": "CLAUDE-RAMPART-0932",
-      "rationale": "Exact successor for the 0.93.2 Rampart hero specialties (Use the Ground, Elusive, Patroness, Giant-Slayer, Living Remedy, Sorceress of Enroth, Brittle, Against the Odds, revised Perfect Mount, Treantmoot and Forest Ambush): one-line routing hooks into the focused new owners lib/entities/hero/NewHorizonsRampartSpecialties, lib/battle/NewHorizonsRampartSpecialties, lib/pathfinder/NewHorizonsElusive, server/battles/BattleRampartSpecialtyCasts, server/processors/PatronessVisit and AI/BattleAI/RampartSpecialtyValue. Existing extraction deferrals retained; no future growth credit. Warcasting (new-horizons:warcast): bounded Warcasting routing into the focused owners (NewHorizonsWarcast, HeroOrderWarcast). 121 to 121 lines; no future growth credit.",
-      "review": "CLAUDE-WARCAST-20261124",
+      "previous_review": "CLAUDE-WARCAST-20261124",
+      "rationale": "Exact successor for the 0.93.2 Rampart hero specialties (Use the Ground, Elusive, Patroness, Giant-Slayer, Living Remedy, Sorceress of Enroth, Brittle, Against the Odds, revised Perfect Mount, Treantmoot and Forest Ambush): one-line routing hooks into the focused new owners lib/entities/hero/NewHorizonsRampartSpecialties, lib/battle/NewHorizonsRampartSpecialties, lib/pathfinder/NewHorizonsElusive, server/battles/BattleRampartSpecialtyCasts, server/processors/PatronessVisit and AI/BattleAI/RampartSpecialtyValue. Existing extraction deferrals retained; no future growth credit. Warcasting (new-horizons:warcast): bounded Warcasting routing into the focused owners (NewHorizonsWarcast, HeroOrderWarcast). 121 to 121 lines; no future growth credit.\n\nCLAUDE-ACADEMY-0942: Exact successor for the 0.94.0-beta.4 Academy hero specialties (Hardened, Spoils of Alchemy, Practice Makes Perfect, Wellspring of Wealth, Storm Lord, revised Serpent's Embrace, Gold Standard, Inexhaustible Knowledge, Halon's Nullifying Shot, Focus Magic and Sage of the Ages): one-line routing hooks or registrations into the focused new owners lib/entities/hero/NewHorizonsAcademySpecialties, lib/battle/NewHorizonsAcademySpecialties, lib/networkPacks/AcademySpecialtyPacks and server/battles/BattleAcademySpecialties. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-ACADEMY-0942",
       "review_category": "ordinary-function-review",
-      "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
-      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "22a7ddaa196eae239230bf7e597c106d81455a558541097871a96c7a323ae158",
+      "review_scope": "Exact source organization hash/count/span only; no runtime or future-growth approval.",
+      "review_status": "AUTHOR_GENERATED_PENDING_INDEPENDENT_REVIEW",
+      "sha256": "df5bed35ce00698cced10e9ea3ab76e751acba9b0f02acd901c84950bc56bf6c",
       "deferral": "Retain every inherited extraction deferral of this unit. Before further substantive growth, move the next coherent touched responsibility into its focused owner; this exact routing gives no future growth allowance.",
       "inherited_exact_source_review": {
         "review": "IR-NH092-ORG-3E82D142-20261116",
@@ -25079,14 +25079,14 @@
     "lib/entities/hero/NewHorizonsSpecialtyPresentation.cpp::newHorizonsHeroes::SpecialtyPresentation resolveSpecialtyPresentation(const CHero & hero, const JsonNode & development, const JsonNode & magic, std::optional<CreatureID> target, const CGHeroInstance * capturedHero)#1": {
       "deferral": "Retain every inherited extraction deferral of this unit. Before further substantive growth, move the next coherent touched responsibility into its focused owner; this exact routing gives no future growth allowance.",
       "kind": "exception",
-      "lines": 147,
+      "lines": 148,
       "owner": "gameplay_engineer",
-      "previous_review": "CLAUDE-CASTLE-COMBAT-0931",
-      "rationale": "Exact successor for the 0.93.2 Rampart hero specialties (Use the Ground, Elusive, Patroness, Giant-Slayer, Living Remedy, Sorceress of Enroth, Brittle, Against the Odds, revised Perfect Mount, Treantmoot and Forest Ambush): one-line routing hooks into the focused new owners lib/entities/hero/NewHorizonsRampartSpecialties, lib/battle/NewHorizonsRampartSpecialties, lib/pathfinder/NewHorizonsElusive, server/battles/BattleRampartSpecialtyCasts, server/processors/PatronessVisit and AI/BattleAI/RampartSpecialtyValue. Existing extraction deferrals retained; no future growth credit.",
-      "review": "CLAUDE-RAMPART-0932",
-      "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
-      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "032c65cac6878df66d174527507b099692d1f4c8c9e77e4145ae24226751183a",
+      "previous_review": "CLAUDE-RAMPART-0932",
+      "rationale": "Exact successor for the 0.93.2 Rampart hero specialties (Use the Ground, Elusive, Patroness, Giant-Slayer, Living Remedy, Sorceress of Enroth, Brittle, Against the Odds, revised Perfect Mount, Treantmoot and Forest Ambush): one-line routing hooks into the focused new owners lib/entities/hero/NewHorizonsRampartSpecialties, lib/battle/NewHorizonsRampartSpecialties, lib/pathfinder/NewHorizonsElusive, server/battles/BattleRampartSpecialtyCasts, server/processors/PatronessVisit and AI/BattleAI/RampartSpecialtyValue. Existing extraction deferrals retained; no future growth credit.\n\nCLAUDE-ACADEMY-0942: Exact successor for the 0.94.0-beta.4 Academy hero specialties (Hardened, Spoils of Alchemy, Practice Makes Perfect, Wellspring of Wealth, Storm Lord, revised Serpent's Embrace, Gold Standard, Inexhaustible Knowledge, Halon's Nullifying Shot, Focus Magic and Sage of the Ages): one-line routing hooks or registrations into the focused new owners lib/entities/hero/NewHorizonsAcademySpecialties, lib/battle/NewHorizonsAcademySpecialties, lib/networkPacks/AcademySpecialtyPacks and server/battles/BattleAcademySpecialties. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-ACADEMY-0942",
+      "review_scope": "Exact source organization hash/count/span only; no runtime or future-growth approval.",
+      "review_status": "AUTHOR_GENERATED_PENDING_INDEPENDENT_REVIEW",
+      "sha256": "768bea0dd6c9429a14c4bc6ce95245f710bd4d994597b0925f0dae5e62b0bffd",
       "inherited_rampart_deferral": "Owner: ui_developer. Before further individual-specialty dispatch growth, move hero-family presentation into cohesive captured-policy resolvers returning the existing presentation contract; preserve historical icon/text/identity and fallback behavior. Owning presentation/content specialist: before further substantive presentation branching, extract a coherent summary/description family using the existing typed presentation result. Preserve captured absence and summary/details values; keep future helpers below ceilings and verify actual rendered text separately."
     },
     "lib/entities/hero/NewHorizonsSpecialtyPresentation.cpp::newHorizonsHeroes::bool resolveIndividualPresentation(const CHero & hero, const JsonNode & development, const JsonNode & magic, const CGHeroInstance * capturedHero, SpecialtyPresentation & result)#1": {
@@ -25697,10 +25697,10 @@
       "deferral": "Retain every inherited extraction deferral of this unit. Before further substantive growth, move the next coherent touched responsibility into its focused owner; this exact routing gives no future growth allowance.",
       "inherited_a1_health_deferral": "Next substantive hero Learning expansion must use focused Learning state/transition owners with explicit owner/partner/round-week/rules inputs; preserve source/map/School eligibility, no duplicate event, current-save and Normal resource semantics. Before further substantive expansion, owning engine/gameplay/UI specialist must extract the next coherent touched policy, ordered stage, codec family or widget responsibility into a focused owner, preserving callback visibility, rejection atomicity, serialized field order, payment and RNG/packet order. This exact bounded migration/registry/validation routing gives no future growth credit.",
       "kind": "exception",
-      "lines": 3080,
+      "lines": 3084,
       "owner": "gameplay_engineer",
       "preceding_review": "IR-COMPOSED-FEATURE-NUMERIC-EXACT-20261029",
-      "previous_review": "CLAUDE-CASTLE-ADVENTURE-0931",
+      "previous_review": "CLAUDE-RAMPART-0932",
       "prior_a1_health_scope": {
         "kind": "exception",
         "lines": 3100,
@@ -25708,11 +25708,11 @@
         "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
         "sha256": "450543a3563b69fd683ee866089caeddd601609193e8a442ea477703f6021856"
       },
-      "rationale": "Exact successor for the 0.93.2 Rampart hero specialties (Use the Ground, Elusive, Patroness, Giant-Slayer, Living Remedy, Sorceress of Enroth, Brittle, Against the Odds, revised Perfect Mount, Treantmoot and Forest Ambush): one-line routing hooks into the focused new owners lib/entities/hero/NewHorizonsRampartSpecialties, lib/battle/NewHorizonsRampartSpecialties, lib/pathfinder/NewHorizonsElusive, server/battles/BattleRampartSpecialtyCasts, server/processors/PatronessVisit and AI/BattleAI/RampartSpecialtyValue. Existing extraction deferrals retained; no future growth credit.",
-      "review": "CLAUDE-RAMPART-0932",
-      "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
-      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "124b8123139adaa60c9288609a79b3848adbfbebbd9557be152ea2bac51caaa0",
+      "rationale": "Exact successor for the 0.93.2 Rampart hero specialties (Use the Ground, Elusive, Patroness, Giant-Slayer, Living Remedy, Sorceress of Enroth, Brittle, Against the Odds, revised Perfect Mount, Treantmoot and Forest Ambush): one-line routing hooks into the focused new owners lib/entities/hero/NewHorizonsRampartSpecialties, lib/battle/NewHorizonsRampartSpecialties, lib/pathfinder/NewHorizonsElusive, server/battles/BattleRampartSpecialtyCasts, server/processors/PatronessVisit and AI/BattleAI/RampartSpecialtyValue. Existing extraction deferrals retained; no future growth credit.\n\nCLAUDE-ACADEMY-0942: Exact successor for the 0.94.0-beta.4 Academy hero specialties (Hardened, Spoils of Alchemy, Practice Makes Perfect, Wellspring of Wealth, Storm Lord, revised Serpent's Embrace, Gold Standard, Inexhaustible Knowledge, Halon's Nullifying Shot, Focus Magic and Sage of the Ages): one-line routing hooks or registrations into the focused new owners lib/entities/hero/NewHorizonsAcademySpecialties, lib/battle/NewHorizonsAcademySpecialties, lib/networkPacks/AcademySpecialtyPacks and server/battles/BattleAcademySpecialties. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-ACADEMY-0942",
+      "review_scope": "Exact source organization hash/count/span only; no runtime or future-growth approval.",
+      "review_status": "AUTHOR_GENERATED_PENDING_INDEPENDENT_REVIEW",
+      "sha256": "cffb6728fd33d639558c9a1f72d05437adbb0cdd87793bde99040618b7a2553a",
       "inherited_rampart_deferral": "Next substantive hero Learning expansion must use focused Learning state/transition owners with explicit owner/partner/round-week/rules inputs; preserve source/map/School eligibility, no duplicate event, current-save and Normal resource semantics. Before further substantive expansion, owning engine/gameplay/UI specialist must extract the next coherent touched policy, ordered stage, codec family or widget responsibility into a focused owner, preserving callback visibility, rejection atomicity, serialized field order, payment and RNG/packet order. This exact bounded migration/registry/validation routing gives no future growth credit."
     },
     "lib/mapObjects/CGHeroInstance.cpp::CStackBasicDescriptor CGHeroInstance::calculateNecromancy (const BattleResult &battleResult) const#1": {
@@ -25746,9 +25746,9 @@
       "deferral": "Retain every inherited extraction deferral of this unit. Before further substantive growth, move the next coherent touched responsibility into its focused owner; this exact routing gives no future growth allowance.",
       "inherited_a1_health_deferral": "Owner: Gameplay engineer. Interface/acceptance: Extract starting specialty producer conversion and hero cost composition behind captured-rule helpers; preserve explicit authored overrides, default starting projections, old policy absence and battle/spellbook cost parity. Owner: gameplay_engineer. Before further specialty producer growth, extract cohesive captured creature-line producer selection; preserve initialization order, explicit zero/absence, removal identities and existing saved-rule behavior. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance. Fafner bounded follow-up: Before further producer selection growth, extract the captured creature-line conversion owner while preserving authored initialization order, zero/absence, removal identity, hero-cost composition and old-save behavior. Extract the next touched captured creature-line/specialty initialization stage behind an explicit hero plus captured-policy initialization helper, preserving authored override\u2192producer refresh\u2192secondary bonus order, removals and level-one meaning; return declared assignments/refresh outcome rather than expose all hero internals. Required characterization: Current versus absent capture, explicit override/zero, old hero specialties/starting perks, level-one/no retroactive growth, real gained-level primary state and no extra RNG. Trigger: Before the next substantive expansion of this affected responsibility. Existing stronger invariant/deferral obligations remain; this approval covers only the pinned finite batch. Retain existing scoped decomposition obligations for the next affected substantive growth; this removal ratchets the exact baseline down and grants no regrowth credit.",
       "kind": "exception",
-      "lines": 354,
+      "lines": 356,
       "owner": "gameplay_engineer",
-      "previous_review": "CLAUDE-CASTLE-ADVENTURE-0931",
+      "previous_review": "CLAUDE-RAMPART-0932",
       "prior_a1_health_scope": {
         "kind": "exception",
         "lines": 346,
@@ -25756,11 +25756,11 @@
         "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
         "sha256": "56b0ebeb208919d1c5d349befad3ab0268df96b986a1e8d14cbc4a29c31f6863"
       },
-      "rationale": "Exact successor for the 0.93.2 Rampart hero specialties (Use the Ground, Elusive, Patroness, Giant-Slayer, Living Remedy, Sorceress of Enroth, Brittle, Against the Odds, revised Perfect Mount, Treantmoot and Forest Ambush): one-line routing hooks into the focused new owners lib/entities/hero/NewHorizonsRampartSpecialties, lib/battle/NewHorizonsRampartSpecialties, lib/pathfinder/NewHorizonsElusive, server/battles/BattleRampartSpecialtyCasts, server/processors/PatronessVisit and AI/BattleAI/RampartSpecialtyValue. Existing extraction deferrals retained; no future growth credit.",
-      "review": "CLAUDE-RAMPART-0932",
-      "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
-      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "c99a93694fdebf1aee2e1af98dbf4ef5d926563e419619b3a34e1ec08e200c3d",
+      "rationale": "Exact successor for the 0.93.2 Rampart hero specialties (Use the Ground, Elusive, Patroness, Giant-Slayer, Living Remedy, Sorceress of Enroth, Brittle, Against the Odds, revised Perfect Mount, Treantmoot and Forest Ambush): one-line routing hooks into the focused new owners lib/entities/hero/NewHorizonsRampartSpecialties, lib/battle/NewHorizonsRampartSpecialties, lib/pathfinder/NewHorizonsElusive, server/battles/BattleRampartSpecialtyCasts, server/processors/PatronessVisit and AI/BattleAI/RampartSpecialtyValue. Existing extraction deferrals retained; no future growth credit.\n\nCLAUDE-ACADEMY-0942: Exact successor for the 0.94.0-beta.4 Academy hero specialties (Hardened, Spoils of Alchemy, Practice Makes Perfect, Wellspring of Wealth, Storm Lord, revised Serpent's Embrace, Gold Standard, Inexhaustible Knowledge, Halon's Nullifying Shot, Focus Magic and Sage of the Ages): one-line routing hooks or registrations into the focused new owners lib/entities/hero/NewHorizonsAcademySpecialties, lib/battle/NewHorizonsAcademySpecialties, lib/networkPacks/AcademySpecialtyPacks and server/battles/BattleAcademySpecialties. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-ACADEMY-0942",
+      "review_scope": "Exact source organization hash/count/span only; no runtime or future-growth approval.",
+      "review_status": "AUTHOR_GENERATED_PENDING_INDEPENDENT_REVIEW",
+      "sha256": "639fbfb4414b2877aab1d2f3e4082a1e6dd6412c4fdf2069deab1c2a45147dca",
       "inherited_rampart_deferral": "Owner: Gameplay engineer. Interface/acceptance: Extract starting specialty producer conversion and hero cost composition behind captured-rule helpers; preserve explicit authored overrides, default starting projections, old policy absence and battle/spellbook cost parity. Owner: gameplay_engineer. Before further specialty producer growth, extract cohesive captured creature-line producer selection; preserve initialization order, explicit zero/absence, removal identities and existing saved-rule behavior. Current exact hash/line bounds supersede historical numeric ratchets only; all inherited extraction and invariant obligations remain binding, with no future or unrelated growth allowance. Fafner bounded follow-up: Before further producer selection growth, extract the captured creature-line conversion owner while preserving authored initialization order, zero/absence, removal identity, hero-cost composition and old-save behavior. Extract the next touched captured creature-line/specialty initialization stage behind an explicit hero plus captured-policy initialization helper, preserving authored override\u2192producer refresh\u2192secondary bonus order, removals and level-one meaning; return declared assignments/refresh outcome rather than expose all hero internals. Required characterization: Current versus absent capture, explicit override/zero, old hero specialties/starting perks, level-one/no retroactive growth, real gained-level primary state and no extra RNG. Trigger: Before the next substantive expansion of this affected responsibility. Existing stronger invariant/deferral obligations remain; this approval covers only the pinned finite batch. Retain existing scoped decomposition obligations for the next affected substantive growth; this removal ratchets the exact baseline down and grants no regrowth credit.\n\nBefore any further substantive expansion, extract the next cohesive touched policy, callback/read adapter or ordered admission stage into its focused owner. Preserve exact capture metadata, source visibility, schema rejection, RNG/packet ordering and standalone/world wire identity; no future growth credit from this exception."
     },
     "lib/mapObjects/CGHeroInstance.cpp::void CGHeroInstance::serializeCommonOptions(JsonSerializeFormat & handler)#1": {
@@ -27180,14 +27180,14 @@
       },
       "deferral": "Keep the mechanical numeric registration table stable; never reuse retired slots in this change, and verify current serialization/type registration with final composed engine. Current exact Command/Authority scope: Engine: extract the append-only Command registration subgroup behind a typed template helper preserving exact IDs/order; require no duplicate IDs and current/historical codec checks before any later registry growth.",
       "kind": "exception",
-      "lines": 305,
+      "lines": 306,
       "owner": "engine_engineer",
-      "previous_review": "PROPOSED-0920-EXACT-SOURCE-ORGANIZATION",
-      "rationale": "Exact 305 to 305-line scope. Existing state/content/serialization responsibility integrates current captured rules and explicit native routing. Preserve independent captures, validation boundaries, deterministic order, existing ownership and saved absence.",
-      "review": "IR-NH092-ORG-3E82D142-20261116",
-      "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
-      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "a2146f081fea85973465c8ed9ede7dbee407f6924971ae58aa03d3e92a470c03"
+      "previous_review": "IR-NH092-ORG-3E82D142-20261116",
+      "rationale": "Exact 305 to 305-line scope. Existing state/content/serialization responsibility integrates current captured rules and explicit native routing. Preserve independent captures, validation boundaries, deterministic order, existing ownership and saved absence.\n\nCLAUDE-ACADEMY-0942: Exact successor for the 0.94.0-beta.4 Academy hero specialties (Hardened, Spoils of Alchemy, Practice Makes Perfect, Wellspring of Wealth, Storm Lord, revised Serpent's Embrace, Gold Standard, Inexhaustible Knowledge, Halon's Nullifying Shot, Focus Magic and Sage of the Ages): one-line routing hooks or registrations into the focused new owners lib/entities/hero/NewHorizonsAcademySpecialties, lib/battle/NewHorizonsAcademySpecialties, lib/networkPacks/AcademySpecialtyPacks and server/battles/BattleAcademySpecialties. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-ACADEMY-0942",
+      "review_scope": "Exact source organization hash/count/span only; no runtime or future-growth approval.",
+      "review_status": "AUTHOR_GENERATED_PENDING_INDEPENDENT_REVIEW",
+      "sha256": "08635ba824bc586783a68adcbe204d415d33563eb1258b45b8aa1b486d2f7456"
     },
     "lib/spells/BattleSpellMechanics.cpp": {
       "deferral": "Further castEval growth requires focused posteffects receipt dispatch taking Mechanics/recorder/ServerCallback, preserving certification last, no duplicate completion and native injury/packet/RNG order. Native controls: Hero/creatureorigin, shields/sourceidentity/history/actions. No general ceilingwaiver.\n\nBefore any further substantive expansion, extract the next cohesive touched policy, callback/read adapter or ordered admission stage into its focused owner. Preserve exact capture metadata, source visibility, schema rejection, RNG/packet ordering and standalone/world wire identity; no future growth credit from this exception. Current exact-scope addendum: Gameplay owner extracts accepted-original completion and spell-evaluation transaction phases after native live/castEval/AI parity; preserve ticket entry/delegation/cost, effect ordering, one Overflow completion and RNG/reflection routing.",
@@ -28465,11 +28465,11 @@
       "legacy_freeze_predecessor_review_scope": "Exact frozen production patch only. Conditional on root serialized engine/AI/UI/content/test composition; no future growth, old-save matrix, native/render/runtime proof or adoption authorization.",
       "legacy_freeze_predecessor_review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_RENDERED_UNRUN",
       "legacy_freeze_predecessor_sha256": "9db9f76d8952f4ac1f77ed074dae2ef1e7ff4a9de3841e44f86f4294f1d646e5",
-      "lines": 4751,
+      "lines": 4754,
       "next_bounded_extraction": "Gameplay with Engine: honor the inherited first extraction, the ordered primary aftermath publication stage3956-3966 after BattleAttack. Pass authority, battle, prepared primary/frozen/Mana contexts and typed Reprisal receipts; retain packet-first, PetrifyingBlood, Dread, primary aftermath, once-only Reprisal, Fury, Mana and Frozen order. Characterize complete packets/state/RNG, lethal/LastStand, automatic, retaliation, multihit and secondary cases before any further substantive makeAttack growth. Ground-movement or validation work must extract its own touched bounded phase; do not relocate the entire hub.",
       "owner": "gameplay_engineer",
       "previous_exact_review": "ACTUAL-NHOFF-DIVINE-IDENTITY-PRIVATE-20261031",
-      "previous_review": "CLAUDE-RAMPART-0932",
+      "previous_review": "CLAUDE-SYLVAN-AMBUSH-20261123",
       "prior_group_d_review": "IR-1145-GP-CONSUMERS-EXACT-9DB40B96-20261030",
       "protected_invariants": [
         "Simulation-thread command authority, current-controller versus physical-side identity and visible callback boundaries",
@@ -28478,7 +28478,7 @@
         "Packet/RNG draw order; primary versus SECONDARY/spell-like damage; health/shield/casualty provenance",
         "No callback/unit use after battle retirement; local movement provenance guard restores on every exit; no asynchronous extraction"
       ],
-      "rationale": "Exact successor for the 0.93.2 Rampart hero specialties (Use the Ground, Elusive, Patroness, Giant-Slayer, Living Remedy, Sorceress of Enroth, Brittle, Against the Odds, revised Perfect Mount, Treantmoot and Forest Ambush): one-line routing hooks into the focused new owners lib/entities/hero/NewHorizonsRampartSpecialties, lib/battle/NewHorizonsRampartSpecialties, lib/pathfinder/NewHorizonsElusive, server/battles/BattleRampartSpecialtyCasts, server/processors/PatronessVisit and AI/BattleAI/RampartSpecialtyValue. Existing extraction deferrals retained; no future growth credit. Exact successor for Sylvan Tactics 5 (Ambush): one-line hooks, includes, the split ranged/melee targeting predicate, one plain unit-state field and its persistence/copy plumbing, or registrations only; the rules live in the focused NewHorizonsSylvanAmbush and SylvanAmbushState units, the client presentation in SylvanAmbushStatusPresentation and SylvanAmbushWaitButton. Existing extraction deferrals retained; 4748 to 4751 lines; no future growth credit.",
+      "rationale": "Exact successor for the 0.93.2 Rampart hero specialties (Use the Ground, Elusive, Patroness, Giant-Slayer, Living Remedy, Sorceress of Enroth, Brittle, Against the Odds, revised Perfect Mount, Treantmoot and Forest Ambush): one-line routing hooks into the focused new owners lib/entities/hero/NewHorizonsRampartSpecialties, lib/battle/NewHorizonsRampartSpecialties, lib/pathfinder/NewHorizonsElusive, server/battles/BattleRampartSpecialtyCasts, server/processors/PatronessVisit and AI/BattleAI/RampartSpecialtyValue. Existing extraction deferrals retained; no future growth credit. Exact successor for Sylvan Tactics 5 (Ambush): one-line hooks, includes, the split ranged/melee targeting predicate, one plain unit-state field and its persistence/copy plumbing, or registrations only; the rules live in the focused NewHorizonsSylvanAmbush and SylvanAmbushState units, the client presentation in SylvanAmbushStatusPresentation and SylvanAmbushWaitButton. Existing extraction deferrals retained; 4748 to 4751 lines; no future growth credit.\n\nCLAUDE-ACADEMY-0942: Exact successor for the 0.94.0-beta.4 Academy hero specialties (Hardened, Spoils of Alchemy, Practice Makes Perfect, Wellspring of Wealth, Storm Lord, revised Serpent's Embrace, Gold Standard, Inexhaustible Knowledge, Halon's Nullifying Shot, Focus Magic and Sage of the Ages): one-line routing hooks or registrations into the focused new owners lib/entities/hero/NewHorizonsAcademySpecialties, lib/battle/NewHorizonsAcademySpecialties, lib/networkPacks/AcademySpecialtyPacks and server/battles/BattleAcademySpecialties. Existing extraction deferrals retained; no future growth credit.",
       "responsibility_spans": [
         "102-681 targeting/deployment, Divine judgment, logs and spell-placement helpers",
         "683-1144 action basics and validated Hero spell execution",
@@ -28491,10 +28491,10 @@
         "4737-4883 stable-priority captured event reactions"
       ],
       "responsibleSourcePhase": "GP_FROZEN_C7C191B0_AND_REQUIRED_CD088EB5_PARTITION",
-      "review": "CLAUDE-SYLVAN-AMBUSH-20261123",
-      "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
-      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "bf05ab617a10ff4d5b162836e0e8df93edec4481f0ac584fc484255366c7ea91",
+      "review": "CLAUDE-ACADEMY-0942",
+      "review_scope": "Exact source organization hash/count/span only; no runtime or future-growth approval.",
+      "review_status": "AUTHOR_GENERATED_PENDING_INDEPENDENT_REVIEW",
+      "sha256": "8660a5bd8b1535286d43cfde517ac3965d5469a3f4ed3b9f3fe628d2d7487810",
       "inherited_rampart_deferral": "Before any further substantive makeAttack growth, extract the ordered primary aftermath publication stage receiving game authority, battle, immutable prepared primary context and typed Reprisal receipts. Keep primary packet first, existing PetrifyingBlood/dread/primary aftermath order, exactly-once Reprisal, subsequent Fury/Mana/Frozen order, lethal source and nonrecursive SECONDARY semantics. Native focused LastStand/automatic/multihit/retaliation/current-save coverage remains required.\n\nGameplay with Engine: honor the inherited first extraction, the ordered primary aftermath publication stage3956-3966 after BattleAttack. Pass authority, battle, prepared primary/frozen/Mana contexts and typed Reprisal receipts; retain packet-first, PetrifyingBlood, Dread, primary aftermath, once-only Reprisal, Fury, Mana and Frozen order. Characterize complete packets/state/RNG, lethal/LastStand, automatic, retaliation, multihit and secondary cases before any further substantive makeAttack growth. Ground-movement or validation work must extract its own touched bounded phase; do not relocate the entire hub. Protected invariants: Simulation-thread command authority, current-controller versus physical-side identity and visible callback boundaries; Existing rejected-action preflights before StartAction, authoritative random caster selected once, no rolled state in client validation; Protect before reactions; preemptive recursion guards; stable reaction order and capture before lethal packet removes effects; Packet/RNG draw order; primary versus SECONDARY/spell-like damage; health/shield/casualty provenance; No callback/unit use after battle retirement; local movement provenance guard restores on every exit; no asynchronous extraction. Gameplay engineer with engine integration: before further accepted-strike growth, extract physical-hit preparation and ordered aftermath publication behind one focused transaction taking immutable source facts, typed per-recipient quota/event owner and prepared packets. Preserve preapply casualty capture, primary then Judgment then final Redemption payout, LastStand spending, SECONDARY exclusions, source/controller identity, native packet/RNG order and hypothetical sibling parity. Existing stronger phase-extraction obligations remain binding."
     },
     "server/battles/BattleActionProcessor.cpp::BattleActionProcessor::MovementResult BattleActionProcessor::moveStack(const CBattleInfoCallback & battle, int stack, BattleHex dest, bool voluntary)#1": {
@@ -28554,15 +28554,15 @@
     "server/battles/BattleActionProcessor.cpp::bool BattleActionProcessor::doHeroSpellAction(const CBattleInfoCallback & battle, const BattleAction & ba, spells::AutomaticHeroCastReceipt automatic)#1": {
       "deferral": "Retain every inherited extraction deferral of this unit. Before further substantive growth, move the next coherent touched responsibility into its focused owner; this exact routing gives no future growth allowance.",
       "kind": "exception",
-      "lines": 101,
+      "lines": 102,
       "owner": "engine_engineer",
       "previous_exact_review": "source-size-legacy-freeze-cf2e62f9-v1",
-      "previous_review": "CLAUDE-CASTLE-COMBAT-0931",
-      "rationale": "Exact successor for the 0.93.2 Rampart hero specialties (Use the Ground, Elusive, Patroness, Giant-Slayer, Living Remedy, Sorceress of Enroth, Brittle, Against the Odds, revised Perfect Mount, Treantmoot and Forest Ambush): one-line routing hooks into the focused new owners lib/entities/hero/NewHorizonsRampartSpecialties, lib/battle/NewHorizonsRampartSpecialties, lib/pathfinder/NewHorizonsElusive, server/battles/BattleRampartSpecialtyCasts, server/processors/PatronessVisit and AI/BattleAI/RampartSpecialtyValue. Existing extraction deferrals retained; no future growth credit.",
-      "review": "CLAUDE-RAMPART-0932",
-      "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
-      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "0a30b2af27602f6dfa072f604c480ca0d95379b01c32cc0c3bc35df46a090f49",
+      "previous_review": "CLAUDE-RAMPART-0932",
+      "rationale": "Exact successor for the 0.93.2 Rampart hero specialties (Use the Ground, Elusive, Patroness, Giant-Slayer, Living Remedy, Sorceress of Enroth, Brittle, Against the Odds, revised Perfect Mount, Treantmoot and Forest Ambush): one-line routing hooks into the focused new owners lib/entities/hero/NewHorizonsRampartSpecialties, lib/battle/NewHorizonsRampartSpecialties, lib/pathfinder/NewHorizonsElusive, server/battles/BattleRampartSpecialtyCasts, server/processors/PatronessVisit and AI/BattleAI/RampartSpecialtyValue. Existing extraction deferrals retained; no future growth credit.\n\nCLAUDE-ACADEMY-0942: Exact successor for the 0.94.0-beta.4 Academy hero specialties (Hardened, Spoils of Alchemy, Practice Makes Perfect, Wellspring of Wealth, Storm Lord, revised Serpent's Embrace, Gold Standard, Inexhaustible Knowledge, Halon's Nullifying Shot, Focus Magic and Sage of the Ages): one-line routing hooks or registrations into the focused new owners lib/entities/hero/NewHorizonsAcademySpecialties, lib/battle/NewHorizonsAcademySpecialties, lib/networkPacks/AcademySpecialtyPacks and server/battles/BattleAcademySpecialties. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-ACADEMY-0942",
+      "review_scope": "Exact source organization hash/count/span only; no runtime or future-growth approval.",
+      "review_status": "AUTHOR_GENERATED_PENDING_INDEPENDENT_REVIEW",
+      "sha256": "5fe98a29f1e5db30d2b2a96fbd4f051d30a18d86b86bf960d4da33dd20cf66b3",
       "inherited_rampart_deferral": "Retain all inherited enclosing BattleActionProcessor file extraction and ordering/lifetime obligations. Before further substantive growth, isolate the affected cohesive Hero-spell admission or ordered completion stage in its focused owner; preserve synchronous receipt/snapshot lifetimes, rejection and packet/RNG order. No future growth allowance."
     },
     "server/battles/BattleActionProcessor.cpp::bool BattleActionProcessor::makeBattleActionImpl(const CBattleInfoCallback & battle, const BattleAction &ba, bool * masterGateActivationContinuationOut, bool voluntary)#1": {
@@ -28652,10 +28652,10 @@
       "legacy_freeze_predecessor_review_scope": "Exact frozen production patch only. Conditional on root serialized engine/AI/UI/content/test composition; no future growth, old-save matrix, native/render/runtime proof or adoption authorization.",
       "legacy_freeze_predecessor_review_status": "INDEPENDENT_SOURCE_REVIEWED_NATIVE_RENDERED_UNRUN",
       "legacy_freeze_predecessor_sha256": "4528ea89f03f59a699962a49498d82380bb51c7f80f008041dc26ee1becdf32a",
-      "lines": 1091,
+      "lines": 1092,
       "next_bounded_extraction": "Gameplay with Engine: extract only3956-3966 ordered aftermath publication first, using existing typed primary, Frozen, Mana and Reprisal receipts and explicit authority/battle references. Keep BattleAttack publication visible immediately before it. Do not move1080 lines to another owner or introduce unrestricted events. Require full deterministic packet/state/RNG before/after characterization for lethal source, Protect, LastStand, multihit, ordinary/automatic/counter/secondary, plus current codec controls; then ratchet caller and destination. All earlier extraction obligations survive.",
       "owner": "gameplay_engineer",
-      "previous_review": "IR-GHOST-HARVEST-GROWTH-PRESENTATION-20261119",
+      "previous_review": "CLAUDE-CASTLE-COMBAT-0931",
       "protected_invariants": [
         "Protect consumed/published before recursive reactions; Brace/Bulwark/Battlecraft counters keep independent recursion and retaliation semantics",
         "BEFORE events may kill/replace actors: revalidate before RNG/damage; one strike flag roll shared across targets",
@@ -28663,7 +28663,7 @@
         "BattleAttack precedes PetrifyingBlood, Dread, primary aftermath, Reprisal, Fury, Mana and Frozen; exactly-once original-side/source receipts",
         "Physical versus spell-like/SECONDARY and actual shield/HP damage; LastStand ends activation; Counterfire/Cleave stamps precede recursion"
       ],
-      "rationale": "Exact successor for 0.93.1 Castle combat specialties (Volley Command, revised Aerial Supremacy, Benediction of Arms, Pariah, Frost Mantle, Quick Study, Sermon): bounded routing hooks into focused new owners only. Existing extraction deferrals retained; no future growth credit.",
+      "rationale": "Exact successor for 0.93.1 Castle combat specialties (Volley Command, revised Aerial Supremacy, Benediction of Arms, Pariah, Frost Mantle, Quick Study, Sermon): bounded routing hooks into focused new owners only. Existing extraction deferrals retained; no future growth credit.\n\nCLAUDE-ACADEMY-0942: Exact successor for the 0.94.0-beta.4 Academy hero specialties (Hardened, Spoils of Alchemy, Practice Makes Perfect, Wellspring of Wealth, Storm Lord, revised Serpent's Embrace, Gold Standard, Inexhaustible Knowledge, Halon's Nullifying Shot, Focus Magic and Sage of the Ages): one-line routing hooks or registrations into the focused new owners lib/entities/hero/NewHorizonsAcademySpecialties, lib/battle/NewHorizonsAcademySpecialties, lib/networkPacks/AcademySpecialtyPacks and server/battles/BattleAcademySpecialties. Existing extraction deferrals retained; no future growth credit.",
       "responsibility_spans": [
         "3332-3461 admission, Protect, before-cast and preemptive responses",
         "3463-3590 packet/feedback setup, BEFORE events and streak admission",
@@ -28677,10 +28677,10 @@
         "4302-4405 Counterfire then deterministic Cleave"
       ],
       "responsibleSourcePhase": "GP_FROZEN_C7C191B0_AND_REQUIRED_CD088EB5_PARTITION",
-      "review": "CLAUDE-CASTLE-COMBAT-0931",
-      "review_scope": "Exact accepted Ghost Soul Harvest grant-result presentation and cohesive hostile-kill accumulator extraction only. Source review and pinned parser measurements; no build, native, rendered, sound, performance, or publication acceptance.",
-      "review_status": "INDEPENDENT_EXACT_SOURCE_REVIEWED_NATIVE_RENDERED_UNRUN",
-      "sha256": "2518a1a175bd4009b9403ae2e69c39736026984e025868db033b2c4494b03237"
+      "review": "CLAUDE-ACADEMY-0942",
+      "review_scope": "Exact source organization hash/count/span only; no runtime or future-growth approval.",
+      "review_status": "AUTHOR_GENERATED_PENDING_INDEPENDENT_REVIEW",
+      "sha256": "07bbf0561f65db37dcf92b0f033a736859ff349b04842511d23b052363ddff08"
     },
     "server/battles/BattleActionProcessor.cpp::void BattleActionProcessor::resolveRainOfArrows(const CBattleInfoCallback & battle, const CStack * attacker, RainOfArrowsAction & action)#1": {
       "kind": "legacy",
@@ -28760,10 +28760,10 @@
       "legacy_freeze_predecessor_review_scope": "Only exact current source organization, measured span/hash and stated responsibility. Excludes the two identified structural blockers, behavior/save/AI/rendered/platform acceptance and publication authorization.",
       "legacy_freeze_predecessor_review_status": "INDEPENDENT_SOURCE_ORGANIZATION_REVIEWED_RUNTIME_UNRUN",
       "legacy_freeze_predecessor_sha256": "2b35bde4b1509cf406ce35475bb3e91d69c4d3443b41d87dbd472c646a831dfd",
-      "lines": 2363,
+      "lines": 2366,
       "next_bounded_extraction": "Engine with Gameplay: retain inherited activation-publication/preflight extraction before further substantive activation growth. Extract a bounded automatic-activation start phase2398-2417 with explicit battle/actor/reason and existing activation-effects/FireWall dependencies, while keeping queue ownership/retirement checks in the orchestrator. Require exact packet/reason/RNG and death/TimeStop/Frozen/Wait/continuation characterization plus genuine cancellation/restart and ordinary versus fixture-linkage controls. Future continuation work must separately shrink onActionMade, not create another huge flow helper.",
       "owner": "gameplay_engineer",
-      "previous_review": "CLAUDE-RAMPART-0932",
+      "previous_review": "PROPOSED-CLAUDE-UNIT-STATE-REVISION-20261125",
       "prior_group_d_review": "IR-PRIVATE-GP-NEXT4-B31-REBASE-EEDFD678-20261030",
       "protected_invariants": [
         "Authoritative simulation thread; no retained callback after synchronous battle finalization; current battle identity check in queue loop",
@@ -28772,7 +28772,7 @@
         "RNG only at authoritative choices with original stream/draw order, including stochastic-only rerolls and machine legacy control",
         "Crisis return frames, no stale reduced activation, pending ghosts and final opening/deployment ordering"
       ],
-      "rationale": "Exact successor for the 0.93.2 Rampart hero specialties (Use the Ground, Elusive, Patroness, Giant-Slayer, Living Remedy, Sorceress of Enroth, Brittle, Against the Odds, revised Perfect Mount, Treantmoot and Forest Ambush): one-line routing hooks into the focused new owners lib/entities/hero/NewHorizonsRampartSpecialties, lib/battle/NewHorizonsRampartSpecialties, lib/pathfinder/NewHorizonsElusive, server/battles/BattleRampartSpecialtyCasts, server/processors/PatronessVisit and AI/BattleAI/RampartSpecialtyValue. Existing extraction deferrals retained; no future growth credit. Unit-state revision: CUnitState position, ghost, ghostPending and health are private; reads use the inline accessors getPosition, isGhost, isGhostPending and getHealth, writes the revision-bumping mutators setPosition, setGhost, setGhostPending, setHealth and editHealth()->. One-to-one mechanical rewrites, no behaviour change. Exact 2363 to 2363 lines; no future growth credit.",
+      "rationale": "Exact successor for the 0.93.2 Rampart hero specialties (Use the Ground, Elusive, Patroness, Giant-Slayer, Living Remedy, Sorceress of Enroth, Brittle, Against the Odds, revised Perfect Mount, Treantmoot and Forest Ambush): one-line routing hooks into the focused new owners lib/entities/hero/NewHorizonsRampartSpecialties, lib/battle/NewHorizonsRampartSpecialties, lib/pathfinder/NewHorizonsElusive, server/battles/BattleRampartSpecialtyCasts, server/processors/PatronessVisit and AI/BattleAI/RampartSpecialtyValue. Existing extraction deferrals retained; no future growth credit. Unit-state revision: CUnitState position, ghost, ghostPending and health are private; reads use the inline accessors getPosition, isGhost, isGhostPending and getHealth, writes the revision-bumping mutators setPosition, setGhost, setGhostPending, setHealth and editHealth()->. One-to-one mechanical rewrites, no behaviour change. Exact 2363 to 2363 lines; no future growth credit.\n\nCLAUDE-ACADEMY-0942: Exact successor for the 0.94.0-beta.4 Academy hero specialties (Hardened, Spoils of Alchemy, Practice Makes Perfect, Wellspring of Wealth, Storm Lord, revised Serpent's Embrace, Gold Standard, Inexhaustible Knowledge, Halon's Nullifying Shot, Focus Magic and Sage of the Ages): one-line routing hooks or registrations into the focused new owners lib/entities/hero/NewHorizonsAcademySpecialties, lib/battle/NewHorizonsAcademySpecialties, lib/networkPacks/AcademySpecialtyPacks and server/battles/BattleAcademySpecialties. Existing extraction deferrals retained; no future growth credit.",
       "responsibility_spans": [
         "70-404 prospective views, stopped anchors and reduced activation helpers",
         "406-600 startup/tactics/opening Orders",
@@ -28784,10 +28784,10 @@
         "1880-2384 accepted-action continuation/completion",
         "2386-2613 automatic activation, legacy triggers and tower valuation"
       ],
-      "review": "PROPOSED-CLAUDE-UNIT-STATE-REVISION-20261125",
-      "review_scope": "Exact recorded source hash, physical span and organization delta only. No future growth, whole-mechanic, compiler, native, rendered, performance, save-resume, publication or promotion acceptance.",
-      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "d5ca6c881463a97faeb5242a564cc10ce3a8a1db199c57d0d5b187d5e3609278",
+      "review": "CLAUDE-ACADEMY-0942",
+      "review_scope": "Exact source organization hash/count/span only; no runtime or future-growth approval.",
+      "review_status": "AUTHOR_GENERATED_PENDING_INDEPENDENT_REVIEW",
+      "sha256": "ef5f22ebdd44f0148b74c86f4fb976cb5df2623626fd3ff1cf0c0cd16a0c3e05",
       "inherited_rampart_deferral": "Engine owner must keep this exact3149-line ceiling and six-line macro-isolated route. Before any further flow growth, extract a cohesive activation/publication preflight with ordering and retirement characterization; retain restart/teardown regression and actual integration versus ordinary symbol exclusion proof. This exception does not waive existing oversized-flow debt. This independently reviewed exception covers only the exact captured-Necromancy source hash and size; it grants no future growth. Gameplay/AI owners: retain focused passive snapshot and damage adjustment owners; before further caller growth extract the affected coherent query/damage stage, preserving current-controller ownership, hypothetical isolation, damage taxonomy, attack order and historical absence. Bounded exception limited to reviewed compatibility/query/presentation routing. Before further substantive growth, extract cohesive non-serialization decision logic into its domain owner with exact rejection/order/lifecycle characterization. Preserve contiguous serialization field order and prefix guards; no generic context or Part-file split. Fafner bounded follow-up: Before further activation/legacy-status growth, extract the touched ordered activation/status boundary; preserve genuine versus continuation/Frozen/TimeStop distinctions, source removal order and native legacy UNBIND semantics. Next4: retain all inherited extraction/order/ownership/captured-absence obligations.22 authored native cases UNRUN; full1146 envelope/history plus branch/RNG/AI integration remain required. Further lifecycle/cache growth must extract a cohesive domain phase, not grow another oversized helper. Owner gameplay_engineer with engine_engineer: preserve genuine activation/Wait/continuation/TimeStop order and state reacquisition; native transition plus old activation/save regressions pending. Continue focused flow/selection decomposition before substantive growth. Exact v5 bounded follow-up: Engine owner must extract the cohesive activation-publication/preflight owner, including explicit narrow quartermaster/Swift/firewall dependencies, before further substantive activation growth. Preserve exact early returns, native packet/RNG/reason order, no old source after finalization, Cure and owned alternate-object linkage, cancellation/restart transitions; require before/after activation packet/state/RNG characterization and genuine cancel/restart tests. Existing stricter debt and lower baselines remain binding. Owning gameplay/engine specialist: before further substantive expansion of this touched rule/transition, extract the next coherent affected policy or ordered stage into a focused owner. Preserve callback visibility, original recipient/caster identity, rejection atomicity and packet/RNG order; characterization must compare exact state and emitted packets. This is no future growth credit.\n\nEngine with Gameplay: retain inherited activation-publication/preflight extraction before further substantive activation growth. Extract a bounded automatic-activation start phase2398-2417 with explicit battle/actor/reason and existing activation-effects/FireWall dependencies, while keeping queue ownership/retirement checks in the orchestrator. Require exact packet/reason/RNG and death/TimeStop/Frozen/Wait/continuation characterization plus genuine cancellation/restart and ordinary versus fixture-linkage controls. Future continuation work must separately shrink onActionMade, not create another huge flow helper. Protected invariants: Authoritative simulation thread; no retained callback after synchronous battle finalization; current battle identity check in queue loop; True activation versus Hero/shot/Pursuit/Dread/MasterGate continuation; TimeStop pauses while Frozen forfeits and advances affliction clock; Swift Gates before round, Divine payout before round increment, expiry/normalization before healing, ordinary Gates and ROUND_START after; RNG only at authoritative choices with original stream/draw order, including stochastic-only rerolls and machine legacy control; Crisis return frames, no stale reduced activation, pending ghosts and final opening/deployment ordering."
     },
     "server/battles/BattleFlowProcessor.cpp::bool BattleFlowProcessor::tryActivateBerserkPenalty(const CBattleInfoCallback & battle, const CStack * next)#1": {
@@ -29033,14 +29033,14 @@
     "server/battles/BattleResultProcessor.cpp": {
       "deferral": "Before result XP expansion extract authoritative battle reward snapshot with explicit result/winner/hero raw XP inputs; preserve pre-removal total, NORMAL defeat gate, no double XP scaling, survivor/reward/query ordering and current-save acceptance.",
       "kind": "exception",
-      "lines": 1057,
+      "lines": 1062,
       "owner": "gameplay_engineer",
-      "previous_review": "IR-NH092-ORG-3E82D142-20261116",
-      "rationale": "Exact 1077 to 1057-line scope. Authoritative execution integrates current spell/action receipts and validated captured data while retiring incompatible handlers. Preserve validated requests, rejection atomicity, ordered effects/packets and RNG. Unit-state revision: CUnitState position, ghost, ghostPending and health are private; reads use the inline accessors getPosition, isGhost, isGhostPending and getHealth, writes the revision-bumping mutators setPosition, setGhost, setGhostPending, setHealth and editHealth()->. One-to-one mechanical rewrites, no behaviour change. Exact 1057 to 1057 lines; no future growth credit.",
-      "review": "PROPOSED-CLAUDE-UNIT-STATE-REVISION-20261125",
-      "review_scope": "Exact recorded source hash, physical span and organization delta only. No future growth, whole-mechanic, compiler, native, rendered, performance, save-resume, publication or promotion acceptance.",
-      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "d576d9373bfe3329c5dad53270f2b8dcc3f97c9a043d57ee3b75bd3201052ddd"
+      "previous_review": "PROPOSED-CLAUDE-UNIT-STATE-REVISION-20261125",
+      "rationale": "Exact 1077 to 1057-line scope. Authoritative execution integrates current spell/action receipts and validated captured data while retiring incompatible handlers. Preserve validated requests, rejection atomicity, ordered effects/packets and RNG. Unit-state revision: CUnitState position, ghost, ghostPending and health are private; reads use the inline accessors getPosition, isGhost, isGhostPending and getHealth, writes the revision-bumping mutators setPosition, setGhost, setGhostPending, setHealth and editHealth()->. One-to-one mechanical rewrites, no behaviour change. Exact 1057 to 1057 lines; no future growth credit.\n\nCLAUDE-ACADEMY-0942: Exact successor for the 0.94.0-beta.4 Academy hero specialties (Hardened, Spoils of Alchemy, Practice Makes Perfect, Wellspring of Wealth, Storm Lord, revised Serpent's Embrace, Gold Standard, Inexhaustible Knowledge, Halon's Nullifying Shot, Focus Magic and Sage of the Ages): one-line routing hooks or registrations into the focused new owners lib/entities/hero/NewHorizonsAcademySpecialties, lib/battle/NewHorizonsAcademySpecialties, lib/networkPacks/AcademySpecialtyPacks and server/battles/BattleAcademySpecialties. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-ACADEMY-0942",
+      "review_scope": "Exact source organization hash/count/span only; no runtime or future-growth approval.",
+      "review_status": "AUTHOR_GENERATED_PENDING_INDEPENDENT_REVIEW",
+      "sha256": "7d2da3ab8960d51b651502a61e830ba2705f31569c324af3fa17905b023ba135"
     },
     "server/battles/BattleResultProcessor.cpp::CasualtiesAfterBattle::CasualtiesAfterBattle(const CBattleInfoCallback & battle, BattleSide sideInBattle): army(battle.battleGetArmyObject(sideInBattle))#1": {
       "kind": "exception",
@@ -29058,14 +29058,14 @@
     "server/battles/BattleResultProcessor.cpp::void BattleResultProcessor::battleFinalize(const BattleID & battleID, const BattleResult & result)#1": {
       "deferral": "Before further result growth, extract reward settlement context with explicit surviving hero, gross debit, winner flag and accepted-cast flag; preserve Buffer cleanup, Normal room, one application, hero removal and remaining recovery order.",
       "kind": "exception",
-      "lines": 371,
+      "lines": 375,
       "owner": "gameplay_engineer",
-      "previous_review": "IR-WISDOM-GAMEPLAY-EXACT-SUCCESSOR-SOURCE-20261103",
-      "rationale": "Exact 391 to 371-line scope. Authoritative execution integrates current spell/action receipts and validated captured data while retiring incompatible handlers. Preserve validated requests, rejection atomicity, ordered effects/packets and RNG.",
-      "review": "IR-NH092-ORG-3E82D142-20261116",
-      "review_scope": "exact-organization-metadata-only-no-runtime-or-future-growth-approval",
-      "review_status": "PENDING_INDEPENDENT_EXACT_SOURCE_REVIEW",
-      "sha256": "05cfebbaa9786eced1cad5a07fda202023d4af8ef908f626edbf5e8fd6ade751"
+      "previous_review": "IR-NH092-ORG-3E82D142-20261116",
+      "rationale": "Exact 391 to 371-line scope. Authoritative execution integrates current spell/action receipts and validated captured data while retiring incompatible handlers. Preserve validated requests, rejection atomicity, ordered effects/packets and RNG.\n\nCLAUDE-ACADEMY-0942: Exact successor for the 0.94.0-beta.4 Academy hero specialties (Hardened, Spoils of Alchemy, Practice Makes Perfect, Wellspring of Wealth, Storm Lord, revised Serpent's Embrace, Gold Standard, Inexhaustible Knowledge, Halon's Nullifying Shot, Focus Magic and Sage of the Ages): one-line routing hooks or registrations into the focused new owners lib/entities/hero/NewHorizonsAcademySpecialties, lib/battle/NewHorizonsAcademySpecialties, lib/networkPacks/AcademySpecialtyPacks and server/battles/BattleAcademySpecialties. Existing extraction deferrals retained; no future growth credit.",
+      "review": "CLAUDE-ACADEMY-0942",
+      "review_scope": "Exact source organization hash/count/span only; no runtime or future-growth approval.",
+      "review_status": "AUTHOR_GENERATED_PENDING_INDEPENDENT_REVIEW",
+      "sha256": "300e27d8c36c8afb2e0ce3bdcb3bcf9a2fe07ce8dd703fdc1ad82799f44a462b"
     },
     "server/battles/BattleResultProcessor.cpp::void BattleResultProcessor::endBattle(const CBattleInfoCallback & battle)#1": {
       "deferral": "Before result XP expansion extract authoritative battle reward snapshot with explicit result/winner/hero raw XP inputs; preserve pre-removal total, NORMAL defeat gate, no double XP scaling, survivor/reward/query ordering and current-save acceptance.",
