@@ -196,6 +196,7 @@ public:
 
 	bool openingPlaying() const;
 	void openingEnd();
+	int introSoundChannel = -1; ///< Stopped when the end-with-autocombat key skips the opening.
 
 	bool makingTurn() const;
 

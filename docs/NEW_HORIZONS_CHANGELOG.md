@@ -61,6 +61,10 @@ read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
   no longer records the computer players' most detailed (trace) messages; add
   `{ "domain" : "ai", "level" : "trace" }` to `logging.loggers` in
   `settings.json` to get them back.
+- **Q works during the battle intro**: pressing Q while the intro music plays
+  ends the intro and asks at once whether to end the battle with autocombat.
+  If the enemy moves first, autocombat takes over at your first turn, without a
+  second press.
 
 ## 0.94.0-beta.3
 

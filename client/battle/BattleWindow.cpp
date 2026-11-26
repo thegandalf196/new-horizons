@@ -765,19 +765,12 @@ void BattleWindow::deactivate()
 	GAME->interface()->cingconsole->deactivate();
 }
 
-bool BattleWindow::captureThisKey(EShortcut key)
-{
-	return owner.openingPlaying();
-}
-
 void BattleWindow::keyPressed(EShortcut key)
 {
 	if (owner.openingPlaying())
-	{
-		owner.openingEnd();
-		return;
-	}
-	InterfaceObjectConfigurable::keyPressed(key);
+		endOpeningWithKey(key);
+	else
+		InterfaceObjectConfigurable::keyPressed(key);
 }
 
 void BattleWindow::clickPressed(const Point & cursorPosition)

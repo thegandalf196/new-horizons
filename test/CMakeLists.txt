@@ -104,6 +104,8 @@ set(test_SRCS
 		client/LeadershipEfficiencyRowTest.cpp
 		client/SpellSchoolBadgeLayoutTest.cpp
 		client/CreatureAbilityGroupingTest.cpp
+		client/ShortcutSharedBindingTest.cpp
+		../client/gui/ShortcutHandler.cpp
 		hero/LeadershipEfficiencyRulesTest.cpp
 		server/battles/LeadershipEfficiencyBattleTest.cpp
 		server/battles/CreatureSupplementalStatsTest.cpp

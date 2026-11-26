@@ -35,6 +35,9 @@ public:
 
 	std::vector<EShortcut> translateJoystickAxis(const std::string & key) const;
 
+	/// True when a keyboard key or joystick button is bound to both shortcuts.
+	bool sharesBinding(EShortcut first, EShortcut second) const;
+
 	/// Returns sorted unique joystick button bindings assigned to the provided shortcut.
 	std::vector<std::string> getJoystickButtonBindings(EShortcut shortcut) const;
 

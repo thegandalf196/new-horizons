@@ -677,16 +677,11 @@ void BattleInterface::playIntroSoundAndUnlockInterface()
 		soundBase::battle05, soundBase::battle06, soundBase::battle07
 	};
 
-	int battleIntroSoundChannel = -1;
-
-	if (!battlefieldSound.empty())
-		battleIntroSoundChannel = ENGINE->sound().playSound(battlefieldSound);
-	else
-		battleIntroSoundChannel = ENGINE->sound().playSoundFromSet(battleIntroSounds);
-
-	if (battleIntroSoundChannel != -1)
+	introSoundChannel = battlefieldSound.empty() ? ENGINE->sound().playSoundFromSet(battleIntroSounds)
+		: ENGINE->sound().playSound(battlefieldSound);
+	if (introSoundChannel != -1)
 	{
-		ENGINE->sound().setCallback(battleIntroSoundChannel, onIntroPlayed);
+		ENGINE->sound().setCallback(introSoundChannel, onIntroPlayed);
 
 		// a replay is watched, not played - the intro is always skipped there
 		if (settings["gameTweaks"]["skipBattleIntroMusic"].Bool() || GAME->server().isReplayActive())
@@ -1269,6 +1264,7 @@ void BattleInterface::activateStack()
 	fieldController->redrawBackgroundWithHexes();
 	actionsController->activateStack();
 	ENGINE->fakeMouseMove();
+	windowObject->resumeEndWithAutocombat();
 }
 
 bool BattleInterface::makingTurn() const

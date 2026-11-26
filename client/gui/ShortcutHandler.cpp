@@ -108,6 +108,18 @@ std::vector<EShortcut> ShortcutHandler::translateJoystickAxis(const std::string 
 	return translateShortcut(mappedJoystickAxes, key);
 }
 
+bool ShortcutHandler::sharesBinding(EShortcut first, EShortcut second) const
+{
+	for(const auto * bindings : {&mappedKeyboardShortcuts, &mappedJoystickShortcuts})
+		for(const auto & [key, shortcut] : *bindings)
+		{
+			const auto range = bindings->equal_range(key);
+			if(shortcut == first && std::any_of(range.first, range.second, [second](const auto & entry) { return entry.second == second; }))
+				return true;
+		}
+	return false;
+}
+
 std::vector<std::string> ShortcutHandler::getJoystickButtonBindings(EShortcut shortcut) const
 {
 	std::vector<std::string> result;

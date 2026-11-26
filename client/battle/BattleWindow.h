@@ -190,4 +190,13 @@ public:
 
 	/// ends battle with autocombat
 	void endWithAutocombat();
+	/// Hands a confirmed early end-with-autocombat request over at the player's activation.
+	void resumeEndWithAutocombat();
+
+private:
+	/// Confirms ending with autocombat; a confirmation made before the player's turn waits for it.
+	void confirmEndWithAutocombat();
+	void startEndWithAutocombat();
+	void endOpeningWithKey(EShortcut key);
+	bool endWithAutocombatPending = false;
 };
