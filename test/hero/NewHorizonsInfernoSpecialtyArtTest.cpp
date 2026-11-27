@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../../lib/entities/hero/CHero.h"
 #include "../../lib/entities/hero/NewHorizonsHeroRules.h"
 #include "../../lib/entities/hero/NewHorizonsInfernoSpecialtyPresentation.h"
@@ -8,6 +9,7 @@
 
 TEST(InfernoSpecialtyArtwork, CapturedRowsUseSelectedNativeFamiliesAndAbsentRowsStayUnclaimed)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const JsonNode current(JsonPath::builtin("config/newHorizonsHeroes"));
 	struct Row { const char * hero; const char * policy; const char * artwork; };
 	for(const auto & row : {

@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../OriginalDataRequirement.h"
 #include "../mock/TinyMapGameTest.h"
 #include "../mock/GameHandlerTestServer.h"
 #include "../../lib/CPlayerState.h"
@@ -40,6 +41,11 @@ TEST(InfernoAdventureSpecialties, SulfurSenseUsesTenLevelThresholdsAndLegacyAbse
 	EXPECT_EQ(sulfurSenseAmount(rules, 20), 3);
 	EXPECT_EQ(sulfurSenseAmount(nullptr), 0);
 	EXPECT_EQ(cutpurseGold(nullptr, 10000, 0), 0);
+}
+
+TEST(InfernoAdventureSpecialties, MissingHeroPreservesTheOriginalResourcePile)
+{
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	ResourceSet base;
 	base[EGameResID::GOLD] = 100;
 	EXPECT_EQ(sulfurSensePickup(base, nullptr), base);
