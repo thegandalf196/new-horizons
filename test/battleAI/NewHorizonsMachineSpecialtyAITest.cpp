@@ -22,6 +22,7 @@
 #include "../../lib/entities/hero/NewHorizonsCapabilityRules.h"
 #include "../../lib/gameState/CGameState.h"
 #include "../../lib/serializer/CMemorySerializer.h"
+#include "../../lib/spells/NewHorizonsSorcery.h"
 #include <algorithm>
 #include <memory>
 #include <vector>
@@ -418,4 +419,33 @@ TEST_F(NewHorizonsMachineSpecialtyAITest, PursuitOnlyIncumbentDeclinesMovementWi
 	EXPECT_EQ(gameState()->saveToMemory(), live);
 	ASSERT_TRUE(gameHandler->battles->makePlayerBattleAction(BattleID(0), PlayerColor(0), fallback));
 	EXPECT_EQ(actor->pursuitMovementRemaining, 0);
+}
+
+TEST_F(NewHorizonsMachineSpecialtyAITest, PyreFireImmuneTargetMatchesHypotheticalAndCachedDamageWithoutMutation)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare("core:pyre"));
+	victim->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
+		BonusType::SPELL_SCHOOL_IMMUNITY, BonusSource::OTHER, 1,
+		BonusSourceID(), BonusSubtypeID(SpellSchool::FIRE)));
+	forceActorFirst();
+	beginCombat();
+	auto branch = simulation();
+	auto sibling = std::make_shared<HypotheticBattle>(environment.get(), branch);
+	const auto * projectedActor = branch->battleGetUnitByID(actor->unitId());
+	const auto * projectedVictim = branch->battleGetUnitByID(victim->unitId());
+	const auto liveBefore = gameState()->saveToMemory();
+	const auto serverRng = rngBytes(*gameHandler->randomizer);
+	const auto aiRng = rngBytes(CRandomGenerator::getDefault());
+	const auto siblingBefore = sibling->battleGetUnitByID(victim->unitId())->acquireState()->save();
+	const auto actual = battle()->calculateDmgRange(BattleAttackInfo(actor, victim, 0, true)).damage;
+	const BattleAttackInfo input(projectedActor, projectedVictim, 0, true);
+	const auto projected = branch->calculateDmgRange(input).damage;
+	EXPECT_EQ(projected.min, actual.min);
+	EXPECT_EQ(projected.max, actual.max);
+	DamageCache cache;
+	EXPECT_EQ(cache.getDamage(projectedActor, projectedVictim, branch), branch->battleExpectedLuckDamage(input));
+	EXPECT_EQ(gameState()->saveToMemory(), liveBefore);
+	EXPECT_EQ(rngBytes(*gameHandler->randomizer), serverRng);
+	EXPECT_EQ(rngBytes(CRandomGenerator::getDefault()), aiRng);
+	EXPECT_EQ(sibling->battleGetUnitByID(victim->unitId())->acquireState()->save(), siblingBefore);
 }

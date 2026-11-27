@@ -4,6 +4,7 @@
 #include "../CGameHandler.h"
 #include "../../lib/battle/CBattleInfoCallback.h"
 #include "../../lib/bonuses/BonusList.h"
+#include "../../lib/bonuses/BonusParameters.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/spells/BonusCaster.h"
 #include "../../lib/spells/CSpell.h"

@@ -101,4 +101,25 @@ TEST_F(InfernoSpellProjectionTest, KindlingForecastReadsAcceptedFireHistoryThrou
 		spell->battleMechanics(&forecast)->adjustEffectValue(child->battleGetUnitByID(enemy->unitId())));
 	EXPECT_EQ(battle()->getUsedSpells(BattleSide::ATTACKER), history);
 }
+
+TEST_F(InfernoSpellProjectionTest, FirstAndSecondKindlingCastsMatchTheirPrecastForecasts)
+{
+	ASSERT_NO_FATAL_FAILURE(fireballArena("core:xyron"));
+	for(int cast = 0; cast < 2; ++cast)
+	{
+		const auto before = enemy->getAvailableHealth();
+		ASSERT_NO_FATAL_FAILURE(projectFireball());
+		const auto expected = parent->battleGetUnitByID(enemy->unitId())->getAvailableHealth();
+		ASSERT_LT(expected, before);
+		ASSERT_TRUE(submit(spellAt(BattleSide::ATTACKER, SpellID::FIREBALL, enemy)));
+		EXPECT_EQ(enemy->getAvailableHealth(), expected) << "cast " << cast + 1;
+		if(cast == 0)
+		{
+			BattleNextRound next;
+			next.battleID = BattleID(0);
+			gameHandler->sendAndApply(next);
+			ASSERT_NO_FATAL_FAILURE(activate(active));
+		}
+	}
+}
 #endif
