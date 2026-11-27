@@ -31,7 +31,7 @@ bool fireSpell(const IBattleInfo & battle, SpellID spell)
 }
 bool ownHeroFireball(const spells::Mechanics & mechanics)
 {
-	return mechanics.getSpellId() == SpellID::FIREBALL && mechanics.isGenuineHeroCast()
+	return mechanics.isGenuineHeroCast() && mechanics.getSpellId() == SpellID::FIREBALL
 		&& !mechanics.isRunicReflectionShare() && mechanics.getHeroCaster()
 		&& mechanics.battle() && mechanics.battle()->getBattle()
 		&& mechanics.battle()->getBattle()->getSideHero(mechanics.getEffectCasterSide()) == mechanics.getHeroCaster();

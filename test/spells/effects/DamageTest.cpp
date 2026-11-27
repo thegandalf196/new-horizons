@@ -41,6 +41,8 @@ protected:
 	{
 		EffectFixture::setUp();
 		EffectFixture::setupEffect(JsonNode());
+		// Identityless damage mechanics never enter hero-only Fireball riders.
+		EXPECT_CALL(mechanicsMock, getSpellId()).Times(0);
 	}
 };
 
