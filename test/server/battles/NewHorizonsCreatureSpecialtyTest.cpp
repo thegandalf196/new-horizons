@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "HeroCommandFixture.h"
+#include "../../OriginalDataRequirement.h"
 #include "HistoricalNecromancyFixture.h"
 #include "../../hero/HistoricalHeroEpochFixture.h"
 #include "../../spells/HistoricalCrusadeRules.h"
@@ -789,11 +790,12 @@ TEST_F(NewHorizonsCreatureSpecialtyTest, SharedPresentationKeepsFallbackResource
 
 TEST_F(NewHorizonsCreatureSpecialtyTest, CurrentThorgrimAndAshPresentationUsesSelectedSpecialties)
 {
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
 	const JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
 	const JsonNode magic(JsonPath::builtin("config/newHorizonsMagic"));
 	for(const auto & [heroId, name, artwork] : std::array{
 		std::tuple{"core:thorgrim", "Master Spellward", "newHorizons/heroSpecialties/ThorgrimMasterSpellward"},
-		std::tuple{"core:ash", "Fireball", "newHorizons/heroSpecialties/AshFireball"}})
+		std::tuple{"core:ash", "Bloodfire", "newHorizons/heroSpecialties/AshFireball"}})
 	{
 		SCOPED_TRACE(heroId);
 		const auto * hero = HeroTypeID(HeroTypeID::decode(heroId)).toHeroType();
@@ -806,6 +808,24 @@ TEST_F(NewHorizonsCreatureSpecialtyTest, CurrentThorgrimAndAshPresentationUsesSe
 		EXPECT_EQ(card.animation().getOriginalName(), std::string(artwork) + "/44");
 		EXPECT_EQ(card.animation(true).getOriginalName(), std::string(artwork) + "/32");
 	}
+}
+
+TEST_F(NewHorizonsCreatureSpecialtyTest, AbsentBloodfireKeepsHistoricalFireballPresentation)
+{
+	VCMI_TEST_REQUIRE_ORIGINAL_DATA();
+	auto rules = JsonNode(JsonPath::builtin("config/newHorizonsHeroes"));
+	rules["revisedSpecialties"].Struct().erase("bloodfire");
+	const JsonNode magic(JsonPath::builtin("config/newHorizonsMagic"));
+	const auto * ash = HeroTypeID(HeroTypeID::decode("core:ash")).toHeroType();
+	ASSERT_NE(ash, nullptr);
+	const auto card = heroSpecialtyPresentation(*ash, rules, std::nullopt, magic);
+	EXPECT_EQ(card.name, "Fireball");
+	EXPECT_EQ(card.spell, SpellID(SpellID::FIREBALL));
+	ASSERT_TRUE(card.artwork.has_value());
+	EXPECT_EQ(*card.artwork, "newHorizons/heroSpecialties/AshFireball");
+	EXPECT_EQ(card.frame(), 0u);
+	EXPECT_EQ(card.animation().getOriginalName(), "newHorizons/heroSpecialties/AshFireball/44");
+	EXPECT_EQ(card.animation(true).getOriginalName(), "newHorizons/heroSpecialties/AshFireball/32");
 }
 
 TEST_F(NewHorizonsCreatureSpecialtyTest, SharedLiveAndPreviewPresentationUsesMarkersWithoutMutation)
