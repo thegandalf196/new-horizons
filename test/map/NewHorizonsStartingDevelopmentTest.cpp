@@ -4,6 +4,7 @@
  */
 #include "StdInc.h"
 #include "../../lib/entities/hero/NewHorizonsAcademySpecialties.h"
+#include "../../lib/entities/hero/NewHorizonsInfernoSpecialties.h"
 #include "../PerkStateFixture.h"
 #include "../server/LegacyEstatesCapture.h"
 #include "../NewHorizonsHistoricalAdventurePolicyTestUtils.h"
@@ -165,6 +166,7 @@ class NewHorizonsStartingDevelopmentTest : public TinyMapGameTest
 protected:
 	bool absent = false;
 	bool absentDruidSpecialty = false;
+	bool absentKindlingSpecialty = false;
 	bool isolateCoreMysticism = false;
 	bool isolateCoreIntelligence = false;
 	bool previousFormatContext = false;
@@ -189,6 +191,8 @@ protected:
 	{
 		TinyMapGameTest::mapLoaded(loaded);
 		auto rules = historicalStartingDevelopmentRules();
+		if(absentKindlingSpecialty)
+			rules["revisedSpecialties"].Struct().erase("kindling");
 		if(absentDruidSpecialty || previousFormatContext)
 			rules.Struct().erase("druidSpecialties");
 		if(absent)
@@ -614,10 +618,24 @@ TEST_F(NewHorizonsStartingDevelopmentTest, AydenDefaultIntelligenceFeedsRealNorm
 
 TEST_F(NewHorizonsStartingDevelopmentTest, XyronDefaultPyromancerFeedsFireDamageWithoutChangingSpecialty)
 {
+	// Capture the original Inferno specialty before the optional Kindling replacement.
+	absentKindlingSpecialty = true;
 	ASSERT_NO_FATAL_FAILURE(prepare(infernoStarts[1]));
 	const SpellID inferno(SpellID::INFERNO);
 	EXPECT_TRUE(actor()->spellbookContainsSpell(inferno));
 	EXPECT_EQ(actor()->getDamageSpellSpecialtyBonusPercent(inferno), 15);
+	EXPECT_FALSE(newHorizonsHeroes::usesKindlingHistory(actor()));
+	EXPECT_EQ(newHorizonsMagic::spellPowerDamagePerkBonusPercent(actor()->getMagicRules(), actor(), inferno.toSpell()), 15);
+	EXPECT_EQ(newHorizonsMagic::spellPowerDamagePerkBonusPercent(actor()->getMagicRules(), actor(), SpellID(SpellID::FROST_RING).toSpell()), 0);
+}
+
+TEST_F(NewHorizonsStartingDevelopmentTest, XyronKindlingReplacesInfernoSpecialtyAndPreservesPyromancer)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare(infernoStarts[1]));
+	const SpellID inferno(SpellID::INFERNO);
+	EXPECT_TRUE(actor()->spellbookContainsSpell(inferno));
+	EXPECT_TRUE(newHorizonsHeroes::usesKindlingHistory(actor()));
+	EXPECT_EQ(actor()->getDamageSpellSpecialtyBonusPercent(inferno), 0);
 	EXPECT_EQ(newHorizonsMagic::spellPowerDamagePerkBonusPercent(actor()->getMagicRules(), actor(), inferno.toSpell()), 15);
 	EXPECT_EQ(newHorizonsMagic::spellPowerDamagePerkBonusPercent(actor()->getMagicRules(), actor(), SpellID(SpellID::FROST_RING).toSpell()), 0);
 }
