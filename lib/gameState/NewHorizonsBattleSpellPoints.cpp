@@ -47,6 +47,8 @@ BattleSpellPointEntry validateBattleSpellPointEntry(const CGameState & state, co
 		const auto & side = battle.getSide(sideID);
 		side.validateManaFurnaceSerialization(true);
 		side.validateManaLeechesSerialization(true);
+		if(side.residualLifeDamage != 0)
+			throw std::runtime_error("BattleStart contains already-applied Residual Life damage");
 		if(side.manaLeechesRecoveredNormal != 0)
 			throw std::runtime_error("BattleStart contains already-applied Mana Leeches recovery");
 		side.validateRecoverySpecialtySerialization(true);
@@ -91,8 +93,10 @@ void applyAcceptedBattleSpellPointEntry(CGameState & state, BattleInfo & battle,
 			if(newHorizonsMagic::spellPointRulesActive(hero->getMagicRules()))
 			{
 				hero->restoreSpellPointSnapshot(side.initialNormalSpellPoints, side.initialBufferSpellPoints);
+				const auto beforeTemporary = hero->getBufferSpellPoints();
 				if(side.temporaryBufferRemaining > 0 && !hero->grantBufferSpellPoints(side.temporaryBufferRemaining))
 					throw std::runtime_error("Failed to grant temporary combat Spell Points");
+				side.temporaryBufferRemaining = hero->getBufferSpellPoints() - beforeTemporary;
 				if(side.additionalMana < 0)
 				{
 					// Preserve signed combat-mana penalties, consuming available

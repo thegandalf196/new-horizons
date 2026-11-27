@@ -24,6 +24,7 @@
 #include "../pathfinder/NewHorizonsMovement.h"
 #include "../battle/HeroCommand.h"
 #include "CGHeroInstance.h"
+#include "../entities/hero/NewHorizonsHoardedPower.h"
 #include "../entities/hero/NewHorizonsGhostSpecialty.h"
 #include "../entities/hero/NewHorizonsLivingInferno.h"
 #include "../entities/hero/NewHorizonsAerialSupremacy.h"
@@ -2096,6 +2097,10 @@ bool CGHeroInstance::grantBufferSpellPoints(int32_t amount)
 {
 	if(!newHorizonsMagic::spellPointRulesActive(getMagicRules()))
 		return false;
+	if(amount < 0)
+		return false;
+	if(const auto cap = newHorizonsHeroes::hoardedPowerCap(*this))
+		amount = static_cast<int32_t>(std::min<int64_t>(amount, std::max<int64_t>(0, int64_t{*cap} - spellPointState.getBuffer())));
 	const bool granted = spellPointState.grantBuffer(amount);
 	if(granted)
 		spellPointsInitialized = true;

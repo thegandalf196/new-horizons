@@ -203,6 +203,7 @@ set(lib_MAIN_SRCS
 	battle/BattleAction.cpp
 	battle/BattleAttackInfo.cpp
 	battle/DamageFinalization.cpp
+	battle/ResidualLife.cpp
 	battle/DamagePayloadPreparation.cpp
 	battle/DamageOrderPayload.cpp
 	battle/DamageCalculationTiming.cpp
@@ -293,8 +294,9 @@ set(lib_MAIN_SRCS
 		entities/hero/NewHorizonsCastleAdventureSpecialties.cpp
 		entities/hero/NewHorizonsRampartSpecialties.cpp
 		entities/hero/NewHorizonsRampartSpecialtyPresentation.cpp
-		entities/hero/NewHorizonsInfernoSpecialties.cpp
-		entities/hero/NewHorizonsAcademySpecialties.cpp
+	entities/hero/NewHorizonsInfernoSpecialties.cpp
+	entities/hero/NewHorizonsAcademySpecialties.cpp
+	entities/hero/NewHorizonsNecropolisCombatSpecialties.cpp
 		entities/hero/NewHorizonsAcademySpecialtyPresentation.cpp
 		entities/hero/NewHorizonsGenieSage.cpp
 		entities/hero/NewHorizonsGenieAbilities.cpp
@@ -454,12 +456,14 @@ set(lib_MAIN_SRCS
 	battle/SpecialtyEventPolicy.cpp
 	battle/NewHorizonsSpecialtyRoundEffects.cpp
 	battle/NewHorizonsPassiveSpecialties.cpp
+	battle/OrdinarySpecialtyDamage.cpp
 	battle/NewHorizonsCreatureSpecialtyCapabilities.cpp
 	battle/NewHorizonsSpecialtyEvents.cpp
 	battle/NewHorizonsSpecialtyProcs.cpp
 	battle/NewHorizonsAttackControllers.cpp
 	battle/NewHorizonsPoisonRefresh.cpp
 	battle/NewHorizonsStun.cpp
+	battle/CHealthEternalServitude.cpp
 	battle/CHealthTemporaryGrowth.cpp
 	battle/CommittedElementalEffects.cpp
 	battle/CommittedBonusOperations.cpp
@@ -714,6 +718,8 @@ set(lib_MAIN_SRCS
 	entities/hero/NewHorizonsSchoolSpellcraftPresentation.cpp
 	entities/hero/NewHorizonsIndividualSpecialtyPresentation.cpp
 	entities/hero/NewHorizonsInfernoSpecialtyPresentation.cpp
+	entities/hero/NewHorizonsNecropolisRetainedSpecialties.cpp
+	entities/hero/NewHorizonsNecropolisSpecialtyPresentation.cpp
 	entities/hero/NewHorizonsSpecialtyPresentation.cpp
 	entities/hero/NewHorizonsRetainedSpecialtyArtwork.cpp
 	entities/hero/NewHorizonsSkillSpecialtyRules.cpp
@@ -832,7 +838,9 @@ set(lib_MAIN_SRCS
 	mapObjects/EstatesArtifactQuote.cpp
 	networkPacks/EstatesPacks.cpp
 	gameState/EstatesPacks.cpp
+	networkPacks/NecropolisSpecialtyPacks.cpp
 	networkPacks/AcademySpecialtyPacks.cpp
+	gameState/NecropolisSpecialtyPacks.cpp
 	gameState/AcademySpecialtyPacks.cpp
 	mapObjects/TownCapitol.cpp
 	mapObjects/NewHorizonsFourOfferLevelUp.cpp
@@ -840,6 +848,7 @@ set(lib_MAIN_SRCS
 	mapObjects/NewHorizonsLevelUpOffer.cpp
 	mapObjects/NewHorizonsHeroUpgrade.cpp
 	mapObjects/HeroManaRegeneration.cpp
+	entities/hero/NewHorizonsHoardedPower.cpp
 	mapObjects/HeroScholar.cpp
 	mapObjects/HeroLearningState.cpp
 	mapObjects/HeroPrimarySkill.cpp
@@ -1409,8 +1418,11 @@ set(lib_MAIN_HEADERS
 		entities/hero/NewHorizonsPariahLearning.h
 		entities/hero/NewHorizonsCastleAdventureSpecialties.h
 		entities/hero/NewHorizonsRampartSpecialties.h
-		entities/hero/NewHorizonsInfernoSpecialties.h
-		entities/hero/NewHorizonsInfernoSpecialtyPresentation.h
+	entities/hero/NewHorizonsInfernoSpecialties.h
+	entities/hero/NewHorizonsInfernoSpecialtyPresentation.h
+	entities/hero/NewHorizonsNecropolisCombatSpecialties.h
+	entities/hero/NewHorizonsNecropolisRetainedSpecialties.h
+	entities/hero/NewHorizonsNecropolisSpecialtyPresentation.h
 	entities/hero/NewHorizonsAcademySpecialties.h
 		entities/hero/NewHorizonsGenieSage.h
 	battle/NewHorizonsSoulHarvest.h
@@ -1493,6 +1505,7 @@ set(lib_MAIN_HEADERS
 	battle/CBattleInfoCallback.h
 	battle/BattleReach.h
 	battle/DamageCalculationTiming.h
+	battle/ResidualLife.h
 	battle/DamagePayloadPreparation.h
 	battle/CBattleInfoEssentials.h
 	battle/VisibleHeroPolicy.h
@@ -1528,6 +1541,7 @@ set(lib_MAIN_HEADERS
 	battle/SpecialtyEventPolicy.h
 	battle/NewHorizonsSpecialtyRoundEffects.h
 	battle/NewHorizonsPassiveSpecialties.h
+	battle/OrdinarySpecialtyDamage.h
 	battle/NewHorizonsCreatureSpecialtyCapabilities.h
 	battle/NewHorizonsSpecialtyEvents.h
 	battle/NewHorizonsSpecialtyProcs.h
@@ -1801,6 +1815,7 @@ set(lib_MAIN_HEADERS
 	mapObjects/TownBuildingInstance.h
 	mapObjects/CGResource.h
 	entities/hero/NewHorizonsInfernoAdventureSpecialties.h
+	entities/hero/NewHorizonsHoardedPower.h
 	mapObjects/CGTownInstance.h
 	mapObjects/NewHorizonsSage.h
 	mapObjects/NewHorizonsRecruitersContacts.h
@@ -1812,6 +1827,7 @@ set(lib_MAIN_HEADERS
 	mapObjects/EstatesStewardship.h
 	mapObjects/EstatesArtifactQuote.h
 	networkPacks/EstatesPacks.h
+	networkPacks/NecropolisSpecialtyPacks.h
 	networkPacks/AcademySpecialtyPacks.h
 	gameState/EstatesState.h
 	entities/hero/NewHorizonsFourOfferProgression.h

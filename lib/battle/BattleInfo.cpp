@@ -1862,6 +1862,8 @@ void BattleInfo::normalizeLegacyHeroCommandState()
 
 void BattleInfo::postDeserialize()
 {
+	for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+		getSide(side).validateResidualLifeSerialization(true, getSideHero(side));
 	for (const auto & unit : stacks)
 		unit->postDeserialize(getSideArmy(unit->unitSide()));
 

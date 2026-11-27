@@ -21,6 +21,8 @@ struct HeroLedger
 	WisdomCombatState wisdom;
 	SpellResponseState response;
 	OverwhelmingFormulaState overwhelming;
+	int64_t residualLifeDamage = 0;
+	int32_t residualLifeThreshold = 0, residualLifeLimit = 0;
 	bool completedHeroCast = false;
 	uint8_t completedLevelMask = 0;
 	std::optional<int32_t> completedCastCount;

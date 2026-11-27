@@ -10,6 +10,7 @@
 #include "../CCreatureHandler.h"
 #include "../callback/IGameInfoCallback.h"
 #include "../entities/hero/NewHorizonsCastleAdventureSpecialties.h"
+#include "../entities/hero/NewHorizonsNecropolisRetainedSpecialties.h"
 
 #include <limits>
 #include <algorithm>
@@ -116,7 +117,9 @@ bool usesConscriptionLedger(const CGHeroInstance * buyer, CreatureID creature)
 
 RecruitmentSpecialtyDiscount recruitmentSpecialtyDiscount(const CGHeroInstance * buyer, CreatureID creature)
 {
-	const int permille = newHorizonsHeroes::wellConnectedDiscountPermille(buyer);
+	const int ancient = creature == CreatureID(CreatureID::decode("new-horizons:royalMummy"))
+		? newHorizonsHeroes::ancientOathsDiscountPercent(buyer) : 0;
+	const int permille = ancient > 0 ? ancient * 10 : newHorizonsHeroes::wellConnectedDiscountPermille(buyer);
 	if(permille <= 0)
 		return {};
 	if(creature != CreatureID::NONE)
@@ -125,7 +128,7 @@ RecruitmentSpecialtyDiscount recruitmentSpecialtyDiscount(const CGHeroInstance *
 		if(!definition || definition->warMachine != ArtifactID::NONE)
 			return {}; // Machine factories deliver artifacts, not hero-army creatures.
 	}
-	return {permille, newHorizonsHeroes::wellConnectedCombinedCapPercent(buyer)};
+	return {permille, ancient > 0 ? 100 : newHorizonsHeroes::wellConnectedCombinedCapPercent(buyer)};
 }
 
 RecruitmentQuoteCursor::RecruitmentQuoteCursor(const CGHeroInstance * buyer)

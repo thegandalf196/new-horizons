@@ -6,12 +6,22 @@
 #include "../../NewHorizonsShadowMagnitudes.h"
 #include "../../CSpell.h"
 #include "../../../battle/CUnitState.h"
+#include "../../../entities/hero/NewHorizonsNecropolisCombatSpecialties.h"
 #include "../../../combatScripts/nativeEvents/NativeEventCommon.h"
 #include "../../../texts/MetaString.h"
 #include <cmath>
 
 namespace spells::effects::native
 {
+namespace
+{
+int64_t earthboundDamage(const Mechanics * mechanics, const battle::Unit * unit)
+{
+	const auto amount = mechanics->adjustEffectValue(unit);
+	const auto percent = newHorizonsHeroes::earthboundDrainPercent(mechanics->getHeroCaster());
+	return amount + amount * percent / 100;
+}
+}
 bool LifeDrain::enemy(const Mechanics * mechanics, const battle::Unit * unit) const
 {
 	return unit && unit->alive() && unit->isValidTarget(false)
@@ -81,7 +91,7 @@ SpellEffectValue LifeDrain::getHealthChange(const Mechanics * mechanics, const T
 	auto copy = unit->acquireState();
 	const auto health = copy->getAvailableHealth();
 	const auto count = copy->getCount();
-	auto amount = mechanics->adjustEffectValue(unit);
+	auto amount = earthboundDamage(mechanics, unit);
 	std::optional<battle::VowCasualtyQuota> quota;
 	const auto damageContext = previewSpellDamageContext(*mechanics, *unit, quota);
 	copy->damageWithContext(amount, false, battle::DamageProvenance::SPELL, damageContext);
@@ -100,7 +110,7 @@ void LifeDrain::apply(ServerCallback * server, const Mechanics * mechanics, cons
 	server->recordResolvedSpellRecipient(friendlyUnit->unitId());
 	const nativeEvents::Context context{*server, *mechanics->battle(), nullptr, nullptr, parameters, {}};
 	const auto damageContext = mechanics->spellDamageContext(*enemyUnit);
-	const auto [damage, killed] = nativeEvents::damage(context, *enemyUnit, mechanics->adjustEffectValue(enemyUnit), mechanics->getUnitCaster(), true, nullptr, false, false, nullptr, &damageContext);
+	const auto [damage, killed] = nativeEvents::damage(context, *enemyUnit, earthboundDamage(mechanics, enemyUnit), mechanics->getUnitCaster(), true, nullptr, false, false, nullptr, &damageContext);
 	if(const auto * current = mechanics->battle()->battleGetUnitByID(enemyId)) nativeEvents::clearFrozen(context, *current);
 	const auto rawHealing = static_cast<int64_t>(std::floor(static_cast<double>(damage)
 		* newHorizonsMagic::lifeDrainHealingPercent(mechanics->getHeroCaster()) / 100));

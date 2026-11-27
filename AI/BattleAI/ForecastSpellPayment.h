@@ -13,6 +13,7 @@ struct SpellPaymentTicket
 	uint64_t actionEpoch;
 	bool evaluated = false;
 	std::vector<battle::spellPoints::Payment> refunds;
+	int64_t residualLifeDamage = 0;
 };
 /// Synchronous evaluation contexts, never copied to a child forecast branch.
 /// Every nested evaluation has its own frame, including automatic/free/reflected
@@ -31,6 +32,7 @@ class DLL_LINKAGE SpellPaymentScopes
 		std::vector<battle::spellPoints::Payment> refunds;
 		bool delegationAllowed = false, delegatedCompletion = false;
 		std::optional<uint64_t> delegateParent;
+		int64_t residualLifeDamage = 0;
 	};
 	std::vector<Frame> frames;
 	uint64_t nextId = 1;
@@ -44,6 +46,7 @@ public:
 	bool completedDelegation() const;
 	void admit(uint64_t id, const SideState * state, int32_t exactCost, bool admitted);
 	std::optional<SpellPaymentTicket> finish(uint64_t id, bool completed) noexcept;
+	bool queueResidualLife(BattleSide side, int64_t damage);
 	bool queueRefund(BattleSide side, battle::spellPoints::Payment payment);
 	std::optional<std::pair<BattleSide, uint64_t>> activeManualAction() const;
 	SpellEvaluationKind currentKind() const;

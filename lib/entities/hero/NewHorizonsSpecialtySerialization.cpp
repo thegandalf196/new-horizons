@@ -24,6 +24,7 @@
 #include "NewHorizonsAerialSupremacy.h"
 #include "NewHorizonsDreadCavalry.h"
 #include "NewHorizonsRevisedSpecialties.h"
+#include "NewHorizonsNecropolisCombatSpecialties.h"
 
 namespace newHorizonsHeroes
 {
@@ -67,6 +68,8 @@ void validateCapturedSpecialtiesSerialization(const JsonNode & development,
 	validateDreadCavalrySerialization(development, context.dreadCavalry);
 	validateGenieSageSerialization(development, context.genieSage);
 	validateRevisedSpecialtiesSerialization(development);
+	if(!context.necropolisSpecialties && requiresNecropolisSpecialtyFormat(development))
+		throw std::runtime_error("Captured Necropolis specialties require the Necropolis save format");
 	validateOrdinaryCreatureSpecialtiesSerialization(development, context.ordinaryCreatureSpecialties);
 	validatePassiveSpecialtySerialization(development, context.nativeRulesRedesign);
 	validateOrdinaryCreatureExtensionsSerialization(development, context.adjacencyFilters);
@@ -89,6 +92,7 @@ void validateCurrentSpecialtyRules(const JsonNode & development)
 	current.remainingRiders = true;
 	current.chosenSpecialties = true;
 	current.manaLeeches = true;
+	current.necropolisSpecialties = true;
 	current.serpentsEmbrace = true;
 	current.ghostSpecialty = true;
 	current.paralyzingGaze = true;

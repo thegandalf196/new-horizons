@@ -68,7 +68,7 @@ bool hasDynamicDamagePassive(const battle::Unit & unit)
 				&& unit.hasBonusOfType(BonusType::DYNAMIC_CREATURE_DAMAGE));
 	}) != 0;
 }
-int casualtyDamagePercent(const BattleAttackInfo & attack)
+int casualtyDamagePermille(const BattleAttackInfo & attack)
 {
 	if(!attack.physicalDamage || attack.shooting || attack.secondaryAttack
 		|| attack.bracePreemptive || attack.preemptiveDamagePercent > 0 || attack.cleaveDamagePercent > 0
@@ -79,16 +79,22 @@ int casualtyDamagePercent(const BattleAttackInfo & attack)
 	const auto bonuses = attack.attacker->getBonuses(Selector::type()(BonusType::CASUALTY_DAMAGE_PERCENTAGE));
 	for(const auto & bonus : *bonuses)
 	{
-		if(bonus->subtype.getNum() != 0 && bonus->subtype.getNum() != 1)
+		if(bonus->subtype.getNum() != 0 && bonus->subtype.getNum() != 1 && bonus->subtype.getNum() != 2)
 			continue;
-		const bool targetDeficit = bonus->subtype.getNum() == 1;
+		const bool targetDeficit = bonus->subtype.getNum() != 0;
 		if(targetDeficit && !attack.defender->isLiving())
 			continue;
 		const auto * subject = targetDeficit ? attack.defender : attack.attacker;
-		result = std::max(result, std::min(std::clamp(bonus->val, 0, 100),
-			casualtyPercent(subject->unitBaseAmount(), subject->getCurrentOriginalCreatureCount())));
+		const int capPermille = bonus->subtype.getNum() == 2
+			? std::clamp(bonus->val, 0, 1000) : std::clamp(bonus->val, 0, 100) * 10;
+		result = std::max(result, std::min(capPermille,
+			casualtyPercent(subject->unitBaseAmount(), subject->getCurrentOriginalCreatureCount()) * 10));
 	}
 	return result;
+}
+int casualtyDamagePercent(const BattleAttackInfo & attack)
+{
+	return casualtyDamagePermille(attack) / 10;
 }
 bool permitsCreatureAttackTarget(const CBattleInfoCallback & callback,
 	const battle::Unit * attacker, const battle::Unit * target)

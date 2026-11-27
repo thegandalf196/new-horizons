@@ -15,6 +15,7 @@
 #include "NewHorizonsShroud.h"
 #include "NewHorizonsBloodrage.h"
 #include "NewHorizonsBulwark.h"
+#include "../entities/hero/NewHorizonsNecropolisCombatSpecialties.h"
 #include "../spells/NewHorizonsMagic.h"
 
 namespace
@@ -234,6 +235,9 @@ void CBattleInfoCallback::preparePhysicalDamageModifiers(const BattleAttackInfo 
 					p.payload.meleeDefenseIgnorePercent += ignored;
 			}
 		}
+		if(info.physicalDamage)
+			p.payload.unyieldingBonesReductionBasisPoints = 10 * newHorizonsHeroes::unyieldingBonesPermille(
+				p.readDefenderHero(*this, info));
 		const bool ordinaryCreatureAttack = newHorizonsCombatSkills::isOrdinaryCreatureAttacker(info.attacker);
 		if(info.shooting && ordinaryCreatureAttack)
 			p.payload.newHorizonsArcheryDamagePercent = newHorizonsCombatSkills::archeryDamagePercent(

@@ -31,6 +31,7 @@
 #include "NewHorizonsRampartSpecialties.h"
 #include "NewHorizonsAcademySpecialties.h"
 #include "NewHorizonsInfernoSpecialtyPresentation.h"
+#include "NewHorizonsNecropolisSpecialtyPresentation.h"
 #include "CHero.h"
 #include "../../mapObjects/CGHeroInstance.h"
 #include "../../CSkillHandler.h"
@@ -160,6 +161,7 @@ bool resolveIndividualPresentation(const CHero & hero,
 	SpecialtyPresentation & result)
 {
 	if(resolveInfernoSpecialtyPresentation(hero, development, capturedHero, result)
+		|| resolveNecropolisSpecialtyPresentation(hero, development, capturedHero, result)
 		|| resolveRevisedSpecialtyPresentation(hero, development, capturedHero, result)
 		|| resolveParalyzingGazePresentation(hero, development, result))
 		return true;

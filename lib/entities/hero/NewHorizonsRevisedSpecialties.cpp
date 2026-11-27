@@ -4,6 +4,8 @@
  */
 #include "StdInc.h"
 #include "NewHorizonsRevisedSpecialties.h"
+#include "NewHorizonsNecropolisRetainedSpecialties.h"
+#include "NewHorizonsNecropolisCombatSpecialties.h"
 #include "NewHorizonsCastleAdventureSpecialties.h"
 #include "NewHorizonsHeroRules.h"
 #include "NewHorizonsRuleValidation.h"
@@ -18,6 +20,7 @@
 #include "NewHorizonsRampartSpecialties.h"
 #include "NewHorizonsAcademySpecialties.h"
 #include "NewHorizonsInfernoSpecialties.h"
+#include "NewHorizonsHoardedPower.h"
 #include "../../bonuses/BonusSelector.h"
 
 #include <array>
@@ -100,7 +103,9 @@ void validateRevisedSpecialtiesSerialization(const JsonNode & development)
 		"brittle", "againstTheOdds", "perfectMount", "treantmoot", "forestAmbush", "hardened", "spoilsOfAlchemy",
 		"practiceMakesPerfect", "wellspringOfWealth", "stormLord", "serpentsEmbraceBound", "goldStandardDiscount",
 		"inexhaustibleKnowledge", "halonNullifyingShot", "spellweaver", "focusMagicSpecialty", "sageOfTheAges", "cutpurse", "sulfurSense", "kindling", "markedForTheKill",
-		"bloodfire", "burnAway", "hellfireBattery"});
+		"bloodfire", "burnAway", "hellfireBattery",
+		"hoardedPower", "residualLife", "earthboundDrain", "eternalServitude", "unyieldingBones",
+		"bloodScent", "soulHarvest", "ancientOathsDiscount"});
 	detail::require(detail::integer(row["version"], 1, 1), "revised specialty version");
 	if(row.Struct().contains("levelScaling"))
 	{
@@ -119,6 +124,8 @@ void validateRevisedSpecialtiesSerialization(const JsonNode & development)
 	validateRampartSpecialtyRows(row);
 	validateAcademySpecialtyRows(row);
 	validateInfernoSpecialtyRows(row);
+	validateNecropolisCombatSpecialtyRows(row);
+	(void)hoardedPowerRules(development);
 }
 
 bool isRetiredRevisedSpecialtyRow(std::string_view row)
@@ -209,9 +216,10 @@ int levelScaledOrdinaryValue(const CGHeroInstance & hero, std::string_view coeff
 
 void refreshLevelScaledSpecialtyBonus(CGHeroInstance & hero)
 {
-	if(!hero.compiledDevelopment()->levelScaling)
+	const bool bloodScentScaling = bloodScentUsesPermille(hero);
+	if(!hero.compiledDevelopment()->levelScaling && !bloodScentScaling)
 		return;
-	if(isHero(hero, "core:ufretin") || rampartPassiveBundleScales(hero))
+	if(isHero(hero, "core:ufretin") || rampartPassiveBundleScales(hero) || bloodScentScaling)
 	{
 		// Runic Endurance, Perfect Mount and Treantmoot are passive bundles; replace them as a whole.
 		const auto passive = passiveCreatureSpecialtyBonuses(hero);
@@ -271,14 +279,16 @@ bool retiresSpecialtyBonus(const CGHeroInstance & hero, const Bonus & bonus)
 	if(revisedSpecialtyRetiresHistorical(hero))
 		return true;
 	// Lord of the Crypts replaces Clavius's flat daily Gold.
-	return bonus.type == BonusType::GENERATE_RESOURCE && isHero(hero, CLAVIUS)
-		&& lordOfTheCryptsRules(hero.getPrimaryGrowthRules()).has_value();
+	return bonus.type == BonusType::GENERATE_RESOURCE
+		&& ((isHero(hero, CLAVIUS) && lordOfTheCryptsRules(hero.getPrimaryGrowthRules()).has_value())
+			|| hoardedPowerCap(hero).has_value());
 }
 
 bool revisedSpecialtyRetiresHistorical(const CGHeroInstance & hero)
 {
 	return castleSpecialtyRetiresHistorical(hero) || retiresHistoricalCastleSpecialty(hero)
-		|| rampartSpecialtyRetiresHistorical(hero) || academySpecialtyRetiresHistorical(hero) || infernoSpecialtyRetiresHistorical(hero);
+		|| rampartSpecialtyRetiresHistorical(hero) || academySpecialtyRetiresHistorical(hero) || infernoSpecialtyRetiresHistorical(hero)
+		|| necropolisCombatRetiresHistorical(hero);
 }
 
 bool benefitsFromStewardship(const CGHeroInstance & hero, const CGTownInstance & town)

@@ -109,6 +109,7 @@ public:
 	virtual const CArmedInstance * getSideArmy(BattleSide side) const = 0;
 	virtual const CGHeroInstance * getSideHero(BattleSide side) const = 0;
 	/// Unspent battle-only Buffer provenance; legacy state has no such pool.
+	virtual int64_t getResidualLifeDamage(BattleSide side) const { (void)side; return 0; }
 	virtual int32_t getTemporaryBufferRemaining(BattleSide side) const
 	{
 		(void)side;

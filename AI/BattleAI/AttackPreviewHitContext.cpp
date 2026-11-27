@@ -234,11 +234,11 @@ AttackPreviewHitContext::SoulHarvestHit AttackPreviewHitContext::prepareSoulHarv
 		victim.canCast() && victim.valOfBonuses(BonusType::REBIRTH) > 0, victim.getCount()};
 }
 
-void AttackPreviewHitContext::finishSoulHarvest(const SoulHarvestHit & eligibility,
+void AttackPreviewHitContext::finishSoulHarvest(const CBattleInfoCallback & state, const SoulHarvestHit & eligibility,
 	battle::CUnitState & actor, const battle::CUnitState & victim)
 {
 	if(eligibility.eligible)
-		newHorizonsSoulHarvest::grant(actor, newHorizonsSoulHarvest::casualtiesAfterHit(
+		newHorizonsSoulHarvest::grant(state, actor, newHorizonsSoulHarvest::casualtiesAfterHit(
 			victim, eligibility.countBefore, eligibility.willRebirth));
 }
 

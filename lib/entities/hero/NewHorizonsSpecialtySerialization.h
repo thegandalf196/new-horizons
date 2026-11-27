@@ -20,6 +20,7 @@ struct SpecialtySerializationContext
 	bool remainingRiders = false;
 	bool chosenSpecialties = false;
 	bool manaLeeches = false;
+	bool necropolisSpecialties = false;
 	bool serpentsEmbrace = false;
 	bool ghostSpecialty = false;
 	bool paralyzingGaze = false;
@@ -59,6 +60,7 @@ struct SpecialtySerializationContext
 		result.remainingRiders = h.hasFeature(Handler::Version::NEW_HORIZONS_REMAINING_SPECIALTY_RIDERS);
 		result.chosenSpecialties = h.hasFeature(Handler::Version::NEW_HORIZONS_REVISED_ORDERS);
 		result.manaLeeches = h.hasFeature(Handler::Version::NEW_HORIZONS_MANA_LEECHES);
+		result.necropolisSpecialties = h.hasFeature(Handler::Version::NEW_HORIZONS_NECROPOLIS_SPECIALTIES);
 		result.serpentsEmbrace = h.hasFeature(Handler::Version::NEW_HORIZONS_SERPENTS_EMBRACE);
 		result.ghostSpecialty = h.hasFeature(Handler::Version::NEW_HORIZONS_GHOST_UPGRADE);
 		result.paralyzingGaze = h.hasFeature(Handler::Version::NEW_HORIZONS_PARALYZING_GAZE);

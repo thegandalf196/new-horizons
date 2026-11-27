@@ -240,6 +240,15 @@ void Rewardable::Interface::grantRewardAfterLevelup(IGameEventCallback & gameEve
 		const int64_t affordableCost = std::min(requestedCost, hero->getManaAvailable());
 		gameEvents.spendSpellPoints(hero->id, affordableCost);
 	}
+	else if(spellPointRules && info.reward.manaDiff > 0)
+	{
+		if(info.reward.manaPercentage >= 0)
+		{
+			const int64_t baseline = int64_t{hero->manaLimit()} * info.reward.manaPercentage / 100;
+			gameEvents.setManaPoints(hero->id, static_cast<int32_t>(std::clamp<int64_t>(baseline, 0, hero->manaLimit())));
+		}
+		gameEvents.restoreSpellPoints(hero->id, info.reward.manaDiff);
+	}
 	else if(info.reward.manaDiff || info.reward.manaPercentage >= 0)
 		gameEvents.setManaPoints(hero->id, info.reward.calculateManaPoints(hero));
 	if(info.reward.manaBuffer > 0)

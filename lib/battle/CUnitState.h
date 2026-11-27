@@ -367,6 +367,7 @@ public:
 	int64_t healingCapacity(int64_t requested, EHealLevel level, EHealPower power) const override;
 	/// Native Rebirth recreates a body; never exported as a Lua healing bypass.
 	HealInfo recreateAfterNativeRebirth(int64_t & amount);
+	HealInfo reanimateForEternalServitude(int64_t & amount);
 
 	void localInit(const IUnitEnvironment * env_);
 	/// Bind copied/prepared state to its environment without resetting values.
@@ -481,6 +482,7 @@ private:
 DLL_LINKAGE bool hasCasualtyProvenanceState(const JsonNode & unitSnapshot);
 /// Validates raw Overwatch round markers without modifying a unit. Missing
 /// legacy fields mean inactive; noninteger/out-of-range markers are rejected.
+DLL_LINKAGE bool hasEternalServitudeState(const JsonNode & unitSnapshot);
 DLL_LINKAGE bool hasOverwatchState(const JsonNode & unitSnapshot);
 DLL_LINKAGE bool hasMoraleActivationState(const JsonNode & unitSnapshot);
 DLL_LINKAGE bool hasHeroicSpiritState(const JsonNode & unitSnapshot);

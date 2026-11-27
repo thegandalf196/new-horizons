@@ -254,7 +254,7 @@ bool HypotheticBattle::projectAcceptedHeroSpell(BattleSide side, SpellID spell, 
 		|| (nativeSpellAttemptEpochs.at(side) == prepared.action.epoch && !payment->evaluated)) return false;
 	const auto receipt = forecast::SideTransitions::acceptedAction(forecastSide(side), action.receipt,
 		prepared.allowancesAfter, lightSpell, mandateStatus.maximumPairs, recipients,
-		forecast::CastCost{spell, payment->exactCost, false}, searchBudget().get(), payment->refunds);
+		forecast::CastCost{spell, payment->exactCost, false}, searchBudget().get(), payment->refunds, payment->residualLifeDamage);
 	if(!receipt || !commitForecastSide(side, *receipt)) return false;
 	evaluatedSpellPayments.at(side).reset();
 	newHorizonsDivineMandate::applySharedPurpose(*this, *this, side, receipt->sharedPurposeRecipients());

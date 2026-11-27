@@ -338,7 +338,8 @@ enum class ESerializationVersion : int32_t
 	NEW_HORIZONS_WARCAST = 1168, // Warcasting Skill roster captures and warcast Order snapshots
 	NEW_HORIZONS_MARCH_LEFT = 1169, // per-stack Day's March (march left) and the movement-limit flag
 	MINIMAL = NEW_HORIZONS_CONSECRATED_ARMS,
-	CURRENT = NEW_HORIZONS_MARCH_LEFT,
+	NEW_HORIZONS_NECROPOLIS_SPECIALTIES = 1170, // Residual Life and Eternal Servitude provenance
+	CURRENT = NEW_HORIZONS_NECROPOLIS_SPECIALTIES,
 };
 
 static_assert(ESerializationVersion::NEW_HORIZONS_COMMAND_AUTHORITY > ESerializationVersion::NEW_HORIZONS_NATIVE_RULES_REDESIGN,

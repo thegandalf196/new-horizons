@@ -48,6 +48,17 @@ does not introduce a general negative magical-resistance mechanism. Use
 `PHYSICAL_DAMAGE_REDUCTION_BASIS_POINTS` for physical-only intrinsic resistance;
 legacy `GENERAL_DAMAGE_REDUCTION` selectors are not interchangeable with it.
 
+## Casualty-based creature damage
+
+`CASUALTY_DAMAGE_PERCENTAGE` applies to the existing eligible ordinary melee
+attack. Subtype 0 reads the attacker's native casualty percentage, while subtype 1
+reads a living target's native casualty percentage. Their values remain whole
+percentage caps. Subtype 2 reads the same living-target ratio with a permille
+cap, preserving fractional caps such as Vokial's 52.5% as 525. It does not change
+how native casualties are counted. Historical subtype 0/1 bonuses retain their
+integer damage-composition order. The final transient native damage payload
+accepts fractional percentages, and each attack applies its casualty bonus once.
+
 ## Canonical builtin identifiers
 
 Builtin bonus identifiers come from `BONUS_LIST` and are initialized before

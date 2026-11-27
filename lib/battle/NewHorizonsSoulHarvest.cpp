@@ -4,6 +4,7 @@
  */
 #include "StdInc.h"
 #include "NewHorizonsSoulHarvest.h"
+#include "../entities/hero/NewHorizonsNecropolisRetainedSpecialties.h"
 #include "../CCreatureHandler.h"
 #include "CUnitState.h"
 #include "CBattleInfoCallback.h"
@@ -36,22 +37,30 @@ int32_t casualtiesAfterHit(const battle::Unit & victim, int32_t countBeforeHit, 
 		return 0;
 	return std::max<int32_t>(0, countBeforeHit - victim.getCount());
 }
-bool grant(battle::CUnitState & actor, int64_t killedCreatures)
+bool grant(battle::CUnitState & actor, int64_t killedCreatures, int growthPercent)
 {
-	if(killedCreatures <= 0 || !actor.alive()
+	if(killedCreatures <= 0 || growthPercent < 100 || !actor.alive()
 		|| actor.isClone() || actor.isSummoned() || actor.hasBattleForm()
 		|| killedCreatures > std::numeric_limits<int32_t>::max() - actor.getCount()
 		|| actor.getHealth().getShadowGiftMaximumHealthLost() > 0)
 		return false;
-	// The count bound above limits this product to int32_max squared in int64.
+	const int64_t extraCreatures = killedCreatures * growthPercent / 100;
+	if(extraCreatures > std::numeric_limits<int32_t>::max() - actor.getCount())
+		return false;
+	// Both multiplicands are bounded to int32 before multiplication.
 	int64_t growth = static_cast<int64_t>(actor.getMaxHealth())
-		* killedCreatures * GHOSTS_PER_CREATURE_KILLED;
+		* extraCreatures * GHOSTS_PER_CREATURE_KILLED;
 	if(growth <= 0 || growth > std::numeric_limits<int32_t>::max())
 		return false;
 	const int32_t before = actor.getCount();
 	actor.heal(growth, EHealLevel::OVERHEAL, EHealPower::ONE_BATTLE);
-	if(actor.getCount() != before + killedCreatures)
+	if(actor.getCount() != before + extraCreatures)
 		throw std::logic_error("Soul Harvest did not add the qualified temporary creature count");
 	return true;
+}
+bool grant(const CBattleInfoCallback & battle, battle::CUnitState & actor, int64_t killedCreatures)
+{
+	return grant(actor, killedCreatures,
+		newHorizonsHeroes::soulHarvestPercent(battle.battleGetOwnerHero(&actor)));
 }
 }

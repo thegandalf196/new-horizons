@@ -11,6 +11,7 @@
 #include "../combatScripts/NativeDamageFacts.h"
 #include <cmath>
 #include "NewHorizonsSpecialtyEvents.h"
+#include "OrdinarySpecialtyDamage.h"
 #include "NewHorizonsAttackControllers.h"
 #include "ArcaneInspiration.h"
 #include "NewHorizonsSylvanTactics.h"
@@ -94,16 +95,7 @@ void CBattleInfoCallback::finalizeDamagePayload(const BattleAttackInfo & info,
 	}
 	newHorizonsSylvanTactics::finalizeDamage(*this, info, payload);
 	payload.unluckyStrike = info.unluckyStrike && (!finalLuckPolicy || luckEligible);
-	payload.ordinaryCreatureSpecialtyDamagePercent = newHorizonsHeroes::ordinaryCreatureDamageMultiplier(*this, info)
-		* newHorizonsSpecialtyEvents::firstStrikeFinalMultiplier(*this, info) / 100;
-	if(info.physicalDamage && info.shooting && !info.secondaryAttack)
-		payload.ordinaryCreatureSpecialtyDamagePercent = payload.ordinaryCreatureSpecialtyDamagePercent
-			* newHorizonsAttackControllers::ballistaPhysicalDamagePercent(*this, *info.attacker) / 100;
-	payload.ordinaryCreatureSpecialtyDamagePercent = payload.ordinaryCreatureSpecialtyDamagePercent
-		* (100 + newHorizonsPrismaticVanguard::activeDamagePercent(info)) / 100;
-	if(info.retaliation && info.aerialCounterDamagePercent > 0)
-		payload.ordinaryCreatureSpecialtyDamagePercent = payload.ordinaryCreatureSpecialtyDamagePercent
-			* (100 + info.aerialCounterDamagePercent) / 100;
+	payload.ordinaryCreatureSpecialtyDamagePercent = newHorizonsPassiveSpecialties::ordinarySpecialtyDamagePercent(*this, info);
 	payload.deathBlow = info.deathBlow;
 	payload.doubleDamage = info.doubleDamage;
 	if(!info.attacker->hasBonusOfType(BonusType::SIEGE_WEAPON))

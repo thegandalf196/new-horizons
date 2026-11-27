@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../entities/hero/NewHorizonsHoardedPower.h"
 #include "../network/InitializationProfile.h"
 #include "../pathfinder/NewHorizonsProtectedMobility.h"
 #include "../pathfinder/NewHorizonsLighthouse.h"
@@ -1819,14 +1820,28 @@ void CGameState::restoreBonusSystemTree()
 	// only after the complete bonus tree and artifact attachments are restored.
 	if(newHorizonsMagic::spellPointRulesActive(magicRules))
 	{
+		const auto reconcileHero = [this](CGHeroInstance * hero)
+		{
+			if(!hero || !hero->areSpellPointsInitialized())
+				return;
+			hero->clampSpellPointsToCapacity();
+			SideInBattle * side = nullptr;
+			for(auto & battle : currentBattles)
+			{
+				if(!battle)
+					continue;
+				for(const auto sideID : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+					if(battle->getSide(sideID).heroID == hero->id)
+						side = &battle->getSide(sideID);
+			}
+			newHorizonsHeroes::reconcileHoardedPowerBuffer(*hero, side);
+		};
 		for(auto * hero : map->getObjects<CGHeroInstance>())
-			if(hero->areSpellPointsInitialized())
-				hero->clampSpellPointsToCapacity();
+			reconcileHero(hero);
 		for(const auto heroID : map->getHeroesInPool())
 		{
 			auto * hero = map->tryGetFromHeroPool(heroID);
-			if(hero && hero->areSpellPointsInitialized())
-				hero->clampSpellPointsToCapacity();
+			reconcileHero(hero);
 		}
 	}
 

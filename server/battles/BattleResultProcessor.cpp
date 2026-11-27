@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../lib/entities/hero/NewHorizonsNecropolisCombatSpecialties.h"
 #include "BattleWisdomRecovery.h"
 #include "BattleResultProcessor.h"
 #include "../../lib/entities/hero/NewHorizonsLearning.h"
@@ -138,6 +139,8 @@ CasualtiesAfterBattle::CasualtiesAfterBattle(const CBattleInfoCallback & battle,
 
 		logGlobal->debug("Calculating casualties for %s", stConst->nodeName());
 
+		const auto * hero = battle.battleGetFightingHero(battle.playerToSide(color));
+		st->editHealth()->retainEternalServitude(newHorizonsHeroes::eternalServitudePercent(hero));
 		st->editHealth()->takeResurrected();
 
 		if(st->unitSlot() == SlotID::WAR_MACHINES_SLOT)
@@ -453,7 +456,10 @@ void BattleResultProcessor::endBattleConfirm(const CBattleInfoCallback & battle)
 				// Temporary restorations do not become permanent reserve troops.
 				// Both survivor return and Endless Legion use this detached view.
 				if(originalFormState)
+				{
+					originalFormState->editHealth()->retainEternalServitude(newHorizonsHeroes::eternalServitudePercent(hero));
 					originalFormState->editHealth()->takeResurrected();
+				}
 				const battle::CUnitState * resultState = originalFormState.get();
 				const TQuantity survivors = resultState && resultState->alive() ? resultState->getCount() : 0;
 				if(survivors > 0)
@@ -558,8 +564,10 @@ bool BattleResultProcessor::applyNewHorizonsNecromancy(const BattleResult & resu
 	if(!winnerHero || !winnerHero->usesNewHorizonsNecromancy())
 		return false;
 	const auto * ownerState = gameHandler->gameInfo().getPlayerState(winnerHero->tempOwner);
+	const auto * activeBattle = gameHandler->gameState().getBattle(winnerHero->getOwner());
+	const auto temporaryBuffer = activeBattle ? activeBattle->getSide(result.winner).temporaryBufferRemaining : 0;
 	auto prepared = newHorizonsNecromancy::prepareBattleNecromancy(result, categoryRules,
-		initialMana, *winnerHero, ownerState);
+		initialMana, *winnerHero, ownerState, temporaryBuffer);
 	if(!prepared.ordinary.active)
 		return false;
 	newHorizonsNecromancy::applyBattleSkeletonRecovery(*gameHandler, result, *winnerHero, prepared.ordinary);

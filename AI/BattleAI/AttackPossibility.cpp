@@ -592,7 +592,7 @@ AttackPossibility AttackPossibility::evaluate(
 				tactics.damage(*state, preemptive, *ap.attackerState, appliedPreemptiveDamage, preemptiveProvenance);
 				serpentBindingAI::observeDeath(mayReleaseSerpents(), fortunePreview, *ap.attackerState,
 					serpentWasAlive, serpentSourceDeaths);
-				AttackPreviewHitContext::finishSoulHarvest(preemptiveHarvest,
+				AttackPreviewHitContext::finishSoulHarvest(*state, preemptiveHarvest,
 					*strikeDefenderState->second, *ap.attackerState);
 				if(lastStand.triggered && !request->brace)
 					hitContext.applyLastStandDefend(ap.attackerState.get(), request->reactiveForLastStand);
@@ -660,7 +660,7 @@ AttackPossibility AttackPossibility::evaluate(
 					tactics.damage(*state, preemptive, *ap.attackerState, appliedPreemptiveDamage, preemptiveProvenance);
 					serpentBindingAI::observeDeath(mayReleaseSerpents(), fortunePreview, *ap.attackerState,
 						serpentWasAlive, serpentSourceDeaths);
-					AttackPreviewHitContext::finishSoulHarvest(preemptiveHarvest,
+					AttackPreviewHitContext::finishSoulHarvest(*state, preemptiveHarvest,
 						*strikeDefenderState->second, *ap.attackerState);
 					if(lastStand.triggered)
 						hitContext.applyLastStandDefend(ap.attackerState.get(), preemptive.retaliation);
@@ -978,7 +978,7 @@ AttackPossibility AttackPossibility::evaluate(
 					ap.defenderDead = !defenderState->alive();
 				}
 			}
-			ap.soulHarvestHealthGained += selectedAttackReceipt::grantSoulHarvest(
+			ap.soulHarvestHealthGained += selectedAttackReceipt::grantSoulHarvest(*state,
 				*ap.attackerState, harvestCasualties);
 			// The pair applies to this complete BattleAttackInfo, including all
 			// collateral targets, then expires before the next own strike.
@@ -1341,7 +1341,7 @@ AttackPossibility AttackPossibility::evaluate(
 					if(consumesBastion)
 						targetState->armorerBastionRound = currentRound;
 					if(cleaveHarvestEligible)
-						ap.soulHarvestHealthGained += selectedAttackReceipt::grantSoulHarvest(
+						ap.soulHarvestHealthGained += selectedAttackReceipt::grantSoulHarvest(*state,
 							*ap.attackerState, newHorizonsSoulHarvest::casualtiesAfterHit(
 								*targetState, cleaveHarvestCountBefore, cleaveMayRebirth));
 					cleave->resolvedHits.emplace_back(targetState->unitId(), cleaveDamageToApply);
@@ -1593,7 +1593,7 @@ AttackPossibility AttackPossibility::evaluate(
 					retaliationActualDamage += actualDamage;
 			}
 			if(retaliation)
-				newHorizonsSoulHarvest::grant(*defenderStates.at(retaliation->attackerId), counterHarvestCasualties);
+				newHorizonsSoulHarvest::grant(*state, *defenderStates.at(retaliation->attackerId), counterHarvestCasualties);
 			if(retaliation && !retaliation->hits.empty())
 			{
 				auto retaliatorState = defenderStates.at(retaliation->attackerId);

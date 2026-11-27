@@ -8,6 +8,7 @@
 	*
 	*/
 #include "StdInc.h"
+#include "../../lib/networkPacks/NecropolisSpecialtyPacks.h"
 #include "../../lib/networkPacks/PacksForClient.h"
 #include "../../lib/spells/AutomaticHeroCast.h"
 #include "../../lib/ScopeGuard.h"
@@ -225,6 +226,23 @@ bool HypotheticBattle::HypotheticServerCallback::resolveAdverseCombatRoll(const 
 
 void HypotheticBattle::HypotheticServerCallback::apply(CPackForClient & pack)
 {
+	if(const auto * residual = dynamic_cast<const RecordResidualLife *>(&pack))
+	{
+		if(residual->battleID != owner->getBattleID()
+			|| (residual->side != BattleSide::ATTACKER && residual->side != BattleSide::DEFENDER))
+			throw std::invalid_argument("Invalid projected Residual Life receipt");
+		if(owner->spellPaymentScopes.activeManualAction())
+		{
+			if(!owner->spellPaymentScopes.queueResidualLife(residual->side, residual->damage))
+				throw std::invalid_argument("Residual Life receipt does not belong to active cast");
+			return;
+		}
+		const auto transition = forecast::SideTransitions::recordResidualLife(owner->forecastSide(residual->side),
+			residual->damage, owner->searchBudget().get());
+		if(!transition || !owner->commitForecastSide(residual->side, *transition))
+			throw std::invalid_argument("Unsupported or stale projected Residual Life receipt");
+		return;
+	}
 	if(const auto * mana = dynamic_cast<const SetMana *>(&pack);
 		mana && (mana->operation == SetMana::Operation::RESTORE_NORMAL
 			|| mana->operation == SetMana::Operation::REFUND_HERO_LUCK))

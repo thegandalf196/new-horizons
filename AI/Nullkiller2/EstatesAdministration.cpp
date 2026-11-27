@@ -46,25 +46,34 @@ void appointAvailableStewards(CCallback & callback, PlayerColor owner)
 	{
 		return left.first != right.first ? left.first > right.first : left.second->id < right.second->id;
 	});
-	for(const auto & [income, town] : ranked)
+	// Place specialty matches before general income assignments can consume
+	// them in a richer town of another faction. Income still orders each pass.
+	std::set<ObjectInstanceID> filled;
+	for(const int preference : {2, 1, 0})
 	{
-		const CGHeroInstance * best = nullptr;
-		int bestPreference = -1;
-		for(const auto * hero : heroes)
+		for(const auto & [income, town] : ranked)
 		{
-			if(appointed.contains(hero->id) || !newHorizonsEstates::eligibleSteward(hero))
+			if(filled.contains(town->id))
 				continue;
-			const int preference = stewardPreference(*hero, *town);
-			if(preference > bestPreference)
+			const CGHeroInstance * best = nullptr;
+			for(const auto * hero : heroes)
 			{
-				best = hero;
-				bestPreference = preference;
+				if(appointed.contains(hero->id) || !newHorizonsEstates::eligibleSteward(hero))
+					continue;
+				if(stewardPreference(*hero, *town) == preference)
+				{
+					best = hero;
+					break;
+				}
+			}
+			if(!best)
+				continue;
+			if(callback.assignTownSteward(town->id, best->id) >= 0)
+			{
+				appointed.insert(best->id);
+				filled.insert(town->id);
 			}
 		}
-		if(!best)
-			break;
-		if(callback.assignTownSteward(town->id, best->id) >= 0)
-			appointed.insert(best->id);
 	}
 }
 }

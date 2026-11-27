@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../entities/hero/NewHorizonsHoardedPower.h"
 #include "TavernHeroesPool.h"
 #include "../pathfinder/NewHorizonsMarchLeft.h"
 
@@ -167,7 +168,10 @@ void TavernHeroesPool::onNewDay(bool completedDay)
 			continue;
 
 		// Ordinary regeneration observes the expired daily bonuses.
+		const auto buffer = newHorizonsHeroes::dailyHoardedPower(*heroPtr, completedDay);
 		heroPtr->setNormalSpellPoints(heroPtr->getManaNewTurn(completedDay));
+		if(buffer > 0)
+			heroPtr->grantBufferSpellPoints(buffer);
 		heroPtr->setMovementPoints(heroPtr->movementPointsLimit());
 	}
 }

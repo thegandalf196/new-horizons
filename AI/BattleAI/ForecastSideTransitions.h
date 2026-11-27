@@ -41,12 +41,14 @@ public:
 		const HeroActionAllowanceState::Receipt &, const HeroActionAllowanceState & consumed,
 		bool lightSpell, uint8_t maximumPairs, const std::vector<uint32_t> & recipients,
 		std::optional<CastCost> cost = {}, battleSearch::SearchBudget * budget = nullptr,
-		std::span<const battle::spellPoints::Payment> refunds = {});
+		std::span<const battle::spellPoints::Payment> refunds = {}, int64_t residualLifeDamage = 0);
 	static std::optional<SideReceipt> payCast(const std::shared_ptr<const SideState> &, CastCost,
 		battleSearch::SearchBudget * budget = nullptr);
 	static std::optional<SideReceipt> refundCast(const std::shared_ptr<const SideState> &, uint64_t token,
 		battle::spellPoints::Payment, battleSearch::SearchBudget * budget = nullptr);
 	static std::optional<SideReceipt> restoreNormal(const std::shared_ptr<const SideState> &, int32_t amount,
+		battleSearch::SearchBudget * budget = nullptr);
+	static std::optional<SideReceipt> recordResidualLife(const std::shared_ptr<const SideState> &, int64_t damage,
 		battleSearch::SearchBudget * budget = nullptr);
 	static std::optional<SideReceipt> replaceMana(const std::shared_ptr<const SideState> &,
 		const battle::spellPoints::State & expected, battle::spellPoints::State after,

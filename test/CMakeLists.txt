@@ -128,6 +128,7 @@ set(test_SRCS
 		nativeDamage/NativeDamageBoundaryTest.cpp
 		nativeDamage/HellfireBatteryDamageTest.cpp
 		server/battles/NewHorizonsHellfireBatteryTest.cpp
+		battle/VokialDamagePrecisionTest.cpp
 		hero/NewHorizonsCommandRulesTest.cpp
 		hero/NewHorizonsCommandStateTest.cpp
 		hero/NewHorizonsCommandPlacementTest.cpp
@@ -159,6 +160,7 @@ set(test_SRCS
 		server/battles/CastleFrostMantleTest.cpp
 		server/battles/RampartCombatLifecycleTest.cpp
 		server/battles/RampartCombatSpecialtyTest.cpp
+		server/battles/NecropolisCombatSpecialtyTest.cpp
 		server/battles/AcademyCombatSpecialtyTest.cpp
 		server/battles/CastleQuickStudyTest.cpp
 		server/battles/MetamagicDoubleCastTest.cpp
@@ -241,7 +243,8 @@ set(test_SRCS
 		battle/NewHorizonsPassThroughRangeTest.cpp
 		battle/NewHorizonsBattleFormHealthTest.cpp
  		battle/CBattleInfoCallbackTest.cpp
- 		battle/CHealthTest.cpp
+		battle/NecropolisCombatSpecialtiesTest.cpp
+		battle/CHealthTest.cpp
 		battle/CHealthValueContextTest.cpp
 		battle/FocusMagicValueStateTest.cpp
 		battleAI/ForecastEffectStateTest.cpp
@@ -271,7 +274,8 @@ set(test_SRCS
 		serializer/OrdinaryCombatPolicySerializationTest.cpp
 		bonus/OrdinaryMeleeEffectSerializationTest.cpp
 		serializer/MachineGenericBonusSerializationTest.cpp
-	serializer/NewHorizonsManaLeechesSerializationTest.cpp
+	serializer/NecropolisSpecialtySerializationTest.cpp
+		serializer/NewHorizonsManaLeechesSerializationTest.cpp
 	serializer/NewHorizonsGhostUpgradeSerializationTest.cpp
 	serializer/NewHorizonsPetrifyingBloodSerializationTest.cpp
 	serializer/NewHorizonsLivingInfernoSerializationTest.cpp
@@ -448,13 +452,15 @@ set(test_SRCS
 		hero/NewHorizonsMasteryRulesTest.cpp
 		hero/NewHorizonsMasteryStateTest.cpp
 		hero/NewHorizonsPerkRulesTest.cpp
+		hero/NecropolisRetainedScalingTest.cpp
 		hero/RevisedSpecialtyLevelScalingTest.cpp
 		hero/CastleSpecialtyRulesTest.cpp
 		hero/RampartSpecialtyRulesTest.cpp
 		hero/RampartStartingProfilesTest.cpp
 		hero/AcademySpecialtyRulesTest.cpp
 		hero/NewHorizonsInfernoAdventureSpecialtiesTest.cpp
-	hero/NewHorizonsInfernoSpecialtyArtTest.cpp
+		hero/NewHorizonsInfernoSpecialtyArtTest.cpp
+		hero/NewHorizonsHoardedPowerTest.cpp
 	hero/NewHorizonsValidatedPerkRulesTest.cpp
 	hero/NewHorizonsPerkOperationTest.cpp
 	hero/PerkInitializationReference.cpp
@@ -1264,6 +1270,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/ConsecratedArmsChoiceAITest.cpp
 		battleAI/DispelValueTest.cpp
 		battleAI/InfernoSpellProjectionTest.cpp
+		battleAI/NecropolisSpecialtyAITest.cpp
 		battleAI/RecoverableEvaluationTest.cpp
 		server/battles/NewHorizonsAvatarOfRageTest.cpp
 		server/battles/NewHorizonsBloodrageDeathPerksTest.cpp
@@ -1528,6 +1535,7 @@ if(ENABLE_NULLKILLER2_AI)
 		nullkiller2/NewHorizonsArcaneReservoirAITest.cpp
 		nullkiller2/NewHorizonsPeacemakerDangerAITest.cpp
 		nullkiller2/NewHorizonsEstatesIncomeAITest.cpp
+		nullkiller2/CoreStewardshipAITest.cpp
 		nullkiller2/FourOfferProgressionAITest.cpp
 		nullkiller2/NewHorizonsMarketSelectionAITest.cpp
 		nullkiller2/NewHorizonsLearningMentorAITest.cpp

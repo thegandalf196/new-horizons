@@ -14,6 +14,7 @@
 #include "../mapObjects/CGHeroInstance.h"
 #include "../mapObjects/CGTownInstance.h"
 #include "../entities/hero/NewHorizonsLeadership.h"
+#include "../entities/hero/NewHorizonsNecropolisCombatSpecialties.h"
 
 void SideInBattle::init(const CGHeroInstance * Hero, const CArmedInstance * Army, const CGTownInstance * town)
 {
@@ -25,6 +26,7 @@ void SideInBattle::init(const CGHeroInstance * Hero, const CArmedInstance * Army
 	passiveDivineMandateUses = 0;
 	manaFurnaceRecoveredNormal = 0;
 	manaLeechesRecoveredNormal = 0;
+	residualLifeDamage = 0;
 	initialAcceptedCombatDay = -1;
 	deepTranceConsumed = false;
 	deepTranceRecoveredNormal = 0;
@@ -102,6 +104,18 @@ void SideInBattle::validateManaLeechesSerialization(bool supported) const
 		throw std::runtime_error("Invalid or unrepresentable Mana Leeches recovery");
 }
 
+void SideInBattle::validateResidualLifeSerialization(bool supported, const CGHeroInstance * hero) const
+{
+	validateResidualLifeShape(supported);
+	if(residualLifeDamage == 0) return;
+	if(!supported || !hero || hero->id != heroID)
+		throw std::runtime_error("Residual Life progress requires its captured battle hero and save format");
+	const auto threshold = newHorizonsHeroes::residualLifeThreshold(hero);
+	const auto limit = newHorizonsHeroes::residualLifeLimit(hero);
+	if(threshold <= 0 || limit <= 0 || residualLifeDamage < 0
+		|| residualLifeDamage > static_cast<int64_t>(threshold) * limit)
+		throw std::runtime_error("Residual Life progress exceeds captured entitlement");
+}
 int32_t SideInBattle::legacySpellPointCompletionCeiling() const
 {
 	validateManaFurnaceSerialization(true);

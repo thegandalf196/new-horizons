@@ -2,11 +2,22 @@
 #include "StdInc.h"
 #include "ForecastSideTransitions.h"
 #include "SearchBudget.h"
+#include "../../lib/battle/ResidualLife.h"
 #include "../../lib/constants/NumericConstants.h"
 namespace forecast
 {
 namespace
 {
+void recordResidual(SideState & next, int64_t damage)
+{
+	if(!next.ledger || !next.mana) throw std::invalid_argument("Missing Residual Life resource ledger");
+	auto & ledger = *next.ledger;
+	const auto result = battle::residualLife::record(ledger.residualLifeDamage, damage,
+		ledger.residualLifeThreshold, ledger.residualLifeLimit);
+	if(result.grant > 0 && !next.mana->pools.grantBuffer(result.grant))
+		throw std::invalid_argument("Invalid projected Residual Life Buffer grant");
+	ledger.residualLifeDamage = result.accumulatedDamage;
+}
 uint64_t charge(SideState & state, CastCost cost)
 {
 	if(!state.mana || !state.knowsSpell(cost.spell) || (cost.automatic && cost.amount != 0) || state.nextCastToken == std::numeric_limits<uint64_t>::max())
@@ -45,10 +56,11 @@ bool SideTransitions::commit(std::shared_ptr<const SideState> & current, const S
 std::optional<SideReceipt> SideTransitions::acceptedAction(const std::shared_ptr<const SideState> & current,
 	const HeroActionAllowanceState::Receipt & action, const HeroActionAllowanceState & consumed,
 	bool lightSpell, uint8_t maximumPairs, const std::vector<uint32_t> & recipients,
-	std::optional<CastCost> cost, battleSearch::SearchBudget * budget, std::span<const battle::spellPoints::Payment> refunds)
+	std::optional<CastCost> cost, battleSearch::SearchBudget * budget, std::span<const battle::spellPoints::Payment> refunds, int64_t residualLifeDamage)
 {
 	std::vector<uint32_t> overlap;
 	std::optional<uint64_t> token;
+	if(residualLifeDamage < 0) return std::nullopt;
 	auto receipt = stage(current, SideDirty::Actions | (cost ? SideDirty::Resources : SideDirty::None), [&](SideState & next)
 	{
 		if(action.round != next.round || !next.ledger
@@ -74,6 +86,7 @@ std::optional<SideReceipt> SideTransitions::acceptedAction(const std::shared_ptr
 				if(!battle::spellPoints::refundCharge(*next.mana, original.paid, original.refunded, refund))
 					throw std::invalid_argument("Scoped cast refund exceeds actual payment provenance");
 		}
+		if(residualLifeDamage > 0) recordResidual(next, residualLifeDamage);
 	}, budget);
 	if(receipt) { receipt->mandateOverlap = std::move(overlap); receipt->paymentToken = token; }
 	return receipt;
@@ -105,6 +118,14 @@ std::optional<SideReceipt> SideTransitions::restoreNormal(const std::shared_ptr<
 	{
 		if(!next.mana || !next.mana->pools.restoreNormal(amount, next.mana->normalLimit()))
 			throw std::invalid_argument("Invalid compact forecast Normal Mana restoration");
+	}, budget);
+}
+std::optional<SideReceipt> SideTransitions::recordResidualLife(const std::shared_ptr<const SideState> & current,
+	int64_t damage, battleSearch::SearchBudget * budget)
+{
+	return stage(current, SideDirty::Resources, [&](SideState & next)
+	{
+		recordResidual(next, damage);
 	}, budget);
 }
 std::optional<SideReceipt> SideTransitions::replaceMana(const std::shared_ptr<const SideState> & current,

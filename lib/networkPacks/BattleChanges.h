@@ -102,6 +102,12 @@ public:
 			throw std::runtime_error("Cannot discard Veteran Cohesion receipt in an older unit update format");
 	}
 
+	template <typename Handler> void validateEternalServitudeSerialization(Handler & h) const
+	{
+		if(battle::hasEternalServitudeState(data) && !h.hasFeature(Handler::Version::NEW_HORIZONS_NECROPOLIS_SPECIALTIES))
+			throw std::runtime_error("Cannot discard Eternal Servitude provenance");
+	}
+
 	template <typename Handler> void validateOverwatchSerialization(Handler & h) const
 	{
 		battle::forestAmbushStateFromUnitJson(data).validateSerialization(h);
@@ -237,7 +243,10 @@ public:
 		if(h.saving)
 			validateFrozenSerialization(h);
 		if(h.saving)
+		{
+			validateEternalServitudeSerialization(h);
 			validateOverwatchSerialization(h);
+		}
 		if(h.saving)
 			validateBattleFormSerialization(h);
 		if(h.saving)
@@ -291,7 +300,10 @@ public:
 		if(!h.saving)
 			validateVeteranCohesionSerialization(h);
 		if(!h.saving)
+		{
+			validateEternalServitudeSerialization(h);
 			validateOverwatchSerialization(h);
+		}
 		if(!h.saving)
 			validateFrozenSerialization(h);
 		if(!h.saving)

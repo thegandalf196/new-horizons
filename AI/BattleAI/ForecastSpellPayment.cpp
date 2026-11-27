@@ -71,13 +71,22 @@ std::optional<SpellPaymentTicket> SpellPaymentScopes::finish(uint64_t id, bool c
 		if(frames.empty() || frames.back().id != *frame.delegateParent) { invalidate(); return std::nullopt; }
 		frames.back().delegatedCompletion = true;
 	}
-	return SpellPaymentTicket{frame.side, frame.spell, frame.exactCost, *frame.actionEpoch, true, std::move(frame.refunds)};
+	return SpellPaymentTicket{frame.side, frame.spell, frame.exactCost, *frame.actionEpoch, true, std::move(frame.refunds), frame.residualLifeDamage};
 }
 std::optional<std::pair<BattleSide, uint64_t>> SpellPaymentScopes::activeManualAction() const
 {
 	if(!valid || frames.empty() || frames.back().kind != SpellEvaluationKind::MANUAL_HERO || !frames.back().actionEpoch)
 		return std::nullopt;
 	return std::pair{frames.back().side, *frames.back().actionEpoch};
+}
+bool SpellPaymentScopes::queueResidualLife(BattleSide side, int64_t damage)
+{
+	if(!valid || frames.empty() || damage < 0) return false;
+	auto & frame = frames.back();
+	if(!frame.admitted || frame.kind != SpellEvaluationKind::MANUAL_HERO || frame.side != side || !frame.actionEpoch
+		|| damage > std::numeric_limits<int64_t>::max() - frame.residualLifeDamage) return false;
+	frame.residualLifeDamage += damage;
+	return true;
 }
 bool SpellPaymentScopes::queueRefund(BattleSide side, battle::spellPoints::Payment payment)
 {

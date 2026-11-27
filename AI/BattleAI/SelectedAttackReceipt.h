@@ -12,6 +12,7 @@
 class AttackPossibility;
 class BattleHex;
 class DamageCache;
+class CBattleInfoCallback;
 class HypotheticBattle;
 class StackWithBonuses;
 class VisibleCandidateWorld;
@@ -74,7 +75,7 @@ BattleAttackInfo attackForStrike(const FortuneStrikeProjection & strike,
 DLL_LINKAGE std::unique_ptr<AttackPossibility> refreshForestAmbush(const AttackPossibility & preview,
 	const std::shared_ptr<HypotheticBattle> & branch, DamageCache & damageCache);
 /// Return actual growth repeated by selected replay, for gross-loss accounting.
-int64_t grantSoulHarvest(battle::CUnitState & actor, int64_t killedCreatures);
+int64_t grantSoulHarvest(const CBattleInfoCallback & state, battle::CUnitState & actor, int64_t killedCreatures);
 /// Apply captured pre-attack or residual damage at the caller's ordered stage.
 void applyCapturedDamage(HypotheticBattle & branch,
 	const std::shared_ptr<StackWithBonuses> & recipient, int64_t damage);

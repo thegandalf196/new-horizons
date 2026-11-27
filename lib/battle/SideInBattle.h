@@ -246,6 +246,7 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	int32_t deepTranceRecoveredNormal = 0;
 	// Only actual Familiar Normal recovery may raise the legacy completion ceiling.
 	int32_t manaLeechesRecoveredNormal = 0;
+	int64_t residualLifeDamage = 0;
 	/// Passive automatic blessings, independent of historical paired-action allowances.
 	uint8_t passiveDivineMandateUses = 0;
 	WisdomCombatState wisdomCombatState;
@@ -253,6 +254,12 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 	MetamagicDoubleCastState metamagicDoubleCast; // Metamagic 6 offer and per-combat uses
 	void validatePassiveFactionSerialization(bool supported) const;
 	void validateManaLeechesSerialization(bool supported) const;
+	void validateResidualLifeShape(bool supported) const
+	{
+		if(residualLifeDamage < 0 || residualLifeDamage > 100000000 || (!supported && residualLifeDamage != 0))
+			throw std::runtime_error("Invalid or unrepresentable Residual Life progress");
+	}
+	void validateResidualLifeSerialization(bool supported, const CGHeroInstance * hero) const;
 	void validateRecoverySpecialtySerialization(bool supported) const;
 	void validateManaFurnaceSerialization(bool supported) const;
 	int32_t legacySpellPointCompletionCeiling() const;
@@ -436,6 +443,8 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 
 	template <typename Handler> void serialize(Handler &h)
 	{
+		if(h.saving)
+			validateResidualLifeShape(h.hasFeature(Handler::Version::NEW_HORIZONS_NECROPOLIS_SPECIALTIES));
 		if(h.saving)
 			leadershipComposition.validateSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY));
 		heroActionAllowances.validateHeroicSpiritSerialization(h);
@@ -812,6 +821,13 @@ struct DLL_LINKAGE SideInBattle : public GameCallbackHolder
 		}
 		if(!h.saving)
 			validateRecoverySpecialtySerialization(true);
+		if(h.hasFeature(Handler::Version::NEW_HORIZONS_NECROPOLIS_SPECIALTIES))
+			h & residualLifeDamage;
+		else if(h.saving && residualLifeDamage != 0)
+			throw std::runtime_error("Cannot discard Residual Life progress");
+		else if(!h.saving)
+			residualLifeDamage = 0;
+		validateResidualLifeShape(true);
 		if(h.hasFeature(Handler::Version::NEW_HORIZONS_MANA_LEECHES))
 			h & manaLeechesRecoveredNormal;
 		else if(!h.saving)

@@ -75,6 +75,8 @@ public:
 	template <typename Handler> void validateCapturedSideSpecialtiesSerialization(Handler & h) const
 	{
 		for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+			getSide(side).validateResidualLifeSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_NECROPOLIS_SPECIALTIES), getSideHero(side));
+		for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 			getSide(side).validateManaLeechesSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_MANA_LEECHES));
 		for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 			getSide(side).validateRecoverySpecialtySerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_RECOVERY_SPECIALTIES));
@@ -647,6 +649,9 @@ public:
 				if(const auto * hero = getSideHero(side))
 					newHorizonsHeroes::validateChosenSpecialtiesSerialization(hero->getPrimaryGrowthRules(),
 						h.hasFeature(Handler::Version::NEW_HORIZONS_REVISED_ORDERS));
+		if(h.saving)
+			for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
+				getSide(side).validateResidualLifeSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_NECROPOLIS_SPECIALTIES), getSideHero(side));
 		if(h.saving)
 			for(const auto side : {BattleSide::ATTACKER, BattleSide::DEFENDER})
 				getSide(side).validateManaLeechesSerialization(h.hasFeature(Handler::Version::NEW_HORIZONS_MANA_LEECHES));
@@ -1262,6 +1267,7 @@ public:
 	PlayerColor getSidePlayer(BattleSide side) const override;
 	const CArmedInstance * getSideArmy(BattleSide side) const override;
 	const CGHeroInstance * getSideHero(BattleSide side) const override;
+	int64_t getResidualLifeDamage(BattleSide side) const override { return getSide(side).residualLifeDamage; }
 	int32_t getTemporaryBufferRemaining(BattleSide side) const override
 	{
 		if(side != BattleSide::ATTACKER && side != BattleSide::DEFENDER)

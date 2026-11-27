@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #pragma once
+#include "../entities/hero/NewHorizonsNecropolisCombatSpecialties.h"
 #include "../entities/hero/NewHorizonsHeroRules.h"
 #include <map>
 #include "../entities/hero/NewHorizonsLearningSpecialties.h"
@@ -123,6 +124,7 @@ public:
 	newHorizonsHeroes::RampartSpecialtyRules rampartSpecialties;
 	newHorizonsHeroes::AcademySpecialtyRules academySpecialties;
 	newHorizonsHeroes::InfernoSpecialtyRules infernoSpecialties;
+	newHorizonsHeroes::NecropolisCombatSpecialtyRules necropolisCombatSpecialties;
 	std::optional<int> manaLeeches;
 	std::optional<newHorizonsHeroes::LivingInfernoRules> livingInferno;
 	std::optional<newHorizonsHeroes::HerbalSurgeonRules> herbalSurgeon;

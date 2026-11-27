@@ -102,7 +102,7 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 	/// Independent final physical creature-hit multiplier against Frozen.
 	int frozenShatterFinalDamageMultiplier = 100;
 	/// Captured ordinary creature specialty; separate from Orders and native effects.
-	int ordinaryCreatureSpecialtyDamagePercent = 100;
+	double ordinaryCreatureSpecialtyDamagePercent = 100;
 	int commandBeneficiaryDamageMultiplierPercent = 100;
 	/// Crossfire's additive ranged premium for this shot only.
 	int archeryCrossfireDamagePercent = 0;
@@ -135,6 +135,8 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 	int newHorizonsArcheryDamagePercent = 0;
 	/// Canonical New Horizons Armorer reduction for this physical creature blow.
 	int newHorizonsArmorerReductionPercent = 0;
+	/// Captured Xsi specialty, independent of Armorer and expressed in basis points.
+	int unyieldingBonesReductionBasisPoints = 0;
 	/// Independent Formation Fighting reduction while the defender is in formation.
 	int formationFightingReductionPercent = 0;
 	/// Independent Pavise reduction for a ranged physical hit against a Defending stack.
@@ -254,7 +256,7 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 		s("frozenShatterFinalDamageMultiplier", frozenShatterFinalDamageMultiplier,
 			"Final physical creature damage multiplier for a Frozen target.");
 		s("ordinaryCreatureSpecialtyDamagePercent", ordinaryCreatureSpecialtyDamagePercent,
-			"Final ordinary physical retaliation multiplier from captured creature specialty rules.");
+			"Final ordinary physical damage multiplier from captured creature specialty rules, including fractional casualty caps.");
 		s("archeryCrossfireDamagePercent", archeryCrossfireDamagePercent,
 			"Crossfire's additive damage premium for this ranged attack.");
 		s("archeryHighArc", archeryHighArc, "Whether High Arc halves distance penalties and ignores obstacle penalties.");
@@ -281,6 +283,8 @@ struct DLL_LINKAGE DamageAttackInfo final : public scripting::ApiSerializable<Da
 			"Canonical New Horizons Archery ranged damage premium.");
 		s("newHorizonsArmorerReductionPercent", newHorizonsArmorerReductionPercent,
 			"Canonical New Horizons Armorer physical creature damage reduction.");
+		s("unyieldingBonesReductionBasisPoints", unyieldingBonesReductionBasisPoints,
+			"Independent physical reduction from Unyielding Bones.");
 		s("formationFightingReductionPercent", formationFightingReductionPercent,
 			"Independent physical reduction supplied by Formation Fighting while the defender is adjacent to a friendly stack.");
 		s("paviseDamageReductionPercent", paviseDamageReductionPercent,

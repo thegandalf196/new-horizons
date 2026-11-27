@@ -395,7 +395,8 @@ void CHealth::validateCasualtyProvenanceLedger() const
 	{
 		const auto rawProvenance = static_cast<int64_t>(cohort.provenance);
 		if(cohort.count <= 0 || cohort.temporarilyRestored < 0
-			|| cohort.temporarilyRestored > cohort.count || !validDamageProvenance(rawProvenance))
+			|| cohort.temporarilyRestored > cohort.count || cohort.eternalServitudeRestored < 0
+			|| cohort.eternalServitudeRestored > cohort.temporarilyRestored || !validDamageProvenance(rawProvenance))
 			throw std::runtime_error("Invalid casualty provenance cohort state");
 		temporaryCount += cohort.temporarilyRestored;
 	}
@@ -459,6 +460,7 @@ void CHealth::replaceNewestTemporaryCasualties(const int32_t amount,
 	{
 		auto & cohort = casualtyProvenance[index - 1];
 		const int32_t selected = std::min(remaining, cohort.temporarilyRestored);
+		cohort.eternalServitudeRestored -= std::min(selected, cohort.eternalServitudeRestored);
 		cohort.temporarilyRestored -= selected;
 		cohort.count -= selected;
 		remaining -= selected;
@@ -707,7 +709,10 @@ void CHealth::reset(bool clearUnusableRemains)
 		// The stack is being removed after death. Any remaining temporary
 		// Resurrection cohort has now expired, but its original death cause stays.
 		for(auto & cohort : casualtyProvenance)
+		{
 			cohort.temporarilyRestored = 0;
+			cohort.eternalServitudeRestored = 0;
+		}
 	}
 	if(clearUnusableRemains)
 		unusableRemains = 0;
@@ -752,7 +757,8 @@ int32_t CHealth::getCasualtyCount(const DamageProvenance provenance) const
 bool CHealth::hasCasualtyProvenanceState() const
 {
 	return getCasualtyCount(DamageProvenance::SPELL) > 0
-		|| getCasualtyCount(DamageProvenance::MAGICAL_CREATURE) > 0;
+		|| getCasualtyCount(DamageProvenance::MAGICAL_CREATURE) > 0
+		|| std::ranges::any_of(casualtyProvenance, [](const auto & cohort) { return cohort.eternalServitudeRestored > 0; });
 }
 
 int64_t CHealth::getTemporaryHitPoints() const
@@ -897,7 +903,10 @@ void CHealth::takeResurrected()
 		}
 		resurrected = 0;
 		for(auto & cohort : casualtyProvenance)
+		{
 			cohort.temporarilyRestored = 0;
+			cohort.eternalServitudeRestored = 0;
+		}
 		validateCasualtyProvenanceLedger();
 	}
 }
@@ -1198,6 +1207,7 @@ void CHealth::CasualtyProvenanceCohort::serializeJson(JsonSerializeFormat & hand
 	int32_t rawProvenance = static_cast<int32_t>(provenance);
 	handler.serializeInt("provenance", rawProvenance);
 	handler.serializeInt("temporarilyRestored", temporarilyRestored);
+	handler.serializeInt("eternalServitudeRestored", eternalServitudeRestored, 0);
 	if(rawProvenance < static_cast<int32_t>(DamageProvenance::OTHER)
 		|| rawProvenance > static_cast<int32_t>(DamageProvenance::MAGICAL_CREATURE))
 		throw std::runtime_error("Invalid casualty provenance kind");

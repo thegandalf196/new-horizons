@@ -59,6 +59,24 @@ TEST_F(ForecastSideStateTest, ExceptionAndRejectedScopeCleanUpWithoutPaymentOrAn
 	EXPECT_THROW(open(scopes, state.get(), SpellEvaluationKind::MANUAL_HERO, SIDE, SpellID::HASTE, 1, false, 4), std::invalid_argument);
 	EXPECT_TRUE(scopes.empty()); EXPECT_EQ(state->mana->pools.getTotal(), 59);
 }
+
+TEST_F(ForecastSideStateTest, ResidualDamageStaysWithItsAcceptedManualScope)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareSide());
+	const auto state = side();
+	SpellPaymentScopes scopes;
+	const auto canceled = open(scopes, state.get(), SpellEvaluationKind::MANUAL_HERO, SIDE, SpellID::HASTE, 12, true, 1);
+	ASSERT_TRUE(scopes.queueResidualLife(SIDE, 123));
+	EXPECT_FALSE(scopes.queueResidualLife(BattleSide::DEFENDER, 10));
+	EXPECT_FALSE(scopes.finish(canceled, false));
+	const auto accepted = open(scopes, state.get(), SpellEvaluationKind::MANUAL_HERO, SIDE, SpellID::HASTE, 12, true, 2);
+	ASSERT_TRUE(scopes.queueResidualLife(SIDE, 50));
+	const auto ticket = scopes.finish(accepted, true);
+	ASSERT_TRUE(ticket);
+	EXPECT_EQ(ticket->residualLifeDamage, 50);
+	EXPECT_EQ(state->mana->pools.getTotal(), 59);
+	EXPECT_FALSE(scopes.queueResidualLife(SIDE, 1));
+}
 TEST_F(ForecastSideStateTest, ScopedRefundsSettleAtomicallyAgainstOneExactOriginalCharge)
 {
 	ASSERT_NO_FATAL_FAILURE(prepareSide());

@@ -98,7 +98,7 @@ public:
 	};
 	static SoulHarvestHit prepareSoulHarvest(const CBattleInfoCallback & state,
 		const battle::Unit & actor, const battle::Unit & victim, bool physical);
-	static void finishSoulHarvest(const SoulHarvestHit & eligibility,
+	static void finishSoulHarvest(const CBattleInfoCallback & state, const SoulHarvestHit & eligibility,
 		battle::CUnitState & actor, const battle::CUnitState & victim);
 	static std::pair<newHorizonsArmorer::ArmorerLastStandDamageResult, BattleSide> resolveUnspentLastStand(
 		const CBattleInfoCallback & state, const BattleAttackInfo & attack, const battle::Unit * target, int64_t damage);

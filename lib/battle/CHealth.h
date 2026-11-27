@@ -31,6 +31,7 @@ public:
 		int32_t count = 0;
 		DamageProvenance provenance = DamageProvenance::OTHER;
 		int32_t temporarilyRestored = 0;
+		int32_t eternalServitudeRestored = 0;
 
 		void serializeJson(JsonSerializeFormat & handler);
 	};
@@ -99,6 +100,11 @@ public:
 	/// returns total initial health
 	int64_t total() const;
 
+	/// Tag only members newly restored since the supplied pre-heal ledger.
+	CHealth prepareEternalServitudeRestoration();
+	void markEternalServitudeRestoration(const CHealth & previous);
+	/// Retain the fraction of tagged members still alive, before temporary expiry.
+	int32_t retainEternalServitude(int32_t percent);
 	void takeResurrected();
 
 	void preserveCapacityHealth();

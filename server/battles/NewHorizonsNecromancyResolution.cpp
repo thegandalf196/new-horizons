@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "../../lib/entities/hero/NewHorizonsHoardedPower.h"
 #include "NewHorizonsRaisedArmy.h"
 #include "../../lib/networkPacks/PacksForClientBattle.h"
 #include "../../lib/entities/hero/NewHorizonsIndividualSpecialties.h"
@@ -15,7 +16,8 @@ namespace newHorizonsNecromancy
 {
 PreparedBattleNecromancy prepareBattleNecromancy(const BattleResult & result,
 	const newHorizonsCreatures::CreatureCategoryRules & categoryRules,
-	int32_t initialMana, const CGHeroInstance & hero, const PlayerState * ownerState)
+	int32_t initialMana, const CGHeroInstance & hero, const PlayerState * ownerState,
+	int32_t temporaryBufferRemaining)
 {
 	const auto capturedPolicy = policy(hero.getPerkState().getRules());
 	const auto losingSide = CBattleInfoEssentials::otherSide(result.winner);
@@ -68,7 +70,7 @@ PreparedBattleNecromancy prepareBattleNecromancy(const BattleResult & result,
 	auto summary = newHorizonsNecromancy::resolve(hero.getNewHorizonsNecromancyRank(), eligibleCount, eligibleCoreCount,
 		boneCollector, corpsePreservation, darkConversion,
 		true, true, postBattleMana,
-		blackHarvest ? hero.manaLimit() : postBattleMana, eligibleEliteCount, soulHarvester, true, skeletonOutput,
+		blackHarvest ? newHorizonsHeroes::blackHarvestRecoveryLimit(hero, temporaryBufferRemaining) : postBattleMana, eligibleEliteCount, soulHarvester, true, skeletonOutput,
 		nonlivingCasualties, undeadCasualties, lordOfTheDead,
 		result.necromancyDefeatedArmyHadLivingChampion, true,
 		hero.getNewHorizonsNecromancyAmplifierBonusPercent(),
@@ -76,7 +78,7 @@ PreparedBattleNecromancy prepareBattleNecromancy(const BattleResult & result,
 		capturedPolicy.has_value(), capturedPolicy ? &*capturedPolicy : nullptr);
 	const auto enhanced = reclaimResidualSkeletons(summary,
 		newHorizonsHeroes::reclaimerConversionPercent(hero, ownerState), postBattleMana,
-		blackHarvest ? hero.manaLimit() : postBattleMana, capturedPolicy ? &*capturedPolicy : nullptr);
+		blackHarvest ? newHorizonsHeroes::blackHarvestRecoveryLimit(hero, temporaryBufferRemaining) : postBattleMana, capturedPolicy ? &*capturedPolicy : nullptr);
 	return {summary, enhanced, ossuary};
 }
 }

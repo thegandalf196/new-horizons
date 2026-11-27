@@ -360,7 +360,7 @@ float BattleExchangeVariant::trackAttack(
 						enemyStackKilled = true;
 				}
 			}
-			newHorizonsSoulHarvest::grant(*projectedAttacker, harvestCasualties);
+			newHorizonsSoulHarvest::grant(*hb, *projectedAttacker, harvestCasualties);
 			// Each projected striker spends its one-attack reward after its full hit set.
 			// The movement bonus belongs to the moved stack, so an enemy preemptive
 			// strike cannot consume it.
@@ -653,7 +653,7 @@ float BattleExchangeVariant::trackAttackWithSelectedDamage(
 			hb->releaseSerpentBindingsForDeath(*defender);
 		hb->projectSerpentBinding(attacker->unitId(), defender->unitId(), actualDamage, serpentBinding);
 		if(harvestEligible)
-			newHorizonsSoulHarvest::grant(*attacker, newHorizonsSoulHarvest::casualtiesAfterHit(
+			newHorizonsSoulHarvest::grant(*hb, *attacker, newHorizonsSoulHarvest::casualtiesAfterHit(
 				*defender, defenderHarvestCountBefore, defenderMayRebirth));
 		paralyzingGazeAI::apply(*hb, attacker->unitId(), defender->unitId(), actualDamage, gazeAdmitted);
 		AttackPreviewHitContext::applyOrdinaryStrike(*hb, projectedAttack, actualDamage, primaryBodyHealthLoss);
@@ -788,7 +788,7 @@ float BattleExchangeVariant::trackAttackWithSelectedDamage(
 				if(targetWasAlive && !target->alive())
 					hb->releaseSerpentBindingsForDeath(*target);
 				if(cleaveHarvestEligible)
-					newHorizonsSoulHarvest::grant(*projectedAttacker, newHorizonsSoulHarvest::casualtiesAfterHit(
+					newHorizonsSoulHarvest::grant(*hb, *projectedAttacker, newHorizonsSoulHarvest::casualtiesAfterHit(
 						*target, targetHarvestCountBefore, targetMayRebirth));
 				AttackPreviewHitContext::applyUnspentLastStand(*hb, target.get(), cleaveLastStand.first,
 					cleaveLastStand.second, cleaveAttack.retaliation, !evaluateOnly);
@@ -893,7 +893,7 @@ float BattleExchangeVariant::trackAttackWithSelectedDamage(
 		hb->projectSerpentBinding(defender->unitId(), attacker->unitId(), actualDamage, counterSerpentBinding);
 		AttackPreviewHitContext::applyOrdinaryStrike(*hb, retaliationAttack, actualDamage, retaliationBodyHealthLoss);
 		if(counterHarvestEligible)
-			newHorizonsSoulHarvest::grant(*defender, newHorizonsSoulHarvest::casualtiesAfterHit(
+			newHorizonsSoulHarvest::grant(*hb, *defender, newHorizonsSoulHarvest::casualtiesAfterHit(
 				*attacker, attackerHarvestCountBefore, attackerMayRebirth));
 		if(counterManaLeech.amount > 0)
 			hb->projectManaLeech(counterManaLeech, actualDamage, nullptr);

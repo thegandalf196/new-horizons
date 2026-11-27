@@ -100,10 +100,10 @@ void selectedAttackReceipt::applyCapturedDamage(HypotheticBattle & branch,
 	if(destroyed) PhysicalStrikeProjection::completeDamagePacket(branch, std::span(&*destroyed, 1));
 }
 
-int64_t selectedAttackReceipt::grantSoulHarvest(battle::CUnitState & actor, int64_t killedCreatures)
+int64_t selectedAttackReceipt::grantSoulHarvest(const CBattleInfoCallback & state, battle::CUnitState & actor, int64_t killedCreatures)
 {
 	const auto before = actor.getAvailableHealth();
-	return newHorizonsSoulHarvest::grant(actor, killedCreatures)
+	return newHorizonsSoulHarvest::grant(state, actor, killedCreatures)
 		? actor.getAvailableHealth() - before : 0;
 }
 

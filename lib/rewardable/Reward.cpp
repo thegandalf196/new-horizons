@@ -9,6 +9,7 @@
  */
 
 #include "StdInc.h"
+#include "../entities/hero/NewHorizonsHoardedPower.h"
 #include "Reward.h"
 #include "../mapObjects/NewHorizonsEstatesPolicy.h"
 #include "PrimaryAndExperienceReward.h"
@@ -148,7 +149,13 @@ void Rewardable::Reward::loadComponents(std::vector<Component> & comps, const CG
 		const int64_t bufferSpent = h && newHorizonsMagic::spellPointRulesActive(h->getMagicRules()) && manaDiff < 0
 			? std::min<int64_t>(-static_cast<int64_t>(manaDiff), h->getBufferSpellPoints())
 			: 0;
-		const int64_t totalChange = normalChange - bufferSpent + manaBuffer;
+		const int64_t baselineNormal = h && manaPercentage >= 0
+			? std::clamp<int64_t>(int64_t{h->manaLimit()} * manaPercentage / 100, 0, h->manaLimit())
+			: (h ? h->getNormalSpellPoints() : 0);
+		const int64_t bufferGain = h && newHorizonsMagic::spellPointRulesActive(h->getMagicRules())
+			? newHorizonsHeroes::rewardBufferGain(*h, baselineNormal, std::max(0, manaDiff), manaBuffer, bufferSpent)
+			: manaBuffer;
+		const int64_t totalChange = normalChange - bufferSpent + bufferGain;
 		comps.emplace_back(ComponentType::MANA, static_cast<si32>(std::clamp<int64_t>(totalChange,
 			std::numeric_limits<si32>::min(), std::numeric_limits<si32>::max())));
 	}

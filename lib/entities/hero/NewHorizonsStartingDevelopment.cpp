@@ -25,9 +25,9 @@ struct StartingBookRow
 	std::string_view hero;
 	std::string_view from;
 	std::string_view to;
-	int revision = 0; // 1: the 2026-11-20 Castle starts, 2: the Academy starts; absent from earlier captures.
+	int revision = 0; // 1: the 2026-11-20 Castle starts, 2: Academy, 3: Necropolis; absent from earlier captures.
 };
-constexpr std::array<StartingBookRow, 25> startingBooks{{
+constexpr std::array<StartingBookRow, 26> startingBooks{{
 	{"core:rion", "core:stoneSkin", "new-horizons:guardianSpirit"},
 	{"core:aeris", "core:protectAir", "new-horizons:holyArmor"},
 	{"core:piquedram", "core:shield", "core:slow"},
@@ -52,24 +52,26 @@ constexpr std::array<StartingBookRow, 25> startingBooks{{
 	{"core:tiva", "core:stoneSkin", "new-horizons:regeneration"},
 	{"core:cuthbert", "core:weakness", "new-horizons:holyArmor", 1},
 	{"core:loynis", "core:prayer", "new-horizons:sanctuary", 1},
-	{"core:solmyr", "new-horizons:masterChainLightning", "core:lightningBolt", 2}
+	{"core:solmyr", "new-horizons:masterChainLightning", "core:lightningBolt", 2},
+	{"core:aislinn", "core:meteorShower", "new-horizons:lifeDrain", 3}
 }};
-/// Rows per revision: the historical table, the Castle starts and the Academy starts.
-constexpr std::array<size_t, 3> startingBookRevisionRows{22, 2, 1};
+/// Rows per revision: historical, Castle, Academy and Necropolis starts.
+constexpr std::array<size_t, 4> startingBookRevisionRows{22, 2, 1, 1};
 
 void validateStartingBooks(const JsonNode & table)
 {
 	require(table.isStruct(), "complete starting book replacement table");
 	// Each revision's rows were captured together: a table holds every historical row and
-	// either all or none of the Castle rows and of the Academy rows.
-	std::array<size_t, 3> present{};
+	// either all or none of each later faction revision.
+	std::array<size_t, 4> present{};
 	for(const auto & [hero, row] : table.Struct())
 		for(const auto & entry : startingBooks)
 			if(entry.hero == hero)
 				++present.at(static_cast<size_t>(entry.revision));
 	require(present[0] == startingBookRevisionRows[0] && (present[1] == 0 || present[1] == startingBookRevisionRows[1])
 		&& (present[2] == 0 || present[2] == startingBookRevisionRows[2])
-		&& present[0] + present[1] + present[2] == table.Struct().size(), "complete starting book replacement table");
+		&& (present[3] == 0 || present[3] == startingBookRevisionRows[3])
+		&& present[0] + present[1] + present[2] + present[3] == table.Struct().size(), "complete starting book replacement table");
 	std::set<int> seen;
 	for(const auto & [hero, row] : table.Struct())
 	{

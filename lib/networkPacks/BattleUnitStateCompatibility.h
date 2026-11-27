@@ -32,6 +32,7 @@ void validateForEnvelope(const UnitChanges & change, Handler & h,
 	change.validatePetrifyingBloodSerialization(h);
 	change.validateTimedSummonSerialization(h);
 	change.validateOverwatchSerialization(h);
+	change.validateEternalServitudeSerialization(h);
 	change.validateVeteranCohesionSerialization(h);
 	change.validateTrainingSerialization(h);
 	change.validatePlagueSerialization(h);

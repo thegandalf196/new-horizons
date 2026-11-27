@@ -10,6 +10,7 @@
 #include "StdInc.h"
 #include "AcceptedHeroSpellHistory.h"
 #include "../entities/hero/NewHorizonsInfernoSpecialties.h"
+#include "../entities/hero/NewHorizonsHoardedPower.h"
 #include "../battle/SpellPointBattleTransitions.h"
 #include "../battle/NewHorizonsFocusMagic.h"
 #include "../battle/BattleRecallAnchors.h"
@@ -298,7 +299,7 @@ void applySpellPointMutation(CGameState & gs, CGHeroInstance & hero, const SetMa
 			newHorizonsHeroes::applyManaLeechRecovery(hero, findBattleSide(gs, hero.id), static_cast<int32_t>(amount));
 			break;
 		case Operation::RESTORE_NORMAL:
-			if(!hero.restoreNormalSpellPoints(static_cast<int32_t>(amount)))
+			if(!newHorizonsHeroes::restoreFixedSpellPoints(hero, static_cast<int32_t>(amount)))
 				throw std::runtime_error("Invalid Normal Spell Point restoration");
 			break;
 		case Operation::SPEND:
@@ -333,9 +334,13 @@ void applySpellPointMutation(CGameState & gs, CGHeroInstance & hero, const SetMa
 			const int64_t restoredBuffer = static_cast<int64_t>(pack.bufferAmount) + pack.temporaryBufferAmount;
 			if(!hero.restoreNormalSpellPoints(static_cast<int32_t>(amount)))
 				throw std::runtime_error("Invalid Hero Luck Normal refund");
+			const auto beforeBuffer = hero.getBufferSpellPoints();
 			if(restoredBuffer != 0 && !hero.grantBufferSpellPoints(static_cast<int32_t>(restoredBuffer)))
 				throw std::runtime_error("Invalid Hero Luck Buffer refund");
-			side->temporaryBufferRemaining = staged.temporaryBufferRemaining;
+			const auto actualBuffer = hero.getBufferSpellPoints() - beforeBuffer;
+			const auto temporaryRefund = std::min<int32_t>(pack.temporaryBufferAmount,
+				std::max<int32_t>(0, actualBuffer - pack.bufferAmount));
+			side->temporaryBufferRemaining += temporaryRefund;
 			break;
 		}
 		case Operation::LEGACY:
@@ -459,10 +464,13 @@ void GameStatePackVisitor::reconcileSpellPointCapacity()
 	if(!needsSpellPointReconciliation()
 		|| !newHorizonsMagic::spellPointRulesActive(gs.getMagicRules()))
 		return;
-	const auto reconcile = [](CGHeroInstance * hero)
+	const auto reconcile = [this](CGHeroInstance * hero)
 	{
 		if(hero && hero->areSpellPointsInitialized())
+		{
 			hero->clampSpellPointsToCapacity();
+			newHorizonsHeroes::reconcileHoardedPowerBuffer(*hero, findBattleSide(gs, hero->id));
+		}
 	};
 	if(spellPointBonusGraphChanged)
 	{
@@ -3288,7 +3296,7 @@ void GameStatePackVisitor::visitBattleResultsApplied(BattleResultsApplied & pack
 				if(pack.necromancy.active && pack.necromancy.applied
 					&& pack.necromancy.manaRecovered > 0
 					&& hero->getOwner() == pack.victor
-					&& !hero->restoreNormalSpellPoints(pack.necromancy.manaRecovered))
+					&& !newHorizonsHeroes::restoreFixedSpellPoints(*hero, pack.necromancy.manaRecovered))
 					throw std::runtime_error("Invalid Black Harvest Normal Spell Point recovery");
 			}
 			else

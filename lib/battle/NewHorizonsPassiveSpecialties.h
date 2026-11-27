@@ -12,6 +12,7 @@ DLL_LINKAGE int boneFormationDefense(int32_t count);
 DLL_LINKAGE bool magicalDamageImmune(const battle::Unit & unit);
 DLL_LINKAGE bool isDynamicPassiveBonus(const Bonus & bonus);
 DLL_LINKAGE bool hasDynamicDamagePassive(const battle::Unit & unit);
+DLL_LINKAGE int casualtyDamagePermille(const BattleAttackInfo & attack);
 DLL_LINKAGE int casualtyDamagePercent(const BattleAttackInfo & attack);
 /// Deliberate creature attacks only; do not use for retaliation/collateral/spells.
 DLL_LINKAGE bool permitsCreatureAttackTarget(const CBattleInfoCallback & battle,

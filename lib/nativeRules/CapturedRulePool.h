@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #pragma once
+#include "../entities/hero/NewHorizonsNecropolisCombatSpecialties.h"
 
 #include "CapturedRuleSet.h"
 #include "../spells/NewHorizonsMetamagicDoubleCast.h"
@@ -58,6 +59,9 @@ public:
 			const bool warcast = h.hasFeature(Handler::Version::NEW_HORIZONS_WARCAST);
 			if(h.saving)
 			{
+				if(!h.hasFeature(Handler::Version::NEW_HORIZONS_NECROPOLIS_SPECIALTIES)
+					&& newHorizonsHeroes::requiresNecropolisSpecialtyFormat(documents[index]->document()))
+					throw std::runtime_error("Cannot write Necropolis specialty rules to an older format");
 				if(!sylvanAmbush && newHorizonsHeroes::requiresSylvanAmbushFormat(documents[index]->document()))
 					throw std::runtime_error("Cannot write Sylvan Tactics 5 rules to an older format");
 				if(!warcast && newHorizonsHeroes::requiresWarcastFormat(documents[index]->document()))
@@ -72,6 +76,9 @@ public:
 			{
 				JsonNode decoded;
 				h & decoded;
+				if(!h.hasFeature(Handler::Version::NEW_HORIZONS_NECROPOLIS_SPECIALTIES)
+					&& newHorizonsHeroes::requiresNecropolisSpecialtyFormat(decoded))
+					throw std::runtime_error("Older format claims Necropolis specialty rules");
 				if(!currentPolicies && newHorizonsMetamagic::requiresDoubleCastFormat(decoded))
 					throw std::runtime_error("Older format claims Double Cast or Chosen Prayers rules");
 				if(!revisedSpecialties && newHorizonsHeroes::requiresRevisedSpecialtyFormat(decoded))

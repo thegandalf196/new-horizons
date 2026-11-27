@@ -8,6 +8,7 @@
  *
  */
 #include "StdInc.h"
+#include "../../lib/entities/hero/NewHorizonsHoardedPower.h"
 #include "NewTurnProcessor.h"
 
 #include "HeroPoolProcessor.h"
@@ -465,6 +466,9 @@ std::vector<SetMana> NewTurnProcessor::updateHeroesManaPoints()
 			// The initial NewTurn has no completed day to qualify for Meditation.
 			const bool completedDay = gameHandler->gameState().day > 0;
 			int32_t newMana = h->getManaNewTurn(completedDay);
+
+			if(const auto buffer = newHorizonsHeroes::dailyHoardedPower(*h, completedDay); buffer > 0)
+				result.emplace_back(h->id, SetMana::Operation::GRANT_BUFFER, buffer);
 
 			if (newMana != h->getNormalSpellPoints())
 				result.emplace_back(h->id, SetMana::Operation::SET_NORMAL, newMana);

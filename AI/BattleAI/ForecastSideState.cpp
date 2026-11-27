@@ -5,6 +5,7 @@
 #include "../../lib/battle/IBattleState.h"
 #include "../../lib/battle/LiveUnitEnvironmentContext.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
+#include "../../lib/entities/hero/NewHorizonsNecropolisCombatSpecialties.h"
 #include "../../lib/nativeRules/CapturedRuleSet.h"
 #include "../../lib/nativeRules/CapturedPerkRules.h"
 #include "../../lib/nativeRules/CompiledMetamagicRules.h"
@@ -35,6 +36,8 @@ void SideState::validate() const
 		if(ledger->allowances.currentRound >= 0 && ledger->allowances.currentRound != round)
 			throw std::invalid_argument("Compact action ledger belongs to a different round");
 		ledger->overwhelming.validateShape();
+		if(ledger->residualLifeDamage < 0 || ledger->residualLifeThreshold < 0 || ledger->residualLifeLimit < 0)
+			throw std::invalid_argument("Invalid Residual Life forecast state");
 		if(ledger->completedLevelMask >= (1u << GameConstants::SPELL_LEVELS)
 			|| (ledger->completedCastCount && *ledger->completedCastCount < 0))
 			throw std::invalid_argument("Invalid compact forecast cast completion state");
@@ -80,6 +83,9 @@ std::optional<SideState> SideState::capture(const CBattleInfoCallback & source, 
 			mana.temporaryBufferRemaining = source.getBattle()->getTemporaryBufferRemaining(side);
 			result.mana = mana;
 			HeroLedger ledger;
+			ledger.residualLifeDamage = source.getBattle()->getResidualLifeDamage(side);
+			ledger.residualLifeThreshold = newHorizonsHeroes::residualLifeThreshold(hero);
+			ledger.residualLifeLimit = newHorizonsHeroes::residualLifeLimit(hero);
 			ledger.allowances = source.getBattle()->getHeroActionAllowances(side);
 			ledger.wisdom = source.getBattle()->getWisdomCombatState(side);
 			ledger.response = source.getBattle()->getSpellResponseState(side);

@@ -1,5 +1,6 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "NewHorizonsNecropolisRetainedSpecialties.h"
 #include "NewHorizonsPassiveSpecialtyBonuses.h"
 #include "NewHorizonsCreatureSpecialtyCapabilities.h"
 #include "NewHorizonsRampartSpecialties.h"
@@ -130,8 +131,10 @@ std::vector<std::shared_ptr<Bonus>> passiveCreatureSpecialtyBonuses(const CGHero
 	const std::string identity = hero.getHeroType()->getJsonKey();
 	if(identity == "core:vokial" && has("bloodScentMaximumDamagePercent"))
 	{
-		auto bonus = Builder(hero, "core:vampire").familyBonus(BonusType::CASUALTY_DAMAGE_PERCENTAGE, 100, "targetCasualties");
-		bonus->subtype = BonusSubtypeID(BonusCustomSubtype(1));
+		const bool permille = bloodScentUsesPermille(hero);
+		auto bonus = Builder(hero, "core:vampire").familyBonus(BonusType::CASUALTY_DAMAGE_PERCENTAGE,
+			permille ? bloodScentCapPermille(hero) : bloodScentCapPercent(hero), "targetCasualties");
+		bonus->subtype = BonusSubtypeID(BonusCustomSubtype(permille ? 2 : 1));
 		return {bonus};
 	}
 	if(identity == "core:ryland" && has("treantmootProtection"))

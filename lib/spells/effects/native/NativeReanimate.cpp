@@ -1,6 +1,7 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
 #include "SummonHelpers.h"
+#include "../../../entities/hero/NewHorizonsNecropolisCombatSpecialties.h"
 #include <cmath>
 
 namespace spells::effects::native
@@ -59,7 +60,8 @@ public:
 			if(!unit || !isValidTarget(mechanics, unit) || !isReceptive(mechanics, unit)) continue;
 			auto state = unit->acquireState();
 			auto health = amount(mechanics, unit);
-			const auto healed = state->heal(health, EHealLevel::RESURRECT, EHealPower::ONE_BATTLE);
+			const auto healed = newHorizonsHeroes::eternalServitudePercent(mechanics->getHeroCaster()) > 0
+				? state->reanimateForEternalServitude(health) : state->heal(health, EHealLevel::RESURRECT, EHealPower::ONE_BATTLE);
 			result.hpDelta += healed.healedHealthPoints; result.unitsDelta += healed.resurrectedCount;
 			result.unitType = summon::creature(unit);
 		}
@@ -70,7 +72,13 @@ public:
 		if(!validPair(mechanics, target)) return;
 		const auto * unit = target.front().unitValue;
 		const nativeEvents::Context context{*server, *mechanics->battle(), nullptr, nullptr, parameters, {}};
-		const auto [health, count] = nativeEvents::heal(context, *unit, amount(mechanics, unit), EHealLevel::RESURRECT, EHealPower::ONE_BATTLE);
+		auto requested = amount(mechanics, unit);
+		auto changed = unit->acquireState();
+		const auto healed = newHorizonsHeroes::eternalServitudePercent(mechanics->getHeroCaster()) > 0
+			? changed->reanimateForEternalServitude(requested) : changed->heal(requested, EHealLevel::RESURRECT, EHealPower::ONE_BATTLE);
+		nativeEvents::changeUnit(context, *changed, healed.healedHealthPoints);
+		const auto health = healed.healedHealthPoints;
+		const auto count = healed.resurrectedCount;
 		if(health <= 0 && count <= 0) return;
 		MetaString message;
 		message.appendTextID(count > 0 ? "new-horizons.combat.reanimate.restored" : "new-horizons.combat.reanimate.healed");

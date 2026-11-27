@@ -8,6 +8,8 @@
  *
  */
 #include "StdInc.h"
+#include "../entities/hero/NewHorizonsNecropolisCombatSpecialties.h"
+#include "../networkPacks/NecropolisSpecialtyPacks.h"
 #include "../battle/QuickStudySpecialty.h"
 #include "../battle/NewHorizonsFrostMantle.h"
 #include "../battle/NewHorizonsSylvanTacticsV2.h"
@@ -220,6 +222,16 @@ public:
 		if(!acceptedManualCaster && !mechanics.isGenuineHeroCast())
 			publishDelayedHeroDamage();
 		overflowPreview = newHorizonsMetamagic::completeOverflow(delegate, battle, mechanics, overflow, overflowOutcome);
+		if(!residualLifePublished && mechanics.isGenuineHeroCast() && !mechanics.isRunicReflectionShare()
+			&& residualLifeDamage > 0 && newHorizonsHeroes::residualLifeThreshold(mechanics.getHeroCaster()) > 0)
+		{
+			RecordResidualLife receipt;
+			receipt.battleID = battle.getBattle()->getBattleID();
+			receipt.side = mechanics.getCasterSide();
+			receipt.damage = residualLifeDamage;
+			delegate.apply(receipt);
+			residualLifePublished = true;
+		}
 		const auto resolved = resolvedSpellRecipientIds();
 		newHorizonsMetamagic::applyGuaranteedCompletion(delegate, battle, mechanics, resolved, originalHeroInjuries);
 		arcaneInspiration::publishCompletedSpell(delegate, battle, mechanics, originalHeroInjuries, acceptedManualCaster);
@@ -394,6 +406,8 @@ private:
 	const CBattleInfoCallback & battle;
 	const Mechanics & mechanics;
 	mutable newHorizonsMetamagic::OverflowState overflow;
+	int64_t residualLifeDamage = 0;
+	mutable bool residualLifePublished = false;
 	newHorizonsMetamagic::OverflowProjectionOutcome overflowOutcome;
 	mutable std::optional<newHorizonsMetamagic::OverflowPreview> overflowPreview;
 	PlayerColor casterOwner;
@@ -506,11 +520,24 @@ private:
 
 	void applyInjuries(StacksInjured & pack)
 	{
+		std::map<uint32_t, int64_t> bodyBefore;
+		if(mechanics.isGenuineHeroCast() && !mechanics.isRunicReflectionShare()
+			&& newHorizonsHeroes::residualLifeThreshold(mechanics.getHeroCaster()) > 0)
+			for(const auto & injury : pack.stacks)
+				if(const auto * unit = battle.battleGetUnitByID(injury.stackAttacked); unit && unit->getPhantomInitialIntegrity() <= 0)
+					bodyBefore.emplace(unit->unitId(), unit->acquireState()->getHealth().getCreatureHealthAvailable());
 		std::vector<ArmySnapshot> before;
 		for(const auto & injury : pack.stacks)
 			before.push_back(armySnapshot(injury.stackAttacked));
 		record(pack);
 		delegate.apply(pack);
+		for(const auto & [id, health] : bodyBefore)
+		{
+			const auto * unit = battle.battleGetUnitByID(id);
+			const auto remaining = unit ? unit->acquireState()->getHealth().getCreatureHealthAvailable() : 0;
+			const auto loss = std::max<int64_t>(0, health - remaining);
+			residualLifeDamage += std::min<int64_t>(loss, std::numeric_limits<int64_t>::max() - residualLifeDamage);
+		}
 		for(const auto & previous : before)
 			recordArmyChange(previous);
 	}

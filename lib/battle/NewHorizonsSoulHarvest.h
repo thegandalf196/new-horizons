@@ -18,5 +18,6 @@ DLL_LINKAGE int32_t casualtiesAfterHit(const battle::Unit & victim,
 	int32_t countBeforeHit, bool willRebirth);
 /// Grant the full qualified casualty total once after the blow's entire hit set.
 /// ONE_BATTLE Overheal never resurrects a dead actor or changes saved old counts.
-DLL_LINKAGE bool grant(battle::CUnitState & actor, int64_t killedCreatures);
+DLL_LINKAGE bool grant(battle::CUnitState & actor, int64_t killedCreatures, int growthPercent = 100);
+DLL_LINKAGE bool grant(const CBattleInfoCallback & battle, battle::CUnitState & actor, int64_t killedCreatures);
 }

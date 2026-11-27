@@ -147,6 +147,7 @@ double physicalDamageReductionFactor(const DamageAttackInfo & info, const Physic
 	reduce(info.stoneboundPhysicalReductionBasisPoints, 10000);
 	if(info.shooting) reduce(info.heavenlyGaleDamageReductionBasisPoints, 10000);
 	reduce(info.newHorizonsArmorerReductionPercent, 100);
+	reduce(info.unyieldingBonesReductionBasisPoints, 10000);
 	if(info.intrinsicPhysicalDamageReductionPercent > 0) reduce(info.intrinsicPhysicalDamageReductionPercent, 100);
 	reduce(info.runicEnduranceReductionPercent, 100);
 	reduce(info.ironHideReductionPercent, 100);

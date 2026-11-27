@@ -247,7 +247,7 @@ class JsonNode;
 	BONUS_NAME(MAGICAL_DAMAGE_IMMUNITY) /*absolute magical HP-damage immunity; never prevents non-damaging effects*/ \
 	BONUS_NAME(CANNOT_SHOOT) /*unit has no ranged attack despite native ammunition*/ \
 	BONUS_NAME(CREATURE_ATTACK_TARGET_PROTECTION) /*excludes deliberate enemy ordinary creature attack selection only*/ \
-	BONUS_NAME(CASUALTY_DAMAGE_PERCENTAGE) /*final primary melee casualty fraction; subtype0 own,1 living target*/ \
+	BONUS_NAME(CASUALTY_DAMAGE_PERCENTAGE) /*final primary melee casualty fraction; subtype0 own %,1 living target %,2 living target permille*/ \
 	BONUS_NAME(DYNAMIC_CREATURE_DAMAGE) /*immutable public dependency marker for projected count/adjacency reevaluation*/ \
 	BONUS_NAME(PHYSICAL_DEFENSE) /*additive creature defense against physical attacks only*/ \
 	BONUS_NAME(NATIVE_RESISTANCE_REFLECTION) /*native Magic Resistance share redirected on its existing resistance draw*/ \

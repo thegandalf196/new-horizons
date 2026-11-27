@@ -3372,6 +3372,44 @@
 						"firePermille": 200,
 						"firePermillePerLevel": 15,
 						"maximumFirePermille": 500
+					},
+					"hoardedPower": {
+						"baseCapPercent": 10,
+						"capPercentPerLevel": 1,
+						"maximumCapPercent": 50
+					},
+					"residualLife": {
+						"damagePerBuffer": 50,
+						"damagePerBufferReductionPerLevel": 1,
+						"minimumDamagePerBuffer": 25,
+						"maximumPerCombat": 20
+					},
+					"earthboundDrain": {
+						"percentPerLevel": 5,
+						"maximumPercent": 100
+					},
+					"eternalServitude": {
+						"basePercent": 20,
+						"percentPerLevel": 2,
+						"maximumPercent": 60
+					},
+					"unyieldingBones": {
+						"basePermille": 50,
+						"permillePerLevel": 5,
+						"maximumPermille": 150
+					},
+					"bloodScent": {
+						"baseCapPermille": 500,
+						"capPermillePerLevel": 25,
+						"maximumCapPermille": 1000
+					},
+					"soulHarvest": {
+						"percentPerLevel": 3
+					},
+					"ancientOathsDiscount": {
+						"basePercent": 10,
+						"percentPerLevel": 1,
+						"maximumPercent": 30
 					}
 				},
 				"creatureLineSpecialties": {
@@ -3532,10 +3570,6 @@
 					"manaFurnace": {
 						"restorePointsPerLevel": 2,
 						"maximumRestorePoints": 40
-					},
-					"graveArchivist": {
-						"learningPercentPerLevel": 5,
-						"learningMaximumPercent": 100
 					},
 					"spiritTeacher": {
 						"learningPercentPerLevel": 5,
@@ -3740,6 +3774,10 @@
 							"from": "core:stoneSkin",
 							"to": "new-horizons:lifeDrain"
 						},
+						"core:aislinn": {
+							"from": "core:meteorShower",
+							"to": "new-horizons:lifeDrain"
+						},
 						"core:galthran": {
 							"from": "core:shield",
 							"to": "core:slow"
@@ -3898,8 +3936,8 @@
 						],
 						"core:nimbus": [
 							{
-								"skill": "new-horizons:necromancy",
-								"perk": "new-horizons:necromancy.graveKnowledge"
+								"skill": "new-horizons:learning",
+								"perk": "new-horizons:learning.historian"
 							}
 						],
 						"core:thant": [
@@ -3911,13 +3949,13 @@
 						"core:vidomina": [
 							{
 								"skill": "new-horizons:necromancy",
-								"perk": "new-horizons:necromancy.graveKnowledge"
+								"perk": "new-horizons:necromancy.corpsePreservation"
 							}
 						],
 						"core:nagash": [
 							{
-								"skill": "new-horizons:estates",
-								"perk": "new-horizons:estates.taxCollector"
+								"skill": "new-horizons:necromancy",
+								"perk": "new-horizons:necromancy.blackHarvest"
 							}
 						],
 						"core:ayden": [
@@ -4356,7 +4394,7 @@
 						"core:aislinn": [
 							{
 								"skill": "new-horizons:spellcraft",
-								"perk": "new-horizons:spellcraft.arcaneFocus"
+								"perk": "new-horizons:spellcraft.concentration"
 							}
 						],
 						"core:sandro": [

@@ -89,7 +89,7 @@ bool finishStrike(const CBattleInfoCallback & battle, battle::CUnitState & actor
 		killedCreatures += std::min<int64_t>(hit.killedAmount,
 			newHorizonsSoulHarvest::casualtiesAfterHit(*state, victim->getCount(), false));
 	}
-	const bool harvested = newHorizonsSoulHarvest::grant(actor, killedCreatures);
+	const bool harvested = newHorizonsSoulHarvest::grant(battle, actor, killedCreatures);
 	actor.afterAttack(ranged, counter, physical);
 	return harvested;
 }

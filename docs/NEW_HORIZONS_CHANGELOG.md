@@ -7,6 +7,17 @@ and revisions as the game develops.
 For individual perk effects, spell formulas, creature statistics and Order rules,
 read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 
+## 0.94.0-beta.7
+
+Necropolis heroes receive revised specialties and level scaling.
+
+- Nagash's Hoarded Power stores fixed Mana recovery that would overflow his maximum as Buffer, within a level-scaled cap. Refilling to maximum grants no Buffer.
+- Clavius's Lord of the Crypts increases weekly Skeleton growth while he stewards a Necropolis town.
+- Septienna's Residual Life turns spell damage into Buffer. Aislinn's Earthbound Drain strengthens Life Drain, which replaces Meteor Shower in her starting spellbook.
+- Thant's Eternal Servitude keeps part of Re-animate's restored creatures after combat if their stack survives. Xsi's Unyielding Bones protects her army from physical damage.
+- Vokial's Blood Scent cap, Vidomina's temporary Ghost harvest and Seth's Royal Mummy recruitment discount now scale with hero level.
+- Nagash starts with Soul Drinker, Seth with Historian, Vidomina with Death March and Aislinn with Concentration.
+
 ## 0.94.0-beta.6
 
 Inferno heroes receive revised specialties and level scaling.

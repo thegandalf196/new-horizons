@@ -43,6 +43,19 @@ HealInfo CUnitState::heal(int64_t & amount, EHealLevel level, EHealPower power)
 	return applyHealing(amount, level, power, level != EHealLevel::OVERHEAL);
 }
 
+HealInfo CUnitState::reanimateForEternalServitude(int64_t & amount)
+{
+	auto previous = editHealth()->prepareEternalServitudeRestoration();
+	std::optional<CHealth> original;
+	if(battleFormOriginalHealth.isBattleFormProvenance())
+		original = editOriginalHealth()->prepareEternalServitudeRestoration();
+	const auto result = heal(amount, EHealLevel::RESURRECT, EHealPower::ONE_BATTLE);
+	if(original)
+		editOriginalHealth()->markEternalServitudeRestoration(*original);
+	else
+		editHealth()->markEternalServitudeRestoration(previous);
+	return result;
+}
 HealInfo CUnitState::recreateAfterNativeRebirth(int64_t & amount)
 {
 	return applyHealing(amount, EHealLevel::RESURRECT, EHealPower::PERMANENT, false);

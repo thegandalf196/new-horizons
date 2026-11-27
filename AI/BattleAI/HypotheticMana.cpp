@@ -40,3 +40,10 @@ bool HypotheticBattle::stageProjectedSpellPayment(BattleSide side, SpellID spell
 	evaluatedSpellPayments.at(side) = forecast::SpellPaymentTicket{side, spell, exactCost, begun->action.epoch, false, {}};
 	return true;
 }
+
+int64_t HypotheticBattle::getResidualLifeDamage(BattleSide side) const
+{
+	const auto & value = forecastSide(side);
+	if(value && value->ledger) return value->ledger->residualLifeDamage;
+	return subject->getBattle()->getResidualLifeDamage(side);
+}

@@ -60,5 +60,6 @@ void applyBattleSkeletonRecovery(CGameHandler & handler, const BattleResult & re
 	const CGHeroInstance & hero, NecromancyResult & summary);
 PreparedBattleNecromancy prepareBattleNecromancy(const BattleResult & result,
 	const newHorizonsCreatures::CreatureCategoryRules & categoryRules,
-	int32_t initialMana, const CGHeroInstance & hero, const PlayerState * ownerState);
+	int32_t initialMana, const CGHeroInstance & hero, const PlayerState * ownerState,
+	int32_t temporaryBufferRemaining = 0);
 }

@@ -74,7 +74,7 @@ std::optional<heroOrderValue::MeleeHitReceipt> apply(HypotheticBattle & battle, 
 	tactics.damage(battle, strike, *victim, damage, battle::DamageProvenance::PHYSICAL_CREATURE);
 	tactics.finish(actor->unitId());
 	if(harvestEligible)
-		newHorizonsSoulHarvest::grant(*actor, newHorizonsSoulHarvest::casualtiesAfterHit(
+		newHorizonsSoulHarvest::grant(battle, *actor, newHorizonsSoulHarvest::casualtiesAfterHit(
 			*victim, victimCountBefore, victimMayRebirth));
 	battle.projectFortuneStrike(strike, {{victim->unitId(), damage}}, actor.get(), !victim->alive(),
 		outcome, true, perfect, side, side, newHorizonsCombatSkills::isPhysicalCreatureLuckAttack(actor.get(), true));
