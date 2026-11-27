@@ -118,6 +118,14 @@ bool requiresNecropolisSpecialtyFormat(const JsonNode & document)
 	if(!document.isStruct()) return false;
 	const auto claims = [](const JsonNode & rules)
 	{
+		const auto starts = rules.Struct().find("startingSkills");
+		if(starts != rules.Struct().end() && starts->second.isStruct())
+		{
+			const auto books = starts->second.Struct().find("startingBookReplacements");
+			if(books != starts->second.Struct().end() && books->second.isStruct()
+				&& books->second.Struct().contains("core:aislinn"))
+				return true;
+		}
 		const auto found = rules.Struct().find("revisedSpecialties");
 		if(found == rules.Struct().end() || !found->second.isStruct()) return false;
 		for(const auto * key : {"hoardedPower", "residualLife", "earthboundDrain", "eternalServitude", "unyieldingBones",

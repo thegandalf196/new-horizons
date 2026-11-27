@@ -1,5 +1,8 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
+#include "../../lib/GameSettings.h"
+#include "../../lib/entities/hero/NewHorizonsNecropolisCombatSpecialties.h"
+#include "../../lib/filesystem/ResourcePath.h"
 #include "../../lib/battle/SideInBattle.h"
 #include "../../lib/networkPacks/PacksForClientBattle.h"
 #include "../../lib/networkPacks/NecropolisSpecialtyPacks.h"
@@ -88,4 +91,34 @@ TEST(NecropolisSpecialtySerialization, ReceiptRoundtripAndOldRefusal)
 	old.oser.version = ESerializationVersion::NEW_HORIZONS_MARCH_LEFT;
 	EXPECT_THROW(source.serialize(old.oser), std::runtime_error);
 	EXPECT_TRUE(old.extractBuffer().empty());
+}
+
+TEST(NecropolisSpecialtySerialization, NewStartingBookRefusesOldFormatEvenWithoutOptionalSpecialties)
+{
+	JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
+	for(const auto * key : {"hoardedPower", "residualLife", "earthboundDrain", "eternalServitude", "unyieldingBones",
+		"bloodScent", "soulHarvest", "ancientOathsDiscount"})
+		rules["revisedSpecialties"].Struct().erase(key);
+	ASSERT_TRUE(newHorizonsHeroes::requiresNecropolisSpecialtyFormat(rules));
+	GameSettings settings;
+	settings.addOverride(EGameSettings::HEROES_NEW_HORIZONS, rules);
+	CMemorySerializer old;
+	old.oser.version = ESerializationVersion::NEW_HORIZONS_MARCH_LEFT;
+	EXPECT_THROW(settings.serialize(old.oser), std::runtime_error);
+	EXPECT_TRUE(old.extractBuffer().empty());
+	rules["startingSkills"]["startingBookReplacements"].Struct().erase("core:aislinn");
+	EXPECT_FALSE(newHorizonsHeroes::requiresNecropolisSpecialtyFormat(rules));
+}
+TEST(NecropolisSpecialtySerialization, WorldHeroOverridesRetainTheStartingBookFormatClaim)
+{
+	JsonNode rules(JsonPath::builtin("config/newHorizonsHeroes"));
+	for(const auto * key : {"hoardedPower", "residualLife", "earthboundDrain", "eternalServitude", "unyieldingBones",
+		"bloodScent", "soulHarvest", "ancientOathsDiscount"})
+		rules["revisedSpecialties"].Struct().erase(key);
+	for(const auto * key : {"newHorizons", "newHorizonsPerks"})
+	{
+		JsonNode wrapped;
+		wrapped["heroes"][key] = rules;
+		EXPECT_TRUE(newHorizonsHeroes::requiresNecropolisSpecialtyFormat(wrapped));
+	}
 }
