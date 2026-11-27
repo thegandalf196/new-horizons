@@ -8,6 +8,8 @@
 #include "../../lib/entities/hero/NewHorizonsInfernoSpecialties.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/mapObjects/CGResource.h"
+#include "../../lib/mapObjects/NewHorizonsEstatesPolicy.h"
+#include "../../lib/bonuses/Bonus.h"
 #include "../../lib/networkPacks/PacksForClient.h"
 #include "../../server/CGameHandler.h"
 #include "../../server/battles/BattleInfernoRewards.h"
@@ -79,7 +81,8 @@ TEST_F(InfernoAdventureRewards, SharedPileQuoteAddsSulfurOnceAndLeavesOtherHeroe
 	EXPECT_EQ(gold->getVisitResources(calid)[EGameResID::GOLD], goldBase[EGameResID::GOLD]);
 	EXPECT_EQ(gold->getVisitResources(calid)[EGameResID::SULFUR], 1);
 	EXPECT_EQ(sulfur->getVisitResources(calid)[EGameResID::SULFUR], sulfurBase[EGameResID::SULFUR] + 1);
-	EXPECT_EQ(gold->getVisitResources(other), goldBase);
+	EXPECT_EQ(gold->getVisitResources(other), newHorizonsEstates::visitReward(goldBase, other));
+	EXPECT_EQ(sulfurSenseAmount(other), 0);
 	EXPECT_EQ(gold->getVisitResources(nullptr), goldBase);
 	ResourceSet huge;
 	huge[EGameResID::SULFUR] = std::numeric_limits<TResource>::max();
@@ -149,6 +152,11 @@ TEST_F(InfernoHistoricalAdventureRewards, AbsentCapturedRowsRetainDailyIncomeAnd
 	ASSERT_TRUE(octavia && calid);
 	EXPECT_EQ(newHorizonsHeroes::cutpurseGold(octavia, 10000, 0), 0);
 	EXPECT_EQ(newHorizonsHeroes::sulfurSenseAmount(calid), 0);
-	EXPECT_EQ(octavia->dailyIncome()[EGameResID::GOLD], 350);
+	int specialtyGold = 0;
+	for(const auto & bonus : octavia->getExportedBonusList())
+		if(bonus->type == BonusType::GENERATE_RESOURCE && bonus->source == BonusSource::HERO_SPECIAL
+			&& bonus->sid == BonusSourceID(octavia->getHeroTypeID()) && bonus->subtype == BonusSubtypeID(GameResID(GameResID::GOLD)))
+			specialtyGold += bonus->val;
+	EXPECT_EQ(specialtyGold, 350);
 	EXPECT_EQ(calid->dailyIncome()[EGameResID::SULFUR], 1);
 }

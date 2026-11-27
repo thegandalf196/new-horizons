@@ -11,6 +11,7 @@ class CutpurseCompletion : public HeroCommandFixture, public testing::WithParamI
 protected:
 	void mapLoaded(CMap * loaded) override
 	{
+		useRevisedOrders = true;
 		HeroCommandFixture::mapLoaded(loaded);
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS,
 			JsonNode(JsonPath::builtin("config/newHorizonsHeroes")));
