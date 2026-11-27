@@ -9,6 +9,9 @@ read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 
 ## 0.94.0-beta.5
 
+Day's March: troops keep the share of the day's march they have left, so
+passing an army from hero to hero no longer carries it further in one day.
+
 - **Day's March ends hero chaining.** Troops now remember how much of the day's
   march they have left. When a hero moves, his troops keep only the share of
   his daily movement he has left. A hero who takes troops can move at most the
