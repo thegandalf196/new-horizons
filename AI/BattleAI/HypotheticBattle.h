@@ -120,6 +120,8 @@ class DLL_LINKAGE HypotheticBattle final : public BattleProxy, public battle::IU
 	BattleSideArray<std::optional<uint64_t>> nativeSpellAttemptEpochs, rejectedSpellPaymentEpochs;
 	void rejectProjectedSpellEvaluation(BattleSide side) noexcept;
 	void captureForecastSides(const CBattleInfoCallback & source);
+	BattleSideArray<std::shared_ptr<const std::vector<SpellID>>> kindlingHistories;
+	void captureKindlingHistory(const CBattleInfoCallback & source);
 	bool commitForecastSide(BattleSide side, const forecast::SideReceipt & receipt);
 	bool manaLeechApplied = false;
 	// Conservative, nonserialized admission metadata; source markers own expiry.

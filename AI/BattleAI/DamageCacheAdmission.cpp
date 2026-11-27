@@ -4,6 +4,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt.
  */
 #include "StdInc.h"
+#include "../../lib/entities/hero/NewHorizonsInfernoSpecialties.h"
 #include "DamageCacheAdmission.h"
 #include "HypotheticBattle.h"
 #include "../../lib/battle/BattleInfo.h"
@@ -140,6 +141,10 @@ bool DamageCacheAdmission::ordinaryCreatureDamageIsStateful()
 {
 	return remember(ORDINARY_DAMAGE_POLICY, [&]
 	{
+		// Pyre's physical shot also reads current magical defenses for its Fire
+		// share. The ordinary pair cache carries no certificate for those facts.
+		if(actor.isBallista() && newHorizonsHeroes::hellfireBatteryFirePermille(hero()) > 0)
+			return true;
 		return observation && observation->matches(battle)
 			? observation->ordinaryCreatureDamageIsStateful()
 			: newHorizonsHeroes::ordinaryCreatureDamageIsStateful(battle);

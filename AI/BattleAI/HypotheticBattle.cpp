@@ -91,6 +91,7 @@ HypotheticBattle::HypotheticBattle(const Environment * ENV, Subject realBattle,
 		forecastReferenceOnly = source->referenceForecastOnly();
 	canonicalHeroOrderStates = heroCommands::isCanonicalRules(getHeroCommandRules());
 	captureForecastSides(*realBattle);
+	captureKindlingHistory(*realBattle);
 	captureNecromancyPassives(*realBattle);
 	captureElementalAttunement(realBattle);
 	captureCurrentBonusOperations(realBattle);
@@ -652,12 +653,6 @@ int64_t HypotheticBattle::getActualDamage(const DamageRange & damage, int32_t at
 	return (damage.min + damage.max) / 2;
 }
 
-std::vector<SpellID> HypotheticBattle::getUsedSpells(BattleSide side) const
-{
-	// Accepted hero spells are public battlefield history (Quick Study reads
-	// it); projected casts are not added to it.
-	return subject->getBattle()->getUsedSpells(side);
-}
 
 int3 HypotheticBattle::getLocation() const
 {

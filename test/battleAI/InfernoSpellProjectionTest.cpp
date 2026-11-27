@@ -2,6 +2,10 @@
 #include "StdInc.h"
 #if ENABLE_BATTLE_AI
 #include "../server/battles/CastleSpecialtyFixture.h"
+#include "../../AI/BattleAI/BattleEvaluatorSpellProjection.h"
+#include "../../AI/BattleAI/HeroActionAdmission.h"
+#include "../../AI/BattleAI/PossibleSpellcast.h"
+#include "../../AI/BattleAI/InitialExportBattleSubject.h"
 #include "../../AI/BattleAI/DispelValue.h"
 #include "../../lib/spells/CSpell.h"
 #include "../../lib/spells/ISpellMechanics.h"
@@ -121,5 +125,68 @@ TEST_F(InfernoSpellProjectionTest, FirstAndSecondKindlingCastsMatchTheirPrecastF
 			ASSERT_NO_FATAL_FAILURE(activate(active));
 		}
 	}
+}
+
+TEST_F(InfernoSpellProjectionTest, KindlingAcceptedDoubleCastHistoryIsLocalToEachBranch)
+{
+	ASSERT_NO_FATAL_FAILURE(specialist("core:xyron", 10, false));
+	ASSERT_NO_FATAL_FAILURE(book(attackerSideHero, SpellID::FIREBALL, "new-horizons:havocMagic"));
+	attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:havocMagic")),
+		MasteryLevel::EXPERT, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->setSecSkillLevel(SecondarySkill(SecondarySkill::decode("new-horizons:metamagic")),
+		MasteryLevel::BASIC, ChangeValueMode::ABSOLUTE);
+	attackerSideHero->addSpellToSpellbook(SpellID::INFERNO);
+	ASSERT_NO_FATAL_FAILURE(emptyField());
+	active = place(BattleSide::ATTACKER, "core:pikeman", BattleHex(1, 5), 1000, 1000);
+	enemy = place(BattleSide::DEFENDER, "core:halberdier", BattleHex(8, 5), 2000, 100);
+	ASSERT_NO_FATAL_FAILURE(beginCombat());
+	ASSERT_NO_FATAL_FAILURE(activate(active));
+	environment = std::make_shared<heroQueueTest::QueueEnvironment>(gameState());
+	live = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
+	parent = std::make_shared<HypotheticBattle>(environment.get(), live);
+	sibling = std::make_shared<HypotheticBattle>(environment.get(), parent);
+	const auto project = [&](const std::shared_ptr<HypotheticBattle> & state, SpellID spell)
+	{
+		PossibleSpellcast candidate;
+		candidate.command = HeroCommand::NONE;
+		candidate.spell = spell.toSpell();
+		candidate.dest.emplace_back(state->battleGetUnitByID(enemy->unitId()));
+		const auto admission = heroActionProjection::admitCandidate(*state, BattleSide::ATTACKER, candidate);
+		if(!admission.admitted) return false;
+		uint32_t target = enemy->unitId();
+		return battleEvaluatorProjection::projectSpell(*state, *live, attackerSideHero,
+			BattleSide::ATTACKER, candidate, admission, target, {}).accepted;
+	};
+	ASSERT_TRUE(project(parent, SpellID::FIREBALL));
+	ASSERT_EQ(parent->getUsedSpells(BattleSide::ATTACKER).size(), 1u);
+	EXPECT_TRUE(sibling->getUsedSpells(BattleSide::ATTACKER).empty());
+	EXPECT_TRUE(battle()->getUsedSpells(BattleSide::ATTACKER).empty());
+	ASSERT_TRUE(submit(spellAt(BattleSide::ATTACKER, SpellID::FIREBALL, enemy)));
+	EXPECT_EQ(parent->battleGetUnitByID(enemy->unitId())->getAvailableHealth(), enemy->getAvailableHealth());
+	child = std::make_shared<HypotheticBattle>(environment.get(), parent);
+	ASSERT_EQ(infernoSpellSpecialties::kindlingBonusBasisPoints(*child, BattleSide::ATTACKER, SpellID::INFERNO), 1000);
+	ASSERT_TRUE(project(child, SpellID::INFERNO));
+	EXPECT_EQ(child->getUsedSpells(BattleSide::ATTACKER).size(), 2u);
+	EXPECT_EQ(parent->getUsedSpells(BattleSide::ATTACKER).size(), 1u);
+	EXPECT_TRUE(sibling->getUsedSpells(BattleSide::ATTACKER).empty());
+	ASSERT_TRUE(submit(spellAt(BattleSide::ATTACKER, SpellID::INFERNO, enemy)));
+	EXPECT_EQ(child->battleGetUnitByID(enemy->unitId())->getAvailableHealth(), enemy->getAvailableHealth());
+}
+
+TEST_F(InfernoSpellProjectionTest, KindlingOwnedExportRootAndChildCaptureHistoryWithinNativeLease)
+{
+	ASSERT_NO_FATAL_FAILURE(fireballArena("core:xyron"));
+	ASSERT_TRUE(submit(spellAt(BattleSide::ATTACKER, SpellID::FIREBALL, enemy)));
+	environment = std::make_shared<heroQueueTest::QueueEnvironment>(gameState());
+	// Explicit originating full-information lease, as in OwnedExportMeleeTest.
+	auto authority = std::shared_ptr<CBattleInfoCallback>(gameState(), battle());
+	auto owned = InitialExportBattleSubject::capture(authority, *battle());
+	ASSERT_NE(owned, nullptr);
+	parent = std::make_shared<HypotheticBattle>(environment.get(), owned);
+	child = std::make_shared<HypotheticBattle>(environment.get(), parent);
+	ASSERT_NE(parent->initialExportSubject(), nullptr);
+	EXPECT_EQ(parent->getUsedSpells(BattleSide::ATTACKER), battle()->getUsedSpells(BattleSide::ATTACKER));
+	EXPECT_EQ(child->getUsedSpells(BattleSide::ATTACKER), parent->getUsedSpells(BattleSide::ATTACKER));
+	EXPECT_GT(infernoSpellSpecialties::kindlingBonusBasisPoints(*child, BattleSide::ATTACKER, SpellID::FIREBALL), 0);
 }
 #endif

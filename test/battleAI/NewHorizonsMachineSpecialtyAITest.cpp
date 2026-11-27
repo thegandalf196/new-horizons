@@ -16,6 +16,7 @@
 #include "../../AI/BattleAI/HypotheticBattle.h"
 #include "../../AI/BattleAI/SelectedAttackReceipt.h"
 #include "../../lib/CRandomGenerator.h"
+#include "../../lib/bonuses/BonusSelector.h"
 #include "../../lib/battle/CPlayerBattleCallback.h"
 #include "../../lib/callback/GameRandomizer.h"
 #include "../../lib/callback/CBattleCallback.h"
@@ -448,4 +449,29 @@ TEST_F(NewHorizonsMachineSpecialtyAITest, PyreFireImmuneTargetMatchesHypothetica
 	EXPECT_EQ(rngBytes(*gameHandler->randomizer), serverRng);
 	EXPECT_EQ(rngBytes(CRandomGenerator::getDefault()), aiRng);
 	EXPECT_EQ(sibling->battleGetUnitByID(victim->unitId())->acquireState()->save(), siblingBefore);
+}
+
+TEST_F(NewHorizonsMachineSpecialtyAITest, PyreWarmCacheRechecksFireDefenseAddedAndRemovedInChildren)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare("core:pyre"));
+	forceActorFirst();
+	beginCombat();
+	auto base = simulation();
+	DamageCache cache;
+	const auto baseline = cache.getDamage(base->battleGetUnitByID(actor->unitId()), base->battleGetUnitByID(victim->unitId()), base);
+	auto protectedBranch = std::make_shared<HypotheticBattle>(environment.get(), base);
+	auto protectedVictim = protectedBranch->getForUpdate(victim->unitId());
+	Bonus immunity(BonusDuration::ONE_BATTLE, BonusType::SPELL_SCHOOL_IMMUNITY, BonusSource::OTHER, 1,
+		BonusSourceID(), BonusSubtypeID(SpellSchool::FIRE));
+	protectedVictim->addUnitBonus({immunity});
+	const auto * protectedActor = protectedBranch->battleGetUnitByID(actor->unitId());
+	const auto reduced = cache.getDamage(protectedActor, protectedVictim.get(), protectedBranch);
+	EXPECT_EQ(reduced, protectedBranch->battleExpectedLuckDamage(BattleAttackInfo(protectedActor, protectedVictim.get(), 0, true)));
+	EXPECT_LT(reduced, baseline);
+	auto restored = std::make_shared<HypotheticBattle>(environment.get(), protectedBranch);
+	auto restoredVictim = restored->getForUpdate(victim->unitId());
+	restoredVictim->removeUnitBonus(Selector::type(BonusType::SPELL_SCHOOL_IMMUNITY));
+	const auto * restoredActor = restored->battleGetUnitByID(actor->unitId());
+	EXPECT_EQ(cache.getDamage(restoredActor, restoredVictim.get(), restored), baseline);
+	EXPECT_EQ(cache.getDamage(base->battleGetUnitByID(actor->unitId()), base->battleGetUnitByID(victim->unitId()), base), baseline);
 }
