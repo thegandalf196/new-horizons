@@ -24,7 +24,7 @@ constexpr auto HAART = "core:lordHaart";
 constexpr auto CAITLIN = "core:caitlin";
 constexpr auto FORCED_MARCH_STACKING = "new-horizons:forced-march-specialty";
 
-bool isHero(const CGHeroInstance & hero, const char * key)
+bool castleAdventureIsHero(const CGHeroInstance & hero, const char * key)
 {
 	return hero.getHeroType() && hero.getHeroType()->getJsonKey() == key;
 }
@@ -116,7 +116,7 @@ std::optional<CastleAdventureSpecialties> castleAdventureSpecialties(const JsonN
 int forcedMarchMovementPercent(const CGHeroInstance & hero, int turn)
 {
 	const auto * rules = capturedRules(hero);
-	if(!rules || !rules->forcedMarchMovementPercent || !hero.cb || !isHero(hero, SYLVIA))
+	if(!rules || !rules->forcedMarchMovementPercent || !hero.cb || !castleAdventureIsHero(hero, SYLVIA))
 		return 0;
 	const auto day = hero.cb->getCalendar(hero.cb->getCalendar().getCurrentDay() + std::max(0, turn));
 	return day.getDayOfWeek() == 1 ? rules->forcedMarchMovementPercent->at(heroLevel(hero)) : 0;
@@ -130,7 +130,7 @@ bool isForcedMarchMoralePenalty(const Bonus & bonus)
 std::optional<Bonus> forcedMarchMoralePenalty(const CGHeroInstance & hero)
 {
 	const auto * rules = capturedRules(hero);
-	if(!rules || !rules->forcedMarchMovementPercent || rules->forcedMarchMoralePenalty <= 0 || !isHero(hero, SYLVIA))
+	if(!rules || !rules->forcedMarchMovementPercent || rules->forcedMarchMoralePenalty <= 0 || !castleAdventureIsHero(hero, SYLVIA))
 		return std::nullopt;
 	const auto & local = hero.getExportedBonusList();
 	if(std::ranges::any_of(local, [](const auto & bonus) { return bonus && isForcedMarchMoralePenalty(*bonus); }))
@@ -147,7 +147,7 @@ int wellConnectedDiscountPermille(const CGHeroInstance * buyer)
 	if(!buyer || !buyer->getOwner().isValidPlayer())
 		return 0;
 	const auto * rules = capturedRules(*buyer);
-	return rules && rules->wellConnectedDiscountPermille && isHero(*buyer, HAART)
+	return rules && rules->wellConnectedDiscountPermille && castleAdventureIsHero(*buyer, HAART)
 		? rules->wellConnectedDiscountPermille->at(heroLevel(*buyer)) : 0;
 }
 
@@ -160,7 +160,7 @@ int wellConnectedCombinedCapPercent(const CGHeroInstance * buyer)
 int almsOfTheFaithfulPercent(const CGHeroInstance & hero)
 {
 	const auto * rules = capturedRules(hero);
-	return rules && rules->almsDonationPercent && isHero(hero, CAITLIN) ? rules->almsDonationPercent->at(heroLevel(hero)) : 0;
+	return rules && rules->almsDonationPercent && castleAdventureIsHero(hero, CAITLIN) ? rules->almsDonationPercent->at(heroLevel(hero)) : 0;
 }
 
 int almsOfTheFaithfulDonation(const CGHeroInstance & hero, int declinedGold)
@@ -171,9 +171,9 @@ int almsOfTheFaithfulDonation(const CGHeroInstance & hero, int declinedGold)
 bool retiresHistoricalCastleSpecialty(const CGHeroInstance & hero)
 {
 	const auto * rules = capturedRules(hero);
-	return rules && ((rules->forcedMarchMovementPercent && isHero(hero, SYLVIA))
-		|| (rules->wellConnectedDiscountPermille && isHero(hero, HAART))
-		|| (rules->almsDonationPercent && isHero(hero, CAITLIN)));
+	return rules && ((rules->forcedMarchMovementPercent && castleAdventureIsHero(hero, SYLVIA))
+		|| (rules->wellConnectedDiscountPermille && castleAdventureIsHero(hero, HAART))
+		|| (rules->almsDonationPercent && castleAdventureIsHero(hero, CAITLIN)));
 }
 
 bool resolveCastleAdventurePresentation(const CHero & hero, const JsonNode & development,
