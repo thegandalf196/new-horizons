@@ -161,16 +161,40 @@ TEST_F(InfernoSpellProjectionTest, KindlingAcceptedDoubleCastHistoryIsLocalToEac
 	ASSERT_EQ(parent->getUsedSpells(BattleSide::ATTACKER).size(), 1u);
 	EXPECT_TRUE(sibling->getUsedSpells(BattleSide::ATTACKER).empty());
 	EXPECT_TRUE(battle()->getUsedSpells(BattleSide::ATTACKER).empty());
+	const auto firstHealth = parent->battleGetUnitByID(enemy->unitId())->getAvailableHealth();
+	sibling.reset(); parent.reset();
+	// Capture a legal offer opened by the ordinary authoritative first cast.
 	ASSERT_TRUE(submit(spellAt(BattleSide::ATTACKER, SpellID::FIREBALL, enemy)));
-	EXPECT_EQ(parent->battleGetUnitByID(enemy->unitId())->getAvailableHealth(), enemy->getAvailableHealth());
+	EXPECT_EQ(enemy->getAvailableHealth(), firstHealth);
+	parent = std::make_shared<HypotheticBattle>(environment.get(), live);
+	sibling = std::make_shared<HypotheticBattle>(environment.get(), parent);
+	ASSERT_EQ(parent->getUsedSpells(BattleSide::ATTACKER).size(), 1u);
 	child = std::make_shared<HypotheticBattle>(environment.get(), parent);
 	ASSERT_EQ(infernoSpellSpecialties::kindlingBonusBasisPoints(*child, BattleSide::ATTACKER, SpellID::INFERNO), 1000);
 	ASSERT_TRUE(project(child, SpellID::INFERNO));
 	EXPECT_EQ(child->getUsedSpells(BattleSide::ATTACKER).size(), 2u);
 	EXPECT_EQ(parent->getUsedSpells(BattleSide::ATTACKER).size(), 1u);
-	EXPECT_TRUE(sibling->getUsedSpells(BattleSide::ATTACKER).empty());
+	EXPECT_EQ(sibling->getUsedSpells(BattleSide::ATTACKER).size(), 1u);
+	EXPECT_EQ(battle()->getUsedSpells(BattleSide::ATTACKER).size(), 1u);
+	const auto followUpHealth = child->battleGetUnitByID(enemy->unitId())->getAvailableHealth();
+	auto nextRound = std::make_shared<HypotheticBattle>(environment.get(), child);
+	nextRound->nextRound();
+	EXPECT_GT(infernoSpellSpecialties::kindlingBonusBasisPoints(*nextRound, BattleSide::ATTACKER, SpellID::FIREBALL), 1000);
+	ASSERT_TRUE(project(nextRound, SpellID::FIREBALL));
+	EXPECT_EQ(nextRound->getUsedSpells(BattleSide::ATTACKER).size(), 3u);
+	EXPECT_EQ(child->getUsedSpells(BattleSide::ATTACKER).size(), 2u);
+	EXPECT_EQ(sibling->getUsedSpells(BattleSide::ATTACKER).size(), 1u);
+	const auto nextRoundHealth = nextRound->battleGetUnitByID(enemy->unitId())->getAvailableHealth();
+	// Release all source-bound forecasts before advancing their authoritative source.
+	nextRound.reset(); child.reset(); sibling.reset(); parent.reset();
 	ASSERT_TRUE(submit(spellAt(BattleSide::ATTACKER, SpellID::INFERNO, enemy)));
-	EXPECT_EQ(child->battleGetUnitByID(enemy->unitId())->getAvailableHealth(), enemy->getAvailableHealth());
+	EXPECT_EQ(enemy->getAvailableHealth(), followUpHealth);
+	BattleNextRound next;
+	next.battleID = BattleID(0);
+	gameHandler->sendAndApply(next);
+	ASSERT_NO_FATAL_FAILURE(activate(active));
+	ASSERT_TRUE(submit(spellAt(BattleSide::ATTACKER, SpellID::FIREBALL, enemy)));
+	EXPECT_EQ(enemy->getAvailableHealth(), nextRoundHealth);
 }
 
 TEST_F(InfernoSpellProjectionTest, KindlingOwnedExportRootAndChildCaptureHistoryWithinNativeLease)
