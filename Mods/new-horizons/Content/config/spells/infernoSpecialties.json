@@ -8,6 +8,9 @@
 		"defaultGainChance": 0,
 		"gainChance": {},
 		"targetType": "CREATURE",
+		"graphics": {
+			"iconEffect": "SPELLINT.def:0:22"
+		},
 		"levels": {
 			"base": {
 				"range": "0",
