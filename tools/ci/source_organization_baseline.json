@@ -288,338 +288,338 @@
       "sha256": "247cdfe27811667c1d5d4e5987d7e1fcf02f8057b6807f8d7636587248d29123"
     },
     "AI/BattleAI/HypotheticBattle.h": {
-      "sha256": "6292df77cf2797205f1272f985d1035c2f60661ccd0f24336c9f006a4da6a6df",
-      "review": "CLAUDE-METAMAGIC6-PHASE4-20261120",
-      "rationale": "Complete exact758-line committed header inventory: all64 handwritten callable bodies remap by byte-identical text from reviewed preimage; only a forward declaration, state member or method declarations/optional forwarding arguments change. Known parser recovery is covered by these complete original spans, not waived. No new inline implementation, source-size exclusion or native/runtime acceptance.",
+      "sha256": "ebbb6413cfec95652efee5e1a33f72f096f9f5194bec0a7df1c5bb1531c22d9f",
+      "review": "IR-BETA6-KINDLING-HEADER-INVENTORY-20261127",
+      "rationale": "Complete callable inventory remapped from exact7bf2f27167 preimage. All65 existing inline bodies are byte-identical; the only header additions are the immutable history-pointer member and capture-method declaration. No inline body added or excluded; owned root/child source-lifetime and COW semantics reviewed separately.",
       "functions": [
         {
           "symbol": "HypotheticBattle::const auto & searchBudget() const#1",
-          "start": 163,
-          "end": 163
+          "start": 165,
+          "end": 165
         },
         {
           "symbol": "HypotheticBattle::const auto & forecastWorkSink() const noexcept#1",
-          "start": 164,
-          "end": 164
+          "start": 166,
+          "end": 166
         },
         {
           "symbol": "HypotheticBattle::void setForecastWorkSink(std::shared_ptr<forecast::NativeReadWork> sink)#1",
-          "start": 165,
-          "end": 169
+          "start": 167,
+          "end": 171
         },
         {
           "symbol": "HypotheticBattle::void setSearchBudget(std::shared_ptr<battleSearch::SearchBudget> budget)#1",
-          "start": 171,
-          "end": 175
+          "start": 173,
+          "end": 177
         },
         {
           "symbol": "HypotheticBattle::const newHorizonsHeroes::LeadershipComposition & getLeadershipComposition(BattleSide side) const override#1",
-          "start": 177,
-          "end": 180
+          "start": 179,
+          "end": 182
         },
         {
           "symbol": "HypotheticBattle::const auto & getArcaneInspirationEffects() const#1",
-          "start": 181,
-          "end": 181
+          "start": 183,
+          "end": 183
         },
         {
           "symbol": "HypotheticBattle::bool mayHaveSerpentBindings() const noexcept#1",
-          "start": 188,
-          "end": 188
+          "start": 190,
+          "end": 190
         },
         {
           "symbol": "HypotheticBattle::const std::shared_ptr<const forecast::SideState> & forecastSide(BattleSide side) const#1",
-          "start": 194,
-          "end": 194
+          "start": 196,
+          "end": 196
         },
         {
           "symbol": "HypotheticBattle::bool hasProjectedManaLeech() const noexcept#1",
-          "start": 205,
-          "end": 205
+          "start": 207,
+          "end": 207
         },
         {
           "symbol": "HypotheticBattle::const SeizeInitiativeState & getSeizeInitiativeState() const override#1",
-          "start": 215,
-          "end": 215
+          "start": 217,
+          "end": 217
         },
         {
           "symbol": "HypotheticBattle::void setSeizeInitiativeState(const SeizeInitiativeState & state) override#1",
-          "start": 216,
-          "end": 220
+          "start": 218,
+          "end": 222
         },
         {
           "symbol": "HypotheticBattle::void completeSeizeInitiativeActivation(uint32_t unitId)#1",
-          "start": 221,
-          "end": 221
+          "start": 223,
+          "end": 223
         },
         {
           "symbol": "HypotheticBattle::const std::shared_ptr<MovementQueryCache> & movementQueryCache() const#1",
-          "start": 234,
-          "end": 234
+          "start": 236,
+          "end": 236
         },
         {
           "symbol": "HypotheticBattle::void setMovementQueryCache(std::shared_ptr<MovementQueryCache> cache)#1",
-          "start": 235,
-          "end": 235
+          "start": 237,
+          "end": 237
         },
         {
           "symbol": "HypotheticBattle::const IBattleInfo * getBattle() const override#1",
-          "start": 243,
-          "end": 243
+          "start": 245,
+          "end": 245
         },
         {
           "symbol": "HypotheticBattle::std::optional<PlayerColor> getPlayerID() const override#1",
-          "start": 244,
-          "end": 244
+          "start": 246,
+          "end": 246
         },
         {
           "symbol": "HypotheticBattle::bool referenceForecastOnly() const noexcept#1",
-          "start": 247,
-          "end": 247
+          "start": 249,
+          "end": 249
         },
         {
           "symbol": "HypotheticBattle::void useReferenceForecast()#1",
-          "start": 248,
-          "end": 253
+          "start": 250,
+          "end": 255
         },
         {
           "symbol": "HypotheticBattle::const forecast::State * forecastState() const#1",
-          "start": 254,
-          "end": 254
+          "start": 256,
+          "end": 256
         },
         {
           "symbol": "HypotheticBattle::int32_t getBloodrageRank(BattleSide side) const override#1",
-          "start": 266,
-          "end": 266
+          "start": 268,
+          "end": 268
         },
         {
           "symbol": "HypotheticBattle::const battle::IUnitEnvironment * unitEnvironment() const#1",
-          "start": 271,
-          "end": 271
-        },
-        {
-          "symbol": "HypotheticBattle::int unitSylvanTacticsSpeed(const battle::Unit * unit, int turn = 0) const override#1",
           "start": 273,
           "end": 273
         },
         {
-          "symbol": "HypotheticBattle::int unitSylvanTacticsInitiativePercent(const battle::Unit * unit) const override#1",
-          "start": 274,
-          "end": 274
-        },
-        {
-          "symbol": "HypotheticBattle::int unitFortuneSpeed(const battle::Unit * unit) const override#1",
+          "symbol": "HypotheticBattle::int unitSylvanTacticsSpeed(const battle::Unit * unit, int turn = 0) const override#1",
           "start": 275,
           "end": 275
         },
         {
-          "symbol": "HypotheticBattle::int unitSpeedBonus(const battle::Unit * unit) const override#1",
+          "symbol": "HypotheticBattle::int unitSylvanTacticsInitiativePercent(const battle::Unit * unit) const override#1",
           "start": 276,
           "end": 276
         },
         {
+          "symbol": "HypotheticBattle::int unitFortuneSpeed(const battle::Unit * unit) const override#1",
+          "start": 277,
+          "end": 277
+        },
+        {
+          "symbol": "HypotheticBattle::int unitSpeedBonus(const battle::Unit * unit) const override#1",
+          "start": 278,
+          "end": 278
+        },
+        {
           "symbol": "HypotheticBattle::const newHorizonsElementalAttunement::Profile & getElementalAttunementProfile(BattleSide side) const override#1",
-          "start": 280,
-          "end": 281
+          "start": 282,
+          "end": 283
         },
         {
           "symbol": "HypotheticBattle::uint8_t getElementalAttunementMask(BattleSide side) const override#1",
-          "start": 282,
-          "end": 282
+          "start": 284,
+          "end": 284
         },
         {
           "symbol": "HypotheticBattle::int unitAdditionalRetaliations(const battle::Unit * unit) const override#1",
-          "start": 288,
-          "end": 292
+          "start": 290,
+          "end": 294
         },
         {
           "symbol": "HypotheticBattle::const BattleDeploymentState & getDeploymentState() const override#1",
-          "start": 303,
-          "end": 303
+          "start": 305,
+          "end": 305
         },
         {
           "symbol": "HypotheticBattle::const newHorizonsCrossSchoolFormula::State & getCrossSchoolFormulaState(BattleSide side) const override#1",
-          "start": 311,
-          "end": 315
+          "start": 313,
+          "end": 317
         },
         {
           "symbol": "HypotheticBattle::int32_t getExtendSpellLastRound(BattleSide side) const override#1",
-          "start": 318,
-          "end": 318
+          "start": 320,
+          "end": 320
         },
         {
           "symbol": "HypotheticBattle::const newHorizonsCommand::ResourceState & getCommandResources(BattleSide side) const override#1",
-          "start": 340,
-          "end": 344
+          "start": 342,
+          "end": 346
         },
         {
           "symbol": "HypotheticBattle::bool hasCommandResourceObservation(BattleSide side) const#1",
-          "start": 345,
-          "end": 345
+          "start": 347,
+          "end": 347
         },
         {
           "symbol": "HypotheticBattle::void setCommandResources(BattleSide side, const newHorizonsCommand::ResourceState & state) override#1",
-          "start": 346,
-          "end": 350
+          "start": 348,
+          "end": 352
         },
         {
           "symbol": "HypotheticBattle::const newHorizonsCrisisCommand::State & getCrisisCommandState() const override#1",
-          "start": 351,
-          "end": 351
+          "start": 353,
+          "end": 353
         },
         {
           "symbol": "HypotheticBattle::void setCrisisCommandState(const newHorizonsCrisisCommand::State & state) override#1",
-          "start": 352,
-          "end": 365
+          "start": 354,
+          "end": 367
         },
         {
           "symbol": "HypotheticBattle::const MetamagicDoubleCastState & getMetamagicDoubleCastState(BattleSide side) const override#1",
-          "start": 362,
-          "end": 365
+          "start": 364,
+          "end": 367
         },
         {
           "symbol": "HypotheticBattle::const DoubleCommandState & getDoubleCommandState(BattleSide side) const override#1",
-          "start": 366,
-          "end": 369
+          "start": 368,
+          "end": 371
         },
         {
           "symbol": "HypotheticBattle::const PreCombatOrderState & getPreCombatOrderState(BattleSide side) const override#1",
-          "start": 370,
-          "end": 373
+          "start": 372,
+          "end": 375
         },
         {
           "symbol": "HypotheticBattle::bool hasCompletedHeroSpellCast(BattleSide side) const override#1",
-          "start": 375,
-          "end": 376
+          "start": 377,
+          "end": 378
         },
         {
           "symbol": "HypotheticBattle::int32_t getCastSpells(BattleSide side) const override#1",
-          "start": 378,
-          "end": 380
-        },
-        {
-          "symbol": "HypotheticBattle::bool getChainGateArmed(BattleSide side) const override#1",
-          "start": 381,
-          "end": 381
-        },
-        {
-          "symbol": "HypotheticBattle::bool getMasterGateUsed(BattleSide side) const override#1",
-          "start": 382,
+          "start": 380,
           "end": 382
         },
         {
-          "symbol": "HypotheticBattle::uint8_t getPassiveDivineMandateUses(BattleSide side) const override#1",
+          "symbol": "HypotheticBattle::bool getChainGateArmed(BattleSide side) const override#1",
           "start": 383,
           "end": 383
         },
         {
+          "symbol": "HypotheticBattle::bool getMasterGateUsed(BattleSide side) const override#1",
+          "start": 384,
+          "end": 384
+        },
+        {
+          "symbol": "HypotheticBattle::uint8_t getPassiveDivineMandateUses(BattleSide side) const override#1",
+          "start": 385,
+          "end": 385
+        },
+        {
           "symbol": "HypotheticBattle::bool hasObstacleChanges() const#1",
-          "start": 444,
-          "end": 444
+          "start": 446,
+          "end": 446
         },
         {
           "symbol": "HypotheticBattle::bool hasWallChanges() const#1",
-          "start": 445,
-          "end": 445
+          "start": 447,
+          "end": 447
         },
         {
           "symbol": "HypotheticBattle::int32_t getMoraleExtraDamagePercent() const override#1",
-          "start": 454,
-          "end": 454
+          "start": 456,
+          "end": 456
         },
         {
           "symbol": "HypotheticBattle::SylvanLuckState getSylvanLuckState(BattleSide side) const override#1",
-          "start": 470,
-          "end": 470
-        },
-        {
-          "symbol": "HypotheticBattle::SylvanLuckDamageFlags getSylvanLuckDamageFlags(BattleSide side) const override#1",
-          "start": 471,
-          "end": 471
-        },
-        {
-          "symbol": "HypotheticBattle::PerfectFortuneState getPerfectFortuneState(BattleSide side) const override#1",
           "start": 472,
           "end": 472
         },
         {
-          "symbol": "HypotheticBattle::LuckSerendipityState getLuckSerendipityState(BattleSide side) const override#1",
+          "symbol": "HypotheticBattle::SylvanLuckDamageFlags getSylvanLuckDamageFlags(BattleSide side) const override#1",
           "start": 473,
           "end": 473
         },
         {
-          "symbol": "HypotheticBattle::void setLuckSerendipityState(BattleSide side, const LuckSerendipityState & state) override#1",
+          "symbol": "HypotheticBattle::PerfectFortuneState getPerfectFortuneState(BattleSide side) const override#1",
           "start": 474,
-          "end": 478
+          "end": 474
+        },
+        {
+          "symbol": "HypotheticBattle::LuckSerendipityState getLuckSerendipityState(BattleSide side) const override#1",
+          "start": 475,
+          "end": 475
+        },
+        {
+          "symbol": "HypotheticBattle::void setLuckSerendipityState(BattleSide side, const LuckSerendipityState & state) override#1",
+          "start": 476,
+          "end": 480
         },
         {
           "symbol": "HypotheticBattle::void setPerfectFortuneState(BattleSide side, const PerfectFortuneState & state) override#1",
-          "start": 479,
-          "end": 483
+          "start": 481,
+          "end": 485
         },
         {
           "symbol": "HypotheticBattle::void setSylvanLuckState(BattleSide side, const SylvanLuckState & state)#1",
-          "start": 484,
-          "end": 484
+          "start": 486,
+          "end": 486
         },
         {
           "symbol": "HypotheticBattle::AdverseCombatRerollState getAdverseCombatRerollState(BattleSide side) const override#1",
-          "start": 485,
-          "end": 488
+          "start": 487,
+          "end": 490
         },
         {
           "symbol": "HypotheticBattle::void setAdverseCombatRerollState(BattleSide side, const AdverseCombatRerollState & state) override#1",
-          "start": 489,
-          "end": 494
+          "start": 491,
+          "end": 496
         },
         {
           "symbol": "HypotheticBattle::void endFortuneActivation()#1",
-          "start": 495,
-          "end": 505
+          "start": 497,
+          "end": 507
         },
         {
           "symbol": "HypotheticBattle::MoraleSuppressionState getMoraleSuppressionState(BattleSide side) const override#1",
-          "start": 508,
-          "end": 511
+          "start": 510,
+          "end": 513
         },
         {
           "symbol": "HypotheticBattle::void setMoraleSuppressionState(BattleSide side, const MoraleSuppressionState & state) override#1",
-          "start": 512,
-          "end": 516
+          "start": 514,
+          "end": 518
         },
         {
           "symbol": "HypotheticBattle::LuckRollRules getLuckRollRules() const override#1",
-          "start": 521,
-          "end": 521
+          "start": 523,
+          "end": 523
         },
         {
           "symbol": "HypotheticBattle::bool getRawFinalDirectPhysicalLuckPolicy() const override#1",
-          "start": 522,
-          "end": 522
+          "start": 524,
+          "end": 524
         },
         {
           "symbol": "HypotheticBattle::const std::vector<ProjectedPlagueHit> & getProjectedPlagueHits() const#1",
-          "start": 589,
-          "end": 589
+          "start": 591,
+          "end": 591
         },
         {
           "symbol": "HypotheticBattle::void resetActiveUnit()#1",
-          "start": 600,
-          "end": 603
+          "start": 602,
+          "end": 605
         },
         {
           "symbol": "HypotheticBattle::HypotheticServerCallback::void recordExtendSpellCast(BattleSide side) override#1",
-          "start": 707,
-          "end": 707
+          "start": 709,
+          "end": 709
         },
         {
           "symbol": "HypotheticBattle::HypotheticEnvironment::void closeNativeSource() noexcept#1",
-          "start": 737,
-          "end": 737
+          "start": 739,
+          "end": 739
         }
       ],
       "review_status": "INDEPENDENT_EXACT_SOURCE_ONLY_NO_NATIVE_ACCEPTANCE",
-      "previous_review": "IR-PERFORMANCE-THROUGH-STEP4-ORG-V1"
+      "previous_review": "CLAUDE-METAMAGIC6-PHASE4-20261120"
     },
     "AI/BattleAI/HypotheticBattleTypes.h": {
       "functions": [
