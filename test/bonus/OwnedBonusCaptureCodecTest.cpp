@@ -146,8 +146,36 @@ TEST(OwnedBonusCaptureCodecTest, ExplicitKnownWireEpochsSelectConcreteBonusProfi
 		|| Version::CURRENT == Version::NEW_HORIZONS_SORCERY_RETIREMENT
 		|| Version::CURRENT == Version::NEW_HORIZONS_SHARED_CAPTURED_RULES)
 		EXPECT_EQ(OwnedBonusCaptureCodec::current().version(), Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY);
+	else if(Version::CURRENT >= Version::NEW_HORIZONS_DOUBLE_CAST_CHOSEN_PRAYERS
+		&& Version::CURRENT <= Version::NEW_HORIZONS_NECROPOLIS_SPECIALTIES)
+		EXPECT_EQ(OwnedBonusCaptureCodec::current().version(), Version::NEW_HORIZONS_CONSECRATED_ARMS);
 	else
 		EXPECT_THROW(OwnedBonusCaptureCodec::current(), std::invalid_argument);
+}
+
+TEST(OwnedBonusCaptureCodecTest, NecropolisStateUsesExistingBonusProfileWithoutChangingFamilyAdmission)
+{
+	const auto epoch = Version::NEW_HORIZONS_NECROPOLIS_SPECIALTIES;
+	const auto stateProfile = capabilities(epoch);
+	ASSERT_TRUE(stateProfile.necropolisSpecialties);
+	EXPECT_EQ(OwnedBonusCaptureCodec::fromSourceEpoch(epoch, stateProfile).version(),
+		Version::NEW_HORIZONS_CONSECRATED_ARMS);
+	EXPECT_EQ(OwnedBonusCaptureCodec::fromSourceCapabilities(stateProfile).version(),
+		Version::NEW_HORIZONS_CONSECRATED_ARMS);
+	EXPECT_EQ(OwnedBonusCaptureCodec::current().version(), Version::NEW_HORIZONS_CONSECRATED_ARMS);
+	auto incomplete = stateProfile;
+	incomplete.extendedOrdinarySpecialties = false;
+	EXPECT_THROW(OwnedBonusCaptureCodec::fromSourceCapabilities(incomplete), std::invalid_argument);
+	EXPECT_THROW(OwnedBonusCaptureCodec::fromSourceEpoch(static_cast<Version>(static_cast<int>(Version::CURRENT) + 1), stateProfile), std::invalid_argument);
+	JsonNode necropolis;
+	necropolis["revisedSpecialties"]["version"].Integer() = 1;
+	necropolis["revisedSpecialties"]["residualLife"]["damagePerBuffer"].Integer() = 50;
+	necropolis["revisedSpecialties"]["residualLife"]["damagePerBufferReductionPerLevel"].Integer() = 1;
+	necropolis["revisedSpecialties"]["residualLife"]["minimumDamagePerBuffer"].Integer() = 25;
+	necropolis["revisedSpecialties"]["residualLife"]["maximumPerCombat"].Integer() = 20;
+	EXPECT_NO_THROW(OwnedBonusCaptureCodec::fromCapturedSpecialties(necropolis, stateProfile));
+	EXPECT_THROW(OwnedBonusCaptureCodec::fromCapturedSpecialties(necropolis,
+		capabilities(Version::NEW_HORIZONS_CONSECRATED_ARMS)), std::runtime_error);
 }
 
 TEST(OwnedBonusCaptureCodecTest, LeadershipEfficiencyEpochRequiresItsCompleteNamedProfile)

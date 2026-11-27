@@ -55,6 +55,7 @@ OwnedBonusCaptureCodec OwnedBonusCaptureCodec::fromSourceEpoch(ESerializationVer
 	case Version::NEW_HORIZONS_SYLVAN_AMBUSH: // Plain unit state and captured rules only.
 	case Version::NEW_HORIZONS_WARCAST: // Order snapshot fields and captured rules only.
 	case Version::NEW_HORIZONS_MARCH_LEFT: // Plain stack state and a packet flag only.
+	case Version::NEW_HORIZONS_NECROPOLIS_SPECIALTIES: // Side state, casualty provenance and captured rules only.
 		profile = Version::NEW_HORIZONS_CONSECRATED_ARMS;
 		break;
 	default:
@@ -70,21 +71,24 @@ OwnedBonusCaptureCodec OwnedBonusCaptureCodec::fromSourceCapabilities(
 {
 	using Version = ESerializationVersion;
 	using Context = newHorizonsHeroes::SpecialtySerializationContext;
+	// Family rules and unit/side state do not change the Bonus clone layout.
+	auto bonusCapabilities = capabilities;
+	bonusCapabilities.necropolisSpecialties = false;
 	Version version;
 	// Explicit known epochs, independent of which writer epoch CURRENT selects.
-	if(capabilities == Context::fromHandler(CodecFeatures{Version::NEW_HORIZONS_ORDINARY_COMBAT_SPECIALTIES}))
+	if(bonusCapabilities == Context::fromHandler(CodecFeatures{Version::NEW_HORIZONS_ORDINARY_COMBAT_SPECIALTIES}))
 		version = Version::NEW_HORIZONS_ORDINARY_COMBAT_SPECIALTIES;
-	else if(capabilities == Context::fromHandler(CodecFeatures{Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES}))
+	else if(bonusCapabilities == Context::fromHandler(CodecFeatures{Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES}))
 		version = Version::NEW_HORIZONS_EXTENDED_ORDINARY_SPECIALTIES;
-	else if(capabilities == Context::fromHandler(CodecFeatures{Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS}))
+	else if(bonusCapabilities == Context::fromHandler(CodecFeatures{Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS}))
 		version = Version::NEW_HORIZONS_PASSIVE_FACTION_SKILLS;
-	else if(capabilities == Context::fromHandler(CodecFeatures{Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN}))
+	else if(bonusCapabilities == Context::fromHandler(CodecFeatures{Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN}))
 		version = Version::NEW_HORIZONS_NATIVE_RULES_REDESIGN;
-	else if(capabilities == Context::fromHandler(CodecFeatures{Version::NEW_HORIZONS_COMMAND_AUTHORITY}))
+	else if(bonusCapabilities == Context::fromHandler(CodecFeatures{Version::NEW_HORIZONS_COMMAND_AUTHORITY}))
 		version = Version::NEW_HORIZONS_COMMAND_AUTHORITY;
-	else if(capabilities == Context::fromHandler(CodecFeatures{Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY}))
+	else if(bonusCapabilities == Context::fromHandler(CodecFeatures{Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY}))
 		version = Version::NEW_HORIZONS_LEADERSHIP_EFFICIENCY;
-	else if(capabilities == Context::fromHandler(CodecFeatures{Version::NEW_HORIZONS_CONSECRATED_ARMS}))
+	else if(bonusCapabilities == Context::fromHandler(CodecFeatures{Version::NEW_HORIZONS_CONSECRATED_ARMS}))
 		version = Version::NEW_HORIZONS_CONSECRATED_ARMS;
 	else throw std::invalid_argument("Unknown or partial owned bonus capture capabilities");
 	return OwnedBonusCaptureCodec(version);
