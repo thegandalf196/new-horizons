@@ -2,15 +2,15 @@
 
 The single product/module authoring value is [config/newHorizonsVersion.json](../config/newHorizonsVersion.json). Menu and generated module read it; development versions may be ahead of the published releases. The version alone does not establish release publication or playable acceptance.
 
-Current source metadata targets **0.94.0-beta.3**. Each release tag
+Current source metadata targets **0.94.0-beta.4**. Each release tag
 identifies its own source revision.
 
-The current writer is **1167** and the minimum accepted save format remains **1164**. Existing
+The current writer is **1168** and the minimum accepted save format remains **1164**. Existing
 supported saves retain their captured rules. Starting spellbooks and perks apply to fresh
 heroes. Earlier save formats are rejected without conversion
 or modification. See the
 [save boundary](developers/Serialization.md#current-save-boundary) and
-[changelog](NEW_HORIZONS_CHANGELOG.md#0940-beta3).
+[changelog](NEW_HORIZONS_CHANGELOG.md#0940-beta4).
 
 Product version, VCMI engine revision, save-schema version and Git commit are separate identities. Save epochs change only for actual compatibility boundaries. Source-matched Windows/Linux packages must record the same full source revision; selected playable promotion is a separate validated operation.
 

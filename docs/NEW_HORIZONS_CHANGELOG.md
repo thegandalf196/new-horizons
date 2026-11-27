@@ -9,6 +9,10 @@ read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 
 ## 0.94.0-beta.4
 
+Castle prayers move into the spellbook, a new Warcasting Skill arrives,
+Academy's heroes get their revised specialties, and quick combat and computer
+turns are faster.
+
 - **Castle prayers without the extra window**: when a Castle hero with Chosen
   Prayers issues an Order, the spellbook opens on its Prayers bookmark. Pick a
   prayer, then click the stack that receives it on the battlefield. You can
