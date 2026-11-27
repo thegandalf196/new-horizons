@@ -8,6 +8,8 @@
 #include "../../../lib/entities/hero/NewHorizonsInfernoSpecialties.h"
 #include "../../../lib/entities/hero/NewHorizonsRevisedSpecialties.h"
 #include "../../../lib/battle/BattleAttackInfo.h"
+#include "../../../lib/bonuses/BonusSelector.h"
+#include "../../../lib/bonuses/BonusList.h"
 #include "../../../lib/spells/NewHorizonsSorcery.h"
 
 class NewHorizonsHellfireBatteryTest : public NewHorizonsMaintenanceFixture
@@ -133,11 +135,25 @@ TEST_F(NewHorizonsHellfireBatteryTest, MissingCaptureKeepsHistoricalBallistaSpec
 	EXPECT_EQ(nativeDamage::hellfireBattery::firePermille(*battle(), shot()), 0);
 	EXPECT_FALSE(newHorizonsHeroes::revisedSpecialtyRetiresHistorical(*attackerSideHero));
 }
+TEST_F(NewHorizonsHellfireBatteryTest, CapturedFireShareScalesFromLevelOneAndStopsAtHalfTheBudget)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare("core:pyre"));
+	EXPECT_EQ(newHorizonsHeroes::hellfireBatteryFirePermille(attackerSideHero), 200);
+	attackerSideHero->level = 2;
+	EXPECT_EQ(newHorizonsHeroes::hellfireBatteryFirePermille(attackerSideHero), 215);
+	attackerSideHero->level = 21;
+	EXPECT_EQ(newHorizonsHeroes::hellfireBatteryFirePermille(attackerSideHero), 500);
+	attackerSideHero->level = 100;
+	EXPECT_EQ(newHorizonsHeroes::hellfireBatteryFirePermille(attackerSideHero), 500);
+}
 TEST_F(NewHorizonsHellfireBatteryTest, CurrentCaptureReplacesGenericSpecialtyAndOnlyChangesBallistaShots)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare("core:pyre"));
 	EXPECT_GT(nativeDamage::hellfireBattery::firePermille(*battle(), shot()), 0);
 	EXPECT_TRUE(newHorizonsHeroes::revisedSpecialtyRetiresHistorical(*attackerSideHero));
+	const auto prototype = actor->getBonuses(Selector::sourceTypeSel(BonusSource::HERO_SPECIAL)
+		.And(Selector::type()(BonusType::PRIMARY_SKILL)));
+	EXPECT_TRUE(prototype->empty());
 	auto melee = shot(); melee.shooting = false;
 	EXPECT_EQ(nativeDamage::hellfireBattery::firePermille(*battle(), melee), 0);
 	auto magical = shot(); magical.physicalDamage = false;
