@@ -11,6 +11,7 @@
 #include "NewHorizonsDreadCavalry.h"
 #include "NewHorizonsPetrifyingBlood.h"
 #include "NewHorizonsLivingInferno.h"
+#include "NewHorizonsInfernoSpecialties.h"
 #include "NewHorizonsParalyzingGaze.h"
 #include "NewHorizonsSerpentsEmbrace.h"
 #include "NewHorizonsManaLeeches.h"
@@ -40,9 +41,11 @@ bool usesConvertedCreatureSpecialty(const CGHeroInstance * hero)
 
 bool replacesGenericCreatureSpecialty(const CGHeroInstance * hero)
 {
+	const auto * inferno = infernoRules(hero, "core:pyre");
 	return hasOrdinaryCreatureSpecialty(hero) || hasSageOfTheAges(hero) || hasWheelOfFortune(hero)
 		|| hasManaLeeches(hero) || hasSerpentsEmbrace(hero)
-		|| hasParalyzingGaze(hero) || hasForestAmbush(hero) || hasPetrifyingBlood(hero) || hasLivingInferno(hero) || hasAerialSupremacy(hero) || hasDreadCavalry(hero);
+		|| hasParalyzingGaze(hero) || hasForestAmbush(hero) || hasPetrifyingBlood(hero) || hasLivingInferno(hero) || hasAerialSupremacy(hero) || hasDreadCavalry(hero)
+		|| (inferno && inferno->hellfireBattery.has_value());
 }
 
 void validateAdditionalSpecialtiesSerialization(const JsonNode & development, bool supported)

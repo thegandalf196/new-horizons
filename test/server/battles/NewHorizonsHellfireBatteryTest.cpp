@@ -7,6 +7,7 @@
 #include "../../../lib/combatScripts/IDamageCalculatorScript.h"
 #include "../../../lib/entities/hero/NewHorizonsInfernoSpecialties.h"
 #include "../../../lib/entities/hero/NewHorizonsRevisedSpecialties.h"
+#include "../../../lib/entities/hero/NewHorizonsAdditionalSpecialties.h"
 #include "../../../lib/battle/BattleAttackInfo.h"
 #include "../../../lib/bonuses/BonusSelector.h"
 #include "../../../lib/bonuses/BonusList.h"
@@ -142,6 +143,9 @@ TEST_F(NewHorizonsHellfireBatteryTest, MissingCaptureKeepsHistoricalBallistaSpec
 	ASSERT_NO_FATAL_FAILURE(prepare("core:pyre"));
 	EXPECT_EQ(nativeDamage::hellfireBattery::firePermille(*battle(), shot()), 0);
 	EXPECT_FALSE(newHorizonsHeroes::revisedSpecialtyRetiresHistorical(*attackerSideHero));
+	EXPECT_FALSE(newHorizonsHeroes::replacesGenericCreatureSpecialty(attackerSideHero));
+	EXPECT_FALSE(actor->getBonuses(Selector::sourceTypeSel(BonusSource::HERO_SPECIAL)
+		.And(Selector::type()(BonusType::PRIMARY_SKILL)))->empty());
 }
 TEST_F(NewHorizonsHellfireBatteryTest, CapturedFireShareScalesFromLevelOneAndStopsAtHalfTheBudget)
 {
@@ -159,6 +163,7 @@ TEST_F(NewHorizonsHellfireBatteryTest, CurrentCaptureReplacesGenericSpecialtyAnd
 	ASSERT_NO_FATAL_FAILURE(prepare("core:pyre"));
 	EXPECT_GT(nativeDamage::hellfireBattery::firePermille(*battle(), shot()), 0);
 	EXPECT_TRUE(newHorizonsHeroes::revisedSpecialtyRetiresHistorical(*attackerSideHero));
+	EXPECT_TRUE(newHorizonsHeroes::replacesGenericCreatureSpecialty(attackerSideHero));
 	const auto prototype = actor->getBonuses(Selector::sourceTypeSel(BonusSource::HERO_SPECIAL)
 		.And(Selector::type()(BonusType::PRIMARY_SKILL)));
 	EXPECT_TRUE(prototype->empty());
