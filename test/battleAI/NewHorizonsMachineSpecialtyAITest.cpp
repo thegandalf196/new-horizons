@@ -470,7 +470,7 @@ TEST_F(NewHorizonsMachineSpecialtyAITest, PyreWarmCacheRechecksFireDefenseAddedA
 	EXPECT_LT(reduced, baseline);
 	auto restored = std::make_shared<HypotheticBattle>(environment.get(), protectedBranch);
 	auto restoredVictim = restored->getForUpdate(victim->unitId());
-	restoredVictim->removeUnitBonus(Selector::type(BonusType::SPELL_SCHOOL_IMMUNITY));
+	restoredVictim->removeUnitBonus(Selector::type()(BonusType::SPELL_SCHOOL_IMMUNITY));
 	const auto * restoredActor = restored->battleGetUnitByID(actor->unitId());
 	EXPECT_EQ(cache.getDamage(restoredActor, restoredVictim.get(), restored), baseline);
 	EXPECT_EQ(cache.getDamage(base->battleGetUnitByID(actor->unitId()), base->battleGetUnitByID(victim->unitId()), base), baseline);
