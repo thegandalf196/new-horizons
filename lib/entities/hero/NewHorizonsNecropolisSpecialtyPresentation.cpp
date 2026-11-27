@@ -78,7 +78,7 @@ bool necropolisRetainedPresentation(const CHero & hero, const JsonNode & develop
 		const int cap = static_cast<int>(std::min<int64_t>(row["maximumCapPermille"].Integer(),
 			row["baseCapPermille"].Integer() + (level - 1) * row["capPermillePerLevel"].Integer()));
 		result.name = "Blood Scent";
-		result.creature = CreatureID::VAMPIRE;
+		result.creature = CreatureID(CreatureID::decode("core:vampire"));
 		result.description = "Vampires and Vampire Lords gain primary melee damage equal to a living target's "
 			"percentage of creatures lost from its battle-start native count, capped at +" + necropolisPermilleText(cap)
 			+ ". Wounds alone do not count, restoration lowers the deficit, and native life drain is unchanged. "
