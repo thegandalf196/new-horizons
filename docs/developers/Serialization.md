@@ -4,7 +4,12 @@
 
 Consecrated Arms and the replacement Metamagic profile require a new game. The
 minimum accepted format is **1164**, `NEW_HORIZONS_CONSECRATED_ARMS`; the current
-writer is **1169**, `NEW_HORIZONS_MARCH_LEFT`, which adds each army stack's
+writer is **1170**, `NEW_HORIZONS_NECROPOLIS_SPECIALTIES`. It records Residual Life's
+combat progress and tracks creatures restored by Eternal Servitude until battle
+cleanup. Earlier supported saves start with zero progress and no creatures
+marked for permanent restoration.
+
+Format 1169, `NEW_HORIZONS_MARCH_LEFT`, adds each army stack's
 Day's March state (its day and that day's share of the march left), the
 movement-limit flag of `SetMovePoints` and the `LowerStackMarchLeft` packet.
 Older saves load with every stack's march full; writing an older format drops
