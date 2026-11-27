@@ -2,7 +2,7 @@
 
 The single product/module authoring value is [config/newHorizonsVersion.json](../config/newHorizonsVersion.json). Menu and generated module read it; development versions may be ahead of the published releases. The version alone does not establish release publication or playable acceptance.
 
-Current source metadata targets **0.94.0-beta.5**. Each release tag
+Current source metadata targets **0.94.0-beta.6**. Each release tag
 identifies its own source revision.
 
 The current writer is **1169** and the minimum accepted save format remains **1164**. Existing
@@ -10,7 +10,7 @@ supported saves retain their captured rules. Starting spellbooks and perks apply
 heroes. Earlier save formats are rejected without conversion
 or modification. See the
 [save boundary](developers/Serialization.md#current-save-boundary) and
-[changelog](NEW_HORIZONS_CHANGELOG.md#0940-beta5).
+[changelog](NEW_HORIZONS_CHANGELOG.md#0940-beta6).
 
 Product version, VCMI engine revision, save-schema version and Git commit are separate identities. Save epochs change only for actual compatibility boundaries. Source-matched Windows/Linux packages must record the same full source revision; selected playable promotion is a separate validated operation.
 
@@ -32,8 +32,8 @@ whose `release_channel` does not match its version. The launchers show
 Candidate 1". `Mods/new-horizons/mod.json` keeps the plain `MAJOR.MINOR.PATCH`,
 because VCMI mod versions are numeric.
 
-Rampart, 0.94.0-beta.1, is the first suffixed beta; later betas follow as
-0.94.0-beta.2, up to 0.94.0-beta.9. 0.93.2 was never published. Packages up to
+Rampart, 0.94.0-beta.1, is the first suffixed beta; later betas increment the
+number after the suffix, including double-digit numbers. 0.93.2 was never published. Packages up to
 0.93.x and 0.92.x cannot read suffixed versions, so their launchers never offer
 0.94.0-beta.1: players of those packages download 0.94.0-beta.1 manually once,
 after which updates arrive as usual.

@@ -15,6 +15,7 @@
 #include "../entities/hero/NewHorizonsCastleAdventureSpecialties.h"
 #include "../entities/hero/NewHorizonsRampartSpecialties.h"
 #include "../entities/hero/NewHorizonsAcademySpecialties.h"
+#include "../entities/hero/NewHorizonsInfernoSpecialties.h"
 
 #include <set>
 #include <string_view>
@@ -121,6 +122,7 @@ public:
 	std::optional<newHorizonsHeroes::CastleAdventureSpecialties> castleAdventure;
 	newHorizonsHeroes::RampartSpecialtyRules rampartSpecialties;
 	newHorizonsHeroes::AcademySpecialtyRules academySpecialties;
+	newHorizonsHeroes::InfernoSpecialtyRules infernoSpecialties;
 	std::optional<int> manaLeeches;
 	std::optional<newHorizonsHeroes::LivingInfernoRules> livingInferno;
 	std::optional<newHorizonsHeroes::HerbalSurgeonRules> herbalSurgeon;

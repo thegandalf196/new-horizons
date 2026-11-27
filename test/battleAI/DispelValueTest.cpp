@@ -12,7 +12,8 @@ class DispelValueTest : public HeroQueueSelectorTest
 {
 protected:
 	/// Dispels one enemy spell effect changing a primary skill by `change`.
-	void dispelEnemyEffect(int change, SpellID source, float & value, PrimarySkill skill = PrimarySkill::ATTACK)
+	void dispelEnemyEffect(int change, SpellID source, float & value, PrimarySkill skill = PrimarySkill::ATTACK,
+		SpellID cast = SpellID(SpellID::DISPEL))
 	{
 		useRevisedOrders = true;
 		ASSERT_NO_FATAL_FAILURE(world());
@@ -26,7 +27,7 @@ protected:
 		parent = std::make_shared<HypotheticBattle>(environment.get(), live);
 		parent->removeUnitBonus(enemy->unitId(), {bonus});
 		ASSERT_FALSE(parent->battleGetUnitByID(enemy->unitId())->hasBonusFrom(BonusSource::SPELL_EFFECT, BonusSourceID(source)));
-		value = dispelAI::removedEffectValue(SpellID(SpellID::DISPEL).toSpell(), *live, parent, PlayerColor(0), 1, 1);
+		value = dispelAI::removedEffectValue(cast.toSpell(), *live, parent, PlayerColor(0), 1, 1);
 		EXPECT_EQ(dispelAI::removedEffectValue(SpellID(SpellID::CURE).toSpell(), *live, parent, PlayerColor(0), 1, 1), 0);
 	}
 };
@@ -62,5 +63,14 @@ TEST_F(DispelValueTest, NothingRemovedIsWorthNothing)
 	live = std::make_shared<CPlayerBattleCallback>(battle(), PlayerColor(0));
 	parent = std::make_shared<HypotheticBattle>(environment.get(), live);
 	EXPECT_EQ(dispelAI::removedEffectValue(SpellID(SpellID::DISPEL).toSpell(), *live, parent, PlayerColor(0), 1, 1), 0);
+	EXPECT_EQ(dispelAI::removedEffectValue(SpellID(SpellID::FIREBALL).toSpell(), *live, parent, PlayerColor(0), 1, 1), 0);
+}
+
+TEST_F(DispelValueTest, BurnAwayCreditsAnEnemyBuffRemovedByFireball)
+{
+	float value = 0;
+	ASSERT_NO_FATAL_FAILURE(dispelEnemyEffect(10, SpellID(SpellID::BLOODLUST), value,
+		PrimarySkill::ATTACK, SpellID(SpellID::FIREBALL)));
+	EXPECT_GT(value, 0);
 }
 }

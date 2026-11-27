@@ -1,0 +1,28 @@
+{
+	"bloodfireBuff": {
+		"name": "Bloodfire",
+		"type": "ability",
+		"school": {},
+		"level": 0,
+		"power": 0,
+		"defaultGainChance": 0,
+		"gainChance": {},
+		"targetType": "CREATURE",
+		"levels": {
+			"base": {
+				"range": "0",
+				"description": "Bloodfire increases Attack for two rounds.",
+				"cost": 0,
+				"power": 0
+			},
+			"none": {},
+			"basic": {},
+			"advanced": {},
+			"expert": {}
+		},
+		"flags": {
+			"positive": true,
+			"special": true
+		}
+	}
+}

@@ -512,6 +512,8 @@
 	"new-horizons.rampart.livingRemedy.log": "Living Remedy: %d %s will regenerate.",
 	"new-horizons.rampart.againstTheOdds.effect": "Against the Odds",
 	"new-horizons.rampart.againstTheOdds.log": "Against the Odds: the stronger enemy grants this army +%d Luck.",
+	"new-horizons.inferno.cutpurse.victory": "%s steals %d Gold from the defeated hero’s treasury.",
+	"new-horizons.inferno.sulfurSense.pickup": "Sulfur Sense adds %d Sulfur.",
 	"new-horizons.academy.hardened.effect": "Hardened: takes less damage from creature attacks until its next activation",
 	"new-horizons.academy.spoilsOfAlchemy.log": "Spoils of Alchemy: %s distils %d Mercury from the fallen.",
 	"new-horizons.academy.inexhaustibleKnowledge.log": "Inexhaustible Knowledge: %s regains %d Mana.",

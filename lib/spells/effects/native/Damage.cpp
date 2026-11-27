@@ -3,6 +3,7 @@
 #include "Damage.h"
 #include "../../ISpellMechanics.h"
 #include "../../SpellDamageContext.h"
+#include "../../NewHorizonsInfernoSpecialties.h"
 #include "../../../battle/CUnitState.h"
 #include "../../../bonuses/BonusList.h"
 #include "../../../mapObjects/CGHeroInstance.h"
@@ -46,6 +47,7 @@ ResistanceShareKind Damage::resistanceShareKind() const
 
 bool Damage::isReceptive(const Mechanics * mechanics, const battle::Unit * unit) const
 {
+	if(infernoSpellSpecialties::bloodfireProtects(*mechanics, *unit)) return true;
 	const auto * spell = mechanics->getSpell();
 	const bool independent = spell->isMagical() && mechanics->usesNewHorizonsMultiplicativeMDR();
 	if(spell->isMagical() && !independent
@@ -64,6 +66,7 @@ bool Damage::isReceptive(const Mechanics * mechanics, const battle::Unit * unit)
 
 int64_t Damage::damageForTarget(size_t index, const Mechanics * mechanics, const battle::Unit * unit) const
 {
+	if(infernoSpellSpecialties::bloodfireProtects(*mechanics, *unit)) return 0;
 	double base;
 	const bool percentage = parameters["killByPercentage"].Bool();
 	const bool count = parameters["killByCount"].Bool();

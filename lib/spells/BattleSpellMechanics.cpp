@@ -40,6 +40,7 @@
 #include "NewHorizonsMagic.h"
 #include "../battle/NewHorizonsElementalAttunement.h"
 #include "NewHorizonsCrossSchoolFormula.h"
+#include "NewHorizonsInfernoSpecialties.h"
 #include "NewHorizonsBlink.h"
 #include "NewHorizonsNaturesWrath.h"
 #include "NewHorizonsPandemonium.h"
@@ -708,6 +709,7 @@ private:
 		if(mechanics.isGenuineHeroCast())
 			newHorizonsMetamagic::enchantmentCapabilities(mechanics.getHeroCaster(), battle, castSpellId, effectSpellId, pack);
 		newHorizonsMetamagic::filterNewBonuses(battle, pack);
+		infernoSpellSpecialties::preserveRefreshChronology(battle, pack);
 
 		std::vector<uint32_t> touched;
 		const auto collect = [&touched](const auto & changes)

@@ -1,6 +1,7 @@
 /* Part of VCMI / New Horizons. GPL-2.0-or-later; see license.txt. */
 #include "StdInc.h"
 #include "BattleSpellMechanics.h"
+#include "NewHorizonsInfernoSpecialties.h"
 #include "TargetCondition.h"
 #include "CSpell.h"
 #include "NewHorizonsMetamagicCore.h"
@@ -13,10 +14,12 @@
 #include "NewHorizonsBlink.h"
 #include "../battle/CBattleInfoCallback.h"
 #include "../battle/IBattleState.h"
+#include "../battle/Unit.h"
 namespace spells
 {
 bool BattleSpellMechanics::isReceptive(const battle::Unit * target) const
 {
+	if(target && target->alive() && !target->isInvincible() && infernoSpellSpecialties::bloodfireProtects(*this, *target)) return true;
 	if(owner->getJsonKey() == newHorizonsSorcerySpells::FORCE_LANCE)
 		return target && target->alive() && target->isValidTarget(false) && !target->isInvincible() && ownerMatches(target);
 	if(target && (newHorizonsMetamagic::empoweredDamage(*this)

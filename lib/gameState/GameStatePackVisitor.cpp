@@ -8,6 +8,8 @@
  *
  */
 #include "StdInc.h"
+#include "AcceptedHeroSpellHistory.h"
+#include "../entities/hero/NewHorizonsInfernoSpecialties.h"
 #include "../battle/SpellPointBattleTransitions.h"
 #include "../battle/NewHorizonsFocusMagic.h"
 #include "../battle/BattleRecallAnchors.h"
@@ -2810,7 +2812,8 @@ void GameStatePackVisitor::visitStartAction(StartAction & pack)
 	}
 	else
 	{
-		if(pack.ba.actionType == EActionType::HERO_SPELL)
+		if(pack.ba.actionType == EActionType::HERO_SPELL
+			&& !newHorizonsHeroes::usesKindlingHistory(battleContext->getSideHero(pack.ba.side)))
 			gs.getBattle(pack.battleID)->getSide(pack.ba.side).usedSpellsHistory.push_back(pack.ba.spell);
 	}
 }
@@ -3094,24 +3097,7 @@ void GameStatePackVisitor::visitBattleSpellCast(BattleSpellCast & pack)
 		if(spendsHeroAllowance)
 			casterSide.heroCommandUsed = true;
 
-		const auto addManaSpent = [](SideInBattle & side, int32_t amount)
-		{
-			if(amount <= 0)
-				return;
-			if(side.acceptedHeroManaSpent > std::numeric_limits<int64_t>::max() - amount)
-				side.acceptedHeroManaSpent = std::numeric_limits<int64_t>::max();
-			else
-				side.acceptedHeroManaSpent += amount;
-		};
-		addManaSpent(casterSide, pack.paidHeroManaCost);
-		if(pack.crossSchoolFormula)
-			battle->setCrossSchoolFormulaState(pack.side, pack.crossSchoolFormula->after);
-		// This marker is set only after every accepted-cast validation above has
-		// succeeded; creature casts and rejected hero requests never consume it.
-		if(battle->getRound() >= 0)
-			casterSide.wisdomCombatState.recordCompletedCast(pack.spellID, battle->getRound());
-		casterSide.heroSpellCastCompleted = true;
-		casterSide.recordCompletedHeroSpellLevel(battle->battleGetSpellLevel(pack.spellID));
+		recordAcceptedHeroSpellHistory(*battle, pack);
 	}
 }
 

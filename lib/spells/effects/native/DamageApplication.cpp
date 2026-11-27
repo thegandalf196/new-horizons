@@ -6,6 +6,7 @@
 #include "../../ISpellMechanics.h"
 #include "../../CSpell.h"
 #include "../../NewHorizonsImplosion.h"
+#include "../../NewHorizonsInfernoSpecialties.h"
 #include "../../../battle/CUnitState.h"
 #include "../../../combatScripts/nativeEvents/NativeEventCommon.h"
 #include "../../../mapObjects/CGHeroInstance.h"
@@ -141,6 +142,11 @@ void Damage::apply(ServerCallback * server, const Mechanics * mechanics, const T
 	{
 		const auto * unit = target[index].unitValue;
 		if(!unit || !unit->alive()) continue;
+		if(infernoSpellSpecialties::bloodfireProtects(*mechanics, *unit))
+		{
+			infernoSpellSpecialties::applyFireballRider(*server, *mechanics, *unit);
+			continue;
+		}
 		const auto id = unit->unitId();
 		server->recordResolvedSpellRecipient(id);
 		const auto origin = unit->getPosition();
@@ -149,6 +155,7 @@ void Damage::apply(ServerCallback * server, const Mechanics * mechanics, const T
 		newHorizonsMetamagic::OverflowPrimaryDamage witness;
 		const auto damageContext = mechanics->spellDamageContext(*unit);
 		const auto [damage, killed] = nativeEvents::damage(context, *unit, amount, mechanics->getUnitCaster(), true, nullptr, parameters["destroyRemains"].Bool(), false, &witness, &damageContext);
+		infernoSpellSpecialties::applyFireballRider(*server, *mechanics, *unit);
 		if(!indirect && mechanics->isGenuineHeroCast() && !mechanics->isRunicReflectionShare())
 			server->recordMetamagicOverflowPrimary(witness);
 		if(mechanics->getSpell()->isMagical() && !indirect)

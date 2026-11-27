@@ -817,69 +817,8 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 		mode == Mode::HERO, owner->getId());
 	if(mode == Mode::PASSIVE)
 		metamagicCastProfile = newHorizonsMetamagic::captureDelayedCastProfile(caster);
-	if(mode == Mode::HERO && dynamic_cast<const CGHeroInstance *>(caster)
-		&& (casterSide == BattleSide::ATTACKER || casterSide == BattleSide::DEFENDER))
-	{
-		const auto * battleInfo = cb->getBattle();
-		const auto * hero = dynamic_cast<const CGHeroInstance *>(caster);
-		const auto scalarContext = newHorizonsMagic::heroSpellCastContext(*hero, *owner, *cb,
-			event->isConcentrated(), automaticHeroCast.automatic());
-		consecratedCastingBonusPercent = scalarContext.consecrated;
-		arcaneFocusBonusPercent = scalarContext.arcaneFocus;
-		counterpressureBonusPercent = scalarContext.counterpressure;
-		crossSchoolFormulaBonusPercent = scalarContext.crossSchool;
-		grandFormulaMultiplierPercent = scalarContext.grandFormula;
-		concentrationBonusPercent = scalarContext.concentration;
-		const auto spellAllowance = cb->battleGetSpellActionAllowance(casterSide, owner->getId());
-		if(battleInfo && hero && spellAllowance
-			&& spellAllowance->source == HeroActionAllowanceState::GrantSource::DIVINE_MANDATE
-			&& spellAllowance->allowance == HeroActionAllowanceState::AllowanceKind::SPELL
-			&& newHorizonsDivineMandate::hasCrownAndAltarPerk(hero))
-		{
-			const auto & grants = battleInfo->getHeroActionAllowances(casterSide).grants;
-			const auto grant = std::find_if(grants.begin(), grants.end(), [&spellAllowance](const auto & entry)
-				{ return entry.id == spellAllowance->grantId; });
-			if(grant != grants.end())
-				crownAndAltarRecipientUnitIds = grant->divineMandateRecipients;
-		}
-
-		overwhelmingFormulaEligible = battleInfo && hero && owner
-			&& (owner->isNegative() || newHorizonsMagic::isLandMine(owner->getId())
-				|| newHorizonsMagic::isFireWall(owner->getId()))
-			&& owner->isMagical() && newHorizonsMagic::rulesActive(battleInfo->getMagicRules())
-			&& battleInfo->getSideHero(casterSide) == hero
-			&& hero->hasActivePerk(std::string(newHorizonsMagic::SPELLCRAFT_SKILL),
-				"new-horizons:spellcraft.overwhelmingFormula");
-
-
-	}
-
-	{
-		auto value = event->getSpellLevel();
-		rangeLevel = value.value_or(caster->getSpellSchoolLevel(owner));
-		vstd::abetween(rangeLevel, 0, 3);
-	}
-	{
-		auto value = event->getSpellLevel();
-		effectLevel = value.value_or(caster->getEffectLevel(owner));
-		vstd::abetween(effectLevel, 0, 3);
-	}
-	{
-		auto value = event->getEffectPower();
-		effectPower = value.value_or(caster->getEffectPower(owner));
-		vstd::amax(effectPower, 0);
-
-		// Inferno's New Horizons Brimstone Stormclouds are a siege-only
-		// Spell Power bonus for the defending hero.  Keep it in the battle
-		// mechanics boundary so it affects every ordinary spell effect while
-		// never leaking onto an adventure-map hero or an attacking hero.
-		if(const auto * heroCaster = caster->getHeroCaster())
-			effectPower += newHorizonsMagic::brimstoneSpellPowerBonus(*heroCaster, *cb)
-				+ metamagicDoubleCast::crescendoSpellPower(*heroCaster, *cb);
-		// Sanya's Quick Study: a copied spell uses a fraction of her Spell Power.
-		if(const auto * heroCaster = caster->getHeroCaster(); heroCaster && mode == Mode::HERO && !value)
-			effectPower = quickStudySpecialty::copyEffectPower(*heroCaster, owner->getId(), effectPower);
-	}
+	initializeHeroCastContext(event);
+	initializeCastPower(event);
 	const auto * extendingHero = dynamic_cast<const CGHeroInstance *>(caster);
 	extendSpellEligible = mode == Mode::HERO && extendingHero && cb
 		&& newHorizonsMagic::heroCastExtendAvailable(*extendingHero, *owner, *cb, effectLevel);
@@ -896,125 +835,7 @@ BaseMechanics::BaseMechanics(const IBattleCast * event):
 	if(!usesNewHorizonsMagicV3()
 		&& newHorizonsMagic::hasStormcallerPerk(dynamic_cast<const CGHeroInstance *>(caster), owner))
 		effectPower = effectPower * 115 / 100;
-	{
-		const auto value = event->getEffectValue();
-		effectValueWasOverridden = value.has_value();
-		const auto * reanimateBattle = cb->getBattle();
-		const auto * reanimateHero = caster->getHeroCaster();
-		if(reanimateBattle && reanimateHero && newHorizonsMagic::reanimateEnabled(
-			reanimateBattle->getMagicRules(), owner->getId()))
-		{
-			// Re-animate historically derives its pool from raw hero Attributes,
-			// ignoring generic effect-value overrides. Keep that contract while
-			// sharing the same rational pool with its preview and specialty.
-			effectValue = *newHorizonsMagic::reanimateBaseHealingPool(
-				reanimateBattle->getMagicRules(), reanimateHero, owner->getId(),
-				std::max(reanimateHero->getPrimSkillLevel(PrimarySkill::SPELL_POWER), 0),
-				getCastSpellPowerComponentBonusPercent(), getSpellPowerCoefficientBasisPoints());
-		}
-		else if(value.has_value())
-			effectValue = *value; // Explicit zero is an override, not absence.
-		else if(const auto casterValue = caster->getEffectValue(owner); casterValue != 0)
-			effectValue = casterValue; // Legacy numeric caster zero means absence.
-		else
-		{
-		const auto * battle = cb->getBattle();
-		const int spellPowerCoefficientBasisPoints = getSpellPowerCoefficientBasisPoints();
-		const auto * heroCaster = caster->getHeroCaster();
-		const bool damageSpell = owner->isDamage() || usesNewHorizonsEarthquake();
-		const int damagePerkBonusPercent = battle && damageSpell
-			? newHorizonsMagic::spellPowerDamagePerkBonusPercent(battle->getMagicRules(), heroCaster, owner)
-			: 0;
-		const int damageSpecialtyPercent = damageSpell && heroCaster
-			? heroCaster->getDamageSpellSpecialtyBonusPercent(owner->getId())
-			: 0;
-		const int damageCoefficientBasisPoints = damageSpell
-			? getDirectDamageSpellPowerCoefficientBasisPoints() * (100 + damagePerkBonusPercent) / 100
-			: 10000;
-		const int effectPowerCoefficientBasisPoints = damageSpell
-			? damageCoefficientBasisPoints
-			: spellPowerCoefficientBasisPoints;
-			const int empowerBonusPercent = battle
-				? newHorizonsMagic::empowerSpellBonusPercent(
-					battle->getMagicRules(), caster->getHeroCaster(), owner->getId(), isMassSlow() ? 3 : 1)
-				: 0;
-			if(usesNewHorizonsEarthquake())
-			{
-				effectValue = newHorizonsMagic::earthquakeRawDamage(
-					battle->getMagicRules()["spells"]["core:earthquake"]["earthquake"], effectPower,
-					damageCoefficientBasisPoints, getEmpowerSpellBonusPercent());
-			}
-			else if(battle && owner->getJsonKey() == "new-horizons:hydrasVitality"
-				&& newHorizonsMagic::rulesActive(battle->getMagicRules())
-				&& battle->getMagicRules()["rulesetVersion"].Integer()
-					>= newHorizonsMagic::SCHOOL_RANK_POWER_COEFFICIENT_RULESET_VERSION)
-			{
-				// Millionths of one percent preserve fractional School scaling
-				// until the effect rounds the resulting creature HP. Capacity uses
-				// the canonical raw attribute, not the legacy divisor.
-				const auto * hero = caster->getHeroCaster();
-				const int specialtyPercent = hero ? hero->getNonDamageSpellSpecialtyBonusPercent(owner->getId()) : 0;
-				effectValue = newHorizonsMagic::hydraCapacityMillionths(effectPower, spellPowerCoefficientBasisPoints, getEmpowerSpellBonusPercent(), specialtyPercent);
-			}
-			else if(battle && newHorizonsMagic::cureEnabled(battle->getMagicRules(), owner->getId()))
-			{
-				effectValue = newHorizonsMagic::cureHealingBudget(caster->getHeroCaster(), effectPower,
-					spellPowerCoefficientBasisPoints, getEmpowerSpellBonusPercent());
-			}
-			else if(battle && newHorizonsMagic::resurrectionRestorationEnabled(
-				battle->getMagicRules(), owner->getId()))
-			{
-				// Both the fixed pool and the Spell Power-derived pool remain separate:
-				// School/Spellcraft, shared cast modifiers and the specialty affect only
-				// the raw Spell Power component.
-				const auto * hero = caster->getHeroCaster();
-				const int specialtyPercent = hero
-					? hero->getNonDamageSpellSpecialtyBonusPercent(owner->getId()) : 0;
-				effectValue = newHorizonsMagic::resurrectionRestorationPool(effectPower,
-					spellPowerCoefficientBasisPoints, getEmpowerSpellBonusPercent(), specialtyPercent);
-			}
-			else
-			{
-				const auto modifiers = newHorizonsMagic::magicArrowOverchargeModifiers(
-					dynamic_cast<const CGHeroInstance *>(caster));
-				std::optional<int64_t> magicArrowValue;
-				if(battle && newHorizonsMagic::magicArrowOverchargeEnabled(battle->getMagicRules(), owner->getId()))
-				{
-					const int capPower = newHorizonsMagic::requiresMagicArrowChargeRules(battle->getMagicRules()) && heroCaster
-						? heroCaster->getPrimSkillLevel(PrimarySkill::SPELL_POWER) : effectPower;
-					magicArrowValue = newHorizonsMagic::magicArrowDamageBasisPoints(battle->getMagicRules(), owner->getId(),
-						effectPower, getEffectPowerDivisor(), getOvercharge(), modifiers, damageCoefficientBasisPoints,
-						empowerBonusPercent, damageSpecialtyPercent, capPower);
-				}
-
-				std::optional<int64_t> savedValue;
-				if(battle && !magicArrowValue)
-				{
-					if(const auto formula = newHorizonsMagic::spellDirectDamage(
-						battle->getMagicRules(), owner->getJsonKey()))
-						savedValue = formula->evaluateBasisPoints(
-							effectPower, getEffectPowerDivisor(), damageCoefficientBasisPoints, empowerBonusPercent,
-							damageSpecialtyPercent);
-				}
-
-				if(magicArrowValue)
-					effectValue = *magicArrowValue;
-				else if(savedValue)
-					effectValue = *savedValue;
-				else if(effectPowerCoefficientBasisPoints != 10000
-					|| empowerBonusPercent > 0 || damageSpecialtyPercent > 0)
-				{
-					const int64_t powerNumerator = static_cast<int64_t>(owner->getBasePower()) * effectPower;
-					effectValue = owner->getLevelPower(effectLevel)
-						+ scaleDamageSpellPowerComponentWithCoefficientBasisPoints(
-							powerNumerator, getEffectPowerDivisor(), effectPowerCoefficientBasisPoints, damageSpecialtyPercent);
-				}
-				else
-					effectValue = owner->calculateRawEffectValue(effectLevel, effectPower, 1, getEffectPowerDivisor());
-			}
-		}
-		vstd::amax(effectValue, 0);
-	}
+	initializeEffectValue(event);
 }
 
 BaseMechanics::~BaseMechanics() = default;
@@ -1421,12 +1242,6 @@ int32_t BaseMechanics::getConsecratedCastingBonusPercent() const
 	return consecratedCastingBonusPercent;
 }
 
-int32_t BaseMechanics::getCastSpellPowerComponentBonusPercent() const
-{
-	return newHorizonsMagic::HeroSpellCastContext{arcaneFocusBonusPercent,
-		consecratedCastingBonusPercent, counterpressureBonusPercent, crossSchoolFormulaBonusPercent,
-		grandFormulaMultiplierPercent, concentrationBonusPercent}.componentBonusPercent();
-}
 
 IBattleCast::Value BaseMechanics::getEffectDuration() const
 {

@@ -12,6 +12,7 @@
 #include "CGResource.h"
 #include "CGHeroInstance.h"
 #include "NewHorizonsEstatesPolicy.h"
+#include "../entities/hero/NewHorizonsInfernoAdventureSpecialties.h"
 #include <limits>
 
 #include "../callback/IGameInfoCallback.h"
@@ -116,7 +117,7 @@ ResourceSet CGResource::getVisitResources(const CGHeroInstance * hero) const
 		throw std::overflow_error("Resource pickup amount exceeds resource range");
 	ResourceSet base;
 	base[resourceID()] = static_cast<TResource>(amount);
-	return newHorizonsEstates::visitReward(base, hero);
+	return newHorizonsHeroes::sulfurSensePickup(newHorizonsEstates::visitReward(base, hero), hero);
 }
 
 void CGResource::collectRes(IGameEventCallback & gameEvents, const CGHeroInstance * hero) const
@@ -137,7 +138,16 @@ void CGResource::collectRes(IGameEventCallback & gameEvents, const CGHeroInstanc
 		sii.text.appendTextID("core.advevent.113");
 		sii.text.replaceName(resourceID());
 	}
-	newHorizonsEstates::appendVisitRewardBonus(sii.text, getVisitResources(nullptr), reward);
+	const auto estatesReward = newHorizonsEstates::visitReward(getVisitResources(nullptr), hero);
+	newHorizonsEstates::appendVisitRewardBonus(sii.text, getVisitResources(nullptr), estatesReward);
+	if(const auto sulfur = reward[EGameResID::SULFUR] - estatesReward[EGameResID::SULFUR]; sulfur > 0)
+	{
+		sii.text.appendEOL();
+		sii.text.appendTextID("new-horizons.inferno.sulfurSense.pickup");
+		sii.text.replaceNumber(sulfur);
+		if(resourceID() != GameResID::SULFUR)
+			sii.components.emplace_back(ComponentType::RESOURCE, GameResID(GameResID::SULFUR), sulfur);
+	}
 	sii.components.emplace_back(ComponentType::RESOURCE, resourceID(), reward[resourceID()]);
 	sii.soundID = soundBase::pickup01 + gameEvents.getRandomGenerator().nextInt(6);
 	gameEvents.showInfoDialog(&sii);

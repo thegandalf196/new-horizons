@@ -171,6 +171,7 @@ set(lib_MAIN_SRCS
 	spells/effects/native/ObstacleEffects.cpp
 	spells/effects/native/HavocStructures.cpp
 	filesystem/SavegamePath.cpp
+	combatScripts/NativeHellfireBatteryDamage.cpp
 	combatScripts/NativeDamageCalculator.cpp
 	combatScripts/NativeDamageCapture.cpp
 	combatScripts/NativeDamageFactors.cpp
@@ -292,6 +293,7 @@ set(lib_MAIN_SRCS
 		entities/hero/NewHorizonsCastleAdventureSpecialties.cpp
 		entities/hero/NewHorizonsRampartSpecialties.cpp
 		entities/hero/NewHorizonsRampartSpecialtyPresentation.cpp
+		entities/hero/NewHorizonsInfernoSpecialties.cpp
 		entities/hero/NewHorizonsAcademySpecialties.cpp
 		entities/hero/NewHorizonsAcademySpecialtyPresentation.cpp
 		entities/hero/NewHorizonsGenieSage.cpp
@@ -711,6 +713,7 @@ set(lib_MAIN_SRCS
 	entities/hero/NewHorizonsSchoolSpellcraft.cpp
 	entities/hero/NewHorizonsSchoolSpellcraftPresentation.cpp
 	entities/hero/NewHorizonsIndividualSpecialtyPresentation.cpp
+	entities/hero/NewHorizonsInfernoSpecialtyPresentation.cpp
 	entities/hero/NewHorizonsSpecialtyPresentation.cpp
 	entities/hero/NewHorizonsRetainedSpecialtyArtwork.cpp
 	entities/hero/NewHorizonsSkillSpecialtyRules.cpp
@@ -768,6 +771,7 @@ set(lib_MAIN_SRCS
 	gameState/NativePilotAdmission.cpp
 	gameState/MapObjectInitialization.cpp
 	gameState/CGameStateCampaign.cpp
+	gameState/AcceptedHeroSpellHistory.cpp
 	gameState/GameStatePackVisitor.cpp
 	gameState/GameStateDemonicGating.cpp
 	gameState/BattleEffectPackVisitor.cpp
@@ -847,6 +851,7 @@ set(lib_MAIN_SRCS
 	mapObjects/CGObjectInstance.cpp
 	mapObjects/CGPandoraBox.cpp
 	mapObjects/CGResource.cpp
+	entities/hero/NewHorizonsInfernoAdventureSpecialties.cpp
 	mapObjects/TownBuildingInstance.cpp
 	mapObjects/CGTownInstance.cpp
 	mapObjects/TownSiegeArmy.cpp
@@ -1000,6 +1005,9 @@ set(lib_MAIN_SRCS
 	spells/NewHorizonsDivineRetribution.cpp
 	spells/NewHorizonsPandemonium.cpp
 	spells/NewHorizonsDirectDamage.cpp
+	spells/NewHorizonsInfernoSpecialties.cpp
+	spells/CastEffectValueInitialization.cpp
+	spells/HeroCastInitialization.cpp
 	spells/HeroSpellCastContext.cpp
 	spells/SpellEffectPreview.cpp
 	spells/NewHorizonsTimedUtility.cpp
@@ -1032,6 +1040,7 @@ set(lib_MAIN_SRCS
 	spells/NewHorizonsRegenerationRate.cpp
 	spells/NewHorizonsEagleEye.cpp
 	spells/NewHorizonsFriendlyFire.cpp
+	spells/NewHorizonsAreaProtection.cpp
 	spells/NewHorizonsMagic.cpp
 	nativeRules/NativeRulePilots.cpp
 	nativeRules/PreparedPilotRules.cpp
@@ -1400,7 +1409,9 @@ set(lib_MAIN_HEADERS
 		entities/hero/NewHorizonsPariahLearning.h
 		entities/hero/NewHorizonsCastleAdventureSpecialties.h
 		entities/hero/NewHorizonsRampartSpecialties.h
-		entities/hero/NewHorizonsAcademySpecialties.h
+		entities/hero/NewHorizonsInfernoSpecialties.h
+		entities/hero/NewHorizonsInfernoSpecialtyPresentation.h
+	entities/hero/NewHorizonsAcademySpecialties.h
 		entities/hero/NewHorizonsGenieSage.h
 	battle/NewHorizonsSoulHarvest.h
 	battle/NewHorizonsOrdinaryStrike.h
@@ -1741,6 +1752,7 @@ set(lib_MAIN_HEADERS
 	gameState/CGameState.h
 	gameState/CGameStateCampaign.h
 	gameState/EVictoryLossCheckResult.h
+	gameState/AcceptedHeroSpellHistory.h
 	gameState/GameStatePackVisitor.h
 	gameState/NewHorizonsBattleSpellPoints.h
 	gameState/NewHorizonsAstrology.h
@@ -1788,6 +1800,7 @@ set(lib_MAIN_HEADERS
 	mapObjects/CGPandoraBox.h
 	mapObjects/TownBuildingInstance.h
 	mapObjects/CGResource.h
+	entities/hero/NewHorizonsInfernoAdventureSpecialties.h
 	mapObjects/CGTownInstance.h
 	mapObjects/NewHorizonsSage.h
 	mapObjects/NewHorizonsRecruitersContacts.h
@@ -1978,6 +1991,7 @@ set(lib_MAIN_HEADERS
 	spells/NewHorizonsDivineRetribution.h
 	spells/NewHorizonsPandemonium.h
 	spells/NewHorizonsDirectDamage.h
+	spells/NewHorizonsInfernoSpecialties.h
 	spells/HeroSpellCastContext.h
 	spells/SpellEffectPreview.h
 	spells/NewHorizonsTimedUtility.h
@@ -2069,6 +2083,7 @@ set(lib_MAIN_HEADERS
 	combatScripts/CombatEventPayload.h
 	combatScripts/ICombatEventScript.h
 	combatScripts/IDamageCalculatorScript.h
+	combatScripts/NativeHellfireBatteryDamage.h
 	combatScripts/NativeDamageCalculator.h
 	combatScripts/NativeDamageFacts.h
 	combatScripts/NativeDamageFactors.h

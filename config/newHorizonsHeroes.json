@@ -103,7 +103,14 @@
 		"inexhaustibleKnowledge": {"manaPermille": 40, "manaPermillePerLevel": 2, "maximumManaPermille": 200, "minimumMana": 1},
 		"halonNullifyingShot": {"enabled": true},
 		"focusMagicSpecialty": {"rangedPermille": 100, "rangedPermillePerLevel": 5, "maximumRangedPermille": 200},
-		"sageOfTheAges": {"spellPowerPerLevel": 2, "knowledgePerLevel": 2}
+		"sageOfTheAges": {"spellPowerPerLevel": 2, "knowledgePerLevel": 2},
+		"cutpurse": {"basePercent": 5, "percentPerLevelBasisPoints": 50, "maximumPercent": 15},
+		"sulfurSense": {"baseSulfur": 1, "levelsPerAdditionalSulfur": 10},
+		"kindling": {"percentPerCast": 10, "capPermillePerLevel": 25, "maximumPercent": 50},
+		"markedForTheKill": {"stacks": 1, "levelsPerStack": 10},
+		"bloodfire": {"attack": 2, "attackPerFiveLevels": 1, "maximumAttack": 6, "duration": 2},
+		"burnAway": {"effects": 1, "levelsPerEffect": 10, "maximumEffects": 3},
+		"hellfireBattery": {"firePermille": 200, "firePermillePerLevel": 15, "maximumFirePermille": 500}
 	},
 	"creatureLineSpecialties": {
 		"version": 1,
@@ -430,7 +437,7 @@
 			"core:nymus": [{"skill": "new-horizons:demonicGating", "perk": "new-horizons:demonicGating.wideGate"}],
 			"core:olema": [{"skill": "new-horizons:spellcraft", "perk": "new-horizons:spellcraft.spellPenetration"}],
 			"core:calid": [{"skill": "new-horizons:estates", "perk": "new-horizons:estates.supervisor"}],
-			"core:xarfax": [{"skill": "new-horizons:havocMagic", "perk": "new-horizons:havocMagic.pyromancer"}],
+			"core:xarfax": [{"skill": "new-horizons:demonicGating", "perk": "new-horizons:demonicGating.hellfireArrival"}],
 			"core:zydar": [{"skill": "new-horizons:spellcraft", "perk": "new-horizons:spellcraft.arcaneFocus"}],
 			"core:vokial": [{"skill": "new-horizons:necromancy", "perk": "new-horizons:necromancy.blackHarvest"}],
 			"core:moandor": [{"skill": "new-horizons:necromancy", "perk": "new-horizons:necromancy.darkConversion"}],

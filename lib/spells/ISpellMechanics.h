@@ -712,6 +712,9 @@ private:
 	newHorizonsHeroes::SpellcraftCastContext spellcraftContext;
 	int32_t herbalSurgeonRegenerationPercent = 0;
 	void captureOriginalSpellSpecialties(const IBattleCast * event);
+	void initializeHeroCastContext(const IBattleCast * event);
+	void initializeCastPower(const IBattleCast * event);
+	void initializeEffectValue(const IBattleCast * event);
 	int32_t spellcraftCoefficient(newHorizonsHeroes::SpellcraftComponent component) const;
     IBattleCast::Value rangeLevel;
 	IBattleCast::Value effectLevel;
@@ -721,6 +724,7 @@ private:
 	/// First-cast Arcane Focus captured before BattleSpellCast marks completion.
 	int32_t arcaneFocusBonusPercent = 0;
 	int32_t crossSchoolFormulaBonusPercent = 0;
+	int32_t kindlingBonusBasisPoints = 0;
 	int32_t concentrationBonusPercent = 0;
 	bool extendSpellEligible = false;
 	/// Consecrated Casting's Spell Power component bonus captured for this cast.

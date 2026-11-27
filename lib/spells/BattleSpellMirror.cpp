@@ -9,6 +9,7 @@
  */
 #include "StdInc.h"
 #include "BattleSpellMechanics.h"
+#include "NewHorizonsInfernoSpecialties.h"
 #include "NewHorizonsMetamagicEffects.h"
 #include "NewHorizonsMetamagicCore.h"
 #include "CSpell.h"
@@ -76,6 +77,7 @@ bool BattleSpellMechanics::wouldResistOrdinary(const battle::Unit * unit) const
 	if(!unit)
 		return false;
 
+	if(infernoSpellSpecialties::bloodfireProtects(*this, *unit)) return false;
 	const auto unitId = unit->unitId();
 	auto resistance = std::ranges::find(resistanceRolls, unitId, &ResistanceRoll::unitId);
 	if(resistance == resistanceRolls.end())
@@ -138,6 +140,7 @@ void BattleSpellMechanics::prepareResistanceRolls(vstd::RNG & rng, const Target 
 		const auto resistanceCandidates = naturesWrath ? wrathConductors : battle()->battleGetAllUnits(false);
 		for(const auto * unit : resistanceCandidates)
 		{
+			if(infernoSpellSpecialties::bloodfireProtects(*this, *unit)) continue;
 			if(!target.empty() && newHorizonsMagic::isProtectedAreaCenter(*battle(), getHeroCaster(),
 				getSpellId(), *unit, target.front().hexValue, getCasterSide(), true))
 				continue;

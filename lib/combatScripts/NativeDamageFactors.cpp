@@ -11,6 +11,32 @@ namespace nativeDamage
 {
 namespace
 {
+enum class FactorIndex : size_t
+{
+	AttackDefense = 0,
+	LegacyPhysicalFirst = 8,
+	LegacyPhysicalLast = 12,
+	Petrification = 18
+};
+bool legacyPhysicalFactor(size_t index)
+{
+	return index >= static_cast<size_t>(FactorIndex::LegacyPhysicalFirst)
+		&& index <= static_cast<size_t>(FactorIndex::LegacyPhysicalLast);
+}
+bool physicalOnlyFactor(size_t index)
+{
+	return index == static_cast<size_t>(FactorIndex::AttackDefense)
+		|| legacyPhysicalFactor(index) || index == static_cast<size_t>(FactorIndex::Petrification);
+}
+double nonnegativePercent(double value) { return std::max(0.0, value / 100); }
+double multiplyPercents(const std::vector<int> & values)
+{
+	double result = 1.0;
+	for(const auto value : values)
+		result *= nonnegativePercent(value);
+	return result;
+}
+
 double defenseIgnored(const DamageAttackInfo & info, double reduction, double defense, bool targetDefense)
 {
 	reduction /= 100;
@@ -173,5 +199,82 @@ std::array<double, 24> factors(const DamageAttackInfo & info, const Facts & fact
 		result[23] = std::sqrt((attacker.baseAmount + 1) * attacker.maxHealth
 			/ (attacker.availableHealth + attacker.maxHealth) - 1);
 	return result;
+}
+DamageModifierTotals foldDamageModifiers(const DamageAttackInfo & info, const Facts & facts, bool includeCommon)
+{
+	DamageModifierTotals result;
+	const bool penetratesLegacy = info.physicalDamage && !hasPhysicalDamageReductionStage(info)
+		&& info.coordinatedPhysicalProtectionIgnorePercent > 0;
+	const auto modifiers = factors(info, facts);
+	for(size_t index = 0; index < modifiers.size(); ++index)
+	{
+		const double value = modifiers[index];
+		if(value > 0)
+		{
+			result.raising += value;
+		}
+		else if(value < 0)
+		{
+			const double remaining = 1 + std::max(-1.0, value);
+			if(penetratesLegacy && legacyPhysicalFactor(index)) result.legacyProtection *= remaining;
+			else result.lowering *= remaining;
+		}
+	}
+	if(includeCommon)
+		for(size_t index = 0; index < modifiers.size(); ++index)
+		{
+			if(physicalOnlyFactor(index)) continue;
+			if(modifiers[index] > 0) result.commonRaising += modifiers[index];
+			else if(modifiers[index] < 0) result.commonLowering *= 1 + std::max(-1.0, modifiers[index]);
+		}
+
+	return result;
+}
+
+FinalDamageFactors finalDamageFactors(const DamageAttackInfo & info, const Facts & facts)
+{
+	FinalDamageFactors result;
+	result.heroOrder = info.heroOrderFinalDamageMultipliers.empty()
+		? nonnegativePercent(info.heroOrderFinalDamageMultiplier) : multiplyPercents(info.heroOrderFinalDamageMultipliers);
+	result.preemptive = nonnegativePercent(info.preemptiveDamageMultiplier);
+	result.cleave = nonnegativePercent(info.cleaveFinalDamageMultiplier);
+	result.archery = nonnegativePercent(info.archeryRangedDamageMultiplierPercent);
+	result.followUp = nonnegativePercent(info.rangedFollowUpDamagePercent);
+	result.activation = nonnegativePercent(info.activationOutputPercent);
+	result.sylvan = multiplyPercents(info.sylvanAttackMultipliers);
+	result.sylvanDefense = multiplyPercents(info.sylvanDefenseMultipliers)
+		* nonnegativePercent(info.commandBeneficiaryDamageMultiplierPercent);
+	result.specialty = static_cast<double>(info.ordinaryCreatureSpecialtyDamagePercent) / 100
+		* std::max(0.0, info.rampartSpecialtyDamageMultiplier);
+	if(info.newHorizonsFinalLuck && info.luckyStrike)
+		result.luck = 2.0 + facts.attacker.value(BonusType::LUCKY_STRIKE_DAMAGE_PERCENTAGE) / 100;
+	if(info.luckyStrike && info.sylvanLuckyStrikeTotalPercent > 0)
+		result.luck = static_cast<double>(info.sylvanLuckyStrikeTotalPercent) / 100;
+	result.phantom = facts.defender.phantomIntegrity > 0 ? (info.physicalDamage ? 0.25 : 2.0) : 1.0;
+	result.immovable = nonnegativePercent(info.bulwarkImmovableFinalDamageMultiplier);
+	result.bastion = nonnegativePercent(info.armorerBastionFinalDamageMultiplier);
+	result.counterBattery = nonnegativePercent(info.counterBatteryFinalDamageMultiplier);
+	result.shatter = static_cast<double>(info.frozenShatterFinalDamageMultiplier) / 100;
+	result.inspiration = (100.0 + info.arcaneInspirationDamageBonusPercent) / 100
+		* (100.0 - info.spellshockOutputPenaltyPercent) / 100;
+	return result;
+}
+
+double finalDamageFactor(const FinalDamageFactors & final, double baseFactor, bool physicalDefenses)
+{
+	double damage = baseFactor * final.inspiration
+		* final.heroOrder * final.preemptive * final.cleave * final.archery * final.followUp
+		* final.activation * final.sylvan * final.sylvanDefense;
+	if(physicalDefenses)
+		damage = damage * final.phantom * final.immovable * final.bastion;
+	damage *= final.counterBattery;
+	if(physicalDefenses)
+		damage *= final.shatter;
+	return damage * final.specialty * final.luck;
+}
+
+double commonDamageFactor(const FinalDamageFactors & final, const DamageModifierTotals & modifiers)
+{
+	return finalDamageFactor(final, modifiers.commonRaising * modifiers.commonLowering, false);
 }
 }

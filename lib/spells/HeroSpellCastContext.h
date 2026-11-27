@@ -20,6 +20,7 @@ struct DLL_LINKAGE HeroSpellCastContext
 	int32_t crossSchool = 0;
 	int32_t grandFormula = 100;
 	int32_t concentration = 0;
+	int32_t kindling = 0; // basis points, preserves the 2.5% per-level cap
 	int32_t componentBonusPercent() const;
 };
 DLL_LINKAGE HeroSpellCastContext heroSpellCastContext(const CGHeroInstance & hero,

@@ -118,9 +118,10 @@ static SpellEffectPreview resolveSpellEffectPreview(const CGHeroInstance & hero,
 	const auto captured = newHorizonsHeroes::captureSpellcraftContext(rules, &hero, spell.getId(), true);
 	const auto coefficient = [&](newHorizonsHeroes::SpellcraftComponent component)
 	{
-		if(captured.factors)
-			return newHorizonsHeroes::composeSpellcraftCoefficient(*captured.factors, component, context.componentBonusPercent());
-		return ordinarySpellPowerCoefficientBasisPoints(rules, &hero, spell.getId(), context.componentBonusPercent());
+		const int ordinary = captured.factors
+			? newHorizonsHeroes::composeSpellcraftCoefficient(*captured.factors, component, context.componentBonusPercent())
+			: ordinarySpellPowerCoefficientBasisPoints(rules, &hero, spell.getId(), context.componentBonusPercent());
+		return static_cast<int>(static_cast<int64_t>(ordinary) * (10000 + context.kindling) / 10000);
 	};
 	const int numerical = coefficient(newHorizonsHeroes::SpellcraftComponent::NUMERICAL);
 	const int empower = empowerSpellBonusPercent(rules, &hero, spell.getId());

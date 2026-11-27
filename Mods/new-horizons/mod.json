@@ -3338,6 +3338,40 @@
 					"sageOfTheAges": {
 						"spellPowerPerLevel": 2,
 						"knowledgePerLevel": 2
+					},
+					"cutpurse": {
+						"basePercent": 5,
+						"percentPerLevelBasisPoints": 50,
+						"maximumPercent": 15
+					},
+					"sulfurSense": {
+						"baseSulfur": 1,
+						"levelsPerAdditionalSulfur": 10
+					},
+					"kindling": {
+						"percentPerCast": 10,
+						"capPermillePerLevel": 25,
+						"maximumPercent": 50
+					},
+					"markedForTheKill": {
+						"stacks": 1,
+						"levelsPerStack": 10
+					},
+					"bloodfire": {
+						"attack": 2,
+						"attackPerFiveLevels": 1,
+						"maximumAttack": 6,
+						"duration": 2
+					},
+					"burnAway": {
+						"effects": 1,
+						"levelsPerEffect": 10,
+						"maximumEffects": 3
+					},
+					"hellfireBattery": {
+						"firePermille": 200,
+						"firePermillePerLevel": 15,
+						"maximumFirePermille": 500
 					}
 				},
 				"creatureLineSpecialties": {
@@ -4279,8 +4313,8 @@
 						],
 						"core:xarfax": [
 							{
-								"skill": "new-horizons:havocMagic",
-								"perk": "new-horizons:havocMagic.pyromancer"
+								"skill": "new-horizons:demonicGating",
+								"perk": "new-horizons:demonicGating.hellfireArrival"
 							}
 						],
 						"core:zydar": [
@@ -12053,7 +12087,8 @@
 		"config/spells/massVariants.json",
 		"config/spells/elementalDamageTags.json",
 		"config/spells/cabirRepair.json",
-		"config/spells/genieLuck.json"
+		"config/spells/genieLuck.json",
+		"config/spells/infernoSpecialties.json"
 	],
 	"spellSchools": {
 		"light": {
@@ -14588,6 +14623,8 @@
 		"new-horizons.rampart.livingRemedy.log": "Living Remedy: %d %s will regenerate.",
 		"new-horizons.rampart.againstTheOdds.effect": "Against the Odds",
 		"new-horizons.rampart.againstTheOdds.log": "Against the Odds: the stronger enemy grants this army +%d Luck.",
+		"new-horizons.inferno.cutpurse.victory": "%s steals %d Gold from the defeated hero’s treasury.",
+		"new-horizons.inferno.sulfurSense.pickup": "Sulfur Sense adds %d Sulfur.",
 		"new-horizons.academy.hardened.effect": "Hardened: takes less damage from creature attacks until its next activation",
 		"new-horizons.academy.spoilsOfAlchemy.log": "Spoils of Alchemy: %s distils %d Mercury from the fallen.",
 		"new-horizons.academy.inexhaustibleKnowledge.log": "Inexhaustible Knowledge: %s regains %d Mana.",

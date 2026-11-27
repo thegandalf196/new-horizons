@@ -17,6 +17,7 @@
 #include "NewHorizonsCastleSpecialties.h"
 #include "NewHorizonsRampartSpecialties.h"
 #include "NewHorizonsAcademySpecialties.h"
+#include "NewHorizonsInfernoSpecialties.h"
 #include "../../bonuses/BonusSelector.h"
 
 #include <array>
@@ -98,7 +99,8 @@ void validateRevisedSpecialtiesSerialization(const JsonNode & development)
 		"almsOfTheFaithful", "useTheGround", "elusive", "patroness", "giantSlayer", "livingRemedy", "sorceressOfEnroth",
 		"brittle", "againstTheOdds", "perfectMount", "treantmoot", "forestAmbush", "hardened", "spoilsOfAlchemy",
 		"practiceMakesPerfect", "wellspringOfWealth", "stormLord", "serpentsEmbraceBound", "goldStandardDiscount",
-		"inexhaustibleKnowledge", "halonNullifyingShot", "spellweaver", "focusMagicSpecialty", "sageOfTheAges"});
+		"inexhaustibleKnowledge", "halonNullifyingShot", "spellweaver", "focusMagicSpecialty", "sageOfTheAges", "cutpurse", "sulfurSense", "kindling", "markedForTheKill",
+		"bloodfire", "burnAway", "hellfireBattery"});
 	detail::require(detail::integer(row["version"], 1, 1), "revised specialty version");
 	if(row.Struct().contains("levelScaling"))
 	{
@@ -116,6 +118,7 @@ void validateRevisedSpecialtiesSerialization(const JsonNode & development)
 	validateCastleAdventureSpecialties(row);
 	validateRampartSpecialtyRows(row);
 	validateAcademySpecialtyRows(row);
+	validateInfernoSpecialtyRows(row);
 }
 
 bool isRetiredRevisedSpecialtyRow(std::string_view row)
@@ -275,7 +278,7 @@ bool retiresSpecialtyBonus(const CGHeroInstance & hero, const Bonus & bonus)
 bool revisedSpecialtyRetiresHistorical(const CGHeroInstance & hero)
 {
 	return castleSpecialtyRetiresHistorical(hero) || retiresHistoricalCastleSpecialty(hero)
-		|| rampartSpecialtyRetiresHistorical(hero) || academySpecialtyRetiresHistorical(hero);
+		|| rampartSpecialtyRetiresHistorical(hero) || academySpecialtyRetiresHistorical(hero) || infernoSpecialtyRetiresHistorical(hero);
 }
 
 bool benefitsFromStewardship(const CGHeroInstance & hero, const CGTownInstance & town)

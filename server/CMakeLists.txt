@@ -43,8 +43,13 @@ set(vcmiservercommon_SRCS
 	battles/BattleVolleyCommand.cpp
 	battles/BattleCastleSpecialtyCasts.cpp
 	battles/BattleRampartSpecialtyCasts.cpp
+	battles/BattleOpeningSpells.cpp
+	battles/BattleInfernoSpecialtyCasts.cpp
 	battles/BattleAcademySpecialties.cpp
+	battles/BattleInfernoRewards.cpp
+	battles/BattleInfernoRewards.h
 	battles/BattleRampartSpecialtyCasts.h
+	battles/BattleInfernoSpecialtyCasts.h
 	battles/BattleAcademySpecialties.h
 	battles/BattlePrimaryAttackCasting.cpp
 	battles/BattleStunActivation.cpp

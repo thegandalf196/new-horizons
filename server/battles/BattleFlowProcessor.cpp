@@ -11,6 +11,7 @@
 #include "../../lib/battle/TimedEffectValueTransitions.h"
 #include "../../lib/battle/NewHorizonsDreadCavalry.h"
 #include "BattleFlowProcessor.h"
+#include "BattleInfernoSpecialtyCasts.h"
 #include "../../lib/battle/NewHorizonsStun.h"
 #include "../../lib/battle/NewHorizonsSpecialtyProcs.h"
 #include "BattleActivationEffects.h"
@@ -339,37 +340,6 @@ void BattleFlowProcessor::onBattleStarted(const CBattleInfoCallback & battle)
 		onTacticsEnded(battle);
 }
 
-void BattleFlowProcessor::castOpeningSpells(const CBattleInfoCallback & battle)
-{
-	for(auto i : {BattleSide::ATTACKER, BattleSide::DEFENDER})
-	{
-		const auto * h = battle.battleGetFightingHero(i);
-		if (!h)
-			continue;
-
-		TConstBonusListPtr bl = h->getBonusesOfType(BonusType::OPENING_BATTLE_SPELL);
-
-		for (const auto & b : *bl)
-		{
-			spells::BonusCaster caster(h, b);
-
-			SpellID spellID = b->subtype.as<SpellID>();
-			if (!spellID.hasValue())
-			{
-				logGlobal->error("unable to cast spell - OPENING_BATTLE_SPELL has invalid spell set!");
-				continue;
-			}
-			const CSpell * spell = spellID.toSpell();
-
-			spells::BattleCast parameters(&battle, &caster, spells::Mode::PASSIVE, spell);
-			int32_t spellLevel = b->parameters ? b->parameters->toNumber() : 3;
-			parameters.setSpellLevel(spellLevel);
-			parameters.setEffectDuration(b->val);
-			parameters.forceMassive = true;
-			parameters.castIfPossible(gameHandler->spellcastEnvironment(), spells::Target());
-		}
-	}
-}
 
 void BattleFlowProcessor::onTacticsEnded(const CBattleInfoCallback & battle)
 {
@@ -384,6 +354,7 @@ void BattleFlowProcessor::onTacticsEnded(const CBattleInfoCallback & battle)
 	}
 
 	castOpeningSpells(battle);
+	battleInfernoSpecialties::castMarkedForTheKill(*gameHandler, battle);
 
 	// it is possible that due to opening spells one side was eliminated -> check for end of battle
 	if (owner->checkBattleStateChanges(battle))

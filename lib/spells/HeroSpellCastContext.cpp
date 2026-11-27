@@ -8,6 +8,7 @@
 #include "NewHorizonsMagic.h"
 #include "NewHorizonsSpellAvailability.h"
 #include "NewHorizonsCrossSchoolFormula.h"
+#include "NewHorizonsInfernoSpecialties.h"
 #include "NewHorizonsSpellcraft.h"
 #include "../battle/CBattleInfoCallback.h"
 #include "../battle/IBattleState.h"
@@ -54,7 +55,10 @@ HeroSpellCastContext heroSpellCastContext(const CGHeroInstance & hero, const CSp
 		result.counterpressure = newHorizonsMagic::SPELLCRAFT_COUNTERPRESSURE_BONUS_PERCENT;
 
 	if(battleInfo && battleInfo->getSideHero(casterSide) == &hero)
+		{
 		result.crossSchool = newHorizonsCrossSchoolFormula::bonusPercent(*battleInfo, casterSide, spell.getId());
+		result.kindling = !automaticHeroCast ? infernoSpellSpecialties::kindlingBonusBasisPoints(*battleInfo, casterSide, spell.getId()) : 0;
+	}
 
 	const int spellLevel = battleInfo ? callback.battleGetSpellLevel(spell.getId()) : 0;
 	if(battleInfo && battleInfo->getSideHero(casterSide) == &hero

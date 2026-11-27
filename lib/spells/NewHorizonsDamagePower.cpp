@@ -3,6 +3,7 @@
  * License: GNU General Public License v2.0 or later; see license.txt
  */
 #include "StdInc.h"
+#include "HeroSpellCastContext.h"
 #include "ISpellMechanics.h"
 #include "NewHorizonsStormOfDaggersDamage.h"
 #include "CSpell.h"
@@ -108,10 +109,11 @@ int64_t BaseMechanics::getStormOfDaggersTotalDamage(int32_t selectedTargetCount)
 
 int32_t BaseMechanics::spellcraftCoefficient(newHorizonsHeroes::SpellcraftComponent component) const
 {
-	if(spellcraftContext.factors)
-		return newHorizonsHeroes::composeSpellcraftCoefficient(*spellcraftContext.factors, component,
-			getCastSpellPowerComponentBonusPercent());
-	return Mechanics::getSpellPowerCoefficientBasisPoints();
+	const int coefficient = spellcraftContext.factors
+		? newHorizonsHeroes::composeSpellcraftCoefficient(*spellcraftContext.factors, component,
+			getCastSpellPowerComponentBonusPercent())
+		: Mechanics::getSpellPowerCoefficientBasisPoints();
+	return static_cast<int32_t>(static_cast<int64_t>(coefficient) * (10000 + kindlingBonusBasisPoints) / 10000);
 }
 
 int32_t BaseMechanics::getSpellPowerCoefficientBasisPoints() const
@@ -128,4 +130,11 @@ int32_t BaseMechanics::getDirectDamageSpellPowerCoefficientBasisPoints() const
 {
 	return spellcraftCoefficient(newHorizonsHeroes::SpellcraftComponent::DIRECT_DAMAGE);
 }
+int32_t BaseMechanics::getCastSpellPowerComponentBonusPercent() const
+{
+	return newHorizonsMagic::HeroSpellCastContext{arcaneFocusBonusPercent,
+		consecratedCastingBonusPercent, counterpressureBonusPercent, crossSchoolFormulaBonusPercent,
+		grandFormulaMultiplierPercent, concentrationBonusPercent}.componentBonusPercent();
+}
+
 }

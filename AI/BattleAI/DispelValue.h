@@ -9,6 +9,8 @@ namespace dispelAI
 {
 /// Dispel removes every removable spell effect from its targets, whoever cast
 /// it, so a Dispel on a hostile stack also strips this side's own debuffs.
+/// Xarfax's Fireball can remove beneficial effects. Valuation reads only the
+/// actual projected removal, so an ordinary Fireball adds no removal value.
 bool removesSpellEffects(const CSpell * spell);
 /// Zero unless `spell` removes spell effects; otherwise the signed value, for
 /// `reference`, of the spell effects present on `before` but absent from

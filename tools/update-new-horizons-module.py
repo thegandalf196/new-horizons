@@ -215,6 +215,7 @@ def base_metadata(settings, schools, skills, module_version):
             'config/spells/elementalDamageTags.json',
             'config/spells/cabirRepair.json',
             'config/spells/genieLuck.json',
+            'config/spells/infernoSpecialties.json',
         ],
         'spellSchools': schools,
         'skills': skills,

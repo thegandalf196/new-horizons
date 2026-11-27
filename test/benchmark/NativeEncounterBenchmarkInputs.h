@@ -106,6 +106,7 @@ struct SpecialtyEncounter
 	const char * opponent;
 	std::vector<std::string> spells;
 	bool nativeHeroDefaults;
+	bool ballista = false;
 };
 inline std::vector<SpecialtyEncounter> specialtyEncounters()
 {
@@ -155,6 +156,11 @@ inline std::vector<SpecialtyEncounter> specialtyEncounters()
 		{"Astral", "core:astral", academyArmy, castle, "core:rion", {"core:magicArrow", "core:lightningBolt"}, false},
 		{"Halon", "core:halon", academyArmy, castle, "core:rion", {}, true},
 		{"Theodorus", "core:theodorus", academyArmy, castle, "core:rion", {"core:magicArrow", "core:lightningBolt"}, false},
+		{"Xyron", "core:xyron", inferno, castle, "core:rion", {"core:fireball", "core:inferno"}, false},
+		{"Olema", "core:olema", inferno, castle, "core:rion", {}, true},
+		{"Ash", "core:ash", inferno, castle, "core:rion", {"core:fireball"}, false},
+		{"Xarfax", "core:xarfax", inferno, castle, "core:rion", {"core:fireball"}, false},
+		{"Pyre", "core:pyre", inferno, castle, "core:rion", {}, true, true},
 	};
 }
 }

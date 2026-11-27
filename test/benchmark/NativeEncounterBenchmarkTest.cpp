@@ -57,6 +57,7 @@ protected:
 	int sylvanPolicy = 0;
 	/// External grants after the authored starting ledger has been verified.
 	std::function<void(CGHeroInstance &, CGHeroInstance *)> afterHeroes;
+	bool attackerBallista = false;
 	std::unique_ptr<nativeBenchmark::AmbushEncounterObserver> ambushObserver;
 	/// Optional read-only observer around each submitted action.
 	std::function<void(const BattleInfo &, const BattleAction &, bool)> observeExtra;
@@ -194,6 +195,8 @@ protected:
 			// then arrange and verify the actual benchmark army before battle.
 			const Army placeholder{{troop("core:pikeman"), 1}};
 			builder.hero({5, 5, 0}, HeroTypeID(HeroTypeID::decode(heroName)), PlayerColor(0)).heroGarrison(placeholder);
+			if(attackerBallista) builder.heroEquipped({{ArtifactPosition::SPELLBOOK, ArtifactID::SPELLBOOK},
+				{ArtifactPosition::MACH1, ArtifactID::BALLISTA}});
 			if(neutralDefender)
 			{
 				ASSERT_GE(right.size(), 1u);
@@ -641,6 +644,7 @@ TEST_P(DISABLED_NativeSpecialtyEncounterBenchmarkTest, Encounter)
 {
 	const auto & row = GetParam();
 	attackerExtraSpells = row.spells;
+	attackerBallista = row.ballista;
 	ASSERT_NO_FATAL_FAILURE(prepare(row.left(), row.right(), row.hero, true, false, false, row.nativeHeroDefaults, row.opponent));
 	runEncounter();
 }

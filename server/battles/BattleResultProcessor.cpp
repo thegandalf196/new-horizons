@@ -13,6 +13,7 @@
 #include "../../lib/entities/hero/NewHorizonsLearning.h"
 #include "NewHorizonsWellspringRecovery.h"
 #include "BattleAcademySpecialties.h"
+#include "BattleInfernoRewards.h"
 #include "NewHorizonsRaisedArmy.h"
 #include "../../lib/entities/hero/NewHorizonsReclaimer.h"
 #include "../../lib/entities/creature/NewHorizonsRecruitmentTraining.h"
@@ -870,6 +871,8 @@ void BattleResultProcessor::battleFinalize(const BattleID & battleID, const Batt
 	if(!finishingBattle->isDraw())
 	{
 		applyWellspringVictoryRecovery(*gameHandler, battleID, winnerHero);
+		if(winnerHasUnitsLeft)
+			battleInfernoRewards::grantCutpurse(*gameHandler, winnerHero, loserHero);
 		battleAcademySpecialties::grantSpoilsOfAlchemy(*gameHandler, battleID, winnerHero,
 			result.casualties[CBattleInfoEssentials::otherSide(finishingBattle->winnerSide)]);
 	}

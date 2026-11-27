@@ -7,6 +7,17 @@ and revisions as the game develops.
 For individual perk effects, spell formulas, creature statistics and Order rules,
 read the [player wiki](https://github.com/thegandalf196/new-horizons/wiki/Home).
 
+## 0.94.0-beta.6
+
+Inferno heroes receive revised specialties and level scaling.
+
+- Octavia gains Cutpurse, stealing part of a defeated enemy hero's treasury. Calid gains Sulfur Sense, finding extra Sulfur with each resource pile.
+- Xyron gains Kindling, building power through consecutive Fire spells. Olema opens combat with Frailty on the strongest enemy stacks.
+- Ash's Bloodfire protects friendly stacks throughout her Fireball area and grants Attack for two rounds. Xarfax's Burn Away strips recent beneficial spell effects from enemies hit by his Fireball.
+- Pyre's Hellfire Battery converts a level-scaled share of her Ballista's damage into Fire magical damage. It retains one shot and one total damage budget.
+- Fiona, Rashka, Marius, Calh, Nymus and Ignatius retain their specialties with the accepted level scaling. Ayden, Axsis and Zydar retain their existing specialties.
+- Xarfax starts with Hellfire Arrival, giving him a distinct opening profile from Xyron's Pyromancer.
+
 ## 0.94.0-beta.5
 
 Day's March: troops keep the share of the day's march they have left, so

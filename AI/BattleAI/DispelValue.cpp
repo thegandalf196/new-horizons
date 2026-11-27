@@ -82,7 +82,7 @@ int longestRounds(const std::vector<Bonus> & removed)
 
 bool removesSpellEffects(const CSpell * spell)
 {
-	return spell && spell->getId() == SpellID::DISPEL;
+	return spell && (spell->getId() == SpellID::DISPEL || spell->getId() == SpellID::FIREBALL);
 }
 
 float removedEffectValue(const CSpell * spell, const CBattleInfoCallback & before,

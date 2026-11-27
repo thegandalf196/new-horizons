@@ -126,6 +126,8 @@ set(test_SRCS
 		hero/UnifiedSkillProgressionTest.cpp
 		server/UnifiedHeroProgressionTest.cpp
 		nativeDamage/NativeDamageBoundaryTest.cpp
+		nativeDamage/HellfireBatteryDamageTest.cpp
+		server/battles/NewHorizonsHellfireBatteryTest.cpp
 		hero/NewHorizonsCommandRulesTest.cpp
 		hero/NewHorizonsCommandStateTest.cpp
 		hero/NewHorizonsCommandPlacementTest.cpp
@@ -451,6 +453,8 @@ set(test_SRCS
 		hero/RampartSpecialtyRulesTest.cpp
 		hero/RampartStartingProfilesTest.cpp
 		hero/AcademySpecialtyRulesTest.cpp
+		hero/NewHorizonsInfernoAdventureSpecialtiesTest.cpp
+	hero/NewHorizonsInfernoSpecialtyArtTest.cpp
 	hero/NewHorizonsValidatedPerkRulesTest.cpp
 	hero/NewHorizonsPerkOperationTest.cpp
 	hero/PerkInitializationReference.cpp
@@ -714,6 +718,7 @@ set(test_SRCS
 		server/battles/NewHorizonsPolymorphLifecycleTest.cpp
 		server/battles/NewHorizonsRealityWarpTest.cpp
 		server/battles/NewHorizonsPursuitMarchTest.cpp
+		server/battles/NewHorizonsCutpurseCompletionTest.cpp
 		server/battles/NewHorizonsElementalRebirthTest.cpp
 		server/battles/NewHorizonsNecromancyCombatTest.cpp
 		server/battles/NewHorizonsElementalConvergenceTest.cpp
@@ -772,6 +777,7 @@ set(test_SRCS
 		server/battles/NewHorizonsMagicStateTest.cpp
 		server/battles/NewHorizonsWarMachinesPerksTest.cpp
 		server/battles/NewHorizonsSpellcraftTargetDurationTest.cpp
+		server/battles/NewHorizonsInfernoSpellSpecialtiesTest.cpp
 		server/battles/NewHorizonsCrossSchoolFormulaTest.cpp
 		server/battles/NewHorizonsDefensiveSpecialtyTest.cpp
 		server/battles/NewHorizonsOffensiveSpecialtyTest.cpp
@@ -1257,6 +1263,7 @@ if(ENABLE_BATTLE_AI)
 		battleAI/ConsecratedArmsValueTest.cpp
 		battleAI/ConsecratedArmsChoiceAITest.cpp
 		battleAI/DispelValueTest.cpp
+		battleAI/InfernoSpellProjectionTest.cpp
 		battleAI/RecoverableEvaluationTest.cpp
 		server/battles/NewHorizonsAvatarOfRageTest.cpp
 		server/battles/NewHorizonsBloodrageDeathPerksTest.cpp
