@@ -95,6 +95,14 @@ TEST_F(NewHorizonsHellfireBatteryTest, FireProtectionChangesOnlyConvertedShareAn
 	EXPECT_EQ(flat(100, 1, 1000).damage.min, 0);
 	EXPECT_EQ(flat(100, 1, 1000).kills.min, 0);
 }
+TEST_F(NewHorizonsHellfireBatteryTest, AbsoluteMagicalImmunityStopsOnlyTheConvertedFireShare)
+{
+	ASSERT_NO_FATAL_FAILURE(prepare("core:pyre"));
+	victim->addNewBonus(std::make_shared<Bonus>(BonusDuration::ONE_BATTLE,
+		BonusType::MAGICAL_DAMAGE_IMMUNITY, BonusSource::OTHER, 1, BonusSourceID()));
+	EXPECT_EQ(flat(100).damage.min, 80);
+	EXPECT_EQ(flat(100, 1, 1000).damage.min, 0);
+}
 TEST_F(NewHorizonsHellfireBatteryTest, CombinedHitHasOneCapAndCombinedCasualtyEstimate)
 {
 	ASSERT_NO_FATAL_FAILURE(prepare("core:pyre"));

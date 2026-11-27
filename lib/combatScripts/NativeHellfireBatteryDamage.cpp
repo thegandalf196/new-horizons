@@ -7,6 +7,7 @@
 #include "../battle/CBattleInfoCallback.h"
 #include "../battle/DamageInteger.h"
 #include "../battle/NewHorizonsMagicalAbilityDamage.h"
+#include "../battle/NewHorizonsPassiveSpecialties.h"
 #include "../battle/Unit.h"
 #include "../entities/hero/NewHorizonsInfernoSpecialties.h"
 #include <cmath>
@@ -36,7 +37,8 @@ int64_t boundDamage(const CBattleInfoCallback & battle, const battle::Unit & tar
 		? static_cast<double>(budget.physical) / static_cast<double>(totalBudget) : 0;
 	const int64_t physical = budget.physical > 0
 		? damageInteger::boundedNonnegative(std::floor(physicalDamage * physicalFraction)) : 0;
-	const int64_t fire = newHorizonsMagicalAbilityDamage::adjustFireDamage(battle, target, budget.fire);
+	const int64_t fire = newHorizonsPassiveSpecialties::magicalDamageImmune(target) ? 0
+		: newHorizonsMagicalAbilityDamage::adjustFireDamage(battle, target, budget.fire);
 	const int64_t combined = physical > std::numeric_limits<int64_t>::max() - fire
 		? std::numeric_limits<int64_t>::max() : physical + fire;
 	// The ordinary minimum belongs to the remaining physical hit, once. A fully
