@@ -48,8 +48,13 @@ public:
 	}
 	bool applicableTarget(Problem & problem, const Mechanics * mechanics, const Target & target) const override
 	{ return validPair(mechanics, target) || status::reject(mechanics, &problem); }
-	Target transformTarget(const Mechanics * mechanics, const Target & aim, const Target &) const override
-	{ return enabled(mechanics) && aim.size() == 1 && aim.front().unitValue ? aim : Target{}; }
+	Target transformTarget(const Mechanics * mechanics, const Target & aim, const Target & target) const override
+	{
+		if(!enabled(mechanics) || aim.size() != 1) return {};
+		// Generic human creature targeting supplies a hex. The shared resolver
+		// retains explicit identities and applies this effect's living/corpse rules.
+		return transformByRange(mechanics, aim, target);
+	}
 	SpellEffectValue getHealthChange(const Mechanics * mechanics, const Target & target) const override
 	{
 		SpellEffectValue result;
