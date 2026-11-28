@@ -5,6 +5,7 @@
 #include "../../lib/serializer/CMemorySerializer.h"
 #include "../../lib/spells/NewHorizonsMetamagicDoubleCast.h"
 #include "../../lib/entities/hero/NewHorizonsRevisedSpecialties.h"
+#include "../../lib/entities/hero/NewHorizonsNecropolisCombatSpecialties.h"
 #include "../OverkillRandomPrayerRules.h"
 
 namespace
@@ -238,6 +239,10 @@ TEST(CapturedRulePool, ActivatedOrdinaryCoefficientsRoundtripAndOlderCapturesSta
 	const JsonNode shipped(JsonPath::builtin("config/newHorizonsHeroes"));
 	CapturedRulePool pool;
 	const auto id = pool.intern(CapturedRuleKind::WorldDevelopment, shipped);
+	ASSERT_TRUE(newHorizonsHeroes::requiresNecropolisSpecialtyFormat(shipped));
+	CMemorySerializer preceding;
+	preceding.oser.version = ESerializationVersion::NEW_HORIZONS_MARCH_LEFT;
+	EXPECT_THROW(preceding.oser & pool, std::runtime_error);
 	CMemorySerializer current;
 	ASSERT_NO_THROW(current.oser & pool);
 	CapturedRulePool restored;
@@ -248,7 +253,10 @@ TEST(CapturedRulePool, ActivatedOrdinaryCoefficientsRoundtripAndOlderCapturesSta
 			EXPECT_EQ(policy(restored, id)[key].Integer(), value) << key;
 
 	// 1164 and 1165 saves keep their captured absence; nothing is synthesized on load.
-	const auto older = beforeWarcast(overkillRandomPrayerHeroes());
+	auto older = beforeWarcast(overkillRandomPrayerHeroes());
+	// Aislinn's Life Drain book replacement was absent before the Necropolis revision.
+	older["startingSkills"]["startingBookReplacements"].Struct().erase("core:aislinn");
+	ASSERT_FALSE(newHorizonsHeroes::requiresNecropolisSpecialtyFormat(older));
 	for(const auto version : {ESerializationVersion::NEW_HORIZONS_CONSECRATED_ARMS,
 		ESerializationVersion::NEW_HORIZONS_DOUBLE_CAST_CHOSEN_PRAYERS, ESerializationVersion::CURRENT})
 	{
