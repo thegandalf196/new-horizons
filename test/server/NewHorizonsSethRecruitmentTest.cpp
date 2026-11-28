@@ -4,6 +4,7 @@
 #include "../../lib/mapObjects/TownRecruitmentOffers.h"
 #include "../../lib/entities/hero/NewHorizonsAdditionalSpecialties.h"
 #include "../../lib/entities/hero/NewHorizonsLearningSpecialties.h"
+#include "../../lib/entities/hero/NewHorizonsNecropolisRetainedSpecialties.h"
 #include "../../lib/gameState/UpgradeInfo.h"
 #include <array>
 #include <tuple>
@@ -298,8 +299,12 @@ TEST_F(NewHorizonsSethRecruitmentTest, CurrentWorldRoundtripPreservesSpentPoolAn
 	ASSERT_TRUE(first->setCreature(SlotID(1), creature("core:mummy"), 4));
 	GameHandlerTestServer server(gameState(), PLAYER);
 	CGameHandler handler(server, gameState());
-	setResources(handler, town->getTotalRecruitmentCost(royal, 3));
+	const auto firstPurchase = town->getTotalRecruitmentCost(royal, 2, first);
+	const auto remainingPurchase = town->getTotalRecruitmentCost(royal, 1, first);
+	EXPECT_LT(firstPurchase[EGameResID::GOLD], town->getTotalRecruitmentCost(royal, 2)[EGameResID::GOLD]);
+	setResources(handler, firstPurchase + remainingPurchase);
 	ASSERT_TRUE(handler.recruitCreatures(town->id, first->id, royal, 2, TOMB, PLAYER));
+	EXPECT_EQ(gameState()->getPlayerState(PLAYER)->resources, remainingPurchase);
 	auto loaded = std::make_shared<CGameState>();
 	loaded->preInit(LIBRARY);
 	loaded->loadFromMemory(gameState()->saveToMemory());
@@ -311,6 +316,8 @@ TEST_F(NewHorizonsSethRecruitmentTest, CurrentWorldRoundtripPreservesSpentPoolAn
 	EXPECT_EQ(count(*restoredHero, royal), 2);
 	EXPECT_EQ(count(*restoredHero, creature("core:mummy")), 4);
 	EXPECT_TRUE(newHorizonsHeroes::hasAncientOaths(restoredHero));
+	EXPECT_EQ(restoredTown->getTotalRecruitmentCost(royal, 1, restoredHero), remainingPurchase);
+	EXPECT_EQ(loaded->getPlayerState(PLAYER)->resources, remainingPurchase);
 	GameHandlerTestServer restoredServer(loaded, PLAYER);
 	CGameHandler restoredHandler(restoredServer, loaded);
 	ASSERT_TRUE(restoredHandler.recruitCreatures(restoredTown->id, restoredHero->id, royal, 1, TOMB, PLAYER));
@@ -327,9 +334,16 @@ TEST_F(NewHorizonsSethRecruitmentTest, AncientOathsReplacesPersonalExperienceBut
 	EXPECT_EQ(first->calculateXp(1000), 1100);
 	EXPECT_FALSE(newHorizonsHeroes::learningSpecialtyRules(first));
 	EXPECT_EQ(first->getSpecialtyPresentation().name, "Ancient Oaths");
+	EXPECT_EQ(newHorizonsHeroes::ancientOathsDiscountPercent(first), 19);
 	auto capture = first->getPrimaryGrowthRules();
 	capture["additionalSpecialties"].Struct().erase("ancientOathsPolicyVersion");
+	capture["revisedSpecialties"].Struct().erase("ancientOathsDiscount");
+	// Restore the actual pre-Ancient Oaths personal Learning capture.
+	capture["additionalSpecialties"]["graveArchivist"]["learningPercentPerLevel"].Integer() = 5;
+	capture["additionalSpecialties"]["graveArchivist"]["learningMaximumPercent"].Integer() = 100;
 	first->replaceCapturedPrimaryGrowthRules(capture);
+	EXPECT_FALSE(newHorizonsHeroes::hasAncientOaths(first));
+	EXPECT_EQ(newHorizonsHeroes::ancientOathsDiscountPercent(first), 0);
 	EXPECT_EQ(first->calculateXp(1000), 1150);
 	EXPECT_TRUE(newHorizonsHeroes::learningSpecialtyRules(first));
 	EXPECT_EQ(first->getSpecialtyPresentation().name, "Grave Archivist");
