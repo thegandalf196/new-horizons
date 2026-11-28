@@ -12,6 +12,7 @@
 #include "../../lib/mapObjects/CGTownInstance.h"
 #include "../../lib/mapObjects/EstatesStewardship.h"
 #include "../../lib/networkPacks/EstatesPacks.h"
+#include "../../lib/networkPacks/PacksForClient.h"
 #include "../../lib/serializer/CMemorySerializer.h"
 #include "../../server/CGameHandler.h"
 #include "../mock/GameHandlerTestServer.h"
@@ -69,7 +70,11 @@ protected:
 		castle = expectAt<CGTownInstance>({7, 20, 0});
 		ASSERT_TRUE(clavius && ordinary && necropolis && castle);
 		necropolis->creatures = {{0, {CreatureID(CreatureID::decode("core:skeleton"))}}};
-		castle->builtBuildings.insert(BuildingID::CAPITOL);
+		NewStructures structures;
+		structures.tid = castle->id;
+		structures.bid = {BuildingID::CAPITOL};
+		gameState()->apply(structures);
+		ASSERT_TRUE(castle->hasBuilt(BuildingID::CAPITOL));
 		ASSERT_GT(castle->dailyIncome()[EGameResID::GOLD], necropolis->dailyIncome()[EGameResID::GOLD]);
 	}
 };
