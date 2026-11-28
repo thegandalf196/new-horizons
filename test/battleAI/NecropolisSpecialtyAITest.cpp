@@ -19,7 +19,10 @@ protected:
 	{
 		ASSERT_NO_FATAL_FAILURE(specialist("core:septienna", 25, false));
 		ASSERT_NO_FATAL_FAILURE(book(attackerSideHero, SpellID::MAGIC_ARROW, "new-horizons:sorceryMagic"));
+		attackerSideHero->setPrimarySkill(PrimarySkill::KNOWLEDGE, 100, ChangeValueMode::ABSOLUTE);
+		ASSERT_GE(attackerSideHero->manaLimit(), 100);
 		attackerSideHero->initializeSpellPoints(100, 0);
+		ASSERT_EQ(attackerSideHero->getNormalSpellPoints(), 100);
 		ASSERT_NO_FATAL_FAILURE(arena());
 		ASSERT_NO_FATAL_FAILURE(activate(active));
 		environment = std::make_shared<heroQueueTest::QueueEnvironment>(gameState());
