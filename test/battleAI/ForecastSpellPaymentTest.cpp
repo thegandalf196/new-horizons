@@ -77,6 +77,35 @@ TEST_F(ForecastSideStateTest, ResidualDamageStaysWithItsAcceptedManualScope)
 	EXPECT_EQ(state->mana->pools.getTotal(), 59);
 	EXPECT_FALSE(scopes.queueResidualLife(SIDE, 1));
 }
+TEST_F(ForecastSideStateTest, ResidualGrantPrecedesPaymentWithoutAuthorizingAnUnaffordableCast)
+{
+	ASSERT_NO_FATAL_FAILURE(prepareSide());
+	auto configured = std::make_shared<SideState>(side()->fork());
+	configured->ledger->residualLifeThreshold = 25;
+	configured->ledger->residualLifeLimit = 20;
+	const std::shared_ptr<const SideState> state = configured;
+	auto consumed = state->ledger->allowances;
+	const auto selection = consumed.eligibleAllowance(HeroActionAllowanceState::ActionKind::SPELL, state->round);
+	ASSERT_TRUE(selection);
+	const auto action = consumed.consumeAllowance(selection->grantId, HeroActionAllowanceState::ActionKind::SPELL, state->round);
+	ASSERT_TRUE(action);
+	EXPECT_FALSE(SideTransitions::acceptedAction(state, *action, consumed, false, 0, {},
+		CastCost{SpellID::HASTE, 60, false}, nullptr, {}, 125));
+	const std::array<battle::spellPoints::Payment, 1> wrongRefund{{{1, 0, 0}}};
+	EXPECT_FALSE(SideTransitions::acceptedAction(state, *action, consumed, false, 0, {},
+		CastCost{SpellID::HASTE, 12, false}, nullptr, wrongRefund, 125));
+	EXPECT_EQ(state->mana->pools.getNormal(), 50);
+	EXPECT_EQ(state->mana->pools.getBuffer(), 9);
+	EXPECT_EQ(state->ledger->residualLifeDamage, 0);
+	EXPECT_TRUE(state->castCharges.empty());
+	const auto accepted = SideTransitions::acceptedAction(state, *action, consumed, false, 0, {},
+		CastCost{SpellID::HASTE, 12, false}, nullptr, {}, 125);
+	ASSERT_TRUE(accepted);
+	EXPECT_EQ(accepted->after()->mana->pools.getNormal(), 50);
+	EXPECT_EQ(accepted->after()->mana->pools.getBuffer(), 2);
+	EXPECT_EQ(accepted->after()->ledger->residualLifeDamage, 125);
+}
+
 TEST_F(ForecastSideStateTest, ScopedRefundsSettleAtomicallyAgainstOneExactOriginalCharge)
 {
 	ASSERT_NO_FATAL_FAILURE(prepareSide());

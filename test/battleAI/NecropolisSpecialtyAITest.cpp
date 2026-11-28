@@ -51,6 +51,8 @@ TEST_F(NecropolisSpecialtyAITest, EvaluatedResidualLifeCastMatchesAcceptedManaPr
 	const auto mana = parent->getProjectedMana(SIDE);
 	ASSERT_TRUE(mana);
 	EXPECT_GT(mana->getBuffer(), 0);
+	// Residual Life is granted by the effects before the native Buffer-first payment.
+	EXPECT_EQ(mana->getNormal(), 100);
 	EXPECT_GT(parent->getResidualLifeDamage(SIDE), 0);
 	EXPECT_EQ(sibling->getResidualLifeDamage(SIDE), 0);
 	EXPECT_EQ(sibling->getProjectedManaAvailable(SIDE), liveMana);

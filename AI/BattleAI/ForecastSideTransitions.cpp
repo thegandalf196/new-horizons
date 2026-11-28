@@ -78,6 +78,11 @@ std::optional<SideReceipt> SideTransitions::acceptedAction(const std::shared_ptr
 		else if(action.grantId != 0 || consumed != ledger)
 			throw std::invalid_argument("Invalid legacy compact forecast action receipt");
 		if(!cost && !refunds.empty()) throw std::invalid_argument("Refund without original cast payment");
+		if(cost && (!next.mana || cost->amount > next.mana->pools.getTotal()))
+			throw std::invalid_argument("Unaffordable compact forecast spell before effects");
+		// Native spell effects grant Residual Life before the final Buffer-first charge.
+		// Keep both operations staged so a rejected action publishes neither.
+		if(residualLifeDamage > 0) recordResidual(next, residualLifeDamage);
 		if(cost)
 		{
 			token = charge(next, *cost);
@@ -86,7 +91,6 @@ std::optional<SideReceipt> SideTransitions::acceptedAction(const std::shared_ptr
 				if(!battle::spellPoints::refundCharge(*next.mana, original.paid, original.refunded, refund))
 					throw std::invalid_argument("Scoped cast refund exceeds actual payment provenance");
 		}
-		if(residualLifeDamage > 0) recordResidual(next, residualLifeDamage);
 	}, budget);
 	if(receipt) { receipt->mandateOverlap = std::move(overlap); receipt->paymentToken = token; }
 	return receipt;
