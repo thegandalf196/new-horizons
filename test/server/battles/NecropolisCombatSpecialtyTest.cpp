@@ -34,12 +34,20 @@ TEST_F(NecropolisCombatSpecialtyTest, ResidualLifeReceivesActualSpellHpDamageOnc
 	ASSERT_NO_FATAL_FAILURE(activate(active));
 	const auto health = enemy->getAvailableHealth();
 	const auto buffer = attackerSideHero->getBufferSpellPoints();
+	const auto total = attackerSideHero->getManaAvailable();
+	const auto cost = battle()->battleGetSpellCost(SpellID(SpellID::MAGIC_ARROW).toSpell(), attackerSideHero);
+	ASSERT_GT(cost, 0);
+	const auto paidBuffer = std::min<int64_t>(buffer, cost);
 	ASSERT_TRUE(submit(spellAt(BattleSide::ATTACKER, SpellID::MAGIC_ARROW, enemy)));
 	const auto damage = health - enemy->getAvailableHealth();
 	const auto threshold = newHorizonsHeroes::residualLifeThreshold(attackerSideHero);
 	ASSERT_GT(damage, 0);
 	EXPECT_EQ(battle()->getResidualLifeDamage(BattleSide::ATTACKER), std::min<int64_t>(damage, 20 * threshold));
-	EXPECT_EQ(attackerSideHero->getBufferSpellPoints() - buffer, std::min<int64_t>(20, damage / threshold));
+	const auto granted = std::min<int64_t>(20, damage / threshold);
+	// The scalar fixture total can be Buffer when Normal capacity is zero.
+	// Spell payment spends that existing Buffer before Residual Life adds its grant.
+	EXPECT_EQ(attackerSideHero->getBufferSpellPoints(), buffer - paidBuffer + granted);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), total - cost + granted);
 }
 TEST_F(NecropolisCombatSpecialtyTest, HistoricalSeptiennaReceivesNoBuffer)
 {
@@ -50,9 +58,14 @@ TEST_F(NecropolisCombatSpecialtyTest, HistoricalSeptiennaReceivesNoBuffer)
 	ASSERT_NO_FATAL_FAILURE(arena());
 	ASSERT_NO_FATAL_FAILURE(activate(active));
 	const auto buffer = attackerSideHero->getBufferSpellPoints();
+	const auto total = attackerSideHero->getManaAvailable();
+	const auto cost = battle()->battleGetSpellCost(SpellID(SpellID::MAGIC_ARROW).toSpell(), attackerSideHero);
+	ASSERT_GT(cost, 0);
+	const auto paidBuffer = std::min<int64_t>(buffer, cost);
 	ASSERT_TRUE(submit(spellAt(BattleSide::ATTACKER, SpellID::MAGIC_ARROW, enemy)));
 	EXPECT_EQ(battle()->getResidualLifeDamage(BattleSide::ATTACKER), 0);
-	EXPECT_EQ(attackerSideHero->getBufferSpellPoints(), buffer);
+	EXPECT_EQ(attackerSideHero->getBufferSpellPoints(), buffer - paidBuffer);
+	EXPECT_EQ(attackerSideHero->getManaAvailable(), total - cost);
 }
 TEST_F(NecropolisCombatSpecialtyTest, AislinnLifeDrainIncreasesActualDamageAndHealing)
 {
