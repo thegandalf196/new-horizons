@@ -2,7 +2,7 @@
   "schema_version": 1,
   "name": "shock-assault",
   "source": {
-    "path": "$HOME/Documents/Projects/gandalf/HoMM 3 Complete/HeroesIII-Definitive/assets/new-horizons/art-source/active-perks-v3/shock-assault-master.png",
+    "path": "assets/new-horizons/art-source/active-perks-v3/shock-assault-master.png",
     "filename": "shock-assault-master.png",
     "byte_size": 3349400,
     "dimensions": [
