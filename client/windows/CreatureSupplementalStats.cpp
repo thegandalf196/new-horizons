@@ -11,6 +11,7 @@
 #include "../../lib/combatScripts/IDamageCalculatorScript.h"
 #include "../../lib/combatScripts/NativePhysicalProtection.h"
 #include "../../lib/entities/hero/NewHorizonsNecromancyPolicy.h"
+#include "../../lib/entities/hero/NewHorizonsNecropolisCombatSpecialties.h"
 #include "../../lib/mapObjects/CGHeroInstance.h"
 #include "../../lib/spells/NewHorizonsMagic.h"
 #include "../../lib/spells/MagicalDamageReduction.h"
@@ -48,6 +49,7 @@ std::optional<int> physicalReduction(const CStackInstance & armyStack, const CSt
 	DamageAttackInfo inputs;
 	inputs.physicalDamageReductionCapPercent = cap;
 	inputs.newHorizonsArmorerReductionPercent = newHorizonsCombatSkills::armorerReductionPercent(hero);
+	inputs.unyieldingBonesReductionBasisPoints = 10 * newHorizonsHeroes::unyieldingBonesPermille(hero);
 	inputs.intrinsicPhysicalDamageReductionPercent = battleStack
 		? battleStack->intrinsicPhysicalDamageReductionPercent()
 		: newHorizonsNecromancy::graveplatePhysicalReductionPercent(hero, armyStack.getCreatureID());

@@ -109,6 +109,7 @@ set(test_SRCS
 		hero/LeadershipEfficiencyRulesTest.cpp
 		server/battles/LeadershipEfficiencyBattleTest.cpp
 		server/battles/CreatureSupplementalStatsTest.cpp
+		server/battles/UnyieldingBonesReadoutTest.cpp
 		server/battles/SethMummyCombatTest.cpp
 		server/NewHorizonsSethRecruitmentTest.cpp
 		../client/windows/CreatureSupplementalStats.cpp
