@@ -112,6 +112,9 @@ TEST_F(NewHorizonsReclaimerFixture, ActualOssuaryPerkIsRequiredByAuthoritativePr
 	EXPECT_FALSE(attackerSideHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
 		newHorizonsNecromancy::DARK_CONVERSION_ID));
 	EXPECT_FALSE(attackerSideHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
+		newHorizonsNecromancy::OSSUARY_ID));
+	// Vidomina's accepted Corpse Preservation start cannot authorize Ossuary delivery.
+	EXPECT_TRUE(attackerSideHero->hasActivePerk(newHorizonsNecromancy::SKILL_ID,
 		newHorizonsNecromancy::CORPSE_PRESERVATION_ID));
 }
 TEST_F(NewHorizonsReclaimerFixture, BothZombieSourcesHaveDistinctActualExplanationCounts)
