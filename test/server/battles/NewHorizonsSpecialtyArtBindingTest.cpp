@@ -476,15 +476,20 @@ protected:
 		useRevisedOrders = true;
 		HeroCommandFixture::mapLoaded(loaded);
 		JsonNode development(JsonPath::builtin("config/newHorizonsHeroes"));
-		// These cases bind the selected art of the governing historical policies.
-		// The revised Castle, Rampart, Academy and Inferno rows replace several of them and own their own art.
-		for(const auto * revised : {"volleyCommand", "aerialSupremacy", "benedictionOfArms", "pariah", "frostMantle",
-			"quickStudy", "sermon", "useTheGround", "elusive", "patroness", "giantSlayer", "livingRemedy",
-			"sorceressOfEnroth", "brittle", "againstTheOdds", "perfectMount", "treantmoot", "forestAmbush",
-			"hardened", "spoilsOfAlchemy", "practiceMakesPerfect", "wellspringOfWealth", "stormLord", "serpentsEmbraceBound",
-			"goldStandardDiscount", "inexhaustibleKnowledge", "halonNullifyingShot", "focusMagicSpecialty", "sageOfTheAges",
-			"cutpurse", "sulfurSense", "kindling", "markedForTheKill", "bloodfire", "burnAway", "hellfireBattery"})
-			development["revisedSpecialties"].Struct().erase(revised);
+		// Pin the six-row revised family retained by the B5 artwork fixtures
+		// (cc2733fc8570), including the three Castle adventure positive controls.
+		// Later faction replacements belong to their dedicated artwork tests.
+		constexpr char historicalRevised[] = R"({
+			"version": 1,
+			"lordOfTheCrypts": {"skeletonGrowthPerLevel": 1},
+			"levelScaling": {"percentOfBasePerLevel": 3},
+			"forcedMarch": {"movementPercent": 20, "movementPercentPerLevel": 2, "maximumMovementPercent": 60, "moralePenalty": 1},
+			"wellConnected": {"discountPermille": 50, "discountPermillePerLevel": 5, "maximumDiscountPermille": 150, "combinedDiscountCapPercent": 25},
+			"almsOfTheFaithful": {"donationPercent": 20, "donationPercentPerLevel": 2, "maximumDonationPercent": 60}
+		})";
+		auto revised = JsonNode(historicalRevised, sizeof(historicalRevised) - 1, "HistoricalSpecialtyArtworkRules");
+		revised.setModScope(development["revisedSpecialties"].getModScope());
+		development["revisedSpecialties"] = std::move(revised);
 		if(historical)
 		{
 			const std::string_view policy = resolvedArtCases.at(GetParam()).policy;
