@@ -161,6 +161,7 @@ set(test_SRCS
 		server/battles/RampartCombatLifecycleTest.cpp
 		server/battles/RampartCombatSpecialtyTest.cpp
 		server/battles/NecropolisCombatSpecialtyTest.cpp
+		server/battles/LifeDrainSpecialtyPreviewTest.cpp
 		server/battles/AcademyCombatSpecialtyTest.cpp
 		server/battles/CastleQuickStudyTest.cpp
 		server/battles/MetamagicDoubleCastTest.cpp

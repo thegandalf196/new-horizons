@@ -6,7 +6,6 @@
 #include "../../NewHorizonsShadowMagnitudes.h"
 #include "../../CSpell.h"
 #include "../../../battle/CUnitState.h"
-#include "../../../entities/hero/NewHorizonsNecropolisCombatSpecialties.h"
 #include "../../../combatScripts/nativeEvents/NativeEventCommon.h"
 #include "../../../texts/MetaString.h"
 #include <cmath>
@@ -17,9 +16,8 @@ namespace
 {
 int64_t earthboundDamage(const Mechanics * mechanics, const battle::Unit * unit)
 {
-	const auto amount = mechanics->adjustEffectValue(unit);
-	const auto percent = newHorizonsHeroes::earthboundDrainPercent(mechanics->getHeroCaster());
-	return amount + amount * percent / 100;
+	return newHorizonsMagic::lifeDrainDamageWithSpecialty(mechanics->getHeroCaster(),
+		mechanics->adjustEffectValue(unit));
 }
 }
 bool LifeDrain::enemy(const Mechanics * mechanics, const battle::Unit * unit) const

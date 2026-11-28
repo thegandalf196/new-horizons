@@ -8,6 +8,7 @@
 #include "CSpell.h"
 #include "ISpellMechanics.h"
 #include "NewHorizonsMagic.h"
+#include "NewHorizonsShadowMagnitudes.h"
 #include "NewHorizonsMetamagicEffects.h"
 #include "../battle/MetamagicDoubleCast.h"
 #include "NewHorizonsWisdom.h"
@@ -186,6 +187,8 @@ SpellEffectPreview spellEffectPreview(const CGHeroInstance & hero, const CSpell 
 	auto result = resolveSpellEffectPreview(hero, spell, callback);
 	adjustTargetFreePreview(result, hero, spell, callback);
 	adjustFactionDamagePreview(result, hero, spell, callback && callback->getBattle() ? callback->getBattle()->getMagicRules() : hero.getMagicRules());
+	if(result.primary && spell.getJsonKey() == SHADOW_LIFE_DRAIN_SPELL)
+		result.primary->value = lifeDrainDamageWithSpecialty(&hero, result.primary->value);
 	if(!result.compactLabelKey.empty())
 		result.narrowLabelKey = result.compactLabelKey + ".narrow";
 	return result;

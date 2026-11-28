@@ -10,6 +10,8 @@
 #include "StdInc.h"
 #include "NewHorizonsShadowMagnitudes.h"
 #include "NewHorizonsMagic.h"
+#include "SpellEffectScalingProfile.h"
+#include "../entities/hero/NewHorizonsNecropolisCombatSpecialties.h"
 #include "ISpellMechanics.h"
 #include "../mapObjects/CGHeroInstance.h"
 
@@ -18,6 +20,12 @@
 
 namespace newHorizonsMagic
 {
+int64_t lifeDrainDamageWithSpecialty(const CGHeroInstance * hero, int64_t ordinaryDamage)
+{
+	return newHorizonsMetamagic::spellDamageOutput(ordinaryDamage, {}, 0,
+		newHorizonsHeroes::earthboundDrainPercent(hero));
+}
+
 int32_t lifeDrainHealingPercent(const CGHeroInstance * hero)
 {
 	return hero && hero->hasActivePerk(std::string(SHADOW_MAGIC_SKILL),

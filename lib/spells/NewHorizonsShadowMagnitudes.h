@@ -15,6 +15,9 @@ class CGHeroInstance;
 
 namespace newHorizonsMagic
 {
+/// Captured caster specialty after ordinary damage adjustments, with one integer floor.
+DLL_LINKAGE int64_t lifeDrainDamageWithSpecialty(const CGHeroInstance * hero, int64_t ordinaryDamage);
+
 /// Portion of actual Life Drain damage healed, before recipient wound limits.
 DLL_LINKAGE int32_t lifeDrainHealingPercent(const CGHeroInstance * hero);
 
