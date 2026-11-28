@@ -17,6 +17,7 @@ protected:
 		if(historical)
 			for(const auto * key : {"bloodScent", "soulHarvest", "ancientOathsDiscount"})
 				rules["revisedSpecialties"].Struct().erase(key);
+		rules.setOverrideFlag(true); // Authored absence must replace installed optional rows.
 		loaded->overrideGameSetting(EGameSettings::HEROES_NEW_HORIZONS, rules);
 	}
 	void startHeroes()

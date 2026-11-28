@@ -5,6 +5,7 @@
 #include "StdInc.h"
 #include "../../lib/entities/hero/NewHorizonsAcademySpecialties.h"
 #include "../../lib/entities/hero/NewHorizonsInfernoSpecialties.h"
+#include "../../lib/entities/hero/NewHorizonsHoardedPower.h"
 #include "../PerkStateFixture.h"
 #include "../server/LegacyEstatesCapture.h"
 #include "../NewHorizonsHistoricalAdventurePolicyTestUtils.h"
@@ -167,6 +168,7 @@ protected:
 	bool absent = false;
 	bool absentDruidSpecialty = false;
 	bool absentKindlingSpecialty = false;
+	bool absentHoardedPowerSpecialty = false;
 	bool isolateCoreMysticism = false;
 	bool isolateCoreIntelligence = false;
 	bool previousFormatContext = false;
@@ -191,6 +193,8 @@ protected:
 	{
 		TinyMapGameTest::mapLoaded(loaded);
 		auto rules = historicalStartingDevelopmentRules();
+		if(absentHoardedPowerSpecialty)
+			rules["revisedSpecialties"].Struct().erase("hoardedPower");
 		if(absentKindlingSpecialty)
 			rules["revisedSpecialties"].Struct().erase("kindling");
 		if(absentDruidSpecialty || previousFormatContext)
@@ -603,9 +607,20 @@ TEST_F(NewHorizonsStartingDevelopmentTest, ThantDefaultMysticismFeedsActualDaily
 
 TEST_F(NewHorizonsStartingDevelopmentTest, NagashDefaultTaxCollectorPreservesGoldSpecialtyAndCountsOwnedTown)
 {
+	absentHoardedPowerSpecialty = true;
 	ownedTown = true;
 	ASSERT_NO_FATAL_FAILURE(prepare(necropolisStarts[7]));
 	EXPECT_EQ(actor()->dailyIncome()[EGameResID::GOLD], 575);
+	EXPECT_FALSE(newHorizonsHeroes::hoardedPowerCap(*actor()).has_value());
+}
+
+TEST_F(NewHorizonsStartingDevelopmentTest, NagashHoardedPowerReplacesGoldIncomeAndPreservesCapturedTaxCollector)
+{
+	ownedTown = true;
+	ASSERT_NO_FATAL_FAILURE(prepare(necropolisStarts[7]));
+	EXPECT_TRUE(newHorizonsHeroes::hoardedPowerCap(*actor()).has_value());
+	EXPECT_EQ(actor()->dailyIncome()[EGameResID::GOLD], 225);
+	EXPECT_TRUE(actor()->hasActivePerk("new-horizons:estates", "new-horizons:estates.taxCollector"));
 }
 
 TEST_F(NewHorizonsStartingDevelopmentTest, AydenDefaultIntelligenceFeedsRealNormalManaCapacity)

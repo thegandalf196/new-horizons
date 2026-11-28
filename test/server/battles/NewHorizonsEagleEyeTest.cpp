@@ -16,6 +16,7 @@
 #include "../../../lib/modding/CModHandler.h"
 #include "../../../lib/spells/NewHorizonsEagleEye.h"
 #include "../../../lib/entities/hero/NewHorizonsLearningSpecialties.h"
+#include "../../../lib/entities/hero/NewHorizonsNecropolisRetainedSpecialties.h"
 #include "../../../lib/networkPacks/PacksForClient.h"
 #include "../../../lib/spells/BattleSpellMechanics.h"
 #include "../../../server/CGameHandler.h"
@@ -48,6 +49,7 @@ protected:
 	bool disableFrostRing = false;
 	std::string specialtyHero;
 	bool specialtyCaptured = true;
+	bool currentNimbusSpecialty = false;
 	bool secondEnemySpell = false;
 	bool retainDraw = false;
 	void SetUp() override
@@ -74,8 +76,15 @@ protected:
 		if(!specialtyHero.empty() || legacyMagic)
 		{
 			auto rules = JsonNode(JsonPath::builtin("config/newHorizonsHeroes"));
-			// This fixture characterizes captured Nimbus Learning profiles before Seth.
-			rules["additionalSpecialties"].Struct().erase("ancientOathsPolicyVersion");
+			if(!currentNimbusSpecialty)
+			{
+				// Pin the pre-Seth Learning capture, including the row removed from current defaults.
+				rules["additionalSpecialties"].Struct().erase("ancientOathsPolicyVersion");
+				rules["revisedSpecialties"].Struct().erase("ancientOathsDiscount");
+				auto & archivist = rules["additionalSpecialties"]["graveArchivist"];
+				archivist["learningPercentPerLevel"].Integer() = 5;
+				archivist["learningMaximumPercent"].Integer() = 100;
+			}
 			rules.setOverrideFlag(true);
 			if(legacyMagic)
 				rules["startingSkills"].Struct().erase("startingBookReplacements");
@@ -510,4 +519,18 @@ TEST_F(NewHorizonsEagleEyeTest, NimbusCapturedLegacyMagicPresentationKeepsAdditi
 	EXPECT_EQ(legacy.name, "Grave Archivist");
 	EXPECT_EQ(legacy.description.find("additional distinct"), std::string::npos);
 	EXPECT_NE(legacy.description.find("5% per hero level"), std::string::npos);
+}
+
+TEST_F(NewHorizonsEagleEyeTest, CurrentNimbusKeepsAncientOathsAndDoesNotAcquireHistoricalLearning)
+{
+	specialtyHero = "core:nimbus";
+	currentNimbusSpecialty = true;
+	ASSERT_NO_FATAL_FAILURE(prepare());
+	const auto & rules = attackerSideHero->getPrimaryGrowthRules();
+	EXPECT_FALSE(rules["additionalSpecialties"].Struct().contains("graveArchivist"));
+	EXPECT_FALSE(newHorizonsHeroes::learningSpecialtyRules(rules, newHorizonsHeroes::LearningSpecialtyKind::GRAVE_ARCHIVIST));
+	EXPECT_EQ(attackerSideHero->getSpecialtyPresentation().name, "Ancient Oaths");
+	attackerSideHero->level = 10;
+	EXPECT_EQ(newHorizonsHeroes::ancientOathsDiscountPercent(attackerSideHero), 19);
+	EXPECT_EQ(attackerSideHero->calculateXp(1000), 1100);
 }
